@@ -26,9 +26,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
-import hyperspy as hs
 from distutils.version import LooseVersion
 import logging
+
+import hyperspy as hs
 
 
 _logger = logging.getLogger(__name__)
@@ -62,11 +63,8 @@ def contrast_stretching(data, saturated_pixels):
     if not 0 <= saturated_pixels <= 100:
         raise ValueError(
             "saturated_pixels must be a scalar in the range[0, 100]")
-    nans = np.isnan(data)
-    if nans.any():
-        data = data[~nans]
-    vmin = np.percentile(data, saturated_pixels / 2.)
-    vmax = np.percentile(data, 100 - saturated_pixels / 2.)
+    vmin = np.nanpercentile(data, saturated_pixels / 2.)
+    vmax = np.nanpercentile(data, 100 - saturated_pixels / 2.)
     return vmin, vmax
 
 

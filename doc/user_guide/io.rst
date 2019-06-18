@@ -86,7 +86,7 @@ and if set to `False`, the units will not be converted. The default is `False`.
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
-.. load-multiple-label::
+.. load-multiple-label:
 
 Loading multiple files
 ----------------------
@@ -250,9 +250,6 @@ filename e.g.:
     >>> s.save('test.hdf5')
 
 
-.. versionadded:: 0.8
-    Saving list, tuples and signals present in :py:attr:`~.metadata`.
-
 When saving to ``hspy``, all supported objects in the signal's
 :py:attr:`~.metadata` is stored. This includes  lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,
@@ -297,6 +294,7 @@ possible to customise the chunk shape using the ``chunks`` keyword. For example,
 ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
 
 .. code-block:: python
+
     >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
     >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
 
@@ -373,22 +371,29 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-`do_async`:   currently supported within Hyperspy for writing only, this will save
-              the file in a background thread and return immediately. Defaults
-              to `False`.
+`do_async`: 
+  currently supported within Hyperspy for writing only, this will save 
+  the file in a background thread and return immediately. Defaults
+  to `False`.
+
 .. Warning::
 
     There is no method currently implemented within Hyperspy to tell if an
     asychronous write has finished.
 
-`compressor`: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
-              Defaults to `None`.
-`clevel`:     The compression level, an `int` from 1 to 9. Defaults to 1.
-`n_threads`:  The number of threads to use for `blosc` compression. Defaults to
-              the maximum number of virtual cores (including Intel Hyperthreading)
-              on your system, which is recommended for best performance. If \
-              `do_asyc = True` you may wish to leave one thread free for the
-              Python GIL.
+
+`compressor`: 
+  The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`]. Defaults to `None`.
+
+`clevel`: 
+  The compression level, an `int` from 1 to 9. Defaults to 1.
+
+`n_threads`: 
+  The number of threads to use for `blosc` compression. Defaults to
+  the maximum number of virtual cores (including Intel Hyperthreading)
+  on your system, which is recommended for best performance. If \
+  `do_asyc = True` you may wish to leave one thread free for the
+  Python GIL.
 
 The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for
 general use. If speed is critical, use 'lz4' (LZ4) with `clevel=9`. Integer data
@@ -581,30 +586,30 @@ available publicly available from EDAX and are on Github
 SpcMap-spd.file.format.pdf>`_, and
 `.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
 
-Extra loading arguments for ``.spd`` file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Extra loading arguments for SPD file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `spc_fname` : {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
 - `ipr_fname` : {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
 - **kwargs: remaining arguments are passed to the Numpy ``memmap`` function.
 
-Extra loading arguments for ``.spd`` and ``.spc`` files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+Extra loading arguments for SPD and SPC files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `load_all_spc` : bool, switch to control if all of the ``.spc`` header is read, or just the important parts for import into HyperSpy.
 
 
 .. _fei-format:
 
-FEI TIA ser and emi
+FEI TIA SER and EMI
 -------------------
 
 HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the
-problem.
+`issues tracker <https://github.com/hyperspy/hyperspy/issues>`_ to make us 
+aware of the problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
 by doing so, the information that is stored in the emi file is lost.
@@ -613,9 +618,18 @@ Therefore strongly recommend to load using the ``.emi`` file instead.
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
 
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- `only_valid_data` : bool, in case of series or linescan data with the 
+acquisition stopped before the end: if True, load only the acquired data. 
+If False, the empty data are filled with zeros. The default is False and this 
+default value will change to True in version 2.0.
+
 .. _unf-format:
 
-SEMPER unf binary format
+SEMPER UNF binary format
 ------------------------
 
 SEMPER is a fully portable system of programs for image processing, particularly
@@ -776,7 +790,7 @@ asdf
 .. _emd_fei-format:
 
 EMD (Velox)
-^^^^^^^^^
+^^^^^^^^^^^
 
 This is a non-compliant variant of the standard EMD format developed by 
 Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS

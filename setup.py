@@ -53,7 +53,7 @@ install_req = ['scipy>=0.15',
                'tqdm>=0.4.9',
                'sympy',
                'dill',
-               'h5py',
+               'h5py>=2.3',
                'python-dateutil>=2.5.0',
                'ipyparallel',
                'dask[array]>=0.18',
@@ -74,7 +74,7 @@ extras_require = {
     "speed": ["numba", "cython"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.0.0"],  # for testing
+    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
     # required to build the docs
     "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
@@ -365,6 +365,9 @@ with update_version_when_dev() as version:
         },
         classifiers=[
             "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.5",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

@@ -128,17 +128,18 @@ class current_model_values():
     """Convenience class that makes use of __repr__ methods for nice printing in
      the notebook"""
 
-    def __init__(self, model, only_free, only_active):
+    def __init__(self, model, only_free, only_active, component_list=None):
         self.model = model
         self.only_free = only_free
         self.only_active = only_active
+        self.component_list = model if component_list is None else component_list
         self.model_type = str(self.model.__class__).split("'")[
             1].split('.')[-1]
 
     def __repr__(self):
         text = "{}: {}\n".format(
             self.model_type, self.model.signal.metadata.General.title)
-        for comp in self.model:
+        for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
                     text += current_component_values(
@@ -149,7 +150,7 @@ class current_model_values():
 
         html = "<h4>{}: {}</h4>".format(self.model_type,
                                         self.model.signal.metadata.General.title)
-        for comp in self.model:
+        for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
                     html += current_component_values(

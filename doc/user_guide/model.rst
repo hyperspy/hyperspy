@@ -11,7 +11,6 @@ the :py:class:`~.model.BaseModel` class is available for both kinds.
 
 .. _2D_model-label:
 
-.. versionadded:: 1.0
    2D models. Note that this first implementation lacks many of the
    features of 1D models e.g. plotting. Those will be added in future releases.
 
@@ -23,8 +22,8 @@ dimensional model is created for a :py:class:`~._signals.signal2d.Signal2D`.
 At present plotting and gradient fitting methods tools for are not yet
 provided for the :py:class:`~.models.model2d.Model2D` class.
 
-.. versionadded:: 0.7
-   Binned/unbinned signals
+Binned/unbinned signals
+-----------------------
 
 Before creating a model verify that the ``Signal.binned`` metadata
 attribute of the signal is set to the correct value because the resulting
@@ -68,15 +67,11 @@ voltage, convergence and collection semi-angles etc.
 
 
 
+
+Creating components for the model
+---------------------------------
+
 .. _model_components-label:
-
-Adding components to the model
-------------------------------
-
-.. versionchanged:: 1.0 `hyperspy.api.model.components` renamed to
-   `hyperspy.api.model.components1D`
-
-.. versionadded:: 1.0 `hyperspy.api.model.components2D`.
 
 In HyperSpy a model consists of a linear combination of components
 and various components are available in one (:py:mod:`~.components1d`)and
@@ -90,6 +85,7 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.power_law.PowerLaw`
 * :py:class:`~._components.offset.Offset`
 * :py:class:`~._components.exponential.Exponential`
+* :py:class:`~._components.expression.Expression`
 * :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~._components.gaussian.Gaussian`
 * :py:class:`~._components.gaussianhf.GaussianHF`
@@ -104,22 +100,18 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.arctan.Arctan`
 * :py:class:`~._components.heaviside.HeavisideStep`
 
-.. versionadded:: 1.0 The following components are currently available for
-                  two-dimensional models:
+The following components are currently available for two-dimensional models:
 
 * :py:class:`~._components.gaussian2d.Gaussian2D`
+* :py:class:`~._components.expression.Expression`
 
 However, this doesn't mean that you have to limit yourself to this meagre list
-of functions. A new function can easily be written or a custom function may
-be specified as below.
+of functions. A new function can easily be written as specified as below.
 
 Specifying custom components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _expression_component-label:
-
-.. versionadded:: 0.8.1 :py:class:`~._components.expression.Expression`
-                  component
 
 .. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component
                   can create 2D components.
@@ -238,9 +230,8 @@ If you need help with the task please submit your question to the :ref:`users
 mailing list <http://groups.google.com/group/hyperspy-users>`.
 
 
-.. _model_components-label:
-
-.. versionchanged:: 0.8.1 printing current model components
+Adding components to the model
+------------------------------
 
 To print the current components in a model use
 :py:attr:`~.model.BaseModel.components`. A table with component number,
@@ -258,10 +249,11 @@ attribute name, component name and component type will be printed:
 In fact, components may be created automatically in some cases. For example, if
 the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
 power-law background component will automatically be placed in the model. To
-add a component first we have to create an instance of the component. Once
+add a component, first we have to create an instance of the component. Once
 the instance has been created we can add the component to the model using
-the :py:meth:`~.model.BaseModel.append` method, e.g. for a type of data that
-can be modelled using Gaussians we might proceed as follows:
+the :py:meth:`~.model.BaseModel.append` and :py:meth:`~.model.BaseModel.extend` 
+methods for one or more components respectively. As an example for a type of data 
+that can be modelled using Gaussians we might proceed as follows:
 
 
 .. code-block:: python
@@ -336,7 +328,6 @@ index in the model.
     >>> m["Long Hydrogen name"]
     <Long Hydrogen name (Gaussian component)>
 
-.. versionadded:: 0.8.1 :py:attr:`~.model.BaseModel.components` attribute
 
 In addition, the components can be accessed in the
 :py:attr:`~.model.BaseModel.components` `Model` attribute. This is specially
@@ -382,8 +373,6 @@ Alternatively, a simpler form can be shown by setting the
             centre | False |     1.4865 |       None |       None
 
 
-.. versionadded:: 0.7.1 :py:attr:`~.component.Component.active_is_multidimensional`
-
 In multidimensional signals it is possible to store the value of the
 ``active`` attribute at each navigation index.
 To enable this feature for a given component set the
@@ -416,9 +405,6 @@ To enable this feature for a given component set the
 
 Indexing the model
 ------------------
-
-.. versionadded:: 1.0 model indexing
-
 
 Often it is useful to consider only part of the model - for example at
 a particular location (i.e. a slice in the navigation space) or energy range
@@ -883,8 +869,13 @@ passed, using the following signature:
 Bounded optimisation
 ^^^^^^^^^^^^^^^^^^^^
 
-Problems of ill-conditioning and divergence can be ameliorated by using bounded
-optimization. Currently, not all optimizers support bounds - see the
+Problems of ill-conditioning and divergence can be improved by using bounded
+optimization. All components' parameters have the attributes `parameter.bmin` and 
+`parameter.bmax` ("bounded min" and "bounded max"). When fitting using the 
+`bounded=True` argument by `m.fit(bounded=True)` or `m.multifit(bounded=True)`, 
+these attributes set the minimum and maximum values allowed for `parameter.value`.
+
+Currently, not all optimizers support bounds - see the
 :ref:`table above <optimizers-table>`. In the following example a gaussian
 histogram is fitted using a :class:`~._components.gaussian.Gaussian`
 component using mpfit and bounds on the ``centre`` parameter.
@@ -915,8 +906,6 @@ component using mpfit and bounds on the ``centre`` parameter.
 Goodness of fit
 ^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.7 chi-squared and reduced chi-squared
-
 The chi-squared, reduced chi-squared and the degrees of freedom are
 computed automatically when fitting. They are stored as signals, in the
 :attr:`~.model.BaseModel.chisq`, :attr:`~.model.BaseModel.red_chisq`  and
@@ -940,8 +929,6 @@ To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
 
 
 
-.. versionadded:: 0.7 plot componets features
-
 By default only the full model line is displayed in the plot. In addition, it
 is possible to display the individual components by calling
 :py:meth:`~.model.BaseModel.enable_plot_components` or directly using
@@ -953,9 +940,6 @@ is possible to display the individual components by calling
 
 To disable this feature call
 :py:meth:`~.model.BaseModel.disable_plot_components`.
-
-.. versionadded:: 0.7.1 :py:meth:`~.model.BaseModel.suspend_update`
-..                and :py:meth:`~.model.Model.resume_update`
 
 .. versionadded:: 1.4 ``Signal1D.plot`` keyword arguments
 
@@ -984,15 +968,6 @@ Non-linear regression often requires setting sensible starting
 parameters. This can be done by plotting the model and adjusting the parameters
 by hand.
 
-.. versionadded:: 0.7
-
-    In addition, it is possible to fit a given component  independently using
-    the :py:meth:`~.model.BaseModel.fit_component` method.
-
-
-.. versionadded:: 0.8.5
-    :py:meth:`~.model.BaseModel.gui`,
-
 .. versionchanged:: 1.3
     All :meth:`notebook_interaction` methods renamed to :meth:`gui`. The
     :meth:`notebook_interaction` methods will be removed in 2.0
@@ -1014,10 +989,6 @@ conveniently adjust the parameter values by running
     sliders to adjust current parameter values. Typing different minimum and
     maximum values changes the boundaries of the slider.
 
-
-.. versionadded:: 0.6
-    :py:meth:`~.models.model1d.Model1D.enable_adjust_position` and
-    :py:meth:`~.models.model1d.Model1D.disable_adjust_position`
 
 Also, :py:meth:`~.models.model1d.Model1D.enable_adjust_position` provides an
 interactive way of setting the position of the components with a
@@ -1092,7 +1063,6 @@ datasets**.
 
 Storing models
 --------------
-.. versionadded:: 1.0 :py:class:`~.signal.ModelManager`
 
 Multiple models can be stored in the same signal. In particular, when
 :py:meth:`~.model.BaseModel.store` is called, a full "frozen" copy of the model
@@ -1156,7 +1126,6 @@ Current stored models can be listed by calling ``s.models``:
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. versionadded:: 1.0
 
 To save a model, a convenience function :py:meth:`~.model.BaseModel.save` is
 provided, which stores the current model into its signal and saves the
@@ -1211,10 +1180,10 @@ formats.
 
 Batch setting of parameter attributes
 -------------------------------------
-.. versionadded:: 0.6
 
-The following methods can be used to ease the task of setting some important
-parameter attributes:
+The following model methods can be used to ease the task of setting some important
+parameter attributes. These can also be used on a per-component basis, by calling them
+on individual components.
 
 * :py:meth:`~.model.BaseModel.set_parameters_not_free`
 * :py:meth:`~.model.BaseModel.set_parameters_free`
@@ -1224,9 +1193,6 @@ parameter attributes:
 
 Smart Adaptive Multi-dimensional Fitting (SAMFire)
 --------------------------------------------------
-
-.. versionadded:: 1.0
-    SAMFire
 
 SAMFire (Smart Adaptive Multi-dimensional Fitting) is an algorithm created to
 reduce the starting value (or local / false minima) problem, which often arises

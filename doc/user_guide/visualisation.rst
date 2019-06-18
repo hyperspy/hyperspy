@@ -120,10 +120,17 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
+    ``plt.close('all')`` is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
     Matplotlib is the library that HyperSpy uses to produce the plots. You can
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
+
+
+.. NOTE::
+
+    Plotting ``float16`` images is currently not supported by matplotlib; however, it is 
+    possible to convert the type of the data by using the 
+    :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
 ===========================
@@ -175,8 +182,6 @@ The following keyboard shortcuts are availalbe when the 2D signal figure is in f
 
 Customising image plot
 ======================
-
-.. versionadded:: 0.8
 
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
@@ -237,8 +242,6 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
 
 .. _plot.divergent_colormaps-label:
 
-
-.. versionadded:: 0.8.1
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
@@ -458,8 +461,6 @@ other signals): :py:func:`~.drawing.utils.plot_images`,
 
 Plotting several images
 -----------------------
-
-.. versionadded:: 0.8
 
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
@@ -1030,8 +1031,6 @@ each plot:
 
 Markers
 =======
-
-.. versionadded:: 0.8
 
 HyperSpy provides an easy access to the main marker of matplotlib. The markers
 can be used in a static way

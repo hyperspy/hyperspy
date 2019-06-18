@@ -222,10 +222,6 @@ experimental data.
 
 .. _eelsdb-label:
 
-.. versionadded:: 1.0
-    :py:func:`~.misc.eels.eelsdb.eelsdb` function.
-
-
 The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
 directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
 example, the following loads all the boron trioxide spectra currently
@@ -609,8 +605,6 @@ to disable the traitsui GUI elements and save the changes to disk:
 
 Messages log
 ------------
-
-.. versionadded:: 1.0
 
 HyperSpy writes messages to the `Python logger
 <https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_. The

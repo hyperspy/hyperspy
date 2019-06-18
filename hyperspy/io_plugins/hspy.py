@@ -407,7 +407,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
                 tmp = np.array(value)
         except ValueError:
             tmp = np.array([[0]])
-        if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
+        if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
             dict2hdfgroup(dict(zip(
                 [str(i) for i in range(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
@@ -533,6 +533,15 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
         else:
             # Optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+
+    if data.dtype  == np.dtype('O'):
+        # For saving ragged array
+        # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
+        group.require_dataset(key,
+                              chunks,
+                              dtype=h5py.special_dtype(vlen=data[0].dtype),
+                              **kwds)
+        group[key][:] = data[:]
 
     maxshape = tuple(None for _ in data.shape)
 

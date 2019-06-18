@@ -273,9 +273,9 @@ class EDSTEM_mixin:
         elif 'Acquisition_instrument.SEM' in ref.metadata:
             mp_ref = ref.metadata.Acquisition_instrument.SEM
         else:
-            raise ValueError("The reference has no metadata." +
-                             "Acquisition_instrument.TEM" +
-                             "\n or metadata.Acquisition_instrument.SEM ")
+            raise ValueError("The reference has no metadata "
+                             "'Acquisition_instrument.TEM '"
+                             "or 'metadata.Acquisition_instrument.SEM'.")
 
         mp = self.metadata
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
@@ -286,7 +286,7 @@ class EDSTEM_mixin:
     def quantification(self,
                        intensities,
                        method,
-                       factors='auto',
+                       factors,
                        composition_units='atomic',
                        navigation_mask=1.0,
                        closing=True,
@@ -353,12 +353,13 @@ class EDSTEM_mixin:
         --------
         vacuum_mask
         """
-        if isinstance(navigation_mask, float):
+        if self.axes_manager.navigation_size == 0:
+            navigation_mask = None
+        elif isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
-        xray_lines = [intensity.metadata.Sample.xray_lines[0]
-                      for intensity in intensities]
+
         composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
@@ -381,8 +382,9 @@ class EDSTEM_mixin:
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
         else:
-            raise ValueError('Please specify method for quantification,'
-                             'as \'CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError("Please specify method for quantification, "
+                             "as 'CL', 'zeta' or 'cross_section'.")
+
         composition = composition.split()
         if composition_units == 'atomic':
             if method != 'cross_section':
@@ -390,7 +392,8 @@ class EDSTEM_mixin:
         else:
             if method == 'cross_section':
                 composition = utils.material.atomic_to_weight(composition)
-        for i, xray_line in enumerate(xray_lines):
+        for i, intensity in enumerate(intensities):
+            xray_line = intensity.metadata.Sample.xray_lines[0]
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
                 ' percent of ' + element
@@ -402,9 +405,7 @@ class EDSTEM_mixin:
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
-        if method == 'cross_section':
-            for i, xray_line in enumerate(xray_lines):
-                element, line = utils_eds._get_element_and_line(xray_line)
+            if method == 'cross_section':
                 number_of_atoms[i].metadata.General.title = \
                     'atom counts of ' + element
                 number_of_atoms[i].metadata.set_item("Sample.elements",
@@ -421,8 +422,8 @@ class EDSTEM_mixin:
         elif method == 'CL':
             return composition
         else:
-            raise ValueError('Please specify method for quantification, as \
-            ''CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError("Please specify method for quantification, as "
+                             "'CL', 'zeta' or 'cross_section'.")
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """

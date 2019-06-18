@@ -141,11 +141,23 @@ class TestMarkers:
         s = Signal1D(np.zeros((3, 50, 50)))
         m0 = markers.point(5, 5)
         m1 = markers.point((5, 10), (10, 15))
-        m2 = markers.point(np.zeros((50, 3)), np.zeros((50, 3)))
+        m2 = markers.point(np.zeros((3, 50)), np.zeros((3, 50)))
         s.add_marker(m0)
         with pytest.raises(ValueError):
             s.add_marker(m1)
         s.add_marker(m2)
+
+    def test_add_marker_signal2d_navigation_dim_vertical_line(self):
+        s = Signal2D(np.arange(2*3*8*9).reshape(2, 3, 8, 9))
+        marker_pos_list = [[1, 3, 5], [2, 4, 6]]
+        m = markers.vertical_line(marker_pos_list)
+        s.add_marker(m)
+        s.axes_manager.indices = (0, 1)
+        for iy, temp_marker_list in enumerate(marker_pos_list):
+            for ix, value in enumerate(temp_marker_list):
+                s.axes_manager.indices = (ix, iy)
+                vertical_line = s._plot.signal_plot.figure.axes[0].lines[1]
+                assert value == vertical_line.get_data()[0]
 
     def test_add_marker_signal2d_navigation_dim(self):
         s = Signal2D(np.zeros((3, 50, 50)))
