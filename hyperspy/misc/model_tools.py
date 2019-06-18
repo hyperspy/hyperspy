@@ -19,12 +19,13 @@
 
 def _is_iter(val):
     "Checks if value is a list or tuple"
-    return type(val) == tuple or type(val) == list
+    return isinstance(val, tuple) or isinstance(val, list)
 
 
 def _iter_join(val):
     "Joins values of iterable parameters for the fancy view, unless it is None, then blank"
-    return "(" + ", ".join(["{:6g}".format(v) for v in val]) + ")" if val else ""
+    return "(" + ", ".join(["{:6g}".format(v)
+                            for v in val]) + ")" if val else ""
 
 
 def _non_iter(val):
@@ -79,7 +80,8 @@ class current_component_values():
                     std = para.std if _is_iter(para.std) else blank
                     bmin = para.bmin if _is_iter(para.bmin) else blank
                     bmax = para.bmax if _is_iter(para.bmax) else blank
-                    for i, (v, s, bn, bx) in enumerate(zip(para.value, std, bmin, bmax)):
+                    for i, (v, s, bn, bx) in enumerate(
+                            zip(para.value, std, bmin, bmax)):
                         if i == 0:
                             text += signature.format(para.name[:size['name']], str(para.free)[:size['free']], str(
                                 v)[:size['value']], str(s)[:size['std']], str(bn)[:size['bmin']], str(bx)[:size['bmax']])

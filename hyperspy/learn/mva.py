@@ -145,9 +145,9 @@ class MVA():
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
-            The result of the decomposition is stored internally. However, 
-            some algorithms generate some extra information that is not 
-            stored. If True (the default is False) return any extra 
+            The result of the decomposition is stored internally. However,
+            some algorithms generate some extra information that is not
+            stored. If True (the default is False) return any extra
             information if available
 
         Returns
@@ -387,7 +387,7 @@ class MVA():
                     explained_variance / explained_variance.sum()
                 number_significant_components = \
                     self._estimate_elbow_position(
-                            explained_variance_ratio)+ 1
+                        explained_variance_ratio) + 1
 
             # Store the results in learning_results
             target.factors = factors
@@ -1096,7 +1096,7 @@ class MVA():
         # Some default formatting for signal markers
         if signal_fmt is None:
             signal_fmt = {'c': '#C24D52',
-                         'linestyle': '',
+                          'linestyle': '',
                           'marker': "^",
                           'markersize': 10,
                           'zorder': 3}
@@ -1148,19 +1148,19 @@ class MVA():
 
         if n_signal_pcs == n:
             ax.plot(range(index_offset, index_offset + n),
-                       s.isig[:n].data,
-                       **signal_fmt)
+                    s.isig[:n].data,
+                    **signal_fmt)
         elif n_signal_pcs > 0:
             ax.plot(range(index_offset, index_offset + n_signal_pcs),
-                       s.isig[:n_signal_pcs].data,
-                       **signal_fmt)
+                    s.isig[:n_signal_pcs].data,
+                    **signal_fmt)
             ax.plot(range(index_offset + n_signal_pcs, index_offset + n),
-                       s.isig[n_signal_pcs:n].data,
-                       **noise_fmt)
+                    s.isig[n_signal_pcs:n].data,
+                    **noise_fmt)
         else:
             ax.plot(range(index_offset, index_offset + n),
-                       s.isig[:n].data,
-                       **noise_fmt)
+                    s.isig[:n].data,
+                    **noise_fmt)
 
         if xaxis_labeling == 'cardinal':
             ax.xaxis.set_major_formatter(
@@ -1255,8 +1255,8 @@ class MVA():
 
     def _estimate_elbow_position(self, curve_values):
         """
-        Estimate the elbow position of a scree plot curve 
-        Used to estimate the number of significant components in 
+        Estimate the elbow position of a scree plot curve
+        Used to estimate the number of significant components in
         a PCA variance ratio plot or other "elbow" type curves
 
         Parameters
@@ -1270,23 +1270,23 @@ class MVA():
             as suggested in :ref:`[Satopää2011] <Satopää2011>`
         """
         maxpoints = min(20, len(curve_values) - 1)
-        # Find a line between first and last point 
+        # Find a line between first and last point
         # With a classic elbow scree plot the line from first to last
         # more or less defines a triangle
         # The elbow should be the point which is the
         # furthest distance from this line
-        
+
         y2 = np.log(curve_values[maxpoints])
         x2 = maxpoints
         y1 = np.log(curve_values[0])
         x1 = 0
-        # loop through the curve values and calculate 
+        # loop through the curve values and calculate
         distance = np.zeros(maxpoints)
         for i in range(maxpoints):
             y0 = np.log(curve_values[i])
             x0 = i
-            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))/\
-                          np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
+            distance[i] = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) /\
+                np.math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         # Point with the largest distance is the "elbow"
         elbow_position = np.argmax(distance)
         return elbow_position

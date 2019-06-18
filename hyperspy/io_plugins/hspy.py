@@ -534,7 +534,7 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # Optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
-    if data.dtype  == np.dtype('O'):
+    if data.dtype == np.dtype('O'):
         # For saving ragged array
         # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
         group.require_dataset(key,

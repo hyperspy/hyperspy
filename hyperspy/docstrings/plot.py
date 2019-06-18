@@ -117,5 +117,5 @@ COMPLEX_DOCSTRING = \
 
 KWARGS_DOCSTRING = \
     """**kwargs, optional
-            Only for 2D signals: additional key word arguments for 
+            Only for 2D signals: additional key word arguments for
             `matplotlib.pyplot.imshow`."""

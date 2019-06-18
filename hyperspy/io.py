@@ -162,8 +162,8 @@ def load(filenames=None,
         by using a list of strings. Only for EMD (NCEM) files.
     only_valid_data : bool, optional
         Only for FEI emi/ser file in case of series or linescan with the
-        acquisition stopped before the end: if True, load only the acquired 
-        data. If False, fill empty data with zeros. Default is False and this 
+        acquisition stopped before the end: if True, load only the acquired
+        data. If False, fill empty data with zeros. Default is False and this
         default value will change to True in version 2.0.
 
 

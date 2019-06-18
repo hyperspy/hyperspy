@@ -2037,7 +2037,7 @@ class BaseSignal(FancySlicing,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            # check first if we have a signal to avoid comparion of signal with 
+            # check first if we have a signal to avoid comparion of signal with
             # string
             if isinstance(navigator, BaseSignal):
                 # Dynamic navigator
