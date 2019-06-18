@@ -17,17 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import wraps
-import logging
 import numpy as np
 import sympy
 from sympy import lambdify
-from sympy.utilities.lambdify import lambdastr
+import warnings
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-
-
-_logger = logging.getLogger(__name__)
 
 
 _CLASS_DOC = \
@@ -74,7 +70,7 @@ class Expression(Component):
 
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, add_rotation=False, rotation_center=None,
-                 **kwargs):
+                 compute_gradients=True, **kwargs):
         """Create a component from a string expression.
 
         It automatically generates the partial derivatives and the
@@ -108,6 +104,11 @@ class Expression(Component):
             is not defined, otherwise the center is the coordinates specified
             by `position`. Alternatively a tuple with the (x, y) coordinates
             of the center can be provided.
+        compute_gradients : bool, optional
+            If `True`, compute the gradient automatically using sympy. If sympy
+            does not support the calculation of the partial derivatives, for 
+            example in case of expression containing a "where" condition, 
+            it can be disabled by using `compute_gradients=False`.
         **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
@@ -119,9 +120,9 @@ class Expression(Component):
 
         Note
         ----
-        Sympy currently does not support the differentiation of function 
-        containing a "where" condition, therefore for such function, the 
-        gradient is not computed automatically.
+        Sympy currently does not support the differentiation of expression 
+        containing a "where" condition, therefore for such expression, it is 
+        advised to write the gradients explicitly.
 
         Examples
         --------
@@ -150,6 +151,7 @@ class Expression(Component):
         """
         self._add_rotation = add_rotation
         self._str_expression = expression
+        self._compute_gradients = compute_gradients
         if rotation_center is None:
             self.compile_function(module=module, position=position)
         else:
@@ -165,6 +167,7 @@ class Expression(Component):
             self._whitelist['expression'] = ('init', expression)
             self._whitelist['name'] = ('init', name)
             self._whitelist['position'] = ('init', position)
+            self._whitelist['compute_gradients'] = ('init', compute_gradients)
             if self._is2D:
                 self._whitelist['add_rotation'] = ('init', self._add_rotation)
                 self._whitelist['rotation_center'] = ('init', rotation_center)
@@ -234,28 +237,33 @@ class Expression(Component):
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
 
-        if not "where" in self._str_expression:
-            ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
-            for parameter in parameters:
-                grad_expr = sympy.diff(eval_expr, parameter)
-                setattr(self,
-                        "_f_grad_%s" % parameter.name,
-                        lambdify(variables + parameters,
-                                  grad_expr.evalf(),
-                                  modules=module,
-                                  dummify=False)
-                        )
-    
-                setattr(self,
-                        "grad_%s" % parameter.name,
-                        ffargs(
-                            getattr(
+        if self._compute_gradients:
+            try:
+                ffargs = (_fill_function_args_2d if 
+                        self._is2D else _fill_function_args)
+                for parameter in parameters:
+                    grad_expr = sympy.diff(eval_expr, parameter)
+                    setattr(self,
+                            "_f_grad_%s" % parameter.name,
+                            lambdify(variables + parameters,
+                                      grad_expr.evalf(),
+                                      modules=module,
+                                      dummify=False)
+                            )
+
+                    setattr(self,
+                            "grad_%s" % parameter.name,
+                            ffargs(
+                                getattr(
+                                    self,
+                                    "_f_grad_%s" %
+                                    parameter.name)).__get__(
                                 self,
-                                "_f_grad_%s" %
-                                parameter.name)).__get__(
-                            self,
-                            Expression)
-                        )
+                                Expression)
+                            )
+            except SyntaxError:
+                warnings.warn("The gradients can not be computed with sympy.",
+                              UserWarning)
 
     def function_nd(self, *args):
         """%s

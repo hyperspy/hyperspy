@@ -103,24 +103,21 @@ class TestPowerLaw:
         s2 = hs.signals.EDSTEMSpectrum(s.data)
         g.estimate_parameters(s2, None, None)
 
-    def test_function_grad(self):
-        pl = hs.model.components1D.PowerLaw()
-        axis = np.arange(-50, 50)
-        for attr in ['function', 'grad_A', 'grad_r', 'grad_origin']:
-            values = getattr(pl, attr)((axis))
-            assert_allclose(values[:50], np.zeros((50)))
-            assert getattr(pl, attr)((axis))[50] == 0
-            if attr != 'grad_A':
-                 getattr(pl, attr)((axis))[51] > 0
-
     def test_function_grad_cutoff(self):
-        pl = hs.model.components1D.PowerLaw(left_cutoff=10.)
-        axis = np.arange(50)
+        pl = self.m[0]
+        pl.left_cutoff.value = 105.0
+        axis = self.s.axes_manager[0].axis
         for attr in ['function', 'grad_A', 'grad_r', 'grad_origin']:
             values = getattr(pl, attr)((axis))
-            assert_allclose(values[:10], np.zeros((10)))
-            assert getattr(pl, attr)((axis))[10] == 0
-            getattr(pl, attr)((axis))[11] > 0
+            assert_allclose(values[:501], np.zeros((501)))
+            assert getattr(pl, attr)((axis))[500] == 0
+            getattr(pl, attr)((axis))[502] > 0
+
+    def test_exception_gradient_calculation(self):
+        # if this doesn't warn, it means that sympy can compute the gradients
+        # and the power law component can be updated.
+        with pytest.warns(UserWarning):
+            hs.model.components1D.PowerLaw(compute_gradients=True)
 
 
 class TestDoublePowerLaw:
