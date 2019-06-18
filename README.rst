@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |AppVeyor|_ |Coveralls|_ |pypi_version|_  |rtd|_ |gitter|_ |saythanks|_
+|Travis|_ |AppVeyor|_ |Coveralls|_ |rtd|_  |pypi_version|_  |python_version|_ |gitter|_ |saythanks|_
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_patch
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
@@ -11,11 +11,14 @@
 .. |Coveralls| image:: https://coveralls.io/repos/github/hyperspy/hyperspy/badge.svg?branch=RELEASE_next_minor
 .. _Coveralls: https://coveralls.io/github/hyperspy/hyperspy?branch=RELEASE_next_minor
 
+.. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
+.. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
+
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
 
-.. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
-.. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
+.. |python_version| image:: https://img.shields.io/pypi/pyversions/hyperspy.svg?style=flat
+.. _python_version: https://pypi.python.org/pypi/hyperspy
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
@@ -41,7 +44,7 @@ HyperSpy is released under the GPL v3 license.
 
 .. warning::
 
-    **Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
+    **Since version 0.8.4 HyperSpy supports Python 3.5 and later. If you need to install
     HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
 
 
