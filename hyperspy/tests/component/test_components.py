@@ -55,7 +55,7 @@ def test_creation_components1d(component_name):
     if component_name == 'ScalableFixedPattern':
         kwargs['signal1D'] = s
     elif component_name == 'Expression':
-        kwargs.update({'expression':"a*x+b", "name":"linear"})
+        kwargs.update({'expression': "a*x+b", "name": "linear"})
 
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))
@@ -171,7 +171,7 @@ class TestOffset:
 
     def test_function_nd(self):
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s = hs.stack([s]*2)
+        s = hs.stack([s] * 2)
         o = hs.model.components1D.Offset()
         o.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
@@ -274,7 +274,7 @@ class TestGaussian:
     def test_function_nd(self, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s2 = hs.stack([s]*2)
+        s2 = hs.stack([s] * 2)
         g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s2, None, None, only_current=False)
         assert g.binned == binned

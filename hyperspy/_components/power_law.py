@@ -58,7 +58,7 @@ class PowerLaw(Expression):
     the component will return 0.
     """
 
-    def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0, 
+    def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0,
                  module="numexpr", compute_gradients=False, **kwargs):
         super().__init__(
             expression="where(left_cutoff<x, A*(-origin + x)**-r, 0)",
@@ -88,7 +88,7 @@ class PowerLaw(Expression):
 
     def estimate_parameters(self, signal, x1, x2, only_current=False,
                             out=False):
-        """Estimate the parameters for the power law component by the two area 
+        """Estimate the parameters for the power law component by the two area
         method.
 
         Parameters

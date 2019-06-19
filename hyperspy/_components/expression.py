@@ -112,8 +112,8 @@ class Expression(Component):
             parameter in the `Component`. For example: {"_gamma": "gamma"}.
         compute_gradients : bool, optional
             If `True`, compute the gradient automatically using sympy. If sympy
-            does not support the calculation of the partial derivatives, for 
-            example in case of expression containing a "where" condition, 
+            does not support the calculation of the partial derivatives, for
+            example in case of expression containing a "where" condition,
             it can be disabled by using `compute_gradients=False`.
         **kwargs
              Keyword arguments can be used to initialise the value of the
@@ -248,17 +248,18 @@ class Expression(Component):
 
         if self._compute_gradients:
             try:
-                ffargs = (_fill_function_args_2d if 
-                        self._is2D else _fill_function_args)
+                ffargs = (_fill_function_args_2d if
+                          self._is2D else _fill_function_args)
                 for parameter in parameters:
                     grad_expr = sympy.diff(eval_expr, parameter)
-                    name = parameter.name if parameter.name not in self._rename_pars else self._rename_pars[parameter.name]
+                    name = parameter.name if parameter.name not in self._rename_pars else self._rename_pars[
+                        parameter.name]
                     setattr(self,
                             "_f_grad_%s" % name,
                             lambdify(variables + parameters,
-                                      grad_expr.evalf(),
-                                      modules=module,
-                                      dummify=False)
+                                     grad_expr.evalf(),
+                                     modules=module,
+                                     dummify=False)
                             )
 
                     setattr(self,
