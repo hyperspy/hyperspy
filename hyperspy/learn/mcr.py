@@ -165,6 +165,27 @@ def mcrals(self,
               'debug': logging.DEBUG}
     logging.getLogger('pymcr.mcr').setLevel(levels[verbosity])
 
+    # Set MCR constraints from strings if necessary
+    for i in range(0, len(c_constraints)):
+        if type(c_constraints[i]) is str:
+            if c_constraints[i] == 'Nonneg':
+                c_constraints[i] = ConstraintNonneg()
+            elif c_constraints[i] == 'Norm':
+                c_constraints[i] = ConstraintNorm()
+            else:
+                raise ValueError("C constraint string '%s' not allowed. Must "
+                                 "be 'Nonneg' or 'Norm'" % c_constraints[i])
+
+    for i in range(0, len(st_constraints)):
+        if type(st_constraints[i]) is str:
+            if st_constraints[i] == 'Nonneg':
+                st_constraints[i] = ConstraintNonneg()
+            elif st_constraints[i] == 'Norm':
+                st_constraints[i] = ConstraintNorm()
+            else:
+                raise ValueError("ST constraint string '%s' not allowed. Must "
+                                 "be 'Nonneg' or 'Norm'" % st_constraints[i])
+
     # Perform MCR
     if simplicity == 'spatial':
         rot_loadings, rotation = orthomax(loadings.data.T, gamma=1)
