@@ -18,6 +18,9 @@
 
 from functools import wraps
 import numpy as np
+import sympy
+from sympy import lambdify
+import warnings
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
@@ -50,7 +53,6 @@ def _fill_function_args_2d(fn):
 
 
 def _parse_substitutions(string):
-    import sympy
     splits = map(str.strip, string.split(';'))
     expr = sympy.sympify(next(splits))
     # We substitute one by one manually, as passing all at the same time does
@@ -68,15 +70,15 @@ class Expression(Component):
 
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, add_rotation=False, rotation_center=None,
-                 rename_pars={}, **kwargs):
+                 rename_pars={}, compute_gradients=True, **kwargs):
         """Create a component from a string expression.
 
         It automatically generates the partial derivatives and the
         class docstring.
 
-        Parameters
+        Parameters`
         ----------
-        expression: str
+        expression : str
             Component function in SymPy text expression format with
             substitutions separated by `;`. See examples and the SymPy
             documentation for details. The only additional constraint is that
@@ -86,18 +88,18 @@ class Expression(Component):
             documentation for details.
         name : str
             Name of the component.
-        position: str, optional
+        position : str, optional
             The parameter name that defines the position of the component if
             applicable. It enables interative adjustment of the position of the
             component in the model. For 2D components, a tuple must be passed
             with the name of the two parameters e.g. `("x0", "y0")`.
-        module: {"numpy", "numexpr"}, default "numpy"
+        module : {"numpy", "numexpr"}, default "numpy"
             Module used to evaluate the function. numexpr is often faster but
             it supports fewer functions and requires installing numexpr.
         add_rotation: bool, default False
             This is only relevant for 2D components. If `True` it automatically
             adds `rotation_angle` parameter.
-        rotation_center: {None, tuple}
+        rotation_center : {None, tuple}
             If None, the rotation center is the center i.e. (0, 0) if `position`
             is not defined, otherwise the center is the coordinates specified
             by `position`. Alternatively a tuple with the (x, y) coordinates
@@ -108,6 +110,11 @@ class Expression(Component):
             `expression`. `rename_parameters` is a dictionary to map the name
             of the parameter in the `expression`` to the desired name of the
             parameter in the `Component`. For example: {"_gamma": "gamma"}.
+        compute_gradients : bool, optional
+            If `True`, compute the gradient automatically using sympy. If sympy
+            does not support the calculation of the partial derivatives, for 
+            example in case of expression containing a "where" condition, 
+            it can be disabled by using `compute_gradients=False`.
         **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
@@ -116,6 +123,12 @@ class Expression(Component):
         -------
         recompile: useful to recompile the function and gradient with a
             a different module.
+
+        Note
+        ----
+        As of version 1.4, Sympy's lambdify function—that the ``Expression`` components uses internally,
+        does not support the differentiation of some expressions, for example those
+        containing a "where" condition. In such cases, the gradients can be set manually if required.
 
         Examples
         --------
@@ -142,11 +155,10 @@ class Expression(Component):
          <Parameter two of my function component>)
 
         """
-
-        import sympy
         self._add_rotation = add_rotation
         self._str_expression = expression
         self._rename_pars = rename_pars
+        self._compute_gradients = compute_gradients
         if rotation_center is None:
             self.compile_function(module=module, position=position)
         else:
@@ -163,6 +175,7 @@ class Expression(Component):
             self._whitelist['name'] = ('init', name)
             self._whitelist['position'] = ('init', position)
             self._whitelist['rename_pars'] = ('init', rename_pars)
+            self._whitelist['compute_gradients'] = ('init', compute_gradients)
             if self._is2D:
                 self._whitelist['add_rotation'] = ('init', self._add_rotation)
                 self._whitelist['rotation_center'] = ('init', rotation_center)
@@ -184,13 +197,13 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
     def compile_function(self, module="numpy", position=False):
-        import sympy
-        from sympy.utilities.lambdify import lambdify
         expr = _parse_substitutions(self._str_expression)
+
         # Extract x
         x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         # Extract y
         y = [symbol for symbol in expr.free_symbols if symbol.name == "y"]
+
         self._is2D = True if y else False
         if self._is2D:
             y = y[0]
@@ -232,28 +245,35 @@ class Expression(Component):
         parnames = [symbol.name if symbol.name not in self._rename_pars else self._rename_pars[symbol.name]
                     for symbol in parameters]
         self._parameter_strings = parnames
-        ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
-        for parameter in parameters:
-            grad_expr = sympy.diff(eval_expr, parameter)
-            name = parameter.name if parameter.name not in self._rename_pars else self._rename_pars[parameter.name]
-            setattr(self,
-                    "_f_grad_%s" % name,
-                    lambdify(variables + parameters,
-                             grad_expr.evalf(),
-                             modules=module,
-                             dummify=False)
-                    )
 
-            setattr(self,
-                    "grad_%s" % name,
-                    ffargs(
-                        getattr(
-                            self,
-                            "_f_grad_%s" %
-                            name)).__get__(
-                        self,
-                        Expression)
-                    )
+        if self._compute_gradients:
+            try:
+                ffargs = (_fill_function_args_2d if 
+                        self._is2D else _fill_function_args)
+                for parameter in parameters:
+                    grad_expr = sympy.diff(eval_expr, parameter)
+                    name = parameter.name if parameter.name not in self._rename_pars else self._rename_pars[parameter.name]
+                    setattr(self,
+                            "_f_grad_%s" % name,
+                            lambdify(variables + parameters,
+                                      grad_expr.evalf(),
+                                      modules=module,
+                                      dummify=False)
+                            )
+
+                    setattr(self,
+                            "grad_%s" % name,
+                            ffargs(
+                                getattr(
+                                    self,
+                                    "_f_grad_%s" %
+                                    name)).__get__(
+                                self,
+                                Expression)
+                            )
+            except SyntaxError:
+                warnings.warn("The gradients can not be computed with sympy.",
+                              UserWarning)
 
     def function_nd(self, *args):
         """%s
