@@ -29,7 +29,7 @@ import traits.api as t
 
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, DataAxis
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -608,6 +608,7 @@ class ImageContrastEditor(t.HasTraits):
                     onselect=self.update_span_selector_traits,
                     onmove_callback=self.update_span_selector_traits,
                     rectprops={"alpha":0.25, "color":'r'})
+            self.span_selector.bounds_check = True
 
         elif self.span_selector is not None:
             self.span_selector.turn_off()
@@ -633,8 +634,8 @@ class ImageContrastEditor(t.HasTraits):
         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
         # Set this attribute to restrict the span selector to the xaxis
         self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
-                                              offset=self.xaxis[0],
-                                              scale=self.xaxis[-1]-self.xaxis[0])
+                                              offset=self.xaxis[1],
+                                              scale=self.xaxis[1]-self.xaxis[0])
 
     def plot_histogram(self):
         self._set_xaxis()
@@ -739,6 +740,7 @@ class ImageContrastEditor(t.HasTraits):
             # print("vmin, vmax", self._vmin, self._vmax)
             self.update_histogram()
             self.update_span_selector_traits()
+
 
 @add_gui_method(toolkey="Signal1D.integrate_in_range")
 class IntegrateArea(SpanSelectorInSignal1D):
