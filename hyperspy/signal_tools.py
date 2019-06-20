@@ -574,6 +574,14 @@ class ImageContrastEditor(t.HasTraits):
 
         self.image.axes_manager.events.indices_changed.connect(
             self._reset, [])
+        self.hspy_fig.events.closed.connect(
+            lambda: self.image.axes_manager.events.indices_changed.disconnect(
+                self._reset), [])
+
+        # Disconnect update image to avoid flickering
+        self.image.disconnect()
+        # And reconnect it if we close the ImageContrastEditor
+        self.hspy_fig.events.closed.connect(self.image.connect, [])
 
     def create_axis(self):
         self.ax = self.hspy_fig.figure.add_subplot(111)

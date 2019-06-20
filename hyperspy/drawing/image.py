@@ -457,12 +457,16 @@ class ImagePlot(BlittedFigure):
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
-                                       self.on_key_press)
+                                        self.on_key_press)
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
-            self.events.closed.connect(
-                lambda: self.axes_manager.events.indices_changed.disconnect(
-                    self.update), [])
+            if self.disconnect not in self.events.closed.connected:
+                self.events.closed.connect(self.disconnect, [])
+
+    def disconnect(self):
+        if self.axes_manager:
+            if self.update in self.axes_manager.events.indices_changed.connected:
+                self.axes_manager.events.indices_changed.disconnect(self.update)
 
     def on_key_press(self, event):
         if event.key == 'h':
