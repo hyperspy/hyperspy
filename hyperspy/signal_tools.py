@@ -565,7 +565,6 @@ class ImageContrastEditor(t.HasTraits):
         # selector on the histogram
         self._vmin, self._vmax = self.image.vmin, self.image.vmax
         self.bins = 100
-        self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
 
         self.span_selector = None
         self.span_selector_switch(on=True)
@@ -589,7 +588,9 @@ class ImageContrastEditor(t.HasTraits):
         self.update_gamma_line()
 
     def _auto_changed(self, old, new):
-        self._reset()
+        # Do something only if auto is ticked
+        if new:
+            self._reset()
 
     def span_selector_switch(self, on):
         if on is True:
@@ -620,7 +621,15 @@ class ImageContrastEditor(t.HasTraits):
         return numba_histogram(self._get_data(), bins=self.bins,
                                ranges=(self._vmin, self._vmax))
 
+    def _set_xaxis(self):
+        self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
+        # Set this attribute to restrict the span selector to the xaxis
+        self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
+                                              offset=self.xaxis[0],
+                                              scale=self.xaxis[-1]-self.xaxis[0])
+
     def plot_histogram(self):
+        self._set_xaxis()
         self.hist_data = self._get_histogram()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid")
@@ -635,11 +644,20 @@ class ImageContrastEditor(t.HasTraits):
 
     def update_histogram(self):
         color = self.hist.get_facecolor()
+        update_span = self.auto and self.span_selector._get_span_width() != 0
         self.hist.remove()
         self.hist_data = self._get_histogram()
+        if update_span:
+            span_x_coord = self.ax.transData.transform(
+                    (self.span_selector.range[0], 0))
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid", color=color)
         self.ax.set_xlim(self._vmin, self._vmax)
+        if update_span:
+            # Restore the span selector at the correct position after updating 
+            # the range of the histogram
+            self.span_selector._set_span_x(
+                    self.ax.transData.inverted().transform(span_x_coord)[0])
         if self.hist_data.max() != 0:
             self.ax.set_ylim(0, self.hist_data.max())
         self.update_gamma_line()
@@ -664,7 +682,6 @@ class ImageContrastEditor(t.HasTraits):
 
         # When we apply the selected range and update the xaxis
         self._vmin, self._vmax = self._get_current_range()
-        self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
         self._reset()
 
         # set the xlim after range selection and calculate the histogram
@@ -681,7 +698,7 @@ class ImageContrastEditor(t.HasTraits):
         # Remove the span selector and set the new one ready to use
         self.span_selector_switch(False)
         self.span_selector_switch(True)
-        self._reset(auto=self.auto)
+        self._reset()
 
     def _reset_original_settings(self):
         self.gamma = self.gamma_original
@@ -689,31 +706,12 @@ class ImageContrastEditor(t.HasTraits):
         self._vmax = self.vmax_original        
 
     def _get_current_range(self):
-        if self.span_selector._get_span_width != 0 :
-            print("span", self.span_selector.rect)
+        if self.span_selector._get_span_width() != 0:
             # if we have a span selector, use it to set the display
             return self.ss_left_value, self.ss_right_value
         else:
-            print("no span", self.span_selector.rect)
+            # print("no span", self.span_selector.rect)
             return self._vmin, self._vmax
-
-    # def _reset(self, update=True, vmin=None, vmax=None, auto=None):
-    #     if auto is None:
-    #         auto = self.auto
-    #     if auto:
-    #         self.image.optimize_contrast(self._get_data(),
-    #                                      ignore_user_values=True)
-    #         self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
-    #         self.image.vmin, self.image.vmax = self._get_current_range()
-    #         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
-    #     elif vmin is not None and vmax is not None:
-    #         self.image.vmin, self.image.vmax = vmin, vmax
-    #         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
-    #     else:
-    #         self.image.vmin, self.image.vmax = self._get_current_range()
-    #     if update:
-    #         self.image.update()
-    #         self.update_histogram()
 
     def close(self):
         self.hspy_fig.close()
@@ -721,20 +719,18 @@ class ImageContrastEditor(t.HasTraits):
     def _reset(self, auto=None, update=True):
         if auto is None:
             auto = self.auto
-        
+
         # Get the vmin and vmax values
         if auto:
             self.image.optimize_contrast(self._get_data(),
                                           ignore_user_values=True)
-            vmin, vmax = self.image._vmin_auto, self.image._vmax_auto
-        else:
-            vmin, vmax = self._get_current_range()
-        
-        # Set the vmin and vmax values and update display
-        self.image.vmin, self.image.vmax = vmin, vmax
+            self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
+
         if update:
-            self.image.update()
+            self._set_xaxis()
+            # print("vmin, vmax", self._vmin, self._vmax)
             self.update_histogram()
+            self.update_span_selector_traits()
 
 @add_gui_method(toolkey="Signal1D.integrate_in_range")
 class IntegrateArea(SpanSelectorInSignal1D):
