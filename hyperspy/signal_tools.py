@@ -540,6 +540,7 @@ class Load(t.HasTraits):
 class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
+    bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.0, 2.0, 1.0)
     saturated_pixels = t.Range(0.0, 100.0, 0.2)
     auto = t.Bool(True,
@@ -568,7 +569,6 @@ class ImageContrastEditor(t.HasTraits):
         # by default, the image display used these, except when there is a span
         # selector on the histogram
         self._vmin, self._vmax = self.image.vmin, self.image.vmax
-        self.bins = 100
 
         self.span_selector = None
         self.span_selector_switch(on=True)
@@ -576,16 +576,16 @@ class ImageContrastEditor(t.HasTraits):
         self._reset(auto=False, update=False)
         self.plot_histogram()
 
-        self.image.axes_manager.events.indices_changed.connect(
-            self._reset, [])
-        self.hspy_fig.events.closed.connect(
-            lambda: self.image.axes_manager.events.indices_changed.disconnect(
-                self._reset), [])
+        if self.image.axes_manager is not None:
+            self.image.axes_manager.events.indices_changed.connect(
+                self._reset, [])
+            self.hspy_fig.events.closed.connect(
+                lambda: self.image.axes_manager.events.indices_changed.disconnect(
+                    self._reset), [])
 
-        # Disconnect update image to avoid image flickering
-        self.image.disconnect()
-        # And reconnect it if we close the ImageContrastEditor
-        self.hspy_fig.events.closed.connect(self.image.connect, [])
+            # Disconnect update image to avoid image flickering and reconnect 
+            # it when necessary in the close method.
+            self.image.disconnect()
 
     def create_axis(self):
         self.ax = self.hspy_fig.figure.add_subplot(111)
@@ -593,6 +593,9 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.yaxis.set_animated(animated)
         self.ax.xaxis.set_animated(animated)
         self.hspy_fig.ax = self.ax
+
+    def _bins_changed(self, old, new):
+        self._reset()
 
     def _gamma_changed(self, old, new):
         if self._vmin == self._vmax:
@@ -740,6 +743,9 @@ class ImageContrastEditor(t.HasTraits):
             return self._vmin, self._vmax
 
     def close(self):
+        # And reconnect the image if we close the ImageContrastEditor
+        if self.image is not None:
+            self.image.connect()
         self.hspy_fig.close()
 
     def _reset(self, auto=None, update=True):
