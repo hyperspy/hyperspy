@@ -237,3 +237,21 @@ def test_plot_two_cursors(ndim, plot_type):
 @update_close_figure
 def test_plot_nav2_sig1_two_cursors_close():
     return _test_plot_two_cursors(ndim=2)
+
+
+def test_plot_with_non_finite_value():
+    s = hs.signals.Signal1D(np.array([np.nan, 2.0]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal1D(np.array([np.nan, np.nan]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal1D(np.array([-np.inf, 2.0]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal1D(np.array([np.inf, 2.0]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)

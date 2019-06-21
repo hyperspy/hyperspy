@@ -6,6 +6,18 @@ Current Version
 
 .. _changes_1.4.1:
 
+v1.4.2
+++++++
+
+This is a maintenance release. Among many other fixes and enhancements, this
+release fixes compatibility issues with Matplotlib v 3.1. Follow the
+following links for details on all the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.1>`_
+and `enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.1+label%3A"type%3A+enhancement">`_.
+
+
+
 v1.4.1
 ++++++
 

@@ -580,7 +580,7 @@ class HyperHeader(object):
             _logger.info("hypermap have no name. Giving it 'Undefined' name")
         hd = root.find("./Header")
         self.date, self.time = gen_iso_date_time(hd)
-        self.version = int(hd.find('./FileVersion').text)
+        self.version = int(literal_eval(hd.find('./FileVersion').text))
         # fill the sem and stage attributes:
         self._set_microscope(root)
         self._set_mode(instrument)
