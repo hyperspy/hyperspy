@@ -542,7 +542,7 @@ class ImageContrastEditor(t.HasTraits):
     ss_right_value = t.Float()
     gamma = t.Range(0.0, 2.0, 1.0)
     auto = t.Bool(True,
-                  desc="Reset the display automatically when changing "
+                  desc="Adjust automatically the display when changing "
                   "navigator indices. Unselect to keep the same display.")
 
     def __init__(self, image):
@@ -738,6 +738,27 @@ class ImageContrastEditor(t.HasTraits):
             self._set_xaxis()
             self.update_histogram()
             self.update_span_selector_traits()
+
+    def _show_help_fired(self):
+        from pyface.message_dialog import information
+        _ = information(None, IMAGE_CONTRAST_EDITOR_HELP,
+                        title="Help"),
+
+
+IMAGE_CONTRAST_EDITOR_HELP = (
+    "This tool provides controls to adjust the contrast of the image:\n\n"
+
+    "gamma: Paramater of the power law transform (also known as gamma correction).\n"
+    "auto: If selected, adjust automatically the contrast when changing the "
+    "nagivation axis by taking into account the gamma value.\n\n"
+    
+    "Buttons:\n"
+    "Apply: Use the range selected to re-calculate the histogram.\n"
+    "Reset: Reset the settings to their initial values.\n"
+    "OK: Close this tool.\n"
+    ""
+    
+    "\n")
 
 
 @add_gui_method(toolkey="Signal1D.integrate_in_range")
@@ -1064,7 +1085,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
-        m = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
+        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
                         title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
