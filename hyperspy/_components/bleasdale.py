@@ -56,3 +56,32 @@ class Bleasdale(Expression):
             autodoc=False,
             compute_gradients=compute_gradients,
             **kwargs)
+
+    def grad_a(self, x):
+        """
+        Returns d(function)/d(parameter_1)
+        """
+        a = self.a.value
+        b = self.b.value
+        c = self.c.value
+
+        return -(b * x + a) ** (-1. / c - 1.) / c
+
+    def grad_b(self, x):
+        """
+        Returns d(function)/d(parameter_1)
+        """
+        a = self.a.value
+        b = self.b.value
+        c = self.c.value
+
+        return -(x * (b * x + a) ** (-1 / c - 1)) / c
+
+    def grad_c(self, x):
+        """
+        Returns d(function)/d(parameter_1)
+        """
+        a = self.a.value
+        b = self.b.value
+        c = self.c.value
+        return np.log(b * x + a) / (c ** 2. * (b * x + a) ** (1. / c))
