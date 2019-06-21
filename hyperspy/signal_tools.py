@@ -541,6 +541,7 @@ class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
     gamma = t.Range(0.0, 2.0, 1.0)
+    saturated_pixels = t.Range(0.0, 100.0, 0.2)
     auto = t.Bool(True,
                   desc="Adjust automatically the display when changing "
                   "navigator indices. Unselect to keep the same display.")
@@ -555,10 +556,13 @@ class ImageContrastEditor(t.HasTraits):
 
         # Copy the original value to be used when resetting the display
         self.gamma_original = copy.deepcopy(self.image.gamma)
+        self.saturated_pixels_original = copy.deepcopy(
+                self.image.saturated_pixels)
         self.vmin_original = copy.deepcopy(self.image.vmin)
         self.vmax_original = copy.deepcopy(self.image.vmax)
 
         self.gamma = self.image.gamma
+        self.saturated_pixels = self.image.saturated_pixels
 
         # self._vmin and self._vmax are used to compute the histogram
         # by default, the image display used these, except when there is a span
@@ -591,9 +595,18 @@ class ImageContrastEditor(t.HasTraits):
         self.hspy_fig.ax = self.ax
 
     def _gamma_changed(self, old, new):
+        if self._vmin == self._vmax:
+            return
         self.image.gamma = new
-        self.image.update()
-        self.update_gamma_line()
+        if hasattr(self, "hist"):
+            self.image.update(optimize_contrast=True)
+            self.update_gamma_line()
+
+    def _saturated_pixels_changed(self, old, new):
+        self.image.saturated_pixels = new
+        # Before the tool is fully initialised
+        if hasattr(self, "hist"):
+            self._reset()
 
     def _auto_changed(self, old, new):
         # Do something only if auto is ticked
@@ -620,7 +633,7 @@ class ImageContrastEditor(t.HasTraits):
             self.span_selector.rect.get_width()
 
         self.image.vmin, self.image.vmax = self._get_current_range()
-        self.image.update()
+        self.image.update(optimize_contrast=False)
         self.update_gamma_line()
 
     def _get_data(self):
@@ -638,6 +651,8 @@ class ImageContrastEditor(t.HasTraits):
                                               scale=self.xaxis[1]-self.xaxis[0])
 
     def plot_histogram(self):
+        if self._vmin == self._vmax:
+            return
         self._set_xaxis()
         self.hist_data = self._get_histogram()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
@@ -652,6 +667,8 @@ class ImageContrastEditor(t.HasTraits):
         plt.tight_layout(pad=0)
 
     def update_histogram(self):
+        if self._vmin == self._vmax:
+            return
         color = self.hist.get_facecolor()
         update_span = self.auto and self.span_selector._get_span_width() != 0
         self.hist.remove()
@@ -679,6 +696,8 @@ class ImageContrastEditor(t.HasTraits):
         return xaxis, ((xaxis-cmin)/(cmax-cmin))**self.gamma*max_hist
 
     def update_gamma_line(self):
+        if self._vmin == self._vmax:
+            return
         self.gamma_line.set_data(*self._get_gamma_curve())
         if self.ax.figure.canvas.supports_blit:
             self.hspy_fig._update_animated()
@@ -687,14 +706,16 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            return
-
-        # When we apply the selected range and update the xaxis
-        self._vmin, self._vmax = self._get_current_range()
-        # Remove the span selector and set the new one ready to use
-        self.span_selector_switch(False)
-        self.span_selector_switch(True)
-        self._reset(auto=False)
+            # No span selector, so we use the saturated_pixels value to 
+            # calculate the vim and vmax values 
+            self._reset(auto=True)
+        else:
+            # When we apply the selected range and update the xaxis
+            self._vmin, self._vmax = self._get_current_range()
+            # Remove the span selector and set the new one ready to use
+            self.span_selector_switch(False)
+            self.span_selector_switch(True)
+            self._reset(auto=False)
 
     def reset(self):
         # Reset the display as original
@@ -707,6 +728,7 @@ class ImageContrastEditor(t.HasTraits):
 
     def _reset_original_settings(self):
         self.gamma = self.gamma_original
+        self.saturated_pixels = self.saturated_pixels_original
         self._vmin = self.vmin_original
         self._vmax = self.vmax_original        
 
@@ -732,7 +754,7 @@ class ImageContrastEditor(t.HasTraits):
 
         if update:
             if not auto:
-                # if we don't "image.optimize_contrast", the image vmin and
+                # if we don't use "image.optimize_contrast", the image vmin and
                 # vmax need to be udpated
                 self.image.vmin, self.image.vmax = self._vmin, self._vmax
             self._set_xaxis()

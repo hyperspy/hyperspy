@@ -310,6 +310,7 @@ class ImagePlot(BlittedFigure):
             self.figure.canvas.supports_blit)
 
     def update(self, **kwargs):
+        optimize_contrast = kwargs.pop("optimize_contrast", False)
         ims = self.ax.images
         # update extent:
         self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
@@ -357,12 +358,17 @@ class ImagePlot(BlittedFigure):
                 return 'x=%1.4g, y=%1.4g' % (x, y)
             self.ax.format_coord = format_coord
 
-            old_vmax, old_vmin = self.vmax, self.vmin
-            self.optimize_contrast(data)
+            old_vmin, old_vmax = self.vmin, self.vmax
+            self.optimize_contrast(data, optimize_contrast)
+            # Use _vmin_auto and _vmax_auto if optimize_contrast is True
+            if optimize_contrast:
+                vmin, vmax = self._vmin_auto, self._vmax_auto
+            else:
+                vmin, vmax = self.vmin, self.vmax                
             # If there is an image, any of the contrast bounds have changed and
             # the new contrast bounds are not the same redraw the colorbar.
-            if (ims and (old_vmax != self.vmax or old_vmin != self.vmin) and
-                    self.vmax != self.vmin):
+            if (ims and (old_vmin != vmin or old_vmax != vmax) and
+                    vmin != vmax):
                 redraw_colorbar = True
                 ims[0].autoscale()
         redraw_colorbar = redraw_colorbar and self.colorbar
@@ -372,26 +378,26 @@ class ImagePlot(BlittedFigure):
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap:
-            vmin, vmax = utils.centre_colormap_values(self.vmin, self.vmax)
+            vmin, vmax = utils.centre_colormap_values(vmin, vmax)
         else:
-            vmin, vmax = self.vmin, self.vmax
+            vmin, vmax = vmin, vmax
 
         if self.gamma != 1.0:
             data = adjust_gamma(rescale_intensity(data,
-                        in_range=(self.vmin, self.vmax), out_range=(0, 1)),
+                        in_range=(vmin, vmax), out_range=(0, 1)),
                         gamma=self.gamma)
             data = rescale_intensity(data,
-                        in_range=(0, 1), out_range=(self.vmin, self.vmax))
+                        in_range=(0, 1), out_range=(vmin, vmax))
 
         norm = copy.copy(self.norm)
         if norm == 'log':
             if data.min() <= 0:
                 norm = SymLogNorm(linthresh=0.03, linscale=0.03,
-                                  vmin=self.vmin, vmax=self.vmax)
+                                  vmin=vmin, vmax=vmax)
             else:
-                norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
+                norm = LogNorm(vmin=vmin, vmax=vmax)
         elif inspect.isclass(norm) and issubclass(norm, Normalize):
-            norm = norm(vmin=self.vmin, vmax=self.vmax)
+            norm = norm(vmin=vmin, vmax=vmax)
         elif norm not in ['auto', 'linear']:
             raise ValueError("`norm` paramater should be 'auto', 'linear', "
                              "'log' or a matplotlib Normalize instance or "
