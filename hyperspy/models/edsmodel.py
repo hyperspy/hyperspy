@@ -799,6 +799,8 @@ class EDSModel(Model1D):
     def get_lines_intensity(self,
                             xray_lines=None,
                             plot_result=False,
+                            only_one=True,
+                            only_lines=("a",),
                             **kwargs):
         """
         Return the fitted intensity of the X-ray lines.
@@ -807,14 +809,25 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or None or 'from_metadata'
-            If None, all main X-ray lines (alpha)
-            If 'from_metadata', take the Xray_lines stored in the `metadata`
-            of the spectrum. Alternatively, provide an iterable containing
+        xray_lines: {None, list of string}
+            If None,
+            if `metadata.Sample.elements.xray_lines` contains a
+            list of lines use those.
+            If `metadata.Sample.elements.xray_lines` is undefined
+            or empty but `metadata.Sample.elements` is defined,
+            use the same syntax as `add_line` to select a subset of lines
+            for the operation.
+            Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
+        only_one : bool
+            If False, use all the lines of each element in the data spectral
+            range. If True use only the line at the highest energy
+            above an overvoltage of 2 (< beam energy / 2).
+        only_lines : {None, list of strings}
+            If not None, use only the given lines.
         kwargs
             The extra keyword arguments for plotting. See
             `utils.plot.plot_signals`
@@ -831,15 +844,17 @@ class EDSModel(Model1D):
         """
         from hyperspy import utils
         intensities = []
+
         if xray_lines is None:
             xray_lines = [component.name for component in self.xray_lines]
         else:
-            if xray_lines == 'from_metadata':
-                xray_lines = self.signal.metadata.Sample.xray_lines
-            xray_lines = filter(lambda x: x in [a.name for a in
-                                                self], xray_lines)
-        if not xray_lines:
+            xray_lines = self.signal._parse_xray_lines(
+                    xray_lines, only_one, only_lines)
+            xray_lines = list(filter(lambda x: x in [a.name for a in
+                                                     self], xray_lines))
+        if len(xray_lines) == 0:
             raise ValueError("These X-ray lines are not part of the model.")
+
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             line_energy = self.signal._get_line_energy(xray_line)
@@ -854,6 +869,7 @@ class EDSModel(Model1D):
                  line_energy,
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
+            img.axes_manager.set_signal_dimension(0)
             if plot_result and img.axes_manager.signal_dimension == 0:
                 print("%s at %s %s : Intensity = %.2f"
                       % (xray_line,

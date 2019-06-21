@@ -28,6 +28,7 @@ from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.test_utils import ignore_warning
 
 
 _logger = logging.getLogger(__name__)
@@ -385,18 +386,26 @@ class Signal1DLine(object):
             y2 += 2
             y1, y2 = np.clip((y1, y2), 0, len(ydata - 1))
             clipped_ydata = ydata[y1:y2]
-            y_max, y_min = (np.nanmax(clipped_ydata),
-                            np.nanmin(clipped_ydata))
+            with ignore_warning(category=RuntimeWarning):
+                # In case of "All-NaN slices"
+                y_max, y_min = (np.nanmax(clipped_ydata),
+                                np.nanmin(clipped_ydata))
 
             if self._plot_imag:
                 # Add real plot
                 yreal = self._get_data(real_part=True)
                 clipped_yreal = yreal[y1:y2]
-                y_min = min(y_min, clipped_yreal.min())
-                y_max = max(y_max, clipped_yreal.max())
+                with ignore_warning(category=RuntimeWarning):
+                    # In case of "All-NaN slices"
+                    y_min = min(y_min, np.nanmin(clipped_yreal))
+                    y_max = max(y_max, np.nanmin(clipped_yreal))
             if y_min == y_max:
                 # To avoid matplotlib UserWarning when calling `set_ylim`
                 y_min, y_max = y_min - 0.1, y_max + 0.1
+            if not np.isfinite(y_min):
+                y_min = None # data are -inf or all NaN
+            if not np.isfinite(y_max):
+                y_max = None # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)

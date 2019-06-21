@@ -158,6 +158,11 @@ def load(filenames=None,
         For filetypes which support several datasets in the same file, this
         will only load the specified dataset. Several datasets can be loaded
         by using a list of strings. Only for EMD (NCEM) files.
+    only_valid_data : bool, optional
+        Only for FEI emi/ser file in case of series or linescan with the
+        acquisition stopped before the end: if True, load only the acquired 
+        data. If False, fill empty data with zeros. Default is False and this 
+        default value will change to True in version 2.0.
 
 
     Returns

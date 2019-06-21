@@ -188,6 +188,26 @@ def test_read_EELS_metadata():
         0.0)
 
 
+def test_read_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_3D_data", "EELS_SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
+    assert md.General.date == "2019-05-14"
+    assert md.General.time == "20:50:13"
+    assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.aperture_size, 5.0)
+    assert_allclose(
+        md.Acquisition_instrument.TEM.convergence_angle, 21.0)
+    assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 62.0)
+    assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 1)
+    assert_allclose(
+            md.Acquisition_instrument.TEM.Detector.EELS.dwell_time,
+            1.9950125E-2)
+
+
 def test_read_EDS_metadata():
     fname = os.path.join(MY_PATH, "dm3_1D_data", "test-EDS_spectrum.dm3")
     s = load(fname)
