@@ -578,7 +578,7 @@ class ImageContrastEditor(t.HasTraits):
             lambda: self.image.axes_manager.events.indices_changed.disconnect(
                 self._reset), [])
 
-        # Disconnect update image to avoid flickering
+        # Disconnect update image to avoid image flickering
         self.image.disconnect()
         # And reconnect it if we close the ImageContrastEditor
         self.hspy_fig.events.closed.connect(self.image.connect, [])
@@ -691,14 +691,10 @@ class ImageContrastEditor(t.HasTraits):
 
         # When we apply the selected range and update the xaxis
         self._vmin, self._vmax = self._get_current_range()
-        self._reset()
-
-        # set the xlim after range selection and calculate the histogram
-        self.ax.set_xlim(self._vmin, self._vmax)
-
         # Remove the span selector and set the new one ready to use
         self.span_selector_switch(False)
         self.span_selector_switch(True)
+        self._reset(auto=False)
 
     def reset(self):
         # Reset the display as original
@@ -719,7 +715,6 @@ class ImageContrastEditor(t.HasTraits):
             # if we have a span selector, use it to set the display
             return self.ss_left_value, self.ss_right_value
         else:
-            # print("no span", self.span_selector.rect)
             return self._vmin, self._vmax
 
     def close(self):
@@ -736,8 +731,11 @@ class ImageContrastEditor(t.HasTraits):
             self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
 
         if update:
+            if not auto:
+                # if we don't "image.optimize_contrast", the image vmin and
+                # vmax need to be udpated
+                self.image.vmin, self.image.vmax = self._vmin, self._vmax
             self._set_xaxis()
-            # print("vmin, vmax", self._vmin, self._vmax)
             self.update_histogram()
             self.update_span_selector_traits()
 
