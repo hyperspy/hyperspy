@@ -42,18 +42,17 @@ class Bleasdale(Expression):
             Extra keyword arguments are passed to the ``Expression`` component.
         
     
-    For :math:`(a+b\cdot x)\leq0`, the component will be set to nan.
-
+    For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
     """
     
     def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
         super(Bleasdale, self).__init__(
-            expression="(a + b * x) ** (-1 / c)",
+            expression="where((a + b * x) > 0, (a + b * x) ** (-1 / c), 0)",
             name="Bleasdale",
             a=a,
             b=b,
             c=c,
-            definition_condition="(a + b * x) > 0",
             module=module,
             autodoc=False,
+            compute_gradients=compute_gradients,
             **kwargs)
