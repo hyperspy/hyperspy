@@ -45,7 +45,8 @@ class Bleasdale(Expression):
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
     """
     
-    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
+    def __init__(self, a=1., b=1., c=1., module="numexpr",
+                 compute_gradients=False, **kwargs):
         super(Bleasdale, self).__init__(
             expression="where((a + b * x) > 0, (a + b * x) ** (-1 / c), 0)",
             name="Bleasdale",
