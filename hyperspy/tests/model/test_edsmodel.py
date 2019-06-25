@@ -211,7 +211,7 @@ def test_comparison_quantification():
 
     np.testing.assert_allclose([q.data for q in quant_model],
                                [q.data for q in atomic_percent],
-                               rtol=0.25E-1)
+                               rtol=0.5E-1)
 
 
 @lazifyTestClass

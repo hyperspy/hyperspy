@@ -34,6 +34,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     no_nans=False,
                     centre_colormap="auto",
                     norm="auto",
+                    min_aspect=0.1,
                     gamma=1.0,
                     **kwargs
                     ):
@@ -100,6 +101,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
+        imf.min_aspect = min_aspect
         imf.norm = norm
         imf.gamma = gamma
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
