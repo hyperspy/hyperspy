@@ -45,8 +45,7 @@ class Bleasdale(Expression):
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
     """
     
-    def __init__(self, a=1., b=1., c=1., module="numexpr",
-                 compute_gradients=False, **kwargs):
+    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
         super(Bleasdale, self).__init__(
             expression="where((a + b * x) > 0, (a + b * x) ** (-1 / c), 0)",
             name="Bleasdale",
@@ -55,7 +54,7 @@ class Bleasdale(Expression):
             c=c,
             module=module,
             autodoc=False,
-            compute_gradients=compute_gradients,
+            compute_gradients=False,
             **kwargs)
 
     def grad_a(self, x):
@@ -66,7 +65,7 @@ class Bleasdale(Expression):
         b = self.b.value
         c = self.c.value
 
-        return -(b * x + a) ** (-1. / c - 1.) / c
+        return np.where((a + b * x) > 0, -(a + b * x) ** (-1 / c - 1) / c, 0)
 
     def grad_b(self, x):
         """
@@ -76,7 +75,8 @@ class Bleasdale(Expression):
         b = self.b.value
         c = self.c.value
 
-        return -(x * (b * x + a) ** (-1 / c - 1)) / c
+        return np.where((a + b * x) > 0, -x * (a + b * x) ** (-1 / c - 1) / c
+               , 0)
 
     def grad_c(self, x):
         """
@@ -85,4 +85,5 @@ class Bleasdale(Expression):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        return np.log(b * x + a) / (c ** 2. * (b * x + a) ** (1. / c))
+        return np.where((a + b * x) > 0, np.log(a + b * x) / (c ** 2. * 
+               (b * x + a) ** (1. / c)), 0)
