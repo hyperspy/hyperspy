@@ -3308,7 +3308,7 @@ class BaseSignal(FancySlicing,
             apodization = 'hann'
 
         if apodization:
-            im_fft = self.deepcopy().apply_apodization(window=apodization)
+            im_fft = self.apply_apodization(window=apodization, inplace=False)
         else:
             im_fft = self
         ax = self.axes_manager
