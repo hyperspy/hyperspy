@@ -5008,6 +5008,7 @@ class BaseSignal(FancySlicing,
                     slice_w.append(None)
 
             self.data = self.data * window_nd[tuple(slice_w)]
+            self.events.data_changed.trigger(obj=self)
         else:
             return self.deepcopy() * window_nd
 
