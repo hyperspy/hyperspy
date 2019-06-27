@@ -3149,13 +3149,15 @@ class BaseSignal(FancySlicing,
 
     def diff(self, axis, order=1, out=None, rechunk=True):
         """Returns a signal with the n-th order discrete difference along
-        given axis.
+        given axis, i. e. it calculates the difference between consecutive 
+        values in the given axis: `out[n] = a[n+1] - a[n]`. See numpy.diff for
+        more details.
 
         Parameters
         ----------
         axis %s
         order : int
-            the order of the derivative
+            The order of the discrete difference.
         %s
         %s
 
@@ -3190,17 +3192,20 @@ class BaseSignal(FancySlicing,
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def derivative(self, axis, order=1, out=None, rechunk=True):
-        """Numerical derivative along the given axis.
+        r"""Numerical derivative along the given axis:
+            
+        For a function :math:`y = f(x)` and two consecutive values :math:`x_1` 
+        and :math:`x_2`:
 
-        Currently only the first order finite difference method is implemented.
+        .. math::
+    
+            \frac{df(x)}{dx} = \frac{y(x_2)-y(x_1)}{x_2-x_1}
 
         Parameters
         ----------
         axis %s
         order: int
-            The order of the derivative. (Note that this is the order of the
-            derivative i.e. `order=2` does not use second order finite
-            differences method.)
+            The order of the derivative.
         %s
         %s
 
