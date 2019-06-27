@@ -151,7 +151,7 @@ class ModelManager(object):
         name : {string, None}
             the name for the model to be stored with
 
-        See Also
+        See also
         --------
         remove
         restore
@@ -187,7 +187,7 @@ class ModelManager(object):
         name : string
             the name of the model to remove
 
-        See Also
+        See also
         --------
         restore
         store
@@ -206,7 +206,7 @@ class ModelManager(object):
         name : string
             the name of the model to restore and remove
 
-        See Also
+        See also
         --------
         restore
         store
@@ -226,7 +226,7 @@ class ModelManager(object):
         name : string
             the name of the model to restore
 
-        See Also
+        See also
         --------
         remove
         store
@@ -792,7 +792,7 @@ class MVATools(object):
         per_row : int, the number of plots in each row, when the
         same_window parameter is True.
 
-        See Also
+        See also
         --------
         plot_decomposition_loadings, plot_decomposition_results.
 
@@ -862,9 +862,9 @@ class MVATools(object):
         same_window
             parameter is True.
 
-        See Also
+        See also
         --------
-        plot_bss_loadings, plot_bss_results.
+        plot_bss_loadings, plot_bss_results
 
         """
         if self.axes_manager.signal_dimension > 2:
@@ -947,7 +947,7 @@ class MVATools(object):
             If 'off', all decorations and frame will be disabled
             If None, no axis decorations will be shown, but ticks/frame will
 
-        See Also
+        See also
         --------
         plot_decomposition_factors, plot_decomposition_results.
 
@@ -1043,9 +1043,9 @@ class MVATools(object):
             If 'off', all decorations and frame will be disabled
             If None, no axis decorations will be shown, but ticks/frame will
 
-        See Also
+        See also
         --------
-        plot_bss_factors, plot_bss_results.
+        plot_bss_factors, plot_bss_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -1129,14 +1129,14 @@ class MVATools(object):
         loading_format : string
             The extension of the format that you wish to save to. default
             is "hspy". The format determines the kind of output.
-            - For image formats (tif, png, jpg, etc.), plots are
-              created using the plotting flags as below, and saved at
-              600 dpi. One plot per loading is saved.
-            - For multidimensional formats ("rpl", "hspy"), arrays are
-              saved in single files.  All loadings are contained in the
-              one file.
-            - For spectral formats (msa), each loading is saved to a
-              separate file.
+                * For image formats (tif, png, jpg, etc.), plots are 
+                  created using the plotting flags as below, and saved at
+                  600 dpi. One plot per loading is saved.
+                * For multidimensional formats ("rpl", "hspy"), arrays are
+                  saved in single files.  All loadings are contained in the
+                  one file.
+                * For spectral formats (msa), each loading is saved to a
+                  separate file.
         multiple_files : bool
             If True, on exporting a file per factor and per loading will
             be created. Otherwise only two files will be created, one for
@@ -1146,28 +1146,29 @@ class MVATools(object):
             If True the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Plotting options (for save_figures = True ONLY)
-        ----------------------------------------------
+        Other Parameters
+        ----------------
+        Plotting options for `save_figures=True` only
 
         calibrate : bool
             if True, calibrates plots where calibration is available
-            from
-            the axes_manager.  If False, plots are in pixels/channels.
+            from the axes_manager. If False, plots are in pixels/channels.
         same_window : bool
             if True, plots each factor to the same window.
-        comp_label : string, the label that is either the plot title
-            (if plotting in separate windows) or the label in the legend
-            (if plotting in the same window)
+        comp_label : string
+            the label that is either the plot title (if plotting in separate 
+            windows) or the label in the legend (if plotting in the same window)
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int, the number of plots in each row, when the
+        per_row : int
+            the number of plots in each row, when the
         same_window
             parameter is True.
         save_figures_format : str
             The image format extension.
 
-        See Also
+        See also
         --------
         get_decomposition_factors,
         get_decomposition_loadings.
@@ -1287,7 +1288,7 @@ class MVATools(object):
         save_figures_format : str
             The image format extension.
 
-        See Also
+        See also
         --------
         get_bss_factors,
         get_bss_loadings.
@@ -1352,7 +1353,7 @@ class MVATools(object):
     def get_decomposition_loadings(self):
         """Return the decomposition loadings as a Signal.
 
-        See Also
+        See also
         -------
         get_decomposition_factors, export_decomposition_results.
 
@@ -1366,7 +1367,7 @@ class MVATools(object):
     def get_decomposition_factors(self):
         """Return the decomposition factors as a Signal.
 
-        See Also
+        See also
         -------
         get_decomposition_loadings, export_decomposition_results.
 
@@ -1380,7 +1381,7 @@ class MVATools(object):
     def get_bss_loadings(self):
         """Return the blind source separtion loadings as a Signal.
 
-        See Also
+        See also
         -------
         get_bss_factors, export_bss_results.
 
@@ -1395,7 +1396,7 @@ class MVATools(object):
     def get_bss_factors(self):
         """Return the blind source separtion factors as a Signal.
 
-        See Also
+        See also
         -------
         get_bss_loadings, export_bss_results.
 
@@ -1422,19 +1423,18 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum",
-        Signal}
+        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum", Signal}
             "smart_auto" (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see `plot` documentation for details.
-        factors_dim, loadings_dim: int
+        factors_dim, loadings_dim : int
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
             to 1(2). (Default 2)
 
-        See Also
+        See also
         --------
         plot_bss_factors, plot_bss_loadings, plot_decomposition_results.
 
@@ -1463,8 +1463,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum",
-        Signal}
+        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum", Signal}
             "smart_auto" (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see `plot` documentation for details.
@@ -1472,12 +1471,12 @@ class MVATools(object):
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
-            we can view the data as spectra(images) by setting this parameter
+            we can view the data as spectra (images) by setting this parameter
             to 1(2). (Default 2)
 
-        See Also
+        See also
         --------
-        plot_factors, plot_loadings, plot_bss_results.
+        plot_factors, plot_loadings, plot_bss_results
 
         """
         factors = self.get_decomposition_factors()
@@ -2092,13 +2091,13 @@ class BaseSignal(FancySlicing,
              **kwds):
         """Saves the signal in the specified format.
 
-        The function gets the format from the extension.:
-            - hspy for HyperSpy's HDF5 specification
-            - rpl for Ripple (useful to export to Digital Micrograph)
-            - msa for EMSA/MSA single spectrum saving.
-            - unf for SEMPER unf binary format.
-            - blo for Blockfile diffraction stack saving.
-            - Many image formats such as png, tiff, jpeg...
+        The function gets the format from the extension
+            * hspy for HyperSpy's HDF5 specification
+            * rpl for Ripple (useful to export to Digital Micrograph)
+            * msa for EMSA/MSA single spectrum saving.
+            * unf for SEMPER unf binary format.
+            * blo for Blockfile diffraction stack saving.
+            * Many image formats such as png, tiff, jpeg...
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
@@ -2224,6 +2223,10 @@ class BaseSignal(FancySlicing,
         -------
         s : a copy of the object with the axes swapped.
 
+
+        See also
+        --------
+        rollaxis
         """
         axis1 = self.axes_manager[axis1].index_in_array
         axis2 = self.axes_manager[axis2].index_in_array
@@ -2260,9 +2263,9 @@ class BaseSignal(FancySlicing,
         s : Signal or subclass
             Output signal.
 
-        See Also
+        See also
         --------
-        roll : swap_axes
+        numpy.roll, swap_axes
 
         Examples
         --------
@@ -2335,8 +2338,6 @@ class BaseSignal(FancySlicing,
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """
-        Rebin array.
-
         Rebin the signal into a smaller or larger shape, based on linear
         interpolation. Specify **either** new_shape or scale.
 
@@ -2438,10 +2439,10 @@ class BaseSignal(FancySlicing,
             Specify the data axis in which to perform the splitting
             operation.  The axis can be specified using the index of the
             axis in `axes_manager` or the axis name.
-            - If 'auto' and if the object has been created with utils.stack,
+            If 'auto' and if the object has been created with utils.stack,
             split will return the former list of signals
-            (options stored in 'metadata._HyperSpy.Stacking_history'
-             else the last navigation axis will be used.
+            (information stored in ``metadata._HyperSpy.Stacking_history``), if 
+            not the last navigation axis will be used.
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be split. The
             splitting is homogeneous. When the axis size is not divisible
@@ -3276,14 +3277,16 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shift : bool, optional
-            If True, the origin of FFT will be shifted in the centre (Default: False).
+            If True, the origin of FFT will be shifted in the centre 
+            (Default: False).
         apodization : bool or 'hann' or 'hamming' or 'tukey'
-            Apply apodization window before calculating FFT in order to suppress streaks.
+            Apply apodization window before calculating FFT in order to 
+            suppress streaks.
             If True or 'hann' applies Hann window. If 'hamming' or 'tukey',
             applies Hamming or Tukey windows.
             (Default: False)
         **kwargs
-            other keyword arguments are described in np.fft.fftn().
+            other keyword arguments are described in np.fft.fftn.
 
         Return
         ------
@@ -3294,11 +3297,12 @@ class BaseSignal(FancySlicing,
         >>> im = hs.signals.Signal2D(scipy.misc.ascent())
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
-        # Use following to plot power spectrum of `im`:
+
+        >>> # Use following to plot power spectrum of `im`:
         >>> im.fft(shift=True, apodization=True).plot(power_spectrum=True)
 
-        Notes
-        -----
+        Note
+        ----
         For further information see the documentation of numpy.fft.fftn
         """
 
@@ -3480,8 +3484,8 @@ class BaseSignal(FancySlicing,
         --------
         max, min, sum, mean, std, var, valuemax, amax
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3512,8 +3516,8 @@ class BaseSignal(FancySlicing,
         --------
         max, min, sum, mean, std, var, valuemax, amax
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3543,8 +3547,8 @@ class BaseSignal(FancySlicing,
         --------
         max, min, sum, mean, std, var, indexmax, amax
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3620,7 +3624,7 @@ class BaseSignal(FancySlicing,
         -------
         hist_spec : An 1D spectrum instance containing the histogram.
 
-        See Also
+        See also
         --------
         print_summary_statistics
         astroML.density_estimation.histogram, numpy.histogram : these are the
@@ -3636,9 +3640,9 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> s = hs.signals.Signal1D(np.random.normal(size=(10, 100)))
-        Plot the data histogram
+        >>> # Plot the data histogram
         >>> s.get_histogram().plot()
-        Plot the histogram of the signal at the current coordinates
+        >>> # Plot the histogram of the signal at the current coordinates
         >>> s.get_current_signal().get_histogram().plot()
 
         """
@@ -4340,9 +4344,10 @@ class BaseSignal(FancySlicing,
         %s
         %s
 
-        See Also
+        See also
         --------
         as_signal2D, transpose, hs.transpose
+
         Examples
         --------
         >>> img = hs.signals.Signal2D(np.ones((3,4,5,6)))
@@ -4383,9 +4388,10 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        DataDimensionError : when data.ndim < 2
+        DataDimensionError
+            when data.ndim < 2
 
-        See Also
+        See also
         --------
         as_signal1D, transpose, hs.transpose
 
@@ -4437,10 +4443,9 @@ class BaseSignal(FancySlicing,
         accordingly if pertinent.
 
         The signal_type attribute specifies the kind of data that the signal
-        contains e.g. "EELS" for electron energy-loss spectroscopy,
-        "PES" for photoemission spectroscopy. There are some methods that are
-        only available for certain kind of signals, so setting this
-        parameter can enable/disable features.
+        contains e.g. "EELS" for electron energy-loss spectroscopy. There are 
+        some methods that are only available for certain kind of signals, so 
+        setting this parameter can enable/disable features.
 
         Parameters
         ----------
@@ -4467,13 +4472,10 @@ class BaseSignal(FancySlicing,
         The signal_origin attribute specifies if the data was obtained
         through experiment or simulation.
 
-
         Parameters
         ----------
         origin : string
             Typically 'experiment' or 'simulation'.
-
-
         """
         self.metadata.Signal.signal_origin = origin
 
@@ -4491,7 +4493,7 @@ class BaseSignal(FancySlicing,
            Number formatter.
         %s
 
-        See Also
+        See also
         --------
         get_histogram
 
@@ -4715,8 +4717,8 @@ class BaseSignal(FancySlicing,
             the operation (usually "int64") will be converted to "float64".
             The default is ``True`` for convienece.
 
-        Note:
-        -----
+        Note
+        ----
         This method uses ``numpy.random.poisson`` (``dask.array.random.poisson``
         for lazy signals) to generate the Gaussian noise. In order to seed it
         you must use ``numpy.random.seed`` (``dask.random.seed``).
@@ -4759,8 +4761,8 @@ class BaseSignal(FancySlicing,
         std : float
             The standard deviation of the gaussian noise.
 
-        Note:
-        -----
+        Note
+        ----
         This method uses ``numpy.random.normal`` (``dask.array.random.normal``
         for lazy signals) to generate the Gaussian noise. In order to seed it
         you must use ``numpy.random.seed`` (``dask.random.seed``).
@@ -4815,11 +4817,11 @@ class BaseSignal(FancySlicing,
         >>> s.T # a shortcut for no arguments
         <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
-        # roll to leave 5 axes in navigation space
+        >>> # roll to leave 5 axes in navigation space
         >>> s.transpose(signal_axes=5)
         <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
 
-        # roll leave 3 axes in navigation space
+        >>> # roll leave 3 axes in navigation space
         >>> s.transpose(navigation_axes=3)
         <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
 
