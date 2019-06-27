@@ -561,14 +561,13 @@ class ImageContrastEditor(t.HasTraits):
                 self.image.saturated_pixels)
         self.vmin_original = copy.deepcopy(self.image.vmin)
         self.vmax_original = copy.deepcopy(self.image.vmax)
-
-        self.gamma = self.image.gamma
-        self.saturated_pixels = self.image.saturated_pixels
-
         # self._vmin and self._vmax are used to compute the histogram
         # by default, the image display used these, except when there is a span
         # selector on the histogram
         self._vmin, self._vmax = self.image.vmin, self.image.vmax
+
+        self.gamma = self.image.gamma
+        self.saturated_pixels = self.image.saturated_pixels
 
         self.span_selector = None
         self.span_selector_switch(on=True)
