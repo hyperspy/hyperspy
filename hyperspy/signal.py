@@ -146,10 +146,10 @@ class ModelManager(object):
 
         Parameters
         ----------
-        model : model
-            the model to store in the signal
-        name : {string, None}
-            the name for the model to be stored with
+        model : ~hyperspy.model.BaseModel (or subclass)
+            The model to store in the signal
+        name : str or None
+            The name for the model to be stored with
 
         See also
         --------
@@ -184,8 +184,8 @@ class ModelManager(object):
 
         Parameters
         ----------
-        name : string
-            the name of the model to remove
+        name : str
+            The name of the model to remove
 
         See also
         --------
@@ -203,8 +203,8 @@ class ModelManager(object):
 
         Parameters
         ----------
-        name : string
-            the name of the model to restore and remove
+        name : str
+            The name of the model to restore and remove
 
         See also
         --------
@@ -223,8 +223,8 @@ class ModelManager(object):
 
         Parameters
         ----------
-        name : string
-            the name of the model to restore
+        name : str
+            The name of the model to restore
 
         See also
         --------
@@ -275,14 +275,15 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled. Default True.
-        comp_label : string
+        comp_label : str
             Title of the plot
         cmap : a matplotlib colormap
             The colormap used for factor images or
             any peak characteristic scatter map
             overlay.
-        Parameters only valid for peak characteristics (or pk char factors):
-        --------------------------------------------------------------------
+
+        Parameters only valid for peak characteristics (or pk char factors)
+        -------------------------------------------------------------------
         img_data - 2D numpy array,
             The array to overlay peak characteristics onto.  If None,
             defaults to the average image of your stack.
@@ -766,35 +767,38 @@ class MVATools(object):
         Parameters
         ----------
 
-        comp_ids : None, int, or list of ints
-            if None (default), returns maps of all components if the output_dimension was defined when
-            executing ``decomposition``. Otherwise it raises a ValueError.
-            if int, returns maps of components with ids from 0 to
-            given int.
-            if list of ints, returns maps of components with ids in
-            given list.
+        comp_ids : None, int, or list (of ints)
+            If ``comp_ids`` is ``None``, maps of all components will be
+            returned if the ``output_dimension`` was defined when executing
+            ``decomposition``. Otherwise it raises a :py:exc:`ValueError`.
+            If ``comp_ids`` is an int, maps of components with ids from 0 to
+            the given value will be returned. If ``comp_ids`` is a list of
+            ints, maps of components with ids contained in the list will be
+            returned.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available
-            from
-            the axes_manager.  If False, plots are in pixels/channels.
+            If ``True``, calibrates plots where calibration is available
+            from the axes_manager.  If ``False``, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default is True.
+            If ``True``, plots each factor to the same window.  They are
+            not scaled. Default is ``True``.
 
-        title : string
+        title : str
             Title of the plot.
 
-        cmap : The colormap used for the factor image, or for peak
+        cmap : ~matplotlib.colors.Colormap
+            The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int, the number of plots in each row, when the
-        same_window parameter is True.
+
+        per_row : int
+            The number of plots in each row, when the ``same_window``
+            parameter is ``True``.
 
         See also
         --------
-        plot_decomposition_loadings, plot_decomposition_results.
+        plot_decomposition_loadings, plot_decomposition_results
 
         """
         if self.axes_manager.signal_dimension > 2:
@@ -835,32 +839,30 @@ class MVATools(object):
         Parameters
         ----------
 
-        comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to
-            given int.
-            if list of ints, returns maps of components with ids in
-            given list.
+        comp_ids : None, int, or list (of ints)
+            If ``comp_ids`` is ``None``, maps of all components will be
+            returned. If it is an int, maps of components with ids from 0 to
+            the given value will be returned. If ``comp_ids`` is a list of
+            ints, maps of components with ids contained in the list will be
+            returned.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available
-            from
-            the axes_manager.  If False, plots are in pixels/channels.
+            If ``True``, calibrates plots where calibration is available
+            from the axes_manager.  If ``False``, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default is True.
+            if ``True``, plots each factor to the same window.  They are
+            not scaled. Default is ``True``.
 
-        title : string
+        comp_label : str
+            Will be deprecated in 2.0, please use ``title`` instead
+
+        title : str
             Title of the plot.
 
-        cmap : The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
-        per_row : int, the number of plots in each row, when the
-        same_window
-            parameter is True.
+        per_row : int
+            The number of plots in each row, when the ``same_window``
+            parameter is ``True``.
 
         See also
         --------
@@ -905,51 +907,54 @@ class MVATools(object):
         Parameters
         ----------
 
-        comp_ids : None, int, or list of ints
-            if None (default), returns maps of all components if the output_dimension was defined when
-            executing ``decomposition``. Otherwise it raises a ValueError.
-            if int, returns maps of components with ids from 0 to
-            given int.
-            if list of ints, returns maps of components with ids in
-            given list.
+        comp_ids : None, int, or list (of ints)
+            If ``comp_ids`` is ``None``, maps of all components will be
+            returned if the ``output_dimension`` was defined when executing
+            ``decomposition``. Otherwise it raises a :py:exc:`ValueError`.
+            If ``comp_ids`` is an int, maps of components with ids from 0 to
+            the given value will be returned. If ``comp_ids`` is a list of
+            ints, maps of components with ids contained in the list will be
+            returned.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available
-            from the axes_manager. If False, plots are in pixels/channels.
+            if ``True``, calibrates plots where calibration is available
+            from the axes_manager. If ``False``, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default is True.
+            if ``True``, plots each factor to the same window. They are
+            not scaled. Default is ``True``.
 
-        title : string
+        title : str
             Title of the plot.
 
         with_factors : bool
-            If True, also returns figure(s) with the factors for the
+            If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
 
-        cmap : matplotlib colormap
+        cmap : ~matplotlib.colors.Colormap
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
 
         no_nans : bool
-            If True, removes NaN's from the loading plots.
+            If ``True``, removes ``NaN``'s from the loading plots.
 
         per_row : int
-            the number of plots in each row, when the same_window
-            parameter is True.
+            The number of plots in each row, when the ``same_window``
+            parameter is ``True``.
 
-        axes_decor : {'all', 'ticks', 'off', None}, optional
-            Controls how the axes are displayed on each image; default is 'all'
-            If 'all', both ticks and axis labels will be shown
-            If 'ticks', no axis labels will be shown, but ticks/labels will
-            If 'off', all decorations and frame will be disabled
-            If None, no axis decorations will be shown, but ticks/frame will
+        axes_decor : str or None, optional
+            One of: ``all``, ``ticks``, ``off``, or ``None``
+            Controls how the axes are displayed on each image; default is
+            ``'all'``
+            If ``'all'``, both ticks and axis labels will be shown
+            If ``'ticks'``, no axis labels will be shown, but ticks/labels will
+            If ``'off'``, all decorations and frame will be disabled
+            If ``None``, no axis decorations will be shown, but ticks/frame will
 
         See also
         --------
-        plot_decomposition_factors, plot_decomposition_results.
+        plot_decomposition_factors, plot_decomposition_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -1001,47 +1006,51 @@ class MVATools(object):
         Parameters
         ----------
 
-        comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to
-            given int.
-            if list of ints, returns maps of components with ids in
-            given list.
+        comp_ids : None, int, or list (of ints)
+            If ``comp_ids`` is ``None``, maps of all components will be
+            returned. If it is an int, maps of components with ids from 0 to
+            the given value will be returned. If ``comp_ids`` is a list of
+            ints, maps of components with ids contained in the list will be
+            returned.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available
-            from
-            the axes_manager.  If False, plots are in pixels/channels.
+            if ``True``, calibrates plots where calibration is available
+            from the axes_manager.  If ``False``, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default is True.
+            If ``True``, plots each factor to the same window. They are
+            not scaled. Default is ``True``.
 
-        title : string
+        comp_label : str
+            Will be deprecated in 2.0, please use ``title`` instead
+
+        title : str
             Title of the plot.
 
         with_factors : bool
-            If True, also returns figure(s) with the factors for the
-            given comp_ids.
+            If `True`, also returns figure(s) with the factors for the
+            given ``comp_ids``.
 
-        cmap : matplotlib colormap
+        cmap : ~matplotlib.colors.Colormap
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
 
         no_nans : bool
-            If True, removes NaN's from the loading plots.
+            If ``True``, removes ``NaN``'s from the loading plots.
 
         per_row : int
-            the number of plots in each row, when the same_window
-            parameter is True.
+            The number of plots in each row, when the ``same_window``
+            parameter is ``True``.
 
-        axes_decor : {'all', 'ticks', 'off', None}, optional
-            Controls how the axes are displayed on each image; default is 'all'
-            If 'all', both ticks and axis labels will be shown
-            If 'ticks', no axis labels will be shown, but ticks / labels will
-            If 'off', all decorations and frame will be disabled
-            If None, no axis decorations will be shown, but ticks/frame will
+        axes_decor : str or None, optional
+            One of: ``all``, ``ticks``, ``off``, or ``None``
+            Controls how the axes are displayed on each image;
+            default is ``'all'``
+            If ``'all'``, both ticks and axis labels will be shown
+            If ``'ticks'``, no axis labels will be shown, but ticks/labels will
+            If ``'off'``, all decorations and frame will be disabled
+            If ``None``, no axis decorations will be shown, but ticks/frame will
 
         See also
         --------
@@ -1105,74 +1114,71 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list of ints
-            if None, returns all components/loadings.
-            if int, returns components/loadings with ids from 0 to
-            given int.
-            if list of ints, returns components/loadings with ids in
-            given list.
+        comp_ids : None, int, or list (of ints)
+            If None, returns all components/loadings.
+            If an int, returns components/loadings with ids from 0 to the
+            given value.
+            If a list of ints, returns components/loadings with ids provided in
+            the given list.
         folder : str or None
             The path to the folder where the file will be saved.
-            If `None` the
-            current folder is used by default.
-        factor_prefix : string
-            The prefix that any exported filenames for
-            factors/components
+            If ``None`` the current folder is used by default.
+        factor_prefix : str
+            The prefix that any exported filenames for factors/components
             begin with
-        factor_format : string
-            The extension of the format that you wish to save to. Default is
-            "hspy". See `loading format` for more details.
-        loading_prefix : string
-            The prefix that any exported filenames for
-            factors/components
+        factor_format : str
+            The extension of the format that you wish to save the factors to.
+            Default is ``'hspy'``. See ``loading_format`` for more details.
+        loading_prefix : str
+            The prefix that any exported filenames for factors/components
             begin with
-        loading_format : string
+        loading_format : str
             The extension of the format that you wish to save to. default
-            is "hspy". The format determines the kind of output.
-                * For image formats (tif, png, jpg, etc.), plots are 
-                  created using the plotting flags as below, and saved at
-                  600 dpi. One plot per loading is saved.
-                * For multidimensional formats ("rpl", "hspy"), arrays are
-                  saved in single files.  All loadings are contained in the
+            is ``'hspy'``. The format determines the kind of output:
+                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                  plots are created using the plotting flags as below, and saved
+                  at 600 dpi. One plot is saved per loading.
+                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                  are saved in single files.  All loadings are contained in the
                   one file.
-                * For spectral formats (msa), each loading is saved to a
+                * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
         multiple_files : bool
-            If True, on exporting a file per factor and per loading will
-            be created. Otherwise only two files will be created, one for
+            If ``True``, one file will be created for each factor and loading.
+            Otherwise, only two files will be created, one for
             the factors and another for the loadings. The default value can
             be chosen in the preferences.
         save_figures : bool
-            If True the same figures that are obtained when using the plot
+            If ``True`` the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
+
+        Note
+        ----
+        The following parameters are only used when ``save_figures = True``:
 
         Other Parameters
         ----------------
-        Plotting options for `save_figures=True` only
-
-        calibrate : bool
-            if True, calibrates plots where calibration is available
-            from the axes_manager. If False, plots are in pixels/channels.
-        same_window : bool
-            if True, plots each factor to the same window.
-        comp_label : string
+        calibrate : :py:class:`bool`
+            If ``True``, calibrates plots where calibration is available
+            from the axes_manager. If ``False``, plots are in pixels/channels.
+        same_window : :py:class:`bool`
+            If ``True``, plots each factor to the same window.
+        comp_label : :py:class:`str`
             the label that is either the plot title (if plotting in separate 
             windows) or the label in the legend (if plotting in the same window)
-        cmap : The colormap used for the factor image, or for peak
+        cmap : :py:class:`~matplotlib.colors.Colormap`
+            The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int
-            the number of plots in each row, when the
-        same_window
-            parameter is True.
-        save_figures_format : str
+        per_row : :py:class:`int`
+            The number of plots in each row, when the ``same_window``
+            parameter is ``True``.
+        save_figures_format : :py:class:`str`
             The image format extension.
 
         See also
         --------
-        get_decomposition_factors,
-        get_decomposition_loadings.
-
+        get_decomposition_factors, get_decomposition_loadings
         """
 
         factors = self.learning_results.factors
@@ -1226,73 +1232,70 @@ class MVATools(object):
         Parameters
         ----------
         comp_ids : None, int, or list of ints
-            if None, returns all components/loadings.
-            if int, returns components/loadings with ids from 0 to given
-             int.
-            if list of ints, returns components/loadings with ids in
-            iven list.
+            If None, returns all components/loadings.
+            If an int, returns components/loadings with ids from 0 to the
+            given value.
+            If a list of ints, returns components/loadings with ids provided in
+            the given list.
         folder : str or None
-            The path to the folder where the file will be saved. If
-            `None` the
-            current folder is used by default.
+            The path to the folder where the file will be saved.
+            If ``None`` the current folder is used by default.
         factor_prefix : string
-            The prefix that any exported filenames for
-            factors/components
+            The prefix that any exported filenames for factors/components
             begin with
         factor_format : string
-            The extension of the format that you wish to save to. Default is
-            "hspy". See `loading format` for more details.
+            The extension of the format that you wish to save the factors to.
+            Default is ``'hspy'``. See ``loading_format`` for more details.
         loading_prefix : string
-            The prefix that any exported filenames for
-            factors/components
+            The prefix that any exported filenames for factors/components
             begin with
         loading_format : string
             The extension of the format that you wish to save to. default
-            is "hspy". The format determines the kind of output.
-            - For image formats (tif, png, jpg, etc.), plots are
-              created using the plotting flags as below, and saved at
-              600 dpi. One plot per loading is saved.
-            - For multidimensional formats ("rpl", "hspy"), arrays are
-              saved in single files.  All loadings are contained in the
-              one file.
-            - For spectral formats (msa), each loading is saved to a
-              separate file.
+            is ``'hspy'``. The format determines the kind of output:
+                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                  plots are created using the plotting flags as below, and saved
+                  at 600 dpi. One plot is saved per loading.
+                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                  are saved in single files.  All loadings are contained in the
+                  one file.
+                * For spectral formats (``'msa'``), each loading is saved to a
+                  separate file.
         multiple_files : Bool
-            If True, on exporting a file per factor and per loading
-            will be created. Otherwise only two files will be created, one
-            for the factors and another for the loadings. Default is True.
+            If ``True``, one file will be created for each factor and loading.
+            Otherwise, only two files will be created, one for
+            the factors and another for the loadings. The default value can
+            be chosen in the preferences.
         save_figures : Bool
-            If True the same figures that are obtained when using the
-            plot
+            If ``True`` the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Plotting options (for save_figures = True ONLY)
-        ----------------------------------------------
-        calibrate : bool
-            if True, calibrates plots where calibration is available
-            from
-            the axes_manager.  If False, plots are in pixels/channels.
-        same_window : bool
-            if True, plots each factor to the same window.
-        comp_label : string
-            the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the
-            same window)
-        cmap : The colormap used for the factor image, or for peak
+        Note
+        ----
+        The following parameters are only used when ``save_figures = True``:
+
+        Other Parameters
+        ----------------
+        calibrate : :py:class:`bool`
+            If ``True``, calibrates plots where calibration is available
+            from the axes_manager. If ``False``, plots are in pixels/channels.
+        same_window : :py:class:`bool`
+            If ``True``, plots each factor to the same window.
+        comp_label : :py:class:`str`
+            the label that is either the plot title (if plotting in separate
+            windows) or the label in the legend (if plotting in the same window)
+        cmap : :py:class:`~matplotlib.colors.Colormap`
+            The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int, the number of plots in each row, when the
-        same_window
-            parameter is True.
-        save_figures_format : str
+        per_row : :py:class:`int`
+            The number of plots in each row, when the ``same_window``
+            parameter is ``True``.
+        save_figures_format : :py:class:`str`
             The image format extension.
 
         See also
         --------
-        get_bss_factors,
-        get_bss_loadings.
-
+        get_bss_factors, get_bss_loadings
         """
 
         factors = self.learning_results.bss_factors
@@ -1351,11 +1354,12 @@ class MVATools(object):
         return signal
 
     def get_decomposition_loadings(self):
-        """Return the decomposition loadings as a Signal.
+        """Return the decomposition loadings as a
+        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
 
         See also
-        -------
-        get_decomposition_factors, export_decomposition_results.
+        --------
+        get_decomposition_factors, export_decomposition_results
 
         """
         signal = self._get_loadings(self.learning_results.loadings)
@@ -1365,11 +1369,12 @@ class MVATools(object):
         return signal
 
     def get_decomposition_factors(self):
-        """Return the decomposition factors as a Signal.
+        """Return the decomposition factors as a
+        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
 
         See also
-        -------
-        get_decomposition_loadings, export_decomposition_results.
+        --------
+        get_decomposition_loadings, export_decomposition_results
 
         """
         signal = self._get_factors(self.learning_results.factors)
@@ -1379,11 +1384,12 @@ class MVATools(object):
         return signal
 
     def get_bss_loadings(self):
-        """Return the blind source separtion loadings as a Signal.
+        """Return the blind source separation loadings as a
+        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
 
         See also
-        -------
-        get_bss_factors, export_bss_results.
+        --------
+        get_bss_factors, export_bss_results
 
         """
         signal = self._get_loadings(
@@ -1394,11 +1400,12 @@ class MVATools(object):
         return signal
 
     def get_bss_factors(self):
-        """Return the blind source separtion factors as a Signal.
+        """Return the blind source separation factors as a
+        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
 
         See also
-        -------
-        get_bss_loadings, export_bss_results.
+        --------
+        get_bss_loadings, export_bss_results
 
         """
         signal = self._get_factors(self.learning_results.bss_factors)
@@ -1414,29 +1421,38 @@ class MVATools(object):
                          loadings_dim=2,):
         """Plot the blind source separation factors and loadings.
 
-        Unlike `plot_bss_factors` and `plot_bss_loadings`, this method displays
-        one component at a time. Therefore it provides a more compact
-        visualization than then other two methods.  The loadings and factors
-        are displayed in different windows and each has its own
-        navigator/sliders to navigate them if they are multidimensional. The
-        component index axis is synchronized between the two.
+        Unlike :py:meth:`~hyperspy.signal.MVATools.plot_bss_factors` and
+        :py:meth:`~hyperspy.signal.MVATools.plot_bss_loadings`,
+        this method displays one component at a time. Therefore it provides a
+        more compact visualization than then other two methods.
+        The loadings and factors are displayed in different windows and each
+        has its own navigator/sliders to navigate them if they are
+        multidimensional. The component index axis is synchronized between
+        the two.
 
         Parameters
         ----------
-        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum", Signal}
-            "smart_auto" (default) displays sliders if the navigation
+        factors_navigator : str, None, or BaseSignal (or subclass)
+            One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
+            :py:class:`~hyperspy.signal.BaseSignal` object.
+            ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see `plot` documentation for details.
-        factors_dim, loadings_dim : int
-            Currently HyperSpy cannot plot signals of dimension higher than
-            two. Therefore, to visualize the BSS results when the
-            factors or the loadings have signal dimension greater than 2
-            we can view the data as spectra(images) by setting this parameter
-            to 1(2). (Default 2)
+            see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
+            for details.
+        loadings_navigator : str, None, or BaseSignal (or subclass)
+            See the ``factors_navigator`` parameter
+        factors_dim : int
+            Currently HyperSpy cannot plot a signal when the signal dimension is
+            higher than two. Therefore, to visualize the BSS results when the
+            factors or the loadings have signal dimension greater than 2,
+            the data can be viewed as spectra (or images) by setting this
+            parameter to 1 (or 2). (The default is 2)
+        loadings_dim : int
+            See the ``factors_dim`` parameter
 
         See also
         --------
-        plot_bss_factors, plot_bss_loadings, plot_decomposition_results.
+        plot_bss_factors, plot_bss_loadings, plot_decomposition_results
 
         """
         factors = self.get_bss_factors()
@@ -1452,31 +1468,40 @@ class MVATools(object):
                                    loadings_navigator="smart_auto",
                                    factors_dim=2,
                                    loadings_dim=2):
-        """Plot the decompostion factors and loadings.
+        """Plot the decomposition factors and loadings.
 
-        Unlike `plot_factors` and `plot_loadings`, this method displays
-        one component at a time. Therefore it provides a more compact
-        visualization than then other two methods.  The loadings and factors
-        are displayed in different windows and each has its own
+        Unlike :py:meth:`~hyperspy.signal.MVATools.plot_decomposition_factors`
+        and :py:meth:`~hyperspy.signal.MVATools.plot_decomposition_loadings`,
+        this method displays one component at a time. Therefore it provides a
+        more compact visualization than then other two methods. The loadings
+        and factors are displayed in different windows and each has its own
         navigator/sliders to navigate them if they are multidimensional. The
         component index axis is synchronized between the two.
 
         Parameters
         ----------
-        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum", Signal}
-            "smart_auto" (default) displays sliders if the navigation
+        factors_navigator : str, None, or BaseSignal (or subclass)
+            One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
+            :py:class:`~hyperspy.signal.BaseSignal` object.
+            ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see `plot` documentation for details.
-        factors_dim, loadings_dim : int
-            Currently HyperSpy cannot plot signals of dimension higher than
-            two. Therefore, to visualize the BSS results when the
-            factors or the loadings have signal dimension greater than 2
-            we can view the data as spectra (images) by setting this parameter
-            to 1(2). (Default 2)
+            see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
+            for details.
+        loadings_navigator : str, None, or BaseSignal (or subclass)
+            See the ``factors_navigator`` parameter
+        factors_dim : int
+            Currently HyperSpy cannot plot a signal when the signal dimension is
+            higher than two. Therefore, to visualize the BSS results when the
+            factors or the loadings have signal dimension greater than 2,
+            the data can be viewed as spectra (or images) by setting this
+            parameter to 1 (or 2). (The default is 2)
+        loadings_dim : int
+            See the ``factors_dim`` parameter
 
         See also
         --------
-        plot_factors, plot_loadings, plot_bss_results
+        plot_decomposition_factors, plot_decomposition_loadings,
+        plot_bss_results
 
         """
         factors = self.get_decomposition_factors()
@@ -1571,20 +1596,20 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        data : numpy array
+        data : numpy.ndarray
            The signal data. It can be an array of any dimensions.
-        axes : dictionary (optional)
-            Dictionary to define the axes (see the
-            documentation of the AxesManager class for more details).
-        attributes : dictionary (optional)
+        axes : dict, optional
+            Dictionary to define the axes (see the documentation of the
+            :py:class:`~hyperspy.axes.AxesManager` class for more details).
+        attributes : dict, optional
             A dictionary whose items are stored as attributes.
-        metadata : dictionary (optional)
+        metadata : dict, optional
             A dictionary containing a set of parameters
-            that will to stores in the `metadata` attribute.
+            that will to stores in the ``metadata`` attribute.
             Some parameters might be mandatory in some cases.
-        original_metadata : dictionary (optional)
+        original_metadata : dict, optional
             A dictionary containing a set of parameters
-            that will to stores in the `original_metadata` attribute. It
+            that will to stores in the ``original_metadata`` attribute. It
             typically contains all the parameters that has been
             imported from the original data file.
 
@@ -2909,7 +2934,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, mean, std, var, indexmax, valuemax, amax
+        max, min, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -2943,7 +2968,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        min, sum, mean, std, var, indexmax, valuemax, amax
+        min, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -2977,7 +3002,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, sum, mean, std, var, indexmax, valuemax, amax
+        max, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -3011,7 +3036,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, std, var, indexmax, valuemax, amax
+        max, min, sum, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -3045,7 +3070,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, var, indexmax, valuemax, amax
+        max, min, sum, mean, var, indexmax, valuemax
 
         Examples
         --------
@@ -3079,7 +3104,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, indexmax, valuemax, amax
+        max, min, sum, mean, std, indexmax, valuemax
 
         Examples
         --------
@@ -3149,9 +3174,9 @@ class BaseSignal(FancySlicing,
 
     def diff(self, axis, order=1, out=None, rechunk=True):
         """Returns a signal with the n-th order discrete difference along
-        given axis, i. e. it calculates the difference between consecutive 
-        values in the given axis: `out[n] = a[n+1] - a[n]`. See numpy.diff for
-        more details.
+        given axis. `i.e.` it calculates the difference between consecutive
+        values in the given axis: `out[n] = a[n+1] - a[n]`. See
+        :py:func:`numpy.diff` for more details.
 
         Parameters
         ----------
@@ -3161,9 +3186,16 @@ class BaseSignal(FancySlicing,
         %s
         %s
 
+        Returns
+        -------
+        s : BaseSignal (or subclasses) or None
+            Note that the size of the data on the given ``axis`` decreases by
+            the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
+            2, the `x` dimension is N, ``der``'s `x` dimension is N - 2.
+
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, valuemax, amax
+        max, min, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -3192,7 +3224,8 @@ class BaseSignal(FancySlicing,
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def derivative(self, axis, order=1, out=None, rechunk=True):
-        r"""Numerical derivative along the given axis:
+        r"""Calculate the numerical derivative along the given axis,
+        with respect to the calibrated units of that axis.
             
         For a function :math:`y = f(x)` and two consecutive values :math:`x_1` 
         and :math:`x_2`:
@@ -3211,10 +3244,10 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        der : Signal
-            Note that the size of the data on the given `axis` decreases by the
-            given `order` i.e. if `axis` is "x" and `order` is 2 the
-            x dimension is N, der's x dimension is N - 2.
+        der : BaseSignal
+            Note that the size of the data on the given ``axis`` decreases by
+            the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
+            2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
 
         See also
         --------
@@ -3247,7 +3280,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, valuemax, amax
+        max, min, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -3487,7 +3520,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax, amax
+        max, min, sum, mean, std, var, valuemax
 
         Examples
         --------
@@ -3519,7 +3552,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax, amax
+        max, min, sum, mean, std, var, valuemax
 
         Examples
         --------
@@ -3550,7 +3583,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, amax
+        max, min, sum, mean, std, var, indexmax
 
         Examples
         --------
@@ -3587,7 +3620,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, amax
+        max, min, sum, mean, std, var, indexmax
 
         """
         idx = self.indexmin(axis)

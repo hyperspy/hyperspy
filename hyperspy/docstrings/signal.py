@@ -4,12 +4,12 @@
 """
 
 ONE_AXIS_PARAMETER = \
-    """: int, str or `axis`
+    """: int, str, or ~hyperspy.axes.DataAxis
             The axis can be passed directly, or specified using the index of
             the axis in `axes_manager` or the axis name."""
 
 MANY_AXIS_PARAMETER = \
-    """: int, str, `axis`, tuple of `axis` or None
+    """: int, str, ~hyperspy.axes.DataAxis, tuple (of DataAxis) or None
             Either one on its own, or many axes in a tuple can be passed. In
             both cases the axes can be passed directly, or specified using the
             index in `axes_manager` or the name of the axis. Any duplicates are
@@ -17,7 +17,7 @@ MANY_AXIS_PARAMETER = \
             axes (default)."""
 
 OUT_ARG = \
-    """out : `Signal` or None
+    """out : BaseSignal (or subclasses) or None
             If None, a new Signal is created with the result of the operation
             and returned (default). If a Signal is passed, it is used to
             receive the output of the operation, and nothing is returned."""
@@ -55,7 +55,7 @@ PARALLEL_ARG = \
            None the default from the preferences settings is used."""
 
 PARALLEL_INT_ARG = \
-    """parallel : None, bool or int
+    """parallel : None or bool or int
            If True, perform computation in parallel using multiple cores. If 
            int, use as many cores as specified. If None the default from 
            the preferences settings is used."""
