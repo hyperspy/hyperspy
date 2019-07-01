@@ -1806,7 +1806,6 @@ class BaseSignal(FancySlicing,
                 imported from the original data file.
 
         """
-
         self.data = file_data_dict['data']
         oldlazy = self._lazy
         if 'models' in file_data_dict:

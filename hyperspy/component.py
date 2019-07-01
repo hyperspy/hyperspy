@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import importlib
 
 import numpy as np
 from dask.array import Array as dArray
@@ -35,6 +34,7 @@ from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
 from IPython.display import display_pretty, display
 from hyperspy.misc.model_tools import current_component_values
+from hyperspy.misc.utils import get_object_package_info
 
 import logging
 
@@ -1146,18 +1146,7 @@ class Component(t.HasTraits):
         dic = {
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
-        # Note that the following can be "__main__" if the component was user
-        # defined
-        dic["package"] = self.__module__.split(".")[0]
-        if dic["package"] != "__main__":
-            try:
-                dic["package_version"] = importlib.import_module(
-                    dic["package"]).__version__
-            except AttributeError:
-                _logger.warning(
-                    "The package {package} does not set its version in " +
-                    "{package}.version. Please report this issue to the " +
-                    "{package} developers.".format(package=dic["package"]))
+        dic.update(get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         from hyperspy.model import _COMPONENTS
         if self._id_name not in _COMPONENTS:

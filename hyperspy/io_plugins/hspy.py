@@ -26,7 +26,7 @@ import h5py
 import numpy as np
 import dask.array as da
 from traits.api import Undefined
-from hyperspy.misc.utils import ensure_unicode, multiply
+from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
 
 _logger = logging.getLogger(__name__)
@@ -203,6 +203,17 @@ def hdfgroup2signaldict(group, lazy=False):
             group[original_metadata], lazy=lazy),
         'attributes': {}
     }
+    if "package" in group:
+        # HyperSpy version is >= 1.5
+        exp["package"] = group["package"]
+        exp["package_version"] = group["package_version"]
+    else:
+        # Prior to v1.4 we didn't store the package information. Since there
+        # were already external package we cannot assume any package provider so
+        # we leave this empty.
+        exp["package"] = ""
+        exp["package_version"] = ""
+
 
     data = group['data']
     if lazy:
@@ -674,6 +685,7 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
 
 
 def write_signal(signal, group, **kwds):
+    group.attrs.update(get_object_package_info(signal))
     if default_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
