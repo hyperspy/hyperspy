@@ -1146,11 +1146,13 @@ class Component(t.HasTraits):
         dic = {
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
-        # Note that the following can be "__main__" if the component was user defined 
+        # Note that the following can be "__main__" if the component was user
+        # defined
         dic["package"] = self.__module__.split(".")[0]
         if dic["package"] != "__main__":
             try:
-                dic["package_version"] = importlib.import_module(dic["package"]).__version__
+                dic["package_version"] = importlib.import_module(
+                    dic["package"]).__version__
             except AttributeError:
                 _logger.warning(
                     "The package {package} does not set its version in " +
