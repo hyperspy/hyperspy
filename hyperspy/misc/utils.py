@@ -1060,6 +1060,7 @@ def add_scalar_axis(signal):
                     name="Scalar",
                     navigate=False)
 
+
 def get_object_package_info(obj):
     """Get info about object package
 

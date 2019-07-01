@@ -214,7 +214,6 @@ def hdfgroup2signaldict(group, lazy=False):
         exp["package"] = ""
         exp["package_version"] = ""
 
-
     data = group['data']
     if lazy:
         data = da.from_array(data, chunks=data.chunks)
