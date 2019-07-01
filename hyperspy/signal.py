@@ -1735,16 +1735,17 @@ class BaseSignal(FancySlicing,
     def _deepcopy_with_new_data(self, data=None, copy_variance=False):
         """Returns a deepcopy of itself replacing the data.
 
-        This method has the advantage over deepcopy that it does not
-        copy the data what can save precious memory
+        This method has an advantage over the default :py:func:`copy.deepcopy`
+        in that it does not copy the data, which can save memory.
 
         Parameters
-        ---------
-        data : {None | np.array}
+        ----------
+        data : None or numpy.ndarray
 
         Returns
         -------
-        ns : Signal
+        ns : ~hyperspy.signal.BaseSignal (or subclass)
+            The newly copied signal
 
         """
         old_np = None
@@ -1809,22 +1810,22 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        file_data_dict : dictionary
+        file_data_dict : dict
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
             following items:
-            data : numpy array
+            data : :py:class:`numpy.ndarray`
                The signal data. It can be an array of any dimensions.
-            axes : dictionary (optional)
+            axes : dict, optional
                 Dictionary to define the axes (see the
                 documentation of the AxesManager class for more details).
-            attributes : dictionary (optional)
+            attributes : dict, optional
                 A dictionary whose items are stored as attributes.
-            metadata : dictionary (optional)
+            metadata : dict, optional
                 A dictionary containing a set of parameters
                 that will to stores in the `metadata` attribute.
                 Some parameters might be mandatory in some cases.
-            original_metadata : dictionary (optional)
+            original_metadata : dict, optional
                 A dictionary containing a set of parameters
                 that will to stores in the `original_metadata` attribute. It
                 typically contains all the parameters that has been
@@ -1908,7 +1909,6 @@ class BaseSignal(FancySlicing,
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes.
-
         """
         # We deepcopy everything but data
         self = self._deepcopy_with_new_data(self.data)
@@ -1926,10 +1926,13 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         add_learning_results : bool
+            Whether or not to include any multivariate learning results in
+            the outputted dictionary
 
         Returns
         -------
-        dic : dictionary
+        dic : dict
+            The dictionary that can be used to recreate the signal
 
         """
         dic = {'data': self.data,
@@ -1966,8 +1969,7 @@ class BaseSignal(FancySlicing,
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
              **kwargs):
         """%s
-        %s
-
+    %s
         """
         if self._plot is not None:
             try:
@@ -2116,19 +2118,20 @@ class BaseSignal(FancySlicing,
              **kwds):
         """Saves the signal in the specified format.
 
-        The function gets the format from the extension
-            * hspy for HyperSpy's HDF5 specification
-            * rpl for Ripple (useful to export to Digital Micrograph)
-            * msa for EMSA/MSA single spectrum saving.
-            * unf for SEMPER unf binary format.
-            * blo for Blockfile diffraction stack saving.
-            * Many image formats such as png, tiff, jpeg...
+        The function gets the format from the specified extension (see
+        :ref:`supported-formats` in the User Guide for more information):
+            * ``'hspy'`` for HyperSpy's HDF5 specification
+            * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
+            * ``'msa'`` for EMSA/MSA single spectrum saving.
+            * ``'unf'`` for SEMPER unf binary format.
+            * ``'blo'`` for Blockfile diffraction stack saving.
+            * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
         Please note that not all the formats supports saving datasets of
-        arbitrary dimensions, e.g. msa only supports 1D data, and blockfiles
-        only support image stacks with a navigation dimension < 2.
+        arbitrary dimensions, e.g. ``'msa'`` only supports 1D data, and
+        blockfiles only supports image stacks with a `navigation_dimension` < 2.
 
         Each format accepts a different set of parameters. For details
         see the specific format documentation.
@@ -2136,23 +2139,26 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         filename : str or None
-            If None (default) and tmp_parameters.filename and
-            `tmp_paramters.folder` are defined, the
+            If None (default) and `tmp_parameters.filename` and
+            `tmp_parameters.folder` are defined, the
             filename and path will be taken from there. A valid
-            extension can be provided e.g. "my_file.rpl", see `extension`.
-        overwrite : None, bool
+            extension can be provided e.g. ``'my_file.rpl'``
+            (see `extension` parameter).
+        overwrite : None or bool
             If None, if the file exists it will query the user. If
-            True(False) it (does not) overwrites the file if it exists.
-        extension : {None, 'hspy', 'hdf5', 'rpl', 'msa', 'unf', 'blo',
-                     'emd', common image extensions e.g. 'tiff', 'png'}
+            True(False) it does(not) overwrite the file if it exists.
+        extension : None or str
             The extension of the file that defines the file format.
-            'hspy' and 'hdf5' are equivalent. Use 'hdf5' if compatibility with
-            HyperSpy versions older than 1.2 is required.
-            If None, the extension is determined from the following list in
+            Allowable string values are: {``'hspy'``, ``'hdf5'``, ``'rpl'``,
+            ``'msa'``, ``'unf'``, ``'blo'``, ``'emd'``, and common image
+            extensions e.g. ``'tiff'``, ``'png'``, etc.}
+            ``'hspy'`` and ``'hdf5'`` are equivalent. Use ``'hdf5'`` if
+            compatibility with HyperSpy versions older than 1.2 is required.
+            If ``None``, the extension is determined from the following list in
             this order:
-            i) the filename
-            ii)  `Signal.tmp_parameters.extension`
-            iii) `hspy` (the default extension)
+                i) the filename
+                ii)  `Signal.tmp_parameters.extension`
+                iii) ``'hspy'`` (the default extension)
 
         """
         if filename is None:
@@ -2186,10 +2192,9 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_plot.update()
 
     def get_dimensions_from_data(self):
-        """Get the dimension parameters from the data_cube. Useful when
-        the data_cube was externally modified, or when the SI was not
-        loaded from a file
-
+        """Get the dimension parameters from the Signal's underlying data.
+        Useful when the data structure was externally modified, or when the
+        spectrum image was not loaded from a file
         """
         dc = self.data
         for axis in self.axes_manager._axes:
@@ -2200,20 +2205,21 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : int or str
             Specify the data axis in which to perform the cropping
             operation. The axis can be specified using the index of the
             axis in `axes_manager` or the axis name.
-        start, end : {int | float | None}
-            The beginning and end of the cropping interval. If int
-            the value is taken as the axis index. If float the index
-            is calculated using the axis calibration. If start/end is
-            None crop from/to the low/high end of the axis.
+        start, end : int, float, or None
+            The beginning and end of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` crop from/to the low/high end of the axis.
         convert_units : bool
-            Default is False
-            If True, convert the units using the `convert_to_units` method of
-            the `axes_manager`. If False, does nothing.
-
+            Default is ``False``
+            If ``True``, convert the units using the
+            :py:meth:`~hyperspy.axes.AxesManager.convert_units` method
+            of the :py:class:`~hyperspy.axes.AxesManager`. If ``False``,
+            does nothing.
         """
         axis = self.axes_manager[axis]
         i1, i2 = axis._get_index(start), axis._get_index(end)
@@ -2237,17 +2243,18 @@ class BaseSignal(FancySlicing,
             self.axes_manager.convert_units(axis)
 
     def swap_axes(self, axis1, axis2, optimize=False):
-        """Swaps the axes.
+        """Swap two axes in the signal.
 
         Parameters
         ----------
-        axis1, axis2 %s
+        axis1%s
+        axis2%s
         %s
 
         Returns
         -------
-        s : a copy of the object with the axes swapped.
-
+        s : hyperspy.signal.BaseSignal (or subclass)
+            A copy of the object with the axes swapped.
 
         See also
         --------
@@ -2270,7 +2277,7 @@ class BaseSignal(FancySlicing,
             s._make_sure_data_is_contiguous()
         return s
 
-    swap_axes.__doc__ %= (ONE_AXIS_PARAMETER, OPTIMIZE_ARG)
+    swap_axes.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER, OPTIMIZE_ARG)
 
     def rollaxis(self, axis, to_axis, optimize=False):
         """Roll the specified axis backwards, until it lies in a given position.
@@ -2278,19 +2285,19 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s The axis to roll backwards.
-            The positions of the other axes do not change relative to one another.
-        to_axis %s The axis is rolled until it
-            lies before this other axis.
+            The positions of the other axes do not change relative to one
+            another.
+        to_axis %s The axis is rolled until it lies before this other axis.
         %s
 
         Returns
         -------
-        s : Signal or subclass
+        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             Output signal.
 
         See also
         --------
-        numpy.roll, swap_axes
+        :py:func:`numpy.roll`, swap_axes
 
         Examples
         --------
@@ -2364,39 +2371,43 @@ class BaseSignal(FancySlicing,
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** new_shape or scale.
+        interpolation. Specify **either** `new_shape` or `scale`.
 
         Parameters
         ----------
-        new_shape : a list of floats or integer, default None
-            For each dimension specify the new_shape. This will
-            then be converted into a scale.
-        scale : a list of floats or integer, default None
-            For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
-            is no binning and a ratio of 2 means that each pixel in the new
+        new_shape : list (of floats or integer) or None
+            For each dimension specify the new_shape. This will internally be
+            converted into a `scale` parameter.
+        scale : list (of floats or integer) or None
+            For each dimension, specify the new:old pixel ratio, e.g. a ratio
+            of 1 is no binning and a ratio of 2 means that each pixel in the new
             spectrum is twice the size of the pixels in the old spectrum.
-            The length of the list should match the dimension of the numpy array.
-            ***Note : Only one of scale or new_shape should be specified otherwise
-            the function will not run***
-        crop: bool, default True
-            When binning by a non-integer number of pixels it is likely that
-            the final row in each dimension contains less than the full quota to
-            fill one pixel.
+            The length of the list should match the dimension of the
+            Signal's underlying data array.
+            *Note : Only one of `scale` or `new_shape` should be specified,
+            otherwise the function will not run*
+        crop : bool
+            Whether or not to crop the resulting rebinned data (default is
+            ``True``). When binning by a non-integer number of
+            pixels it is likely that the final row in each dimension will
+            contain fewer than the full quota to fill one pixel.
 
-            e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-            pixels and one row containing only 0.8 pixels worth. Selection of
-            crop='True' or crop='False' determines whether or not this
-            'black' line is cropped from the final binned array or not.
+                - e.g. a 5*5 array binned by 2.1 will produce two rows
+                  containing 2.1 pixels and one row containing only 0.8
+                  pixels. Selection of ``crop=True`` or ``crop=False``
+                  determines whether or not this `"black"` line is cropped
+                  from the final binned array or not.
 
-            *Please note that if crop=False is used, the final row in each
-            dimension may appear black, if a fractional number of pixels are left
+            Please note that if ``crop=False`` is used, the final row in each
+            dimension may appear black if a fractional number of pixels are left
             over. It can be removed but has been left to preserve total counts
-            before and after binning.*
-
+            before and after binning.
         %s
+
         Returns
         -------
-        s : Signal subclass
+        s : BaseSignal (or subclass)
+            The resulting cropped signal.
 
         Examples
         --------
@@ -2454,31 +2465,30 @@ class BaseSignal(FancySlicing,
               step_sizes='auto'):
         """Splits the data into several signals.
 
-        The split can be defined by giving the number_of_parts, a homogeneous
-        step size or a list of customized step sizes. By default ('auto'),
-        the function is the reverse of utils.stack().
+        The split can be defined by giving the `number_of_parts`, a homogeneous
+        step size, or a list of customized step sizes. By default (``'auto'``),
+        the function is the reverse of :py:func:`~hyperspy.misc.utils.stack`.
 
         Parameters
         ----------
-        axis : {'auto' | int | string}
-            Specify the data axis in which to perform the splitting
-            operation.  The axis can be specified using the index of the
-            axis in `axes_manager` or the axis name.
-            If 'auto' and if the object has been created with utils.stack,
-            split will return the former list of signals
-            (information stored in ``metadata._HyperSpy.Stacking_history``), if 
-            not the last navigation axis will be used.
-        number_of_parts : {'auto' | int}
-            Number of parts in which the SI will be split. The
+        axis %s
+            If ``'auto'`` and if the object has been created with
+            :py:func:`~hyperspy.misc.utils.stack`,
+            this method will return the former list of signals (information
+            stored in `metadata._HyperSpy.Stacking_history`).
+            If it was not created with :py:func:`~hyperspy.misc.utils.stack`,
+            the last navigation axis will be used.
+        number_of_parts : str or int
+            Number of parts in which the spectrum image will be split. The
             splitting is homogeneous. When the axis size is not divisible
-            by the number_of_parts the reminder data is lost without
-            warning. If number_of_parts and step_sizes is 'auto',
-            number_of_parts equals the length of the axis,
-            step_sizes equals one  and the axis is suppressed from each
-            sub_spectra.
-        step_sizes : {'auto' | list of ints | int}
-            Size of the split parts. If 'auto', the step_sizes equals one.
-            If int, the splitting is homogeneous.
+            by the `number_of_parts` the remainder data is lost without
+            warning. If `number_of_parts` and `step_sizes` is ``'auto'``,
+            `number_of_parts` equals the length of the axis,
+            `step_sizes` equals one, and the axis is suppressed from each
+            sub-spectrum.
+        step_sizes : str, list (of ints), or int
+            Size of the split parts. If ``'auto'``, the `step_sizes` equals one.
+            If an int is given, the splitting is homogeneous.
 
         Examples
         --------
@@ -2499,7 +2509,8 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        list of the split signals
+        splitted : list
+            A list of the split signals
 
         """
 
@@ -2574,6 +2585,8 @@ class BaseSignal(FancySlicing,
 
         return splitted
 
+    split.__doc__ %= (ONE_AXIS_PARAMETER)
+
     def _unfold(self, steady_axes, unfolded_axis):
         """Modify the shape of the data by specifying the axes whose
         dimension do not change and the axis over which the remaining axes will
@@ -2595,8 +2608,10 @@ class BaseSignal(FancySlicing,
         -----
         WARNING: this private function does not modify the signal subclass
         and it is intended for internal use only. To unfold use the public
-        `unfold`, `unfold_navigation_space` or `unfold_signal_space` instead.
-        It doesn't make sense unfolding when dim < 2
+        :py:meth:`~hyperspy.signal.BaseSignal.unfold`,
+        :py:meth:`~hyperspy.signal.BaseSignal.unfold_navigation_space`,
+        :py:meth:`~hyperspy.signal.BaseSignal.unfold_signal_space` instead.
+        It doesn't make sense to perform an unfolding when `dim` < 2
 
         """
         if self.data.squeeze().ndim < 2:
@@ -2639,11 +2654,25 @@ class BaseSignal(FancySlicing,
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separately
 
+        Parameters
+        ----------
+        unfold_navigation : bool
+            Whether or not to unfold the navigation dimension(s) (default:
+            ``True``)
+        unfold_signal : bool
+            Whether or not to unfold the signal dimension(s) (default:
+            ``True``)
+
         Returns
         -------
         needed_unfolding : bool
+            Whether or not one of the axes needed unfolding (and that
+            unfolding was performed)
 
-
+        Note
+        ----
+        It doesn't make sense to perform an unfolding when the total number
+        of dimensions is < 2.
         """
         unfolded = False
         if unfold_navigation:
@@ -2687,7 +2716,8 @@ class BaseSignal(FancySlicing,
         Returns
         -------
         needed_unfolding : bool
-
+            Whether or not the navigation space needed unfolding (and whether
+            it was performed)
         """
 
         if self.axes_manager.navigation_dimension < 2:
@@ -2713,7 +2743,8 @@ class BaseSignal(FancySlicing,
         Returns
         -------
         needed_unfolding : bool
-
+            Whether or not the signal space needed unfolding (and whether
+            it was performed)
         """
         if self.axes_manager.signal_dimension < 2:
             needed_unfolding = False
@@ -2732,7 +2763,7 @@ class BaseSignal(FancySlicing,
         return needed_unfolding
 
     def fold(self):
-        """If the signal was previously unfolded, folds it back"""
+        """If the signal was previously unfolded, fold it back"""
         folding = self.metadata._HyperSpy.Folding
         # Note that == must be used instead of is True because
         # if the value was loaded from a file its type can be np.bool_
@@ -2930,11 +2961,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the sum of the provided Signal along the
+            specified axes.
 
         See also
         --------
-        max, min, mean, std, var, indexmax, valuemax
+        max, min, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
         Examples
         --------
@@ -2964,11 +2997,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the maximum of the provided Signal over the
+            specified axes
 
         See also
         --------
-        min, sum, mean, std, var, indexmax, valuemax
+        min, sum, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
         Examples
         --------
@@ -2998,11 +3033,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the minimum of the provided Signal over the
+            specified axes
 
         See also
         --------
-        max, sum, mean, std, var, indexmax, valuemax
+        max, sum, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
         Examples
         --------
@@ -3032,11 +3069,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the mean of the provided Signal over the
+            specified axes
 
         See also
         --------
-        max, min, sum, std, var, indexmax, valuemax
+        max, min, sum, std, var, indexmax, indexmin, valuemax, valuemin
 
         Examples
         --------
@@ -3066,11 +3105,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the standard deviation of the provided
+            Signal over the specified axes
 
         See also
         --------
-        max, min, sum, mean, var, indexmax, valuemax
+        max, min, sum, mean, var, indexmax, indexmin, valuemax, valuemin
 
         Examples
         --------
@@ -3100,11 +3141,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the variance of the provided Signal over the
+            specified axes
 
         See also
         --------
-        max, min, sum, mean, std, indexmax, valuemax
+        max, min, sum, mean, std, indexmax, indexmin, valuemax, valuemin
 
         Examples
         --------
@@ -3129,7 +3172,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.nansum, axis, out=out, rechunk=rechunk)
-    nansum.__doc__ %= (NAN_FUNC.format('sum', sum.__doc__))
+    nansum.__doc__ %= (NAN_FUNC.format('sum'))
 
     def nanmax(self, axis=None, out=None, rechunk=True):
         """%s
@@ -3138,7 +3181,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.nanmax, axis, out=out, rechunk=rechunk)
-    nanmax.__doc__ %= (NAN_FUNC.format('max', max.__doc__))
+    nanmax.__doc__ %= (NAN_FUNC.format('max'))
 
     def nanmin(self, axis=None, out=None, rechunk=True):
         """%s"""
@@ -3146,7 +3189,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.nanmin, axis, out=out, rechunk=rechunk)
-    nanmin.__doc__ %= (NAN_FUNC.format('min', min.__doc__))
+    nanmin.__doc__ %= (NAN_FUNC.format('min'))
 
     def nanmean(self, axis=None, out=None, rechunk=True):
         """%s """
@@ -3154,7 +3197,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.nanmean, axis, out=out, rechunk=rechunk)
-    nanmean.__doc__ %= (NAN_FUNC.format('mean', mean.__doc__))
+    nanmean.__doc__ %= (NAN_FUNC.format('mean'))
 
     def nanstd(self, axis=None, out=None, rechunk=True):
         """%s"""
@@ -3162,7 +3205,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.nanstd, axis, out=out, rechunk=rechunk)
-    nanstd.__doc__ %= (NAN_FUNC.format('std', std.__doc__))
+    nanstd.__doc__ %= (NAN_FUNC.format('std'))
 
     def nanvar(self, axis=None, out=None, rechunk=True):
         """%s"""
@@ -3170,10 +3213,10 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.nanvar, axis, out=out, rechunk=rechunk)
-    nanvar.__doc__ %= (NAN_FUNC.format('var', var.__doc__))
+    nanvar.__doc__ %= (NAN_FUNC.format('var'))
 
     def diff(self, axis, order=1, out=None, rechunk=True):
-        """Returns a signal with the n-th order discrete difference along
+        """Returns a signal with the `n`-th order discrete difference along
         given axis. `i.e.` it calculates the difference between consecutive
         values in the given axis: `out[n] = a[n+1] - a[n]`. See
         :py:func:`numpy.diff` for more details.
@@ -3195,7 +3238,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, valuemax
+        derivative, integrate1D, integrate_simpson
 
         Examples
         --------
@@ -3251,7 +3294,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        diff
+        diff, integrate1D, integrate_simpson
 
         """
 
@@ -3266,8 +3309,8 @@ class BaseSignal(FancySlicing,
     derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def integrate_simpson(self, axis, out=None):
-        """Returns a signal with the result of calculating the integral
-        of the signal along an axis using Simpson's rule.
+        """Calculate the integral of a Signal along an axis using
+        `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_.
 
         Parameters
         ----------
@@ -3276,11 +3319,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the integral of the provided Signal along
+            the specified axis.
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, valuemax
+        diff, derivative, integrate1D
 
         Examples
         --------
@@ -3315,20 +3360,23 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shift : bool, optional
-            If True, the origin of FFT will be shifted in the centre 
-            (Default: False).
-        apodization : bool or 'hann' or 'hamming' or 'tukey'
-            Apply apodization window before calculating FFT in order to 
-            suppress streaks.
-            If True or 'hann' applies Hann window. If 'hamming' or 'tukey',
-            applies Hamming or Tukey windows.
-            (Default: False)
-        **kwargs
-            other keyword arguments are described in np.fft.fftn.
+            If ``True``, the origin of FFT will be shifted to the centre
+            (default is ``False``).
+        apodization : bool or str
+            Apply an
+            `apodization window <http://mathworld.wolfram.com/ApodizationFunction.html>`_
+            before calculating the FFT in order to suppress streaks.
+            Valid string values are {``'hann'`` or ``'hamming'`` or ``'tukey'``}
+            If ``True`` or ``'hann'``, applies a Hann window.
+            If ``'hamming'`` or ``'tukey'``, applies Hamming or Tukey
+            windows, respectively (default is ``False``).
+        **kwargs : dict
+            other keyword arguments are described in :py:func:`numpy.fft.fftn`
 
-        Return
-        ------
+        Returns
+        -------
         s : ComplexSignal
+            A Signal containing the result of the FFT algorithm
 
         Examples
         --------
@@ -3341,7 +3389,8 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        For further information see the documentation of numpy.fft.fftn
+        For further information see the documentation of
+        :py:func:`numpy.fft.fftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -3394,25 +3443,26 @@ class BaseSignal(FancySlicing,
         """
         Compute the inverse discrete Fourier Transform.
 
-        This function computes real part of the inverse of the discrete
-        Fourier Transform over the signal axes by means of the
-        Fast Fourier Transform (FFT) as implemented in
-        numpy.
+        This function computes the real part of the inverse of the discrete
+        Fourier Transform over the signal axes by means of the Fast Fourier
+        Transform (FFT) as implemented in numpy.
 
         Parameters
         ----------
         shift : bool or None, optional
-            If None the shift option will be set to the original status of the
-            FFT using value in metadata. If no FFT entry is present in
-            metadata, the parameter will be set to False. If True, the origin
-            of FFT will be shifted to the centre, otherwise the origin would
-            be kept at (0, 0)(Default: None).
-        **kwargs
-            other keyword arguments are described in np.fft.ifftn().
+            If ``None``, the shift option will be set to the original status
+            of the FFT using the value in metadata. If no FFT entry is
+            present in metadata, the parameter will be set to ``False``.
+            If ``True``, the origin of the FFT will be shifted to the centre.
+            If ``False``, the origin will be kept at (0, 0)
+            (default is ``None``).
+        **kwargs : dict
+            other keyword arguments are described in :py:func:`numpy.fft.ifftn`
 
         Return
         ------
         s : Signal
+            A Signal containing the result of the inverse FFT algorithm
 
         Examples
         --------
@@ -3422,10 +3472,10 @@ class BaseSignal(FancySlicing,
         >>> imfft.ifft()
         <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>
 
-        Notes
-        -----
-        For further information see the documentation of numpy.fft.ifftn
-
+        Note
+        ----
+        For further information see the documentation of
+        :py:func:`numpy.fft.ifftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -3471,9 +3521,10 @@ class BaseSignal(FancySlicing,
     def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.
 
-        The integration is performed using Simpson's rule if
-        `metadata.Signal.binned` is False and summation over the given axis if
-        True.
+        The integration is performed using
+        `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
+        `metadata.Signal.binned` is ``False`` and simple summation over the
+        given axis if ``True``.
 
         Parameters
         ----------
@@ -3482,7 +3533,9 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the integral of the provided Signal along
+            the specified axis.
 
         See also
         --------
@@ -3515,12 +3568,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
-            The data dtype is always int.
+        s : BaseSignal (or subclasses)
+            A new Signal containing the indices of the minimum along the
+            specified axis. Note: the data `dtype` is always ``int``.
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax
+        max, min, sum, mean, std, var, indexmax, valuemax, valuemin
 
         Examples
         --------
@@ -3547,12 +3601,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
-            The data dtype is always int.
+        s : BaseSignal (or subclasses)
+            A new Signal containing the indices of the maximum along the
+            specified axis. Note: the data `dtype` is always ``int``.
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax
+        max, min, sum, mean, std, var, indexmin, valuemax, valuemin
 
         Examples
         --------
@@ -3569,7 +3624,8 @@ class BaseSignal(FancySlicing,
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def valuemax(self, axis, out=None, rechunk=True):
-        """Returns a signal with the value of coordinates of the maximum along an axis.
+        """Returns a signal with the value of coordinates of the maximum along
+        an axis.
 
         Parameters
         ----------
@@ -3579,11 +3635,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the calibrated coordinate values of the
+            maximum along the specified axis.
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax
+        max, min, sum, mean, std, var, indexmax, indexmin, valuemin
 
         Examples
         --------
@@ -3606,7 +3664,8 @@ class BaseSignal(FancySlicing,
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def valuemin(self, axis, out=None, rechunk=True):
-        """Returns a signal with the value of coordinates of the minimum along an axis.
+        """Returns a signal with the value of coordinates of the minimum along
+        an axis.
 
         Parameters
         ----------
@@ -3616,11 +3675,13 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : Signal
+        s : BaseSignal (or subclasses)
+            A new Signal containing the calibrated coordinate values of the
+            minimum along the specified axis.
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax
+        max, min, sum, mean, std, var, indexmax, indexmin, valuemax
 
         """
         idx = self.indexmin(axis)
@@ -3639,41 +3700,45 @@ class BaseSignal(FancySlicing,
 
         More sophisticated algorithms for determining bins can be used.
         Aside from the `bins` argument allowing a string specified how bins
-        are computed, the parameters are the same as numpy.histogram().
+        are computed, the parameters are the same as :py:func:`numpy.histogram`.
 
         Parameters
         ----------
-        bins : int or list or str, optional
-            If bins is a string, then it must be one of:
-            'knuth' : use Knuth's rule to determine bins
-            'scotts' : use Scott's rule to determine bins
-            'freedman' : use the Freedman-diaconis rule to determine bins
-            'blocks' : use bayesian blocks for dynamic bin widths
+        bins : int, list, or str, optional
+            If `bins` is a string, then it must be one of:
+
+                - ``'knuth'`` : use Knuth's rule to determine bins
+                - ``'scotts'`` : use Scott's rule to determine bins
+                - ``'freedman'`` : use the Freedman-diaconis rule to
+                  determine bins
+                - ``'blocks'`` : use bayesian blocks for dynamic bin widths
         range_bins : tuple or None, optional
-            the minimum and maximum range for the histogram. If not specified,
-            it will be (x.min(), x.max())
+            the minimum and maximum range for the histogram. If
+            `range_bins` is ``None``, (``x.min()``, ``x.max()``) will be used.
         %s
         %s
         **kwargs
             other keyword arguments (weight and density) are described in
-            np.histogram().
+            :py:func:`numpy.histogram`.
 
         Returns
         -------
-        hist_spec : An 1D spectrum instance containing the histogram.
+        hist_spec : ~hyperspy._signals.signal1d.Signal1D
+            A 1D spectrum instance containing the histogram.
 
         See also
         --------
-        print_summary_statistics
-        astroML.density_estimation.histogram, numpy.histogram : these are the
-            functions that hyperspy uses to compute the histogram.
+        print_summary_statistics,
+        :py:func:`astroML.density_estimation.histogram`,
+        :py:func:`numpy.histogram`
 
         Notes
         -----
-        The lazy version of the algorithm does not support 'knuth' and 'blocks'
-        bins arguments.
-        The number of bins estimators are taken from AstroML. Read
-        their documentation for more info.
+            - The lazy version of the algorithm does not support the
+              ``'knuth'`` and ``'blocks'`` `bins` arguments.
+            - The estimators for `bins` are taken from the AstroML project.
+              Read the documentation of
+              :py:func:`astroML.density_estimation.histogram` for more info.
 
         Examples
         --------
@@ -3722,62 +3787,64 @@ class BaseSignal(FancySlicing,
             show_progressbar=None,
             parallel=None, inplace=True, ragged=None,
             **kwargs):
-        """Apply a function to the signal data at all the coordinates.
+        """Apply a function to the signal data at all the navigation
+        coordinates.
 
         The function must operate on numpy arrays. It is applied to the data at
-        each navigation coordinate pixel-py-pixel. Any extra keyword argument
-        is passed to the function. The keywords can take different values at
+        each navigation coordinate pixel-py-pixel. Any extra keyword arguments
+        are passed to the function. The keywords can take different values at
         different coordinates. If the function takes an `axis` or `axes`
-        argument, the function is assumed to be vectorial and the signal axes
+        argument, the function is assumed to be vectorized and the signal axes
         are assigned to `axis` or `axes`.  Otherwise, the signal is iterated
         over the navigation axes and a progress bar is displayed to monitor the
         progress.
 
-        In general, only navigation axes (order, calibration and number) is
+        In general, only navigation axes (order, calibration, and number) are
         guaranteed to be preserved.
 
         Parameters
         ----------
 
         function : function
-            A function that can be applied to the signal.
+            Any function that can be applied to the signal.
         %s
         %s
         inplace : bool
-            if True (default), the data is replaced by the result. Otherwise a
-            new signal with the results is returned.
-        ragged : {None, bool}
-            Indicates if results for each navigation pixel are of identical
-            shape (and/or numpy arrays to begin with). If None, appropriate
-            choice is made while processing. None is not allowed for Lazy
-            signals!
-        keyword arguments : any valid keyword argument
-            All extra keyword arguments are passed to the
+            if ``True`` (default), the data is replaced by the result. Otherwise
+            a new Signal with the results is returned.
+        ragged : None or bool
+            Indicates if the results for each navigation pixel are of identical
+            shape (and/or numpy arrays to begin with). If ``None``,
+            the appropriate choice is made while processing. Note: ``None``
+            is not allowed for Lazy signals!
+        **kwargs : dict
+            All extra keyword arguments are passed to the provided function
 
         Notes
         -----
         If the function results do not have identical shapes, the result is an
         array of navigation shape, where each element corresponds to the result
-        of the function (of arbitrary object type), called "ragged array". As
+        of the function (of arbitrary object type), called a "ragged array". As
         such, most functions are not able to operate on the result and the data
         should be used directly.
 
-        This method is similar to Python's :func:`map` that can also be utilize
-        with a :class:`Signal` instance for similar purposes. However, this
-        method has the advantage of being faster because it iterates the numpy
-        array instead of the :class:`Signal`.
+        This method is similar to Python's :py:func:`map` that can also be
+        utilized with a :py:class:`~hyperspy.signal.BaseSignal` instance for
+        similar purposes. However, this method has the advantage of being faster
+        because it iterates the underlying numpy data array instead of the
+        :py:class:`~hyperspy.signal.BaseSignal`.
 
         Examples
         --------
         Apply a Gaussian filter to all the images in the dataset. The sigma
-        parameter is constant.
+        parameter is constant:
 
         >>> import scipy.ndimage
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a Gaussian filter to all the images in the dataset. The signal
-        parameter is variable.
+        parameter is variable:
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10)).T
@@ -3836,6 +3903,8 @@ class BaseSignal(FancySlicing,
         return res
 
     map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
+    # TODO: Start here on 7/2/19
 
     def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
@@ -4577,30 +4646,30 @@ class BaseSignal(FancySlicing,
             self, marker, plot_on_signal=True, plot_marker=True,
             permanent=False, plot_signal=True, render_figure=True):
         """
-        Add one or several markers to the signal or navigator plot.
-
-        Plot the signal, if not yet plotted
+        Add one or several markers to the signal or navigator plot and plot
+        the signal, if not yet plotted (by default)
 
         Parameters
         ----------
-        marker : marker object or iterable of marker objects
+        marker : :py:mod:`hyperspy.drawing.marker` object or iterable
             The marker or iterable (list, tuple, ...) of markers to add.
-            See `plot.markers`. If you want to add a large number of markers,
-            add them as an iterable, since this will be much faster.
-            For signals with navigation dimensions, the markers can be
-            made to change for different navigation indices. See the examples
-            for info.
-        plot_on_signal : bool, default True
-            If True, add the marker to the signal
+            See the :ref:`plot.markers` section in the User Guide if you want
+            to add a large number of markers as an iterable, since this will
+            be much faster. For signals with navigation dimensions,
+            the markers can be made to change for different navigation
+            indices. See the examples for info.
+        plot_on_signal : bool
+            If True (default), add the marker to the signal
             If False, add the marker to the navigator
-        plot_marker : bool, default True
-            If True, plot the marker.
-        permanent : bool, default False
-            If False, the marker will only appear in the current
+        plot_marker : bool
+            If True (default), plot the marker.
+        permanent : bool
+            If False (default), the marker will only appear in the current
             plot. If True, the marker will be added to the
-            metadata.Markers list, and be plotted with plot(plot_markers=True).
-            If the signal is saved as a HyperSpy HDF5 file, the markers will be
-            stored in the HDF5 signal and be restored when the file is loaded.
+            ``metadata.Markers`` list, and be plotted with
+            ``plot(plot_markers=True)``. If the signal is saved as a HyperSpy
+            HDF5 file, the markers will be stored in the HDF5 signal and be
+            restored when the file is loaded.
 
         Examples
         --------
@@ -4611,13 +4680,13 @@ class BaseSignal(FancySlicing,
         >>> im.add_marker(m)
 
         Adding to a 1D signal, where the point will change
-        when the navigation index is changed.
+        when the navigation index is changed.:
 
         >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
         >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
-        Add permanent marker
+        Add permanent marker:
 
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
         >>> marker = hs.markers.point(50, 60, color='red')
@@ -4625,24 +4694,24 @@ class BaseSignal(FancySlicing,
 
         Add permanent marker to signal with 2 navigation dimensions.
         The signal has navigation dimensions (3, 2), as the dimensions
-        gets flipped compared to the output from np.random.random.
+        gets flipped compared to the output from :py:func:`numpy.random.random`.
         To add a vertical line marker which changes for different navigation
         indices, the list used to make the marker must be a nested list:
-        2 lists with 3 elements each (2 x 3).
+        2 lists with 3 elements each (2 x 3):
 
         >>> s = hs.signals.Signal1D(np.random.random((2, 3, 10)))
         >>> marker = hs.markers.vertical_line([[1, 3, 5], [2, 4, 6]])
         >>> s.add_marker(marker, permanent=True)
 
         Add permanent marker which changes with navigation position, and
-        do not add it to a current plot
+        do not add it to a current plot:
 
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
         >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
-        Removing a permanent marker
+        Removing a permanent marker:
 
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker = hs.markers.point(10, 60, color='red')
@@ -4650,7 +4719,7 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker, permanent=True)
         >>> del s.metadata.Markers.point_marker
 
-        Adding many markers as a list
+        Adding many markers as a list:
 
         >>> from numpy.random import random
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
@@ -5013,7 +5082,7 @@ class BaseSignal(FancySlicing,
             (Default: False)
         Returns
         -------
-        out : :class:`~hyperspy.signals.BaseSignal or subclasses, optional
+        out : :py:class:`~hyperspy.signal.BaseSignal or subclasses, optional
             If 'inplace'=True, returns apodized signal of the same type as self.
         Examples
         --------

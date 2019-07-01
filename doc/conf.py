@@ -237,7 +237,8 @@ man_pages = [
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'hyperspyweb': ('http://hyperspy.org/', None),
                        'matplotlib': ('https://matplotlib.org', None),
-                       'numpy': ('https://docs.scipy.org/doc/numpy', None)}
+                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
+                       'astroML': ('https://www.astroml.org/', None)}
 
 # -- Options for Sphinx API doc ----------------------------------------------
 # Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py
