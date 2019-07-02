@@ -146,7 +146,7 @@ class ModelManager(object):
 
         Parameters
         ----------
-        model : ~hyperspy.model.BaseModel (or subclass)
+        model : :py:class:`~hyperspy.model.BaseModel` (or subclass)
             The model to store in the signal
         name : str or None
             The name for the model to be stored with
@@ -788,7 +788,7 @@ class MVATools(object):
         title : str
             Title of the plot.
 
-        cmap : ~matplotlib.colors.Colormap
+        cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -933,7 +933,7 @@ class MVATools(object):
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
 
-        cmap : ~matplotlib.colors.Colormap
+        cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -1034,7 +1034,7 @@ class MVATools(object):
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
 
-        cmap : ~matplotlib.colors.Colormap
+        cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -1749,7 +1749,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        ns : ~hyperspy.signal.BaseSignal (or subclass)
+        ns : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             The newly copied signal
 
         """
@@ -3754,7 +3754,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        hist_spec : ~hyperspy._signals.signal1d.Signal1D
+        hist_spec : :py:class:`~hyperspy._signals.signal1d.Signal1D`
             A 1D spectrum instance containing the histogram.
 
         See also

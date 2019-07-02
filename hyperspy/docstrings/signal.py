@@ -4,12 +4,12 @@
 """
 
 ONE_AXIS_PARAMETER = \
-    """: int, str, or ~hyperspy.axes.DataAxis
+    """: int, str, or :py:class:`~hyperspy.axes.DataAxis`
             The axis can be passed directly, or specified using the index of
             the axis in the Signal's `axes_manager` or the axis name."""
 
 MANY_AXIS_PARAMETER = \
-    """: int, str, ~hyperspy.axes.DataAxis, tuple (of DataAxis) or None
+    """: int, str, :py:class:`~hyperspy.axes.DataAxis`, tuple (of DataAxis) or None
             Either one on its own, or many axes in a tuple can be passed. In
             both cases the axes can be passed directly, or specified using the
             index in `axes_manager` or the name of the axis. Any duplicates are

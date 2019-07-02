@@ -7,9 +7,9 @@
 BASE_PLOT_DOCSTRING_PARAMETERS = \
     """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
         Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
-        
+
         If ``'auto'``:
-        
+
             - If `navigation_dimension` > 0, a navigator is
               provided to explore the data.
             - If `navigation_dimension` is 1 and the signal is an image
@@ -28,19 +28,19 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
               current `Z` index and a window with sliders for the `X`, `Y`, 
               and `Z` axes will be raised. Notice that changing the `Z`-axis 
               index changes the navigator in this case.
-        
+
         If ``'slider'``:
         
             - If `navigation dimension` > 0 a window with one slider per 
               axis is raised to navigate the data.
-        
+
         If ``'spectrum'``:
         
             - If `navigation_dimension` > 0 the navigator is always a 
               spectrum obtained by integrating the data over all other axes.
-        
+
         If ``None``, no navigator will be provided.
-        
+
         Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass) 
         instance can be provided. The `signal_dimension` must be 1 (for a 
         spectrum navigator) or 2 (for a image navigator) and 
@@ -49,7 +49,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
         `navigator_shape` of the current object (for a dynamic navigator).
         If the signal `dtype` is RGB or RGBA this parameter has no effect and 
         the value is always set to ``'slider'``.
-    axes_manager : None or ~hyperspy.axes.AxesManager
+    axes_manager : None or :py:class:`~hyperspy.axes.AxesManager`
         If None, the signal's `axes_manager` attribute is used.
     plot_markers : bool, default True
         Plot markers added using s.add_marker(marker, permanent=True).
