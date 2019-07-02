@@ -54,7 +54,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
     plot_markers : bool, default True
         Plot markers added using s.add_marker(marker, permanent=True).
         Note, a large number of markers might lead to very slow plotting.
-    norm : str or matplotlib.colors.Normalize  
+    norm : str or :py:class:`matplotlib.colors.Normalize` 
         The function used to normalize the data prior to plotting.
         Allowable strings are: ``'auto'``, ``'linear'``, or ``'log'`` 
         (default value is ``'auto'``).
