@@ -238,6 +238,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'hyperspyweb': ('http://hyperspy.org/', None),
                        'matplotlib': ('https://matplotlib.org', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy', None),
+                       'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+                       'dask': ('https://docs.dask.org/en/latest', None),
                        'astroML': ('https://www.astroml.org/', None)}
 
 # -- Options for Sphinx API doc ----------------------------------------------
