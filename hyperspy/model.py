@@ -67,8 +67,16 @@ def reconstruct_component(comp_dictionary, **init_args):
         _class = getattr(
             importlib.import_module(
                 _COMPONENTS[_id]["module"]), _id)
-    else:
+    elif "_class_dump" in comp_dictionary:
+        # When a component is not registered using the extension mechanism,
+        # it is serialized using dill.
         _class = dill.loads(comp_dictionary['_class_dump'])
+    else:
+        raise ImportError(
+            f'Loading the {comp_dictionary["_id_name"]} component ' +
+            'failed because the component is provided by the ' +
+            f'{comp_dictionary["package"]} Python package, but ' +
+            f'{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
 
 
