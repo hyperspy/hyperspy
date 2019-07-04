@@ -52,12 +52,14 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG, RECHUNK_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
+from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -2044,11 +2046,9 @@ class BaseSignal(FancySlicing,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            if navigator is "slider":
-                self._plot.navigator_data_function = "slider"
-            elif navigator is None:
-                self._plot.navigator_data_function = None
-            elif isinstance(navigator, BaseSignal):
+            # check first if we have a signal to avoid comparion of signal with 
+            # string
+            if isinstance(navigator, BaseSignal):
                 # Dynamic navigator
                 if (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape +
@@ -2066,6 +2066,10 @@ class BaseSignal(FancySlicing,
                     raise ValueError(
                         "The navigator dimensions are not compatible with "
                         "those of self.")
+            elif navigator == "slider":
+                self._plot.navigator_data_function = "slider"
+            elif navigator is None:
+                self._plot.navigator_data_function = None
             elif navigator == "data":
                 if np.issubdtype(self.data.dtype, np.complexfloating):
                     self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
@@ -2159,12 +2163,11 @@ class BaseSignal(FancySlicing,
                 self.plot()
 
     def update_plot(self):
-        if self._plot is not None:
-            if self._plot.is_active:
-                if self._plot.signal_plot is not None:
-                    self._plot.signal_plot.update()
-                if self._plot.navigator_plot is not None:
-                    self._plot.navigator_plot.update()
+        if self._plot is not None and self._plot.is_active:
+            if self._plot.signal_plot is not None:
+                self._plot.signal_plot.update()
+            if self._plot.navigator_plot is not None:
+                self._plot.navigator_plot.update()
 
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when
@@ -2177,7 +2180,7 @@ class BaseSignal(FancySlicing,
             axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
-        """Crops the data in a given axis. The range is given in pixels
+        """Crops the data in a given axis. The range is given in pixels.
 
         Parameters
         ----------
@@ -2192,12 +2195,16 @@ class BaseSignal(FancySlicing,
             None crop from/to the low/high end of the axis.
         convert_units : bool
             Default is False
-            If True, convert the units using the 'convert_to_units' method of
-            the 'axes_manager'. If False, does nothing.
+            If True, convert the units using the `convert_to_units` method of
+            the `axes_manager`. If False, does nothing.
 
         """
         axis = self.axes_manager[axis]
         i1, i2 = axis._get_index(start), axis._get_index(end)
+        # To prevent an axis error, which may confuse users
+        if i1 is not None and i2 is not None and not i1 != i2:
+            raise ValueError("The `start` and `end` values need to be "
+                             "different.")
         if i1 is not None:
             new_offset = axis.axis[i1]
         # We take a copy to guarantee the continuity of the data
@@ -2497,14 +2504,14 @@ class BaseSignal(FancySlicing,
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
 
-        if number_of_parts is 'auto' and step_sizes is 'auto':
+        if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
             number_of_parts = len_axis
-        elif number_of_parts is not 'auto' and step_sizes is not 'auto':
+        elif number_of_parts != 'auto' and step_sizes != 'auto':
             raise ValueError(
                 "You can define step_sizes or number_of_parts "
                 "but not both.")
-        elif step_sizes is 'auto':
+        elif step_sizes == 'auto':
             if number_of_parts > shape[axis]:
                 raise ValueError(
                     "The number of parts is greater than "
@@ -3250,7 +3257,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.var(-1).data.shape
+        >>> s.integrate_simpson(-1).data.shape
         (64,64)
 
         """
@@ -3267,7 +3274,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shift=False, **kwargs):
+    def fft(self, shift=False, apodization=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3277,8 +3284,12 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shift : bool, optional
-            If True, the origin of FFT will be shifted to the centre (Default: False).
-
+            If True, the origin of FFT will be shifted in the centre (Default: False).
+        apodization : bool or 'hann' or 'hamming' or 'tukey'
+            Apply apodization window before calculating FFT in order to suppress streaks.
+            If True or 'hann' applies Hann window. If 'hamming' or 'tukey',
+            applies Hamming or Tukey windows.
+            (Default: False)
         **kwargs
             other keyword arguments are described in np.fft.fftn().
 
@@ -3292,7 +3303,7 @@ class BaseSignal(FancySlicing,
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
         # Use following to plot power spectrum of `im`:
-        >>> im.fft().plot()
+        >>> im.fft(shift=True, apodization=True).plot(power_spectrum=True)
 
         Notes
         -----
@@ -3301,19 +3312,26 @@ class BaseSignal(FancySlicing,
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
+        if apodization==True:
+            apodization = 'hann'
+
+        if apodization:
+            im_fft = self.apply_apodization(window=apodization, inplace=False)
+        else:
+            im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if isinstance(self.data, da.Array):
             if shift:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+                    da.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
                     da.fft.fftn(self.data, axes=axes, **kwargs))
         else:
             if shift:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+                    np.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
                     np.fft.fftn(self.data, axes=axes, **kwargs))
@@ -3442,7 +3460,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.var(-1).data.shape
+        >>> s.integrate1D(-1).data.shape
         (64,64)
 
         """
@@ -3476,7 +3494,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.indexmax(-1).data.shape
+        >>> s.indexmin(-1).data.shape
         (64,64)
 
         """
@@ -3689,12 +3707,8 @@ class BaseSignal(FancySlicing,
 
         function : function
             A function that can be applied to the signal.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {None,bool,int}
-            if True, the mapping will be performed in a threaded (parallel)
-            manner.
+        %s
+        %s
         inplace : bool
             if True (default), the data is replaced by the result. Otherwise a
             new signal with the results is returned.
@@ -3787,6 +3801,8 @@ class BaseSignal(FancySlicing,
             self.events.data_changed.trigger(obj=self)
         return res
 
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
     def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
         and hence support operating on the full dataset efficiently.
@@ -3813,9 +3829,8 @@ class BaseSignal(FancySlicing,
             where the key-value pairs will be passed as kwargs for the
             callable, and the values will be iterated together with the signal
             navigation.
-        parallel : {None, bool}
-            if True, the mapping will be performed in a threaded (parallel)
-            manner. If None the default from `preferences` is used.
+        %s
+        %s
         inplace : bool
             if True (default), the data is replaced by the result. Otherwise a
             new signal with the results is returned.
@@ -3824,9 +3839,6 @@ class BaseSignal(FancySlicing,
             shape (and/or numpy arrays to begin with). If None, appropriate
             choice is made while processing. None is not allowed for Lazy
             signals!
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
         **kwargs
             passed to the function as constant kwargs
 
@@ -3934,6 +3946,8 @@ class BaseSignal(FancySlicing,
         res = map_result_construction(self, inplace, res_data, ragged,
                                       sig_shape)
         return res
+
+    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 
     def copy(self):
         try:
@@ -4531,7 +4545,7 @@ class BaseSignal(FancySlicing,
             self, marker, plot_on_signal=True, plot_marker=True,
             permanent=False, plot_signal=True, render_figure=True):
         """
-        Add a marker to the signal or navigator plot.
+        Add one or several markers to the signal or navigator plot.
 
         Plot the signal, if not yet plotted
 
@@ -4541,6 +4555,9 @@ class BaseSignal(FancySlicing,
             The marker or iterable (list, tuple, ...) of markers to add.
             See `plot.markers`. If you want to add a large number of markers,
             add them as an iterable, since this will be much faster.
+            For signals with navigation dimensions, the markers can be
+            made to change for different navigation indices. See the examples
+            for info.
         plot_on_signal : bool, default True
             If True, add the marker to the signal
             If False, add the marker to the navigator
@@ -4562,19 +4579,28 @@ class BaseSignal(FancySlicing,
         >>> im.add_marker(m)
 
         Adding to a 1D signal, where the point will change
-        when the navigation index is changed
+        when the navigation index is changed.
 
         >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
         >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
-        >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker
 
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
-        >>> marker = hs.markers.point(50, 60)
+        >>> marker = hs.markers.point(50, 60, color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
-        >>> s.plot(plot_markers=True) #doctest: +SKIP
+
+        Add permanent marker to signal with 2 navigation dimensions.
+        The signal has navigation dimensions (3, 2), as the dimensions
+        gets flipped compared to the output from np.random.random.
+        To add a vertical line marker which changes for different navigation
+        indices, the list used to make the marker must be a nested list:
+        2 lists with 3 elements each (2 x 3).
+
+        >>> s = hs.signals.Signal1D(np.random.random((2, 3, 10)))
+        >>> marker = hs.markers.vertical_line([[1, 3, 5], [2, 4, 6]])
+        >>> s.add_marker(marker, permanent=True)
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot
@@ -4617,12 +4643,14 @@ class BaseSignal(FancySlicing,
             name_list = self.metadata.Markers.keys()
         marker_name_suffix = 1
         for m in marker_list:
-            marker_data_shape = m._get_data_shape()
+            marker_data_shape = m._get_data_shape()[::-1]
             if (not (len(marker_data_shape) == 0)) and (
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(
                     "Navigation shape of the marker must be 0 or the "
-                    "same navigation shape as this signal.")
+                    "inverse navigation shape as this signal. If the "
+                    "navigation dimensions for the signal is (2, 3), "
+                    "the marker dimension must be (3, 2).")
             if (m.signal is not None) and (m.signal is not self):
                 raise ValueError("Markers can not be added to several signals")
             m._plot_on_signal = plot_on_signal
@@ -4926,6 +4954,85 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
+    def apply_apodization(self, window='hann', hann_order=None, tukey_alpha=0.5, inplace=False):
+        """
+        Apply apodization window to a signal either in place or return a new signal.
+
+        Parameters
+        ----------
+        window : string, optional
+            Select between 'hann', 'hamming', 'tukey'
+            (Default: 'hann')
+        hann_order : None or int, optional
+            Only used if window='hann'
+            If integer n provided hann window of nth order will be used.
+            If None, first order hann window is used.
+            Higher orders result in more homogeneous intensity distribution.
+        tukey_alpha : float
+            Only used if window='tykey'
+            From scipy documentation:
+            Shape parameter of the Tukey window, representing the fraction of
+            the window inside the cosine tapered region. If zero,
+            the Tukey window is equivalent to a rectangular window.
+            If one, the Tukey window is equivalent to a Hann window.
+            (Default: 0.5)
+        inplace : boolean, optional
+            If True apodization applied in place, i.e. signal data will be substituted by the apodized one.
+            (Default: False)
+        Returns
+        -------
+        out : :class:`~hyperspy.signals.BaseSignal or subclasses, optional
+            If 'inplace'=True, returns apodized signal of the same type as self.
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> holo = hs.datasets.example_signals.object_hologram()
+        >>> holo.apply_apodization('tukey', tukey_alpha=0.1).plot()
+        """
+
+        if window == 'hanning' or window == 'hann':
+            if hann_order:
+                window_function = lambda m: hann_window_nth_order(m, hann_order)
+            else:
+                window_function = lambda m: np.hanning(m)
+        elif window == 'hamming':
+            window_function = lambda m: np.hamming(m)
+        elif window == 'tukey':
+            window_function = lambda m: sp.signal.tukey(m, tukey_alpha)
+        else:
+            raise ValueError('Wrong type parameter value.')
+
+        windows_1d = []
+
+        axes = np.array(self.axes_manager.signal_indices_in_array)
+
+        for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
+            if isinstance(self.data, da.Array):
+                chunks = self.data.chunks[axis_index]
+                window_da = da.from_array(window_function(axis.size),
+                                          chunks=(chunks, ))
+                windows_1d.append(window_da)
+            else:
+                windows_1d.append(window_function(axis.size))
+
+        window_nd = outer_nd(*windows_1d).T
+
+        # Prepare slicing for multiplication window_nd nparray with data with higher dimensionality:
+        if inplace:
+            slice_w = []
+
+            # Iterate over all dimensions of the data
+            for i in range(self.data.ndim):
+                if any(i == axes):  # If current dimension represents one of signal axis, all elements in window
+                    # along current axis to be subscribed
+                    slice_w.append(slice(None))
+                else:  # If current dimension is navigation one, new axis is absent in window and should be created
+                    slice_w.append(None)
+
+            self.data = self.data * window_nd[tuple(slice_w)]
+            self.events.data_changed.trigger(obj=self)
+        else:
+            return self * window_nd
 
 ARITHMETIC_OPERATORS = (
     "__add__",

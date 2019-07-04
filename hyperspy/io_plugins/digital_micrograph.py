@@ -913,7 +913,15 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
             })
-
+        if "SI" in self.imdict.ImageTags.keys():
+            mapping.update({
+                "{}.SI.Acquisition.Date".format(tags_path): (
+                    "General.date",
+                    self._get_date),
+                "{}.SI.Acquisition.Start time".format(tags_path): (
+                    "General.time",
+                    self._get_time),
+            })
         if self.signal_type == "EELS":
             if is_scanning:
                 mapped_attribute = 'dwell_time'

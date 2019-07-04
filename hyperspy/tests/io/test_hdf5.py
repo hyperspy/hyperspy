@@ -31,19 +31,18 @@ import pytest
 from distutils.version import LooseVersion
 
 from hyperspy.io import load
-from hyperspy.io_plugins.hspy import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.utils import markers
-from hyperspy.drawing.marker import dict2marker
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
-from hyperspy.api import preferences
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
+
 my_path = os.path.dirname(__file__)
+
 
 data = np.array([4066., 3996., 3932., 3923., 5602., 5288., 7234., 7809.,
                  4710., 5015., 4366., 4524., 4832., 5474., 5718., 5034.,
@@ -409,7 +408,7 @@ class TestAxesConfiguration:
 
 class Test_permanent_markers_io:
 
-    def test_save_permanent_marker(self, mpl_cleanup):
+    def test_save_permanent_marker(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
@@ -417,7 +416,7 @@ class Test_permanent_markers_io:
             filename = tmp + '/testsavefile.hdf5'
         s.save(filename)
 
-    def test_save_load_empty_metadata_markers(self, mpl_cleanup):
+    def test_save_load_empty_metadata_markers(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         m.name = "test"
@@ -429,7 +428,7 @@ class Test_permanent_markers_io:
         s1 = load(filename)
         assert len(s1.metadata.Markers) == 0
 
-    def test_save_load_permanent_marker(self, mpl_cleanup):
+    def test_save_load_permanent_marker(self):
         x, y = 5, 2
         color = 'red'
         size = 10
@@ -450,7 +449,7 @@ class Test_permanent_markers_io:
         assert m1.marker_properties['color'] == color
         assert m1.name == name
 
-    def test_save_load_permanent_marker_all_types(self, mpl_cleanup):
+    def test_save_load_permanent_marker_all_types(self):
         x1, y1, x2, y2 = 5, 2, 1, 8
         s = Signal2D(np.arange(100).reshape(10, 10))
         m0_list = [
@@ -480,7 +479,7 @@ class Test_permanent_markers_io:
         for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
             assert m0_dict == m1_dict
 
-    def test_save_load_horizontal_line_marker(self, mpl_cleanup):
+    def test_save_load_horizontal_line_marker(self):
         y = 8
         color = 'blue'
         linewidth = 2.5
@@ -496,7 +495,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_horizontal_line_segment_marker(self, mpl_cleanup):
+    def test_save_load_horizontal_line_segment_marker(self):
         x1, x2, y = 1, 5, 8
         color = 'red'
         linewidth = 1.2
@@ -513,7 +512,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_vertical_line_marker(self, mpl_cleanup):
+    def test_save_load_vertical_line_marker(self):
         x = 9
         color = 'black'
         linewidth = 3.5
@@ -529,7 +528,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_vertical_line_segment_marker(self, mpl_cleanup):
+    def test_save_load_vertical_line_segment_marker(self):
         x, y1, y2 = 2, 1, 3
         color = 'white'
         linewidth = 4.2
@@ -546,7 +545,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_line_segment_marker(self, mpl_cleanup):
+    def test_save_load_line_segment_marker(self):
         x1, x2, y1, y2 = 1, 9, 4, 7
         color = 'cyan'
         linewidth = 0.7
@@ -563,7 +562,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_point_marker(self, mpl_cleanup):
+    def test_save_load_point_marker(self):
         x, y = 9, 8
         color = 'purple'
         name = "point test"
@@ -579,7 +578,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_rectangle_marker(self, mpl_cleanup):
+    def test_save_load_rectangle_marker(self):
         x1, x2, y1, y2 = 2, 4, 1, 3
         color = 'yellow'
         linewidth = 5
@@ -596,7 +595,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_text_marker(self, mpl_cleanup):
+    def test_save_load_text_marker(self):
         x, y = 3, 9.5
         color = 'brown'
         name = "text_test"
@@ -613,7 +612,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_multidim_navigation_marker(self, mpl_cleanup):
+    def test_save_load_multidim_navigation_marker(self):
         x, y = (1, 2, 3), (5, 6, 7)
         name = 'test point'
         s = Signal2D(np.arange(300).reshape(3, 10, 10))
@@ -672,3 +671,15 @@ def test_lazy_metadata_arrays(tmpfilepath):
     with pytest.raises(TypeError):
         l.deepcopy()
     del l
+
+
+def test_save_ragged_array(tmpfilepath):
+    a = np.array([0, 1])
+    b = np.array([0, 1, 2])
+    s = BaseSignal(np.array([a, b])).T
+    filename = os.path.join(tmpfilepath, "test_save_ragged_array.hspy")
+    s.save(filename)
+    s1 = load(filename)
+    for i in range(len(s.data)):
+        np.testing.assert_allclose(s.data[i], s1.data[i])
+    assert s.__class__ == s1.__class__

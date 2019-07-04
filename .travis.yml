@@ -5,6 +5,7 @@ env:
   global:
     - DISPLAY=99.0
     - MPLBACKEND="agg"
+    - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
 
 matrix:
   include:
@@ -21,9 +22,11 @@ matrix:
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
+    if: tag IS present
   - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
+    if: tag IS present
   allow_failures:
     # Only test for the latest supported version as chances are that it'll
     # contain the most up-to-date external libraries.
@@ -41,17 +44,18 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba";
-    else DEPS="pip ipython numpy scipy matplotlib=2.2.3 h5py sympy scikit-image numexpr";
+      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba mrcz";
+    else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
     fi
-  - conda create -n testenv --yes python=$PYTHON;
+  - conda update -y conda;
+    conda config --append channels conda-forge;
+    conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
-    conda install -y -c conda-forge $DEPS;
+    conda install -y $DEPS $TEST_DEPS;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[all];
+      pip install .;
     else pip install .;
     fi
-  - python setup.py build_ext --inplace;
 
 before_script: # configure a headless display to test plot generation
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then sh -e /etc/init.d/xvfb start; fi
@@ -62,8 +66,7 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
-    py.test --mpl --cov=hyperspy --pyargs hyperspy;
+  - pytest --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
 # This needs a service to upload the artifacts (and corresponding configuration)

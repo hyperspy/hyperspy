@@ -25,20 +25,19 @@ from hyperspy.ui_registry import add_gui_method
 @add_gui_method(toolkey="ScalableFixedPattern_Component")
 class ScalableFixedPattern(Component):
 
-    """Fixed pattern component with interpolation support.
+    r"""Fixed pattern component with interpolation support.
 
-        f(x) = a*s(b*x-x0) + c
+    .. math::
+    
+        f(x) = a \cdot s \left(b \cdot x - x_0\right) + c
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     a      |  yscale   |
-    +------------+-----------+
-    |     b      |  xscale   |
-    +------------+-----------+
-    |    x0      |  shift    |
-    +------------+-----------+
+    ============ =============
+     Variable     Parameter 
+    ============ =============
+     :math:`a`    yscale 
+     :math:`b`    xscale 
+     :math:`x_0`  shift 
+    ============ =============
 
 
     The fixed pattern is defined by a single spectrum which must be provided to
@@ -49,10 +48,12 @@ class ScalableFixedPattern(Component):
         In [1]: s = load('my_spectrum.hspy')
         In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
 
-    Attributes
+    Parameters
     ----------
 
-    yscale, xscale, shift : Float
+    yscale : Float
+    xscale : Float
+    shift : Float
     interpolate : Bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.

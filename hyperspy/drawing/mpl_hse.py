@@ -90,7 +90,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' ({})'.format(
                 self.axes_manager.signal_axes[0].units)
-        self.ylabel = self.quantity_label if self.quantity_label is not '' \
+        self.ylabel = self.quantity_label if self.quantity_label != '' \
             else 'Intensity'
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel

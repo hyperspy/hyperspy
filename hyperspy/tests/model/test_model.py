@@ -589,6 +589,28 @@ class TestModel2D:
         np.testing.assert_allclose(gt.sigma_y.value, 2.)
 
 
+class TestModelPrintCurrentValues:
+
+    def setup_method(self, method):
+        np.random.seed(1)
+        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = 10
+        m = s.create_model()
+        m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Offset())
+        self.s = s
+        self.m = m
+
+    @pytest.mark.parametrize("only_free", [True, False])
+    @pytest.mark.parametrize("skip_multi", [True, False])
+    def test_print_current_values(self, only_free, skip_multi):
+        self.m.print_current_values(only_free, skip_multi)
+
+    def test_print_current_values_component_list(self):
+        self.m.print_current_values(component_list=list(self.m))
+
+
 @lazifyTestClass
 class TestModelFitBinned:
 
@@ -1166,31 +1188,31 @@ class TestAdjustPosition:
         self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 
-    def test_enable_adjust_position(self, mpl_cleanup):
+    def test_enable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         assert len(self.m._position_widgets) == 1
         # Check that both line and label was added
         assert len(list(self.m._position_widgets.values())[0]) == 2
 
-    def test_disable_adjust_position(self, mpl_cleanup):
+    def test_disable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
 
-    def test_enable_all(self, mpl_cleanup):
+    def test_enable_all(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 2
 
-    def test_enable_all_zero_start(self, mpl_cleanup):
+    def test_enable_all_zero_start(self):
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 1
 
-    def test_manual_close(self, mpl_cleanup):
+    def test_manual_close(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
@@ -1202,3 +1224,23 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
+
+
+def test_as_signal_parallel():
+    import numpy as np
+    import hyperspy.api as hs
+
+    np.random.seed(1)
+    s = hs.signals.Signal1D(np.random.random((50, 10)))
+
+    m = s.create_model()
+    m.append(hs.model.components1D.PowerLaw())
+    m.set_signal_range(2, 5)
+    m.multifit(show_progressbar=False)
+
+    s1 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+    s2 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+
+    np.testing.assert_allclose(s1, s2)

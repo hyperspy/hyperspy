@@ -180,6 +180,8 @@ class Test_quantification:
         s.add_lines(xray_lines)
         s.axes_manager[0].scale = 0.5
         s.axes_manager[1].scale = 0.5
+        s.axes_manager[0].units = 'nm'
+        s.axes_manager[1].units = 'nm'
         self.signal = s
 
     def test_metadata(self):
@@ -224,6 +226,24 @@ class Test_quantification:
         np.testing.assert_allclose(res[0][1].data, np.array(
             [[80.962287987, 80.962287987],
              [80.962287987, 80.962287987]]), atol=1e-3)
+
+    def test_quant_cross_section_units(self):
+        s = self.signal.deepcopy()
+        s2 = self.signal.deepcopy()
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 0.5/1000
+
+        method = 'cross_section'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, factors)
+        res2 = s2.quantification(intensities, method, factors)
+        np.testing.assert_allclose(res[0][0].data, res2[0][0].data)
+        # Check that the quantification doesn't change the units of the signal
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
 
     def test_quant_cross_section(self):
         s = self.signal
@@ -270,6 +290,21 @@ class Test_quantification:
         elements = ['Pt', 'Ni']
         res = utils_eds.zeta_to_edx_cross_section(factors, elements)
         np.testing.assert_allclose(res, [3, 6], atol=1e-3)
+
+    def test_quant_element_order(self):
+        s = self.signal
+        s.set_elements([])
+        s.set_lines([])
+        lines = ['Zn_Ka', 'Al_Ka']
+        kfactors = [2.0009344042484134, 1]
+        intensities = s.get_lines_intensity(xray_lines=lines)
+        res = s.quantification(intensities, method='CL', factors=kfactors,
+                               composition_units='weight')
+        assert res[0].metadata.Sample.xray_lines[0] == 'Zn_Ka'
+        assert res[1].metadata.Sample.xray_lines[0] == 'Al_Ka'
+        np.testing.assert_allclose(res[1].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
 
 
 @lazifyTestClass
@@ -330,7 +365,7 @@ class Test_eds_markers:
                                        weight_percents=[50, 50])
         self.signal = s
 
-    def test_plot_auto_add(self, mpl_cleanup):
+    def test_plot_auto_add(self):
         s = self.signal
         s.plot(xray_lines=True)
         # Should contain 6 lines
@@ -338,7 +373,7 @@ class Test_eds_markers:
             sorted(s._xray_markers.keys()) ==
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
-    def test_manual_add_line(self, mpl_cleanup):
+    def test_manual_add_line(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_La'])
         assert (
@@ -348,7 +383,7 @@ class Test_eds_markers:
         # Check that the line has both a vertical line marker and text marker:
         assert len(s._xray_markers['Zn_La']) == 2
 
-    def test_manual_remove_element(self, mpl_cleanup):
+    def test_manual_remove_element(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])

@@ -16,76 +16,75 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 
-class Lorentzian(Component):
+class Lorentzian(Expression):
 
-    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component
+    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component.
 
     .. math::
 
-        f(x)=\frac{a}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
+        f(x)=\frac{A}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}
+            +\gamma^{2}}\right]
 
-    +---------------------+-----------+
-    |     Parameter       | Attribute |
-    +---------------------+-----------+
-    +---------------------+-----------+
-    |      :math:`a`      |     A     |
-    +---------------------+-----------+
-    |    :math:`\gamma`   |   gamma   |
-    +---------------------+-----------+
-    |      :math:`x_0`    |  centre   |
-    +---------------------+-----------+
+    ============== =============
+    Variable        Parameter 
+    ============== =============
+    :math:`A`       A     
+    :math:`\gamma`  gamma  
+    :math:`x_0`     centre 
+    ============== =============
 
+
+    Parameters
+    -----------
+    A : float
+        Height parameter, where :math:`A/(\gamma\pi)` is the maximum of the 
+        peak.
+    gamma : float
+        Scale parameter corresponding to the half-width-at-half-maximum of the 
+        peak, which corresponds to the interquartile spread.
+    centre : float
+        Location of the peak maximum.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
+
+    For convenience the `fwhm` attribute can be used to get and set
+    the full-with-half-maximum.
     """
 
-    def __init__(self, A=1., gamma=1., centre=0.):
-        Component.__init__(self, ('A', 'gamma', 'centre'))
-        self.A.value = A
-        self.gamma.value = gamma
-        self.centre.value = centre
+    def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
+        # We use `_gamma` internally to workaround the use of the `gamma` 
+        # function in sympy
+        super(Lorentzian, self).__init__(
+            expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
+            name="Lorentzian",
+            A=A,
+            gamma=gamma,
+            centre=centre,
+            position="centre",
+            module=module,
+            autodoc=False,
+            rename_pars={"_gamma": "gamma"},
+            **kwargs)
 
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
+
         self.gamma.bmin = None
         self.gamma.bmax = None
-        self._position = self.centre
 
         self.isbackground = False
         self.convolved = True
 
-        # Gradients
-        self.A.grad = self.grad_A
-        self.gamma.grad = self.grad_gamma
-        self.centre.grad = self.grad_centre
+    @property
+    def fwhm(self):
+        return self.gamma.value * 2
 
-    def function(self, x):
-        """
-        """
-        A = self.A.value
-        gamma = self.gamma.value
-        centre = self.centre.value
+    @fwhm.setter
+    def fwhm(self, value):
+        self.gamma.value = value / 2
 
-        return A / np.pi * (gamma / ((x - centre) ** 2 + gamma ** 2))
-
-    def grad_A(self, x):
-        """
-        """
-        return self.function(x) / self.A.value
-
-    def grad_gamma(self, x):
-        """
-        """
-        return self.A.value / (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2)) - (
-            (2 * self.A.value * self.gamma.value ** 2) / (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2))
-
-    def grad_centre(self, x):
-        """
-        """
-        return (2 * (x - self.centre.value) * self.A.value * self.gamma.value) / \
-            (np.pi *
-             (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2)

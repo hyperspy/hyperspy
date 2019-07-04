@@ -59,7 +59,7 @@ class TestPlotROI():
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_point1D_axis_0(self, mpl_cleanup):
+    def test_plot_point1D_axis_0(self):
         self.im.plot()
         p = roi.Point1DROI(0.5)
         p.add_widget(signal=self.im, axes=[0, ], color="cyan")
@@ -67,7 +67,7 @@ class TestPlotROI():
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_point1D_axis_1(self, mpl_cleanup):
+    def test_plot_point1D_axis_1(self):
         self.im.plot()
         p = roi.Point1DROI(0.05)
         p.add_widget(signal=self.im, axes=[1, ], color="cyan")
@@ -75,7 +75,7 @@ class TestPlotROI():
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_point1D_axis_2(self, mpl_cleanup):
+    def test_plot_point1D_axis_2(self):
         self.im.plot()
         p = roi.Point1DROI(0.005)
         p.add_widget(signal=self.im, axes=[2, ], color="cyan")
@@ -83,7 +83,7 @@ class TestPlotROI():
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_spanroi_axis_0(self, mpl_cleanup):
+    def test_plot_spanroi_axis_0(self):
         self.im.plot()
         p = roi.SpanROI(0.5, 0.7)
         p.add_widget(signal=self.im, axes=[0, ], color="cyan")
@@ -91,7 +91,7 @@ class TestPlotROI():
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_spanroi_axis_1(self, mpl_cleanup):
+    def test_plot_spanroi_axis_1(self):
         self.im.plot()
         p = roi.SpanROI(0.05, 0.07)
         p.add_widget(signal=self.im, axes=[1, ], color="cyan")
@@ -99,7 +99,7 @@ class TestPlotROI():
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_spanroi_axis_2(self, mpl_cleanup):
+    def test_plot_spanroi_axis_2(self):
         self.im.plot()
         p = roi.SpanROI(0.005, 0.007)
         p.add_widget(signal=self.im, axes=[2, ], color="cyan")
@@ -108,7 +108,7 @@ class TestPlotROI():
     @pytest.mark.parametrize("space", ("signal", "navigation"))
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_point2D(self, mpl_cleanup, space):
+    def test_plot_point2D(self, space):
         objs = _transpose_space(im=self.im, space=space)
         p = roi.Point2DROI(0.05, 0.01)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
@@ -117,7 +117,7 @@ class TestPlotROI():
     @pytest.mark.parametrize("space", ("signal", "navigation"))
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_circle_roi(self, mpl_cleanup, space):
+    def test_plot_circle_roi(self, space):
         self.im.axes_manager[2].scale = 0.01
         objs = _transpose_space(im=self.im, space=space)
         p = roi.CircleROI(cx=0.1, cy=0.1, r=0.1)
@@ -127,7 +127,7 @@ class TestPlotROI():
     @pytest.mark.parametrize("space", ("signal", "navigation"))
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_rectangular_roi(self, mpl_cleanup, space):
+    def test_plot_rectangular_roi(self, space):
         objs = _transpose_space(im=self.im, space=space)
         p = roi.RectangularROI(left=0.01, top=0.01, right=0.1, bottom=0.03)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
@@ -136,7 +136,7 @@ class TestPlotROI():
     @pytest.mark.parametrize("space", ("signal", "navigation"))
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-    def test_plot_line2d_roi(self, mpl_cleanup, space):
+    def test_plot_line2d_roi(self, space):
         objs = _transpose_space(im=self.im, space=space)
         p = roi.Line2DROI(x1=0.01, y1=0.01, x2=0.1, y2=0.03)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")

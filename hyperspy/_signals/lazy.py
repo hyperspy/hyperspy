@@ -761,8 +761,8 @@ class LazySignal(BaseSignal):
                 ndim = self.axes_manager.navigation_dimension
                 sdim = self.axes_manager.signal_dimension
                 bH, aG = da.compute(
-                    data.sum(axis=range(ndim)),
-                    data.sum(axis=range(ndim, ndim + sdim)))
+                    data.sum(axis=tuple(range(ndim))),
+                    data.sum(axis=tuple(range(ndim, ndim + sdim))))
                 bH = da.where(sm, bH, 1)
                 aG = da.where(nm, aG, 1)
 

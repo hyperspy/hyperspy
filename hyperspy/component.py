@@ -32,6 +32,8 @@ from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
+from IPython.display import display_pretty, display
+from hyperspy.misc.model_tools import current_component_values
 
 import logging
 
@@ -819,6 +821,14 @@ class Component(t.HasTraits):
             parameter._axes_manager = value
         self.__axes_manager = value
 
+    @property
+    def _is_navigation_multidimensional(self):
+        if (self._axes_manager is None or not
+                self._axes_manager.navigation_dimension):
+            return False
+        else:
+            return True
+
     def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
@@ -1183,3 +1193,18 @@ class Component(t.HasTraits):
         else:
             raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+    def print_current_values(self, only_free=False, fancy=True):
+            """Prints the current values of the component's parameters.
+            Parameters
+            ----------
+            only_free : bool
+                If True, only free parameters will be printed.
+            fancy : bool
+                If True, attempts to print using html rather than text in the notebook.
+            """
+            if fancy:
+                display(current_component_values(self, only_free=only_free))
+            else:
+                display_pretty(current_component_values(
+                    self, only_free=only_free))

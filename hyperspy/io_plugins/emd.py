@@ -298,7 +298,7 @@ class EMD(object):
             signal.metadata.General.title = name
         else:
             # Take title of Signal!
-            if signal.metadata.General.title is not '':
+            if signal.metadata.General.title != '':
                 name = signal.metadata.General.title
             else:  # Take default!
                 name = '__unnamed__'
@@ -500,7 +500,7 @@ def fei_check(filename):
     with h5py.File(filename, 'r') as f:
         if 'Version' in list(f.keys()):
             version = f.get('Version')
-            v_dict = json.loads(version.value[0].decode('utf-8'))
+            v_dict = json.loads(version[0].decode('utf-8'))
             if v_dict['format'] in ['Velox', 'DevelopersKit']:
                 return True
 
@@ -818,7 +818,7 @@ class FeiEMDReader(object):
             self.map_label_dict = {}
             for key in key_list:
                 v = json.loads(
-                    image_display_group[key].value[0].decode('utf-8'))
+                    image_display_group[key][0].decode('utf-8'))
                 data_key = v['dataPath'].split('/')[-1]  # key in data group
                 self.map_label_dict[data_key] = v['display']['label']
         except KeyError:
@@ -834,10 +834,10 @@ class FeiEMDReader(object):
                     sub_dict = {}
                     for subgroup_key in _get_keys_from_group(subgroup):
                         v = json.loads(
-                            subgroup[subgroup_key].value[0].decode('utf-8'))
+                            subgroup[subgroup_key][0].decode('utf-8'))
                         sub_dict[subgroup_key] = v
                 else:
-                    sub_dict = json.loads(subgroup.value[0].decode('utf-8'))
+                    sub_dict = json.loads(subgroup[0].decode('utf-8'))
                 d[group_key] = sub_dict
         except IndexError:
             _logger.warning("Some metadata can't be read.")
@@ -855,7 +855,7 @@ class FeiEMDReader(object):
                     sig[next(iter(sig))]
                     ["SpectrumImageSettings"][0].decode("utf8")
                 )["endFramePosition"])
-        except Exception as e:
+        except Exception:
             _logger.exception(
                 "Failed to read the number of frames from Data/SpectrumImage")
             self.number_of_frames = None
@@ -1132,7 +1132,7 @@ class FeiSpectrumStream(object):
         # Parse acquisition settings to get bin_count and dtype
         acquisition_settings_group = stream_group['AcquisitionSettings']
         acquisition_settings = json.loads(
-            acquisition_settings_group.value[0].decode('utf-8'))
+            acquisition_settings_group[0].decode('utf-8'))
         self.bin_count = int(acquisition_settings['bincount'])
         if self.bin_count % self.reader.rebin_energy != 0:
             raise ValueError('The `rebin_energy` needs to be a divisor of the',
