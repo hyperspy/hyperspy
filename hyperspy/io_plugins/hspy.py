@@ -203,10 +203,10 @@ def hdfgroup2signaldict(group, lazy=False):
             group[original_metadata], lazy=lazy),
         'attributes': {}
     }
-    if "package" in group:
+    if "package" in group.attrs:
         # HyperSpy version is >= 1.5
-        exp["package"] = group["package"]
-        exp["package_version"] = group["package_version"]
+        exp["package"] = group.attrs["package"]
+        exp["package_version"] = group.attrs["package_version"]
     else:
         # Prior to v1.4 we didn't store the package information. Since there
         # were already external package we cannot assume any package provider so
