@@ -670,6 +670,10 @@ class DataAxis(BaseDataAxis):
         """
         return super().update_from(axis, attributes)
 
+    def crop(self, i1=None, i2=None):
+        self.axis = self.axis[i1:i2]
+        self.size = len(self.axis)
+
 
 class FunctionalDataAxis(BaseDataAxis):
 
@@ -747,6 +751,10 @@ class FunctionalDataAxis(BaseDataAxis):
         d = super()._get_axis_dictionary()
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
+
+    def crop(self, i1=None, i2=None):
+        # TODO
+        pass
 
 
 class LinearDataAxis(FunctionalDataAxis, UnitConversion):
@@ -874,6 +882,10 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
 
         """
         return super().update_from(axis, attributes)
+
+    def crop(self, i1=None, i2=None):
+        # TODO
+        self.offset = self.axis[i1]
 
     @property
     def scale_as_quantity(self):

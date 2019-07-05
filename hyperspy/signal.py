@@ -2205,15 +2205,13 @@ class BaseSignal(FancySlicing,
         if i1 is not None and i2 is not None and not i1 != i2:
             raise ValueError("The `start` and `end` values need to be "
                              "different.")
-        if i1 is not None:
-            new_offset = axis.axis[i1]
+
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
             (slice(None),) * axis.index_in_array + (slice(i1, i2),
                                                     Ellipsis)]
 
-        if i1 is not None:
-            axis.offset = new_offset
+        self.axis.crop(i1, i2)
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
