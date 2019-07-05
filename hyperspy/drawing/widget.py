@@ -281,15 +281,17 @@ class WidgetBase(object):
 
     def _i2v(self, axis, i):
         """Wrapped version of DataAxis.index2value, which bounds the value
-        inbetween axis.low_value and axis.high_value+axis.scale, and does not
-        raise a ValueError.
+        inbetween axis.low_value and axis.high_value + axis.scale when the axis
+        is linear and does not raise a ValueError.
         """
         try:
             return axis.index2value(i)
         except ValueError:
             if i > axis.high_index:
-                # TODO: broken with non linear axis
-                return axis.high_value + axis.scale
+                if axis.is_linear:
+                    return axis.high_value + axis.scale
+                else:
+                    return axis.high_value
             elif i < axis.low_index:
                 return axis.low_value
             else:
@@ -567,7 +569,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
         if self.axes:
-            self._size = np.array([ax.scale for ax in self.axes])
+            self._size = np.array([ax.index2value(1) for ax in self.axes])
 
     def _get_size(self):
         """Getter for 'size' property. Returns the size as a tuple (to prevent

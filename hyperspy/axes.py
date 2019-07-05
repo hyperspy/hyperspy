@@ -25,7 +25,6 @@ import dask.array as da
 import traits.api as t
 from traits.trait_errors import TraitError
 import pint
-import logging
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal

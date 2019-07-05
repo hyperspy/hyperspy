@@ -161,7 +161,7 @@ class ImagePlot(BlittedFigure):
             self._ylabel += ' (%s)' % yaxis.units
 
         if (xaxis.is_linear and yaxis.is_linear and
-                (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale)):
+                xaxis.units == yaxis.units and xaxis.scale == yaxis.scale):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
