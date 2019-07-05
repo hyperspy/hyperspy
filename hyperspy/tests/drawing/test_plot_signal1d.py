@@ -21,7 +21,6 @@ import pytest
 import matplotlib.pyplot as plt
 import os
 from shutil import copyfile
-import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
@@ -174,7 +173,7 @@ class TestPlotNonLinearAxis:
     def setup_method(self):
         dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
                  'offset': 1, 'navigate': True}
-        dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'A',
+        dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'O',
                  'navigate': False}
         np.random.seed(1)
         s = hs.signals.Signal1D(np.random.random((10, 100)),
