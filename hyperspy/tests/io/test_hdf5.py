@@ -31,19 +31,18 @@ import pytest
 from distutils.version import LooseVersion
 
 from hyperspy.io import load
-from hyperspy.io_plugins.hspy import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.utils import markers
-from hyperspy.drawing.marker import dict2marker
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
-from hyperspy.api import preferences
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
+
 my_path = os.path.dirname(__file__)
+
 
 data = np.array([4066., 3996., 3932., 3923., 5602., 5288., 7234., 7809.,
                  4710., 5015., 4366., 4524., 4832., 5474., 5718., 5034.,
@@ -672,3 +671,15 @@ def test_lazy_metadata_arrays(tmpfilepath):
     with pytest.raises(TypeError):
         l.deepcopy()
     del l
+
+
+def test_save_ragged_array(tmpfilepath):
+    a = np.array([0, 1])
+    b = np.array([0, 1, 2])
+    s = BaseSignal(np.array([a, b])).T
+    filename = os.path.join(tmpfilepath, "test_save_ragged_array.hspy")
+    s.save(filename)
+    s1 = load(filename)
+    for i in range(len(s.data)):
+        np.testing.assert_allclose(s.data[i], s1.data[i])
+    assert s.__class__ == s1.__class__
