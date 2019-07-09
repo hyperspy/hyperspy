@@ -19,14 +19,17 @@ of signals.
 
 HyperSpy extensions
 -------------------
+..versionadded:: 1.5
+  Register signal, components and widgets extensions
 
-In this document we refer to external programs that build on HyperSpy as
-"HyperSpy extensions". Those programs can e.g. provide extra data analysis tools
-file formats, add graphical user interfaces, provide
-extra blind source separation algorithms etc.
+External packages can extend HyperSpy by registering signals, components and
+widgets. Objects registered by external packages can be used, saved and loaded
+like standard HyperSpy objects. For details on how to register extension refer
+to the HyperSpy Developer Guide
 
 There are multiple HyperSpy extensions. For a list of extensions hosted
-publicly in GitHub search for the GitHub topic `hyperspy-extension <https://github.com/topics/hyperspy-extension>`_
+publicly in GitHub search for the GitHub topic
+`hyperspy-extension <https://github.com/topics/hyperspy-extension>`_
 
 .. note::
     From version 2.0, HyperSpy will be split into a core package (HyperSpy)
