@@ -4,7 +4,27 @@ What's new
 Current Version
 ===============
 
-.. _changes_1.4.1:
+.. _changes_1.5:
+
+v1.5
+++++
+
+* Drop support for python 3.5
+
+
+Changelog
+*********
+
+Previous Versions
+=================
+
+
+We only cover here the main highlights, for a detailed list of all the changes
+see `the commits in the GITHUB milestones
+<https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
+
+
+.. _changes_1.4.2:
 
 v1.4.2
 ++++++
@@ -17,6 +37,7 @@ and `enhancements
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.1+label%3A"type%3A+enhancement">`_.
 
 
+.. _changes_1.4.1:
 
 v1.4.1
 ++++++
@@ -84,17 +105,6 @@ Enhancements
 
 
 
-
-Changelog
-*********
-
-Previous Versions
-=================
-
-
-We only cover here the main highlights, for a detailed list of all the changes
-see `the commits in the GITHUB milestones
-<https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
 
 .. _changes_1.3.2:
 v1.3.2
