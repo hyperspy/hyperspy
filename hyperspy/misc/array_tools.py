@@ -372,6 +372,34 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
     return sarray
 
 
+def calculate_bins_histogram(data):
+    """
+    Calculate number of bins according to the Freedman Diaconis or the Sturges
+    rules, taking the maximum of these two.
+    See the numpy.histogram documentation for more details.
+
+    Parameters
+    ----------
+    data : numpy array
+        Input data.
+
+    Returns
+    -------
+    bins : int
+        Number of bins.
+    """
+    # Sturges rule
+    bins_sturges = int(np.log2(data.size))
+
+    # Freedman Diaconis rule
+    q75, q25 = np.percentile(data, [75 ,25])
+    iqr = q75 - q25
+    width = 2 * iqr / np.power(data.size, 1./3)
+    bins_fd = int((data.max() - data.min()) / width)
+
+    return max(bins_sturges, bins_fd)
+
+
 @jit_ifnumba()
 def numba_histogram(data, bins, ranges):
     """
@@ -383,6 +411,11 @@ def numba_histogram(data, bins, ranges):
         Number of bins
     ranges : (float, float)
         The lower and upper range of the bins.
+
+    Returns
+    -------
+    hist : array
+        The values of the histogram.
     """
     # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
     hist = np.zeros((bins,), dtype=np.intp)

@@ -35,7 +35,7 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.misc.array_tools import numba_histogram
+from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
 
 _logger = logging.getLogger(__name__)
 
@@ -593,9 +593,6 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.xaxis.set_animated(animated)
         self.hspy_fig.ax = self.ax
 
-    def _bins_changed(self, old, new):
-        self._reset()
-
     def _gamma_changed(self, old, new):
         if self._vmin == self._vmax:
             return
@@ -641,8 +638,8 @@ class ImageContrastEditor(t.HasTraits):
     def _get_data(self):
         return self.image.data_function()
 
-    def _get_histogram(self):
-        return numba_histogram(self._get_data(), bins=self.bins,
+    def _get_histogram(self, data):
+        return numba_histogram(data, bins=self.bins,
                                ranges=(self._vmin, self._vmax))
 
     def _set_xaxis(self):
@@ -655,8 +652,10 @@ class ImageContrastEditor(t.HasTraits):
     def plot_histogram(self):
         if self._vmin == self._vmax:
             return
+        data = self._get_data()
+        self.bins = calculate_bins_histogram(data)
+        self.hist_data = self._get_histogram(data)
         self._set_xaxis()
-        self.hist_data = self._get_histogram()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid")
         self.ax.set_xlim(self._vmin, self._vmax)
@@ -674,7 +673,7 @@ class ImageContrastEditor(t.HasTraits):
         color = self.hist.get_facecolor()
         update_span = self.auto and self.span_selector._get_span_width() != 0
         self.hist.remove()
-        self.hist_data = self._get_histogram()
+        self.hist_data = self._get_histogram(self._get_data())
         if update_span:
             span_x_coord = self.ax.transData.transform(
                     (self.span_selector.range[0], 0))
