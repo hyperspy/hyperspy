@@ -543,6 +543,12 @@ class ImageContrastEditor(t.HasTraits):
     bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.1, 3.0, 1.0)
     saturated_pixels = t.Range(0.0, 100.0, 0.2)
+    norm = t.Enum(
+        'Auto',
+        'Linear',
+        'Log',
+        'Power',
+        default='Auto')
     auto = t.Bool(True,
                   desc="Adjust automatically the display when changing "
                   "navigator indices. Unselect to keep the same display.")
@@ -561,6 +567,7 @@ class ImageContrastEditor(t.HasTraits):
                 self.image.saturated_pixels)
         self.vmin_original = copy.deepcopy(self.image.vmin)
         self.vmax_original = copy.deepcopy(self.image.vmax)
+        self.norm_original = copy.deepcopy(self.image.norm)
         # self._vmin and self._vmax are used to compute the histogram
         # by default, the image display used these, except when there is a span
         # selector on the histogram
@@ -612,6 +619,10 @@ class ImageContrastEditor(t.HasTraits):
         if new:
             self._reset()
 
+    def _norm_changed(self, old, new):
+        self.image.norm = new.lower()
+        self._reset()
+
     def span_selector_switch(self, on):
         if on is True:
             self.span_selector = \
@@ -662,7 +673,7 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_ylim(0, self.hist_data.max())
         self.ax.set_xticks([])
         self.ax.set_yticks([])
-        self.gamma_line = self.ax.plot(*self._get_gamma_curve(),
+        self.gamma_line = self.ax.plot(*self._get_curve(),
                                        color='#ff7f0e')[0]
         self.gamma_line.set_animated(self.ax.figure.canvas.supports_blit)
         plt.tight_layout(pad=0)
@@ -690,16 +701,23 @@ class ImageContrastEditor(t.HasTraits):
         self.update_gamma_line()
         self.ax.figure.canvas.draw_idle()
 
-    def _get_gamma_curve(self):
+    def _get_curve(self):
         cmin, cmax = self._get_current_range()
         xaxis = np.linspace(cmin, cmax, self.bins)
         max_hist = self.hist_data.max()
-        return xaxis, ((xaxis-cmin)/(cmax-cmin))**self.gamma*max_hist
+        if self.image.norm == "power":
+            values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
+        elif self.image.norm == "log":
+            v = np.log(xaxis)
+            values = (np.log(xaxis)-v[0])/(v[-1]-v[0]) * max_hist
+        else:
+            values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
+        return xaxis, values
 
     def update_gamma_line(self):
         if self._vmin == self._vmax:
             return
-        self.gamma_line.set_data(*self._get_gamma_curve())
+        self.gamma_line.set_data(*self._get_curve())
         if self.ax.figure.canvas.supports_blit:
             self.hspy_fig._update_animated()
         else:
@@ -728,6 +746,7 @@ class ImageContrastEditor(t.HasTraits):
         self._reset()
 
     def _reset_original_settings(self):
+        self.norm = self.norm_original
         self.gamma = self.gamma_original
         self.saturated_pixels = self.saturated_pixels_original
         self._vmin = self.vmin_original
@@ -747,6 +766,7 @@ class ImageContrastEditor(t.HasTraits):
         self.hspy_fig.close()
 
     def _reset(self, auto=None, update=True):
+        self.image.norm = self.norm.lower()
         if auto is None:
             auto = self.auto
 
