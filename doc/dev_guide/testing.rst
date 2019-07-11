@@ -1,3 +1,6 @@
+Running and writing tests
+=========================
+
 
 HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
 tests reside in the ``hyperspy.tests`` module. 

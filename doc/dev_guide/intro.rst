@@ -30,7 +30,7 @@ works -- so read it well:
 .html>`_.
 
 For developing the code the home of HyperSpy is on github and you'll see that
-a lot of this guide boils down to using that platform well. so visit the
+a lot of this guide boils down to using that platform well. So visit the
 following link and poke around the code, issues, and pull requests: `HyperSpy
 on Github <https://github.com/hyperspy/hyperspy>`_.
 
@@ -47,10 +47,11 @@ pattern is:
     5. Push the local changes to your own github fork.
     6. Create a pull request (PR) to the official HyperSpy repository.
 
-Note: You cannot mess up the main HyperSpy project unless you have been
-promoted to write access and the dev-team. So when you're starting out be
-confident to play, get it wrong, and if it all goes wrong you can always get
-a fresh install of HyperSpy!!
+.. note:: 
+  You cannot mess up the main HyperSpy project unless you have been
+  promoted to write access and the dev-team. So when you're starting out be
+  confident to play, get it wrong, and if it all goes wrong you can always get
+  a fresh install of HyperSpy!!
 
 PS: If you choose to develop in Windows/Mac you may find `Github Desktop
 <https://desktop.github.com>`_ useful.
@@ -159,127 +160,8 @@ we know exactly what caused it. Ideally, the tests should be written at the
 same time than the code itself, as they are very convenient to run to check
 outputs when coding. Writing tests can seem laborious but you'll probably
 soon find that they're very important as they force you to sanity check all
-you do.
+you do. For details on running and writing HyperSpy test see :ref:`dev_tests`
 
-HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
-tests reside in the ``hyperspy.tests`` module. 
-
-First ensure pytest and its plugins are installed by:
-
-.. code:: bash
-   
-   # If using a standard hyperspy install
-   pip install hyperspy[test]
-   # Or, from a hyperspy local development directory
-   pip install -e .[test]
-   # Or just installing the dependencies using conda
-   conda install -c conda-forge pytest pytest-mpl
-
-To run them:
-
-.. code:: bash
-
-   pytest --mpl --pyargs hyperspy
-
-Or, from HyperSpy's project folder simply:
-
-.. code:: bash
-
-   pytest
-
-
-Useful hints on testing:
-
-* When comparing integers, it's fine to use ``==``. When comparing floats, be
-  sure to use ``numpy.testing.assert_almost_equal()`` or
-  ``numpy.testing.assert_allclose()``.
-* ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
-* The ``hyperspy.misc.test_utils.py`` contains a few useful functions for
-  testing.
-* ``@pytest.mark.parametrize()`` is a very convenient decorator to test several
-  parameters of the same function without having to write to much repetitive
-  code, which is often error-prone. See `pytest documentation for more details
-  <http://doc.pytest.org/en/latest/parametrize.html>`_.
-* It is good to check that the tests does not use too much of memory after
-  creating new tests. If you need to explicitly delete your objects and free
-  memory, you can do the following to release the memory associated to the
-  ``s`` object, for example:
-
-.. code:: python
-
-    del s
-    gc.collect()
-
-
-* Once, you have pushed your PR to the official HyperSpy repository, it can be
-  useful to check the coverage of your tests using the coveralls.io check of
-  your PR. There should be a link to it at the bottom of your PR on the github
-  PR page. This service can help you to find how well your code is being tested
-  and exactly which part is not currently tested.
-* `pytest-sugar <https://pypi.python.org/pypi/pytest-sugar>`_ can be installed
-  to have a nicer look and feel of pytest in the console (encoding issue have
-  been reported in the Windows console).
-
-
-.. _plot-test-label:
-
-Plot testing
-^^^^^^^^^^^^
-Plotting is tested using the ``@pytest.mark.mpl_image_compare`` decorator of
-the `pytest mpl plugin <https://pypi.python.org/pypi/pytest-mpl>`_.  This
-decorator uses reference images to compare with the generated output during the
-tests. The references images are located in the folder defined by the argument
-``baseline_dir`` of the ``@pytest.mark.mpl_image_compare`` decorator.
-
-To run plotting tests, you simply need to add the option ``--mpl``:
-::
-
-    pytest --mpl
-
-If you don't use the ``--mpl``, the code of the tests will be executed but the
-images will not be compared to the references images.
-
-If you need to add or change some plots, follow the workflow below:
-
-    1. Write the tests using appropriate decorator such as
-       ``@pytest.mark.mpl_image_compare``.
-    2. If you need to generate new reference image in the folder
-       ``plot_test_dir``, for example, run: ``pytest
-       --mpl-generate-path=plot_test_dir``
-    3. Run again the tests and this time they should pass.
-    4. Use ``git add`` to put the new file in the git repository.
-
-When the plotting tests are failling, it is possible to download the figure 
-comparison images generated by pytest-mpl in the `artifacts tabs 
-<https://ci.appveyor.com/project/hyperspy/hyperspy/build/1.0.2500/job/2c2qccaktd90po2q/artifacts>`_ 
-of the corresponding build.
-
-
-The plotting tests need matplotlib > 3.0.0, since small changes in the way 
- matplotlib generates the figure can make the tests fail.
-
-In travis and appveyor, the matplotlib backend is set to ``agg`` by setting
-the ``MPLBACKEND`` environment variable to ``agg``. At the first import of
-``matplotlib.pyplot``, matplotlib will look at the ``MPLBACKEND`` environment
-variable and set accordingly the backend.
-
-See `pytest-mpl <https://pypi.python.org/pypi/pytest-mpl>`_ for more details.
-
-Exporting pytest results as HTML
-^^^^^^^^^^^^
-With ``pytest-html`` it is possible to export the results of running pytest 
-for easier viewing. I can be installed by conda:
-
-.. code:: bash
-
-   conda install pytest-html
-   
-and run by:
-
-.. code:: bash
-
-   pytest --mpl --html=report.html
-   
 Write documentation
 ^^^^^^^^^^^^^^^^^^^
 
@@ -323,82 +205,3 @@ When you've got a branch that's ready to be incorporated in to the main code of
 HyperSpy -- make a pull request on GitHub and wait for it to be reviewed and
 discussed.
 
-6. Contributing cython code
----------------------------
-
-Python is not the fastest language, and can be particularly slow in loops.
-Performance can sometimes be significantly improved by implementing optional
-cython code alongside the pure Python versions. While developing cython code,
-make use of the official cython recommendations (http://docs.cython.org/).  Add
-your cython extensions to the setup.py, in the existing list of
-``raw_extensions``.
-
-Unlike the cython recommendation, the cythonized .c or .cpp files are not
-welcome in the git source repository (except original c or c++ files), since
-they are typically quite large. Cythonization will take place during Travis
-CI and Appveyor building. The cythonized code will be generated and included
-in source or binary distributions for end users. To help troubleshoot
-potential deprecation with future cython releases, add a comment with in the
-header of your .pyx files with the cython version. If cython is present in
-the build environment and any cythonized c/c++ file is missing, then setup
-.py tries to cythonize all extensions automatically.
-
-To make the development easier the new command ``recythonize`` has been added
-to setup.py.  It can be used in conjunction with other default commands.  For
-example ``python setup.py recythonize build_ext --inplace`` will recythonize
-all changed (and described in setup.py!) cython code and compile.
-
-When developing on git branches, the first time you call setup.py in
-conjunction with or without any other command - it will generate a
-post-checkout hook, which will include a potential cythonization and
-compilation product list (.c/.cpp/.so/.pyd). With your next ``git checkout``
-the hook will remove them and automatically run ``python setup.py build_ext
---inplace`` to cythonize and compile the code if available.  If an older
-version of HyperSpy (<= 0.8.4.x) is checked out this should have no side
-effects.
-
-If another custom post-checkout hook is detected on PR, then setup.py tries to
-append or update the relevant part. To prevent unwanted hook generation or
-update you can create the empty file ``.hook_ignore`` in source directory (same
-level as setup.py).
-
-7. Adding new methods
----------------------
-
-With the addition of the ``LazySignal`` class and its derivatives, adding
-methods that operate on the data becomes slightly more complicated. However, we
-have attempted to streamline it as much as possible. ``LazySignals`` use
-``dask.array.Array`` for the ``data`` field instead of the usual
-``numpy.ndarray``. The full documentation is available
-`here <https://dask.readthedocs.io/en/latest/array.html>`_. While interfaces of
-the two arrays are indeed almost identical, the most important differences are
-(``da`` being ``dask.array.Array`` in the examples):
-
- - **Dask arrays are immutable**: ``da[3] = 2`` does not work. ``da += 2``
-   does, but it's actually a new object -- might as well use ``da = da + 2``
-   for a better distinction.
- - **Unknown shapes are problematic**: ``res = da[da>0.3]`` works, but the
-   shape of the result depends on the values and cannot be inferred without
-   execution. Hence few operations can be run on ``res`` lazily, and it should
-   be avoided if possible.
-
-The easiest way to add new methods that work both with arbitrary navigation
-dimensions and ``LazySignals`` is by using the ``map`` (or, for more control,
-``_map_all`` or ``_map_iterate``) method to map your function ``func`` across
-all "navigation pixels" (e.g. spectra in a spectrum-image). ``map`` methods
-will run the function on all pixels efficiently and put the results back in the
-correct order. ``func`` is not constrained by ``dask`` and can use whatever
-code (assignment, etc.) you wish.
-
-If the new method cannot be coerced into a shape suitable ``map``, separate
-cases for lazy signals will have to be written. If a function operates on
-arbitrary-sized arrays and the shape of the output can be known before calling,
-``da.map_blocks`` and ``da.map_overlap`` are efficient and flexible.
-
-Finally, in addition to ``_iterate_signal`` that is available to all HyperSpy
-signals, lazy counterparts also have ``_block_iterator`` method that supports
-signal and navigation masking and yields (returns on subsequent calls) the
-underlying dask blocks as numpy arrays. It is important to note that stacking
-all (flat) blocks and reshaping the result into the initial data shape will not
-result in identical arrays. For illustration it is best to see the `dask
-documentation <https://dask.readthedocs.io/en/latest/array.html>`_.

@@ -10,3 +10,6 @@ HyperSpy Developer Guide
     :maxdepth: 2
 
     intro.rst
+    testing.rst
+    lazy_computations.rst
+    cython_code.rst
