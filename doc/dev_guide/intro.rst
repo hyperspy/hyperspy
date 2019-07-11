@@ -1,8 +1,4 @@
-﻿﻿
-
-.. _dev_guide-label:
-
-Developer Guide
+﻿﻿Getting started
 ===============
 
 This 6-step guide is intended to give people who want to start contributing
