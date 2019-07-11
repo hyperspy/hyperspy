@@ -13,6 +13,8 @@
 
 import sys
 import os
+from datetime import datetime
+
 sys.path.append('../')
 from hyperspy import Release
 sys.path.append(os.path.abspath('sphinxext'))
@@ -56,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'HyperSpy'
-copyright = '2011-2018, The HyperSpy development team'
+copyright = f'2011-{datetime.today().year}, The HyperSpy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
