@@ -20,12 +20,11 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, LogNorm, SymLogNorm
+from matplotlib.colors import Normalize, LogNorm, SymLogNorm, PowerNorm
 from traits.api import Undefined
 import logging
 import inspect
 import copy
-from skimage.exposure import adjust_gamma, rescale_intensity
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -302,6 +301,8 @@ class ImagePlot(BlittedFigure):
         self.figure.canvas.draw()
 
     def _add_colorbar(self):
+        # Bug extend='min' or extend='both' and power law norm
+        # Use it when it is fixed in matplotlib
         self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
         self.set_quantity_label()
         self._colorbar.set_label(
@@ -382,15 +383,11 @@ class ImagePlot(BlittedFigure):
         else:
             vmin, vmax = vmin, vmax
 
-        if self.gamma != 1.0:
-            data = adjust_gamma(rescale_intensity(data,
-                        in_range=(vmin, vmax), out_range=(0, 1)),
-                        gamma=self.gamma)
-            data = rescale_intensity(data,
-                        in_range=(0, 1), out_range=(vmin, vmax))
-
         norm = copy.copy(self.norm)
-        if norm == 'log':
+        if self.gamma != 1.0 or norm == 'power':
+            # Overwrite norm parameter
+            norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
+        elif norm == 'log':
             if data.min() <= 0:
                 norm = SymLogNorm(linthresh=0.03, linscale=0.03,
                                   vmin=vmin, vmax=vmax)

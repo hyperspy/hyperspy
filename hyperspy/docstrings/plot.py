@@ -44,7 +44,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
-        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass},
+        norm : {'auto', 'linear', 'log', 'power', mpl `Normalize` instance or subclass},
             default is 'auto'.
             Plot the intensity scale on a linear or logarithmic scale. If
             'auto', plot the intensity on a linear scale except when
@@ -85,7 +85,7 @@ PLOT2D_DOCSTRING = \
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data.
+            `vmin` and `vmax` are used to normalize the intensity scale.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}
@@ -95,7 +95,10 @@ PLOT2D_DOCSTRING = \
         min_aspect : float
             Set the minimum aspect ratio of the image and the figure. To
             keep the image in the aspect limit the pixels are made
-            rectangular."""
+            rectangular.
+        gamma : float, optional
+            Display image using gamma correction (power law intensity scale).
+            The gamma value have to be > 0. Default is 1.0."""
 
 
 COMPLEX_DOCSTRING = \

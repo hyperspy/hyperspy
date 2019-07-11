@@ -299,6 +299,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
              saturated_pixels=0,
              vmin=None,
              vmax=None,
+             gamma=1.0,
              no_nans=False,
              centre_colormap="auto",
              min_aspect=0.1,

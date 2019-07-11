@@ -541,7 +541,7 @@ class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
-    gamma = t.Range(0.0, 2.0, 1.0)
+    gamma = t.Range(0.1, 3.0, 1.0)
     saturated_pixels = t.Range(0.0, 100.0, 0.2)
     auto = t.Bool(True,
                   desc="Adjust automatically the display when changing "
