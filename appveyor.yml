@@ -18,12 +18,6 @@ environment:
      - PY_VERSION: 3.6
        PLATFORM: x86
        TAG_SCENARIO: true
-     - PY_VERSION: 3.5
-       PLATFORM: x64
-       TAG_SCENARIO: true
-     - PY_VERSION: 3.5
-       PLATFORM: x86
-       TAG_SCENARIO: true
 
 for:
 -
