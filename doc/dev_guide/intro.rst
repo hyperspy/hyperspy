@@ -1,8 +1,8 @@
 ﻿﻿Getting started
 ===============
 
-This 6-step guide is intended to give people who want to start contributing
-their own tools to HyperSpy a foothold to kick-start the process. This is
+This 5-step guide is intended to give people who want to start contributing
+to HyperSpy a foothold to kick-start the process. This is
 also the way to start if you ultimately hope to become a member of the
 developer team.
 
@@ -12,16 +12,15 @@ have little experience when it comes to working on a reasonably large
 open-source project like HyperSpy. This guide is aimed at you - helping to
 reduce the barrier to make a contribution.
 
-Before you start you should decide which platform (i.e. Linux, Windows, or Mac)
-you are going to work in. All are possible and the advice below is the same
-it's only the specifics that change.
 
 1. Start using HyperSpy and understand it
 -----------------------------------------
 
-The best way to start understanding how HyperSpy works and to build a broad
-overview of the code as it stands is to use it -- so what are you waiting for?
-`Install HyperSpy <http://hyperspy.org/hyperspy-doc/current/user_guide/install.html>`_.
+Probably you would not be interested in contributing to HyperSpy if you were not
+already an user, but, just in case: the best way to start understanding how
+HyperSpy works and to build a broad overview of the code as it stands is to
+use it -- so what are you waiting for? `Install HyperSpy
+<http://hyperspy.org/hyperspy-doc/current/user_guide/install.html>`_.
 
 The user-guide also provides a good overview of all the parts of the code that
 are currently implemented as well as much information about how everything
@@ -29,32 +28,6 @@ works -- so read it well:
 `HyperSpy User-Guide <http://www.hyperspy.org/hyperspy-doc/current/index
 .html>`_.
 
-For developing the code the home of HyperSpy is on github and you'll see that
-a lot of this guide boils down to using that platform well. So visit the
-following link and poke around the code, issues, and pull requests: `HyperSpy
-on Github <https://github.com/hyperspy/hyperspy>`_.
-
-It's probably also worth visiting the `Github <https://github.com/>`_ home page
-and going through the `"boot camp" <https://help.github
-.com/categories/bootcamp/>`_ to get a feel for the terminology.
-
-In brief, to give you a hint on the terminology to search for, the contribution
-pattern is:
-    1. Setup git/github if you don't have it.
-    2. Fork HyperSpy on github.
-    3. Checkout your fork on your local machine.
-    4. Create a new branch locally where you will make your changes.
-    5. Push the local changes to your own github fork.
-    6. Create a pull request (PR) to the official HyperSpy repository.
-
-.. note:: 
-  You cannot mess up the main HyperSpy project unless you have been
-  promoted to write access and the dev-team. So when you're starting out be
-  confident to play, get it wrong, and if it all goes wrong you can always get
-  a fresh install of HyperSpy!!
-
-PS: If you choose to develop in Windows/Mac you may find `Github Desktop
-<https://desktop.github.com>`_ useful.
 
 2. Got a problem? -- ask!
 -------------------------
@@ -80,7 +53,28 @@ for some new feature or tool that you want to work on.
 3. Pick your battles
 --------------------
 
-Work out what you want to contribute and break it down in to manageable chunks.
+There are many ways to contribute to HyperSpy:
+
+1. Just by asking any question you may have in our
+   `Gitter chat room <https://gitter.im/hyperspy/hyperspy>`_
+   instead of sending a private email to the developers you are contributing to
+   HyperSpy.
+2. Issues reported in the
+   `issues tracker <https://github.com/hyperspy/hyperspy/issues>`_
+   are precious contributions.
+3. The documentation (let it be the docstrings, guides or the website)
+   is always in need of some care. Beside, contributing to HyperSpy's
+   documentation is a very good way to get familiar with GitHub.
+4. `Pull requests <https://github.com/hyperspy/hyperspy/pulls>`_ reviews are
+   essential for the sustainability of any open development software project
+   and HyperSpy is no exception. Therefore, reviews are highly appreciated.
+   While you may need a good familiarity with
+   the HyperSpy code base to review pull
+   requests containing new features, you can start by reviewing
+   simpler ones such as documentation contributions or simple bug fixes.
+
+If you are planning to contribute code, work out what you want to contribute
+and break it down in to manageable chunks.
 
 You may have a very clear idea of what you want to contribute but if you're
 not sure where to start you can always look through the issues and pull
@@ -99,104 +93,12 @@ same direction.
 4. Get good habits
 ------------------
 
-There are 3 key points to get right when starting out as a contributor - keep
-work separated in manageable sections, make sure that your code style is good,
-and bear in mind that every new function you write will need a test and user
-documentation!
+There are 3 key points to get right when starting out as a contributor
 
-Use git and work in manageable branches
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-By now you'll have had a look around GitHub - but why's it so important?
-
-Well GitHub is the public forum in which we manage and discuss development of
-the code. More importantly, it enables every developer to utilise Git which is
-an open source "version control" system that you can use on your laptop or
-desktop. By version control we mean that you can separate out your contribution
-to the code into many versions (called branches) and switch between them
-easily. Later you can choose which version you want to have integrated into
-HyperSpy.
-
-You can learn all about Git `here <http://www.git-scm.com/about>`_!
-
-The most important thing for you to do is to separate your contributions so
-that each branch is small advancement on the "master" code or on another
-branch. In the end each branch will have to be checked and reviewed by
-someone else before it can be included - so if it's too big, you will be
-asked to split it up!
-
-For personal use, before integrating things into the main HyperSpy code, you
-may want to use a few branches together. You can do that but just make sure
-each new thing has it's own branch! You can merge some together for your
-personal use.
-
-Diagrammatically you should be aiming for something like this:
-
-.. figure:: user_guide/images/branching_schematic.png
-
-
-Get the style right
-^^^^^^^^^^^^^^^^^^^
-
-HyperSpy follows the Style Guide for Python Code - these are just some rules
-for consistency that you can read all about in the `Python Style Guide
-<https://www.python.org/dev/peps/pep-0008/>`_.
-
-You can check your code with the `pep8 Code Checker
-<https://pypi.python.org/pypi/pep8>`_.
-
-.. _tests-label:
-
-Write tests
-^^^^^^^^^^^
-
-Every new function that is written in to HyperSpy needs to be tested and
-documented.
-
-Tests are short functions found in hyperspy/tests that call your functions
-under some known conditions and check the outputs against known values. They
-should depend on as few other features as possible so that when they break
-we know exactly what caused it. Ideally, the tests should be written at the
-same time than the code itself, as they are very convenient to run to check
-outputs when coding. Writing tests can seem laborious but you'll probably
-soon find that they're very important as they force you to sanity check all
-you do. For details on running and writing HyperSpy test see :ref:`dev_tests`
-
-Write documentation
-^^^^^^^^^^^^^^^^^^^
-
-Documentation comes in two parts: docstrings and user-guide documentation.
-
-Docstrings -- written at the start of a function and give essential information
-about how it should be used, such as which arguments can be passed to it and
-what the syntax should be. The docstrings need to follow the `numpy
-specification <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT
-.rst.txt>`_, as shown in `this example
-<https://github.com/numpy/numpy/blob/master/doc/example.py>`_.
-
-User-guide documentation -- A description of the functionality of the code and
-how to use it with examples and links to the relevant code.
-
-When writing both the docstrings and user guide documentation, it is useful to
-have some kind of data which the users can use themselves. Artificial
-datasets for this purpose can be found in `hyperspy.datasets.artificial_data`.
-
-Build the documentation -- To check the output of what you wrote, you can build
-the documentation by running the ``make`` command in the ``hyperspy/doc`` 
-directory. For example ``make html`` will build the whole documentation in 
-html format. See the make command documentation for more details.
-
-To install the documentation dependencies, run either
-
-   .. code-block:: bash
-
-       $ conda install hyperspy-dev
-
-or
-
-   .. code-block:: bash
-
-       $ pip install hyperspy[build-doc]
+1. use Git branches to keep work separated in manageable sections
+2. make sure that your code style is good, and
+3. bear in mind that every new function you write will need a test
+   and user documentation!
 
 5. Make your contribution
 -------------------------
