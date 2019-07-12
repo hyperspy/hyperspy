@@ -355,8 +355,8 @@ class ImagePlot(BlittedFigure):
                 if col >= 0 and row >= 0:
                     z = data[row, col]
                     if np.isfinite(z):
-                        return 'x=%1.4g, y=%1.4g, intensity=%1.4g' % (x, y, z)
-                return 'x=%1.4g, y=%1.4g' % (x, y)
+                        return f'x={x:1.4g}, y={y:1.4g}, intensity={z:1.4g}'
+                return f'x={x:1.4g}, y={y:1.4g}'
             self.ax.format_coord = format_coord
 
             old_vmin, old_vmax = self.vmin, self.vmax
@@ -391,6 +391,10 @@ class ImagePlot(BlittedFigure):
             if data.min() <= 0:
                 norm = SymLogNorm(linthresh=0.03, linscale=0.03,
                                   vmin=vmin, vmax=vmax)
+                if "cmap" not in kwargs.keys():
+                    kwargs['cmap'] = "coolwarm"
+                    if self.centre_colormap == "auto":
+                        self.centre_colormap = False
             else:
                 norm = LogNorm(vmin=vmin, vmax=vmax)
         elif inspect.isclass(norm) and issubclass(norm, Normalize):
