@@ -1,16 +1,17 @@
-﻿﻿Getting started
-===============
+﻿﻿Introduction
+============
 
-This 5-step guide is intended to give people who want to start contributing
-to HyperSpy a foothold to kick-start the process. This is
-also the way to start if you ultimately hope to become a member of the
-developer team.
+This guide is intended to give people who want to start contributing
+to HyperSpy a foothold to kick-start the process.
 
 We anticipate that many potential contributors and developers will be
 scientists who may have a lot to offer in terms of expert knowledge but may
 have little experience when it comes to working on a reasonably large
 open-source project like HyperSpy. This guide is aimed at you - helping to
 reduce the barrier to make a contribution.
+
+Getting started
+---------------
 
 
 1. Start using HyperSpy and understand it
@@ -50,31 +51,33 @@ they're logged until dealt with. This is also a good place to make a proposal
 for some new feature or tool that you want to work on.
 
 
-3. Pick your battles
---------------------
+3. Contribute—yes you can!
+---------------------------
 
-There are many ways to contribute to HyperSpy:
+You don't need to be a professional programmer to contribute to HyperSpy.
+Indeed, there are many ways to contribute:
 
-1. Just by asking any question you may have in our
+1. Just by asking a question in our
    `Gitter chat room <https://gitter.im/hyperspy/hyperspy>`_
    instead of sending a private email to the developers you are contributing to
-   HyperSpy.
+   HyperSpy. Once you get more familiar with HyperSpy,  it'll be awesome if you
+   could help others with their questions.
 2. Issues reported in the
    `issues tracker <https://github.com/hyperspy/hyperspy/issues>`_
    are precious contributions.
-3. The documentation (let it be the docstrings, guides or the website)
-   is always in need of some care. Beside, contributing to HyperSpy's
-   documentation is a very good way to get familiar with GitHub.
-4. `Pull requests <https://github.com/hyperspy/hyperspy/pulls>`_ reviews are
-   essential for the sustainability of any open development software project
+3. `Pull request <https://github.com/hyperspy/hyperspy/pulls>`_ reviews are
+   essential for the sustainability of open development software projects
    and HyperSpy is no exception. Therefore, reviews are highly appreciated.
    While you may need a good familiarity with
-   the HyperSpy code base to review pull
-   requests containing new features, you can start by reviewing
-   simpler ones such as documentation contributions or simple bug fixes.
+   the HyperSpy code base to review complex contributions,
+   you can start by reviewing simpler ones such as documentation
+   contributions or simple bug fixes.
+4. Last but not least, you can contribute code in the form of
+   documentation, bug fixes, enhancements or new features. That is the main
+   topic of the rest of this guide.
 
-If you are planning to contribute code, work out what you want to contribute
-and break it down in to manageable chunks.
+4. Contributing code
+--------------------
 
 You may have a very clear idea of what you want to contribute but if you're
 not sure where to start you can always look through the issues and pull
@@ -83,27 +86,23 @@ You'll find that there are many known areas for development in the issues
 and a number of pull-requests are part finished projects just sitting there
 waiting for a keen new contributor to come and learn by finishing.
 
+The documentation (let it be the docstrings,
+guides or the website) is always in need of some care. Beside,
+contributing to HyperSpy's documentation is a very good way to get
+familiar with GitHub.
+
 When you've decided what you're going to work on - let people know using the
-online forums!
-
-It may be that someone else is doing something similar and can help, it's also
-good to make sure that those working on related projects are pulling in the
-same direction.
-
-4. Get good habits
-------------------
+online forums! It may be that someone else is doing something similar and
+can help, it's
+also good to make sure that those working on related projects are pulling in
+the same direction.
 
 There are 3 key points to get right when starting out as a contributor
 
-1. use Git branches to keep work separated in manageable sections
-2. make sure that your code style is good, and
-3. bear in mind that every new function you write will need a test
-   and user documentation!
-
-5. Make your contribution
--------------------------
-
-When you've got a branch that's ready to be incorporated in to the main code of
-HyperSpy -- make a pull request on GitHub and wait for it to be reviewed and
-discussed.
-
+1. Work out what you want to contribute and break it down in to manageable
+   chunks. Use :ref:`Git branches <using_github-label>` to keep work separated
+   in manageable sections.
+2. Make sure that your :ref:`code style <coding_style-label>` is good.
+3. Bear in mind that every new function you write will need 
+   :ref:`tests <testing-label>` and
+   :ref:`user documentation <writing_documentation-label>`!

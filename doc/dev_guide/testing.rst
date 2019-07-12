@@ -1,5 +1,26 @@
+
+
+.. _testing-label:
+
 Running and writing tests
 =========================
+
+
+Write tests
+^^^^^^^^^^^
+
+Every new function that is written in to HyperSpy needs to be tested and
+documented.
+
+Tests are short functions found in hyperspy/tests that call your functions
+under some known conditions and check the outputs against known values. They
+should depend on as few other features as possible so that when they break
+we know exactly what caused it. Ideally, the tests should be written at the
+same time than the code itself, as they are very convenient to run to check
+outputs when coding. Writing tests can seem laborious but you'll probably
+soon find that they're very important as they force you to sanity check all
+you do. For details on running and writing HyperSpy test see :ref:`dev_tests`
+
 
 
 HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
