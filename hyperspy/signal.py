@@ -59,6 +59,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
+from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -3264,7 +3265,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shift=False, **kwargs):
+    def fft(self, shift=False, apodization=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3274,8 +3275,12 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shift : bool, optional
-            If True, the origin of FFT will be shifted to the centre (Default: False).
-
+            If True, the origin of FFT will be shifted in the centre (Default: False).
+        apodization : bool or 'hann' or 'hamming' or 'tukey'
+            Apply apodization window before calculating FFT in order to suppress streaks.
+            If True or 'hann' applies Hann window. If 'hamming' or 'tukey',
+            applies Hamming or Tukey windows.
+            (Default: False)
         **kwargs
             other keyword arguments are described in np.fft.fftn().
 
@@ -3289,7 +3294,7 @@ class BaseSignal(FancySlicing,
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
         # Use following to plot power spectrum of `im`:
-        >>> im.fft().plot()
+        >>> im.fft(shift=True, apodization=True).plot(power_spectrum=True)
 
         Notes
         -----
@@ -3298,19 +3303,26 @@ class BaseSignal(FancySlicing,
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
+        if apodization==True:
+            apodization = 'hann'
+
+        if apodization:
+            im_fft = self.apply_apodization(window=apodization, inplace=False)
+        else:
+            im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if isinstance(self.data, da.Array):
             if shift:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+                    da.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
                     da.fft.fftn(self.data, axes=axes, **kwargs))
         else:
             if shift:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+                    np.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
                     np.fft.fftn(self.data, axes=axes, **kwargs))
@@ -4933,6 +4945,85 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
+    def apply_apodization(self, window='hann', hann_order=None, tukey_alpha=0.5, inplace=False):
+        """
+        Apply apodization window to a signal either in place or return a new signal.
+
+        Parameters
+        ----------
+        window : string, optional
+            Select between 'hann', 'hamming', 'tukey'
+            (Default: 'hann')
+        hann_order : None or int, optional
+            Only used if window='hann'
+            If integer n provided hann window of nth order will be used.
+            If None, first order hann window is used.
+            Higher orders result in more homogeneous intensity distribution.
+        tukey_alpha : float
+            Only used if window='tykey'
+            From scipy documentation:
+            Shape parameter of the Tukey window, representing the fraction of
+            the window inside the cosine tapered region. If zero,
+            the Tukey window is equivalent to a rectangular window.
+            If one, the Tukey window is equivalent to a Hann window.
+            (Default: 0.5)
+        inplace : boolean, optional
+            If True apodization applied in place, i.e. signal data will be substituted by the apodized one.
+            (Default: False)
+        Returns
+        -------
+        out : :class:`~hyperspy.signals.BaseSignal or subclasses, optional
+            If 'inplace'=True, returns apodized signal of the same type as self.
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> holo = hs.datasets.example_signals.object_hologram()
+        >>> holo.apply_apodization('tukey', tukey_alpha=0.1).plot()
+        """
+
+        if window == 'hanning' or window == 'hann':
+            if hann_order:
+                window_function = lambda m: hann_window_nth_order(m, hann_order)
+            else:
+                window_function = lambda m: np.hanning(m)
+        elif window == 'hamming':
+            window_function = lambda m: np.hamming(m)
+        elif window == 'tukey':
+            window_function = lambda m: sp.signal.tukey(m, tukey_alpha)
+        else:
+            raise ValueError('Wrong type parameter value.')
+
+        windows_1d = []
+
+        axes = np.array(self.axes_manager.signal_indices_in_array)
+
+        for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
+            if isinstance(self.data, da.Array):
+                chunks = self.data.chunks[axis_index]
+                window_da = da.from_array(window_function(axis.size),
+                                          chunks=(chunks, ))
+                windows_1d.append(window_da)
+            else:
+                windows_1d.append(window_function(axis.size))
+
+        window_nd = outer_nd(*windows_1d).T
+
+        # Prepare slicing for multiplication window_nd nparray with data with higher dimensionality:
+        if inplace:
+            slice_w = []
+
+            # Iterate over all dimensions of the data
+            for i in range(self.data.ndim):
+                if any(i == axes):  # If current dimension represents one of signal axis, all elements in window
+                    # along current axis to be subscribed
+                    slice_w.append(slice(None))
+                else:  # If current dimension is navigation one, new axis is absent in window and should be created
+                    slice_w.append(None)
+
+            self.data = self.data * window_nd[tuple(slice_w)]
+            self.events.data_changed.trigger(obj=self)
+        else:
+            return self * window_nd
 
 ARITHMETIC_OPERATORS = (
     "__add__",
