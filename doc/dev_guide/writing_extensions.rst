@@ -104,7 +104,7 @@ Registering a new BaseSignal subclass
 To register a new :py:class:`hyperspy.signal.BaseSignal` subclass add it to the
 ``hyperspy_extension.yaml`` file as follows:
 
-.. yaml::
+.. code-block:: yaml
 
     signals:
         MySignal:
@@ -142,7 +142,7 @@ It is good practice to use a verbose ``signal_type`` with compact aliases.
 Creating new HyperSpy model components
 --------------------------------------
 
-When and where create a new components 
+When and where create a new components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy provides the :py:class:`hyperspy._components.expression.Expression`
@@ -188,6 +188,28 @@ for your function you should consider creating your own.
      I-- No  --> K
 
 
+Registering new components
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All new components must be a subclass of
+:py:class:`hyperspy._components.expression.Expression`. To register a new
+1D component add  it to the ``hyperspy_extension.yaml`` file as in the following:
+
+.. code-block:: yaml
+
+    components1D:
+        MyComponent1DClass:
+        # The module where the component is located.
+    module: my_package.components
+
+Equivalently, to add a new component 2D:
+
+.. code-block:: yaml
+
+    components2D:
+        MyComponent2DClass:
+        # The module where the component is located.
+    module: my_package.components
 
 
 
