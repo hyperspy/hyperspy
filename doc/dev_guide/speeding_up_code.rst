@@ -1,39 +1,63 @@
 
-Contributing cython code
-========================
+Speeding up code
+================
 
-Python is not the fastest language, and can be particularly slow in loops.
-Performance can sometimes be significantly improved by implementing optional
-cython code alongside the pure Python versions. While developing cython code,
-make use of the official cython recommendations (http://docs.cython.org/).  Add
-your cython extensions to the setup.py, in the existing list of
-``raw_extensions``.
+Python is not the fastest language, but this is not usually an issue because
+most scientific Python software uses libraries written in compiled languages
+such as Numpy for data processing, hence running at close to C-speed.
+Nevertheless, sometimes it is necessary to improve the speed of some parts of
+the code by writing some functions
+in compiled languages or by using Just-in-time (JIT) compilation. Before taking
+this approach, please make
+sure that the extra complexity is worth it by writing a first implementation of
+the functionality using Python and Numpy and profiling your code.
 
-Unlike the cython recommendation, the cythonized .c or .cpp files are not
-welcome in the git source repository (except original c or c++ files), since
-they are typically quite large. Cythonization will take place during Travis
-CI and Appveyor building. The cythonized code will be generated and included
-in source or binary distributions for end users. To help troubleshoot
-potential deprecation with future cython releases, add a comment with in the
-header of your .pyx files with the cython version. If cython is present in
+Writing Numba code
+------------------
+
+If you need to improve the speed of a given part of the code your first choice
+should be `Numba <https://numba.pydata.org/>`_. This is because Numba code is
+very similar (when not identical) to Python code, and, therefore, it is a lot
+easier to maintain than Cython code.
+
+Writing Cython code
+-------------------
+
+Cython code will only if:
+
+1. It is not possible to speed up the function using numba instead,
+2. it is accompanied by a pure Python
+   version of the same code that behaves exactly in the same way when the compiled
+   C extension is not present. This because we may not be able to provide
+   binaries for all platforms and not all users will be able to compile C code
+   in their platforms.
+
+Please read through the official Cython recommendations
+(http://docs.cython.org/) before writing Cython code.
+
+To help troubleshoot
+potential deprecations in future Cython releases, add a comment in the
+header of your .pyx files stating the Cython version you used when writing the
+code.
+
+Note that the "cythonized" .c or .cpp files are not
+welcome in the git source repository because they are
+they are typically very large. 
+
+Once you have written you Cython files, add
+them to ``raw_extensions`` in ``setup.py``.
+
+Compiling Cython code
+^^^^^^^^^^^^^^^^^^^^^
+
+If Cython is present in
 the build environment and any cythonized c/c++ file is missing, then setup
 .py tries to cythonize all extensions automatically.
 
-To make the development easier the new command ``recythonize`` has been added
-to setup.py.  It can be used in conjunction with other default commands.  For
+To make the development easier ``setup.py`` provides a ``recythonize`` command
+that can be used in conjunction with default commands.  For
 example ``python setup.py recythonize build_ext --inplace`` will recythonize
-all changed (and described in setup.py!) cython code and compile.
+all Cython code and compile it. 
 
-When developing on git branches, the first time you call setup.py in
-conjunction with or without any other command - it will generate a
-post-checkout hook, which will include a potential cythonization and
-compilation product list (.c/.cpp/.so/.pyd). With your next ``git checkout``
-the hook will remove them and automatically run ``python setup.py build_ext
---inplace`` to cythonize and compile the code if available.  If an older
-version of HyperSpy (<= 0.8.4.x) is checked out this should have no side
-effects.
-
-If another custom post-checkout hook is detected on PR, then setup.py tries to
-append or update the relevant part. To prevent unwanted hook generation or
-update you can create the empty file ``.hook_ignore`` in source directory (same
-level as setup.py).
+Cythonization and compilation also takes takes place during continous
+integration (CI).
