@@ -37,3 +37,19 @@ or
    .. code-block:: bash
 
        $ pip install hyperspy[build-doc]
+
+
+When writing documentation the Python package `sphobjinv
+<https://github.com/bskinn/sphobjinv>`_ can be useful for writing
+cross-references. For example, to find how to write a cross-reference to
+:py:method:`hyperspy.signal.BaseSignal.set_signal_type`:
+
+
+.. code-block:: bash
+
+  $ sphobjinv suggest doc/_build/html/objects.inv set_signal_type -st 90
+  
+  
+  Name                                                      Score 
+  ---------------------------------------------------------  -------
+  :py:method:`hyperspy.signal.BaseSignal.set_signal_type`      90  
