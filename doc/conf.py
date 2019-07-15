@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.imgmath',
     'sphinx.ext.autosummary',
+    'sphinxcontrib.mermaid',
 ]
 
 try:
