@@ -193,7 +193,8 @@ Registering new components
 
 All new components must be a subclass of
 :py:class:`hyperspy._components.expression.Expression`. To register a new
-1D component add  it to the ``hyperspy_extension.yaml`` file as in the following:
+1D component add  it to the ``hyperspy_extension.yaml`` file as in the following
+example:
 
 .. code-block:: yaml
 
@@ -212,7 +213,52 @@ Equivalently, to add a new component 2D:
     module: my_package.components
 
 
+Creating and registering new widgets and toolkeys
+-------------------------------------------------
+
+Toolkeys are functions to which it is possible to associate widgets. Extension
+can declare new toolkeys and widgets. For example, the `hyperspy-gui-traitsui
+<https://github.com/hyperspy/hyperspy_gui_traitsui>`_ and
+`hyperspy-gui-ipywidgets
+<https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ provide widgets for
+toolkeys declared in HyperSpy.
+
+Registering toolkeys
+^^^^^^^^^^^^^^^^^^^^
+
+Typically new toolkeys are declared using the
+:py:function:`hyperspy.ui_registry.add_gui_method` HyperSpy decorator.
+To register a new toolkey that you have declared in your package, add it to
+the ``hyperspy_extension.yaml`` file as in the following example:
 
 
+.. code-block:: yaml
 
+    GUI:
+        # In order to define assign a widget to a function, that function must declare
+        # a `toolkey`. The `toolkeys` list contains a list of all the toolkeys
+        # provided by the extensions. In order to avoid name clashes, by convention
+        # toolkeys must start by the name of the packages that provides them.
+        toolkeys:
+        - my_package.MyComponent
+
+
+Registering widgets
+^^^^^^^^^^^^^^^^^^^
+
+In the example below we register a new ipywidget for the
+``my_package.MyComponent`` toolkey of the previous example. The ``function``
+simply returns the widget to display.
+
+.. code-block:: yaml
+
+    GUI:
+        widgets:
+            ipywidgets:
+            # Each widget is declared using a dictionary with two keys, `module` and `function`.
+            my_package.MyComponent:
+                # The function that creates the widget
+                function: get_mycomponent_widget
+                # The module where the function resides.
+            module: my_package.widgets
 
