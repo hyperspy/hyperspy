@@ -2,8 +2,8 @@
 
 .. _writing_documentation-label:
 
-Write documentation
-^^^^^^^^^^^^^^^^^^^
+Writing documentation
+=====================
 
 Documentation comes in two parts: docstrings and user-guide documentation.
 
