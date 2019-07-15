@@ -9,6 +9,13 @@ Writing packages that extend HyperSpy
   External packages can extend HyperSpy by registering signals,
   components and widgets.
 
+.. warning::
+  The mechanism to register extensions is in beta state. This means that it can
+  change between minor and patch versions. Therefore, if you maintain a package
+  that registers HyperSpy extensions, please verify that it works properly with
+  any future HyperSpy release. We expect it to reach maturity with the release
+  of HyperSpy 2.0.
+
 External packages can extend HyperSpy by registering signals, components and
 widgets. Objects registered by external packages are "first-class citizens" i.e.
 they can be used, saved and loaded like any of those objects shipped with
