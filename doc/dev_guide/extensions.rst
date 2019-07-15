@@ -101,6 +101,44 @@ for your function you should consider creating your own.
 Registering a new BaseSignal subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+To register a new :py:class:`hyperspy.signal.BaseSignal` subclass add it to the
+``hyperspy_extension.yaml`` file as follows:
+
+.. yaml::
+
+    signals:
+        MySignal:
+            signal_type: "MySignal"
+            signal_type_aliases:
+            - MS
+            - ThisIsMySignal
+            # The dimension of the signal subspace. For example, 2 for images, 1 for
+            # spectra. If the signal can take any signal dimension, set it to -1.
+            signal_dimension: 1
+            # The data type, "real" or "complex".
+            dtype: real
+            # True for LazySignal subclasses
+            lazy: False
+            # The module where the signal is located.
+            module: my_package.signal
+
+
+Note that HyperSpy uses ``signal_type`` to determine which class is the most
+appropiate to deal with a particular sort of data. Therefore, signal type
+must be specific enough so that HyperSpy will find a single signal subclass
+match for each sort of data. Note that HyperSpy assumes that only one signal
+subclass exists for a particular ``signal_type``. It is up to external
+packages developers to avoid signal_type clashes, typically by collaborating
+in developing a single package per data type.
+
+The optional ``signal_type_aliases`` are used to determine the most appropiate
+signal subclass when using
+:py:method:`hyperspy.signal.BaseSignal.set_signal_type`.
+For example, if the ``signal_type`` has ``Electron Energy Loss Spectroscopy``
+an ``EELS`` alias, setting the signal type to ``EELS`` will correctly assign
+the signal subclass with ``Electron Energy Loss Spectroscopy`` signal type.
+It is good practice to use a verbose ``signal_type`` with compact aliases.
+
 Creating new HyperSpy model components
 --------------------------------------
 
