@@ -11,5 +11,7 @@ HyperSpy Developer Guide
 
     intro.rst
     testing.rst
+    writing_docs.rst
+    coding_style.rst
     lazy_computations.rst
-    cython_code.rst
+    speeding_up_code.rst
