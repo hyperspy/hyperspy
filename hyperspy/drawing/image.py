@@ -384,8 +384,9 @@ class ImagePlot(BlittedFigure):
             vmin, vmax = vmin, vmax
 
         norm = copy.copy(self.norm)
-        if self.gamma != 1.0 or norm == 'power':
-            # Overwrite norm parameter
+        if norm == 'power' or (norm == 'auto' and self.gamma != 1.0):
+            # with auto norm, we use the power norm when gamma differs from its
+            # default value.
             norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
         elif norm == 'log':
             if data.min() <= 0:
@@ -399,7 +400,7 @@ class ImagePlot(BlittedFigure):
                 norm = LogNorm(vmin=vmin, vmax=vmax)
         elif inspect.isclass(norm) and issubclass(norm, Normalize):
             norm = norm(vmin=vmin, vmax=vmax)
-        elif norm not in ['auto', 'linear']:
+        elif norm not in ['auto', 'linear', 'log', 'power']:
             raise ValueError("`norm` paramater should be 'auto', 'linear', "
                              "'log' or a matplotlib Normalize instance or "
                              "subclass.")

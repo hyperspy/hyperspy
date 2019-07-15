@@ -575,6 +575,7 @@ class ImageContrastEditor(t.HasTraits):
 
         self.gamma = self.image.gamma
         self.saturated_pixels = self.image.saturated_pixels
+        self.norm = self.image.norm.capitalize()
 
         self.span_selector = None
         self.span_selector_switch(on=True)
@@ -606,7 +607,7 @@ class ImageContrastEditor(t.HasTraits):
         self.image.gamma = new
         if hasattr(self, "hist"):
             self.image.update(optimize_contrast=True)
-            self.update_gamma_line()
+            self.update_line()
 
     def _saturated_pixels_changed(self, old, new):
         self.image.saturated_pixels = new
@@ -620,8 +621,9 @@ class ImageContrastEditor(t.HasTraits):
             self._reset()
 
     def _norm_changed(self, old, new):
-        self.image.norm = new.lower()
-        self._reset()
+        if hasattr(self, "hist"):
+            self.image.norm = new.lower()
+            self._reset()
 
     def span_selector_switch(self, on):
         if on is True:
@@ -644,7 +646,7 @@ class ImageContrastEditor(t.HasTraits):
 
         self.image.vmin, self.image.vmax = self._get_current_range()
         self.image.update(optimize_contrast=False)
-        self.update_gamma_line()
+        self.update_line()
 
     def _get_data(self):
         return self.image.data_function()
@@ -673,9 +675,9 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_ylim(0, self.hist_data.max())
         self.ax.set_xticks([])
         self.ax.set_yticks([])
-        self.gamma_line = self.ax.plot(*self._get_curve(),
+        self.line = self.ax.plot(*self._get_line(),
                                        color='#ff7f0e')[0]
-        self.gamma_line.set_animated(self.ax.figure.canvas.supports_blit)
+        self.line.set_animated(self.ax.figure.canvas.supports_blit)
         plt.tight_layout(pad=0)
 
     def update_histogram(self):
@@ -698,26 +700,28 @@ class ImageContrastEditor(t.HasTraits):
                     self.ax.transData.inverted().transform(span_x_coord)[0])
         if self.hist_data.max() != 0:
             self.ax.set_ylim(0, self.hist_data.max())
-        self.update_gamma_line()
+        self.update_line()
         self.ax.figure.canvas.draw_idle()
 
-    def _get_curve(self):
+    def _get_line(self):
         cmin, cmax = self._get_current_range()
         xaxis = np.linspace(cmin, cmax, self.bins)
         max_hist = self.hist_data.max()
-        if self.image.norm == "power":
-            values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
+        if self.image.norm == "linear":
+            values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
         elif self.image.norm == "log":
             v = np.log(xaxis)
             values = (np.log(xaxis)-v[0])/(v[-1]-v[0]) * max_hist
         else:
-            values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
+            # if 'auto' or 'power' use the self.gamma value
+            values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
+
         return xaxis, values
 
-    def update_gamma_line(self):
+    def update_line(self):
         if self._vmin == self._vmax:
             return
-        self.gamma_line.set_data(*self._get_curve())
+        self.line.set_data(*self._get_line())
         if self.ax.figure.canvas.supports_blit:
             self.hspy_fig._update_animated()
         else:
