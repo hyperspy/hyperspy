@@ -70,19 +70,22 @@ and the
 Possible warning when importing HyperSpy?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HyperSpy support different GUIs and matplotlib backends which in specific cases 
-can lead to warnings when importing HyperSpy. There may be several causes for a
-warning, for example:
+HyperSpy supports different GUIs and matplotlib backends which in specific cases 
+can lead to warnings when importing HyperSpy. Most of the time there is nothing
+to worry about—the warnings simply inform you of several choices you have.
+There may be several causes for a warning, for example:
 
-* if not all the GUIs packages are installed: see below to deactivate this warning
-* if the matplotlib ``notebook`` backend is active, the traitsui GUI installed and 
-  selected in the preferences. A warning is raised because the notebook matplotlib 
-  backend is not compatible with the traitsui GUI.
-   * If you want to use the traitsui GUI, use the ``qt`` matplotlib backend in the 
-     notebook.
-   * Alternatively, if you prefer to use the ``notebook`` matplotlib backend, you can  
-     still use the ipywdigets GUIs and disable the traitsui GUI in the 
-     :ref:`preferences <configuring-hyperspy-label>`.
+* not all the GUIs packages are installed. If none is installed, we reccomend you to install
+  at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
+  data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
+  :ref:`preferences <configuring-hyperspy-label>` as explained below.
+* the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
+  backend (e.g. ``notebook``, ``nbabb`` or ``widget``).
+   * If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
+   * Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
+     if you don't want to see the (harmless) warning, make sure that you have the
+     ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
+     GUI in the :ref:`preferences <configuring-hyperspy-label>.
 
 
 By default, HyperSpy warns the user if one of the GUI packages is not installed.
