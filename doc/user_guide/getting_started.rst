@@ -67,12 +67,13 @@ that you have installed at least one of HyperSpy's GUI packages:
 and the
 `traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
-Possible warning when importing HyperSpy?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Possible warnings when importing HyperSpy?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HyperSpy supports different GUIs and matplotlib backends which in specific cases 
-can lead to warnings when importing HyperSpy. Most of the time there is nothing
-to worry about—the warnings simply inform you of several choices you have.
+HyperSpy supports different GUIs and 
+`matplotlib backends <https://matplotlib.org/tutorials/introductory/usage.html#backends>`_ 
+which in specific cases can lead to warnings when importing HyperSpy. Most of the time 
+there is nothing to worry about — the warnings simply inform you of several choices you have.
 There may be several causes for a warning, for example:
 
 * not all the GUIs packages are installed. If none is installed, we reccomend you to install
@@ -80,12 +81,12 @@ There may be several causes for a warning, for example:
   data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
   :ref:`preferences <configuring-hyperspy-label>` as explained below.
 * the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
-  backend (e.g. ``notebook``, ``nbabb`` or ``widget``).
+  backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
    * If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
    * Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
-     if you don't want to see the (harmless) warning, make sure that you have the
+     and if you don't want to see the (harmless) warning, make sure that you have the
      ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
-     GUI in the :ref:`preferences <configuring-hyperspy-label>.
+     GUI in the :ref:`preferences <configuring-hyperspy-label>`.
 
 
 By default, HyperSpy warns the user if one of the GUI packages is not installed.
@@ -100,8 +101,8 @@ These warnings can be turned off using the
 
 
 .. versionchanged:: v1.3
-    HyperSpy works with all matplotlib backends, including the notebook 
-    (also called nbAgg) backend that enables interactive plotting embedded 
+    HyperSpy works with all matplotlib backends, including the ``notebook`` 
+    (also called ``nbAgg``) backend that enables interactive plotting embedded 
     in the jupyter notebook.
 
 .. warning::
