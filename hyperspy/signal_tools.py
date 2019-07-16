@@ -710,13 +710,30 @@ class ImageContrastEditor(t.HasTraits):
         if self.image.norm == "linear":
             values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
         elif self.image.norm == "log":
-            v = np.log(xaxis)
-            values = (np.log(xaxis)-v[0])/(v[-1]-v[0]) * max_hist
+            if xaxis[0] <= 0:
+                v = self._sym_log_transform(xaxis)
+            else:
+                v = np.log(xaxis)
+            values = (v-v[0]) / (v[-1]-v[0]) * max_hist
         else:
-            # if 'auto' or 'power' use the self.gamma value
+            # if "auto" or "power" use the self.gamma value
             values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
 
         return xaxis, values
+
+    def _sym_log_transform(self, arr, linthresh=0.03, linscale=0.03):
+        # adapted from matploltib.colors.SymLogNorm
+        arr = arr.copy()
+        _linscale_adj = (linscale / (1.0 - np.e ** -1))
+        with np.errstate(invalid="ignore"):
+            masked = np.abs(arr) > linthresh
+        sign = np.sign(arr[masked])
+        log = (_linscale_adj + np.log(np.abs(arr[masked]) / linthresh))
+        log *= sign * linthresh
+        arr[masked] = log
+        arr[~masked] *= _linscale_adj
+
+        return arr
 
     def update_line(self):
         if self._vmin == self._vmax:
