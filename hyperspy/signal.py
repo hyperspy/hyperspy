@@ -4467,9 +4467,35 @@ class BaseSignal(FancySlicing,
         Examples
         --------
 
-        >>> s = hs.signals.Signal1D([0, 1, 2, 3])
-        >>> s.set_signal_type("EELS")
+        Calling the method without arguments prints the known signal types:
 
+        >>> s = hs.signals.Signal1D([0, 1, 2, 3])
+        >>> s.set_signal_type()
+        +--------------------+---------------------+--------------------+----------+
+        |    signal_type     |       aliases       |     class name     | package  |
+        +--------------------+---------------------+--------------------+----------+
+        | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
+        |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
+        |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
+        |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
+        |      hologram      |                     |   HologramImage    | hyperspy |
+        |      MySignal      |                     |      MySignal      | hspy_ext |
+        +--------------------+---------------------+--------------------+----------+
+
+        To set the signal_type using the signal_type:
+
+        >>> s.set_signal_type("EELS")
+        >>> s
+        <EELSSpectrum, title: , dimensions: (|4)>
+        >>> s.set_signal_type("EDS_SEM")
+        >>> s
+        <EDSSEMSpectrum, title: , dimensions: (|4)>
+
+        or any of its aliases:
+
+        >>> s.set_signal_type("TEM EELS")
+        >>> s
+        <EELSSpectrum, title: , dimensions: (|4)>
         """
         if signal_type:
             self.metadata.Signal.signal_type = signal_type
