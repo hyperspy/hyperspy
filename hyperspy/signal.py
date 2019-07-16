@@ -4499,6 +4499,8 @@ class BaseSignal(FancySlicing,
         """
         if signal_type:
             self.metadata.Signal.signal_type = signal_type
+            # _assign_subclass takes care of matching aliases with their
+            # corresponding signal class
             self._assign_subclass()
         else:
             table = PrettyTable()
