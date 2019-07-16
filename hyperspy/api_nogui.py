@@ -3,6 +3,14 @@
 # Set the PyQt API to 2 to avoid incompatibilities between matplotlib
 # traitsui
 
+import logging
+from hyperspy import datasets
+from hyperspy.utils import *
+from hyperspy.io import load
+from hyperspy import signals
+from hyperspy.Release import version as __version__
+from hyperspy.defaults_parser import preferences
+from hyperspy.logger import set_log_level
 from hyperspy import docstrings
 
 __doc__ = """
@@ -70,21 +78,12 @@ For more details see their doctrings.
 # Remove the module to avoid polluting the namespace
 del docstrings
 
-from hyperspy.logger import set_log_level
-from hyperspy.defaults_parser import preferences
 set_log_level(preferences.General.logging_level)
 
-from hyperspy.Release import version as __version__
-from hyperspy import signals
-from hyperspy.io import load
-from hyperspy.utils import *
-from hyperspy import datasets
 
-import logging
 _logger = logging.getLogger(__name__)
 
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
-

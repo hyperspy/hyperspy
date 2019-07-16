@@ -64,10 +64,10 @@ def print_known_signal_types():
         if sdict["lazy"] or not sdict["signal_type"]:
             continue
         aliases = (", ".join(sdict["signal_type_aliases"])
-                    if "signal_type_aliases" in sdict
-                    else "")
+                   if "signal_type_aliases" in sdict
+                   else "")
         package = sdict["module"].split(".")[0]
         table.add_row([sdict["signal_type"], aliases, sclass, package])
         table.sortby = "class name"
     return print_html(f_text=table.get_string,
-                        f_html=table.get_html_string)
+                      f_html=table.get_html_string)

@@ -139,8 +139,6 @@ class TestConvertComplexSignal1D:
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
 
 
-
-
 if __name__ == '__main__':
 
     import pytest

@@ -4674,9 +4674,9 @@ class BaseSignal(FancySlicing,
         <EELSSpectrum, title: , dimensions: (|4)>
 
         To set the `signal_type` to `undefined`, simply call the method without arguments:
-        
-        >>> s.set_signal_type()                                                         
-        >>> s                                                                           
+
+        >>> s.set_signal_type()
+        >>> s
         <Signal1D, title: , dimensions: (|4)>
 
         """
@@ -4684,7 +4684,6 @@ class BaseSignal(FancySlicing,
         # _assign_subclass takes care of matching aliases with their
         # corresponding signal class
         self._assign_subclass()
-
 
     def set_signal_origin(self, origin):
         """Set the `signal_origin` metadata value.
