@@ -3305,7 +3305,7 @@ class BaseSignal(FancySlicing,
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
-        if apodization==True:
+        if apodization == True:
             apodization = 'hann'
 
         if apodization:
@@ -4476,7 +4476,11 @@ class BaseSignal(FancySlicing,
             self._assign_subclass()
         else:
             table = PrettyTable()
-            table.field_names = ["signal_type", "aliases", "class name","package"]
+            table.field_names = [
+                "signal_type",
+                "aliases",
+                "class name",
+                "package"]
             for sclass, sdict in ALL_EXTENSIONS["signals"].items():
                 # skip lazy signals and non-data-type specific signals
                 if sdict["lazy"] or not sdict["signal_type"]:
@@ -4487,8 +4491,8 @@ class BaseSignal(FancySlicing,
                 package = sdict["module"].split(".")[0]
                 table.add_row([sdict["signal_type"], aliases, sclass, package])
                 table.sortby = "class name"
-            return print_html(f_text=table.get_string, f_html=table.get_html_string)
-
+            return print_html(f_text=table.get_string,
+                              f_html=table.get_html_string)
 
     def set_signal_origin(self, origin):
         """Set the `signal_origin` metadata value.
@@ -4975,7 +4979,8 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
-    def apply_apodization(self, window='hann', hann_order=None, tukey_alpha=0.5, inplace=False):
+    def apply_apodization(self, window='hann',
+                          hann_order=None, tukey_alpha=0.5, inplace=False):
         """
         Apply apodization window to a signal either in place or return a new signal.
 
@@ -5013,13 +5018,14 @@ class BaseSignal(FancySlicing,
 
         if window == 'hanning' or window == 'hann':
             if hann_order:
-                window_function = lambda m: hann_window_nth_order(m, hann_order)
+                def window_function(
+                    m): return hann_window_nth_order(m, hann_order)
             else:
-                window_function = lambda m: np.hanning(m)
+                def window_function(m): return np.hanning(m)
         elif window == 'hamming':
-            window_function = lambda m: np.hamming(m)
+            def window_function(m): return np.hamming(m)
         elif window == 'tukey':
-            window_function = lambda m: sp.signal.tukey(m, tukey_alpha)
+            def window_function(m): return sp.signal.tukey(m, tukey_alpha)
         else:
             raise ValueError('Wrong type parameter value.')
 
@@ -5038,13 +5044,15 @@ class BaseSignal(FancySlicing,
 
         window_nd = outer_nd(*windows_1d).T
 
-        # Prepare slicing for multiplication window_nd nparray with data with higher dimensionality:
+        # Prepare slicing for multiplication window_nd nparray with data with
+        # higher dimensionality:
         if inplace:
             slice_w = []
 
             # Iterate over all dimensions of the data
             for i in range(self.data.ndim):
-                if any(i == axes):  # If current dimension represents one of signal axis, all elements in window
+                if any(
+                        i == axes):  # If current dimension represents one of signal axis, all elements in window
                     # along current axis to be subscribed
                     slice_w.append(slice(None))
                 else:  # If current dimension is navigation one, new axis is absent in window and should be created
@@ -5054,6 +5062,7 @@ class BaseSignal(FancySlicing,
             self.events.data_changed.trigger(obj=self)
         else:
             return self * window_nd
+
 
 ARITHMETIC_OPERATORS = (
     "__add__",
