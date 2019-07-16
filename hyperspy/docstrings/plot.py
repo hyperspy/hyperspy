@@ -5,67 +5,80 @@
 
 
 BASE_PLOT_DOCSTRING_PARAMETERS = \
-    """navigator : {"auto", None, "slider", "spectrum", Signal}
-            If "auto", if navigation_dimension > 0, a navigator is
-            provided to explore the data.
-            If navigation_dimension is 1 and the signal is an image
-            the navigator is a spectrum obtained by integrating
-            over the signal axes (the image).
-            If navigation_dimension is 1 and the signal is a spectrum
-            the navigator is an image obtained by stacking horizontally
-            all the spectra in the dataset.
-            If navigation_dimension is > 1, the navigator is an image
-            obtained by integrating the data over the signal axes.
-            Additionaly, if navigation_dimension > 2 a window
-            with one slider per axis is raised to navigate the data.
-            For example,
-            if the dataset consists of 3 navigation axes X, Y, Z and one
-            signal axis, E, the default navigator will be an image
-            obtained by integrating the data over E at the current Z
-            index and a window with sliders for the X, Y and Z axes
-            will be raised. Notice that changing the Z-axis index
-            changes the navigator in this case.
-            If "slider" and the navigation dimension > 0 a window
-            with one slider per axis is raised to navigate the data.
-            If "spectrum" and navigation_dimension > 0 the navigator
-            is always a spectrum obtained by integrating the data
-            over all other axes.
-            If None, no navigator will be provided.
-            Alternatively a Signal instance can be provided. The signal
-            dimension must be 1 (for a spectrum navigator) or 2 (for a
-            image navigator) and navigation_shape must be 0 (for a static
-            navigator) or navigation_shape + signal_shape must be equal
-            to the navigator_shape of the current object (for a dynamic
-            navigator).
-            If the signal dtype is RGB or RGBA this parameters has no
-            effect and is always "slider".
-        axes_manager : {None, axes_manager}
-            If None `axes_manager` is used.
-        plot_markers : bool, default True
-            Plot markers added using s.add_marker(marker, permanent=True).
-            Note, a large number of markers might lead to very slow plotting.
-        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass},
-            default is 'auto'.
-            Plot the intensity scale on a linear or logarithmic scale. If
-            'auto', plot the intensity on a linear scale except when
-            `power_spectrum` is True, which can be used only for compatible
-            signal. For Signal2D, a matplotlib `Normalize` subclass or
-            instance can be provided.
-            """
+    """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
+
+        If ``'auto'``:
+
+            - If `navigation_dimension` > 0, a navigator is
+              provided to explore the data.
+            - If `navigation_dimension` is 1 and the signal is an image
+              the navigator is a sum spectrum obtained by integrating
+              over the signal axes (the image).
+            - If `navigation_dimension` is 1 and the signal is a spectrum
+              the navigator is an image obtained by stacking all the 
+              spectra in the dataset horizontally.
+            - If `navigation_dimension` is > 1, the navigator is a sum 
+              image obtained by integrating the data over the signal axes.
+            - Additionally, if `navigation_dimension` > 2, a window
+              with one slider per axis is raised to navigate the data.
+            - For example, if the dataset consists of 3 navigation axes `X`, 
+              `Y`, `Z` and one signal axis, `E`, the default navigator will 
+              be an image obtained by integrating the data over `E` at the 
+              current `Z` index and a window with sliders for the `X`, `Y`, 
+              and `Z` axes will be raised. Notice that changing the `Z`-axis 
+              index changes the navigator in this case.
+
+        If ``'slider'``:
+        
+            - If `navigation dimension` > 0 a window with one slider per 
+              axis is raised to navigate the data.
+
+        If ``'spectrum'``:
+        
+            - If `navigation_dimension` > 0 the navigator is always a 
+              spectrum obtained by integrating the data over all other axes.
+
+        If ``None``, no navigator will be provided.
+
+        Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass) 
+        instance can be provided. The `signal_dimension` must be 1 (for a 
+        spectrum navigator) or 2 (for a image navigator) and 
+        `navigation_shape` must be 0 (for a static navigator) or 
+        `navigation_shape` + `signal_shape` must be equal to the 
+        `navigator_shape` of the current object (for a dynamic navigator).
+        If the signal `dtype` is RGB or RGBA this parameter has no effect and 
+        the value is always set to ``'slider'``.
+    axes_manager : None or :py:class:`~hyperspy.axes.AxesManager`
+        If None, the signal's `axes_manager` attribute is used.
+    plot_markers : bool, default True
+        Plot markers added using s.add_marker(marker, permanent=True).
+        Note, a large number of markers might lead to very slow plotting.
+    norm : str or :py:class:`matplotlib.colors.Normalize` 
+        The function used to normalize the data prior to plotting.
+        Allowable strings are: ``'auto'``, ``'linear'``, or ``'log'`` 
+        (default value is ``'auto'``).
+        If ``'auto'``, intensity is plotted on a linear scale except when
+        the Signal's `power_spectrum` is ``True``, which can be used only for 
+        compatible signals.  
+        Alternatively, for a :py:class:`~hyperspy._signals.signal2d.Signal2D` 
+        object, an instance of the :py:class:`~matplotlib.colors.Normalize` 
+        class can be used to customize the normalization function.
+    """
 
 
 BASE_PLOT_DOCSTRING = \
     """Plot the signal at the current coordinates.
 
-        For multidimensional datasets an optional figure,
-        the "navigator", with a cursor to navigate that data is
-        raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals with signal_dimension equal to
-        0, 1 and 2 can be plotted.
+    For multidimensional datasets an optional figure,
+    the "navigator", with a cursor to navigate that data is
+    raised. In any case it is possible to navigate the data using
+    the sliders. Currently only signals with signal_dimension equal to
+    0, 1 and 2 can be plotted.
 
-        Parameters
-        ----------
-        %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
+    Parameters
+    ----------
+    %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
 
 
 PLOT2D_DOCSTRING = \
@@ -116,6 +129,7 @@ COMPLEX_DOCSTRING = \
 
 
 KWARGS_DOCSTRING = \
-    """**kwargs, optional
-            Only for 2D signals: additional key word arguments for 
-            `matplotlib.pyplot.imshow`."""
+    """**kwargs
+            Only for :py:class:`~hyperspy._signals.signal2d.Signal2D`: 
+            additional (optional) keyword arguments for 
+            :py:func:`matplotlib.pyplot.imshow`."""
