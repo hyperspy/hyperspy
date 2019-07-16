@@ -87,3 +87,4 @@ _logger = logging.getLogger(__name__)
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
+

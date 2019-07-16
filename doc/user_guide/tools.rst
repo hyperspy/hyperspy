@@ -222,14 +222,13 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
 Note that, if you have :ref:`packages that extend HyperSpy
 <hyperspy_extensions-label>` installed in your system, there may
 be more specialised signals available to you. To print all available specialised
-:py:class:`~.signal.BaseSignal` subclasses installed in your system simply
-call the :py:meth:`~.signal.BaseSignal.set_signal_type` method without arguments
-as in the following example:
+:py:class:`~.signal.BaseSignal` subclasses installed in your system call the
+:py:func:`hyperspy.utils.print_known_signal_types`
+function as in the following example:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D([0, 1, 2, 3])
-    >>> s.set_signal_type()
+    >>> hs.print_known_signal_types()
     +--------------------+---------------------+--------------------+----------+
     |    signal_type     |       aliases       |     class name     | package  |
     +--------------------+---------------------+--------------------+----------+

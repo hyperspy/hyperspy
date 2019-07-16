@@ -4603,7 +4603,7 @@ class BaseSignal(FancySlicing,
             self._make_lazy()
 
     def set_signal_type(self, signal_type=None):
-        """Set the signal type or print all known signal types.
+        """Set the signal type and convert the current signal accordingly.
 
         The ``signal_type`` attribute specifies the type of data that the signal
         contains e.g. electron energy-loss spectroscopy data,
@@ -4625,21 +4625,28 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         signal_type : str, optional
-            If no arguments are passed, print a table containing all known
-            signal types. Otherwise, set the signal_type to the given signal
+            If no arguments are passed, the `signal_type` is set to undefined
+            and the current signal converted to a generic signal subclass.
+            Otherwise, set the signal_type to the given signal
             type or to the signal type corresponding to the given signal type
             alias. Setting the signal_type to a known signal type (if exists)
             is highly advisable. If none exists, it is good practice
             to set signal_type to a value that best describes the data signal
             type.
 
+        See Also
+        --------
+        print_known_signal_types
+
         Examples
         --------
 
-        Calling the method without arguments prints the known signal types:
+        Let's first print all known `signal_type`s:
 
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
-        >>> s.set_signal_type()
+        >>> s
+        <Signal1D, title: , dimensions: (|4)>
+        >>> hs.print_known_signal_types()
         +--------------------+---------------------+--------------------+----------+
         |    signal_type     |       aliases       |     class name     | package  |
         +--------------------+---------------------+--------------------+----------+
@@ -4651,7 +4658,7 @@ class BaseSignal(FancySlicing,
         |      MySignal      |                     |      MySignal      | hspy_ext |
         +--------------------+---------------------+--------------------+----------+
 
-        To set the signal_type using the signal_type:
+        We can set the `signal_type` using the `signal_type`:
 
         >>> s.set_signal_type("EELS")
         >>> s
@@ -4665,31 +4672,19 @@ class BaseSignal(FancySlicing,
         >>> s.set_signal_type("TEM EELS")
         >>> s
         <EELSSpectrum, title: , dimensions: (|4)>
+
+        To set the `signal_type` to `undefined`, simply call the method without arguments:
+        
+        >>> s.set_signal_type()                                                         
+        >>> s                                                                           
+        <Signal1D, title: , dimensions: (|4)>
+
         """
-        if signal_type:
-            self.metadata.Signal.signal_type = signal_type
-            # _assign_subclass takes care of matching aliases with their
-            # corresponding signal class
-            self._assign_subclass()
-        else:
-            table = PrettyTable()
-            table.field_names = [
-                "signal_type",
-                "aliases",
-                "class name",
-                "package"]
-            for sclass, sdict in ALL_EXTENSIONS["signals"].items():
-                # skip lazy signals and non-data-type specific signals
-                if sdict["lazy"] or not sdict["signal_type"]:
-                    continue
-                aliases = (", ".join(sdict["signal_type_aliases"])
-                           if "signal_type_aliases" in sdict
-                           else "")
-                package = sdict["module"].split(".")[0]
-                table.add_row([sdict["signal_type"], aliases, sclass, package])
-                table.sortby = "class name"
-            return print_html(f_text=table.get_string,
-                              f_html=table.get_html_string)
+        self.metadata.Signal.signal_type = signal_type
+        # _assign_subclass takes care of matching aliases with their
+        # corresponding signal class
+        self._assign_subclass()
+
 
     def set_signal_origin(self, origin):
         """Set the `signal_origin` metadata value.
