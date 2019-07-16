@@ -31,6 +31,7 @@ import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
+from prettytable import PrettyTable
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -50,7 +51,7 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import slugify
+from hyperspy.misc.utils import slugify, print_html
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
@@ -62,6 +63,7 @@ from hyperspy.misc.signal_tools import (are_signals_aligned,
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
 
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.ui_registry import ALL_EXTENSIONS
 
 _logger = logging.getLogger(__name__)
 
@@ -4431,34 +4433,62 @@ class BaseSignal(FancySlicing,
         if self._lazy:
             self._make_lazy()
 
-    def set_signal_type(self, signal_type):
-        """Set the signal type and change the current class
-        accordingly if pertinent.
+    def set_signal_type(self, signal_type=None):
+        """Set the signal type or print all known signal types.
 
-        The signal_type attribute specifies the kind of data that the signal
-        contains e.g. "EELS" for electron energy-loss spectroscopy,
-        "PES" for photoemission spectroscopy. There are some methods that are
-        only available for certain kind of signals, so setting this
-        parameter can enable/disable features.
+        The signal_type attribute specifies the type of data that the signal
+        contains e.g. electron energy-loss spectroscopy data,
+        photoemission spectroscopy data, etc.
+
+        When setting `signal_type` to a "known" type, HyperSpy converts the
+        current signal to the most appropriate
+        :py:class:`hyperspy.signal.BaseSignal` subclass. Known signal types are
+        signal types that have a specialized
+        :py:class:`hyperspy.signal.BaseSignal` subclass associated, usually
+        providing specific features for the analysis of that type of signal.
+
+        HyperSpy ships with a minimal set of known signal types. External
+        packages can register extra signal types. To print a list of
+        registered signal types in the current installation run this method
+        without arguments. Note that
+
 
         Parameters
         ----------
-        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", "DielectricFunction"}
-            Currently there are special features for "EELS" (electron
-            energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
-            thin samples, normally obtained in a transmission electron
-            microscope), "EDS_SEM" (energy dispersive X-rays of thick samples,
-            normally obtained in a scanning electron microscope) and
-            "DielectricFuction". Setting the signal_type to the correct acronym
-            is highly advisable when analyzing any signal for which HyperSpy
-            provides extra features. Even if HyperSpy does not provide extra
-            features for the signal that you are analyzing, it is good practice
+        signal_type : str, optional
+            If no arguments are passed, print a table containing all known
+            signal types. Otherwise, set the signal_type to the given signal
+            type or to the signal type corresponding to the given signal type
+            alias. Setting the signal_type to a known signal type (if exists)
+            is highly advisable. If none exists, it is good practice
             to set signal_type to a value that best describes the data signal
             type.
 
+        Examples
+        --------
+
+        >>> s = hs.signals.Signal1D([0, 1, 2, 3])
+        >>> s.set_signal_type("EELS")
+
         """
-        self.metadata.Signal.signal_type = signal_type
-        self._assign_subclass()
+        if signal_type:
+            self.metadata.Signal.signal_type = signal_type
+            self._assign_subclass()
+        else:
+            table = PrettyTable()
+            table.field_names = ["signal_type", "aliases", "class name","package"]
+            for sclass, sdict in ALL_EXTENSIONS["signals"].items():
+                # skip lazy signals and non-data-type specific signals
+                if sdict["lazy"] or not sdict["signal_type"]:
+                    continue
+                aliases = (", ".join(sdict["signal_type_aliases"])
+                           if "signal_type_aliases" in sdict
+                           else "")
+                package = sdict["module"].split(".")[0]
+                table.add_row([sdict["signal_type"], aliases, sclass, package])
+                table.sortby = "class name"
+            return print_html(f_text=table.get_string, f_html=table.get_html_string)
+
 
     def set_signal_origin(self, origin):
         """Set the `signal_origin` metadata value.
