@@ -1169,7 +1169,7 @@ class MVATools(object):
         same_window : :py:class:`bool`
             If ``True``, plots each factor to the same window.
         comp_label : :py:class:`str`
-            the label that is either the plot title (if plotting in separate 
+            the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor image, or for peak
@@ -3300,12 +3300,12 @@ class BaseSignal(FancySlicing,
     def derivative(self, axis, order=1, out=None, rechunk=True):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
-            
-        For a function :math:`y = f(x)` and two consecutive values :math:`x_1` 
+
+        For a function :math:`y = f(x)` and two consecutive values :math:`x_1`
         and :math:`x_2`:
 
         .. math::
-    
+
             \frac{df(x)}{dx} = \frac{y(x_2)-y(x_1)}{x_2-x_1}
 
         Parameters

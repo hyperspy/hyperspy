@@ -18,8 +18,8 @@ MANY_AXIS_PARAMETER = \
 
 OUT_ARG = \
     """out : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses) or :py:data:`None`
-            If ``None``, a new Signal is created with the result of the 
-            operation and returned (default). If a Signal is passed, 
+            If ``None``, a new Signal is created with the result of the
+            operation and returned (default). If a Signal is passed,
             it is used to receive the output of the operation, and nothing is
             returned."""
 
@@ -51,11 +51,11 @@ SHOW_PROGRESSBAR_ARG = \
 
 PARALLEL_ARG = \
     """parallel : None or bool
-           If ``True``, perform computation in parallel using multiple cores. If 
+           If ``True``, perform computation in parallel using multiple cores. If
            ``None``, the default from the preferences settings is used."""
 
 PARALLEL_INT_ARG = \
     """parallel : None, bool, or int
-           If True, perform computation in parallel using multiple cores. If 
-           int, use as many cores as specified. If None the default from 
+           If True, perform computation in parallel using multiple cores. If
+           int, use as many cores as specified. If None the default from
            the preferences settings is used."""
