@@ -325,7 +325,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             min_aspect=min_aspect,
             **kwargs
         )
-    plot.__doc__ %= BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal

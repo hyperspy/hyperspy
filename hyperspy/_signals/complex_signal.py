@@ -230,7 +230,7 @@ class ComplexSignal_mixin:
                              'norm': norm,
                              'fft_shift': fft_shift,
                              'same_axes': same_axes}
-    plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
 class ComplexSignal(ComplexSignal_mixin, BaseSignal):

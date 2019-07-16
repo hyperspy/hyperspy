@@ -1991,7 +1991,7 @@ class BaseSignal(FancySlicing,
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
              **kwargs):
         """%s
-    %s
+        %s
         """
         if self._plot is not None:
             try:

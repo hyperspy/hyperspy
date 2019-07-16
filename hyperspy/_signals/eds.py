@@ -841,12 +841,11 @@ class EDS_mixin:
              background_windows=None,
              integration_windows=None,
              **kwargs):
-        """
-        Plot the EDS spectrum. The following markers can be added
+        """Plot the EDS spectrum. The following markers can be added
 
         - The position of the X-ray lines and their names.
         - The background windows associated with each X-ray lines. A black line
-        links the left and right window with the average value in each window.
+          links the left and right window with the average value in each window.
 
         Parameters
         ----------

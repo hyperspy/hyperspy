@@ -18,6 +18,7 @@
 
 from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
+from hyperspy.docstrings.plot import PLOT2D_DOCSTRING, KWARGS_DOCSTRING
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
@@ -44,44 +45,8 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
         Parameters
         ----------
-        colorbar : bool, optional
-             If true, a colorbar is plotted for non-RGB images.
-        scalebar : bool, optional
-            If True and the units and scale of the x and y axes are the same a
-            scale bar is plotted.
-        scalebar_color : str, optional
-            A valid MPL color string; will be used as the scalebar color.
-        axes_ticks : {None, bool}, optional
-            If True, plot the axes ticks. If None axes_ticks are only
-            plotted when the scale bar is not plotted. If False the axes ticks
-            are never plotted.
-        axes_off : bool, optional
-            If True, the axes labels are not plotted.
-        saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds. For
-            example, the low and high bounds of a value of 1 are the
-            0.5% and 99.5% percentiles. It must be in the [0, 100] range.
-        vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data.
-        no_nans : bool, optional
-            If True, set nans to zero for plotting.
-        centre_colormap : {"auto", True, False}	
-            If True the centre of the color scheme is set to zero. This is	
-            specially useful when using diverging color schemes. If "auto"	
-            (default), diverging color schemes are automatically centred.
-        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass}, 
-            default is 'auto'.
-            Plot the intensity scale on a linear or logarithmic scale. If 
-            'auto', plot the intensity on a linear scale except when 
-            `power_spectrum` is True, which can be used only for compatible 
-            signal. For Signal2D, a matplotlib `Normalize` subclass or 
-            instance can be provided.
-        gamma : float
-            Value used for the gamma adjustement and not compatible norm='log'.
-            Default is 1.0 (linear scale).
-            See ``matplotlib.colors.PowerNorm`` for more information.
-        **kwargs, optional
-            Additional key word arguments passed to matplotlib.imshow()
+        %s
+        %s
 
         """
         if self.signal_plot is not None:
@@ -122,3 +87,5 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                 self.navigator_plot.events.closed.connect(
                     self._on_navigator_plot_closing, [])
                 imf.events.closed.connect(self.close_navigator_plot, [])
+
+    plot_signal.__doc__ %= (PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
