@@ -66,3 +66,19 @@ def test_plot_contrast_editor(gamma, saturated_pixels):
     assert ceditor.saturated_pixels == saturated_pixels
     return plt.gcf()
 
+
+@pytest.mark.parametrize("norm", ("auto", "linear", "log"))
+def test_plot_contrast_editor_norm(norm):
+    np.random.seed(1)
+    data = np.random.random(size=(100, 100))*1000
+    data += np.arange(100*100).reshape((100, 100))
+    s = signals.Signal2D(data)
+    s.plot(norm=norm)
+    ceditor = ImageContrastEditor(s._plot.signal_plot)
+    if norm == "log":
+        # test log with negative numbers
+        s2 = s - 5E3
+        s2.plot(norm=norm)
+        ceditor2 = ImageContrastEditor(s._plot.signal_plot)
+    assert ceditor.norm == norm.capitalize()
+
