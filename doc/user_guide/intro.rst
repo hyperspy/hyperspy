@@ -18,6 +18,9 @@ multidimensionality.
   External packages can extend HyperSpy by registering signals,
   components and widgets.
 
+
+.. _hyperspy_extensions-label:
+
 External packages can extend HyperSpy to e.g. implement features to analyse a
 particular sort of data. For details on how to register extensions see
 :ref:`writing_extensions-label`. For a list of packages that extend HyperSpy
@@ -55,7 +58,7 @@ that sets its character:
   elements are provided where there
   is a clear productivity advantage in doing so. See the
   `hyperspy-gui-ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
-  and 
+  and
   `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
   packages for details. Not enough? If you
   need a full, standalone GUI, `HyperSpyUI <http://hyperspy.org/hyperspyUI/>`_
