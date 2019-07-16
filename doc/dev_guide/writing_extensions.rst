@@ -36,10 +36,10 @@ arising from naming conflicts.
 At this point it is worth noting that HyperSpy's main strength is its amazing
 community of users and developers. We trust that the developers of packages
 that extend HyperSpy will play by the same rules that have made the Python
-scientific ecosystem in general, and HyperSpy in particular, successful. In
-particular, avoiding duplication of efforts and being good community players
-by contributing code to the best matching project are essential for the
-sustainability of our software ecosystem.
+scientific ecosystem successful. In particular, avoiding duplication of
+efforts and being good community players by contributing code to the best
+matching project are essential for the sustainability of our software
+ecosystem.
 
 Registering extensions
 ----------------------
@@ -108,8 +108,8 @@ for your function you should consider creating your own.
 Registering a new BaseSignal subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To register a new :py:class:`hyperspy.signal.BaseSignal` subclass add it to the
-``hyperspy_extension.yaml`` file as follows:
+To register a new :py:class:`hyperspy.signal.BaseSignal` subclass you must add it to the
+``hyperspy_extension.yaml`` file as in the following example:
 
 .. code-block:: yaml
 
@@ -131,20 +131,24 @@ To register a new :py:class:`hyperspy.signal.BaseSignal` subclass add it to the
 
 
 Note that HyperSpy uses ``signal_type`` to determine which class is the most
-appropiate to deal with a particular sort of data. Therefore, signal type
-must be specific enough so that HyperSpy will find a single signal subclass
-match for each sort of data. Note that HyperSpy assumes that only one signal
-subclass exists for a particular ``signal_type``. It is up to external
-packages developers to avoid signal_type clashes, typically by collaborating
-in developing a single package per data type.
+appropiate to deal with a particular sort of data. Therefore, the signal type
+must be specific enough for HyperSpy to find a single signal subclass
+match for each sort of data.
+
+.. warning::
+    HyperSpy assumes that only one signal
+    subclass exists for a particular ``signal_type``. It is up to external
+    packages developers to avoid ``signal_type`` clashes, typically by collaborating
+    in developing a single package per data type.
 
 The optional ``signal_type_aliases`` are used to determine the most appropiate
 signal subclass when using
 :py:method:`hyperspy.signal.BaseSignal.set_signal_type`.
-For example, if the ``signal_type`` has ``Electron Energy Loss Spectroscopy``
-an ``EELS`` alias, setting the signal type to ``EELS`` will correctly assign
+For example, if the ``signal_type`` ``Electron Energy Loss Spectroscopy``
+has an ``EELS`` alias, setting the signal type to ``EELS`` will correctly assign
 the signal subclass with ``Electron Energy Loss Spectroscopy`` signal type.
-It is good practice to use a verbose ``signal_type`` with compact aliases.
+It is good practice to choose a very explicit ``signal_type`` while leaving
+acronyms for ``signal_type_aliases``.
 
 Creating new HyperSpy model components
 --------------------------------------
