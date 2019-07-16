@@ -64,6 +64,7 @@ install_req = ['scipy>=0.15',
                'sparse',
                'imageio',
                'pyyaml',
+               'PTable'
                ]
 
 extras_require = {
