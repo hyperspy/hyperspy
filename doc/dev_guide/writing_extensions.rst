@@ -23,11 +23,11 @@ HyperSpy. Because of HyperSpy's structure, we anticipate that most packages
 registering HyperSpy extensions will provide support for specific sorts of
 data.
 
-Models can be provided by external packages too but don't need to 
+Models can be provided by external packages too but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
 the relevant :py:class:`hyperspy.signal.BaseSignal` subclass.
 
-It is good practice to add all packages that extend HyperSpy 
+It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
 <https://github.com/hyperspy/hyperspy-extensions-list>`_ regardless their
 maturity level. In this way we can avoid duplication of efforts and issues
@@ -67,6 +67,7 @@ Creating new HyperSpy BaseSignal subclasses
 
 When and where create a new ``BaseSignal`` subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+I are bad.
 
 HyperSpy provides most of its functionality through the different
 :py:class:`hyperspy.signal.BaseSignal`
@@ -131,7 +132,7 @@ To register a new :py:class:`hyperspy.signal.BaseSignal` subclass you must add i
 
 
 Note that HyperSpy uses ``signal_type`` to determine which class is the most
-appropiate to deal with a particular sort of data. Therefore, the signal type
+appropriate to deal with a particular sort of data. Therefore, the signal type
 must be specific enough for HyperSpy to find a single signal subclass
 match for each sort of data.
 
@@ -141,7 +142,7 @@ match for each sort of data.
     packages developers to avoid ``signal_type`` clashes, typically by collaborating
     in developing a single package per data type.
 
-The optional ``signal_type_aliases`` are used to determine the most appropiate
+The optional ``signal_type_aliases`` are used to determine the most appropriate
 signal subclass when using
 :py:method:`hyperspy.signal.BaseSignal.set_signal_type`.
 For example, if the ``signal_type`` ``Electron Energy Loss Spectroscopy``
@@ -153,7 +154,7 @@ acronyms for ``signal_type_aliases``.
 Creating new HyperSpy model components
 --------------------------------------
 
-When and where create a new components
+When and where create a new component
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy provides the :py:class:`hyperspy._components.expression.Expression`
@@ -272,4 +273,3 @@ simply returns the widget to display.
                 function: get_mycomponent_widget
                 # The module where the function resides.
             module: my_package.widgets
-
