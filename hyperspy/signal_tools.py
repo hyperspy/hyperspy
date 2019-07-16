@@ -538,6 +538,7 @@ class Load(t.HasTraits):
 
 @add_gui_method(toolkey="Signal1D.contrast_editor")
 class ImageContrastEditor(t.HasTraits):
+    mpl_help = "See the matplotlib SymLogNorm for more information."
     ss_left_value = t.Float()
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
@@ -549,6 +550,12 @@ class ImageContrastEditor(t.HasTraits):
         'Log',
         'Power',
         default='Auto')
+    linthresh = t.Range(0.0, 1.0, 0.01, exclude_low=True, exclude_high=False,
+                        desc=f"Range of value closed to zero, which are "
+                        "linearly extrapolated. {mpl_help}")
+    linscale = t.Range(0.0, 10.0, 0.1, exclude_low=False, exclude_high=False,
+                       desc=f"Number of decades to use for each half of "
+                       "the linear range. {mpl_help}")
     auto = t.Bool(True,
                   desc="Adjust automatically the display when changing "
                   "navigator indices. Unselect to keep the same display.")
@@ -568,6 +575,8 @@ class ImageContrastEditor(t.HasTraits):
         self.vmin_original = copy.deepcopy(self.image.vmin)
         self.vmax_original = copy.deepcopy(self.image.vmax)
         self.norm_original = copy.deepcopy(self.image.norm)
+        self.linthresh_original = copy.deepcopy(self.image.linthresh)
+        self.linscale_original = copy.deepcopy(self.image.linscale)
         # self._vmin and self._vmax are used to compute the histogram
         # by default, the image display used these, except when there is a span
         # selector on the histogram
@@ -623,6 +632,16 @@ class ImageContrastEditor(t.HasTraits):
     def _norm_changed(self, old, new):
         if hasattr(self, "hist"):
             self.image.norm = new.lower()
+            self._reset()
+
+    def _linthresh_changed(self, old, new):
+        self.image.linthresh = new
+        if hasattr(self, "hist"):
+            self._reset()
+
+    def _linscale_changed(self, old, new):
+        self.image.linscale = new
+        if hasattr(self, "hist"):
             self._reset()
 
     def span_selector_switch(self, on):
@@ -721,15 +740,15 @@ class ImageContrastEditor(t.HasTraits):
 
         return xaxis, values
 
-    def _sym_log_transform(self, arr, linthresh=0.03, linscale=0.03):
+    def _sym_log_transform(self, arr):
         # adapted from matploltib.colors.SymLogNorm
         arr = arr.copy()
-        _linscale_adj = (linscale / (1.0 - np.e ** -1))
+        _linscale_adj = (self.linscale / (1.0 - np.e ** -1))
         with np.errstate(invalid="ignore"):
-            masked = np.abs(arr) > linthresh
+            masked = np.abs(arr) > self.linthresh
         sign = np.sign(arr[masked])
-        log = (_linscale_adj + np.log(np.abs(arr[masked]) / linthresh))
-        log *= sign * linthresh
+        log = (_linscale_adj + np.log(np.abs(arr[masked]) / self.linthresh))
+        log *= sign * self.linthresh
         arr[masked] = log
         arr[~masked] *= _linscale_adj
 
@@ -769,6 +788,8 @@ class ImageContrastEditor(t.HasTraits):
     def _reset_original_settings(self):
         self.norm = self.norm_original
         self.gamma = self.gamma_original
+        self.linthresh = self.linthresh_original
+        self.linscale = self.linscale_original
         self.saturated_pixels = self.saturated_pixels_original
         self._vmin = self.vmin_original
         self._vmax = self.vmax_original        

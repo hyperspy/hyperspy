@@ -36,6 +36,8 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     norm="auto",
                     min_aspect=0.1,
                     gamma=1.0,
+                    linthresh=0.01,
+                    linscale=0.1,
                     **kwargs
                     ):
         """Plot image.
@@ -75,9 +77,9 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             signal. For Signal2D, a matplotlib `Normalize` subclass or 
             instance can be provided.
         gamma : float
-            Value used for the gamma adjustement. Default is 1.0 (no 
-            adjustement). See ``skimage.exposure.adjust_gamma`` for more 
-            information.
+            Value used for the gamma adjustement and not compatible norm='log'.
+            Default is 1.0 (linear scale).
+            See ``matplotlib.colors.PowerNorm`` for more information.
         **kwargs, optional
             Additional key word arguments passed to matplotlib.imshow()
 
@@ -104,6 +106,8 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.min_aspect = min_aspect
         imf.norm = norm
         imf.gamma = gamma
+        imf.linthresh = linthresh
+        imf.linscale = linscale
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         imf.plot(**kwargs)
         self.signal_plot = imf

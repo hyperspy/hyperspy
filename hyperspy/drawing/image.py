@@ -98,6 +98,8 @@ class ImagePlot(BlittedFigure):
         self.centre_colormap = "auto"
         self.norm = "auto"
         self.gamma = 1.0
+        self.linthresh = 0.01
+        self.linscale = 0.1
 
     @property
     def vmax(self):
@@ -390,7 +392,8 @@ class ImagePlot(BlittedFigure):
             norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
         elif norm == 'log':
             if data.min() <= 0:
-                norm = SymLogNorm(linthresh=0.03, linscale=0.03,
+                norm = SymLogNorm(linthresh=self.linthresh,
+                                  linscale=self.linscale,
                                   vmin=vmin, vmax=vmax)
                 if "cmap" not in kwargs.keys():
                     kwargs['cmap'] = "coolwarm"

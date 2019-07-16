@@ -96,9 +96,20 @@ PLOT2D_DOCSTRING = \
             Set the minimum aspect ratio of the image and the figure. To
             keep the image in the aspect limit the pixels are made
             rectangular.
-        gamma : float, optional
-            Display image using gamma correction (power law intensity scale).
-            The gamma value have to be > 0. Default is 1.0."""
+        gamma : float
+            Value used for the gamma adjustement and not compatible norm='log'.
+            See ``matplotlib.colors.PowerNorm`` for more information.
+            Default is 1.0 (linear scale).
+        linthresh : float, optional
+            Only used with norm='log' and negative values: Range of value
+            closed to zero, which are linearly extrapolated.
+            See the ``matplotlib.colors.SymLogNorm`` for more information.
+            Default is 0.01.
+        linscale : float, optional
+            Only used with norm='log' and negative values: Number of decades to
+            use for each half of the linear range.
+            See the ``matplotlib.colors.SymLogNorm`` for more information.
+            Default is 0.1."""
 
 
 COMPLEX_DOCSTRING = \
