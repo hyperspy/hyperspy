@@ -138,6 +138,7 @@ class TestConvertComplexSignal1D:
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
 
+
 class TestSignalTypeList:
 
     def setup_method(self, method):
@@ -150,6 +151,7 @@ class TestSignalTypeList:
     def test_html_output(self):
         obj = self.s.set_signal_type()
         assert obj._repr_html_()
+
 
 if __name__ == '__main__':
 
