@@ -543,7 +543,7 @@ class ImageContrastEditor(t.HasTraits):
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.1, 3.0, 1.0)
-    saturated_pixels = t.Range(0.0, 100.0, 0.2)
+    saturated_pixels = t.Range(0.0, 10.0, 0.2)
     norm = t.Enum(
         'Auto',
         'Linear',
@@ -833,20 +833,48 @@ class ImageContrastEditor(t.HasTraits):
                         title="Help"),
 
 
-IMAGE_CONTRAST_EDITOR_HELP = (
-    "This tool provides controls to adjust the contrast of the image:\n\n"
+IMAGE_CONTRAST_EDITOR_HELP = \
+"""
+<h2>Image contrast editor</h2>
+<p>This tool provides controls to adjust the contrast of the image.</p>
 
-    "gamma: Paramater of the power law transform (also known as gamma correction).\n"
-    "auto: If selected, adjust automatically the contrast when changing the "
-    "nagivation axis by taking into account the gamma value.\n\n"
-    
-    "Buttons:\n"
-    "Apply: Use the range selected to re-calculate the histogram.\n"
-    "Reset: Reset the settings to their initial values.\n"
-    "OK: Close this tool.\n"
-    ""
-    
-    "\n")
+<h3>Basic parameters</h3>
+
+<p><b>Bins</b>: Number of bins used in the histogram calculation</p>
+
+<p><b>Norm</b>: Normalisation used to display the image.</p>
+
+<p><b>Saturated pixels</b>: The percentage of pixels that are left out of the bounds.
+For example, the low and high bounds of a value of 1 are the 0.5% and 99.5% 
+percentiles. It must be in the [0, 100] range.</p>
+
+<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma 
+correction). <i>(not compatible with the 'log' norm)</i>.</p>
+
+<p><b>Auto</b>: If selected, adjust automatically the contrast when changing 
+nagivation axis by taking into account others parameters.</p>
+
+<h3>Advanced parameters</h3>
+                                                
+<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity, 
+there is a need to have a range around zero that is linear. 
+This allows the user to specify the size of this range around zero. 
+<i>(only with the 'log' norm)</i>.</p>
+
+<p><b>Linear scale</b>: Since the values close to zero tend toward infinity, 
+there is a need to have a range around zero that is linear. 
+This allows the user to specify the size of this range around zero. 
+<i>(only with the 'log' norm)</i>.</p>
+
+<h3>Buttons</h3>
+
+<p><b>Apply</b>: Use the range selected to re-calculate the histogram.</p>
+
+<p><b>Reset</b>: Reset the settings to their initial values.</p>
+
+<p><b>OK</b>: Close this tool.</p>
+
+"""
 
 
 @add_gui_method(toolkey="Signal1D.integrate_in_range")
