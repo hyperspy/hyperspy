@@ -740,6 +740,14 @@ class ImageContrastEditor(t.HasTraits):
 
         return xaxis, values
 
+    @property
+    def negative_values_displayed(self):
+        """ Return `True` if the current display contains negative values."""
+        if self._get_current_range()[0] <= 0:
+            return True
+        else:
+            return False
+
     def _sym_log_transform(self, arr):
         # adapted from matploltib.colors.SymLogNorm
         arr = arr.copy()
@@ -786,7 +794,7 @@ class ImageContrastEditor(t.HasTraits):
         self._reset()
 
     def _reset_original_settings(self):
-        self.norm = self.norm_original
+        self.norm = self.norm_original.capitalize()
         self.gamma = self.gamma_original
         self.linthresh = self.linthresh_original
         self.linscale = self.linscale_original
@@ -859,12 +867,12 @@ nagivation axis by taking into account others parameters.</p>
 <p><b>Linear threshold</b>: Since the values close to zero tend toward infinity, 
 there is a need to have a range around zero that is linear. 
 This allows the user to specify the size of this range around zero. 
-<i>(only with the 'log' norm)</i>.</p>
+<i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
 <p><b>Linear scale</b>: Since the values close to zero tend toward infinity, 
 there is a need to have a range around zero that is linear. 
 This allows the user to specify the size of this range around zero. 
-<i>(only with the 'log' norm)</i>.</p>
+<i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
 <h3>Buttons</h3>
 
