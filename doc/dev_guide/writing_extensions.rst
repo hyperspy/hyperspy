@@ -53,7 +53,7 @@ In order to register HyperSpy extensions you need to:
     .. code-block:: python
 
         entry_points={'hyperspy.extensions': 'your_package_name =
-        your_package_name'},
+                      your_package_name'},
 2. Create a ``hyperspy_extension.yaml`` configuration file in your
    module's root directory.
 3. Declare all new HyperSpy objects provided by your package in the
@@ -213,18 +213,18 @@ example:
 .. code-block:: yaml
 
     components1D:
-        MyComponent1DClass:
+      MyComponent1DClass:
         # The module where the component is located.
-    module: my_package.components
+        module: my_package.components
 
 Equivalently, to add a new component 2D:
 
 .. code-block:: yaml
 
     components2D:
-        MyComponent2DClass:
+      MyComponent2DClass:
         # The module where the component is located.
-    module: my_package.components
+        module: my_package.components
 
 
 Creating and registering new widgets and toolkeys
@@ -254,11 +254,11 @@ To register a new toolkey:
 .. code-block:: yaml
 
     GUI:
-        # In order to assign a widget to a function, that function must declare
-        # a `toolkey`. The `toolkeys` list contains a list of all the toolkeys
-        # provided by the extensions. In order to avoid name clashes, by convention
-        # toolkeys must start by the name of the packages that provides them.
-        toolkeys:
+      # In order to assign a widget to a function, that function must declare
+      # a `toolkey`. The `toolkeys` list contains a list of all the toolkeys
+      # provided by the extensions. In order to avoid name clashes, by convention
+      # toolkeys must start by the name of the packages that provides them.
+      toolkeys:
         - my_package.MyComponent
 
 
@@ -273,11 +273,11 @@ resides.
 .. code-block:: yaml
 
     GUI:
-        widgets:
-            ipywidgets:
-            # Each widget is declared using a dictionary with two keys, `module` and `function`.
-            my_package.MyComponent:
-                # The function that creates the widget
-                function: get_mycomponent_widget
-                # The module where the function resides.
-                module: my_package.widgets
+      widgets:
+        ipywidgets:
+          # Each widget is declared using a dictionary with two keys, `module` and `function`.
+          my_package.MyComponent:
+            # The function that creates the widget
+            function: get_mycomponent_widget
+            # The module where the function resides.
+            module: my_package.widgets
