@@ -25,7 +25,9 @@ data.
 
 Models can be provided by external packages too but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
-the relevant :py:class:`hyperspy.signal.BaseSignal` subclass.
+the relevant :py:class:`hyperspy.signal.BaseSignal` subclass, see for example,
+the :py:meth:`hyperspy._signals.eds_tem.EDSTEM_mixin.create_model` of the 
+:py:class:`~._signals.eds_tem.EDSTEMSpectrum`.
 
 It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
@@ -144,7 +146,7 @@ match for each sort of data.
 
 The optional ``signal_type_aliases`` are used to determine the most appropriate
 signal subclass when using
-:py:method:`hyperspy.signal.BaseSignal.set_signal_type`.
+:py:meth:`hyperspy.signal.BaseSignal.set_signal_type`.
 For example, if the ``signal_type`` ``Electron Energy Loss Spectroscopy``
 has an ``EELS`` alias, setting the signal type to ``EELS`` will correctly assign
 the signal subclass with ``Electron Energy Loss Spectroscopy`` signal type.
@@ -239,7 +241,7 @@ Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
 
 Typically new toolkeys are declared using the
-:py:function:`hyperspy.ui_registry.add_gui_method` HyperSpy decorator.
+:py:func:`hyperspy.ui_registry.add_gui_method` HyperSpy decorator.
 To register a new toolkey that you have declared in your package, add it to
 the ``hyperspy_extension.yaml`` file as in the following example:
 
