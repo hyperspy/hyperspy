@@ -232,7 +232,7 @@ Creating and registering new widgets and toolkeys
 
 To generate GUIs of specific method and functions, HyperSpy use widgets and toolkeys:
 
-* *widgets* are ipywidgets or traitsui objects, which can generate GUIs,
+* *widgets* (typically ipywidgets or traitsui objects) generate GUIs,
 * *toolkeys* are functions to which it is possible to associate widgets to a signal 
   method or to a module function.
 
@@ -245,8 +245,8 @@ Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
 To register a new toolkey:
 
-1. declare a new toolkey by adding the :py:func:`hyperspy.ui_registry.add_gui_method` 
-   HyperSpy decorator to the function you want to assign a widget to.
+1. declare a new toolkey, *e. g.* by adding the :py:func:`hyperspy.ui_registry.add_gui_method` 
+   decorator to the function you want to assign a widget to,
 2. register a new toolkey that you have declared in your package by adding it to
    the ``hyperspy_extension.yaml`` file as in the following example:
 
