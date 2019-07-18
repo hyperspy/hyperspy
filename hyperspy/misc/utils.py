@@ -1081,7 +1081,7 @@ def get_object_package_info(obj):
             dic["package_version"] = ""
             _logger.warning(
                 "The package {package} does not set its version in " +
-                "{package}.version. Please report this issue to the " +
+                "{package}.__version__. Please report this issue to the " +
                 "{package} developers.".format(package=dic["package"]))
     else:
         dic["package_version"] = ""
