@@ -4,13 +4,15 @@
 # traitsui
 
 import logging
+_logger = logging.getLogger(__name__)
+from hyperspy.logger import set_log_level
+set_log_level(preferences.General.logging_level)
 from hyperspy import datasets
 from hyperspy.utils import *
 from hyperspy.io import load
 from hyperspy import signals
 from hyperspy.Release import version as __version__
 from hyperspy.defaults_parser import preferences
-from hyperspy.logger import set_log_level
 from hyperspy import docstrings
 
 __doc__ = """
@@ -78,10 +80,8 @@ For more details see their doctrings.
 # Remove the module to avoid polluting the namespace
 del docstrings
 
-set_log_level(preferences.General.logging_level)
 
 
-_logger = logging.getLogger(__name__)
 
 
 def get_configuration_directory_path():
