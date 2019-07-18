@@ -67,7 +67,6 @@ Creating new HyperSpy BaseSignal subclasses
 
 When and where create a new ``BaseSignal`` subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-I are bad.
 
 HyperSpy provides most of its functionality through the different
 :py:class:`hyperspy.signal.BaseSignal`

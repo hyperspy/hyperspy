@@ -23,7 +23,7 @@ easier to maintain than Cython code.
 Writing Cython code
 -------------------
 
-Cython code will only if:
+Cython code should only be considered if:
 
 1. It is not possible to speed up the function using numba instead,
 2. it is accompanied by a pure Python
