@@ -391,25 +391,36 @@ class ImagePlot(BlittedFigure):
             # default value.
             norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
         elif norm == 'log':
-            if data.min() <= 0:
-                norm = SymLogNorm(linthresh=self.linthresh,
-                                  linscale=self.linscale,
-                                  vmin=vmin, vmax=vmax)
-                if "cmap" not in kwargs.keys():
-                    kwargs['cmap'] = "RdBu_r"
-                    if self.centre_colormap == "auto":
-                        self.centre_colormap = False
-            else:
-                norm = LogNorm(vmin=vmin, vmax=vmax)
+            if np.nanmax(data) <= 0:
+                raise ValueError('All displayed data are <= 0 and can not '
+                                 'be plotted using `norm="log"`. '
+                                 'Use `norm="symlog"` to plot on a log scale.')
+            if np.nanmin(data) <= 0:
+                vmin = np.nanmin(np.where(data > 0, data, np.inf))
+
+            norm = LogNorm(vmin=vmin, vmax=vmax)
+        elif norm == 'symlog':
+            norm = SymLogNorm(linthresh=self.linthresh,
+                              linscale=self.linscale,
+                              vmin=vmin, vmax=vmax)
+            if "cmap" not in kwargs.keys():
+                kwargs['cmap'] = "RdBu_r"
+                if self.centre_colormap == "auto":
+                    self.centre_colormap = False
         elif inspect.isclass(norm) and issubclass(norm, Normalize):
             norm = norm(vmin=vmin, vmax=vmax)
-        elif norm not in ['auto', 'linear', 'log', 'power']:
+        elif norm not in ['auto', 'linear']:
             raise ValueError("`norm` paramater should be 'auto', 'linear', "
-                             "'log' or a matplotlib Normalize instance or "
-                             "subclass.")
+                             "'log', 'symlog' or a matplotlib Normalize  "
+                             "instance or subclass.")
         else:
             # set back to matplotlib default
             norm = None
+
+        if np.nanmin(data) <= 0 and "cmap" not in kwargs.keys():
+            kwargs['cmap'] = "Reds"
+            if self.centre_colormap == "auto":
+                self.centre_colormap = False
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)

@@ -546,8 +546,9 @@ class ImageContrastEditor(t.HasTraits):
     saturated_pixels = t.Range(0.0, 10.0, 0.2)
     norm = t.Enum(
         'Linear',
-        'Log',
         'Power',
+        'Log',
+        'Symlog',
         default='Linear')
     linthresh = t.Range(0.0, 1.0, 0.01, exclude_low=True, exclude_high=False,
                         desc=f"Range of value closed to zero, which are "
@@ -731,26 +732,17 @@ class ImageContrastEditor(t.HasTraits):
         max_hist = self.hist_data.max()
         if self.image.norm == "linear":
             values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
+        elif self.image.norm == "symlog":
+            v = self._sym_log_transform(xaxis)
+            values = (v-v[0]) / (v[-1]-v[0]) * max_hist
         elif self.image.norm == "log":
-            if xaxis[0] <= 0:
-                v = self._sym_log_transform(xaxis)
-            else:
-                v = np.log(xaxis)
+            v = np.log(xaxis)
             values = (v-v[0]) / (v[-1]-v[0]) * max_hist
         else:
             # if "auto" or "power" use the self.gamma value
             values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
 
         return xaxis, values
-
-    @property
-    def negative_values_displayed(self):
-        """ Return `True` if the current display contains negative values."""
-        print('here', self._get_current_range()[0])
-        if self._get_current_range()[0] <= 0 and self.norm == 'log':
-            return True
-        else:
-            return False
 
     def _sym_log_transform(self, arr):
         # adapted from matploltib.colors.SymLogNorm
@@ -831,6 +823,11 @@ class ImageContrastEditor(t.HasTraits):
             self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
 
         if update:
+            if self.norm.lower() == 'log' and self._vmin <= 0:
+                # With norm='log', get the smallest positive value
+                data = self._get_data()
+                self._vmin = np.nanmin(np.where(data > 0, data, np.inf))
+                self.image.update()
             if not auto:
                 # if we don't use "image.optimize_contrast", the image vmin and
                 # vmax need to be udpated

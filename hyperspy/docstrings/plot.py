@@ -7,9 +7,9 @@
 BASE_PLOT_DOCSTRING_PARAMETERS = \
 """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
-    
+
             If ``'auto'``:
-    
+
                 - If `navigation_dimension` > 0, a navigator is
                   provided to explore the data.
                 - If `navigation_dimension` is 1 and the signal is an image
@@ -28,19 +28,19 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
                   current `Z` index and a window with sliders for the `X`, `Y`, 
                   and `Z` axes will be raised. Notice that changing the `Z`-axis 
                   index changes the navigator in this case.
-    
+
             If ``'slider'``:
-    
+
                 - If `navigation dimension` > 0 a window with one slider per 
                   axis is raised to navigate the data.
-    
+
             If ``'spectrum'``:
-    
+
                 - If `navigation_dimension` > 0 the navigator is always a 
                   spectrum obtained by integrating the data over all other axes.
-    
+
             If ``None``, no navigator will be provided.
-    
+
             Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass) 
             instance can be provided. The `signal_dimension` must be 1 (for a 
             spectrum navigator) or 2 (for a image navigator) and 
@@ -54,32 +54,30 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
-        norm : str or :py:class:`matplotlib.colors.Normalize` 
-            The function used to normalize the data prior to plotting.
-            Allowable strings are: ``'auto'``, ``'linear'``, or ``'log'`` 
-            (default value is ``'auto'``).
-            If ``'auto'``, intensity is plotted on a linear scale except when
-            the Signal's `power_spectrum` is ``True``, which can be used only for 
-            compatible signals.  
-            Alternatively, for a :py:class:`~hyperspy._signals.signal2d.Signal2D` 
-            object, an instance of the :py:class:`~matplotlib.colors.Normalize` 
-            class can be used to customize the normalization function.
         """
 
 
 BASE_PLOT_DOCSTRING = \
         """Plot the signal at the current coordinates.
-    
+
         For multidimensional datasets an optional figure,
         the "navigator", with a cursor to navigate that data is
         raised. In any case it is possible to navigate the data using
         the sliders. Currently only signals with signal_dimension equal to
         0, 1 and 2 can be plotted.
-    
+
         Parameters
         ----------
         %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
 
+PLOT1D_DOCSTRING = \
+"""norm : str, optional
+            The function used to normalize the data prior to plotting.
+            Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
+            (default value is ``'auto'``).
+            If ``'auto'``, intensity is plotted on a linear scale except when
+            ``power_spectrum=True`` (only for complex signals).
+        """
 
 PLOT2D_DOCSTRING = \
 """colorbar : bool, optional
@@ -113,14 +111,28 @@ PLOT2D_DOCSTRING = \
             Value used for the gamma adjustement and not compatible norm='log'.
             See :py:class:`matplotlib.colors.PowerNorm` for more information.
             Default is 1.0 (linear scale).
+        norm : str or :py:class:`matplotlib.colors.Normalize` 
+            The function used to normalize the data prior to plotting.
+            Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``, or 
+            ``'symlog'``. (default value is ``'auto'``).
+            If ``'auto'``, intensity is plotted on a linear scale except when
+            ``power_spectrum=True`` (only for complex signals).
+            With ``log``, negative values will be masked and cmap will be set 
+            to Reds. ``symlog`` can be used to plot negative value on a log 
+            scale and the colormap will be set to RdBu_r; see 
+            :py:class:`matplotlib.colors.SymLogNorm` 
+            for more information. 
+            Alternatively, for a :py:class:`~hyperspy._signals.signal2d.Signal2D` 
+            object, an instance of the :py:class:`matplotlib.colors.Normalize` 
+            class can be used to customize the normalization function.
         linthresh : float, optional
-            Only used with norm='log' and negative values: Range of value
+            Only used with norm='symlog': Range of value
             closed to zero, which are linearly extrapolated.
             See the :py:class:`matplotlib.colors.SymLogNorm` for more information.
             Default is 0.01.
         linscale : float, optional
-            Only used with norm='log' and negative values: Number of decades to
-            use for each half of the linear range.
+            Only used with norm='symlog': Number of decades to use for each 
+            half of the linear range.
             See the :py:class:`matplotlib.colors.SymLogNorm` for more information.
             Default is 0.1.
         """
