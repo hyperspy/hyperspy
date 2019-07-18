@@ -396,7 +396,7 @@ class ImagePlot(BlittedFigure):
                                   linscale=self.linscale,
                                   vmin=vmin, vmax=vmax)
                 if "cmap" not in kwargs.keys():
-                    kwargs['cmap'] = "coolwarm"
+                    kwargs['cmap'] = "RdBu_r"
                     if self.centre_colormap == "auto":
                         self.centre_colormap = False
             else:
