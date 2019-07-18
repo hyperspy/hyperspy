@@ -545,11 +545,10 @@ class ImageContrastEditor(t.HasTraits):
     gamma = t.Range(0.1, 3.0, 1.0)
     saturated_pixels = t.Range(0.0, 10.0, 0.2)
     norm = t.Enum(
-        'Auto',
         'Linear',
         'Log',
         'Power',
-        default='Auto')
+        default='Linear')
     linthresh = t.Range(0.0, 1.0, 0.01, exclude_low=True, exclude_high=False,
                         desc=f"Range of value closed to zero, which are "
                         "linearly extrapolated. {mpl_help}")
@@ -574,7 +573,6 @@ class ImageContrastEditor(t.HasTraits):
                 self.image.saturated_pixels)
         self.vmin_original = copy.deepcopy(self.image.vmin)
         self.vmax_original = copy.deepcopy(self.image.vmax)
-        self.norm_original = copy.deepcopy(self.image.norm)
         self.linthresh_original = copy.deepcopy(self.image.linthresh)
         self.linscale_original = copy.deepcopy(self.image.linscale)
         # self._vmin and self._vmax are used to compute the histogram
@@ -584,7 +582,12 @@ class ImageContrastEditor(t.HasTraits):
 
         self.gamma = self.image.gamma
         self.saturated_pixels = self.image.saturated_pixels
-        self.norm = self.image.norm.capitalize()
+
+        if self.image.norm == 'auto':
+            self.norm = 'Linear'
+        else:
+            self.norm = self.image.norm.capitalize()
+        self.norm_original = copy.deepcopy(self.norm)
 
         self.span_selector = None
         self.span_selector_switch(on=True)
@@ -743,7 +746,8 @@ class ImageContrastEditor(t.HasTraits):
     @property
     def negative_values_displayed(self):
         """ Return `True` if the current display contains negative values."""
-        if self._get_current_range()[0] <= 0:
+        print('here', self._get_current_range()[0])
+        if self._get_current_range()[0] <= 0 and self.norm == 'log':
             return True
         else:
             return False
