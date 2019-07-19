@@ -42,7 +42,7 @@ for _component, _specs in _EXTENSIONS["components1D"].items():
         importlib.import_module(
             _specs["module"]), _component)
 
-del importlib
+del importlib, _component, _specs, _g
 
 # Generating the documentation
 
