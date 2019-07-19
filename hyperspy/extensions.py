@@ -23,37 +23,37 @@ EXTENSIONS["GUI"]["widgets"] = {}
 # import unless needed
 ALL_EXTENSIONS = copy.deepcopy(EXTENSIONS)
 
-_ext_extensions = [
+_external_extensions = [
     entry_point.module_name
     for entry_point in pkg_resources.iter_entry_points('hyperspy.extensions')]
 
-for _ext_ext_mod in _ext_extensions:
-    _logger.info("Enabling extension %s" % _ext_ext_mod)
+for _external_extension_mod in _external_extensions:
+    _logger.info("Enabling extension %s" % _external_extension_mod)
     _path = os.path.join(
-        os.path.dirname(pkgutil.get_loader(_ext_ext_mod).get_filename()),
+        os.path.dirname(pkgutil.get_loader(_external_extension_mod).get_filename()),
         "hyperspy_extension.yaml")
 
     if os.path.isfile(_path):
         with open(_path, 'r') as stream:
-            _ext_ext = yaml.safe_load(stream)
-            if "signals" in _ext_ext:
-                ALL_EXTENSIONS["signals"].update(_ext_ext["signals"])
-            if "components1D" in _ext_ext:
+            _external_extension = yaml.safe_load(stream)
+            if "signals" in _external_extension:
+                ALL_EXTENSIONS["signals"].update(_external_extension["signals"])
+            if "components1D" in _external_extension:
                 ALL_EXTENSIONS["components1D"].update(
-                    _ext_ext["components1D"])
-            if "components2D" in _ext_ext:
+                    _external_extension["components1D"])
+            if "components2D" in _external_extension:
                 ALL_EXTENSIONS["components2D"].update(
-                    _ext_ext["components2D"])
-            if "GUI" in _ext_ext:
-                if "toolkeys" in _ext_ext["GUI"]:
+                    _external_extension["components2D"])
+            if "GUI" in _external_extension:
+                if "toolkeys" in _external_extension["GUI"]:
                     ALL_EXTENSIONS["GUI"]["toolkeys"].extend(
-                        _ext_ext["GUI"]["toolkeys"])
-                if "widgets" in _ext_ext["GUI"]:
-                    for toolkit, specs in _ext_ext["GUI"]["widgets"].items():
+                        _external_extension["GUI"]["toolkeys"])
+                if "widgets" in _external_extension["GUI"]:
+                    for toolkit, specs in _external_extension["GUI"]["widgets"].items():
                         if toolkit not in ALL_EXTENSIONS["GUI"]["widgets"]:
                             ALL_EXTENSIONS["GUI"]["widgets"][toolkit] = {}
                         ALL_EXTENSIONS["GUI"]["widgets"][toolkit].update(specs)
 
     else:
         _logger.error(
-            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_ext_ext_mod))
+            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_external_extension_mod))
