@@ -38,6 +38,11 @@ import importlib
 
 _g = globals()
 for _component, _specs in _EXTENSIONS["components1D"].items():
+    # Don't add the new Polynomial to the API.
+    # To use it the old `Polynomial` has a `legacy` keyword.
+    # TODO: remove in HyperSpy v2.0
+    if _component == "eab91275-88db-4855-917a-cdcbe7209592":
+        continue
     _g[_component] = getattr(
         importlib.import_module(
             _specs["module"]), _component)

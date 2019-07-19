@@ -1148,9 +1148,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             elif background_type == 'Offset':
                 background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':
-                with ignore_warning(message="The `Polynomial2`"):
-                    background_estimator = components1d.Polynomial2(
-                        polynomial_order)
+                background_estimator = components1d.Polynomial(
+                    polynomial_order, legacy=False)
             else:
                 raise ValueError(
                     "Background type: " +

@@ -485,7 +485,6 @@ class TestModel1D:
         with pytest.raises(AttributeError):
             getattr(m.components, slugify(invalid_name))
 
-    @pytest.mark.filterwarnings("ignore:The `Polynomial2`")
     def test_snap_parameter_bounds(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
@@ -496,7 +495,7 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components1D.Gaussian()
         m.append(g4)
-        p = hs.model.components1D.Polynomial2(3)
+        p = hs.model.components1D.Polynomial(3, legacy=False)
         m.append(p)
 
         g1.A.value = 3.
@@ -753,7 +752,6 @@ class TestModelFitBinned:
             self.m.fit(method="dummy")
 
 
-@pytest.mark.filterwarnings("ignore:The `Polynomial2`")
 @lazifyTestClass
 class TestModelWeighted:
 
@@ -766,7 +764,7 @@ class TestModelWeighted:
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial2(1))
+        m.append(hs.model.components1D.Polynomial(1, legacy=False))
         self.m = m
 
     def test_fit_leastsq_binned(self):

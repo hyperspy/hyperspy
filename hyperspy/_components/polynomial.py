@@ -21,6 +21,7 @@ import logging
 
 
 from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import ordinal
 
 
 _logger = logging.getLogger(__name__)
@@ -147,6 +148,7 @@ def convert_to_polynomial(poly_dict):
     poly2_dict = dict(poly_dict)
     coefficient_dict = poly_dict['parameters'][0]
     poly2_dict['parameters'] = []
+    poly2_dict['_id_name'] = "eab91275-88db-4855-917a-cdcbe7209592"
     for i, coeff in enumerate(coeff_list):
         param_dict = dict(coefficient_dict)
         param_dict['_id_name'] = 'a{}'.format(coeff)

@@ -45,8 +45,7 @@ def get_components1d_name_list():
     return components1d_name_list
 
 
-@pytest.mark.filterwarnings("ignore:The `Polynomial2`")
-@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
+@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @pytest.mark.parametrize('component_name', get_components1d_name_list())
 def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
@@ -228,6 +227,7 @@ class TestPolynomial:
         np.testing.assert_allclose(p.coefficients.map['values'],
                                    np.tile([0.5, 2, 3], (10, 1)))
 
+    @pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
@@ -238,21 +238,20 @@ class TestPolynomial:
         np.testing.assert_allclose(p.coefficients.map['values'],
                                    np.tile([0.5, 2, 3], (2, 5, 1)))
 
-    @pytest.mark.filterwarnings("ignore:The `Polynomial2`")
+    @pytest.mark.filterwarnings("ignore:The API of the")
     def test_conversion_dictionary_to_polynomial2(self):
         from hyperspy._components.polynomial import convert_to_polynomial
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
-        poly = hs.model.components1D.Polynomial(order=2)
+        poly = hs.model.components1D.Polynomial(order=2, legacy=True)
         poly.coefficients.value = [1, 2, 3]
         poly.coefficients.value = [1, 2, 3]
         poly.coefficients._bounds = ((None, None), (10, 0.0), (None, None))
         poly_dict = poly.as_dictionary(True)
         poly2_dict = convert_to_polynomial(poly_dict)
 
-        poly2 = hs.model.components1D.Polynomial2(order=2)
-        poly2._id_name = 'Polynomial'
+        poly2 = hs.model.components1D.Polynomial(order=2, legacy=False)
         _ = poly2._load_dictionary(poly2_dict)
         assert poly2.a2.value == 1
         assert poly2.a2._bounds == (None, None)
@@ -261,7 +260,6 @@ class TestPolynomial:
         assert poly2.a0.value == 3
 
 
-@pytest.mark.filterwarnings("ignore:The `Polynomial2`")
 class TestPolynomial2:
 
     def setup_method(self, method):
@@ -269,15 +267,15 @@ class TestPolynomial2:
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial2(order=2))
+        m.append(hs.model.components1D.Polynomial(order=2, legacy=False))
         coeff_values = (0.5, 2, 3)
         self.m = m
         s_2d = hs.signals.Signal1D(np.arange(1000).reshape(10, 100))
         self.m_2d = s_2d.create_model()
-        self.m_2d.append(hs.model.components1D.Polynomial2(order=2))
+        self.m_2d.append(hs.model.components1D.Polynomial(order=2, legacy=False))
         s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
         self.m_3d = s_3d.create_model()
-        self.m_3d.append(hs.model.components1D.Polynomial2(order=2))
+        self.m_3d.append(hs.model.components1D.Polynomial(order=2, legacy=False))
         data = 50*np.ones(100)
         s_offset = hs.signals.Signal1D(data)
         self.m_offset = s_offset.create_model()
@@ -301,7 +299,7 @@ class TestPolynomial2:
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         s.metadata.Signal.binned = binned
-        p = hs.model.components1D.Polynomial2(order=2)
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
         p.estimate_parameters(s, None, None, only_current=only_current)
         assert_allclose(p.a2.value, 0.5)
         assert_allclose(p.a1.value, 2)
@@ -310,13 +308,13 @@ class TestPolynomial2:
     def test_zero_order(self):
         m = self.m_offset
         with pytest.raises(ValueError):
-            m.append(hs.model.components1D.Polynomial2(order=0))
+            m.append(hs.model.components1D.Polynomial(order=0, legacy=False))
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_2d.as_signal(show_progressbar=None, parallel=False)
         model = Model1D(s)
-        p = hs.model.components1D.Polynomial2(order=2)
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.a2.map['values'], 0.5)
@@ -327,7 +325,7 @@ class TestPolynomial2:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
         model = Model1D(s)
-        p = hs.model.components1D.Polynomial2(order=2)
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.a2.map['values'], 0.5)
@@ -337,7 +335,7 @@ class TestPolynomial2:
     def test_function_nd(self):
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         s = hs.stack([s]*2)
-        p = hs.model.components1D.Polynomial2(order=2)
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
         p.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
         assert_allclose(p.function_nd(axis.axis), s.data)
