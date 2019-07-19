@@ -34,6 +34,9 @@ from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
+from IPython.display import display_pretty, display
+from hyperspy.misc.model_tools import current_component_values
+from hyperspy.misc.utils import get_object_package_info
 
 import logging
 
@@ -52,7 +55,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
         return super(NoneFloat, self).validate(object, name, value)
 
 
-@add_gui_method(toolkey="Parameter")
+@add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
 
     """Model parameter
@@ -714,7 +717,7 @@ class Parameter(t.HasTraits):
         return view
 
 
-@add_gui_method(toolkey="Component")
+@add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
     __axes_manager = None
 
@@ -862,9 +865,9 @@ class Component(t.HasTraits):
 
     def _get_long_description(self):
         if self.name:
-            text = '%s (%s component)' % (self.name, self._id_name)
+            text = '%s (%s component)' % (self.name, self.__class__.__name__)
         else:
-            text = '%s component' % self._id_name
+            text = '%s component' % self.__class__.__name__
         return text
 
     def _get_short_description(self):
@@ -872,7 +875,7 @@ class Component(t.HasTraits):
         if self.name:
             text += self.name
         else:
-            text += self._id_name
+            text += self.__class__.__name__
         text += ' component'
         return text
 
@@ -1147,9 +1150,10 @@ class Component(t.HasTraits):
         dic = {
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
+        dic.update(get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        from hyperspy.model import components
-        if self._id_name not in components.__dict__.keys():
+        from hyperspy.model import _COMPONENTS
+        if self._id_name not in _COMPONENTS:
             import dill
             dic['_class_dump'] = dill.dumps(self.__class__)
         return dic
@@ -1202,3 +1206,18 @@ class Component(t.HasTraits):
         else:
             raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+    def print_current_values(self, only_free=False, fancy=True):
+        """Prints the current values of the component's parameters.
+        Parameters
+        ----------
+        only_free : bool
+            If True, only free parameters will be printed.
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
+        """
+        if fancy:
+            display(current_component_values(self, only_free=only_free))
+        else:
+            display_pretty(current_component_values(
+                self, only_free=only_free))

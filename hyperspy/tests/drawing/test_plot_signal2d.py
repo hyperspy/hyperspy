@@ -85,22 +85,24 @@ def _generate_parameter():
         for colorbar in [True, False]:
             for axes_ticks in [True, False]:
                 for centre_colormap in [True, False]:
-                    parameters.append([scalebar, colorbar, axes_ticks,
-                                       centre_colormap])
+                    for min_aspect in [0.2, 0.7]:
+                        parameters.append([scalebar, colorbar, axes_ticks,
+                                           centre_colormap, min_aspect])
     return parameters
 
 
 @pytest.mark.parametrize(("scalebar", "colorbar", "axes_ticks",
-                          "centre_colormap"),
+                          "centre_colormap", "min_aspect"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
+def test_plot(scalebar, colorbar, axes_ticks, centre_colormap, min_aspect):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal.plot(scalebar=scalebar,
                           colorbar=colorbar,
                           axes_ticks=axes_ticks,
-                          centre_colormap=centre_colormap)
+                          centre_colormap=centre_colormap,
+                          min_aspect=min_aspect)
     return test_plot.signal._plot.signal_plot.figure
 
 
@@ -443,3 +445,29 @@ def test_plot_images_not_signal():
 
     with pytest.raises(ValueError):
         hs.plot.plot_images('not a list of signal')
+
+
+def test_plot_images_tranpose():
+    a = hs.signals.BaseSignal(np.arange(100).reshape(10, 10))
+    b = hs.signals.BaseSignal(np.arange(100).reshape(10, 10)).T
+
+    hs.plot.plot_images([a, b.T])
+    hs.plot.plot_images([a, b])
+
+
+def test_plot_with_non_finite_value():
+    s = hs.signals.Signal2D(np.array([[np.nan, 2.0] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[np.nan, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[-np.inf, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[np.inf, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)

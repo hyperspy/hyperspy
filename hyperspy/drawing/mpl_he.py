@@ -68,6 +68,7 @@ class MPL_HyperExplorer(object):
                        no_nans=False,
                        centre_colormap="auto",
                        title=None,
+                       min_aspect=0.1,
                        **kwds):
         if self.axes_manager.navigation_dimension == 0:
             return
@@ -121,6 +122,7 @@ class MPL_HyperExplorer(object):
             imf.vmax = vmax
             imf.no_nans = no_nans
             imf.centre_colormap = centre_colormap
+            imf.min_aspect = min_aspect
             # Navigator labels
             if self.axes_manager.navigation_dimension == 1:
                 imf.yaxis = self.axes_manager.navigation_axes[0]
