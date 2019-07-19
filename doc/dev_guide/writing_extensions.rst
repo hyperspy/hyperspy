@@ -25,7 +25,9 @@ data.
 
 Models can be provided by external packages too but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
-the relevant :py:class:`hyperspy.signal.BaseSignal` subclass.
+the relevant :py:class:`hyperspy.signal.BaseSignal` subclass, see for example,
+the :py:meth:`hyperspy._signals.eds_tem.EDSTEM_mixin.create_model` of the 
+:py:class:`~._signals.eds_tem.EDSTEMSpectrum`.
 
 It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
@@ -51,7 +53,7 @@ In order to register HyperSpy extensions you need to:
     .. code-block:: python
 
         entry_points={'hyperspy.extensions': 'your_package_name =
-        your_package_name'},
+                      your_package_name'},
 2. Create a ``hyperspy_extension.yaml`` configuration file in your
    module's root directory.
 3. Declare all new HyperSpy objects provided by your package in the
@@ -143,7 +145,7 @@ match for each sort of data.
 
 The optional ``signal_type_aliases`` are used to determine the most appropriate
 signal subclass when using
-:py:method:`hyperspy.signal.BaseSignal.set_signal_type`.
+:py:meth:`hyperspy.signal.BaseSignal.set_signal_type`.
 For example, if the ``signal_type`` ``Electron Energy Loss Spectroscopy``
 has an ``EELS`` alias, setting the signal type to ``EELS`` will correctly assign
 the signal subclass with ``Electron Energy Loss Spectroscopy`` signal type.
@@ -210,65 +212,71 @@ example:
 .. code-block:: yaml
 
     components1D:
-        MyComponent1DClass:
+      MyComponent1DClass:
         # The module where the component is located.
-    module: my_package.components
+        module: my_package.components
 
 Equivalently, to add a new component 2D:
 
 .. code-block:: yaml
 
     components2D:
-        MyComponent2DClass:
+      MyComponent2DClass:
         # The module where the component is located.
-    module: my_package.components
+        module: my_package.components
 
 
 Creating and registering new widgets and toolkeys
 -------------------------------------------------
 
-Toolkeys are functions to which it is possible to associate widgets. Extension
-can declare new toolkeys and widgets. For example, the `hyperspy-gui-traitsui
-<https://github.com/hyperspy/hyperspy_gui_traitsui>`_ and
-`hyperspy-gui-ipywidgets
-<https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ provide widgets for
-toolkeys declared in HyperSpy.
+To generate GUIs of specific method and functions, HyperSpy use widgets and toolkeys:
+
+* *widgets* (typically ipywidgets or traitsui objects) generate GUIs,
+* *toolkeys* are functions to which it is possible to associate widgets to a signal 
+  method or to a module function.
+
+An extension can declare new toolkeys and widgets. For example, the 
+`hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_ and
+`hyperspy-gui-ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ 
+provide widgets for toolkeys declared in HyperSpy.
 
 Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
+To register a new toolkey:
 
-Typically new toolkeys are declared using the
-:py:function:`hyperspy.ui_registry.add_gui_method` HyperSpy decorator.
-To register a new toolkey that you have declared in your package, add it to
-the ``hyperspy_extension.yaml`` file as in the following example:
+1. declare a new toolkey, *e. g.* by adding the :py:func:`hyperspy.ui_registry.add_gui_method` 
+   decorator to the function you want to assign a widget to,
+2. register a new toolkey that you have declared in your package by adding it to
+   the ``hyperspy_extension.yaml`` file as in the following example:
 
 
 .. code-block:: yaml
 
     GUI:
-        # In order to define assign a widget to a function, that function must declare
-        # a `toolkey`. The `toolkeys` list contains a list of all the toolkeys
-        # provided by the extensions. In order to avoid name clashes, by convention
-        # toolkeys must start by the name of the packages that provides them.
-        toolkeys:
+      # In order to assign a widget to a function, that function must declare
+      # a `toolkey`. The `toolkeys` list contains a list of all the toolkeys
+      # provided by the extensions. In order to avoid name clashes, by convention
+      # toolkeys must start by the name of the packages that provides them.
+      toolkeys:
         - my_package.MyComponent
 
 
 Registering widgets
 ^^^^^^^^^^^^^^^^^^^
 
-In the example below we register a new ipywidget for the
+In the example below we register a new ipywidget widget for the
 ``my_package.MyComponent`` toolkey of the previous example. The ``function``
-simply returns the widget to display.
+simply returns the widget to display. The key *module* defines where the functions
+resides.
 
 .. code-block:: yaml
 
     GUI:
-        widgets:
-            ipywidgets:
-            # Each widget is declared using a dictionary with two keys, `module` and `function`.
-            my_package.MyComponent:
-                # The function that creates the widget
-                function: get_mycomponent_widget
-                # The module where the function resides.
+      widgets:
+        ipywidgets:
+          # Each widget is declared using a dictionary with two keys, `module` and `function`.
+          my_package.MyComponent:
+            # The function that creates the widget
+            function: get_mycomponent_widget
+            # The module where the function resides.
             module: my_package.widgets
