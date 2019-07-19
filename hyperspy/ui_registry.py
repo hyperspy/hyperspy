@@ -34,37 +34,6 @@ if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
             UI_REGISTRY[toolkey][toolkit] = specs
 
 
-def register_widget(toolkit, toolkey):
-    """Decorator to register a UI widget.
-
-    Parameters
-    ----------
-    f: function
-        Function that returns or display the UI widget. The signature must
-        include ``obj``, ``display`` and ``**kwargs``.
-    toolkit: string
-        The name of the widget toolkit e.g. ipywidgets
-    toolkey: string
-        The "key" of the tool for which the widget provides an interface. If
-        the toolkey is not in the ``UI_REGISTRY`` dictionary a ``NameError``
-        is raised.
-
-    Returns
-    -------
-    widgets: dictionary or None
-        Dictionary containing the widget objects if display is False, else None.
-
-    """
-    if not toolkey in UI_REGISTRY:
-        raise NameError("%s is not a registered toolkey" % toolkey)
-    TOOLKIT_REGISTRY.add(toolkit)
-
-    def decorator(f):
-        UI_REGISTRY[toolkey][toolkit] = f
-        return f
-    return decorator
-
-
 def _toolkits_to_string(toolkits):
     if isinstance(toolkits, str):
         return "{} toolkit".format(toolkits)
