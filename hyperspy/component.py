@@ -863,9 +863,9 @@ class Component(t.HasTraits):
 
     def _get_long_description(self):
         if self.name:
-            text = '%s (%s component)' % (self.name, self._id_name)
+            text = '%s (%s component)' % (self.name, self.__class__.__name__)
         else:
-            text = '%s component' % self._id_name
+            text = '%s component' % self.__class__.__name__
         return text
 
     def _get_short_description(self):
@@ -873,7 +873,7 @@ class Component(t.HasTraits):
         if self.name:
             text += self.name
         else:
-            text += self._id_name
+            text += self.__class__.__name__
         text += ' component'
         return text
 

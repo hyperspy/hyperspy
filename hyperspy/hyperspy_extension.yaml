@@ -124,7 +124,7 @@ signals:
     lazy: True
     module: hyperspy._signals.eds_sem
   DielectricFunction:
-    signal_type: DielectricFunction 
+    signal_type: DielectricFunction
     signal_type_aliases:
       - dielectric function
     signal_dimension: 1
@@ -142,57 +142,82 @@ signals:
 
 components1D:
   Arctan:
+    class: Arctan
     module: hyperspy._components.arctan
   Bleasdale:
     module: hyperspy._components.bleasdale
+    class: Bleasdale
   DoublePowerLaw:
     module: hyperspy._components.eels_double_power_law
+    class: DoublePowerLaw
   EELSCLEdge:
     module: hyperspy._components.eels_cl_edge
+    class: EELSCLEdge
   Erf:
     module: hyperspy._components.error_function
+    class: Erf
   Exponential:
     module: hyperspy._components.exponential
+    class: Exponential
   Expression:
     module: hyperspy._components.expression
+    class: Expression
   Gaussian:
     module: hyperspy._components.gaussian
+    class: Gaussian
   GaussianHF:
     module: hyperspy._components.gaussianhf
+    class: GaussianHF
   HeavisideStep:
     module: hyperspy._components.heaviside
+    class: HeavisideStep
   Logistic:
     module: hyperspy._components.logistic
+    class: Logistic
   Lorentzian:
     module: hyperspy._components.lorentzian
+    class: Lorentzian
   Offset:
     module: hyperspy._components.offset
+    class: Offset
   PESCoreLineShape:
     module: hyperspy._components.pes_core_line_shape
+    class: PESCoreLineShape
   Polynomial:
     module: hyperspy._components.polynomial
+    class: Polynomial
   PowerLaw:
     module: hyperspy._components.power_law
+    class: PowerLaw
   RC:
     module: hyperspy._components.rc
+    class: RC
   SEE:
     module: hyperspy._components.pes_see
+    class: SEE
   ScalableFixedPattern:
     module: hyperspy._components.scalable_fixed_pattern
+    class: ScalableFixedPattern
   SkewNormal:
     module: hyperspy._components.skew_normal
+    class: SkewNormal
   Vignetting:
     module: hyperspy._components.eels_vignetting
+    class: Vignetting
   Voigt:
     module: hyperspy._components.voigt
+    class: Voigt
   VolumePlasmonDrude:
     module: hyperspy._components.volume_plasmon_drude
+    class: VolumePlasmonDrude
 
 components2D:
   Expression:
     module: hyperspy._components.expression
+    class: Expression
   Gaussian2D:
     module: hyperspy._components.gaussian2d
+    class: Gaussian2D
 
 GUI:
   toolkeys:

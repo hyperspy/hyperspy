@@ -60,10 +60,10 @@ class current_component_values():
             **size)
 
         if self.only_active:
-            text = "{0}: {1}".format(self._id_name, self.name)
+            text = "{0}: {1}".format(self.__class__.__name__, self.name)
         else:
             text = "{0}: {1}\nActive: {2}".format(
-                self._id_name, self.name, self.active)
+                self.__class__.__name__, self.name, self.active)
         text += "\n"
         text += signature.format("Parameter Name",
                                  "Free", "Value", "Std", "Min", "Max")
@@ -97,10 +97,10 @@ class current_component_values():
 
     def _repr_html_(self):
         if self.only_active:
-            text = "<p><b>{0}: {1}</b></p>".format(self._id_name, self.name)
+            text = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
         else:
             text = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
-                self._id_name, self.name, self.active)
+                self.__class__.__name__, self.name, self.active)
 
         para_head = """<table style="width:100%"><tr><th>Parameter Name</th><th>Free</th>
             <th>Value</th><th>Std</th><th>Min</th><th>Max</th></tr>"""

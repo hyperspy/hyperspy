@@ -66,14 +66,14 @@ def reconstruct_component(comp_dictionary, **init_args):
     if _id in _COMPONENTS:
         _class = getattr(
             importlib.import_module(
-                _COMPONENTS[_id]["module"]), _id)
+                _COMPONENTS[_id]["module"]), _COMPONENTS[_id]["class"])
     elif "_class_dump" in comp_dictionary:
         # When a component is not registered using the extension mechanism,
         # it is serialized using dill.
         _class = dill.loads(comp_dictionary['_class_dump'])
     else:
         raise ImportError(
-            f'Loading the {comp_dictionary["_id_name"]} component ' +
+            f'Loading the {comp_dictionary["class"]} component ' +
             'failed because the component is provided by the ' +
             f'{comp_dictionary["package"]} Python package, but ' +
             f'{comp_dictionary["package"]} is not installed.')
@@ -104,7 +104,7 @@ class ModelComponents(object):
                 ans += "\n"
                 name_string = c.name
                 variable_name = slugify(name_string, valid_variable_name=True)
-                component_type = c._id_name
+                component_type = c.__class__.__name__
 
                 variable_name = shorten_name(variable_name, 19)
                 name_string = shorten_name(name_string, 19)
@@ -352,7 +352,7 @@ class BaseModel(list):
         if thing.name:
             name_string = thing.name
         else:
-            name_string = thing._id_name
+            name_string = thing.__class__.__name__
 
         if name_string in component_name_list:
             temp_name_string = name_string
@@ -1776,7 +1776,7 @@ class BaseModel(list):
                 if component.name:
                     if component.name == value:
                         component_list.append(component)
-                elif component._id_name == value:
+                elif component.__class__.__name__ == value:
                     component_list.append(component)
             if component_list:
                 if len(component_list) == 1:
