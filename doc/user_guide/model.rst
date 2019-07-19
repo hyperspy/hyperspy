@@ -251,8 +251,8 @@ the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
 power-law background component will automatically be placed in the model. To
 add a component, first we have to create an instance of the component. Once
 the instance has been created we can add the component to the model using
-the :py:meth:`~.model.BaseModel.append` and :py:meth:`~.model.BaseModel.extend` 
-methods for one or more components respectively. As an example for a type of data 
+the :py:meth:`~.model.BaseModel.append` and :py:meth:`~.model.BaseModel.extend`
+methods for one or more components respectively. As an example for a type of data
 that can be modelled using Gaussians we might proceed as follows:
 
 
@@ -351,11 +351,14 @@ It is possible to "switch off" a component by setting its
 switched off, to all effects it is as if it was not part of the model. To
 switch it on simply set the ``active`` attribute back to ``True``.
 
-The current values of a component can be visualised using the 
-:py:attr:`~.component.Component.print_current_values()` method. The 
-IPython display function elegantly presents it using HTML 
+
+.. _Component.print_current_values:
+
+The current values of a component can be visualised using the
+:py:attr:`~.component.Component.print_current_values()` method. The
+IPython display function elegantly presents it using HTML
 and allows for correct copying and pasting into Excel spreadsheets.
-Alternatively, a simpler form can be shown by setting the 
+Alternatively, a simpler form can be shown by setting the
 ``fancy`` argument to ``False``
 
 .. code-block:: python
@@ -443,10 +446,10 @@ pixel indices in ``m.axes_manager.indices`` or as calibrated coordinates in
 of a component and :py:attr:`~.component.Component.free_parameters` lists only
 the free parameters.
 
-The value of a particular parameter in the current coordinates can be 
+The value of a particular parameter in the current coordinates can be
 accessed by :py:attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
 To access an array of the value of the parameter across all
-navigation pixels, :py:attr:`component.Parameter.map['values']` (e.g. ``Gaussian.A.map["values"]``) can be used. 
+navigation pixels, :py:attr:`component.Parameter.map['values']` (e.g. ``Gaussian.A.map["values"]``) can be used.
 On its own, :py:attr:`component.Parameter.map` returns a NumPy array with three elements:
 ``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and standard error for
 each index. The last element shows whether the value has been set in a given index, either
@@ -543,7 +546,7 @@ For example:
     >>> gaussian.free_parameters  # Print the free parameters
     [<Parameter A of Carbon component>, <Parameter sigma of Carbon component>]
     >>> m.print_current_values(only_free=True, fancy=False) # Print the values of all free parameters.
-    Model1D: 
+    Model1D:
     Gaussian: Carbon
     Active: True
     Parameter Name |  Free |      Value |        Std |        Min |        Max
@@ -870,9 +873,9 @@ Bounded optimisation
 ^^^^^^^^^^^^^^^^^^^^
 
 Problems of ill-conditioning and divergence can be improved by using bounded
-optimization. All components' parameters have the attributes `parameter.bmin` and 
-`parameter.bmax` ("bounded min" and "bounded max"). When fitting using the 
-`bounded=True` argument by `m.fit(bounded=True)` or `m.multifit(bounded=True)`, 
+optimization. All components' parameters have the attributes `parameter.bmin` and
+`parameter.bmax` ("bounded min" and "bounded max"). When fitting using the
+`bounded=True` argument by `m.fit(bounded=True)` or `m.multifit(bounded=True)`,
 these attributes set the minimum and maximum values allowed for `parameter.value`.
 
 Currently, not all optimizers support bounds - see the

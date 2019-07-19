@@ -9,6 +9,44 @@ Current Version
 v1.5
 ++++
 
+NEW
+---
+
+* New method :py:meth:`hyperspy.component.Component.print_current_values`. See
+  :ref:`the User Guide for details <Component.print_current_values>`.
+* New :py:class:`hyperspy._components.skew_normal.SkewNormal` component.
+* New :py:method:`hyperspy.signal.BaseSignal.apply_apodization` method and
+  ``apodization`` keyword for :py:method:`hyperspy.signal.BaseSignal.fft`. See
+  :ref:`signal.fft` for details.
+* Estimation of number of significant components by the elbow method.
+  See :ref:`scree-plot`.
+
+Enhancements
+------------
+
+* The ref:`dev_guide-label` has been extended, enhanced and divided into
+  chapters.
+* Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
+  automatically transposed when using
+  :py:func:`hyperspy.drawing.utils.plot_images`
+  or :py:func:`hyperspy.drawing.utils.plot_spectra` respectively. This is
+  specially relevant when plotting the result of EDS quantification. See
+  :ref:`eds-label` for examples.
+* The following components have been rewritten using
+  :py:class:`hyperspy._components.expression.Expression`, boosting their
+  speeds among other benefits. Multiple issues have been fixed on the way.
+
+  * :py:class:`hyperspy._components.lorentzian.Lorentzian`
+  * :py:class:`hyperspy._components.exponential.Exponential`
+  * :py:class:`hyperspy._components.bleasdale.Bleasdale`
+  * :py:class:`hyperspy._components.rc.RC`
+  * :py:class:`hyperspy._components.logistic.Logistic`
+  * :py:class:`hyperspy._components.error_function.Erf`
+  * :py:class:`hyperspy._components.gaussian2d.Gaussian2D`
+  * :py:class:`hyperspy._components.volume_plasmon_drude.VolumePlasmonDrude`
+
+For developers
+--------------
 * Drop support for python 3.5
 
 
