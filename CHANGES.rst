@@ -24,7 +24,7 @@ NEW
 Enhancements
 ------------
 
-* The ref:`dev_guide-label` has been extended, enhanced and divided into
+* The :ref:`Developer Guide <dev_guide-label>` has been extended, enhanced and divided into
   chapters.
 * Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
   automatically transposed when using
@@ -48,7 +48,8 @@ Enhancements
 For developers
 --------------
 * Drop support for python 3.5
-
+* New extension mechanism that enables external packages to register HyperSpy
+  objects. See :ref:`writing_extensions-label` for details.
 
 Changelog
 *********
