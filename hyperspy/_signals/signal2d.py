@@ -296,7 +296,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
              scalebar_color="white",
              axes_ticks=None,
              axes_off=False,
-             saturated_pixels=0,
+             saturated_pixels=None,
              vmin=None,
              vmax=None,
              gamma=1.0,

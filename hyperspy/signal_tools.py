@@ -36,6 +36,8 @@ from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
+from hyperspy.defaults_parser import preferences
+
 
 _logger = logging.getLogger(__name__)
 
@@ -543,7 +545,7 @@ class ImageContrastEditor(t.HasTraits):
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.1, 3.0, 1.0)
-    saturated_pixels = t.Range(0.0, 10.0, 0.2)
+    saturated_pixels = t.Range(0.0, 5.0, preferences.Plot.saturated_pixels)
     norm = t.Enum(
         'Linear',
         'Power',

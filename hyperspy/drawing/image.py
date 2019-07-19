@@ -35,6 +35,7 @@ from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ class ImagePlot(BlittedFigure):
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
-        self.saturated_pixels = 0.2
+        self.saturated_pixels = None
         self.ax_markers = list()
         self.scalebar_color = "white"
         self._user_scalebar = None
@@ -178,6 +179,8 @@ class ImagePlot(BlittedFigure):
                         yaxis.axis[-1] + yaxis.scale / 2.,
                         yaxis.axis[0] - yaxis.scale / 2.)
         self._calculate_aspect()
+        if self.saturated_pixels is None:
+            self.saturated_pixels = preferences.Plot.saturated_pixels
 
     def _calculate_aspect(self):
         xaxis = self.xaxis

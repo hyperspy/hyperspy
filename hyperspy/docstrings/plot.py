@@ -91,10 +91,11 @@ PLOT2D_DOCSTRING = \
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        saturated_pixels: scalar
+        saturated_pixels: scalar, optional
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
+            If None (default value), the value from the preferences is used.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize the intensity scale.
         no_nans : bool, optional
@@ -143,8 +144,9 @@ COMPLEX_DOCSTRING = \
             If True, plot the power spectrum instead of the actual signal, if
             False, plot the real and imaginary parts of the complex signal.
         representation : {'cartesian' or 'polar'}
-            Determines if the real and imaginary part of the complex data is plotted ('cartesian',
-            default), or if the amplitude and phase should be used ('polar').
+            Determines if the real and imaginary part of the complex data is 
+            plotted ('cartesian', default), or if the amplitude and phase 
+            should be used ('polar').
         same_axes : bool, default True
             If True (default) plot the real and
             imaginary parts (or amplitude and phase) in the same figure if

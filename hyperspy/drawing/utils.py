@@ -357,11 +357,11 @@ def plot_signals(signal_list, sync=True, navigator="auto",
                         **kwargs)
 
 
-def _make_heatmap_subplot(spectra):
+def _make_heatmap_subplot(spectra, **plot_kwargs):
     from hyperspy._signals.signal2d import Signal2D
     im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     im.metadata.General.title = spectra.metadata.General.title
-    im.plot()
+    im.plot(**plot_kwargs)
     return im._plot.signal_plot.ax
 
 

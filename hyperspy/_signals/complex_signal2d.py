@@ -64,7 +64,7 @@ class Complex2Dmixin:
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             saturated_pixels=0,
+             saturated_pixels=None,
              vmin=None,
              vmax=None,
              no_nans=False,
