@@ -385,8 +385,10 @@ class ImagePlot(BlittedFigure):
         else:
             vmin, vmax = vmin, vmax
 
+        if self.norm == 'auto' and self.gamma != 1.0:
+            self.norm = 'power'
         norm = copy.copy(self.norm)
-        if norm == 'power' or (norm == 'auto' and self.gamma != 1.0):
+        if norm == 'power':
             # with auto norm, we use the power norm when gamma differs from its
             # default value.
             norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
@@ -403,10 +405,6 @@ class ImagePlot(BlittedFigure):
             norm = SymLogNorm(linthresh=self.linthresh,
                               linscale=self.linscale,
                               vmin=vmin, vmax=vmax)
-            if "cmap" not in kwargs.keys():
-                kwargs['cmap'] = "RdBu_r"
-                if self.centre_colormap == "auto":
-                    self.centre_colormap = False
         elif inspect.isclass(norm) and issubclass(norm, Normalize):
             norm = norm(vmin=vmin, vmax=vmax)
         elif norm not in ['auto', 'linear']:
@@ -416,11 +414,6 @@ class ImagePlot(BlittedFigure):
         else:
             # set back to matplotlib default
             norm = None
-
-        if np.nanmin(data) <= 0 and "cmap" not in kwargs.keys():
-            kwargs['cmap'] = "Reds"
-            if self.centre_colormap == "auto":
-                self.centre_colormap = False
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)

@@ -67,7 +67,7 @@ def test_plot_contrast_editor(gamma, saturated_pixels):
     return plt.gcf()
 
 
-@pytest.mark.parametrize("norm", ("auto", "linear", "log"))
+@pytest.mark.parametrize("norm", ("linear", "log", "power", "symlog"))
 def test_plot_contrast_editor_norm(norm):
     np.random.seed(1)
     data = np.random.random(size=(100, 100))*1000
