@@ -212,18 +212,35 @@ example:
 .. code-block:: yaml
 
     components1D:
-      MyComponent1DClass:
-        # The module where the component is located.
+      # _id_name of the component. It must be an UUID4. This can be generated
+      # using ``uuid.uuid4()``. Also, many editors can automatically generate
+      # UUIDs. The same UUID must be stored in the components ``_id_name`` attribute.
+      fc731a2c-0a05-4acb-91df-d15743b531c3:
+        # The module where the component class is located.
         module: my_package.components
+        # The actual class of the component
+        class: MyComponent1DClass
 
 Equivalently, to add a new component 2D:
 
 .. code-block:: yaml
 
     components2D:
-      MyComponent2DClass:
+      # _id_name of the component. It must be an UUID4. This can be generated
+      # using ``uuid.uuid4()``. Also, many editors can automatically generate
+      # UUIDs. The same UUID must be stored in the components ``_id_name`` attribute.
+      2ffbe0b5-a991-4fc5-a089-d2818a80a7e0:
         # The module where the component is located.
         module: my_package.components
+        class: MyComponent2DClass
+
+.. note::
+
+  HyperSpy's legacy components use their class name instead of an UUID as
+  ``id_name``. This is for compatibility with old versions of the software. We
+  encourage all extension developers to use UUIDs instead in order to i) avoid
+  name clashes ii) make it easy to find the component online if e.g. the package
+  is renamed or the component relocated.
 
 
 Creating and registering new widgets and toolkeys
