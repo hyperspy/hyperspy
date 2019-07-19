@@ -1,9 +1,11 @@
 import pytest
 import numpy as np
+import numpy.testing as nt
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+from hyperspy.datasets import artificial_data
 
 
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
@@ -31,6 +33,35 @@ def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
                     np.allclose(c2.data, -c1.data, atol=atol)):
                 matches += 1
     return matches == len(c1_list)
+
+
+class TestReverseBSS:
+
+    def setup_method(self, method):
+        s = artificial_data.get_core_loss_eels_line_scan_signal()
+        s.decomposition()
+        s.blind_source_separation(2)
+        self.s = s
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_autoreverse_default(self):
+        self.s.learning_results.bss_factors[:, 0] *= -1
+        self.s._auto_reverse_bss_component('loadings')
+        nt.assert_array_less(self.s.learning_results.bss_factors[:, 0], 0)
+        nt.assert_array_less(0, self.s.learning_results.bss_factors[:, 1])
+        self.s._auto_reverse_bss_component('factors')
+        nt.assert_array_less(0, self.s.learning_results.bss_factors)
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_autoreverse_on_loading(self):
+        self.s._auto_reverse_bss_component('loadings')
+        nt.assert_array_less(0, self.s.learning_results.bss_factors)
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_reverse_wrong_parameter(self):
+        with pytest.raises(ValueError):
+            self.s.blind_source_separation(2,
+                                           reverse_component_criterion='toto')
 
 
 class TestBSS1D:
