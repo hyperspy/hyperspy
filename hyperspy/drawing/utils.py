@@ -435,8 +435,8 @@ def _set_spectrum_xlabel(spectrum, ax):
 def _transpose_if_required(signal, expected_dimension):
     # EDS profiles or maps have signal dimension = 0 and navigation dimension
     # 1 or 2. For convenience transpose the signal if possible
-    if (signal.axes_manager.signal_dimension == 0 and 
-        signal.axes_manager.navigation_dimension == expected_dimension):
+    if (signal.axes_manager.signal_dimension == 0 and
+            signal.axes_manager.navigation_dimension == expected_dimension):
         return signal.T
     else:
         return signal
@@ -474,7 +474,7 @@ def plot_images(images,
     ----------
     images : list of Signal2D or BaseSignal
         `images` should be a list of Signals to plot. For `BaseSignal` with
-        navigation dimensions 2 and signal dimension 0, the signal will be 
+        navigation dimensions 2 and signal dimension 0, the signal will be
         tranposed to form a `Signal2D`.
         Multi-dimensional images will have each plane plotted as a separate
         image.
@@ -1205,7 +1205,7 @@ def plot_spectra(
     Parameters
     ----------
     spectra : list of Signal1D or BaseSignal
-        Ordered spectra list of signal to plot. If `style` is "cascade" or 
+        Ordered spectra list of signal to plot. If `style` is "cascade" or
         "mosaic" the spectra can have different size and axes. For `BaseSignal`
         with navigation dimensions 1 and signal dimension 0, the signal will be
         tranposed to form a `Signal1D`.
@@ -1376,7 +1376,7 @@ def plot_spectra(
     elif style == 'heatmap':
         if not isinstance(spectra, hyperspy.signal.BaseSignal):
             import hyperspy.utils
-            spectra = [_transpose_if_required(spectrum, 1) for spectrum in 
+            spectra = [_transpose_if_required(spectrum, 1) for spectrum in
                        spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():

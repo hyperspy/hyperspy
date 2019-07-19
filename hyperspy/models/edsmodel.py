@@ -849,7 +849,7 @@ class EDSModel(Model1D):
             xray_lines = [component.name for component in self.xray_lines]
         else:
             xray_lines = self.signal._parse_xray_lines(
-                    xray_lines, only_one, only_lines)
+                xray_lines, only_one, only_lines)
             xray_lines = list(filter(lambda x: x in [a.name for a in
                                                      self], xray_lines))
         if len(xray_lines) == 0:

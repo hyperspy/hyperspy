@@ -516,10 +516,10 @@ def ser_reader(filename, objects=None, lazy=False, only_valid_data=False):
                 })
                 array_shape[i] = header['Dim-%i_DimensionSize' % idim][0]
 
-        # Deal with issue when TotalNumberElements does not equal 
+        # Deal with issue when TotalNumberElements does not equal
         # ValidNumberElements for ndim==1.
-        if ndim == 1 and (header['TotalNumberElements'] 
-                != header['ValidNumberElements'][0]) and only_valid_data:
+        if ndim == 1 and (header['TotalNumberElements']
+                          != header['ValidNumberElements'][0]) and only_valid_data:
             if header['ValidNumberElements'][0] == 1:
                 # no need for navigation dimension
                 array_shape = []
@@ -586,7 +586,7 @@ def ser_reader(filename, objects=None, lazy=False, only_valid_data=False):
         from dask import delayed
         from dask.array import from_delayed
         val = delayed(load_only_data, pure=True)(filename, array_shape,
-                                                 record_by, len(axes), 
+                                                 record_by, len(axes),
                                                  only_valid_data=only_valid_data)
         dc = from_delayed(val, shape=array_shape,
                           dtype=data['Array'].dtype)
@@ -632,8 +632,8 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None,
     # dtype is float
     if multiply(array_shape) != multiply(data['Array'].shape):
         if int(header['NumberDimensions']) == 1 and only_valid_data:
-            # No need to fill with zeros if `TotalNumberElements != 
-            # ValidNumberElements` for series data. 
+            # No need to fill with zeros if `TotalNumberElements !=
+            # ValidNumberElements` for series data.
             # The valid data is always `0:ValidNumberElements`
             dc = data['Array'][0:header['ValidNumberElements'][0], ...]
             array_shape[0] = header['ValidNumberElements'][0]
