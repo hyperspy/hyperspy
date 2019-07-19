@@ -151,7 +151,7 @@ class Polynomial(Component):
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
 
-class Polynomial2(Expression):
+class Polynomial(Expression):
 
     """n-order polynomial component.
 
@@ -190,7 +190,8 @@ class Polynomial2(Expression):
         name = "{} order Polynomial".format(ordinal(order))
         super().__init__(expression=expr, name=name, module=module, 
              autodoc=False, **kwargs)
-    
+        self._id_name = "eab91275-88db-4855-917a-cdcbe7209592"
+
     def get_polynomial_order(self):
         return len(self.parameters) - 1
 

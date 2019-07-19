@@ -186,6 +186,9 @@ components1D:
   Polynomial:
     module: hyperspy._components.polynomial
     class: Polynomial
+  eab91275-88db-4855-917a-cdcbe7209592:
+    module: hyperspy._components.polynomial
+    class: Polynomial
   PowerLaw:
     module: hyperspy._components.power_law
     class: PowerLaw
