@@ -30,6 +30,7 @@ from distutils.version import LooseVersion
 import logging
 
 import hyperspy as hs
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -455,7 +456,7 @@ def plot_images(images,
                 suptitle_fontsize=18,
                 colorbar='multi',
                 centre_colormap="auto",
-                saturated_pixels=0,
+                saturated_pixels=None,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -707,7 +708,11 @@ def plot_images(images,
         return arg
     vmin = _check_arg(vmin, None, 'vmin')
     vmax = _check_arg(vmax, None, 'vmax')
-    saturated_pixels = _check_arg(saturated_pixels, 0, 'saturated_pixels')
+    if saturated_pixels is None:
+        saturated_pixels = preferences.Plot.saturated_pixels
+    saturated_pixels = _check_arg(saturated_pixels,
+                                  preferences.Plot.saturated_pixels,
+                                  'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -837,6 +842,7 @@ def plot_images(images,
     # 'single' scalebar
     if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
+        print(saturated_pixels)
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
         else:
