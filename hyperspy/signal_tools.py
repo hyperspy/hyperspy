@@ -794,7 +794,7 @@ class ImageContrastEditor(t.HasTraits):
         self.linscale = self.linscale_original
         self.saturated_pixels = self.saturated_pixels_original
         self._vmin = self.vmin_original
-        self._vmax = self.vmax_original        
+        self._vmax = self.vmax_original
 
     def _get_current_range(self):
         if self.span_selector._get_span_width() != 0:
@@ -806,6 +806,11 @@ class ImageContrastEditor(t.HasTraits):
     def close(self):
         # And reconnect the image if we close the ImageContrastEditor
         if self.image is not None:
+            if self.auto:
+                # reset the `_*_user` value so that the contrast of the image
+                # get updated automatically after closing the contrast tool
+                self.image._vmin_user = None
+                self.image._vmax_user = None
             self.image.connect()
         self.hspy_fig.close()
 
@@ -828,7 +833,7 @@ class ImageContrastEditor(t.HasTraits):
         if update:
             if self.norm.lower() == 'log' and self._vmin <= 0:
                 # With norm='log', get the smallest positive value
-                self._vmin = np.nanmin(np.where(data > 0, self.data, np.inf))
+                self._vmin = np.nanmin(np.where(self.data > 0, self.data, np.inf))
                 self.image.update()
             if not auto:
                 # if we don't use "image.optimize_contrast", the image vmin and

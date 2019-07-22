@@ -370,7 +370,7 @@ class ImagePlot(BlittedFigure):
             if optimize_contrast:
                 vmin, vmax = self._vmin_auto, self._vmax_auto
             else:
-                vmin, vmax = self.vmin, self.vmax                
+                vmin, vmax = self.vmin, self.vmax
             # If there is an image, any of the contrast bounds have changed and
             # the new contrast bounds are not the same redraw the colorbar.
             if (ims and (old_vmin != vmin or old_vmax != vmax) and
