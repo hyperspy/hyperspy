@@ -116,17 +116,14 @@ class DoublePowerLaw(Expression):
 
     def grad_origin(self, x):
         return np.where(x > self.left_cutoff.value, self.A.value * self.r.value
-                        * self.ratio.value * (x - self.origin.value -
-                        self.shift.value) ** (-self.r.value) / (x - 
-                        self.origin.value - self.shift.value) + 
-                        self.A.value * self.r.value * (x - self.origin.value) 
-                        ** (-self.r.value) / (x - self.origin.value), 0)
+                        * self.ratio.value * (x - self.origin.value - self.shift.value) 
+                        ** (-self.r.value - 1) + self.A.value * self.r.value
+                        * (x - self.origin.value) ** (-self.r.value - 1), 0)
 
     def grad_shift(self, x):
         return np.where(x > self.left_cutoff.value, self.A.value * self.r.value
-                        * self.ratio.value(x - self.origin.value - 
-                        self.shift.value) ** (-self.r.value) / 
-                        (x - self.origin.value - self.shift.value), 0)
+                        * self.ratio.value * (x - self.origin.value - 
+                        self.shift.value) ** (-self.r.value - 1), 0)
 
     def grad_ratio(self, x):
         return np.where(x > self.left_cutoff.value, self.A.value *
