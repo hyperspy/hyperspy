@@ -315,6 +315,12 @@ class ImagePlot(BlittedFigure):
         self._colorbar.ax.yaxis.set_animated(
             self.figure.canvas.supports_blit)
 
+    def _update_data(self):
+        # self._current_data caches the displayed data.
+        self._current_data =  self.data_function(
+                axes_manager=self.axes_manager,
+                **self.data_function_kwargs)
+
     def update(self, data_changed=True, **kwargs):
         optimize_contrast = kwargs.pop("optimize_contrast", False)
         ims = self.ax.images
@@ -343,9 +349,7 @@ class ImagePlot(BlittedFigure):
             # to recompute the histogram to adjust the contrast. In those cases
             # use `data_changed=True`.
             _logger.debug("Updating image slowly because `data_changed=True`")
-            self._current_data = self.data_function(
-                axes_manager=self.axes_manager,
-                **self.data_function_kwargs)
+            self._update_data()
         data = self._current_data
 
         if rgb_tools.is_rgbx(data):

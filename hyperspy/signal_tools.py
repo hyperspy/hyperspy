@@ -595,7 +595,7 @@ class ImageContrastEditor(t.HasTraits):
         self.span_selector = None
         self.span_selector_switch(on=True)
 
-        self._reset(auto=False, update=False)
+        self._reset(auto=False, update=False, indices_changed=False)
         self.plot_histogram()
 
         if self.image.axes_manager is not None:
@@ -628,27 +628,27 @@ class ImageContrastEditor(t.HasTraits):
         self.image.saturated_pixels = new
         # Before the tool is fully initialised
         if hasattr(self, "hist"):
-            self._reset()
+            self._reset(indices_changed=False)
 
     def _auto_changed(self, old, new):
         # Do something only if auto is ticked
         if new:
-            self._reset()
+            self._reset(indices_changed=False)
 
     def _norm_changed(self, old, new):
         if hasattr(self, "hist"):
             self.image.norm = new.lower()
-            self._reset()
+            self._reset(indices_changed=False)
 
     def _linthresh_changed(self, old, new):
         self.image.linthresh = new
         if hasattr(self, "hist"):
-            self._reset()
+            self._reset(indices_changed=False)
 
     def _linscale_changed(self, old, new):
         self.image.linscale = new
         if hasattr(self, "hist"):
-            self._reset()
+            self._reset(indices_changed=False)
 
     def span_selector_switch(self, on):
         if on is True:
@@ -773,14 +773,14 @@ class ImageContrastEditor(t.HasTraits):
         if self.ss_left_value == self.ss_right_value:
             # No span selector, so we use the saturated_pixels value to 
             # calculate the vim and vmax values 
-            self._reset(auto=True)
+            self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
             self._vmin, self._vmax = self._get_current_range()
             # Remove the span selector and set the new one ready to use
             self.span_selector_switch(False)
             self.span_selector_switch(True)
-            self._reset(auto=False)
+            self._reset(auto=False, indices_changed=False)
 
     def reset(self):
         # Reset the display as original
@@ -789,7 +789,7 @@ class ImageContrastEditor(t.HasTraits):
         # Remove the span selector and set the new one ready to use
         self.span_selector_switch(False)
         self.span_selector_switch(True)
-        self._reset()
+        self._reset(indices_changed=False)
 
     def _reset_original_settings(self):
         self.norm = self.norm_original.capitalize()
@@ -818,15 +818,20 @@ class ImageContrastEditor(t.HasTraits):
             self.image.connect()
         self.hspy_fig.close()
 
-    def _reset(self, auto=None, update=True):
+    def _reset(self, auto=None, update=True, indices_changed=True):
+        # indices_changed is used for the connection to the indices_changed
+        # event of the axes_manager, which will require to update the displayed
+        # image
         self.image.norm = self.norm.lower()
         if auto is None:
             auto = self.auto
 
+        if indices_changed:
+            self.image._update_data()
         # Get the vmin and vmax values
         if auto:
             self.image.optimize_contrast(self._get_data(),
-                                          ignore_user_values=True)
+                                         ignore_user_values=True)
             self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
 
         if update:
