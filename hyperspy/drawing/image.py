@@ -278,7 +278,7 @@ class ImagePlot(BlittedFigure):
                 animated=self.figure.canvas.supports_blit)
         for marker in self.ax_markers:
             marker.plot()
-        self.update(**kwargs)
+        self.update(data_changed=True, **kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.ScaleBar(
@@ -315,7 +315,7 @@ class ImagePlot(BlittedFigure):
         self._colorbar.ax.yaxis.set_animated(
             self.figure.canvas.supports_blit)
 
-    def update(self, **kwargs):
+    def update(self, data_changed=True, **kwargs):
         optimize_contrast = kwargs.pop("optimize_contrast", False)
         ims = self.ax.images
         # update extent:
@@ -337,12 +337,21 @@ class ImagePlot(BlittedFigure):
             else:
                 self.centre_colormap = False
         redraw_colorbar = False
+        if data_changed:
+            # When working with lazy signals the following may reread the data
+            # from disk unnecessarily, for example when updating the image just
+            # to recompute the histogram to adjust the contrast. In those cases
+            # use `data_changed=True`.
+            _logger.debug("Updating image slowly because `data_changed=True`")
+            self._current_data = self.data_function(
+                axes_manager=self.axes_manager,
+                **self.data_function_kwargs)
+        data = self._current_data
 
-        data = self.data_function(axes_manager=self.axes_manager,
-                                  **self.data_function_kwargs)
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+            data = self._current_data = data
 
         for marker in self.ax_markers:
             marker.update()
@@ -458,7 +467,7 @@ class ImagePlot(BlittedFigure):
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the
         # method arguments and auto contrast does not work then
-        self.update()
+        self.update(data_changed=False)
 
     def gui_adjust_contrast(self, display=True, toolkit=None):
         ceditor = ImageContrastEditor(self)
@@ -494,7 +503,7 @@ class ImagePlot(BlittedFigure):
 
     def toggle_norm(self):
         self.norm = 'linear' if self.norm == 'log' else 'log'
-        self.update()
+        self.update(data_changed=False)
         if self.colorbar:
             self._colorbar.remove()
             self._add_colorbar()
@@ -518,7 +527,7 @@ class ImagePlot(BlittedFigure):
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax
-        self.update()
+        self.update(data_changed=False)
 
     def optimize_colorbar(self,
                           number_of_ticks=5,
