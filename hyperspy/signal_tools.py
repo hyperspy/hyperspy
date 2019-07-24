@@ -595,12 +595,12 @@ class ImageContrastEditor(t.HasTraits):
         self.span_selector = None
         self.span_selector_switch(on=True)
 
-        self._reset(auto=False, update=False, axes_manager=True)
+        self._reset(auto=False, update=False)
         self.plot_histogram()
 
         if self.image.axes_manager is not None:
             self.image.axes_manager.events.indices_changed.connect(
-                self._reset, {'obj': 'axes_manager'})
+                self._reset, [])
             self.hspy_fig.events.closed.connect(
                 lambda: self.image.axes_manager.events.indices_changed.disconnect(
                     self._reset), [])
@@ -673,6 +673,9 @@ class ImageContrastEditor(t.HasTraits):
         self.image.update(optimize_contrast=False)
         self.update_line()
 
+    def _get_data(self):
+        return self.image.data_function()
+
     def _get_histogram(self, data):
         return numba_histogram(data, bins=self.bins,
                                ranges=(self._vmin, self._vmax))
@@ -687,8 +690,9 @@ class ImageContrastEditor(t.HasTraits):
     def plot_histogram(self):
         if self._vmin == self._vmax:
             return
-        self.bins = calculate_bins_histogram(self.data)
-        self.hist_data = self._get_histogram(self.data)
+        data = self._get_data()
+        self.bins = calculate_bins_histogram(data)
+        self.hist_data = self._get_histogram(data)
         self._set_xaxis()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid")
@@ -707,7 +711,7 @@ class ImageContrastEditor(t.HasTraits):
         color = self.hist.get_facecolor()
         update_span = self.auto and self.span_selector._get_span_width() != 0
         self.hist.remove()
-        self.hist_data = self._get_histogram(self.data)
+        self.hist_data = self._get_histogram(self._get_data())
         if update_span:
             span_x_coord = self.ax.transData.transform(
                     (self.span_selector.range[0], 0))
@@ -814,26 +818,22 @@ class ImageContrastEditor(t.HasTraits):
             self.image.connect()
         self.hspy_fig.close()
 
-    def _reset(self, auto=None, update=True, axes_manager=None):
-        if axes_manager is not None:
-            # when the indices are changed, we update the data; _reset is
-            # connected to axes_managed.indices_changed, which pass the
-            # `axes_manager` argument: this is how we know that we need to
-            # update data.
-            self.data = self.image.data_function()
+    def _reset(self, auto=None, update=True):
         self.image.norm = self.norm.lower()
         if auto is None:
             auto = self.auto
 
         # Get the vmin and vmax values
         if auto:
-            self.image.optimize_contrast(self.data, ignore_user_values=True)
+            self.image.optimize_contrast(self._get_data(),
+                                          ignore_user_values=True)
             self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
 
         if update:
             if self.norm.lower() == 'log' and self._vmin <= 0:
                 # With norm='log', get the smallest positive value
-                self._vmin = np.nanmin(np.where(self.data > 0, self.data, np.inf))
+                data = self._get_data()
+                self._vmin = np.nanmin(np.where(data > 0, data, np.inf))
                 self.image.update()
             if not auto:
                 # if we don't use "image.optimize_contrast", the image vmin and
