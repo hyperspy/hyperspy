@@ -621,7 +621,7 @@ class ImageContrastEditor(t.HasTraits):
             return
         self.image.gamma = new
         if hasattr(self, "hist"):
-            self.image.update(optimize_contrast=True)
+            self.image.update(optimize_contrast=True, data_changed=False)
             self.update_line()
 
     def _saturated_pixels_changed(self, old, new):
@@ -670,11 +670,11 @@ class ImageContrastEditor(t.HasTraits):
             self.span_selector.rect.get_width()
 
         self.image.vmin, self.image.vmax = self._get_current_range()
-        self.image.update(optimize_contrast=False)
+        self.image.update(optimize_contrast=False, data_changed=False)
         self.update_line()
 
     def _get_data(self):
-        return self.image.data_function()
+        return self.image._current_data
 
     def _get_histogram(self, data):
         return numba_histogram(data, bins=self.bins,
@@ -834,7 +834,7 @@ class ImageContrastEditor(t.HasTraits):
                 # With norm='log', get the smallest positive value
                 data = self._get_data()
                 self._vmin = np.nanmin(np.where(data > 0, data, np.inf))
-                self.image.update()
+                self.image.update(data_changed=False)
             if not auto:
                 # if we don't use "image.optimize_contrast", the image vmin and
                 # vmax need to be udpated
