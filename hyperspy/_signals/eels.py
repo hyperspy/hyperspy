@@ -40,7 +40,7 @@ from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="microscope_parameters_EELS")
+@add_gui_method(toolkey="hyperspy.microscope_parameters_EELS")
 class EELSTEMParametersUI(BaseSetMetadataItems):
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence semi-angle (mrad)')
