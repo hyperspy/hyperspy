@@ -586,30 +586,30 @@ available publicly available from EDAX and are on Github
 SpcMap-spd.file.format.pdf>`_, and
 `.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
 
-Extra loading arguments for ``.spd`` file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Extra loading arguments for SPD file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `spc_fname` : {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
 - `ipr_fname` : {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
 - **kwargs: remaining arguments are passed to the Numpy ``memmap`` function.
 
-Extra loading arguments for ``.spd`` and ``.spc`` files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+Extra loading arguments for SPD and SPC files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `load_all_spc` : bool, switch to control if all of the ``.spc`` header is read, or just the important parts for import into HyperSpy.
 
 
 .. _fei-format:
 
-FEI TIA ser and emi
+FEI TIA SER and EMI
 -------------------
 
 HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the
-problem.
+`issues tracker <https://github.com/hyperspy/hyperspy/issues>`_ to make us 
+aware of the problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
 by doing so, the information that is stored in the emi file is lost.
@@ -618,9 +618,18 @@ Therefore strongly recommend to load using the ``.emi`` file instead.
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
 
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- `only_valid_data` : bool, in case of series or linescan data with the 
+acquisition stopped before the end: if True, load only the acquired data. 
+If False, the empty data are filled with zeros. The default is False and this 
+default value will change to True in version 2.0.
+
 .. _unf-format:
 
-SEMPER unf binary format
+SEMPER UNF binary format
 ------------------------
 
 SEMPER is a fully portable system of programs for image processing, particularly

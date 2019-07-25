@@ -20,7 +20,7 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, LogNorm
+from matplotlib.colors import Normalize, LogNorm, SymLogNorm, PowerNorm
 from traits.api import Undefined
 import logging
 import inspect
@@ -34,6 +34,8 @@ from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
+from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -86,7 +88,7 @@ class ImagePlot(BlittedFigure):
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
-        self.saturated_pixels = 0.2
+        self.saturated_pixels = None
         self.ax_markers = list()
         self.scalebar_color = "white"
         self._user_scalebar = None
@@ -96,6 +98,9 @@ class ImagePlot(BlittedFigure):
         self.no_nans = False
         self.centre_colormap = "auto"
         self.norm = "auto"
+        self.gamma = 1.0
+        self.linthresh = 0.01
+        self.linscale = 0.1
 
     @property
     def vmax(self):
@@ -174,6 +179,8 @@ class ImagePlot(BlittedFigure):
                         yaxis.axis[-1] + yaxis.scale / 2.,
                         yaxis.axis[0] - yaxis.scale / 2.)
         self._calculate_aspect()
+        if self.saturated_pixels is None:
+            self.saturated_pixels = preferences.Plot.saturated_pixels
 
     def _calculate_aspect(self):
         xaxis = self.xaxis
@@ -191,13 +198,19 @@ class ImagePlot(BlittedFigure):
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
-        # print(self._aspect)
 
-    def optimize_contrast(self, data):
-        if (self._vmin_user is not None and self._vmax_user is not None):
+    def optimize_contrast(self, data, ignore_user_values=False):
+        if (self._vmin_user is not None and self._vmax_user is not None and
+            not ignore_user_values):
             return
-        self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
-            data, self.saturated_pixels)
+        with ignore_warning(category=RuntimeWarning):
+            # In case of "All-NaN slices"
+            vmin, vmax = utils.contrast_stretching(data, self.saturated_pixels)
+        if vmin == np.nan:
+            vmin = None
+        if vmax == np.nan:
+            vmax = None
+        self._vmin_auto, self._vmax_auto = vmin, vmax
 
     def create_figure(self, max_size=None, min_size=2, **kwargs):
         """Create matplotlib figure
@@ -250,14 +263,8 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        data = self.data_function(axes_manager=self.axes_manager,
-                                  **self.data_function_kwargs)
-        if rgb_tools.is_rgbx(data):
-            self.colorbar = False
-            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-        self.optimize_contrast(data)
-        if (not self.axes_manager or
-                self.axes_manager.navigation_size == 0):
+
+        if (not self.axes_manager or self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
             if self._text is not None:
@@ -271,7 +278,7 @@ class ImagePlot(BlittedFigure):
                 animated=self.figure.canvas.supports_blit)
         for marker in self.ax_markers:
             marker.plot()
-        self.update(**kwargs)
+        self.update(data_changed=True, **kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.ScaleBar(
@@ -299,6 +306,8 @@ class ImagePlot(BlittedFigure):
         self.figure.canvas.draw()
 
     def _add_colorbar(self):
+        # Bug extend='min' or extend='both' and power law norm
+        # Use it when it is fixed in matplotlib
         self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
         self.set_quantity_label()
         self._colorbar.set_label(
@@ -306,7 +315,14 @@ class ImagePlot(BlittedFigure):
         self._colorbar.ax.yaxis.set_animated(
             self.figure.canvas.supports_blit)
 
-    def update(self, **kwargs):
+    def _update_data(self):
+        # self._current_data caches the displayed data.
+        self._current_data =  self.data_function(
+                axes_manager=self.axes_manager,
+                **self.data_function_kwargs)
+
+    def update(self, data_changed=True, **kwargs):
+        optimize_contrast = kwargs.pop("optimize_contrast", False)
         ims = self.ax.images
         # update extent:
         self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
@@ -327,13 +343,23 @@ class ImagePlot(BlittedFigure):
             else:
                 self.centre_colormap = False
         redraw_colorbar = False
-        data = rgb_tools.rgbx2regular_array(
-            self.data_function(axes_manager=self.axes_manager,
-                               **self.data_function_kwargs),
-            plot_friendly=True)
-        numrows, numcols = data.shape[:2]
+        if data_changed:
+            # When working with lazy signals the following may reread the data
+            # from disk unnecessarily, for example when updating the image just
+            # to recompute the histogram to adjust the contrast. In those cases
+            # use `data_changed=True`.
+            _logger.debug("Updating image slowly because `data_changed=True`")
+            self._update_data()
+        data = self._current_data
+
+        if rgb_tools.is_rgbx(data):
+            self.colorbar = False
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+            data = self._current_data = data
+
         for marker in self.ax_markers:
             marker.update()
+
         if len(data.shape) == 2:
             def format_coord(x, y):
                 try:
@@ -346,37 +372,61 @@ class ImagePlot(BlittedFigure):
                     row = -1
                 if col >= 0 and row >= 0:
                     z = data[row, col]
-                    return 'x=%1.4g, y=%1.4g, intensity=%1.4g' % (x, y, z)
-                else:
-                    return 'x=%1.4g, y=%1.4g' % (x, y)
+                    if np.isfinite(z):
+                        return f'x={x:1.4g}, y={y:1.4g}, intensity={z:1.4g}'
+                return f'x={x:1.4g}, y={y:1.4g}'
             self.ax.format_coord = format_coord
-            old_vmax, old_vmin = self.vmax, self.vmin
-            self.optimize_contrast(data)
+
+            old_vmin, old_vmax = self.vmin, self.vmax
+            self.optimize_contrast(data, optimize_contrast)
+            # Use _vmin_auto and _vmax_auto if optimize_contrast is True
+            if optimize_contrast:
+                vmin, vmax = self._vmin_auto, self._vmax_auto
+            else:
+                vmin, vmax = self.vmin, self.vmax
             # If there is an image, any of the contrast bounds have changed and
             # the new contrast bounds are not the same redraw the colorbar.
-            if (ims and (old_vmax != self.vmax or old_vmin != self.vmin) and
-                    self.vmax != self.vmin):
+            if (ims and (old_vmin != vmin or old_vmax != vmax) and
+                    vmin != vmax):
                 redraw_colorbar = True
                 ims[0].autoscale()
         redraw_colorbar = redraw_colorbar and self.colorbar
+
         if self.plot_indices is True:
             self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap:
-            vmin, vmax = utils.centre_colormap_values(self.vmin, self.vmax)
+            vmin, vmax = utils.centre_colormap_values(vmin, vmax)
         else:
-            vmin, vmax = self.vmin, self.vmax
+            vmin, vmax = vmin, vmax
 
+        if self.norm == 'auto' and self.gamma != 1.0:
+            self.norm = 'power'
         norm = copy.copy(self.norm)
-        if norm == 'log':
-            norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
+        if norm == 'power':
+            # with auto norm, we use the power norm when gamma differs from its
+            # default value.
+            norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
+        elif norm == 'log':
+            if np.nanmax(data) <= 0:
+                raise ValueError('All displayed data are <= 0 and can not '
+                                 'be plotted using `norm="log"`. '
+                                 'Use `norm="symlog"` to plot on a log scale.')
+            if np.nanmin(data) <= 0:
+                vmin = np.nanmin(np.where(data > 0, data, np.inf))
+
+            norm = LogNorm(vmin=vmin, vmax=vmax)
+        elif norm == 'symlog':
+            norm = SymLogNorm(linthresh=self.linthresh,
+                              linscale=self.linscale,
+                              vmin=vmin, vmax=vmax)
         elif inspect.isclass(norm) and issubclass(norm, Normalize):
-            norm = norm(vmin=self.vmin, vmax=self.vmax)
+            norm = norm(vmin=vmin, vmax=vmax)
         elif norm not in ['auto', 'linear']:
             raise ValueError("`norm` paramater should be 'auto', 'linear', "
-                             "'log' or a matplotlib Normalize instance or "
-                             "subclass.")
+                             "'log', 'symlog' or a matplotlib Normalize  "
+                             "instance or subclass.")
         else:
             # set back to matplotlib default
             norm = None
@@ -421,7 +471,7 @@ class ImagePlot(BlittedFigure):
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the
         # method arguments and auto contrast does not work then
-        self.update()
+        self.update(data_changed=False)
 
     def gui_adjust_contrast(self, display=True, toolkit=None):
         ceditor = ImageContrastEditor(self)
@@ -438,12 +488,16 @@ class ImagePlot(BlittedFigure):
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
-                                       self.on_key_press)
+                                        self.on_key_press)
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
-            self.events.closed.connect(
-                lambda: self.axes_manager.events.indices_changed.disconnect(
-                    self.update), [])
+            if self.disconnect not in self.events.closed.connected:
+                self.events.closed.connect(self.disconnect, [])
+
+    def disconnect(self):
+        if self.axes_manager:
+            if self.update in self.axes_manager.events.indices_changed.connected:
+                self.axes_manager.events.indices_changed.disconnect(self.update)
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -453,7 +507,7 @@ class ImagePlot(BlittedFigure):
 
     def toggle_norm(self):
         self.norm = 'linear' if self.norm == 'log' else 'log'
-        self.update()
+        self.update(data_changed=False)
         if self.colorbar:
             self._colorbar.remove()
             self._add_colorbar()
@@ -477,7 +531,7 @@ class ImagePlot(BlittedFigure):
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax
-        self.update()
+        self.update(data_changed=False)
 
     def optimize_colorbar(self,
                           number_of_ticks=5,

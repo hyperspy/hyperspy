@@ -138,6 +138,11 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
+    saturated_pixels = t.CFloat(0.05,
+                                label='Saturated pixels',
+                                desc='Set the default saturated_pixels for '
+                                'plotting images.'
+                                )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )

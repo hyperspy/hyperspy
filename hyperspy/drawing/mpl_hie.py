@@ -18,6 +18,7 @@
 
 from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
+from hyperspy.docstrings.plot import PLOT2D_DOCSTRING, KWARGS_DOCSTRING
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
@@ -28,41 +29,24 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     scalebar_color="white",
                     axes_ticks=None,
                     axes_off=False,
-                    saturated_pixels=0,
+                    saturated_pixels=None,
                     vmin=None,
                     vmax=None,
                     no_nans=False,
                     centre_colormap="auto",
                     norm="auto",
+                    min_aspect=0.1,
+                    gamma=1.0,
+                    linthresh=0.01,
+                    linscale=0.1,
                     **kwargs
                     ):
         """Plot image.
 
         Parameters
         ----------
-        colorbar : bool, optional
-             If true, a colorbar is plotted for non-RGB images.
-        scalebar : bool, optional
-            If True and the units and scale of the x and y axes are the same a
-            scale bar is plotted.
-        scalebar_color : str, optional
-            A valid MPL color string; will be used as the scalebar color.
-        axes_ticks : {None, bool}, optional
-            If True, plot the axes ticks. If None axes_ticks are only
-            plotted when the scale bar is not plotted. If False the axes ticks
-            are never plotted.
-        axes_off : bool, optional
-            If True, the axes labels are not plotted.
-        saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds. For
-            example, the low and high bounds of a value of 1 are the
-            0.5% and 99.5% percentiles. It must be in the [0, 100] range.
-        vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data.
-        no_nans : bool, optional
-            If True, set nans to zero for plotting.
-        **kwargs, optional
-            Additional key word arguments passed to matplotlib.imshow()
+        %s
+        %s
 
         """
         if self.signal_plot is not None:
@@ -84,7 +68,11 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
+        imf.min_aspect = min_aspect
         imf.norm = norm
+        imf.gamma = gamma
+        imf.linthresh = linthresh
+        imf.linscale = linscale
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         imf.plot(**kwargs)
         self.signal_plot = imf
@@ -99,3 +87,5 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                 self.navigator_plot.events.closed.connect(
                     self._on_navigator_plot_closing, [])
                 imf.events.closed.connect(self.close_navigator_plot, [])
+
+    plot_signal.__doc__ %= (PLOT2D_DOCSTRING, KWARGS_DOCSTRING)

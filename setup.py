@@ -18,6 +18,15 @@
 
 from __future__ import print_function
 
+import hyperspy.Release as Release
+from distutils.errors import CompileError, DistutilsPlatformError
+import distutils.ccompiler
+import distutils.sysconfig
+import itertools
+import subprocess
+import os
+import warnings
+from setuptools import setup, Extension, Command
 import sys
 
 v = sys.version_info
@@ -28,23 +37,12 @@ if v[0] != 3:
     print(error, file=sys.stderr)
     sys.exit(1)
 
-from setuptools import setup, Extension, Command
-
-import warnings
-
-import os
-import subprocess
-import itertools
 
 # stuff to check presence of compiler:
-import distutils.sysconfig
-import distutils.ccompiler
-from distutils.errors import CompileError, DistutilsPlatformError
 
 
 setup_path = os.path.dirname(__file__)
 
-import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
                'matplotlib>=2.2.3',
@@ -55,10 +53,10 @@ install_req = ['scipy>=0.15',
                'tqdm>=0.4.9',
                'sympy',
                'dill',
-               'h5py',
+               'h5py>=2.3',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.18',
+               'dask[array]>=0.18, !=2.0',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
@@ -75,18 +73,20 @@ extras_require = {
     "speed": ["numba", "cython"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.0.0"], # for testing
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"], # required to build the docs
+    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
+    # required to build the docs
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
 
-# Don't include "tests" and "docs" requirements since "all" is designed to be 
+# Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
-runtime_extras_require = {x:extras_require[x] for x in extras_require.keys() 
-        if x not in ["tests", "build-doc"]}
+runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
+                          if x not in ["tests", "build-doc"]}
 extras_require["all"] = list(itertools.chain(*list(
-        runtime_extras_require.values())))
+    runtime_extras_require.values())))
 
 extras_require["dev"] = list(itertools.chain(*list(extras_require.values())))
+
 
 def update_version(version):
     release_path = "hyperspy/Release.py"
@@ -363,6 +363,8 @@ with update_version_when_dev() as version:
         },
         classifiers=[
             "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",
