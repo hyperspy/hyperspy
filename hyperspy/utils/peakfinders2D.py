@@ -427,20 +427,19 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     return centers
 
 
-def find_peaks_xc(z, disc_image, min_distance=5, peak_threshold=0.2):
-    """Find peaks using the the correlation between the image and a reference
-    peaks.
+def find_peaks_xc(z, template, separation=5, threshold=0.5):
+    """Find peaks in the cross correlation between the image and a template.
 
     Parameters
     ----------
-    z: numpy.ndarray
+    z : numpy.ndarray
         Array of image intensities.
-    disc_image: numpy.ndarray (square)
+    template : numpy.ndarray (square)
         Array containing a single bright disc, similar to those to detect.
-    min_distance: int
-        The minimum expected distance between peaks (in pixels)
-    peak_threshold: float between 0 and 1
-        Larger values will lead to fewer peaks in the output.
+    separation : float
+        Expected distance between peaks.
+    threshold : float
+        Minimum difference between maximum and minimum filtered images.
 
     Returns
     -------
@@ -448,11 +447,9 @@ def find_peaks_xc(z, disc_image, min_distance=5, peak_threshold=0.2):
         (n_peaks, 2)
         Array of peak coordinates.
     """
-    response_image = match_template(z, disc_image, pad_input=True)
-    peaks = corner_peaks(response_image,
-                         min_distance=min_distance,
-                         threshold_rel=peak_threshold)
-    # make return format the same as the other peak finders
-    peaks -= 1
+    response_image = match_template(z, template, pad_input=True)
+    peaks = find_peaks_minmax(response_image,
+                              separation=separation,
+                              threshold=threshold)
 
     return clean_peaks(peaks)

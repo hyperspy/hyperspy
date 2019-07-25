@@ -108,9 +108,15 @@ class TestFindPeaks2D:
         if parallel and dataset._lazy:
             pytest.skip("Parallel=True is ignored for lazy signal.")
 
-
-        peaks = dataset.find_peaks2D(method=method, parallel=parallel,
-                                     interactive=False)
+        if method=='xc':
+            disc = np.zeros((5, 5))
+            disc[1:4, 1:4] = 0.5
+            disc[2,2] = 1
+            peaks = dataset.find_peaks2D(method=method, parallel=parallel,
+                                         interactive=False, template=disc)
+        else:
+            peaks = dataset.find_peaks2D(method=method, parallel=parallel,
+                                         interactive=False)
         assert isinstance(peaks, BaseSignal)
         assert not isinstance(peaks, LazySignal)
 
@@ -145,10 +151,15 @@ class TestFindPeaks2D:
     def test_gets_right_answer(self, method, parallel):
         if method=='stat':
             pytest.importorskip("sklearn")
-
         ans = np.empty((1,), dtype=object)
         ans[0] = np.array([[self.xref, self.yref]])
-
-        peaks = self.ref.find_peaks2D(method=method, parallel=parallel,
-                                      interactive=False)
+        if method=='xc':
+            disc = np.zeros((5, 5))
+            disc[1:4, 1:4] = 0.5
+            disc[2,2] = 1
+            peaks = self.ref.find_peaks2D(method=method, parallel=parallel,
+                                         interactive=False, template=disc)
+        else:
+            peaks = self.ref.find_peaks2D(method=method, parallel=parallel,
+                                         interactive=False)
         nt.assert_allclose(peaks.data[0], ans[0])
