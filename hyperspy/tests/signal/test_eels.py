@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 
 from hyperspy import signals, model
+from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
 
 
@@ -33,11 +34,11 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = model.components1d.Gaussian()
+        gauss = Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = model.components1d.Gaussian()
+        gauss2 = Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -239,7 +240,7 @@ class TestFourierRatioDeconvolution:
     @pytest.mark.parametrize(('extrapolate_lowloss'), [True, False])
     def test_running(self, extrapolate_lowloss):
         s = signals.EELSSpectrum(np.arange(200))
-        gaussian = model.components1d.Gaussian()
+        gaussian = Gaussian()
         gaussian.A.value = 50
         gaussian.sigma.value = 10
         gaussian.centre.value = 20
