@@ -47,21 +47,24 @@ def clean_peaks(peaks):
 
 
 def find_peaks_minmax(z, separation=5., threshold=10.):
-    """
-    Method to locate the positive peaks in an image by comparing maximum
+    """Method to locate the positive peaks in an image by comparing maximum
     and minimum filtered images.
+
     Parameters
     ----------
-    z : ndarray
+    z : numpy.ndarray
         Matrix of image intensities.
     separation : float
         Expected distance between peaks.
     threshold : float
         Minimum difference between maximum and minimum filtered images.
+
     Returns
     -------
-    peaks: array with dimensions (npeaks, 2) that contains the x, y coordinates
-           for each peak found in the image.
+    peaks : numpy.ndarray
+        (n_peaks, 2)
+        Peak pixel coordinates.
+
     """
     data_max = ndi.filters.maximum_filter(z, separation)
     maxima = (z == data_max)
@@ -179,21 +182,22 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
 
         Parameters
         ----------
-        image : ndarray
+        image : numpy.ndarray
+            The image for which the gradient will be calculated.
 
         Returns
         -------
-        ndarray
+        gradient_of_image : numpy.ndarray
+            The gradient of the image.
 
         """
         gradient_of_image = np.gradient(image)
         gradient_of_image = gradient_of_image[0] ** 2 + gradient_of_image[
                                                             1] ** 2
         return gradient_of_image
-
+    # Check window size is appropriate.
     if window_size < 2:
         raise ValueError("`window_size` must be >= 2.")
-
     # Generate an ordered list of matrix coordinates.
     if len(z.shape) != 2:
         raise ValueError("'z' should be a 2-d image matrix.")
@@ -222,9 +226,8 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
 
 
 def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
-    """
-    Method to locate positive peaks in an image based on statistical refinement
-    and difference with respect to mean intensity.
+    """Method to locate positive peaks in an image based on statistical
+    refinement and difference with respect to mean intensity.
 
     Parameters
     ----------
@@ -242,9 +245,9 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
 
     Returns
     -------
-    ndarray
+    peaks : numpy.ndarray
         (n_peaks, 2)
-        Array of peak coordinates.
+        Peak pixel coordinates.
 
     Notes
     -----
@@ -343,13 +346,12 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
 
 def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
                    threshold=0.2, overlap=0.5, exclude_border=False):
-    """
-    Finds peaks via the difference of Gaussian Matrices method from
+    """Finds peaks via the difference of Gaussian Matrices method from
     `scikit-image`.
 
     Parameters
     ----------
-    z : ndarray
+    z : numpy.ndarray
         2-d array of intensities
     min_sigma, max_sigma, sigma_ratio, threshold, overlap :
         Additional parameters to be passed to the algorithm. See `blob_dog`
@@ -358,9 +360,9 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
 
     Returns
     -------
-    ndarray
+    peaks : numpy.ndarray
         (n_peaks, 2)
-        Array of peak coordinates.
+        Peak pixel coordinates.
 
     Notes
     -----
@@ -389,13 +391,12 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
 def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
                    threshold=0.2, overlap=0.5, log_scale=False,
                    exclude_border=False):
-    """
-    Finds peaks via the Laplacian of Gaussian Matrices method from
+    """Finds peaks via the Laplacian of Gaussian Matrices method from
     `scikit-image`.
 
     Parameters
     ----------
-    z : ndarray
+    z : numpy.ndarray
         Array of image intensities.
     min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale :
         Additional parameters to be passed to the ``blob_log`` method of the
@@ -404,9 +405,9 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
 
     Returns
     -------
-    ndarray
+    peaks : numpy.ndarray
         (n_peaks, 2)
-        Array of peak coordinates.
+        Peak pixel coordinates.
 
     """
     from skimage.feature import blob_log
@@ -423,3 +424,34 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     except IndexError:
         return NO_PEAKS
     return centers
+
+
+def find_peaks_xc(z, disc_image, min_distance=5, peak_threshold=0.2):
+    """Find peaks using the the correlation between the image and a reference
+    peaks.
+
+    Parameters
+    ----------
+    z: numpy.ndarray
+        Array of image intensities.
+    disc_image: numpy.ndarray (square)
+        Array containing a single bright disc, similar to those to detect.
+    min_distance: int
+        The minimum expected distance between peaks (in pixels)
+    peak_threshold: float between 0 and 1
+        Larger values will lead to fewer peaks in the output.
+
+    Returns
+    -------
+    numpy.ndarray
+        (n_peaks, 2)
+        Array of peak coordinates.
+    """
+    response_image = match_template(z, disc_image, pad_input=True)
+    peaks = corner_peaks(response_image,
+                         min_distance=min_distance,
+                         threshold_rel=peak_threshold)
+    # make return format the same as the other peak finders
+    peaks -= 1
+
+    return clean_peaks(peaks)
