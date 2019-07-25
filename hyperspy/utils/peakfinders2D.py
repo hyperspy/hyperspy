@@ -118,7 +118,7 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
         The minimum gradient required to begin a peak search.
     window_size : int
         The size of the square window within which a peak search is
-        conducted. If odd, will round down to even. The size must be larger 
+        conducted. If odd, will round down to even. The size must be larger
         than 2.
     distance_cutoff : float
         The maximum distance a peak may be from the initial
@@ -327,7 +327,7 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
 
 
 def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
-                   threshold=0.2, overlap=0.5):
+                   threshold=0.2, overlap=0.5, exclude_border=False):
     """
     Finds peaks via the difference of Gaussian Matrices method from
     `scikit-image`.
@@ -372,7 +372,8 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
 
 
 def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
-                   threshold=0.2, overlap=0.5, log_scale=False):
+                   threshold=0.2, overlap=0.5, log_scale=False,
+                   exclude_border=False):
     """
     Finds peaks via the Laplacian of Gaussian Matrices method from
     `scikit-image`.
@@ -382,7 +383,7 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     z : ndarray
         Array of image intensities.
     min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale :
-        Additional parameters to be passed to the ``blob_log`` method of the 
+        Additional parameters to be passed to the ``blob_log`` method of the
         ``scikit-image`` library. See its documentation for details:
         http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-log
 
