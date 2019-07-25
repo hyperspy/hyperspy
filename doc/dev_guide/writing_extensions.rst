@@ -237,7 +237,7 @@ Equivalently, to add a new component 2D:
 .. note::
 
   HyperSpy's legacy components use their class name instead of an UUID as
-  ``id_name``. This is for compatibility with old versions of the software. We
+  ``_id_name``. This is for compatibility with old versions of the software. We
   encourage all extension developers to use UUIDs instead in order to i) avoid
   name clashes ii) make it easy to find the component online if e.g. the package
   is renamed or the component relocated.
