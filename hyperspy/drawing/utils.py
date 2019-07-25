@@ -30,6 +30,7 @@ from distutils.version import LooseVersion
 import logging
 
 import hyperspy as hs
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -63,6 +64,9 @@ def contrast_stretching(data, saturated_pixels):
     if not 0 <= saturated_pixels <= 100:
         raise ValueError(
             "saturated_pixels must be a scalar in the range[0, 100]")
+    if np.ma.is_masked(data):
+        # If there is a mask, compressed the data to remove the masked data
+        data = np.ma.masked_less_equal(data, 0).compressed()
     vmin = np.nanpercentile(data, saturated_pixels / 2.)
     vmax = np.nanpercentile(data, 100 - saturated_pixels / 2.)
     return vmin, vmax
@@ -354,11 +358,11 @@ def plot_signals(signal_list, sync=True, navigator="auto",
                         **kwargs)
 
 
-def _make_heatmap_subplot(spectra):
+def _make_heatmap_subplot(spectra, **plot_kwargs):
     from hyperspy._signals.signal2d import Signal2D
     im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     im.metadata.General.title = spectra.metadata.General.title
-    im.plot()
+    im.plot(**plot_kwargs)
     return im._plot.signal_plot.ax
 
 
@@ -452,7 +456,7 @@ def plot_images(images,
                 suptitle_fontsize=18,
                 colorbar='multi',
                 centre_colormap="auto",
-                saturated_pixels=0,
+                saturated_pixels=None,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -704,7 +708,11 @@ def plot_images(images,
         return arg
     vmin = _check_arg(vmin, None, 'vmin')
     vmax = _check_arg(vmax, None, 'vmax')
-    saturated_pixels = _check_arg(saturated_pixels, 0, 'saturated_pixels')
+    if saturated_pixels is None:
+        saturated_pixels = preferences.Plot.saturated_pixels
+    saturated_pixels = _check_arg(saturated_pixels,
+                                  preferences.Plot.saturated_pixels,
+                                  'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -834,6 +842,7 @@ def plot_images(images,
     # 'single' scalebar
     if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
+        print(saturated_pixels)
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
         else:
