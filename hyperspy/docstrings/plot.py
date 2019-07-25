@@ -5,10 +5,10 @@
 
 
 BASE_PLOT_DOCSTRING_PARAMETERS = \
-"""navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
-            Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
+    """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
 
-            If ``'auto'``:
+        If ``'auto'``:
 
                 - If `navigation_dimension` > 0, a navigator is
                   provided to explore the data.
@@ -58,17 +58,17 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
 
 
 BASE_PLOT_DOCSTRING = \
-        """Plot the signal at the current coordinates.
+    """Plot the signal at the current coordinates.
 
-        For multidimensional datasets an optional figure,
-        the "navigator", with a cursor to navigate that data is
-        raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals with signal_dimension equal to
-        0, 1 and 2 can be plotted.
+    For multidimensional datasets an optional figure,
+    the "navigator", with a cursor to navigate that data is
+    raised. In any case it is possible to navigate the data using
+    the sliders. Currently only signals with signal_dimension equal to
+    0, 1 and 2 can be plotted.
 
-        Parameters
-        ----------
-        %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
+    Parameters
+    ----------
+    %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
 
 PLOT1D_DOCSTRING = \
 """norm : str, optional
@@ -80,7 +80,7 @@ PLOT1D_DOCSTRING = \
         """
 
 PLOT2D_DOCSTRING = \
-"""colorbar : bool, optional
+    """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
         scalebar : bool, optional
             If True and the units and scale of the x and y axes are the same a
@@ -91,13 +91,13 @@ PLOT2D_DOCSTRING = \
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        saturated_pixels: scalar, optional
+        saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
             If None (default value), the value from the preferences is used.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize the intensity scale.
+            `vmin` and `vmax` are used to normalize luminance data.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}
@@ -107,46 +107,16 @@ PLOT2D_DOCSTRING = \
         min_aspect : float
             Set the minimum aspect ratio of the image and the figure. To
             keep the image in the aspect limit the pixels are made
-            rectangular.
-        gamma : float
-            Value used for the gamma adjustement and not compatible norm='log'.
-            See :py:class:`matplotlib.colors.PowerNorm` for more information.
-            Default is 1.0 (linear scale).
-        norm : str or :py:class:`matplotlib.colors.Normalize` 
-            The function used to normalize the data prior to plotting.
-            Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``, or 
-            ``'symlog'``. (default value is ``'auto'``).
-            If ``'auto'``, intensity is plotted on a linear scale except when
-            ``power_spectrum=True`` (only for complex signals).
-            With ``log``, negative values will be masked and cmap will be set 
-            to Reds. ``symlog`` can be used to plot negative value on a log 
-            scale and the colormap will be set to RdBu_r; see 
-            :py:class:`matplotlib.colors.SymLogNorm` 
-            for more information. 
-            Alternatively, for a :py:class:`~hyperspy._signals.signal2d.Signal2D` 
-            object, an instance of the :py:class:`matplotlib.colors.Normalize` 
-            class can be used to customize the normalization function.
-        linthresh : float, optional
-            Only used with norm='symlog': Range of value
-            closed to zero, which are linearly extrapolated.
-            See the :py:class:`matplotlib.colors.SymLogNorm` for more information.
-            Default is 0.01.
-        linscale : float, optional
-            Only used with norm='symlog': Number of decades to use for each 
-            half of the linear range.
-            See the :py:class:`matplotlib.colors.SymLogNorm` for more information.
-            Default is 0.1.
-        """
+            rectangular."""
 
 
 COMPLEX_DOCSTRING = \
-"""power_spectrum : bool, default is False.
+    """power_spectrum : bool, default is False.
             If True, plot the power spectrum instead of the actual signal, if
             False, plot the real and imaginary parts of the complex signal.
         representation : {'cartesian' or 'polar'}
-            Determines if the real and imaginary part of the complex data is 
-            plotted ('cartesian', default), or if the amplitude and phase 
-            should be used ('polar').
+            Determines if the real and imaginary part of the complex data is plotted ('cartesian',
+            default), or if the amplitude and phase should be used ('polar').
         same_axes : bool, default True
             If True (default) plot the real and
             imaginary parts (or amplitude and phase) in the same figure if
@@ -158,8 +128,7 @@ COMPLEX_DOCSTRING = \
 
 
 KWARGS_DOCSTRING = \
-"""**kwargs
+    """**kwargs
             Only for :py:class:`~hyperspy._signals.signal2d.Signal2D`: 
             additional (optional) keyword arguments for 
-            :py:func:`matplotlib.pyplot.imshow`.
-        """
+            :py:func:`matplotlib.pyplot.imshow`."""

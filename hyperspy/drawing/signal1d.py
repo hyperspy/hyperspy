@@ -403,9 +403,9 @@ class Signal1DLine(object):
                 # To avoid matplotlib UserWarning when calling `set_ylim`
                 y_min, y_max = y_min - 0.1, y_max + 0.1
             if not np.isfinite(y_min):
-                y_min = None # data are -inf or all NaN
+                y_min = None  # data are -inf or all NaN
             if not np.isfinite(y_max):
-                y_max = None # data are inf or all NaN
+                y_max = None  # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)

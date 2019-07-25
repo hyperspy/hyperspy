@@ -419,7 +419,8 @@ class ModifiableSpanSelector(SpanSelector):
     def release(self, event):
         """When the button is released, the span stays in the screen and the
         iteractivity machinery passes to modify mode"""
-        if self.pressv is None or (self.ignore(event) and not self._button_down):
+        if self.pressv is None or (self.ignore(
+                event) and not self._button_down):
             return
         self._button_down = False
         self.update_range()

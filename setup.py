@@ -63,6 +63,8 @@ install_req = ['scipy>=0.15',
                'numexpr',
                'sparse',
                'imageio',
+               'pyyaml',
+               'PTable'
                ]
 
 extras_require = {
@@ -75,7 +77,7 @@ extras_require = {
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinxcontrib-mermaid"],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be
@@ -346,6 +348,7 @@ with update_version_when_dev() as version:
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+                'hyperspy_extension.yaml',
             ],
         },
         author=Release.authors['all'][0],

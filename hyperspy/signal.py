@@ -31,6 +31,7 @@ import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
+from prettytable import PrettyTable
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -50,7 +51,7 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import slugify
+from hyperspy.misc.utils import slugify, print_html
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
@@ -63,6 +64,7 @@ from hyperspy.misc.signal_tools import (are_signals_aligned,
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
 
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.ui_registry import ALL_EXTENSIONS
 
 _logger = logging.getLogger(__name__)
 
@@ -1168,7 +1170,7 @@ class MVATools(object):
         same_window : :py:class:`bool`
             If ``True``, plots each factor to the same window.
         comp_label : :py:class:`str`
-            the label that is either the plot title (if plotting in separate 
+            the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor image, or for peak
@@ -1855,7 +1857,6 @@ class BaseSignal(FancySlicing,
                 imported from the original data file.
 
         """
-
         self.data = file_data_dict['data']
         oldlazy = self._lazy
         if 'models' in file_data_dict:
@@ -2088,7 +2089,7 @@ class BaseSignal(FancySlicing,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            # check first if we have a signal to avoid comparion of signal with 
+            # check first if we have a signal to avoid comparion of signal with
             # string
             if isinstance(navigator, BaseSignal):
                 # Dynamic navigator
@@ -3301,12 +3302,12 @@ class BaseSignal(FancySlicing,
     def derivative(self, axis, order=1, out=None, rechunk=True):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
-            
-        For a function :math:`y = f(x)` and two consecutive values :math:`x_1` 
+
+        For a function :math:`y = f(x)` and two consecutive values :math:`x_1`
         and :math:`x_2`:
 
         .. math::
-    
+
             \frac{df(x)}{dx} = \frac{y(x_2)-y(x_1)}{x_2-x_1}
 
         Parameters
@@ -3427,7 +3428,7 @@ class BaseSignal(FancySlicing,
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
-        if apodization==True:
+        if apodization == True:
             apodization = 'hann'
 
         if apodization:
@@ -4603,33 +4604,87 @@ class BaseSignal(FancySlicing,
         if self._lazy:
             self._make_lazy()
 
-    def set_signal_type(self, signal_type):
-        """Set the signal type and change the current class
-        accordingly if pertinent.
+    def set_signal_type(self, signal_type=None):
+        """Set the signal type and convert the current signal accordingly.
 
-        The `signal_type` attribute specifies the kind of data that the signal
-        contains e.g. "EELS" for electron energy-loss spectroscopy. There are 
-        some methods that are only available for certain kind of signals, so 
-        setting this parameter can enable/disable features for a Signal.
+        The ``signal_type`` attribute specifies the type of data that the signal
+        contains e.g. electron energy-loss spectroscopy data,
+        photoemission spectroscopy data, etc.
+
+        When setting `signal_type` to a "known" type, HyperSpy converts the
+        current signal to the most appropriate
+        :py:class:`hyperspy.signal.BaseSignal` subclass. Known signal types are
+        signal types that have a specialized
+        :py:class:`hyperspy.signal.BaseSignal` subclass associated, usually
+        providing specific features for the analysis of that type of signal.
+
+        HyperSpy ships with a minimal set of known signal types. External
+        packages can register extra signal types. To print a list of
+        registered signal types in the current installation run this method
+        without arguments. Note that
+
 
         Parameters
         ----------
-        signal_type : str
-            Should be one of {``'EELS'``, ``'EDS_TEM'``, ``'EDS_SEM'``, or
-            ``'DielectricFunction'``}.
-            Currently there are special features for "EELS" (electron
-            energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
-            thin samples, normally obtained in a transmission electron
-            microscope), "EDS_SEM" (energy dispersive X-rays of thick samples,
-            normally obtained in a scanning electron microscope) and
-            "DielectricFuction". Setting the `signal_type` to the correct
-            value is highly advisable when analyzing any signal for which
-            HyperSpy provides extra features. Even if HyperSpy does not
-            provide extra features for the signal that you are analyzing,
-            it is good practice to set `signal_type` to a value that best
-            describes the data signal type.
+        signal_type : str, optional
+            If no arguments are passed, the `signal_type` is set to undefined
+            and the current signal converted to a generic signal subclass.
+            Otherwise, set the signal_type to the given signal
+            type or to the signal type corresponding to the given signal type
+            alias. Setting the signal_type to a known signal type (if exists)
+            is highly advisable. If none exists, it is good practice
+            to set signal_type to a value that best describes the data signal
+            type.
+
+        See Also
+        --------
+        print_known_signal_types
+
+        Examples
+        --------
+
+        Let's first print all known `signal_type`s:
+
+        >>> s = hs.signals.Signal1D([0, 1, 2, 3])
+        >>> s
+        <Signal1D, title: , dimensions: (|4)>
+        >>> hs.print_known_signal_types()
+        +--------------------+---------------------+--------------------+----------+
+        |    signal_type     |       aliases       |     class name     | package  |
+        +--------------------+---------------------+--------------------+----------+
+        | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
+        |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
+        |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
+        |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
+        |      hologram      |                     |   HologramImage    | hyperspy |
+        |      MySignal      |                     |      MySignal      | hspy_ext |
+        +--------------------+---------------------+--------------------+----------+
+
+        We can set the `signal_type` using the `signal_type`:
+
+        >>> s.set_signal_type("EELS")
+        >>> s
+        <EELSSpectrum, title: , dimensions: (|4)>
+        >>> s.set_signal_type("EDS_SEM")
+        >>> s
+        <EDSSEMSpectrum, title: , dimensions: (|4)>
+
+        or any of its aliases:
+
+        >>> s.set_signal_type("TEM EELS")
+        >>> s
+        <EELSSpectrum, title: , dimensions: (|4)>
+
+        To set the `signal_type` to `undefined`, simply call the method without arguments:
+
+        >>> s.set_signal_type()
+        >>> s
+        <Signal1D, title: , dimensions: (|4)>
+
         """
         self.metadata.Signal.signal_type = signal_type
+        # _assign_subclass takes care of matching aliases with their
+        # corresponding signal class
         self._assign_subclass()
 
     def set_signal_origin(self, origin):
@@ -5174,13 +5229,14 @@ class BaseSignal(FancySlicing,
 
         if window == 'hanning' or window == 'hann':
             if hann_order:
-                window_function = lambda m: hann_window_nth_order(m, hann_order)
+                def window_function(
+                    m): return hann_window_nth_order(m, hann_order)
             else:
-                window_function = lambda m: np.hanning(m)
+                def window_function(m): return np.hanning(m)
         elif window == 'hamming':
-            window_function = lambda m: np.hamming(m)
+            def window_function(m): return np.hamming(m)
         elif window == 'tukey':
-            window_function = lambda m: sp.signal.tukey(m, tukey_alpha)
+            def window_function(m): return sp.signal.tukey(m, tukey_alpha)
         else:
             raise ValueError('Wrong type parameter value.')
 
@@ -5199,13 +5255,15 @@ class BaseSignal(FancySlicing,
 
         window_nd = outer_nd(*windows_1d).T
 
-        # Prepare slicing for multiplication window_nd nparray with data with higher dimensionality:
+        # Prepare slicing for multiplication window_nd nparray with data with
+        # higher dimensionality:
         if inplace:
             slice_w = []
 
             # Iterate over all dimensions of the data
             for i in range(self.data.ndim):
-                if any(i == axes):  # If current dimension represents one of signal axis, all elements in window
+                if any(
+                        i == axes):  # If current dimension represents one of signal axis, all elements in window
                     # along current axis to be subscribed
                     slice_w.append(slice(None))
                 else:  # If current dimension is navigation one, new axis is absent in window and should be created
@@ -5215,6 +5273,7 @@ class BaseSignal(FancySlicing,
             self.events.data_changed.trigger(obj=self)
         else:
             return self * window_nd
+
 
 ARITHMETIC_OPERATORS = (
     "__add__",

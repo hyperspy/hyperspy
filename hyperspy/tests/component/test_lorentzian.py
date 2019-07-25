@@ -24,26 +24,30 @@ from hyperspy.components1d import Lorentzian
 
 def test_function():
     g = Lorentzian()
-    g.A.value = 1.5*np.pi
+    g.A.value = 1.5 * np.pi
     g.gamma.value = 1
     g.centre.value = 2
     assert_allclose(g.function(2), 1.5)
     assert_allclose(g.function(4), 0.3)
+
 
 def test_util_gamma_getset():
     g1 = Lorentzian()
     g1.gamma.value = 3.0
     assert_allclose(g1.gamma.value, 3.0)
 
+
 def test_util_fwhm_set():
     g1 = Lorentzian()
     g1.fwhm = 1.0
     assert_allclose(g1.gamma.value, 0.5)
 
+
 def test_util_fwhm_get():
     g1 = Lorentzian()
     g1.gamma.value = 2.0
     assert_allclose(g1.fwhm, 4.0)
+
 
 def test_util_fwhm_getset():
     g1 = Lorentzian()
