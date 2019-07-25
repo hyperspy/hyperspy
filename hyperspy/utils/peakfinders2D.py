@@ -25,6 +25,21 @@ NO_PEAKS = np.array([[np.nan, np.nan]])
 
 
 def clean_peaks(peaks):
+    """Utility function to deal with no peaks being found.
+
+    Parameters
+    ----------
+    peaks : numpy.ndarray
+        Result of peak finding
+
+    Returns
+    -------
+    peaks : numpy.ndarray
+        Result of peak finding
+    NO_PEAKS : str
+        Flag indicating no peaks found.
+
+    """
     if len(peaks) == 0:
         return NO_PEAKS
     else:
