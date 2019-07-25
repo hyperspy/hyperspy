@@ -375,7 +375,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
     z = z / np.max(z)
     blobs = blob_dog(z, min_sigma=min_sigma, max_sigma=max_sigma,
                      sigma_ratio=sigma_ratio, threshold=threshold,
-                     overlap=overlap)
+                     overlap=overlap, exclude_border=exclude_border)
     try:
         centers = np.round(blobs[:, :2]).astype(int)
     except IndexError:
@@ -417,7 +417,7 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
         raise ValueError("`num_sigma` parameter should be an integer.")
     blobs = blob_log(z, min_sigma=min_sigma, max_sigma=max_sigma,
                      num_sigma=num_sigma, threshold=threshold, overlap=overlap,
-                     log_scale=log_scale)
+                     log_scale=log_scale, exclude_border=exclude_border)
     # Attempt to return only peak positions. If no peaks exist, return an
     # empty array.
     try:
