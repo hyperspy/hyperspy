@@ -79,8 +79,8 @@ def _generate_reference():
     return Signal2D(ref), xref, yref
 
 
-PEAK_METHODS = ['local_max', 'max', 'minmax', 'zaefferer', 'stat', 
-                'laplacian_of_gaussian', 'difference_of_gaussian']
+PEAK_METHODS = ['local_max', 'max', 'minmax', 'zaefferer', 'stat',
+                'laplacian_of_gaussian', 'difference_of_gaussian', 'xc']
 DATASETS = _generate_dataset()
 DATASETS_NAME = ["dense", "sparse_nav0d", "sparse_nav1d", "sparse_nav2d"]
 
