@@ -484,7 +484,7 @@ class MVA():
                                 comp_list=None,
                                 mask=None,
                                 on_loadings=False,
-                                pretreatment=None,
+                                reverse_component_criterion='factors',
                                 compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
@@ -497,6 +497,7 @@ class MVA():
         number_of_components : int
             number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
+            BSS algorithms available.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If diff_order is 0, the signal is not differentiated.
@@ -512,7 +513,7 @@ class MVA():
             navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
-             to choose non contiguous components.
+            to choose non contiguous components.
         mask : bool numpy array or Signal instance.
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
@@ -520,7 +521,9 @@ class MVA():
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        pretreatment: dict
+        reverse_component_criterion : str {'factors', 'loadings'}
+            Use either the `factor` or the `loading` to determine if the 
+            component needs to be reversed.
         compute: bool
            If the decomposition results are lazy, compute the BSS components
            so that they are not lazy.
@@ -685,8 +688,8 @@ class MVA():
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
-        self._unmix_components(compute=compute)
-        self._auto_reverse_bss_component(lr)
+        self._unmix_components()
+        self._auto_reverse_bss_component(reverse_component_criterion)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
 
@@ -813,13 +816,22 @@ class MVA():
             lr.bss_factors = lr.bss_factors.compute()
             lr.bss_loadings = lr.bss_loadings.compute()
 
-    def _auto_reverse_bss_component(self, target):
-        n_components = target.bss_factors.shape[1]
+    def _auto_reverse_bss_component(self, reverse_component_criterion):
+        n_components = self.learning_results.bss_factors.shape[1]
         for i in range(n_components):
-            minimum = np.nanmin(target.bss_loadings[:, i])
-            maximum = np.nanmax(target.bss_loadings[:, i])
+            if reverse_component_criterion == 'factors':
+                values = self.learning_results.bss_factors
+            elif reverse_component_criterion == 'loadings':
+                values = self.learning_results.bss_loadings
+            else:
+                raise ValueError("`reverse_component_criterion` can take only "
+                                 "`factor` or `loading` as parameter.")
+            minimum = np.nanmin(values[:, i])
+            maximum = np.nanmax(values[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
+                _logger.info("Independent component {} reversed based on the "
+                             "{}".format(i, reverse_component_criterion))
 
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """

@@ -364,7 +364,7 @@ def test_plot_images_single_image():
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, saturated_pixels=0.1)
     return plt.gcf()
 
 
@@ -374,7 +374,7 @@ def test_plot_images_single_image_stack():
     image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, saturated_pixels=0.1)
     return plt.gcf()
 
 
@@ -471,3 +471,16 @@ def test_plot_with_non_finite_value():
     s = hs.signals.Signal2D(np.array([[np.inf, np.nan] for v in range(2)]))
     s.plot()
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+
+@pytest.mark.parametrize("cmap", ['gray', None])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_negative_value(cmap):
+    s = hs.signals.Signal2D(np.arange(10*10).reshape(10, 10))
+    s -= 5*10
+    if cmap:
+        s.plot(norm='log', cmap=cmap)
+    else:
+        s.plot(norm='log')
+    return plt.gcf()
