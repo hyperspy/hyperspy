@@ -40,7 +40,7 @@ from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
-        find_peaks_stat, find_peaks_log, find_peaks_dog)
+        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
 
 
 _logger = logging.getLogger(__name__)
@@ -756,7 +756,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                      current_index=False, show_progressbar=None,
                      parallel=None,  display=True, toolkit=None, **kwargs):
         """Find peaks in a 2D signal.
-        
+
         Function to locate the positive peaks in an image using various, user
         specified, methods. Returns a structured array containing the peak
         positions.

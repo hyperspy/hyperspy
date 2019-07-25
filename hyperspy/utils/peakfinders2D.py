@@ -18,6 +18,7 @@
 
 import numpy as np
 import scipy.ndimage as ndi
+from skimage.feature import match_template, corner_peaks
 import copy
 
 
