@@ -18,7 +18,7 @@
 import numpy as np
 import traits.api as t
 import pytest
-from matplotlib.testing.decorators import cleanup
+import matplotlib.pyplot as plt
 
 from hyperspy.misc.test_utils import update_close_figure
 import hyperspy.api as hs
@@ -27,6 +27,7 @@ import hyperspy.api as hs
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal'
+style_pytest_mpl = 'default'
 
 
 class _TestPlot:
@@ -46,14 +47,14 @@ class _TestPlot:
         s = hs.signals.__dict__['%sSignal%iD' % (dtype, sdim)](data)
         if sdim == 1:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Energy',
-                                                   units='eV', scale=500.0, offset=300.0)
+                                                   units='keV', scale=.5, offset=0.3)
         elif sdim == 2:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Reciprocal distance',
                                                    units='1/nm', scale=1, offset=0.0)
         if ndim > 0:
             s.axes_manager = self._set_navigation_axes(s.axes_manager, name='',
-                                                       units='m', scale=1E-6,
-                                                       offset=5E-6)
+                                                       units='nm', scale=1.0,
+                                                       offset=5.0)
         s.metadata.General.title = title
         # workaround to be able to access the figure in case of complex 2d
         # signals
@@ -100,15 +101,28 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize(("ndim", "sdim", "plot_type", "data_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_sig_nav(ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()
     return _get_figure(test_plot, data_type, plot_type)
+
+
+@pytest.mark.parametrize("sdim", [1, 2])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_data_changed_event(sdim):
+    if sdim == 2:
+        s = hs.signals.Signal2D(np.arange(25).reshape((5, 5)))
+    else:
+        s = hs.signals.Signal1D(np.arange(25))
+    s.plot()
+    s.data *= -2
+    s.events.data_changed.trigger(obj=s)
+    return plt.gcf()
 
 
 def _get_figure(test_plot, data_type, plot_type):
@@ -127,8 +141,6 @@ def _get_figure(test_plot, data_type, plot_type):
     return fig
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav0_sig1_close():
     test_plot = _TestPlot(ndim=0, sdim=1, data_type="real")
@@ -136,8 +148,6 @@ def test_plot_nav0_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav1_sig1_close():
     test_plot = _TestPlot(ndim=1, sdim=1, data_type="real")
@@ -145,8 +155,6 @@ def test_plot_nav1_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav2_sig1_close():
     test_plot = _TestPlot(ndim=2, sdim=1, data_type="real")
@@ -154,8 +162,6 @@ def test_plot_nav2_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav0_sig2_close():
     test_plot = _TestPlot(ndim=0, sdim=2, data_type="real")
@@ -163,8 +169,6 @@ def test_plot_nav0_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav1_sig2_close():
     test_plot = _TestPlot(ndim=1, sdim=2, data_type="real")
@@ -172,8 +176,6 @@ def test_plot_nav1_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav2_sig2_close():
     test_plot = _TestPlot(ndim=2, sdim=2, data_type="real")

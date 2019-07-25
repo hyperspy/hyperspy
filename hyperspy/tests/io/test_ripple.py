@@ -172,7 +172,7 @@ def test_data(pdict):
                     )
                 elif "EDS" in s.metadata.Signal.signal_type and metadata:
                     mdpaths += (
-                        "Acquisition_instrument.TEM.tilt_stage",
+                        "Acquisition_instrument.TEM.Stage.tilt_alpha",
                         "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
                         "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
                         "Acquisition_instrument.TEM.Detector."
@@ -190,11 +190,12 @@ def test_data(pdict):
                         stest.metadata.get_item(mdpath))
                 for saxis, taxis in zip(
                         s.axes_manager._axes, stest.axes_manager._axes):
+                    taxis.convert_to_units()
                     assert saxis.scale == taxis.scale
                     assert saxis.offset == taxis.offset
                     assert saxis.units == taxis.units
                     assert saxis.name == taxis.name
-        except:
+        except BaseException:
             raise
         finally:
             # As of v0.8.5 the data in the ripple files are loaded as memmaps

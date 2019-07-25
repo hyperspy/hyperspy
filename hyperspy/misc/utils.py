@@ -24,11 +24,10 @@ import types
 from io import StringIO
 import codecs
 import collections
-import tempfile
 import unicodedata
 from contextlib import contextmanager
-from ..misc.signal_tools import broadcast_signals
-from ..exceptions import VisibleDeprecationWarning
+from hyperspy.misc.signal_tools import broadcast_signals
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import numpy as np
 
@@ -152,15 +151,14 @@ def slugify(value, valid_variable_name=False):
         try:
             # Convert to unicode using the default encoding
             value = str(value)
-        except:
+        except BaseException:
             # Try latin1. If this does not work an exception is raised.
             value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
-    if valid_variable_name is True:
-        if value[:1].isdigit():
-            value = 'Number_' + value
+    if valid_variable_name and not value.isidentifier():
+        value = 'Number_' + value
     return value
 
 
@@ -594,7 +592,7 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
         string = stuff
     try:
         string = string.decode(encoding)
-    except:
+    except BaseException:
         string = string.decode(encoding2, errors='ignore')
     return string
 
@@ -681,10 +679,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    if isinstance(obj, collections.Iterable):
-        return True
-    else:
-        return False
+    return isinstance(obj, collections.Iterable)
 
 
 def ordinal(value):
@@ -754,10 +749,6 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def without_nans(data):
-    return data[~np.isnan(data)]
-
-
 def stack(signal_list, axis=None, new_axis_name='stack_element',
           lazy=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
@@ -799,7 +790,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from itertools import zip_longest
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
@@ -954,7 +944,7 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._iterate_signal()
+    iterators = tuple(signal[1]._cycle_signal()
                       if isinstance(signal[1], BaseSignal) else signal[1]
                       for signal in iterating_kwargs)
     # make all kwargs iterating for simplicity:
@@ -986,7 +976,8 @@ def map_result_construction(signal,
                             ragged,
                             sig_shape=None,
                             lazy=False):
-    from hyperspy.signals import (BaseSignal, LazySignal)
+    from hyperspy.signals import BaseSignal
+    from hyperspy._lazy_signals import LazySignal
     res = None
     if inplace:
         sig = signal
@@ -1012,6 +1003,8 @@ def map_result_construction(signal,
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
     sig.get_dimensions_from_data()
+    if not sig.axes_manager._axes:
+        add_scalar_axis(sig)
     return res
 
 
@@ -1030,3 +1023,32 @@ def multiply(iterable):
     for i in iterable:
         prod *= i
     return prod
+
+
+def iterable_not_string(thing):
+    return isinstance(thing, collections.Iterable) and \
+        not isinstance(thing, str)
+
+
+def signal_range_from_roi(signal_range):
+    from hyperspy.roi import SpanROI
+    if isinstance(signal_range, SpanROI):
+        return (signal_range.left, signal_range.right)
+    else:
+        return signal_range
+
+
+def deprecation_warning(msg):
+    warnings.warn(msg, VisibleDeprecationWarning)
+
+
+def add_scalar_axis(signal):
+    am = signal.axes_manager
+    from hyperspy.signal import BaseSignal
+    signal.__class__ = BaseSignal
+    am.remove(am._axes)
+    am._append_axis(size=1,
+                    scale=1,
+                    offset=0,
+                    name="Scalar",
+                    navigate=False)

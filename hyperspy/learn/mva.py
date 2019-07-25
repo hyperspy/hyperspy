@@ -22,10 +22,11 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
     import mdp
     mdp_installed = True
-except:
+except BaseException:
     mdp_installed = False
 
 
@@ -50,7 +51,7 @@ def centering_and_whitening(X):
     del _
     K = (u / (d / np.sqrt(X.shape[1]))).T
     del u, d
-    X1 = np.dot(K, X)
+    X1 = K @ X
     return X1.T, K
 
 
@@ -144,8 +145,10 @@ class MVA():
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
-            The result of the decomposition is stored internally. However, some algorithms generate some extra
-            information that is not stored. If True (the default is False) return any extra information if available
+            The result of the decomposition is stored internally. However, 
+            some algorithms generate some extra information that is not 
+            stored. If True (the default is False) return any extra 
+            information if available
 
         Returns
         -------
@@ -161,11 +164,13 @@ class MVA():
         to_return = None
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
-            _logger.warning(
+            raise TypeError(
                 'To perform a decomposition the data must be of the float '
-                'type. You can change the type using the change_dtype method'
-                ' e.g. s.change_dtype(\'float64\')\n'
-                'Nothing done.')
+                'type, but the current type is \'{}\'. '
+                'To fix this issue, you can change the type using the '
+                'change_dtype method (e.g. s.change_dtype(\'float64\')) '
+                'and then repeat the decomposition.\n'
+                'No decomposition was performed.'.format(self.data.dtype))
             return
 
         if self.axes_manager.navigation_size < 2:
@@ -235,6 +240,7 @@ class MVA():
             # algorithms
             explained_variance = None
             explained_variance_ratio = None
+            number_significant_components = None
             mean = None
 
             if algorithm == 'svd':
@@ -326,7 +332,7 @@ class MVA():
                             var_array = np.polyval(
                                 polyfit, dc[
                                     signal_mask, navigation_mask])
-                        except:
+                        except BaseException:
                             raise ValueError(
                                 'var_func must be either a function or an '
                                 'array defining the coefficients of a polynom')
@@ -379,13 +385,16 @@ class MVA():
                     explained_variance_ratio is None:
                 explained_variance_ratio = \
                     explained_variance / explained_variance.sum()
+                number_significant_components = \
+                    self._estimate_elbow_position(
+                            explained_variance_ratio)+ 1
 
             # Store the results in learning_results
-
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
             target.explained_variance_ratio = explained_variance_ratio
+            target.number_significant_components = number_significant_components
             target.decomposition_algorithm = algorithm
             target.poissonian_noise_normalized = \
                 normalize_poissonian_noise
@@ -413,15 +422,15 @@ class MVA():
             if reproject in ('navigation', 'both'):
                 if algorithm not in ('nmf', 'sparse_pca',
                                      'mini_batch_sparse_pca'):
-                    loadings_ = np.dot(dc[:, signal_mask] - mean, factors)
+                    loadings_ = (dc[:, signal_mask] - mean) @ factors
                 else:
                     loadings_ = sk.transform(dc[:, signal_mask])
                 target.loadings = loadings_
             if reproject in ('signal', 'both'):
                 if algorithm not in ('nmf', 'sparse_pca',
                                      'mini_batch_sparse_pca'):
-                    factors = np.dot(np.linalg.pinv(loadings),
-                                     dc[navigation_mask, :] - mean).T
+                    factors = (np.linalg.pinv(loadings) @ (
+                        dc[navigation_mask, :] - mean)).T
                     target.factors = factors
                 else:
                     _logger.info("Reprojecting the signal is not yet "
@@ -475,7 +484,8 @@ class MVA():
                                 comp_list=None,
                                 mask=None,
                                 on_loadings=False,
-                                pretreatment=None,
+                                reverse_component_criterion='factors',
+                                compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
         decomposition.
@@ -487,6 +497,7 @@ class MVA():
         number_of_components : int
             number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
+            BSS algorithms available.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If diff_order is 0, the signal is not differentiated.
@@ -502,7 +513,7 @@ class MVA():
             navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
-             to choose non contiguous components.
+            to choose non contiguous components.
         mask : bool numpy array or Signal instance.
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
@@ -510,7 +521,13 @@ class MVA():
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        pretreatment: dict
+        reverse_component_criterion : str {'factors', 'loadings'}
+            Use either the `factor` or the `loading` to determine if the 
+            component needs to be reversed.
+        compute: bool
+           If the decomposition results are lazy, compute the BSS components
+           so that they are not lazy.
+           Default is False.
 
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
@@ -659,20 +676,20 @@ class MVA():
             lr.bss_node = temp_function(**kwargs)
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
-        w = np.dot(unmixing_matrix, invsqcovmat)
+        w = unmixing_matrix @ invsqcovmat
         if lr.explained_variance is not None:
             # The output of ICA is not sorted in any way what makes it
             # difficult to compare results from different unmixings. The
             # following code is an experimental attempt to sort them in a
             # more predictable way
-            sorting_indices = np.argsort(np.dot(
-                lr.explained_variance[:number_of_components],
-                np.abs(w.T)))[::-1]
+            sorting_indices = np.argsort(
+                lr.explained_variance[:number_of_components] @ np.abs(w.T)
+            )[::-1]
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
         self._unmix_components()
-        self._auto_reverse_bss_component(lr)
+        self._auto_reverse_bss_component(reverse_component_criterion)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
 
@@ -743,6 +760,12 @@ class MVA():
         >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
         """
 
+        if hasattr(self.learning_results.factors, "compute"):
+            # They are lazy
+            _logger.warning(
+                "Component(s) %s not reversed, featured not implemented "
+                "for lazy computations" % component_number)
+            return
         target = self.learning_results
 
         for i in [component_number, ]:
@@ -765,34 +788,50 @@ class MVA():
         >>> s.reverse_bss_component(1) # reverse IC 1
         >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
         """
-
+        if hasattr(self.learning_results.bss_factors, "compute"):
+            # They are lazy
+            _logger.warning(
+                "Component(s) %s not reversed, featured not implemented "
+                "for lazy computations" % component_number)
+            return
         target = self.learning_results
 
         for i in [component_number, ]:
+            _logger.info("Component %i reversed" % i)
             target.bss_factors[:, i] *= -1
             target.bss_loadings[:, i] *= -1
             target.unmixing_matrix[i, :] *= -1
 
-    def _unmix_components(self):
+    def _unmix_components(self, compute=False):
         lr = self.learning_results
         w = lr.unmixing_matrix
         n = len(w)
         if lr.on_loadings:
-            lr.bss_loadings = np.dot(lr.loadings[:, :n], w.T)
-            lr.bss_factors = np.dot(lr.factors[:, :n], np.linalg.inv(w))
+            lr.bss_loadings = lr.loadings[:, :n] @  w.T
+            lr.bss_factors = lr.factors[:, :n] @ np.linalg.inv(w)
         else:
+            lr.bss_factors = lr.factors[:, :n] @ w.T
+            lr.bss_loadings = lr.loadings[:, :n] @ np.linalg.inv(w)
+        if compute:
+            lr.bss_factors = lr.bss_factors.compute()
+            lr.bss_loadings = lr.bss_loadings.compute()
 
-            lr.bss_factors = np.dot(lr.factors[:, :n], w.T)
-            lr.bss_loadings = np.dot(lr.loadings[:, :n], np.linalg.inv(w))
-
-    def _auto_reverse_bss_component(self, target):
-        n_components = target.bss_factors.shape[1]
+    def _auto_reverse_bss_component(self, reverse_component_criterion):
+        n_components = self.learning_results.bss_factors.shape[1]
         for i in range(n_components):
-            minimum = np.nanmin(target.bss_loadings[:, i])
-            maximum = np.nanmax(target.bss_loadings[:, i])
+            if reverse_component_criterion == 'factors':
+                values = self.learning_results.bss_factors
+            elif reverse_component_criterion == 'loadings':
+                values = self.learning_results.bss_loadings
+            else:
+                raise ValueError("`reverse_component_criterion` can take only "
+                                 "`factor` or `loading` as parameter.")
+            minimum = np.nanmin(values[:, i])
+            maximum = np.nanmax(values[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
-                _logger.info("IC %i reversed" % i)
+                _logger.info("Independent component {} reversed based on the "
+                             "{}".format(i, reverse_component_criterion))
 
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """
@@ -821,7 +860,7 @@ class MVA():
             factors = target.bss_factors
             loadings = target.bss_loadings.T
         if components is None:
-            a = np.dot(factors, loadings)
+            a = factors @ loadings
             signal_name = 'model from %s with %i components' % (
                 mva_type, factors.shape[1])
         elif hasattr(components, '__iter__'):
@@ -830,12 +869,11 @@ class MVA():
             for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
-            a = np.dot(tfactors, tloadings)
+            a = tfactors @ tloadings
             signal_name = 'model from %s with components %s' % (
                 mva_type, components)
         else:
-            a = np.dot(factors[:, :components],
-                       loadings[:components, :])
+            a = factors[:, :components] @ loadings[:components, :]
             signal_name = 'model from %s with %i components' % (
                 mva_type, components)
 
@@ -920,8 +958,12 @@ class MVA():
         s.axes_manager[-1].units = ''
         return s
 
-    def plot_explained_variance_ratio(self, n=None, log=True, threshold=0, hline='auto', xaxis_type='index',
-                                      xaxis_labeling=None, signal_fmt=None, noise_fmt=None, fig=None, ax=None, **kwargs):
+    def plot_explained_variance_ratio(self, n=30, log=True, threshold=0,
+                                      hline='auto', vline=False,
+                                      xaxis_type='index',
+                                      xaxis_labeling=None, signal_fmt=None,
+                                      noise_fmt=None, fig=None, ax=None,
+                                      **kwargs):
         """Plot the decomposition explained variance ratio vs index number
         (Scree Plot).
 
@@ -949,6 +991,12 @@ class MVA():
             draw in the case  ``threshold`` is an int, or not given.
             If True, (and ``threshold`` is an int), the line will be drawn
             through the last component defined as signal.
+            If False, the line will not be drawn in any circumstance.
+        vline: {True, False} : Default : False
+            Whether or not to draw a vertical line illustrating an estimate of
+            the number of significant components. If True, the line will be
+            drawn at the the knee or elbow position of the curve indicating the
+            number of significant components.
             If False, the line will not be drawn in any circumstance.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
@@ -1007,8 +1055,12 @@ class MVA():
         """
         s = self.get_explained_variance_ratio()
 
+        n_max = len(self.learning_results.explained_variance_ratio)
         if n is None:
-            n = len(self.learning_results.explained_variance_ratio)
+            n = n_max
+        elif n > n_max:
+            _logger.info("n is too large, setting n to its maximal value.")
+            n = n_max
 
         # Determine right number of components for signal and cutoff value
         if isinstance(threshold, float):
@@ -1024,6 +1076,15 @@ class MVA():
             n_signal_pcs = threshold
             if n_signal_pcs == 0:
                 hline = False
+
+        if vline == True:
+            if self.learning_results.number_significant_components is None:
+                vline = False
+            else:
+                index_number_significant_components =\
+                    self.learning_results.number_significant_components - 1
+        else:
+            vline = False
 
         # Handling hline logic
         if hline == 'auto':
@@ -1047,15 +1108,17 @@ class MVA():
         # Some default formatting for signal markers
         if signal_fmt is None:
             signal_fmt = {'c': '#C24D52',
-                          's': 100,
+                         'linestyle': '',
                           'marker': "^",
+                          'markersize': 10,
                           'zorder': 3}
 
         # Some default formatting for noise markers
         if noise_fmt is None:
             noise_fmt = {'c': '#4A70B0',
-                         's': 100,
+                         'linestyle': '',
                          'marker': 'o',
+                         'markersize': 10,
                          'zorder': 3}
 
         # Sane defaults for xaxis labeling
@@ -1075,7 +1138,7 @@ class MVA():
             ax = fig.add_subplot(111)
 
         if log:
-            ax.semilogy()
+            ax.set_yscale("log")
 
         if hline:
             ax.axhline(cutoff,
@@ -1084,38 +1147,40 @@ class MVA():
                        linestyle='dashed',
                        zorder=1)
 
+        if vline:
+            ax.axvline(index_number_significant_components,
+                       linewidth=2,
+                       color='gray',
+                       linestyle='dashed',
+                       zorder=1)
+
+        index_offset = 0
+        if xaxis_type == 'number':
+            index_offset = 1
+
         if n_signal_pcs == n:
-            ax.scatter(range(n),
+            ax.plot(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **signal_fmt)
         elif n_signal_pcs > 0:
-            ax.scatter(range(n_signal_pcs),
+            ax.plot(range(index_offset, index_offset + n_signal_pcs),
                        s.isig[:n_signal_pcs].data,
                        **signal_fmt)
-            ax.scatter(range(n_signal_pcs, n),
+            ax.plot(range(index_offset + n_signal_pcs, index_offset + n),
                        s.isig[n_signal_pcs:n].data,
                        **noise_fmt)
         else:
-            ax.scatter(range(n),
+            ax.plot(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **noise_fmt)
 
-        if xaxis_type == 'index':
-            locs = ax.get_xticks()
-            if xaxis_labeling == 'ordinal':
-                ax.set_xticklabels([ordinal(int(i)) for i in locs])
-            else:
-                ax.set_xticklabels([int(i) for i in locs])
-
-        if xaxis_type == 'number':
-            locs = ax.get_xticks()
-            if xaxis_labeling == 'ordinal':
-                ax.set_xticklabels([ordinal(int(i + 1)) for i in locs])
-            else:
-                ax.set_xticklabels([int(i + 1) for i in locs])
+        if xaxis_labeling == 'cardinal':
+            ax.xaxis.set_major_formatter(
+                FuncFormatter(lambda x, p: ordinal(x)))
 
         ax.set_ylabel(axes_titles['y'])
         ax.set_xlabel(axes_titles['x'])
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True, min_n_ticks=1))
         ax.margins(0.05)
         ax.autoscale()
         ax.set_title(s.metadata.General.title, y=1.01)
@@ -1141,7 +1206,6 @@ class MVA():
         ax.set_xlabel('Principal component')
         ax.set_ylabel('Cumulative explained variance ratio')
         plt.draw()
-        plt.show()
         return ax
 
     def normalize_poissonian_noise(self, navigation_mask=None,
@@ -1201,6 +1265,44 @@ class MVA():
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
+    def _estimate_elbow_position(self, curve_values):
+        """
+        Estimate the elbow position of a scree plot curve 
+        Used to estimate the number of significant components in 
+        a PCA variance ratio plot or other "elbow" type curves
+
+        Parameters
+        ----------
+        curve_values : :class:`numpy.ndarray`
+
+        Returns
+        -------
+        elbow position : int
+            Index of the elbow position in the input array,
+            as suggested in :ref:`[Satopää2011] <Satopää2011>`
+        """
+        maxpoints = min(20, len(curve_values) - 1)
+        # Find a line between first and last point 
+        # With a classic elbow scree plot the line from first to last
+        # more or less defines a triangle
+        # The elbow should be the point which is the
+        # furthest distance from this line
+        
+        y2 = np.log(curve_values[maxpoints])
+        x2 = maxpoints
+        y1 = np.log(curve_values[0])
+        x1 = 0
+        # loop through the curve values and calculate 
+        distance = np.zeros(maxpoints)
+        for i in range(maxpoints):
+            y0 = np.log(curve_values[i])
+            x0 = i
+            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))/\
+                          np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
+        # Point with the largest distance is the "elbow"
+        elbow_position = np.argmax(distance)
+        return elbow_position
+
 
 class LearningResults(object):
     # Decomposition
@@ -1208,6 +1310,7 @@ class LearningResults(object):
     loadings = None
     explained_variance = None
     explained_variance_ratio = None
+    number_significant_components = None
     decomposition_algorithm = None
     poissonian_noise_normalized = None
     output_dimension = None
@@ -1226,13 +1329,15 @@ class LearningResults(object):
     signal_mask = None
 
     def save(self, filename, overwrite=None):
-        """Save the result of the decomposition and demixing analysis
+        """
+        Save the result of the decomposition and demixing analysis
+
         Parameters
         ----------
         filename : string
         overwrite : {True, False, None}
-            If True(False) overwrite(don't overwrite) the file if it exists.
-            If None (default) ask what to do if file exists.
+            If True (False) overwrite(don't overwrite) the file if it exists.
+            If None (default), ask what to do if file exists.
         """
         kwargs = {}
         for attribute in [
@@ -1250,16 +1355,21 @@ class LearningResults(object):
             np.savez(filename, **kwargs)
 
     def load(self, filename):
-        """Load the results of a previous decomposition and
-         demixing analysis from a file.
+        """
+        Load the results of a previous decomposition and demixing analysis
+        from a file.
+
         Parameters
         ----------
         filename : string
         """
-        decomposition = np.load(filename)
+        decomposition = np.load(filename, allow_pickle=True)
         for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
+            # Unwrap values stored as 0D numpy arrays to raw datatypes
+            if isinstance(value, np.ndarray) and value.ndim == 0:
+                value = value.item()
             setattr(self, key, value)
         _logger.info("\n%s loaded correctly" % filename)
         # For compatibility with old version ##################
@@ -1297,11 +1407,6 @@ class LearningResults(object):
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-        #
-        # Output_dimension is an array after loading, convert it to int
-        if hasattr(self, 'output_dimension') and self.output_dimension \
-                is not None:
-            self.output_dimension = int(self.output_dimension)
         _logger.info(self._summary())
 
     def summary(self):
@@ -1328,16 +1433,29 @@ class LearningResults(object):
                 ("Number of components : %i" % len(self.unmixing_matrix)))
         return summary_str
 
-    def crop_decomposition_dimension(self, n):
+    def crop_decomposition_dimension(self, n, compute=False):
         """
         Crop the score matrix up to the given number.
         It is mainly useful to save memory and reduce the storage size
+
+        Parameters
+        ----------
+        n : int
+            Number of components to keep.
+        compute: bool
+           If the decomposition results are lazy, also compute the results.
+           Default is False.
         """
         _logger.info("trimming to %i dimensions" % n)
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]
         self.factors = self.factors[:, :n]
+        if compute:
+            self.loadings = self.loadings.compute()
+            self.factors = self.factors.compute()
+            if self.explained_variance is not None:
+                self.explained_variance = self.explained_variance.compute()
 
     def _transpose_results(self):
         (self.factors, self.loadings, self.bss_factors,

@@ -26,7 +26,7 @@ import pytest
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.io import load
-from hyperspy.components1d import Gaussian
+from hyperspy.components1d import Gaussian, Expression, GaussianHF
 
 
 def clean_model_dictionary(d):
@@ -144,9 +144,42 @@ class TestModelSaving:
     def setup_method(self, method):
         s = Signal1D(range(100))
         m = s.create_model()
-        m.append(Gaussian())
-        m.components.Gaussian.A.value = 13
-        m.components.Gaussian.name = 'something'
+        m.append(Gaussian(A=13))
+        m[-1].name = 'something'
+        m.append(GaussianHF(module="numpy"))
+        m[-1].height.value = 3
+        m.append(Expression(name="Line", expression="a * x + b", a=1, c=0, rename_pars={"b": "c"}))
+        self.m = m
+
+    def test_save_and_load_model(self):
+        m = self.m
+        m.save('tmp.hdf5', overwrite=True)
+        s = load('tmp.hdf5')
+        assert hasattr(s.models, 'a')
+        mr = s.models.restore('a')
+        assert mr.components.something.A.value == 13
+        assert mr.components.GaussianHF.height.value == 3
+        assert mr.components.Line.a.value == 1
+        assert mr.components.Line.c.value == 0
+        assert mr.components.Line.function(10) == 10
+
+    def teardown_method(self, method):
+        gc.collect()        # Make sure any memmaps are closed first!
+        remove('tmp.hdf5')
+
+
+class TestEELSModelSaving:
+
+    def setup_method(self, method):
+        s = Signal1D(range(100))
+        s.axes_manager[0].offset = 280
+        s.set_signal_type("EELS")
+        s.add_elements(["C"])
+        s.set_microscope_parameters(100, 10, 10)
+        m = s.create_model(auto_background=False)
+        m.components.C_K.fine_structure_smoothing = 0.5
+        m.components.C_K.fine_structure_width = 50
+        m.components.C_K.fine_structure_active = True
         self.m = m
 
     def test_save_and_load_model(self):
@@ -155,7 +188,7 @@ class TestModelSaving:
         l = load('tmp.hdf5')
         assert hasattr(l.models, 'a')
         n = l.models.restore('a')
-        assert n.components.something.A.value == 13
+        assert n[0].fine_structure_width == 50
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!

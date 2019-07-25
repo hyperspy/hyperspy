@@ -45,7 +45,7 @@ class WidgetBase(object):
     needed.
     """
 
-    def __init__(self, axes_manager=None, **kwargs):
+    def __init__(self, axes_manager=None, color='red', alpha=1.0, **kwargs):
         self.axes_manager = axes_manager
         self._axes = list()
         self.ax = None
@@ -53,10 +53,12 @@ class WidgetBase(object):
         self.selected = False
         self._selected_artist = None
         self._size = 1.
-        self.color = 'red'
+        self._pos = np.array([0.])
         self.__is_on = True
         self.background = None
         self.patch = []
+        self.color = color
+        self.alpha = alpha
         self.cids = list()
         self.blit = True
         self.events = Events()
@@ -131,6 +133,26 @@ class WidgetBase(object):
                 self.ax = None
         self.__is_on = value
 
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, color):
+        self._color = color
+        for p in self.patch:
+            p.set_color(self._color)
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha):
+        self._alpha = alpha
+        for p in self.patch:
+            p.set_alpha(self._alpha)
+
     def _set_patch(self):
         """Create the matplotlib patch(es), and store it in self.patch
         """
@@ -142,9 +164,10 @@ class WidgetBase(object):
         """Create and add the matplotlib patches to 'ax'
         """
         self._set_patch()
+        self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
         for p in self.patch:
             ax.add_artist(p)
-            p.set_animated(hasattr(ax, 'hspy_fig'))
+            p.set_animated(self.blit)
         if hasattr(super(WidgetBase, self), '_add_patch_to'):
             super(WidgetBase, self)._add_patch_to(ax)
 
@@ -163,7 +186,7 @@ class WidgetBase(object):
         if self.is_on() is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            canvas.draw()
+            canvas.draw_idle()
             self.select()
 
     def select(self):
@@ -178,7 +201,9 @@ class WidgetBase(object):
         # Simulate a pick event
         x, y = self.patch[0].get_transform().transform_point((0, 0))
         mouseevent = MouseEvent('pick_event', canvas, x, y)
-        canvas.pick_event(mouseevent, self.patch[0])
+        # when the widget is added programatically, mouseevent can be "empty"
+        if mouseevent.button:
+            canvas.pick_event(mouseevent, self.patch[0])
         self.picked = False
 
     def connect(self, ax):
@@ -216,7 +241,7 @@ class WidgetBase(object):
         for cid in self.cids:
             try:
                 self.ax.figure.canvas.mpl_disconnect(cid)
-            except:
+            except BaseException:
                 pass
         if self._navigating:
             self.disconnect_navigate()
@@ -232,8 +257,8 @@ class WidgetBase(object):
         """Update the patch drawing.
         """
         try:
-            if hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._draw_animated()
+            if self.blit and hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig._update_animated()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -268,6 +293,9 @@ class WidgetBase(object):
                 return axis.low_value
             else:
                 raise
+
+    def __str__(self):
+        return "{} with id {}".format(self.__class__.__name__, id(self))
 
 
 class DraggableWidgetBase(WidgetBase):
@@ -547,8 +575,10 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         return tuple(self._size.tolist())
 
     def _set_size(self, value):
-        """Setter for the 'size' property. Calls _size_changed to handle size
-        change, if the value has changed.
+        """Setter for the 'size' property.
+
+        Calls _size_changed to handle size change, if the value has changed.
+
         """
         value = np.minimum(value, [ax.size * ax.scale for ax in self.axes])
         value = np.maximum(value,
@@ -843,7 +873,7 @@ class ResizersMixin(object):
             if value:
                 for r in self._resizer_handles:
                     ax.add_artist(r)
-                    r.set_animated(hasattr(ax, 'hspy_fig'))
+                    r.set_animated(self.blit)
             else:
                 for container in [
                         ax.patches,
