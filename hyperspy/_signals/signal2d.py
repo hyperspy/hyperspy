@@ -756,6 +756,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                      current_index=False, show_progressbar=None,
                      parallel=None,  display=True, toolkit=None, **kwargs):
         """Find peaks in a 2D signal.
+        
         Function to locate the positive peaks in an image using various, user
         specified, methods. Returns a structured array containing the peak
         positions.
@@ -765,10 +766,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
         method : str
              Select peak finding algorithm to implement. Available methods
              are:
-                 'local_max' - simple local maximum search using the 
+                 'local_max' - simple local maximum search using the
                  `scikit-image` `peaks_local_max` function.
 
-                 'max' - simple local maximum search - call the peak finder 
+                 'max' - simple local maximum search - call the peak finder
                  implemented in `scikit-image` which uses a maximum filter
 
                  'minmax' - finds peaks by comparing maximum filter results
@@ -782,12 +783,14 @@ class Signal2D(BaseSignal, CommonSignal2D):
                  positions where these coincide.
 
                  'laplacian_of_gaussian' - a blob finder implemented in
-                 `scikit-image` which uses the laplacian of Gaussian 
+                 `scikit-image` which uses the laplacian of Gaussian
                  matrices approach.
 
                  'difference_of_gaussian' - a blob finder implemented in
-                 `scikit-image` which uses the difference of Gaussian 
+                 `scikit-image` which uses the difference of Gaussian
                  matrices approach.
+
+                 xc' - A cross correlation peakfinder
         interactive : bool
             If True, the method parameter can be adjusted interactively using
             a GUI and the results will be saved to the attribute `peaks`.
@@ -806,8 +809,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Returns
         -------
         peaks : structured numpy array
-                Array of shape `_navigation_shape_in_array` in which each cell 
-                contains an array with dimensions (npeaks, 2) that contains 
+                Array of shape `_navigation_shape_in_array` in which each cell
+                contains an array with dimensions (npeaks, 2) that contains
                 the x, y pixel coordinates of peaks found in each image.
         """
         method_dict = {
@@ -818,6 +821,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             'stat': find_peaks_stat,
             'laplacian_of_gaussian':  find_peaks_log,
             'difference_of_gaussian': find_peaks_dog,
+            'xc' : find_peaks_xc
         }
         if method in method_dict:
             method = method_dict[method]
@@ -832,8 +836,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if current_index:
             peaks = method(self.__call__(), **kwargs)
         else:
-            peaks = self.map(method, show_progressbar=show_progressbar, 
-                             parallel=parallel, inplace=False, 
+            peaks = self.map(method, show_progressbar=show_progressbar,
+                             parallel=parallel, inplace=False,
                              ragged=True, **kwargs)
 
         return peaks
