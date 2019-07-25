@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2019 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -354,7 +354,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
     ----------
     z : numpy.ndarray
         2-d array of intensities
-    min_sigma, max_sigma, sigma_ratio, threshold, overlap :
+    min_sigma, max_sigma, sigma_ratio, threshold, overlap, exclude_border :
         Additional parameters to be passed to the algorithm. See `blob_dog`
         documentation for details:
         http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-dog
@@ -399,7 +399,7 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     ----------
     z : numpy.ndarray
         Array of image intensities.
-    min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale :
+    min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale, exclude_border :
         Additional parameters to be passed to the ``blob_log`` method of the
         ``scikit-image`` library. See its documentation for details:
         http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-log
