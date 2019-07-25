@@ -70,6 +70,14 @@ BASE_PLOT_DOCSTRING = \
     ----------
     %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
 
+PLOT1D_DOCSTRING = \
+"""norm : str, optional
+            The function used to normalize the data prior to plotting.
+            Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
+            (default value is ``'auto'``).
+            If ``'auto'``, intensity is plotted on a linear scale except when
+            ``power_spectrum=True`` (only for complex signals).
+        """
 
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
@@ -87,6 +95,7 @@ PLOT2D_DOCSTRING = \
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
+            If None (default value), the value from the preferences is used.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize luminance data.
         no_nans : bool, optional
