@@ -56,7 +56,6 @@ class Polynomial(Expression):
         # Not to break scripts once we remove the legacy Polynomial
         if "legacy" in kwargs:
             del kwargs["legacy"]
-        from hyperspy.misc.utils import deprecation_warning
         if order == 0:
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in

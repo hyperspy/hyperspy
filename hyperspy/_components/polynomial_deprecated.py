@@ -79,7 +79,6 @@ class Polynomial(Component):
         else:
             from hyperspy._components.polynomial import Polynomial
             self.__class__ = Polynomial
-            print(kwargs)
             self.__init__(order=order, module=module, **kwargs)
 
     def get_polynomial_order(self):

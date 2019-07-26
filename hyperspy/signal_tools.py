@@ -540,6 +540,7 @@ class Load(t.HasTraits):
 
 @add_gui_method(toolkey="hyperspy.Signal1D.contrast_editor")
 class ImageContrastEditor(t.HasTraits):
+    mpl_help = "See the matplotlib SymLogNorm for more information."
     ss_left_value = t.Float()
     ss_right_value = t.Float()
 

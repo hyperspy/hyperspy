@@ -178,8 +178,8 @@ class TestOffset:
         assert_allclose(o.function_nd(axis.axis), s.data)
 
 
-@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
-class TestPolynomial:
+@pytest.mark.filterwarnings("ignore:The API of the `Polynomial` component")
+class TestDeprecatedPolynomial:
 
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
@@ -260,7 +260,7 @@ class TestPolynomial:
         assert poly2.a0.value == 3
 
 
-class TestPolynomial2:
+class TestPolynomial:
 
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))

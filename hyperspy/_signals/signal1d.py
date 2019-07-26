@@ -55,7 +55,6 @@ from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
-from hyperspy.misc.test_utils import ignore_warning
 
 
 _logger = logging.getLogger(__name__)

@@ -894,7 +894,7 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
-@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
+@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @lazifyTestClass
 class TestModelSignalVariance:
 

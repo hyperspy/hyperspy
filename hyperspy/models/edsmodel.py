@@ -286,8 +286,8 @@ class EDSModel(Model1D):
         order: int
             The order of the polynomial
         """
-        with ignore_warning(message="The definition of the `Polynomial`"):
-            background = create_component.Polynomial(order=order)
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            background = create_component.Polynomial(order=order, legacy=False)
         background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)
