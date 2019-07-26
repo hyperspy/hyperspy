@@ -24,6 +24,7 @@ NEW
 Enhancements
 ------------
 
+* The contrast adjustment tool has been hugely improved. Test it by pressing the ``h`` key on any image.
 * The :ref:`Developer Guide <dev_guide-label>` has been extended, enhanced and divided into
   chapters.
 * Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
