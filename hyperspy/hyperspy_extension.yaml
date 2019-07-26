@@ -184,6 +184,9 @@ components1D:
     module: hyperspy._components.pes_core_line_shape
     class: PESCoreLineShape
   Polynomial:
+    module: hyperspy._components.polynomial_deprecated
+    class: Polynomial
+  eab91275-88db-4855-917a-cdcbe7209592:
     module: hyperspy._components.polynomial
     class: Polynomial
   PowerLaw:

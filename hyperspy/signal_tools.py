@@ -34,6 +34,7 @@ from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
 from hyperspy.defaults_parser import preferences
@@ -1222,7 +1223,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
-        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
+        m = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
                         title="Instructions"),
 
     def _show_derivative_histogram_fired(self):

@@ -56,6 +56,7 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
+
 _logger = logging.getLogger(__name__)
 
 
@@ -1147,7 +1148,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':
                 background_estimator = components1d.Polynomial(
-                    polynomial_order)
+                    polynomial_order, legacy=False)
             else:
                 raise ValueError(
                     "Background type: " +
