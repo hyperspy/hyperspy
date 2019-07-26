@@ -24,7 +24,9 @@ import traits.api as t
 from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
+from distutils.version import LooseVersion
 
+import hyperspy
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
@@ -1126,11 +1128,13 @@ class Component(t.HasTraits):
         """Returns component as a dictionary
         For more information on method and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+
         Parameters
         ----------
         fullcopy : Bool (optional, False)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
+
         Returns
         -------
         dic : dictionary
@@ -1156,6 +1160,7 @@ class Component(t.HasTraits):
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
+
         Parameters
         ----------
         dict : dictionary
@@ -1171,6 +1176,7 @@ class Component(t.HasTraits):
                 component attributes.  For more information see
                 :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys() *
+
         Returns
         -------
         twin_dict : dictionary
@@ -1180,6 +1186,11 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
+            if (self._id_name == "Polynomial" and 
+                    LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
+                # in HyperSpy 2.0 the polynomial definition changed
+                from hyperspy._components.polynomial import convert_to_polynomial
+                dic = convert_to_polynomial(dic)
             load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:

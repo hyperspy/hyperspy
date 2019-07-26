@@ -715,10 +715,14 @@ estimated standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
-    >>> line.coefficients.value
-    (0.99246156488437653, 103.67507406125888)
-    >>> line.coefficients.std
-    (0.11771053738516088, 13.541061301257537)
+    >>> line.a.value
+    0.9924615648843765
+    >>> line.b.value
+    103.67507406125888
+    >>> line.a.std
+    0.11771053738516088
+    >>> line.b.std
+    13.541061301257537
 
 
 
