@@ -44,6 +44,7 @@ Enhancements
   * :py:class:`hyperspy._components.error_function.Erf`
   * :py:class:`hyperspy._components.gaussian2d.Gaussian2D`
   * :py:class:`hyperspy._components.volume_plasmon_drude.VolumePlasmonDrude`
+  * :py:class:`hyperspy._components.eels_double_powerlaw.DoublePowerLaw`
 
 For developers
 --------------
