@@ -34,6 +34,10 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
+from hyperspy.defaults_parser import preferences
+
 
 _logger = logging.getLogger(__name__)
 
@@ -705,11 +709,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line_range = 'full'
         elif self.background_type == 'Polynomial':
             self.background_estimator = components1d.Polynomial(
-                self.polynomial_order, legacy=False)
+                self.polynomial_order)
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):
-        self.background_estimator = components1d.Polynomial(new, legacy=True)
+        self.background_estimator = components1d.Polynomial(new)
         self.span_selector_changed()
 
     def _background_type_changed(self, old, new):
