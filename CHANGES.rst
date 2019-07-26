@@ -45,6 +45,14 @@ Enhancements
   * :py:class:`hyperspy._components.gaussian2d.Gaussian2D`
   * :py:class:`hyperspy._components.volume_plasmon_drude.VolumePlasmonDrude`
   * :py:class:`hyperspy._components.eels_double_power_law.DoublePowerLaw`
+  * The :py:class:`hyperspy._components.polynomial_deprecated.Polynomial`
+    component will be deprecated in HyperSpy 2.0 in favour of the new
+    :py:class:`hyperspy._components.polynomial.Polynomial` component, that is based on
+    :py:class:`hyperspy._components.expression.Expression` and has an improved API. To
+    start using the new component pass the ``legacy=False`` keyword to the 
+    the :py:class:`hyperspy._components.polynomial_deprecated.Polynomial` component
+    constructor.
+
 
 For developers
 --------------
