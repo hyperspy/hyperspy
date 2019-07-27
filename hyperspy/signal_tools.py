@@ -997,12 +997,14 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.background_estimator = components1d.Offset()
             self.bg_line_range = 'full'
         elif self.background_type == 'Polynomial':
-            self.background_estimator = components1d.Polynomial(
-                self.polynomial_order)
+            with ignore_warning(message="The API of the `Polynomial` component"):
+                self.background_estimator = components1d.Polynomial(
+                    self.polynomial_order)
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):
-        self.background_estimator = components1d.Polynomial(new)
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            self.background_estimator = components1d.Polynomial(new)
         self.span_selector_changed()
 
     def _background_type_changed(self, old, new):
