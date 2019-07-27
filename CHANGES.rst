@@ -15,8 +15,8 @@ NEW
 * New method :py:meth:`hyperspy.component.Component.print_current_values`. See
   :ref:`the User Guide for details <Component.print_current_values>`.
 * New :py:class:`hyperspy._components.skew_normal.SkewNormal` component.
-* New :py:method:`hyperspy.signal.BaseSignal.apply_apodization` method and
-  ``apodization`` keyword for :py:method:`hyperspy.signal.BaseSignal.fft`. See
+* New :py:meth:`hyperspy.signal.BaseSignal.apply_apodization` method and
+  ``apodization`` keyword for :py:meth:`hyperspy.signal.BaseSignal.fft`. See
   :ref:`signal.fft` for details.
 * Estimation of number of significant components by the elbow method.
   See :ref:`scree-plot`.
@@ -117,6 +117,7 @@ NEW
 ---
 
 * Support for three new file formats:
+
     * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :ref:`emd_fei-format`.
     * Reading Bruker's SPX format. See :ref:`spx-format`.
     * Reading and writing the mrcz open format. See :ref:`mrcz-format`.
@@ -133,10 +134,11 @@ Enhancements
 ------------
 
 * :py:func:`~.drawing.utils.plot_images` improvements (see :ref:`plot.images` for details):
+
     * The ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
-     supports iterable types, allowing the user to specify different colormaps
-     for the different images that are plotted by providing a list or other
-     generator.
+      supports iterable types, allowing the user to specify different colormaps
+      for the different images that are plotted by providing a list or other
+      generator.
     * Clicking on an individual image updates it.
 * New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization-label`.
 * The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method now operates much faster
