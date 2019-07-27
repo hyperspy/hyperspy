@@ -121,7 +121,15 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             specs["function"])
         if toolkit in toolkits:
             used_toolkits.add(toolkit)
-            thisw = f(obj=self, display=display, **kwargs)
+            try:
+                thisw = f(obj=self, display=display, **kwargs)
+            except NotImplementedError as e:
+                # traitsui raises this exception when the backend is
+                # not supported
+                if toolkit == "traitsui":
+                    pass
+                else:
+                    raise e
             if not display:
                 widgets[toolkit] = thisw
         else:
