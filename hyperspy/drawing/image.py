@@ -484,6 +484,9 @@ class ImagePlot(BlittedFigure):
         self.update(data_changed=False)
 
     def gui_adjust_contrast(self, display=True, toolkit=None):
+        if self._is_rgb:
+            raise NotImplementedError(
+                "Constrast adjustment of RGB images is not implemented")
         ceditor = ImageContrastEditor(self)
         return ceditor.gui(display=display, toolkit=toolkit)
     gui_adjust_contrast.__doc__ = \
