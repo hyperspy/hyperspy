@@ -6,6 +6,7 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.misc.test_utils import ignore_warning
 
 
 RTOL = 1E-6
@@ -608,7 +609,8 @@ class TestModelPrintCurrentValues:
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(1))
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            m.append(hs.model.components1D.Polynomial(1))
         m.append(hs.model.components1D.Offset())
         self.s = s
         self.m = m
