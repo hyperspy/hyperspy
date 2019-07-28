@@ -4,6 +4,15 @@ What's new
 Current Version
 ===============
 
+.. _changes_1.5.1:
+
+v1.5.1
+++++++
+
+This is a maintenance release that fixes some regressions introduced in v1.5.
+Follow the following links for details on all the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.1>`_.
+
 .. _changes_1.5:
 
 v1.5
@@ -50,7 +59,7 @@ Enhancements
     component will be deprecated in HyperSpy 2.0 in favour of the new
     :py:class:`hyperspy._components.polynomial.Polynomial` component, that is based on
     :py:class:`hyperspy._components.expression.Expression` and has an improved API. To
-    start using the new component pass the ``legacy=False`` keyword to the 
+    start using the new component pass the ``legacy=False`` keyword to the
     the :py:class:`hyperspy._components.polynomial_deprecated.Polynomial` component
     constructor.
 
