@@ -9,9 +9,9 @@ Current Version
 v1.5.1
 ++++++
 
-This is a maintenance release that fixes 2 regressions introduced in v1.5.
+This is a maintenance release that fixes some regressions introduced in v1.5.
 Follow the following links for details on all the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.1>`_.
 
 .. _changes_1.5:
 
