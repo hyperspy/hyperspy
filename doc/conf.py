@@ -36,8 +36,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.imgmath',
+    'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
-    'sphinxcontrib.mermaid',
 ]
 
 try:
@@ -244,6 +244,9 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
                        'dask': ('https://docs.dask.org/en/latest', None),
                        'astroML': ('https://www.astroml.org/', None)}
+
+graphviz_output_format = "svg"
+
 
 # -- Options for Sphinx API doc ----------------------------------------------
 # Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py
