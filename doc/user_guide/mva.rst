@@ -265,9 +265,10 @@ finding the correct minima. Usually a value between 1 and 2 works well:
    ...                 method='SGD',
    ...                 subspace_learning_rate=1.1)
 
-The third method is MomentumSGD, which typically improves the convergence
-properties of stochastic gradient descent. This takes the further parameter
-"momentum", which should be a fraction between 0 and 1.
+The third method is Momentum Stochastic Gradient Descent (MomentumSGD), 
+which typically improves the convergence properties of stochastic gradient
+descent. This takes the further parameter "momentum", which should be a
+fraction between 0 and 1.
 
 .. code-block:: python
 
@@ -328,9 +329,9 @@ where the subspace, i.e. the underlying low-rank component, is changing over tim
                        subspace_momentum=0.5)
 
 
-The default and MomentumSGD solvers assumes an l2-norm minimization problem,
-which can still be sensitive to very heavily corrupted data. A more robust
-alternative is available, although it is typically much slower than the l2 approach
+The default and MomentumSGD solvers both assume an l2-norm minimization problem,
+which can still be sensitive to very heavily corrupted data. A more robust alternative
+is available, although it is typically much slower.
 
 .. code-block:: python
 
