@@ -101,6 +101,7 @@ class ImagePlot(BlittedFigure):
         self.gamma = 1.0
         self.linthresh = 0.01
         self.linscale = 0.1
+        self._is_rgb = False
 
     @property
     def vmax(self):
@@ -322,7 +323,20 @@ class ImagePlot(BlittedFigure):
                 **self.data_function_kwargs)
 
     def update(self, data_changed=True, **kwargs):
+        if data_changed:
+            # When working with lazy signals the following may reread the data
+            # from disk unnecessarily, for example when updating the image just
+            # to recompute the histogram to adjust the contrast. In those cases
+            # use `data_changed=True`.
+            _logger.debug("Updating image slowly because `data_changed=True`")
+            self._update_data()
+        data = self._current_data
         optimize_contrast = kwargs.pop("optimize_contrast", False)
+        if rgb_tools.is_rgbx(data):
+            self.colorbar = False
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+            data = self._current_data = data
+            self._is_rgb = True
         ims = self.ax.images
         # update extent:
         self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
@@ -331,7 +345,7 @@ class ImagePlot(BlittedFigure):
                         self.yaxis.axis[0] - self.yaxis.scale / 2.)
 
         # Turn on centre_colormap if a diverging colormap is used.
-        if self.centre_colormap == "auto":
+        if not self._is_rgb and self.centre_colormap == "auto":
             if "cmap" in kwargs:
                 cmap = kwargs["cmap"]
             elif ims:
@@ -343,24 +357,12 @@ class ImagePlot(BlittedFigure):
             else:
                 self.centre_colormap = False
         redraw_colorbar = False
-        if data_changed:
-            # When working with lazy signals the following may reread the data
-            # from disk unnecessarily, for example when updating the image just
-            # to recompute the histogram to adjust the contrast. In those cases
-            # use `data_changed=True`.
-            _logger.debug("Updating image slowly because `data_changed=True`")
-            self._update_data()
-        data = self._current_data
 
-        if rgb_tools.is_rgbx(data):
-            self.colorbar = False
-            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-            data = self._current_data = data
 
         for marker in self.ax_markers:
             marker.update()
 
-        if len(data.shape) == 2:
+        if not self._is_rgb:
             def format_coord(x, y):
                 try:
                     col = self.xaxis.value2index(x)
@@ -390,46 +392,46 @@ class ImagePlot(BlittedFigure):
                     vmin != vmax):
                 redraw_colorbar = True
                 ims[0].autoscale()
+            if self.centre_colormap:
+                vmin, vmax = utils.centre_colormap_values(vmin, vmax)
+            else:
+                vmin, vmax = vmin, vmax
+
+            if self.norm == 'auto' and self.gamma != 1.0:
+                self.norm = 'power'
+            norm = copy.copy(self.norm)
+            if norm == 'power':
+                # with auto norm, we use the power norm when gamma differs from its
+                # default value.
+                norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
+            elif norm == 'log':
+                if np.nanmax(data) <= 0:
+                    raise ValueError('All displayed data are <= 0 and can not '
+                                    'be plotted using `norm="log"`. '
+                                    'Use `norm="symlog"` to plot on a log scale.')
+                if np.nanmin(data) <= 0:
+                    vmin = np.nanmin(np.where(data > 0, data, np.inf))
+
+                norm = LogNorm(vmin=vmin, vmax=vmax)
+            elif norm == 'symlog':
+                norm = SymLogNorm(linthresh=self.linthresh,
+                                linscale=self.linscale,
+                                vmin=vmin, vmax=vmax)
+            elif inspect.isclass(norm) and issubclass(norm, Normalize):
+                norm = norm(vmin=vmin, vmax=vmax)
+            elif norm not in ['auto', 'linear']:
+                raise ValueError("`norm` paramater should be 'auto', 'linear', "
+                                "'log', 'symlog' or a matplotlib Normalize  "
+                                "instance or subclass.")
+            else:
+                # set back to matplotlib default
+                norm = None
         redraw_colorbar = redraw_colorbar and self.colorbar
 
         if self.plot_indices is True:
             self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
-        if self.centre_colormap:
-            vmin, vmax = utils.centre_colormap_values(vmin, vmax)
-        else:
-            vmin, vmax = vmin, vmax
-
-        if self.norm == 'auto' and self.gamma != 1.0:
-            self.norm = 'power'
-        norm = copy.copy(self.norm)
-        if norm == 'power':
-            # with auto norm, we use the power norm when gamma differs from its
-            # default value.
-            norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
-        elif norm == 'log':
-            if np.nanmax(data) <= 0:
-                raise ValueError('All displayed data are <= 0 and can not '
-                                 'be plotted using `norm="log"`. '
-                                 'Use `norm="symlog"` to plot on a log scale.')
-            if np.nanmin(data) <= 0:
-                vmin = np.nanmin(np.where(data > 0, data, np.inf))
-
-            norm = LogNorm(vmin=vmin, vmax=vmax)
-        elif norm == 'symlog':
-            norm = SymLogNorm(linthresh=self.linthresh,
-                              linscale=self.linscale,
-                              vmin=vmin, vmax=vmax)
-        elif inspect.isclass(norm) and issubclass(norm, Normalize):
-            norm = norm(vmin=vmin, vmax=vmax)
-        elif norm not in ['auto', 'linear']:
-            raise ValueError("`norm` paramater should be 'auto', 'linear', "
-                             "'log', 'symlog' or a matplotlib Normalize  "
-                             "instance or subclass.")
-        else:
-            # set back to matplotlib default
-            norm = None
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
@@ -438,8 +440,9 @@ class ImagePlot(BlittedFigure):
             ims[0].set_extent(self._extent)
             self._calculate_aspect()
             self.ax.set_aspect(self._aspect)
-            ims[0].set_norm(norm)
-            ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
+            if not self._is_rgb:
+                ims[0].set_norm(norm)
+                ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar:
                 # ims[0].autoscale()
                 self._colorbar.draw_all()
@@ -454,12 +457,19 @@ class ImagePlot(BlittedFigure):
                 self.figure.canvas.draw_idle()
         else:  # no signal have been drawn yet
             new_args = {'interpolation': 'nearest',
-                        'vmin': vmin,
-                        'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
                         'animated': self.figure.canvas.supports_blit,
+                        }
+            if not self._is_rgb:
+                new_args.update(
+                    {
+                        'vmin': vmin,
+                        'vmax': vmax,
                         'norm': norm}
+
+                    
+                )
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
@@ -474,6 +484,9 @@ class ImagePlot(BlittedFigure):
         self.update(data_changed=False)
 
     def gui_adjust_contrast(self, display=True, toolkit=None):
+        if self._is_rgb:
+            raise NotImplementedError(
+                "Constrast adjustment of RGB images is not implemented")
         ceditor = ImageContrastEditor(self)
         return ceditor.gui(display=display, toolkit=toolkit)
     gui_adjust_contrast.__doc__ = \

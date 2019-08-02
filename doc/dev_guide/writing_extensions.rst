@@ -26,7 +26,7 @@ data.
 Models can be provided by external packages too but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
 the relevant :py:class:`hyperspy.signal.BaseSignal` subclass, see for example,
-the :py:meth:`hyperspy._signals.eds_tem.EDSTEM_mixin.create_model` of the 
+the :py:meth:`hyperspy._signals.eds_tem.EDSTEM_mixin.create_model` of the
 :py:class:`~._signals.eds_tem.EDSTEMSpectrum`.
 
 It is good practice to add all packages that extend HyperSpy
@@ -82,30 +82,62 @@ The flowchart below can help you decide where to add
 a new data analysis function. Notice that only if no suitable package exists
 for your function you should consider creating your own.
 
-.. mermaid::
+..  This is the original mermaid code. It produces a nicer looking diagram
+    with the defaults, but, as of version 0.3.1, it raises an exception in
+    ReadTheDocs, so we use graphviz below instead.
 
-   graph TD
+    .. mermaid::
 
-     A(New function needed)
-     B{Is it useful for data of any type and dimensions?}
-     C(Contribute it to BaseSignal)
-     D{Does an SignalxD for the required dimension exist in HyperSpy?}
-     E[Contribute new SignalxD to HyperSpy]
-     F{Is the function useful only for some sort of data?}
-     G(Contribute it to SignalxD)
-     H{Does an signal for that sort of data exists?}
-     I(Contribute to package providing the relevant signal)
-     J(Create you own package and signal subclass to host the funtion)
-     A-->B
-     B-- Yes -->C
-     B-- No  -->D
-     D-- Yes -->F
-     D-- No  -->E
-     E-->F
-     F-- Yes -->H
-     F-- No  -->G
-     H-- Yes -->I
-     H-- No -->J
+       graph TD
+
+         A(New function needed)
+         B{Is it useful for data of any type and dimensions?}
+         C(Contribute it to BaseSignal)
+         D{Does an SignalxD for the required dimension exist in HyperSpy?}
+         E[Contribute new SignalxD to HyperSpy]
+         F{Is the function useful only for some sort of data?}
+         G(Contribute it to SignalxD)
+         H{Does an signal for that sort of data exists?}
+         I(Contribute to package providing the relevant signal)
+         J(Create you own package and signal subclass to host the funtion)
+         A-->B
+         B-- Yes -->C
+         B-- No  -->D
+         D-- Yes -->F
+         D-- No  -->E
+         E-->F
+         F-- Yes -->H
+         F-- No  -->G
+         H-- Yes -->I
+         H-- No -->J
+
+
+.. graphviz::
+
+    digraph G {
+         A [label="New function needed"]
+         B [label="Is it useful for data of any type and dimensions?",shape="diamond"]
+         C [label="Contribute it to BaseSignal"]
+         D [label="Does an SignalxD for the required dimension exist in HyperSpy",shape="diamond"]
+         E [label="Contribute new SignalxD to HyperSpy"]
+         F [label="Is the function useful only for some sort of data?",shape="diamond"]
+         G [label="Contribute it to SignalxD"]
+         H [label="Does an signal for that sort of data exists?",shape="diamond"]
+         I [label="Contribute to package providing the relevant signal"]
+         J [label="Create you own package and signal subclass to host the funtion"]
+         A->B
+         B->C [label="Yes"]
+         B->D [label="No"]
+         D->F [label="Yes"]
+         D->E [label="No"]
+         E->F
+         F->H [label="Yes"]
+         F->G [label="No"]
+         H->I [label="Yes"]
+         H->J [label="No"]
+
+    }
+
 
 Registering a new BaseSignal subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -172,33 +204,69 @@ The flowchart below can help you decide when and where to add
 a new hyperspy model :py:class:`hyperspy.component.Component`.
 for your function you should consider creating your own.
 
-.. mermaid::
+..  This is the original mermaid code. It produces a nicer looking diagram
+    with the defaults, but, as of version 0.3.1, it raises an exception in
+    ReadTheDocs, so we use graphviz below instead.
 
-   graph TD
 
-     A(New component needed)
-     B{Can it be declared using Expression?}
-     C{Can it be useful to other users?}
-     D(Just use Expression)
-     E[Create new component using Expression]
-     F[Create new component from the scratch]
-     G{Is it useful for general users?}
-     H(Contribute it to HyperSpy)
-     I{Does a suitable package for it exist?}
-     J[Contribute it to the relevant package]
-     K[Create your own package to host it]
+    .. mermaid::
 
-     A-->B
-     B-- Yes -->C
-     B-- No  -->F
-     C-- No  -->D
-     C-- Yes -->E
-     E-->G
-     F-->G
-     G-- Yes --> H
-     G-- No  --> I
-     I-- Yes --> J
-     I-- No  --> K
+       graph TD
+
+         A(New component needed)
+         B{Can it be declared using Expression?}
+         C{Can it be useful to other users?}
+         D(Just use Expression)
+         E[Create new component using Expression]
+         F[Create new component from the scratch]
+         G{Is it useful for general users?}
+         H(Contribute it to HyperSpy)
+         I{Does a suitable package for it exist?}
+         J[Contribute it to the relevant package]
+         K[Create your own package to host it]
+
+         A-->B
+         B-- Yes -->C
+         B-- No  -->F
+         C-- No  -->D
+         C-- Yes -->E
+         E-->G
+         F-->G
+         G-- Yes --> H
+         G-- No  --> I
+         I-- Yes --> J
+         I-- No  --> K
+
+
+.. graphviz::
+
+    digraph G {
+
+
+        A [label="New component needed"]
+        B [label="Can it be declared using Expression?",shape="diamond"]
+        C [label="Can it be useful to other users?",shape="diamond"]
+        D [label="Just use Expression"]
+        E [label="Create new component using Expression"]
+        F [label="Create new component from the scratch"]
+        G [label="Is it useful for general users?",shape="diamond"]
+        H [label="Contribute it to HyperSpy"]
+        I [label="Does a suitable package for it exist?",shape="diamond"]
+        J [label="Contribute it to the relevant package"]
+        K [label="Create your own package to host it"]
+
+        A->B
+        B->C [label="Yes"]
+        B->F [label="No"]
+        C->E [label="Yes"]
+        C->D [label="No"]
+        E->G
+        F->G
+        G->H [label="Yes"]
+        G->I [label="No"]
+        I->J [label="Yes"]
+        I->K [label="No"]
+    }
 
 
 Registering new components
@@ -249,19 +317,19 @@ Creating and registering new widgets and toolkeys
 To generate GUIs of specific method and functions, HyperSpy use widgets and toolkeys:
 
 * *widgets* (typically ipywidgets or traitsui objects) generate GUIs,
-* *toolkeys* are functions to which it is possible to associate widgets to a signal 
+* *toolkeys* are functions to which it is possible to associate widgets to a signal
   method or to a module function.
 
-An extension can declare new toolkeys and widgets. For example, the 
+An extension can declare new toolkeys and widgets. For example, the
 `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_ and
-`hyperspy-gui-ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ 
+`hyperspy-gui-ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
 provide widgets for toolkeys declared in HyperSpy.
 
 Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
 To register a new toolkey:
 
-1. declare a new toolkey, *e. g.* by adding the :py:func:`hyperspy.ui_registry.add_gui_method` 
+1. declare a new toolkey, *e. g.* by adding the :py:func:`hyperspy.ui_registry.add_gui_method`
    decorator to the function you want to assign a widget to,
 2. register a new toolkey that you have declared in your package by adding it to
    the ``hyperspy_extension.yaml`` file as in the following example:

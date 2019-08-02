@@ -172,6 +172,20 @@ def test_plot_multiple_images_list(vmin, vmax):
                         labelwrap=20, vmin=vmin, vmax=vmax)
     return plt.gcf()
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_rgb_image():
+    # load rgb imimagesage
+    rgb = hs.signals.Signal1D(scipy.misc.face())
+    rgb.change_dtype("rgb8")
+    rgb.metadata.General.title = 'RGB'
+    axesRGB = rgb.axes_manager
+    axesRGB[0].name = "x"
+    axesRGB[1].name = "y"
+    axesRGB[0].units = "cm"
+    axesRGB[1].units = "cm"
+    rgb.plot()
+    return plt.gcf()
 
 class _TestIteratedSignal:
 
