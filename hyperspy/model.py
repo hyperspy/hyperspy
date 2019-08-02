@@ -264,7 +264,7 @@ class BaseModel(list):
                 Other keyword arguments are passed onto `BaseSignal.save()`
         """
         if self.signal is None:
-            raise ValueError("Currently cannot store models with no signal")
+            raise ValueError("Currently cannot save models with no signal")
         else:
             self.store(name)
             self.signal.save(file_name, **kwargs)

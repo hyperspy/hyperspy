@@ -35,6 +35,7 @@ from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
 from hyperspy.defaults_parser import preferences
@@ -997,12 +998,14 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.background_estimator = components1d.Offset()
             self.bg_line_range = 'full'
         elif self.background_type == 'Polynomial':
-            self.background_estimator = components1d.Polynomial(
-                self.polynomial_order)
+            with ignore_warning(message="The API of the `Polynomial` component"):
+                self.background_estimator = components1d.Polynomial(
+                    self.polynomial_order)
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):
-        self.background_estimator = components1d.Polynomial(new)
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            self.background_estimator = components1d.Polynomial(new)
         self.span_selector_changed()
 
     def _background_type_changed(self, old, new):
@@ -1223,7 +1226,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
-        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
+        m = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
                         title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
