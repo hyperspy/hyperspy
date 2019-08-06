@@ -1051,6 +1051,21 @@ reaching the end of the dataset.
     :py:meth:`~.model.BaseModel.multifit` to perform the fit over the entire
     spectrum image.
 
+A common problem is that the fitting fails going from the end of one row to the
+beginning of the next (where the spectrum changes abruptly). A simple solution to 
+this problem is to iterate through the signal indices in a horizontal zigzag 
+pattern, as seen on the image below. This alternate iteration method can be enabled
+by the :py:meth:`~.model.BaseModel.multifit` ``zigzag=True`` argument. The zigzag 
+pattern supports ndimensional navigation space.
+
+.. figure::  images/zigzag_axes_manager.png
+    :align:   center
+    :width:   500
+
+    Zigzag pattern for a 2D navigation space. The pixel intensity refers to the order 
+    that the signal is fitted in.
+
+
 Sometimes one may like to store and fetch the value of the parameters at a
 given position manually. This is possible using
 :py:meth:`~.model.BaseModel.store_current_values` and
