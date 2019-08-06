@@ -25,6 +25,7 @@ import traits.api as t
 from traits.trait_errors import TraitError
 import pint
 import logging
+import itertools
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
@@ -627,6 +628,24 @@ class DataAxis(t.HasTraits, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
+def zigzagiter(shape):
+    '''Similar to np.ndindex, but yields indices 
+    in horizontal zigzag pattern, like snake game
+    
+    Code found from https://stackoverflow.com/questions/57366966/
+    '''
+    N = len(shape)
+    idx = N*[0]
+    drc = N*[1]
+    while True:
+        yield (*idx,)
+        for j in reversed(range(N)):
+            if idx[j] + drc[j] not in (-1, shape[j]):
+                idx[j] += drc[j]
+                break
+            drc[j] *= -1
+        else:
+            break
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
@@ -755,6 +774,8 @@ class AxesManager(t.HasTraits):
         self._update_attributes()
         self._update_trait_handlers()
         self._index = None  # index for the iterator
+        self._zigzag = False  # Use horizontal zigzag indexing, not classic indexing
+        self._zigzag_index = None
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -950,16 +971,32 @@ class AxesManager(t.HasTraits):
         """
         if self._index is None:
             self._index = 0
-            val = (0,) * self.navigation_dimension
+
+            if self._zigzag:
+                self._zigzag_generator = zigzagiter(self._navigation_shape_in_array)
+                self._zigzag_index = 0 # Need to track both indices incase mismatch
+                val = next(self._zigzag_generator)
+            else:
+                val = (0,) * self.navigation_dimension
             self.indices = val
         elif self._index >= self._max_index:
             raise StopIteration
         else:
             self._index += 1
-            val = np.unravel_index(
-                self._index,
-                tuple(self._navigation_shape_in_array)
-            )[::-1]
+            if self._zigzag:
+                if self._index != self._zigzag_index:
+                    # In case we need to start further out in the generator
+                    self._zigzag_generator = itertools.islice(
+                        zigzagiter(self._navigation_shape_in_array), 
+                        self._index, 
+                        None)
+                    self._zigzag_index = self._index
+                val = next(self._zigzag_generator)[::-1]
+            else:
+                val = np.unravel_index(
+                    self._index,
+                    tuple(self._navigation_shape_in_array)
+                )[::-1]
             self.indices = val
         return val
 
