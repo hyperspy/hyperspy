@@ -19,7 +19,7 @@
 
 from unittest import mock
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, zigzagiter
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 from hyperspy.defaults_parser import preferences
 from numpy import arange, zeros
@@ -307,3 +307,23 @@ class TestAxesHotkeys:
             self.am.key_navigator(fake_key_event(step))
 
         assert self.am.indices == (1, 1, 1, 1, 1, 1)
+
+class TestScanPattern:
+
+    def setup_method(self, method):
+        s = Signal1D(zeros((3,3,3,2)))
+        self.am = s.axes_manager
+
+    def test_normal(self):
+        self.am._zigzag = False
+        for i, index in enumerate(self.am):
+            # Hits a new layer on index 9
+            if i == 9: 
+                assert self.am.indices == (0, 0, 1)
+
+    def test_zigzag(self):
+        self.am._zigzag = True
+        for i, index in enumerate(self.am):
+            # Hits a new layer on index 9
+            if i == 9: 
+                assert self.am.indices == (2, 2, 1)
