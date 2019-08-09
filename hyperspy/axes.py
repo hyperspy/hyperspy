@@ -628,11 +628,12 @@ class DataAxis(t.HasTraits, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
-def zigzagiter(shape):
+def serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices 
-    in horizontal zigzag pattern, like snake game
+    in serpentine pattern, like snake game
     
-    Code found from https://stackoverflow.com/questions/57366966/
+    Code by Stackoverflow user Paul Panzer,
+    from https://stackoverflow.com/questions/57366966/
     '''
     N = len(shape)
     idx = N*[0]
@@ -774,8 +775,9 @@ class AxesManager(t.HasTraits):
         self._update_attributes()
         self._update_trait_handlers()
         self._index = None  # index for the iterator
-        self._zigzag = False  # Use horizontal zigzag indexing, not classic indexing
-        self._zigzag_index = None
+        # Can use serpentine or flyback scan pattern 
+        # for the axes manager indexing
+        self._iterpath = 'serpentine'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -969,29 +971,33 @@ class AxesManager(t.HasTraits):
             iteration.
 
         """
+        if self._iterpath not in ['serpentine', 'flyback']:
+            raise ValueError('''The iterpath scan pattern is set to {}. \
+            It must be either "serpentine" or "flyback", and is set either \
+            as multifit `iterpath` argument or \
+            `axes_manager._iterpath`'''.format(self._iterpath))
         if self._index is None:
             self._index = 0
-
-            if self._zigzag:
-                self._zigzag_generator = zigzagiter(self._navigation_shape_in_array)
-                self._zigzag_index = 0 # Need to track both indices incase mismatch
-                val = next(self._zigzag_generator)
-            else:
+            if self._iterpath == 'serpentine':
+                self._iterpath_generator = serpentine_iter(
+                    self._navigation_shape_in_array)
+                val = next(self._iterpath_generator)
+            else: # flyback
                 val = (0,) * self.navigation_dimension
             self.indices = val
         elif self._index >= self._max_index:
             raise StopIteration
         else:
             self._index += 1
-            if self._zigzag:
-                if self._index != self._zigzag_index:
-                    # In case we need to start further out in the generator
-                    self._zigzag_generator = itertools.islice(
-                        zigzagiter(self._navigation_shape_in_array), 
-                        self._index, 
-                        None)
-                    self._zigzag_index = self._index
-                val = next(self._zigzag_generator)[::-1]
+            if self._iterpath == 'serpentine':
+                # In case we need to start further out in the generator
+                # for some reason. This is possibly expensive, as it needs
+                # to calculate all previous values first
+                # self._iterpath_generator = itertools.islice(
+                #     serpentine_iter(self._navigation_shape_in_array), 
+                #     self._index, 
+                #     None)
+                val = next(self._iterpath_generator)[::-1]
             else:
                 val = np.unravel_index(
                     self._index,

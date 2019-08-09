@@ -1251,7 +1251,7 @@ class BaseModel(list):
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
-                 interactive_plot=False, zigzag=False, **kwargs):
+                 interactive_plot=False, iterpath='serpentine', **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -1277,10 +1277,14 @@ class BaseModel(list):
             Note that this slows down the fitting by a lot, but it allows for
             interactive monitoring of the fitting (if in interactive mode).
 
-        zigzag : bool
-            If True, iterate through the signal in a horizontal zigzag manner,
-            instead of beginning each new row at the first index. Works for 
-            n-dimensional navigation space, not only 2D.
+        iterpath : str
+            If 'serpentine', iterate through the signal in a serpentine, 
+            "snake-game"-like manner instead of beginning each new row at 
+            the first index. Works for n-dimensional navigation space, 
+            not only 2D.
+
+            If 'flyback', at each new row the index begins at the first column,
+            in accordance with the way np.ndindex generates indices.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -1316,9 +1320,7 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
-        self.axes_manager._zigzag = False
-        if zigzag:
-            self.axes_manager._zigzag = True
+        self.axes_manager._iterpath = iterpath
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):
@@ -1346,9 +1348,6 @@ class BaseModel(list):
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
-        if zigzag:
-            # Turn it back off again at end in case other operations don't want zigzag
-            self.axes_manager._zigzag = False
 
     multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
