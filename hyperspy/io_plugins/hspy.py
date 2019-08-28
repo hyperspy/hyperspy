@@ -205,12 +205,20 @@ def hdfgroup2signaldict(group, lazy=False):
     }
 
     data = group['data']
+
     if lazy:
         data = da.from_array(data, chunks=data.chunks)
         exp['attributes']['_lazy'] = True
     else:
         data = np.asanyarray(data)
+
+    if 'mask' in group.keys():
+        mask = group['mask']
+        data = np.ma.asarray(data)
+        data.mask = mask
+
     exp['data'] = data
+    axes = []
     axes = []
     for i in range(len(exp['data'].shape)):
         try:
@@ -534,7 +542,7 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # Optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
-    if data.dtype  == np.dtype('O'):
+    if data.dtype == np.dtype('O'):
         # For saving ragged array
         # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
         group.require_dataset(key,
@@ -693,6 +701,10 @@ def write_signal(signal, group, **kwds):
     overwrite_dataset(group, signal.data, 'data',
                       signal_axes=signal.axes_manager.signal_indices_in_array,
                       **kwds)
+    if signal.has_mask():
+        overwrite_dataset(group, signal.data.mask, 'mask',
+                          signal_axes=signal.axes_manager.signal_indices_in_array,
+                          **kwds)
     if default_version < LooseVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")

@@ -1525,6 +1525,7 @@ def _change_API_comp_label(title, comp_label):
     return title
 
 
+
 class SpecialSlicersSignal(SpecialSlicers):
 
     def __setitem__(self, i, j):
@@ -1537,6 +1538,109 @@ class SpecialSlicersSignal(SpecialSlicers):
 
     def __len__(self):
         return self.obj.axes_manager.signal_shape[0]
+
+
+class MaskSlicer(SpecialSlicers):
+    """
+    Expansion of the Special Slicer class. Used for applying a mask
+    """
+    def __setitem__(self, key, value):
+        if isinstance(self.obj, MaskPasser):
+            array_slices = self.obj.signal._get_array_slices(key, self.isNavigation)
+            if self.isNavigation == self.obj.isNavigation:
+                print("You can't used masig or manav twice")
+            self.obj.signal.add_mask()
+            array_slices = tuple([slice1 if not (slice1 == slice(None, None, None)) else slice2 for
+                                  slice1, slice2 in zip(self.obj.slice, array_slices)])
+            self.obj.signal.data.mask[array_slices] = value
+        else:
+            array_slices = self.obj._get_array_slices(key, self.isNavigation)
+            self.obj.add_mask()
+            self.obj.data.mask[array_slices] = value
+
+    def __getitem__(self, key, out=None):
+        if isinstance(self.obj, MaskPasser):
+            if self.isNavigation == self.obj.isNavigation:
+                print("You can't used masig or manav twice")
+                return
+            array_slices = self.obj.signal._get_array_slices(key, self.isNavigation)
+            array_slices = tuple([slice1 if not (slice1 == slice(None, None, None)) else slice2 for
+                                  slice1, slice2 in zip(self.obj.slice, array_slices)])
+            return MaskPasser(self.obj.signal, array_slices, self.isNavigation)
+        else:
+            array_slices = self.obj._get_array_slices(key, self.isNavigation)
+            return MaskPasser(self.obj, array_slices, self.isNavigation)
+
+
+class MaskPasser():
+    def __init__(self, s, sl, nav):
+        self.signal = s
+        self.slice = sl
+        self.isNavigation = nav
+        self.manav = MaskSlicer(self, isNavigation=True)
+        self.masig = MaskSlicer(self, isNavigation=False)
+
+    def mask_below(self, maximum):
+        """Mask below the max value
+
+        Parameters:
+        -------------
+        maximum: float
+            Mask any values in the slice below the maximum value
+        """
+        self.signal.add_mask()
+        self.signal.data.mask[self.slice][(self.signal.data[self.slice] < maximum)] = True
+        return
+
+    def mask_above(self, minimum):
+        """Mask above the minimum value
+
+        Parameters:
+        -------------
+        minimum: float
+            Mask any values in the slice above the minimum value
+        """
+        self.signal.add_mask()
+        self.signal.data.mask[self.slice][(self.signal.data[self.slice] > minimum)] = True
+        return
+
+    def mask_where(self, condition):
+        """Mask at some condition
+
+        Parameters:
+        -------------
+        condition: array_like
+            Masking condition
+
+        """
+        self.signal.add_mask()
+        self.signal.data.mask[self.slice][condition] = True
+        return
+
+    def mask_circle(self, center, radius, unmask=False):
+        """Applies a mask to every pixel using a shape and the appropriate definition
+
+        Parameters
+        ----------
+        center: tuple
+            The (x,y) center of the circle
+        radius: float or int
+            The radius of the circle
+        unmask: bool
+            Unmask any pixels in the defined shape
+        """
+        self.signal.add_mask()
+        if not all(isinstance(item, int) for item in center):
+            center = (self.signal.axes_manager.signal_axes[1].value2index(center[1]),
+                     self.signal.axes_manager.signal_axes[0].value2index(center[0]))
+        if not isinstance(radius, int):
+            radius = self.signal.axes_manager.signal_axes[0].value2index(radius)
+        x_ind, y_ind = np.meshgrid(range(-radius, radius + 1), range(-radius, radius + 1))
+        r = np.sqrt(x_ind ** 2 + y_ind ** 2)
+        inside = r < radius
+        x_ind, y_ind = x_ind[inside]+int(center[0]), y_ind[inside]+int(center[1])
+        self.signal.data.mask[self.slice][..., x_ind, y_ind] = not unmask
+        return
 
 
 class BaseSetMetadataItems(t.HasTraits):
@@ -1597,6 +1701,9 @@ class BaseSignal(FancySlicing,
         self._plot = None
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
+        self.manav = MaskSlicer(self, isNavigation=True)
+        self.masig = MaskSlicer(self, isNavigation=False)
+        self.mask_passer= None
         self.events = Events()
         self.events.data_changed = Event("""
             Event that triggers when the data has changed
@@ -1779,6 +1886,7 @@ class BaseSignal(FancySlicing,
         else:
             self._data = np.atleast_1d(np.asanyarray(value))
 
+
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
 
@@ -1937,6 +2045,93 @@ class BaseSignal(FancySlicing,
         if fft_shift:
             value = np.fft.fftshift(value)
         return value
+
+    def mask_below(self, value, unmask=False):
+        """Applies a mask to every pixel with an average value below value
+
+        Parameters
+        ----------
+        value: float
+            The maximum pixel value to apply a mask to.
+        unmask: bool
+            Unmask any pixel with a value below value
+        """
+        self.add_mask()
+        print(value)
+        print(self)
+        print(np.less(self.data, value))
+        print(self.data.mask)
+        self.data.mask[self.data < value] = not unmask
+
+    def has_mask(self):
+        return isinstance(self.data, np.ma.masked_array)
+
+    def mask_above(self, value, unmask=False):
+        """Applies a mask to every pixel with a value below some value
+
+        Parameters
+        ----------
+        value: float
+            The minimum pixel value to apply a mask to.
+        unmask: bool
+            Unmask any pixel with a value above value
+        """
+        self.add_mask()
+        print(self.data > value)
+        self.data.mask[self.data > value] = not unmask
+
+    def mask_where(self, condition):
+        """Mask at some condition
+
+        Parameters:
+        -------------
+        condition: array_like
+            Masking condition
+
+        """
+        self.add_mask()
+        self.data.mask[condition] = True
+        return
+
+    def mask_border(self, pixels=1):
+        self.add_mask()
+        if isinstance(pixels, int):
+            pixels = (self.axes_manager.signal_axes[0].value2index(pixels))
+        self.data.mask[..., -pixels:] = True
+        self.data.mask[..., : pixels] = True
+        self.data.mask[..., : pixels, :] = True
+        self.data.mask[..., -pixels:, :] = True
+
+    def add_mask(self):
+        if not isinstance(self.data, np.ma.masked_array):
+            self.data = np.ma.asarray(self.data)
+            self.data.mask = False  # setting all values to unmasked
+
+    def mask_circle(self, center, radius, unmask=False):
+        """Applies a mask to every pixel using a shape and the appropriate definition
+
+        Parameters
+        ----------
+        shape: str
+            Acceptable shapes ['rectangle, 'circle']
+        data: list
+            Define shapes. eg 'rectangle' -> [x1,x2,y1,y2] 'circle' -> [radius, x,y]
+            data allows indexing with floats and the axes described for the signal
+        unmask: bool
+            Unmask any pixels in the defined shape
+        """
+        self.add_mask()
+        if not all(isinstance(item, int) for item in center):
+            center = (self.axes_manager.signal_axes[1].value2index(center[1]),
+                     self.axes_manager.signal_axes[0].value2index(center[0]))
+        if not isinstance(radius, int):
+            radius = self.axes_manager.signal_axes[0].value2index(radius)
+        x_ind, y_ind = np.meshgrid(range(-radius, radius + 1), range(-radius, radius + 1))
+        r = np.sqrt(x_ind ** 2 + y_ind ** 2)
+        inside = r < radius
+        x_ind, y_ind = x_ind[inside]+int(center[0]), y_ind[inside]+int(center[1])
+        self.data.mask[..., x_ind, y_ind] = True
+        return
 
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
              **kwargs):
