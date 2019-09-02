@@ -1,12 +1,14 @@
 language: python
-
+python:
+  - "3.7"
 
 env:
   global:
     - MPLBACKEND="agg"
     - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
     - FAIL_ON_EXTERNAL_DEPRECATION=false
-    - USE_CONDA=true
+    - ENV=conda
+    - MINIMAL_ENV=false
 
 services:
   - xvfb
@@ -14,17 +16,17 @@ services:
 matrix:
   include:
     # All tests run for the latest supported Python version in Linux
-  - env: export PYTHON=3.7; MINIMAL_ENV=false
-  - env: export PYTHON=3.7; MINIMAL_ENV=false; USE_CONDA=false
+  - env: export PYTHON=3.7;
   - env: export PYTHON=3.7; MINIMAL_ENV=true
-  - env: export PYTHON=3.7; MINIMAL_ENV=false; USE_CONDA=false
+  - env: export ENV=pip
+  - env: export ENV=pip; MINIMAL_ENV=true
     # Only standard test for older supported versions of Python in Linux
-  - env: export PYTHON=3.6; MINIMAL_ENV=false
+  - env: export PYTHON=3.6;
     # All tests, but the min requirements test run for the latest supported Python version in OSx
-  - env: export PYTHON=3.7; MINIMAL_ENV=false
+  - env: export PYTHON=3.7;
     os: osx
     language: generic
-  - env: export PYTHON=3.6; MINIMAL_ENV=false
+  - env: export PYTHON=3.6;
     os: osx
     language: generic
     if: tag IS present
@@ -39,27 +41,31 @@ before_install:
     else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     fi
   - |
-    if [ $USE_CONDA == true ]; then
+    if [ $ENV == conda ]; then
       chmod +x miniconda.sh;
       ./miniconda.sh -b -p $HOME/miniconda;
     fi
 
 install:
   - if [[ $MINIMAL_ENV == false ]] ; then
-      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba mrcz";
-    else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
+      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits numexpr numba mrcz";
+    else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr traits";
     fi
   - |
-    if [ $USE_CONDA == true ]; then
+    if [ $ENV == conda ]; then
       source $HOME/miniconda/bin/activate root
       conda config --append channels conda-forge
+      conda info
       conda create -n testenv --yes python=$PYTHON
-      source activate testenv
+      conda activate testenv
       conda install -y $DEPS $TEST_DEPS
+    else
+      pip install -U $DEPS $TEST_DEPS
+      pip list installed
     fi
   - if [[ $MINIMAL_ENV == false ]] ; then
-      pip install .;
-    else pip install . --no-deps;
+      pip install .[all];
+    else pip install .;
     fi
 
 before_script: # configure a headless display to test plot generation
@@ -69,7 +75,8 @@ before_script: # configure a headless display to test plot generation
   - sleep 1 # give xvfb some time to start
 
 script:
-  - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
+  - which python
+  - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
   - pytest --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
@@ -84,10 +91,7 @@ script:
 
 after_success:
 - coveralls
-- if [[ $MINIMAL_ENV == false ]]; then
-    python setup.py bdist_wheel;
-  else python setup.py sdist;
-  fi
+- python setup.py bdist_wheel;
 
 before_deploy:
 - export DISTRIB=$(ls ./dist/*);
