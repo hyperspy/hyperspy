@@ -1,8 +1,7 @@
-language: python
-python:
-  - "3.7"
+language: generic
 
 env:
+  # We set the default value in global and changed it in the matrix when necessary
   global:
     - ENV=conda
     - MINIMAL_ENV=false
@@ -19,19 +18,21 @@ services:
 matrix:
   include:
     # All tests run for the latest supported Python version in Linux
-  - env: export PYTHON=3.7;
-  - env: export PYTHON=3.7; MINIMAL_ENV=true
+  - env: export CONDA_PYTHON=3.7
+  - env: export CONDA_PYTHON=3.7; MINIMAL_ENV=true
   - env: export ENV=pip
+    language: python
+    python: 3.7
   - env: export ENV=pip; MINIMAL_ENV=true
+    language: python
+    python: 3.7
     # Only standard test for older supported versions of Python in Linux
-  - env: export PYTHON=3.6;
+  - env: export CONDA_PYTHON=3.6
     # All tests, but the min requirements test run for the latest supported Python version in OSx
-  - env: export PYTHON=3.7;
+  - env: export CONDA_PYTHON=3.7
     os: osx
-    language: generic
-  - env: export PYTHON=3.6;
+  - env: export CONDA_PYTHON=3.6
     os: osx
-    language: generic
     if: tag IS present
   allow_failures:
     # Only test for the latest supported version as chances are that it'll
@@ -48,10 +49,7 @@ install:
       DEPS="${DEPS} ${DEPS_OPTIONAL}";
     fi
   - source ./ci/travis_install_with_$ENV.sh
-  - if [[ $MINIMAL_ENV == false ]] ; then
-      pip install .[all];
-    else pip install .;
-    fi
+  - pip install .
 
 script:
   - which python
