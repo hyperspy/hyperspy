@@ -5,6 +5,8 @@ env:
   global:
     - MPLBACKEND="agg"
     - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
+    - FAIL_ON_EXTERNAL_DEPRECATION=false
+    - USE_CONDA=true
 
 services:
   - xvfb
@@ -12,46 +14,52 @@ services:
 matrix:
   include:
     # All tests run for the latest supported Python version in Linux
-  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
+  - env: export PYTHON=3.7; MINIMAL_ENV=false
+  - env: export PYTHON=3.7; MINIMAL_ENV=false; USE_CONDA=false
+  - env: export PYTHON=3.7; MINIMAL_ENV=true
+  - env: export PYTHON=3.7; MINIMAL_ENV=false; USE_CONDA=false
     # Only standard test for older supported versions of Python in Linux
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; MINIMAL_ENV=false
     # All tests, but the min requirements test run for the latest supported Python version in OSx
-  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.7; MINIMAL_ENV=false
     os: osx
     language: generic
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; MINIMAL_ENV=false
     os: osx
     language: generic
     if: tag IS present
   allow_failures:
     # Only test for the latest supported version as chances are that it'll
     # contain the most up-to-date external libraries.
-  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.7; MINIMAL_ENV=false; FAIL_ON_EXTERNAL_DEPRECATION=true
 
 before_install:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then
       curl "https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh" -o miniconda.sh;
     else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     fi
-  - chmod +x miniconda.sh;
-    ./miniconda.sh -b -p $HOME/miniconda;
-    export "PATH=$HOME/miniconda/bin:$PATH";
-    hash -r;
-install:
+  - |
+    if [ $USE_CONDA == true ]; then
+      chmod +x miniconda.sh;
+      ./miniconda.sh -b -p $HOME/miniconda;
+    fi
 
-  - if [[ $MINIMAL_ENV == 'False' ]] ; then
+install:
+  - if [[ $MINIMAL_ENV == false ]] ; then
       DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba mrcz";
     else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
     fi
-  - conda update -y conda;
-    conda config --append channels conda-forge;
-    conda create -n testenv --yes python=$PYTHON;
-    source activate testenv;
-    conda install -y $DEPS $TEST_DEPS;
-  - if [[ $MINIMAL_ENV == 'False' ]] ; then
+  - |
+    if [ $USE_CONDA == true ]; then
+      source $HOME/miniconda/bin/activate root
+      conda config --append channels conda-forge
+      conda create -n testenv --yes python=$PYTHON
+      source activate testenv
+      conda install -y $DEPS $TEST_DEPS
+    fi
+  - if [[ $MINIMAL_ENV == false ]] ; then
       pip install .;
-    else pip install .;
+    else pip install . --no-deps;
     fi
 
 before_script: # configure a headless display to test plot generation
@@ -76,7 +84,7 @@ script:
 
 after_success:
 - coveralls
-- if [[ $MINIMAL_ENV == 'False' ]]; then
+- if [[ $MINIMAL_ENV == false ]]; then
     python setup.py bdist_wheel;
   else python setup.py sdist;
   fi
@@ -93,4 +101,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    condition: $MINIMAL_ENV = 'False'
+    condition: $MINIMAL_ENV = false
