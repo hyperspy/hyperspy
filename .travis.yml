@@ -3,9 +3,11 @@ language: python
 
 env:
   global:
-    - DISPLAY=99.0
     - MPLBACKEND="agg"
     - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
+
+services:
+  - xvfb
 
 matrix:
   include:
@@ -53,11 +55,10 @@ install:
     fi
 
 before_script: # configure a headless display to test plot generation
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then sh -e /etc/init.d/xvfb start; fi
   # from http://afitnerd.com/2011/09/06/headless-browser-testing-on-mac/
   # and https://github.com/travis-ci/travis-ci/issues/7313#issuecomment-279914149
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then ( sudo Xvfb :99 -ac -screen 0 1024x768x8; echo ok ) & fi
-  - sleep 3 # give xvfb some time to start
+  - sleep 1 # give xvfb some time to start
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
