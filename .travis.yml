@@ -9,6 +9,7 @@ env:
     - DEPS_OPTIONAL="scikit-learn mrcz numba cython"
     - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
     - MPLBACKEND="agg"
+    - TEST_ARG_OPT="--mpl"
     - FAIL_ON_EXTERNAL_DEPRECATION=false
 
 
@@ -54,7 +55,8 @@ install:
 script:
   - which python
   - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
-  - pytest --mpl --cov=hyperspy --pyargs hyperspy;
+  - if [ $ENV == pip ]; then TEST_ARG_OPT=""; fi
+  - pytest --pyargs hyperspy --cov=hyperspy $TEST_ARG_OPT;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
 # This needs a service to upload the artifacts (and corresponding configuration)
