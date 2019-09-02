@@ -554,10 +554,10 @@ class ImageContrastEditor(t.HasTraits):
         'Symlog',
         default='Linear')
     linthresh = t.Range(0.0, 1.0, 0.01, exclude_low=True, exclude_high=False,
-                        desc=f"Range of value closed to zero, which are "
+                        desc="Range of value closed to zero, which are "
                         "linearly extrapolated. {mpl_help}")
     linscale = t.Range(0.0, 10.0, 0.1, exclude_low=False, exclude_high=False,
-                       desc=f"Number of decades to use for each half of "
+                       desc="Number of decades to use for each half of "
                        "the linear range. {mpl_help}")
     auto = t.Bool(True,
                   desc="Adjust automatically the display when changing "

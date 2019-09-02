@@ -434,12 +434,12 @@ def dict2signal(signal_dict, lazy=False):
             importlib.import_module(signal_dict["package"])
         except ImportError:
             _logger.warning(
-                f"This file contains a signal provided by the " +
-                f'{signal_dict["package"]} Python package that is not ' +
-                f'currently installed. The signal will be loaded into a '
-                f'generic HyperSpy signal. Consider installing ' +
-                f'{signal_dict["package"]} to load this dataset into its '
-                f'original signal class.')
+                "This file contains a signal provided by the " + 
+                '{signal_dict["package"]} Python package that is not ' + 
+                'currently installed. The signal will be loaded into a ' 
+                'generic HyperSpy signal. Consider installing ' + 
+                '{signal_dict["package"]} to load this dataset into its ' 
+                'original signal class.')
     signal_dimension = -1  # undefined
     signal_type = ""
     if "metadata" in signal_dict:

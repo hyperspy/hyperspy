@@ -375,8 +375,8 @@ class ImagePlot(BlittedFigure):
                 if col >= 0 and row >= 0:
                     z = data[row, col]
                     if np.isfinite(z):
-                        return f'x={x:1.4g}, y={y:1.4g}, intensity={z:1.4g}'
-                return f'x={x:1.4g}, y={y:1.4g}'
+                        return 'x={x:1.4g}, y={y:1.4g}, intensity={z:1.4g}'
+                return 'x={x:1.4g}, y={y:1.4g}'
             self.ax.format_coord = format_coord
 
             old_vmin, old_vmax = self.vmin, self.vmax

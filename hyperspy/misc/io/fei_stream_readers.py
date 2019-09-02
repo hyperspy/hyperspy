@@ -1,11 +1,11 @@
 import numpy as np
 import dask.array as da
-import sparse
+from scipy import sparse
 
 from hyperspy.decorators import jit_ifnumba
 
 
-class DenseSliceCOO(sparse.COO):
+class DenseSliceCOO(sparse.coo_matrix):
     """Just like sparse.COO, but returning a dense array on indexing/slicing"""
 
     def __getitem__(self, *args, **kwargs):

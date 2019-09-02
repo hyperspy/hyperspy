@@ -73,10 +73,10 @@ def reconstruct_component(comp_dictionary, **init_args):
         _class = dill.loads(comp_dictionary['_class_dump'])
     else:
         raise ImportError(
-            f'Loading the {comp_dictionary["class"]} component ' +
+            'Loading the {comp_dictionary["class"]} component ' +
             'failed because the component is provided by the ' +
-            f'{comp_dictionary["package"]} Python package, but ' +
-            f'{comp_dictionary["package"]} is not installed.')
+            '{comp_dictionary["package"]} Python package, but ' +
+            '{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
 
 
