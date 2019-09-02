@@ -4075,7 +4075,7 @@ class BaseSignal(FancySlicing,
         sig_shape = None
         if not ragged:
             sig_shape = () if shapes[0] == (1,) else shapes[0]
-            res_data = np.stack(res_data.flat).reshape(
+            res_data = np.stack(res_data.ravel()).reshape(
                 self.axes_manager._navigation_shape_in_array + sig_shape)
         res = map_result_construction(self, inplace, res_data, ragged,
                                       sig_shape)
