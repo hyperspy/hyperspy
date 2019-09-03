@@ -23,6 +23,7 @@ from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
 
+
 @lazifyTestClass
 class TestRemoveBackground1DGaussian:
 
@@ -122,15 +123,14 @@ def compare_axes_manager_metadata(s0, s1):
         assert a0.offset == a1.offset
     assert s0.metadata.General.title == s1.metadata.General.title
 
+
 @pytest.mark.parametrize('nav_dim', [0, 1])
 @pytest.mark.parametrize('fast', [True, False])
 @pytest.mark.parametrize('zero_fill', [True, False])
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
-@pytest.mark.parametrize('background_type', ['Power Law', #'Polynomial',
-                                             'Offset'])
-# Add Polynomial background test once 
-# https://github.com/hyperspy/hyperspy/pull/1989 is merged.
+@pytest.mark.parametrize('background_type',
+                         ['Power Law', 'Polynomial', 'Offset'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,

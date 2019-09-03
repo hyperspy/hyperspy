@@ -20,9 +20,7 @@ import logging
 
 import numpy as np
 import warnings
-import matplotlib
 from matplotlib import pyplot as plt
-from distutils.version import LooseVersion
 
 from hyperspy import utils
 from hyperspy.signal import BaseSignal
@@ -31,7 +29,8 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.plot import markers
-from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING_PARAMETERS
+from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING_PARAMETERS,
+                                      PLOT1D_DOCSTRING)
 
 
 _logger = logging.getLogger(__name__)
@@ -841,12 +840,11 @@ class EDS_mixin:
              background_windows=None,
              integration_windows=None,
              **kwargs):
-        """
-        Plot the EDS spectrum. The following markers can be added
+        """Plot the EDS spectrum. The following markers can be added
 
         - The position of the X-ray lines and their names.
         - The background windows associated with each X-ray lines. A black line
-        links the left and right window with the average value in each window.
+          links the left and right window with the average value in each window.
 
         Parameters
         ----------
@@ -881,6 +879,7 @@ class EDS_mixin:
             Else provide an array for which each row corresponds to a X-ray
             line. Each row contains the left and right value of the window.
         %s
+        %s
 
         Examples
         --------
@@ -912,7 +911,8 @@ class EDS_mixin:
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
 
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING_PARAMETERS)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING)
 
     def _plot_xray_lines(self, xray_lines=False, only_lines=("a", "b"),
                          only_one=False, background_windows=None,
@@ -968,12 +968,9 @@ class EDS_mixin:
             keywords argument for markers.vertical_line
         """
         per_xray = len(position[0])
-        if LooseVersion(matplotlib.__version__) >= "1.5.3":
-            colors = itertools.cycle(np.sort(
+        colors = itertools.cycle(np.sort(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
-        else:
-            colors = itertools.cycle(np.sort(
-                plt.rcParams['axes.color_cycle'] * per_xray))
+
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
             self.add_marker(line, render_figure=False)

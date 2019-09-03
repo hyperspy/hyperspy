@@ -29,21 +29,21 @@ class Lorentzian(Expression):
             +\gamma^{2}}\right]
 
     ============== =============
-    Variable        Parameter 
+    Variable        Parameter
     ============== =============
-    :math:`A`       A     
-    :math:`\gamma`  gamma  
-    :math:`x_0`     centre 
+    :math:`A`       A
+    :math:`\gamma`  gamma
+    :math:`x_0`     centre
     ============== =============
 
 
     Parameters
     -----------
     A : float
-        Height parameter, where :math:`A/(\gamma\pi)` is the maximum of the 
+        Height parameter, where :math:`A/(\gamma\pi)` is the maximum of the
         peak.
     gamma : float
-        Scale parameter corresponding to the half-width-at-half-maximum of the 
+        Scale parameter corresponding to the half-width-at-half-maximum of the
         peak, which corresponds to the interquartile spread.
     centre : float
         Location of the peak maximum.
@@ -56,7 +56,7 @@ class Lorentzian(Expression):
     """
 
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
-        # We use `_gamma` internally to workaround the use of the `gamma` 
+        # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
         super(Lorentzian, self).__init__(
             expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
@@ -87,4 +87,3 @@ class Lorentzian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.gamma.value = value / 2
-

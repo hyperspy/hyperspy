@@ -79,6 +79,10 @@ def test_fft_signal2d(lazy):
     assert_allclose(im_fft.data, np.fft.fftshift(
         np.fft.fft2(im.inav[0, 0]).data))
 
+    assert im.fft(apodization=True) == im.apply_apodization().fft()
+    for apodization in ['hann', 'hamming', 'tukey']:
+        assert im.fft(apodization=apodization) == im.apply_apodization(window=apodization).fft()
+
 
 @pytest.mark.parametrize('lazy', [True, False])
 def test_fft_signal1d(lazy):
@@ -118,6 +122,10 @@ def test_fft_signal1d(lazy):
     assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
     assert_allclose(np.fft.fftshift(
         np.fft.fft(s.inav[0, 0, 0].data)), s_fft.data)
+
+    assert s.fft(apodization=True) == s.apply_apodization().fft()
+    for apodization in ['hann', 'hamming', 'tukey']:
+        assert s.fft(apodization=apodization) == s.apply_apodization(window=apodization).fft()
 
 
 def test_nul_signal():

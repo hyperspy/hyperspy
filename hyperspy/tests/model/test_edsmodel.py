@@ -1,7 +1,8 @@
 
 import numpy as np
-from hyperspy.misc.test_utils import assert_warns
+import pytest
 
+from hyperspy.misc.test_utils import assert_warns
 from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
