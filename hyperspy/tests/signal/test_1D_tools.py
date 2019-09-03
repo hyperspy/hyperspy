@@ -20,6 +20,7 @@ from unittest import mock
 import numpy as np
 from scipy.signal import savgol_filter
 import pytest
+import dask.array as da
 
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.decorators import lazifyTestClass
@@ -210,6 +211,8 @@ class TestInterpolateInBetween:
         s = self.s.inav[0]
         s.change_dtype('float')
         tmp = np.zeros_like(s.data)
+        if isinstance(tmp, da.Array):
+            tmp = np.asarray(np.zeros_like(s.data))
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
@@ -221,6 +224,8 @@ class TestInterpolateInBetween:
         s = self.s.inav[0]
         s.change_dtype('float')
         tmp = np.zeros_like(s.data)
+        if isinstance(tmp, da.Array):
+            tmp = np.asarray(np.zeros_like(s.data))
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
