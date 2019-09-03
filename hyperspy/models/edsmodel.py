@@ -31,6 +31,8 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
+from hyperspy.misc.test_utils import ignore_warning
+
 
 _logger = logging.getLogger(__name__)
 
@@ -271,7 +273,7 @@ class EDSModel(Model1D):
     @property
     def _active_background_components(self):
         return [bc for bc in self.background_components
-                if bc.coefficients.free]
+                if bc.free_parameters]
 
     def add_polynomial_background(self, order=6):
         """
@@ -284,7 +286,8 @@ class EDSModel(Model1D):
         order: int
             The order of the polynomial
         """
-        background = create_component.Polynomial(order=order)
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            background = create_component.Polynomial(order=order, legacy=False)
         background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)
@@ -295,14 +298,14 @@ class EDSModel(Model1D):
         Free the yscale of the background components.
         """
         for component in self.background_components:
-            component.coefficients.free = True
+            component.set_parameters_free()
 
     def fix_background(self):
         """
         Fix the background components.
         """
         for component in self._active_background_components:
-            component.coefficients.free = False
+            component.set_parameters_not_free()
 
     def enable_xray_lines(self):
         """Enable the X-ray lines components.
@@ -849,7 +852,7 @@ class EDSModel(Model1D):
             xray_lines = [component.name for component in self.xray_lines]
         else:
             xray_lines = self.signal._parse_xray_lines(
-                    xray_lines, only_one, only_lines)
+                xray_lines, only_one, only_lines)
             xray_lines = list(filter(lambda x: x in [a.name for a in
                                                      self], xray_lines))
         if len(xray_lines) == 0:
