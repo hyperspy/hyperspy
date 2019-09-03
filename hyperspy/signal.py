@@ -3912,9 +3912,9 @@ class BaseSignal(FancySlicing,
             if not isinstance(function, np.ufunc):
                 fargs = inspect.signature(function).parameters.keys()
             else:
-                _logger.warning("The function '{}' can direcly operate on "
-                                "hyperspy signals and it is not necessary to "
-                                "use `map`".format(function.__name__))
+                _logger.warning(f"The function `{function.__name__}` can "
+                                "direcly operate on hyperspy signals and it "
+                                "is not necessary to use `map`.")
         except TypeError:
             # This is probably a Cython function that is not supported by
             # inspect.
