@@ -11,8 +11,6 @@ widgets externally (usually for testing or customisation purposes).
 
 '''
 
-import functools
-import types
 import importlib
 
 from hyperspy.misc.utils import isiterable
