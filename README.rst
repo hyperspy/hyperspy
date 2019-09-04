@@ -42,10 +42,8 @@ of signals.
 
 HyperSpy is released under the GPL v3 license.
 
-.. warning::
-
-    **Since version 0.8.4 HyperSpy supports Python 3 (version 3.5 and newer). If you need to install
-    HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
+**Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
+HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
 
 
 Contributing
@@ -59,5 +57,5 @@ Cite
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.3249885.svg
-.. _DOI: https://doi.org/10.5281/zenodo.3249885
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.3353463.svg
+.. _DOI: https://doi.org/10.5281/zenodo.3353463

@@ -148,7 +148,7 @@ class TestMarkers:
         s.add_marker(m2)
 
     def test_add_marker_signal2d_navigation_dim_vertical_line(self):
-        s = Signal2D(np.arange(2*3*8*9).reshape(2, 3, 8, 9))
+        s = Signal2D(np.arange(2 * 3 * 8 * 9).reshape(2, 3, 8, 9))
         marker_pos_list = [[1, 3, 5], [2, 4, 6]]
         m = markers.vertical_line(marker_pos_list)
         s.add_marker(m)
