@@ -353,7 +353,7 @@ class BaseInteractiveROI(BaseROI):
             'widget' argument.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
-            interactivel on any roi attribute change.
+            interactively on any roi attribute change.
 
         """
         if hasattr(signal, '_plot_kwargs'):
