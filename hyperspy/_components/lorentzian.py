@@ -193,7 +193,6 @@ class Lorentzian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.gamma.value = value / 2
-<<<<<<< HEAD
 
     @property
     def height(self):
@@ -202,5 +201,3 @@ class Lorentzian(Expression):
     @height.setter
     def height(self, value):
         self.A.value = value * self.gamma.value * np.pi
-=======
->>>>>>> upstream/RELEASE_next_minor
