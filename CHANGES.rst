@@ -4,6 +4,18 @@ What's new
 Current Version
 ===============
 
+.. _changes_1.5.2:
+
+v1.5.2
+++++++
+
+This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
+2.3.0 and fixes a bug in the Brucker reader. See
+ `the issue tracker
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.2>`_
+for details.
+
+
 .. _changes_1.5.1:
 
 v1.5.1
