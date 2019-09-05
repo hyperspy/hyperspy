@@ -3915,10 +3915,10 @@ class BaseSignal(FancySlicing,
                 _logger.warning(f"The function `{function.__name__}` can "
                                 "direcly operate on hyperspy signals and it "
                                 "is not necessary to use `map`.")
-        except TypeError:
+        except TypeError as error:
             # This is probably a Cython function that is not supported by
             # inspect.
-            pass
+            _logger.warning(error)
 
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
