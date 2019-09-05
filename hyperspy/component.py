@@ -556,10 +556,18 @@ class Parameter(t.HasTraits):
         shape = self._axes_manager._navigation_shape_in_array
         if not shape:
             shape = [1, ]
-        dtype_ = np.dtype([
-            ('values', 'float', self._number_of_elements),
-            ('std', 'float', self._number_of_elements),
-            ('is_set', 'bool', 1)])
+        # Shape-1 fields in dtypes won’t be collapsed to scalars in a future
+        # numpy version (see release notes numpy 1.17.0)
+        if self._number_of_elements > 1:
+            dtype_ = np.dtype([
+                ('values', 'float', self._number_of_elements),
+                ('std', 'float', self._number_of_elements),
+                ('is_set', 'bool')])
+        else:
+            dtype_ = np.dtype([
+                ('values', 'float'),
+                ('std', 'float'),
+                ('is_set', 'bool')])
         if (self.map is None or self.map.shape != shape or
                 self.map.dtype != dtype_):
             self.map = np.zeros(shape, dtype_)

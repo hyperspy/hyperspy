@@ -31,7 +31,6 @@ import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
-from prettytable import PrettyTable
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -51,7 +50,7 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import slugify, print_html
+from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
@@ -62,9 +61,8 @@ from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
-
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.ui_registry import ALL_EXTENSIONS
+
 
 _logger = logging.getLogger(__name__)
 
@@ -1986,6 +1984,8 @@ class BaseSignal(FancySlicing,
             axes_manager = self.axes_manager
         value = np.atleast_1d(self.data.__getitem__(
             axes_manager._getitem_tuple))
+        if isinstance(value, da.Array):
+            value = np.asarray(value)
         if fft_shift:
             value = np.fft.fftshift(value)
         return value
@@ -4075,7 +4075,7 @@ class BaseSignal(FancySlicing,
         sig_shape = None
         if not ragged:
             sig_shape = () if shapes[0] == (1,) else shapes[0]
-            res_data = np.stack(res_data.flat).reshape(
+            res_data = np.stack(res_data.ravel()).reshape(
                 self.axes_manager._navigation_shape_in_array + sig_shape)
         res = map_result_construction(self, inplace, res_data, ragged,
                                       sig_shape)

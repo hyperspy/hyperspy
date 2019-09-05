@@ -19,9 +19,9 @@ def test_dense_stream(lazy):
     arr = np.random.randint(0, 65535, size=(2, 3, 4, 5)).astype("uint16")
     stream = array_to_stream(arr)
     if lazy:
-        arrs = da.from_array(stream_to_sparse_COO_array(
+        arrs = stream_to_sparse_COO_array(
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
-            last_frame=2), chunks=(1, 1, 2, 5))
+            last_frame=2)
         arrs = arrs.compute()
         assert (arrs == arr).all()
     else:
@@ -36,9 +36,9 @@ def test_empty_stream(lazy):
     arr = np.zeros((2, 3, 4, 5), dtype="uint16")
     stream = array_to_stream(arr)
     if lazy:
-        arrs = da.from_array(stream_to_sparse_COO_array(
+        arrs = stream_to_sparse_COO_array(
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
-            last_frame=2), chunks=(1, 1, 2, 5))
+            last_frame=2)
         arrs = arrs.compute()
         assert not arrs.any()
     else:
@@ -56,9 +56,9 @@ def test_sparse_stream(lazy):
     arr[1, 1, 3, 3] = 3
     stream = array_to_stream(arr)
     if lazy:
-        arrs = da.from_array(stream_to_sparse_COO_array(
+        arrs = stream_to_sparse_COO_array(
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
-            last_frame=2), chunks=(1, 1, 2, 5))
+            last_frame=2)
         arrs = arrs.compute()
         assert (arrs == arr).all()
     else:
