@@ -821,7 +821,7 @@ class HyperHeader(object):
         """calculate and return real time for whole hypermap
         in seconds
         """
-        line_cnt_sum = np.sum(self.line_counter).astype(np.float64)
+        line_cnt_sum = np.sum(self.line_counter, dtype=np.float64)
         line_avg = self.dsp_metadata['LineAverage']
         pix_avg = self.dsp_metadata['PixelAverage']
         pix_time = self.dsp_metadata['PixelTime']
