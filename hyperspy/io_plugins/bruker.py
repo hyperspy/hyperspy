@@ -727,8 +727,7 @@ class HyperHeader(object):
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
                 self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                        'energy': tmp_d['Energy'],
-                                                        'width': tmp_d['Width']}
+                                                        'energy': tmp_d['Energy']}
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
