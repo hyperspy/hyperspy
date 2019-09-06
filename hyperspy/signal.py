@@ -3905,12 +3905,20 @@ class BaseSignal(FancySlicing,
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
+        fargs = []
         try:
-            fargs = inspect.signature(function).parameters.keys()
-        except TypeError:
+            # numpy ufunc operate element-wise on the inputs and we don't
+            # except them to have an axis argument
+            if not isinstance(function, np.ufunc):
+                fargs = inspect.signature(function).parameters.keys()
+            else:
+                _logger.warning(f"The function `{function.__name__}` can "
+                                "direcly operate on hyperspy signals and it "
+                                "is not necessary to use `map`.")
+        except TypeError as error:
             # This is probably a Cython function that is not supported by
             # inspect.
-            fargs = []
+            _logger.warning(error)
 
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
