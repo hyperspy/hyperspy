@@ -27,7 +27,6 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     X = axis.axis[i1:i2]
     if only_current is True:
         data = signal()[i1:i2]
-        X_shape = (len(X),)
         i = 0
         centre_shape = (1,)
     else:
@@ -35,25 +34,25 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
         data_gi = [slice(None), ] * len(signal.data.shape)
         data_gi[axis.index_in_array] = slice(i1, i2)
         data = signal.data[tuple(data_gi)]
-        X_shape = [1, ] * len(signal.data.shape)
-        X_shape[axis.index_in_array] = data.shape[i]
         centre_shape = list(data.shape)
         centre_shape[i] = 1
 
     if isinstance(data, da.Array):
         _cumsum = da.cumsum
-        _interp = da.interpsqrt
+        _max = da.max
+        _abs = da.fabs
+        _argmin = da.argmin
     else:
         _cumsum = np.cumsum
-        _interp = np.interp
+        _max = np.max
+        _abs = np.abs
+        _argmin = np.argmin
 
-    cdf=_cumsum(data)
-    cdfnorm=cdf/cdf[-1:]
+    cdf=_cumsum(data,i)
+    cdfnorm=cdf/_max(cdf,i).reshape(centre_shape)
     
-    centre = _interp(0.5,cdfnorm,X.reshape(X_shape))
-
-    gamma = (_interp(0.75,cdfnorm,X.reshape(X_shape)) - 
-            _interp(0.25,cdfnorm,X.reshape(X_shape))) / 2
+    centre = axis.axis[_argmin(_abs(0.5-cdfnorm),i)]
+    gamma = (axis.axis[_argmin(_abs(0.75-cdfnorm),i)]-axis.axis[_argmin(_abs(0.25-cdfnorm),i)])/2
     height = data.max(i)
     if isinstance(data, da.Array):
         return da.compute(centre, height, gamma)
@@ -167,14 +166,14 @@ class Lorentzian(Expression):
         if only_current is True:
             self.centre.value = centre
             self.gamma.value = gamma
-            self.A.value = height * self.gamma.value * np.pi
+            self.A.value = height * gamma * np.pi
             if self.binned:
                 self.A.value /= axis.scale
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
-            self.A.map['values'][:] = height * self.gamma.value * np.pi
+            self.A.map['values'][:] = height * gamma * np.pi
 
             if self.binned:
                 self.A.map['values'] /= axis.scale
