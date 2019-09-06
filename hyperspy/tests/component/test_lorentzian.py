@@ -16,11 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
+from hyperspy.signals import Signal1D
 from hyperspy.components1d import Lorentzian
 
+TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 def test_function():
     g = Lorentzian()
@@ -30,6 +34,23 @@ def test_function():
     assert_allclose(g.function(2), 1.5)
     assert_allclose(g.function(4), 0.3)
 
+@pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+def test_estimate_parameters_binned(only_current, binned):
+    s = Signal1D(np.empty((500,)))
+    s.metadata.Signal.binned = binned
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = .2
+    axis.offset = -20
+    g1 = Lorentzian(52342, 2, 30)
+    s.data = g1.function(axis.axis)
+    g2 = Lorentzian()
+    factor = axis.scale if binned else 1
+    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
+                                  only_current=only_current)
+    assert g2.binned == binned
+    assert_allclose(g1.A.value, g2.A.value * factor,0.1)
+    assert abs(g2.centre.value - g1.centre.value) <= 0.2
+    assert abs(g2.gamma.value - g1.gamma.value) <= 0.1
 
 def test_util_gamma_getset():
     g1 = Lorentzian()

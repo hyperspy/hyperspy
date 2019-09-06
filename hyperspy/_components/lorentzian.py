@@ -51,8 +51,8 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     cdf=_cumsum(data,i)
     cdfnorm=cdf/_max(cdf,i).reshape(centre_shape)
     
-    centre = axis.axis[_argmin(_abs(0.5-cdfnorm),i)]
-    gamma = (axis.axis[_argmin(_abs(0.75-cdfnorm),i)]-axis.axis[_argmin(_abs(0.25-cdfnorm),i)])/2
+    centre = X[_argmin(_abs(0.5-cdfnorm),i)]
+    gamma = (X[_argmin(_abs(0.75-cdfnorm),i)]-X[_argmin(_abs(0.25-cdfnorm),i)])/2
     height = data.max(i)
     if isinstance(data, da.Array):
         return da.compute(centre, height, gamma)
