@@ -226,7 +226,7 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[1], tuple)
 
     @pytest.mark.xfail(sys.platform == 'win32',
-                   reason="randomly fails in win32")
+                       reason="randomly fails in win32")
     def test_numpy_general_type(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
@@ -238,7 +238,7 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[1][1], str)
 
     @pytest.mark.xfail(sys.platform == 'win32',
-                   reason="randomly fails in win32")
+                       reason="randomly fails in win32")
     def test_general_type_not_working(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
@@ -683,3 +683,10 @@ def test_save_ragged_array(tmpfilepath):
     for i in range(len(s.data)):
         np.testing.assert_allclose(s.data[i], s1.data[i])
     assert s.__class__ == s1.__class__
+
+def test_load_missing_extension(caplog):
+    path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
+    s = load(path)
+    assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
+    with pytest.raises(ImportError):
+       m = s.models.restore("a") 

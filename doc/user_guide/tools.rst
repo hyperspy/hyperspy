@@ -24,7 +24,10 @@ common functionality to deal with one-dimensional (e.g. spectral) data and
 spectroscopy data analysis.
 
 The :ref:`table below <signal_subclasses_table-label>` summarises all the
-currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
+specialised :py:class:`~.signal.BaseSignal` subclasses currently distributed
+with HyperSpy.
+
+
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
 is imported in the user namespace when loading HyperSpy. In the following
@@ -211,6 +214,39 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     |    :py:class:`~._signals.complex_signal2d.Complex2D`                    |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
+
+.. versionadded:: 1.5
+    External packages can register extra :py:class:`~.signal.BaseSignal`
+    subclasses.
+
+Note that, if you have :ref:`packages that extend HyperSpy
+<hyperspy_extensions-label>` installed in your system, there may
+be more specialised signals available to you. To print all available specialised
+:py:class:`~.signal.BaseSignal` subclasses installed in your system call the
+:py:func:`hyperspy.utils.print_known_signal_types`
+function as in the following example:
+
+.. code-block:: python
+
+    >>> hs.print_known_signal_types()
+    +--------------------+---------------------+--------------------+----------+
+    |    signal_type     |       aliases       |     class name     | package  |
+    +--------------------+---------------------+--------------------+----------+
+    | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
+    |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
+    |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
+    |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
+    |      hologram      |                     |   HologramImage    | hyperspy |
+    |      MySignal      |                     |      MySignal      | hspy_ext |
+    +--------------------+---------------------+--------------------+----------+
+
+.. warning::
+    From version 2.0 HyperSpy will no longer ship
+    :py:class:`~.signal.BaseSignal` subclasses that are specific to a
+    particular type of data (i.e. with non-empty ``signal_type``). All those
+    signals currently distributed with HyperSpy will be moved to new
+    packages.
+    
 The following example shows how to transform between different subclasses.
 
    .. code-block:: python
@@ -467,7 +503,7 @@ First consider indexing a single spectrum, which has only one signal dimension
     >>> s.isig[5::2].data
     array([5, 7, 9])
 
-Unlike numpy, HyperSpy supports indexing using decimal numbers or string 
+Unlike numpy, HyperSpy supports indexing using decimal numbers or string
 (containing a decimal number and an units), in which case
 HyperSpy indexes using the axis scales instead of the indices.
 

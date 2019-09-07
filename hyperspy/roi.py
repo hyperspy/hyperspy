@@ -353,7 +353,7 @@ class BaseInteractiveROI(BaseROI):
             'widget' argument.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
-            interactivel on any roi attribute change.
+            interactively on any roi attribute change.
 
         """
         if hasattr(signal, '_plot_kwargs'):
@@ -524,7 +524,7 @@ def guess_vertical_or_horizontal(axes, signal):
             "Could not find valid widget type for the given `axes` value")
 
 
-@add_gui_method(toolkey="Point1DROI")
+@add_gui_method(toolkey="hyperspy.Point1DROI")
 class Point1DROI(BasePointROI):
 
     """Selects a single point in a 1D space. The coordinate of the point in the
@@ -568,7 +568,7 @@ class Point1DROI(BasePointROI):
             self.value)
 
 
-@add_gui_method(toolkey="Point2DROI")
+@add_gui_method(toolkey="hyperspy.Point2DROI")
 class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
@@ -609,7 +609,7 @@ class Point2DROI(BasePointROI):
             self.x, self.y)
 
 
-@add_gui_method(toolkey="SpanROI")
+@add_gui_method(toolkey="hyperspy.SpanROI")
 class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
@@ -668,7 +668,7 @@ class SpanROI(BaseInteractiveROI):
             self.right)
 
 
-@add_gui_method(toolkey="RectangularROI")
+@add_gui_method(toolkey="hyperspy.RectangularROI")
 class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
@@ -806,7 +806,7 @@ class RectangularROI(BaseInteractiveROI):
             self.bottom)
 
 
-@add_gui_method(toolkey="CircleROI")
+@add_gui_method(toolkey="hyperspy.CircleROI")
 class CircleROI(BaseInteractiveROI):
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
@@ -969,7 +969,7 @@ class CircleROI(BaseInteractiveROI):
                 self.r_inner)
 
 
-@add_gui_method(toolkey="Line2DROI")
+@add_gui_method(toolkey="hyperspy.Line2DROI")
 class Line2DROI(BaseInteractiveROI):
 
     x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
@@ -1104,7 +1104,8 @@ class Line2DROI(BaseInteractiveROI):
         elif units == 'radians':
             conversation = 1.
         else:
-            raise ValueError("Units are not recognized. Use  either 'degrees' or 'radians'.")
+            raise ValueError(
+                "Units are not recognized. Use  either 'degrees' or 'radians'.")
 
         if axis == 'horizontal':
             return np.arctan2(y, x) * conversation

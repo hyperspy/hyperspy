@@ -35,9 +35,11 @@ style_pytest_mpl = 'default'
 
 style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
 
+
 @pytest.fixture
 def mpl_generate_path_cmdopt(request):
     return request.config.getoption("--mpl-generate-path")
+
 
 def _generate_filename_list(style):
     path = os.path.dirname(__file__)
@@ -49,6 +51,7 @@ def _generate_filename_list(style):
             filename_list2.append(os.path.join(path, baseline_dir,
                                                '%s%i.png' % (filename, i)))
     return filename_list2
+
 
 @pytest.fixture
 def setup_teardown(request, scope="class"):
@@ -71,6 +74,7 @@ def setup_teardown(request, scope="class"):
     for filename in _generate_filename_list(style):
         os.remove(filename)
 
+
 @pytest.mark.usefixtures("setup_teardown")
 class TestPlotSpectra():
 
@@ -80,7 +84,6 @@ class TestPlotSpectra():
     s_reverse = s.deepcopy()
     s_reverse.axes_manager[1].offset = 512
     s_reverse.axes_manager[1].scale = -1
-
 
     def _generate_parameters(style):
         parameters = []

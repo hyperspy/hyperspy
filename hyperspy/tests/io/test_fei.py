@@ -348,7 +348,7 @@ class TestFEIReader():
         fname1 = os.path.join(self.dirpathold, '03_Scanning Preview.emi')
         s1 = load(fname1, only_valid_data=only_valid_data)
         nav_shape = (5, ) if only_valid_data else (200, )
-        assert s1.data.shape == nav_shape + (128, 128) 
+        assert s1.data.shape == nav_shape + (128, 128)
         nav_axes = s1.axes_manager.navigation_axes
         sig_axes = s1.axes_manager.signal_axes
         assert len(nav_axes) == len(nav_shape)

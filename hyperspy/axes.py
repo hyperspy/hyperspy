@@ -382,7 +382,7 @@ class BaseDataAxis(t.HasTraits):
             if not self.is_linear and isfloat(slice_.step):
                 raise ValueError(
                     "Float steps are only supported for linear axes.")
-        
+
         v2i = self.value2index
 
         if isinstance(slice_, slice):
@@ -613,7 +613,7 @@ class BaseDataAxis(t.HasTraits):
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
-@add_gui_method(toolkey="DataAxis")
+@add_gui_method(toolkey="hyperspy.DataAxis")
 class DataAxis(BaseDataAxis):
 
     def __init__(self,
@@ -904,7 +904,7 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
         self._set_quantity(value, 'offset')
 
 
-@add_gui_method(toolkey="AxesManager")
+@add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.
@@ -1792,7 +1792,7 @@ class AxesManager(t.HasTraits):
 
     def gui_navigation_sliders(self, title="", display=True, toolkit=None):
         return get_gui(self=self.navigation_axes,
-                       toolkey="navigation_sliders",
+                       toolkey="hyperspy.navigation_sliders",
                        display=display,
                        toolkit=toolkit,
                        title=title)

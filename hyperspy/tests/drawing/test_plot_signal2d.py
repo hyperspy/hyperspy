@@ -172,6 +172,20 @@ def test_plot_multiple_images_list(vmin, vmax):
                         labelwrap=20, vmin=vmin, vmax=vmax)
     return plt.gcf()
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_rgb_image():
+    # load rgb imimagesage
+    rgb = hs.signals.Signal1D(scipy.misc.face())
+    rgb.change_dtype("rgb8")
+    rgb.metadata.General.title = 'RGB'
+    axesRGB = rgb.axes_manager
+    axesRGB[0].name = "x"
+    axesRGB[1].name = "y"
+    axesRGB[0].units = "cm"
+    axesRGB[1].units = "cm"
+    rgb.plot()
+    return plt.gcf()
 
 class _TestIteratedSignal:
 
@@ -499,3 +513,16 @@ def test_plot_with_non_finite_value():
     s = hs.signals.Signal2D(np.array([[np.inf, np.nan] for v in range(2)]))
     s.plot()
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+
+@pytest.mark.parametrize("cmap", ['gray', None])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_negative_value(cmap):
+    s = hs.signals.Signal2D(np.arange(10*10).reshape(10, 10))
+    s -= 5*10
+    if cmap:
+        s.plot(norm='log', cmap=cmap)
+    else:
+        s.plot(norm='log')
+    return plt.gcf()
