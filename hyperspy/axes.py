@@ -613,7 +613,6 @@ class BaseDataAxis(t.HasTraits):
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
-@add_gui_method(toolkey="hyperspy.DataAxis")
 class DataAxis(BaseDataAxis):
 
     def __init__(self,

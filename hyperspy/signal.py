@@ -2274,7 +2274,7 @@ class BaseSignal(FancySlicing,
             (slice(None),) * axis.index_in_array + (slice(i1, i2),
                                                     Ellipsis)]
 
-        self.axis.crop(i1, i2)
+        axis.crop(i1, i2)
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
