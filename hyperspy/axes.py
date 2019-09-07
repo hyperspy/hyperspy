@@ -669,8 +669,24 @@ class DataAxis(BaseDataAxis):
         """
         return super().update_from(axis, attributes)
 
-    def crop(self, i1=None, i2=None):
-        self.axis = self.axis[i1:i2]
+    def crop(self, start=None, end=None):
+        """Crop the axis in place.
+
+        Parameters
+        ----------
+        start : int, float, or None
+            The beginning of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        end : int, float, or None
+            The end of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        """
+
+        self.axis = self.axis[self._get_index(start):self._get_index(end)]
         self.size = len(self.axis)
 
 
@@ -751,7 +767,7 @@ class FunctionalDataAxis(BaseDataAxis):
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
 
-    def crop(self, i1=None, i2=None):
+    def crop(self, start=None, end=None):
         # TODO
         pass
 
@@ -882,9 +898,32 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
         """
         return super().update_from(axis, attributes)
 
-    def crop(self, i1=None, i2=None):
-        # TODO
-        self.offset = self.axis[i1]
+    def crop(self, start=None, end=None):
+        """Crop the axis in place.
+
+        Parameters
+        ----------
+        start : int, float, or None
+            The beginning of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        end : int, float, or None
+            The end of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        """
+        if end is not None:
+            self.size = self._get_index(end)
+        if start is not None:
+            i1 = self._get_index(start)
+            self.offset = self.axis[i1]
+            self.size -= self._get_index(i1)
+        self.update_axis()
+
+    crop.__doc__ = DataAxis.crop.__doc__
+
 
     @property
     def scale_as_quantity(self):

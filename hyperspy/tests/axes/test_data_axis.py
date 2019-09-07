@@ -309,3 +309,44 @@ class TestLinearDataAxis:
         assert self.axis.low_value == 10
         assert self.axis.high_value == 10 + 0.1 * 9
         np.testing.assert_allclose(self.axis.axis, axis)
+
+    @pytest.mark.parametrize("use_indices", (False, True))
+    def test_crop(self, use_indices):
+        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        start = 10.2
+        if use_indices:
+            start = axis.value2index(start)
+        axis.crop(start)
+        assert axis.size == 8
+        np.testing.assert_almost_equal(axis.axis[0], 10.2)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.9)
+        np.testing.assert_almost_equal(axis.offset, 10.2)
+        np.testing.assert_almost_equal(axis.scale, 0.1)
+
+        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        end = 10.4
+        if use_indices:
+            end = axis.value2index(end)
+        axis.crop(start, end)
+        assert axis.size == 2
+        np.testing.assert_almost_equal(axis.axis[0], 10.2)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.3)
+        np.testing.assert_almost_equal(axis.offset, 10.2)
+        np.testing.assert_almost_equal(axis.scale, 0.1)
+
+        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis.crop(None, end)
+        assert axis.size == 4
+        np.testing.assert_almost_equal(axis.axis[0], 10.0)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.3)
+        np.testing.assert_almost_equal(axis.offset, 10.0)
+        np.testing.assert_almost_equal(axis.scale, 0.1)
+
+    def test_crop_values(self):
+        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis.crop(10.2)
+        assert axis.size == 8
+        np.testing.assert_almost_equal(axis.axis[0], 10.2)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.9)
+        np.testing.assert_almost_equal(axis.offset, 10.2)
+        np.testing.assert_almost_equal(axis.scale, 0.1)
