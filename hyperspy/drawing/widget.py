@@ -569,7 +569,14 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
         if self.axes:
-            self._size = np.array([ax.index2value(1) for ax in self.axes])
+            self._size = np.array([self._get_step(ax) for ax in self.axes])
+
+    def _get_step(self, axis):
+        # TODO: need to check if this is working fine, particularly with
+        """ Use to determine the size of the widget with support for non 
+        linear axis.
+        """
+        return axis.index2value(axis.index + 1) - axis.index2value(axis.index)
 
     def _get_size(self):
         """Getter for 'size' property. Returns the size as a tuple (to prevent
