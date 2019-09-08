@@ -349,6 +349,7 @@ class BaseDataAxis(t.HasTraits):
                 " is not defined".format(self.__class__.__name__))
 
     def _get_positive_index(self, index):
+        # To be used with re
         if index < 0:
             index = self.size + index
             if index < 0:
@@ -685,8 +686,20 @@ class DataAxis(BaseDataAxis):
             is calculated using the axis calibration. If `start`/`end` is
             ``None`` the method crops from/to the low/high end of the axis.
         """
+        if start is None:
+            start = 0
+        if end is None:
+            end = self.size
+        # Use `_get_positive_index` to support reserved indexing
+        i1 = self._get_positive_index(self._get_index(start))
+        i2 = self._get_positive_index(self._get_index(end))
 
-        self.axis = self.axis[self._get_index(start):self._get_index(end)]
+        # Not sure, if we should support unordered values or not...
+        if i1 > i2:
+            raise ValueError("The `start` value must be lower than the `end` "
+                             "value.")
+
+        self.axis = self.axis[i1:i2]
         self.size = len(self.axis)
 
 
@@ -914,16 +927,19 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
             is calculated using the axis calibration. If `start`/`end` is
             ``None`` the method crops from/to the low/high end of the axis.
         """
-        if end is not None:
-            self.size = self._get_index(end)
-        if start is not None:
-            i1 = self._get_index(start)
-            self.offset = self.axis[i1]
-            self.size -= self._get_index(i1)
+        if start is None:
+            start = 0
+        if end is None:
+            end = self.size
+        # Use `_get_positive_index` to support reserved indexing
+        i1 = self._get_positive_index(self._get_index(start))
+        i2 = self._get_positive_index(self._get_index(end))
+
+        self.offset = self.index2value(i1)
+        self.size = i2 - i1
         self.update_axis()
 
     crop.__doc__ = DataAxis.crop.__doc__
-
 
     @property
     def scale_as_quantity(self):

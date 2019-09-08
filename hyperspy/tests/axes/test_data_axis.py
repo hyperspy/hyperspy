@@ -133,6 +133,33 @@ class TestDataAxis:
         assert self.axis.value2index(10.15) == 3
         assert self.axis.value2index(60) == 8
 
+    @pytest.mark.parametrize("use_indices", (False, True))
+    def test_crop(self, use_indices):
+        axis = DataAxis(axis=self._axis)
+        start, end = 4., 196.
+        if use_indices:
+            start = axis.value2index(start)
+            end = axis.value2index(end)
+        axis.crop(start, end)
+        assert axis.size == 12
+        np.testing.assert_almost_equal(axis.axis[0], 4)
+        np.testing.assert_almost_equal(axis.axis[-1], 169)
+
+    def test_crop_reverses_indexing(self):
+        # reverse indexing
+        axis = DataAxis(axis=self._axis)
+        axis.crop(-14, -2)
+        assert axis.size == 12
+        np.testing.assert_almost_equal(axis.axis[0], 4)
+        np.testing.assert_almost_equal(axis.axis[-1], 169)
+
+        # mixed reverses indexing
+        axis = DataAxis(axis=self._axis)
+        axis.crop(2, -2)
+        assert axis.size == 12
+        np.testing.assert_almost_equal(axis.axis[0], 4)
+        np.testing.assert_almost_equal(axis.axis[-1], 169)
+
 
 class TestFunctionalDataAxis:
 
@@ -178,7 +205,7 @@ class TestReciprocalDataAxis:
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
         self._test_initialisation_parameters(axis)        
-        
+
 
 class TestLinearDataAxis:
 
@@ -342,11 +369,16 @@ class TestLinearDataAxis:
         np.testing.assert_almost_equal(axis.offset, 10.0)
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
-    def test_crop_values(self):
+    @pytest.mark.parametrize("mixed", (False, True))
+    def test_crop_reverses_indexing(self, mixed):
         axis = LinearDataAxis(size=10, scale=0.1, offset=10)
-        axis.crop(10.2)
-        assert axis.size == 8
+        if mixed:
+            i1, i2 = 2, -6
+        else:
+            i1, i2 = -8, -6
+        axis.crop(i1, i2)
+        assert axis.size == 2
         np.testing.assert_almost_equal(axis.axis[0], 10.2)
-        np.testing.assert_almost_equal(axis.axis[-1], 10.9)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.3)
         np.testing.assert_almost_equal(axis.offset, 10.2)
         np.testing.assert_almost_equal(axis.scale, 0.1)
