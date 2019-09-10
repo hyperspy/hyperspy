@@ -4,6 +4,109 @@ What's new
 Current Version
 ===============
 
+.. _changes_1.5.2:
+
+v1.5.2
+++++++
+
+This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
+2.3.0 and fixes a bug in the Brucker reader. See
+ `the issue tracker
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.2>`_
+for details.
+
+
+.. _changes_1.5.1:
+
+v1.5.1
+++++++
+
+This is a maintenance release that fixes some regressions introduced in v1.5.
+Follow the following links for details on all the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.1>`_.
+
+.. _changes_1.5:
+
+v1.5
+++++
+
+NEW
+---
+
+* New method :py:meth:`hyperspy.component.Component.print_current_values`. See
+  :ref:`the User Guide for details <Component.print_current_values>`.
+* New :py:class:`hyperspy._components.skew_normal.SkewNormal` component.
+* New :py:meth:`hyperspy.signal.BaseSignal.apply_apodization` method and
+  ``apodization`` keyword for :py:meth:`hyperspy.signal.BaseSignal.fft`. See
+  :ref:`signal.fft` for details.
+* Estimation of number of significant components by the elbow method.
+  See :ref:`scree-plot`.
+
+Enhancements
+------------
+
+* The contrast adjustment tool has been hugely improved. Test it by pressing the ``h`` key on any image.
+* The :ref:`Developer Guide <dev_guide-label>` has been extended, enhanced and divided into
+  chapters.
+* Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
+  automatically transposed when using
+  :py:func:`hyperspy.drawing.utils.plot_images`
+  or :py:func:`hyperspy.drawing.utils.plot_spectra` respectively. This is
+  specially relevant when plotting the result of EDS quantification. See
+  :ref:`eds-label` for examples.
+* The following components have been rewritten using
+  :py:class:`hyperspy._components.expression.Expression`, boosting their
+  speeds among other benefits. Multiple issues have been fixed on the way.
+
+  * :py:class:`hyperspy._components.lorentzian.Lorentzian`
+  * :py:class:`hyperspy._components.exponential.Exponential`
+  * :py:class:`hyperspy._components.bleasdale.Bleasdale`
+  * :py:class:`hyperspy._components.rc.RC`
+  * :py:class:`hyperspy._components.logistic.Logistic`
+  * :py:class:`hyperspy._components.error_function.Erf`
+  * :py:class:`hyperspy._components.gaussian2d.Gaussian2D`
+  * :py:class:`hyperspy._components.volume_plasmon_drude.VolumePlasmonDrude`
+  * :py:class:`hyperspy._components.eels_double_power_law.DoublePowerLaw`
+  * The :py:class:`hyperspy._components.polynomial_deprecated.Polynomial`
+    component will be deprecated in HyperSpy 2.0 in favour of the new
+    :py:class:`hyperspy._components.polynomial.Polynomial` component, that is based on
+    :py:class:`hyperspy._components.expression.Expression` and has an improved API. To
+    start using the new component pass the ``legacy=False`` keyword to the
+    the :py:class:`hyperspy._components.polynomial_deprecated.Polynomial` component
+    constructor.
+
+
+For developers
+--------------
+* Drop support for python 3.5
+* New extension mechanism that enables external packages to register HyperSpy
+  objects. See :ref:`writing_extensions-label` for details.
+
+Changelog
+*********
+
+Previous Versions
+=================
+
+
+We only cover here the main highlights, for a detailed list of all the changes
+see `the commits in the GITHUB milestones
+<https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
+
+
+.. _changes_1.4.2:
+
+v1.4.2
+++++++
+
+This is a maintenance release. Among many other fixes and enhancements, this
+release fixes compatibility issues with Matplotlib v 3.1. Follow the
+following links for details on all the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.1>`_
+and `enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.1+label%3A"type%3A+enhancement">`_.
+
+
 .. _changes_1.4.1:
 
 v1.4.1
@@ -35,6 +138,7 @@ NEW
 ---
 
 * Support for three new file formats:
+
     * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :ref:`emd_fei-format`.
     * Reading Bruker's SPX format. See :ref:`spx-format`.
     * Reading and writing the mrcz open format. See :ref:`mrcz-format`.
@@ -51,10 +155,11 @@ Enhancements
 ------------
 
 * :py:func:`~.drawing.utils.plot_images` improvements (see :ref:`plot.images` for details):
+
     * The ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
-     supports iterable types, allowing the user to specify different colormaps
-     for the different images that are plotted by providing a list or other
-     generator.
+      supports iterable types, allowing the user to specify different colormaps
+      for the different images that are plotted by providing a list or other
+      generator.
     * Clicking on an individual image updates it.
 * New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization-label`.
 * The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method now operates much faster
@@ -72,17 +177,6 @@ Enhancements
 
 
 
-
-Changelog
-*********
-
-Previous Versions
-=================
-
-
-We only cover here the main highlights, for a detailed list of all the changes
-see `the commits in the GITHUB milestones
-<https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
 
 .. _changes_1.3.2:
 v1.3.2

@@ -296,11 +296,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
              scalebar_color="white",
              axes_ticks=None,
              axes_off=False,
-             saturated_pixels=0,
+             saturated_pixels=None,
              vmin=None,
              vmax=None,
+             gamma=1.0,
              no_nans=False,
              centre_colormap="auto",
+             min_aspect=0.1,
              **kwargs
              ):
         """%s
@@ -317,11 +319,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
             saturated_pixels=saturated_pixels,
             vmin=vmin,
             vmax=vmax,
+            gamma=gamma,
             no_nans=no_nans,
             centre_colormap=centre_colormap,
+            min_aspect=min_aspect,
             **kwargs
         )
-    plot.__doc__ %= BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal

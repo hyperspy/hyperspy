@@ -411,8 +411,6 @@ An example of multi-dimensional EDS data (e.g. 3D SEM-EDS) is given in
 Plotting X-ray lines
 ^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.8
-
 X-ray lines can be added as plot labels with
 :py:meth:`~._signals.eds.EDS_mixin.plot`. The lines are either retrieved
 from `metadata.Sample.Xray_lines`, or selected with the same method as
@@ -450,8 +448,6 @@ You can also select a subset of lines to label:
 
 Geting the intensity of an X-ray line
 -------------------
-
-.. versionadded:: 0.8
 
 The sample and data used in this section are described in
 :ref:`[Rossouw2015] <Rossouw2015>`, and can be downloaded using:
@@ -518,8 +514,6 @@ Finally, the windows of integration can be visualised using
 Background subtraction
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.8
-
 The background can be subtracted from the X-ray intensities with
 :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
 The background value is obtained by averaging the intensity in two
@@ -546,10 +540,6 @@ can be plotted using :py:meth:`~._signals.eds.EDS_mixin.plot`:
 
 EDS Quantification
 ------------------
-
-.. versionadded:: 0.8 EDS Quantification
-
-.. versionadded:: 1.0 zeta-factors and ionization cross sections
 
 HyperSpy now includes three methods for EDS quantification:
 

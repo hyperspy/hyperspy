@@ -17,9 +17,11 @@
 
 import numpy as np
 import pytest
+import matplotlib.pyplot as plt
 
 from hyperspy import signals, components1d
 from hyperspy._signals.signal1d import BackgroundRemoval
+from hyperspy.signal_tools import ImageContrastEditor
 
 
 BASELINE_DIR = "plot_signal_tools"
@@ -47,3 +49,36 @@ def test_plot_BackgroundRemoval():
     br.span_selector.onmove_callback()
 
     return br.signal._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
+                               tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+@pytest.mark.parametrize("gamma", (0.7, 1.2))
+@pytest.mark.parametrize("saturated_pixels", (0.3, 0.5))
+def test_plot_contrast_editor(gamma, saturated_pixels):
+    np.random.seed(1)
+    data = np.random.random(size=(10, 10, 100, 100))*1000
+    data += np.arange(10*10*100*100).reshape((10, 10, 100, 100))
+    s = signals.Signal2D(data)
+    s.plot(gamma=gamma, saturated_pixels=saturated_pixels)
+    ceditor = ImageContrastEditor(s._plot.signal_plot)
+    assert ceditor.gamma == gamma
+    assert ceditor.saturated_pixels == saturated_pixels
+    return plt.gcf()
+
+
+@pytest.mark.parametrize("norm", ("linear", "log", "power", "symlog"))
+def test_plot_contrast_editor_norm(norm):
+    np.random.seed(1)
+    data = np.random.random(size=(100, 100))*1000
+    data += np.arange(100*100).reshape((100, 100))
+    s = signals.Signal2D(data)
+    s.plot(norm=norm)
+    ceditor = ImageContrastEditor(s._plot.signal_plot)
+    if norm == "log":
+        # test log with negative numbers
+        s2 = s - 5E3
+        s2.plot(norm=norm)
+        ceditor2 = ImageContrastEditor(s._plot.signal_plot)
+    assert ceditor.norm == norm.capitalize()
+
