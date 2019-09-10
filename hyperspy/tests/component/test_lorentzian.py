@@ -11,7 +11,8 @@
 #  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# GNU General Public License for more details.from hyperspy.utils import stack
+
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
@@ -23,6 +24,7 @@ import pytest
 
 from hyperspy.signals import Signal1D
 from hyperspy.components1d import Lorentzian
+from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
@@ -36,12 +38,12 @@ def test_function():
 
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned):
-    s = Signal1D(np.empty((500,)))
+    s = Signal1D(np.empty((250,)))
     s.metadata.Signal.binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = .2
-    axis.offset = -20
-    g1 = Lorentzian(52342, 2, 30)
+    axis.offset = -15
+    g1 = Lorentzian(52342, 2, 10)
     s.data = g1.function(axis.axis)
     g2 = Lorentzian()
     factor = axis.scale if binned else 1
@@ -52,23 +54,36 @@ def test_estimate_parameters_binned(only_current, binned):
     assert abs(g2.centre.value - g1.centre.value) <= 0.2
     assert abs(g2.gamma.value - g1.gamma.value) <= 0.1
 
+@pytest.mark.parametrize(("binned"), (True, False))
+def test_function_nd(binned):
+    s = Signal1D(np.empty((250,)))
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = .2
+    axis.offset = -15
+    g1 = Lorentzian(52342, 2, 10)
+    s.data = g1.function(axis.axis)
+    s.metadata.Signal.binned = binned
+    s2 = stack([s] * 2)
+    g2 = Lorentzian()
+    factor = axis.scale if binned else 1
+    g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
+    assert g2.binned == binned
+    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data,0.16)
+
 def test_util_gamma_getset():
     g1 = Lorentzian()
     g1.gamma.value = 3.0
     assert_allclose(g1.gamma.value, 3.0)
-
 
 def test_util_fwhm_set():
     g1 = Lorentzian()
     g1.fwhm = 1.0
     assert_allclose(g1.gamma.value, 0.5)
 
-
 def test_util_fwhm_get():
     g1 = Lorentzian()
     g1.gamma.value = 2.0
     assert_allclose(g1.fwhm, 4.0)
-
 
 def test_util_fwhm_getset():
     g1 = Lorentzian()

@@ -121,8 +121,11 @@ class Lorentzian(Expression):
         self.convolved = True
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the Lorentzian by calculating the median and half the
-        interquartile range.
+        """Estimate the Lorentzian by calculating the median (centre) and half 
+        the interquartile range (gamma).
+        
+        Note that an insufficient range will affect the accuracy of this 
+        method. 
 
         Parameters
         ----------
