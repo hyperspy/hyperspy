@@ -67,11 +67,31 @@ that you have installed at least one of HyperSpy's GUI packages:
 and the
 `traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
+Possible warnings when importing HyperSpy?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+HyperSpy supports different GUIs and 
+`matplotlib backends <https://matplotlib.org/tutorials/introductory/usage.html#backends>`_ 
+which in specific cases can lead to warnings when importing HyperSpy. Most of the time 
+there is nothing to worry about — the warnings simply inform you of several choices you have.
+There may be several causes for a warning, for example:
+
+* not all the GUIs packages are installed. If none is installed, we reccomend you to install
+  at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
+  data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
+  :ref:`preferences <configuring-hyperspy-label>` as explained below.
+* the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
+  backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
+   * If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
+   * Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
+     and if you don't want to see the (harmless) warning, make sure that you have the
+     ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
+     GUI in the :ref:`preferences <configuring-hyperspy-label>`.
+
+
 By default, HyperSpy warns the user if one of the GUI packages is not installed.
 These warnings can be turned off using the
-:py:class:`~.defaults_parser.Preferences` GUI
-(see :ref:`here <configuring-hyperspy-label>` for more information) or
-programmatically as follows:
+:ref:`preferences <configuring-hyperspy-label>` GUI or programmatically as follows:
 
     .. code-block:: python
 
@@ -80,12 +100,10 @@ programmatically as follows:
        >>> hs.preferences.save()
 
 
-Now you are ready to load
-your data (see below).
-
 .. versionchanged:: v1.3
-    HyperSpy works with all matplotlib backends, including the nbagg backend
-    that enables interactive plotting embedded in the jupyter notebook.
+    HyperSpy works with all matplotlib backends, including the ``notebook`` 
+    (also called ``nbAgg``) backend that enables interactive plotting embedded 
+    in the jupyter notebook.
 
 .. warning::
         When using the qt4 backend in Python 2 the matplotlib magic must be
@@ -103,11 +121,6 @@ your data (see below).
        >>> import matplotlib
        >>> matplotlib.rcParams["backend"] = "Agg"
        >>> import hyperspy.api as hs
-
-
-
-
-
 
 
 Getting help
@@ -199,7 +212,7 @@ of the signal class.
 .. _example-data-label:
 
 Loading example data and data from online databases
-----------------------------------------------------
+---------------------------------------------------
 
 HyperSpy is distributed with some example data that can be found in
 `hs.datasets.example_signals`. The following example plots one of the example
@@ -221,10 +234,6 @@ experimental data.
     >>> s.plot()
 
 .. _eelsdb-label:
-
-.. versionadded:: 1.0
-    :py:func:`~.misc.eels.eelsdb.eelsdb` function.
-
 
 The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
 directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
@@ -423,7 +432,7 @@ navigation dimensions:
 .. _quantity_and_converting_units:
 
 Using quantity and converting units
--------------------------------------------
+-----------------------------------
 
 The scale and the offset of each axis can be set and retrieved as quantity.
 
@@ -582,7 +591,7 @@ hyperspy gui packages are installed and enabled:
    Preferences user interface.
 
 .. versionadded:: 1.3
-    Possibility to enable/disable GUIs in the
+    Possibility to enable/disable GUIs in the preferences.
 
 It is also possible to set the preferences programmatically. For example,
 to disable the traitsui GUI elements and save the changes to disk:
@@ -591,6 +600,7 @@ to disable the traitsui GUI elements and save the changes to disk:
 
     >>> hs.preferences.GUIs.enable_traitsui_gui = False
     >>> hs.preferences.save()
+    >>> # if not saved, this setting will be used until the next jupyter kernel shutdown
 
 .. versionchanged:: 1.3
 
@@ -609,8 +619,6 @@ to disable the traitsui GUI elements and save the changes to disk:
 
 Messages log
 ------------
-
-.. versionadded:: 1.0
 
 HyperSpy writes messages to the `Python logger
 <https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_. The

@@ -148,7 +148,7 @@ class TestModelSaving:
         m[-1].name = 'something'
         m.append(GaussianHF(module="numpy"))
         m[-1].height.value = 3
-        m.append(Expression(name="Line", expression="a * x + b", a=1, b=0))
+        m.append(Expression(name="Line", expression="a * x + b", a=1, c=0, rename_pars={"b": "c"}))
         self.m = m
 
     def test_save_and_load_model(self):
@@ -160,6 +160,7 @@ class TestModelSaving:
         assert mr.components.something.A.value == 13
         assert mr.components.GaussianHF.height.value == 3
         assert mr.components.Line.a.value == 1
+        assert mr.components.Line.c.value == 0
         assert mr.components.Line.function(10) == 10
 
     def teardown_method(self, method):

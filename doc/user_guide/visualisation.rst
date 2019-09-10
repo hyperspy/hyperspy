@@ -57,8 +57,13 @@ the x-axis if 1D:
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**. When using the keyboard
-arrows the PageUp and PageDown keys change the stepsize.
+on and the spectrum or navigator figure is selected**. When using the numpad
+arrows the PageUp and PageDown keys change the size of the step.
+
+The current coordinates can be either set by navigating the
+:py:meth:`~.signal.BaseSignal.plot`, or specified by pixel indices
+in ``s.axes_manager.indices`` or as calibrated coordinates in
+``s.axes_manager.coordinates``.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
@@ -115,10 +120,17 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
+    ``plt.close('all')`` is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
     Matplotlib is the library that HyperSpy uses to produce the plots. You can
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
+
+
+.. NOTE::
+
+    Plotting ``float16`` images is currently not supported by matplotlib; however, it is 
+    possible to convert the type of the data by using the 
+    :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
 ===========================
@@ -170,8 +182,6 @@ The following keyboard shortcuts are availalbe when the 2D signal figure is in f
 
 Customising image plot
 ======================
-
-.. versionadded:: 0.8
 
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
@@ -232,8 +242,6 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
 
 .. _plot.divergent_colormaps-label:
 
-
-.. versionadded:: 0.8.1
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
@@ -454,8 +462,6 @@ other signals): :py:func:`~.drawing.utils.plot_images`,
 Plotting several images
 -----------------------
 
-.. versionadded:: 0.8
-
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
 to customize the resulting output. The function returns a list of
@@ -465,6 +471,10 @@ below. Plots generated from another installation may look slightly different
 due to ``matplotlib`` GUI backends and default font sizes. To change the
 font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
+
+.. versionadded:: 1.5
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   dimension 2 and signal dimension 0.
 
 A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
 different slices of a multidimensional image (a *hyperimage*):
@@ -574,7 +584,7 @@ Another example for this function is plotting EDS line intensities see
 :ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
 to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
-`cmap`),adding scalebars to the plots (with `scalebar`), and changing the
+`cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
 which is used to call subplots_adjust method of matplotlib
 (see `documentation <http://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
@@ -583,7 +593,7 @@ which is used to call subplots_adjust method of matplotlib
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
+    >>> hs.plot.plot_images(im,
     ...     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
     ...     colorbar='single', saturated_pixels=2, scalebar='all',
     ...     scalebar_color='black', suptitle_fontsize=16,
@@ -614,7 +624,7 @@ generator:
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
+    >>> hs.plot.plot_images(im,
     >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
     >>>    colorbar='multi', saturated_pixels=2, scalebar=[0],
     >>>    scalebar_color='white', suptitle_fontsize=16)
@@ -705,6 +715,10 @@ Plotting several spectra
 same figure. It supports different styles, the default
 being "overlap". The default style is configurable in :ref:`preferences
 <configuring-hyperspy-label>`.
+
+.. versionadded:: 1.5
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian
 functions with different sigma values) and plot them in the same figure using
@@ -1017,8 +1031,6 @@ each plot:
 
 Markers
 =======
-
-.. versionadded:: 0.8
 
 HyperSpy provides an easy access to the main marker of matplotlib. The markers
 can be used in a static way

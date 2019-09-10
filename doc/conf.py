@@ -11,10 +11,12 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from hyperspy import Release
 import sys
 import os
+from datetime import datetime
+
 sys.path.append('../')
-from hyperspy import Release
 sys.path.append(os.path.abspath('sphinxext'))
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -34,6 +36,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.imgmath',
+    'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
 ]
 
@@ -56,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'HyperSpy'
-copyright = '2011-2018, The HyperSpy development team'
+copyright = f'2011-{datetime.today().year}, The HyperSpy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -181,6 +184,9 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'HyperSpydoc'
 
+# Add the documentation for __init__() methods and the class docstring to the
+# built documentation
+autoclass_content = 'both'
 
 # -- Options for LaTeX output --------------------------------------------
 
@@ -231,8 +237,16 @@ man_pages = [
 ]
 
 # Add the hyperspy website to the intersphinx domains
-intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None),
-                       'matplotlib': ('https://matplotlib.org', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'hyperspyweb': ('http://hyperspy.org/', None),
+                       'matplotlib': ('https://matplotlib.org', None),
+                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
+                       'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+                       'dask': ('https://docs.dask.org/en/latest', None),
+                       'astroML': ('https://www.astroml.org/', None)}
+
+graphviz_output_format = "svg"
+
 
 # -- Options for Sphinx API doc ----------------------------------------------
 # Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py

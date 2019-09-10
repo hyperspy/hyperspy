@@ -16,45 +16,44 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 
-class Exponential(Component):
+class Exponential(Expression):
 
-    """Exponentian function components
+    r"""Exponential function component.
 
-    f(x) = A*e^{-x/k}
+    .. math::
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     k      |    tau    |
-    +------------+-----------+
+        f(x) = A\cdot\exp\left(-\frac{x}{\tau}\right)
 
+    ============= =============
+    Variable       Parameter 
+    ============= =============
+    :math:`A`      A     
+    :math:`\tau`   tau    
+    ============= =============
+
+
+    Parameters
+    -----------
+    A: float
+        Maximum intensity
+    tau: float
+        Scale parameter (time constant)
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
     """
 
-    def __init__(self):
-        Component.__init__(self, ['A', 'tau'])
+    def __init__(self, A=1., tau=1., module="numexpr", **kwargs):
+        super(Exponential, self).__init__(
+            expression="A * exp(-x / tau)",
+            name="Exponential",
+            A=A,
+            tau=tau,
+            module=module,
+            autodoc=False,
+            **kwargs,
+        )
+
         self.isbackground = False
-        self.A.grad = self.grad_A
-        self.tau.grad = self.grad_tau
-
-    def function(self, x):
-        """
-        """
-        A = self.A.value
-        tau = self.tau.value
-        return A * np.exp(-x / tau)
-
-    def grad_A(self, x):
-        return self.function(x) / self.A.value
-
-    def grad_tau(self, x):
-        A = self.A.value
-        tau = self.tau.value
-        return x * (np.exp(-x / tau)) * A / tau ** 2
