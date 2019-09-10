@@ -969,6 +969,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
         self.polynomial_order = polynomial_order
+        # For the GUIs, we display 'Power law' 
         if background_type in ['Power Law', 'PowerLaw']:
             background_type = 'Power law'
         self.background_type = background_type
