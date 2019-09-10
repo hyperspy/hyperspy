@@ -21,6 +21,7 @@ import logging
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -139,6 +140,8 @@ class MPL_HyperExplorer(object):
                                     imf.update), [])
 
             imf.title = title
+            if "cmap" not in kwds.keys() or kwds['cmap'] is None:
+                kwds["cmap"] = preferences.Plot.cmap_navigator
             imf.plot(**kwds)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
