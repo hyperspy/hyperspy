@@ -774,10 +774,10 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self._index = None  # index for the iterator
+        self._index = None  # index for the iterpath
         # Can use serpentine or flyback scan pattern 
         # for the axes manager indexing
-        self._iterpath = 'serpentine'
+        self._iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
