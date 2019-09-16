@@ -286,21 +286,28 @@ class EDSTEM_mixin:
     def quantification(self,
                        intensities,
                        method,
-                       factors,
+                       factors='auto',
                        composition_units='atomic',
+                       absorption_correction = False,
+                       tilt_stage=0,
+                       take_off_angle='auto',
+                       mass_thickness='auto',
+                       conv_crit = 0.5,
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
                        **kwargs):
         """
-        Quantification using Cliff-Lorimer, the zeta-factor method, or
-        ionization cross sections.
+        Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
+        method, or ionization cross sections. The function iterates through
+        quantification function until two successive interations don't change
+        the final composition by a defined percentage critera (0.5% by default).
 
         Parameters
         ----------
         intensities: list of signal
             the intensitiy for each X-ray lines.
-        method: 'CL' or 'zeta' or 'cross_section'
+        method: {'CL', 'zeta', 'cross_section'}
             Set the quantification method: Cliff-Lorimer, zeta-factor, or
             ionization cross sections.
         factors: list of float
@@ -308,9 +315,23 @@ class EDSTEM_mixin:
             as intensities. Note that intensities provided by Hyperspy are
             sorted by the alphabetical order of the X-ray lines.
             eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
-        composition_units: 'weight' or 'atomic'
+        composition_units: {'atomic', 'atomic'}
             The quantification returns the composition in atomic percent by
             default, but can also return weight percent if specified.
+        absorption_correction: {'False', True} bool
+            Specify whether or not an absorption correction should be applied.
+            'False' by default so absorption will not be applied unless
+            specfied.
+        tilt_stage : the sample holder tilt stage, used to calculate the
+            absorption pathways (in degrees).
+        mass_thickness: {'auto'}
+            mass_thickness in ***find out units*** (can be a single value or
+            have the same navigation dimension as the signal).
+            NB: Must be specified for 'CL' method, for 'zeta' or 'cross_section'
+            methods, first quantification step provides a mass_thickness
+            internally during quantification.
+        conv_crit: The convergence criterium defined as the percentage
+            difference between 2 successive iterations. 0.5% by default.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
             quantification. If int is given the vacuum_mask method is used to
@@ -328,7 +349,8 @@ class EDSTEM_mixin:
         Returns
         ------
         A list of quantified elemental maps (signal) giving the composition of
-        the sample in weight or atomic percent.
+        the sample in weight or atomic percent with absorption correciton taken
+        into account based on the sample thickness estimate provided.
 
         If the method is 'zeta' this function also returns the mass thickness
         profile for the data.
@@ -353,42 +375,100 @@ class EDSTEM_mixin:
         --------
         vacuum_mask
         """
-        if self.axes_manager.navigation_size == 0:
-            navigation_mask = None
-        elif isinstance(navigation_mask, float):
+        if isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
-
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
 
         composition = utils.stack(intensities, lazy=False)
+        if take_off_angle == 'auto':
+            toa = self.get_take_off_angle()
+        else:
+            toa = take_off_angle
 
         if method == 'CL':
+            
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
                 mask=navigation_mask) * 100.
+
         elif method == 'zeta':
-            results = utils_eds.quantification_zeta_factor(
-                composition.data, zfactors=factors,
-                dose=self._get_dose(method, **kwargs),
-                absorption_correction=None)
-            composition.data = results[0] * 100.
-            mass_thickness = intensities[0].deepcopy()
-            mass_thickness.data = results[1]
+            int_stack = utils.stack(intensities)
+
+            comp_old = utils.stack(intensities)
+            comp_old.data = np.zeros_like(comp_old.data)
+
+            abs_corr = None # initial
+
+            it = 0
+            MAX_ITERATIONS = 30
+
+            while True:
+                results = utils_eds.quantification_zeta_factor(
+                    int_stack.data,
+                    zfactors=factors,
+                    dose=self._get_dose(method),
+                    absorption_correction=abs_corr)
+                composition.data = results[0] * 100.
+                mass_thickness = intensities[0].deepcopy()
+                mass_thickness.data = results[1]
+
+                res_max = np.max((composition - comp_old).data)
+
+                if not absorption_correction or res_max < (conv_crit/100):
+                    break
+                elif it >= MAX_ITERATIONS:
+                    raise Exception('Absorption correction failed as solution '
+                                    'did not converge after %d iterations'
+                                    % (MAX_ITERATIONS))
+
+                comp_old.data = composition.data
+                abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
+                                                       mass_thickness,
+                                                       toa)
+
             mass_thickness.metadata.General.title = 'Mass thickness'
         elif method == 'cross_section':
-            results = utils_eds.quantification_cross_section(
-                composition.data,
-                cross_sections=factors,
-                dose=self._get_dose(method, **kwargs),
-                absorption_correction=None)
+            int_stack = utils.stack(intensities)
+
+            comp_old = utils.stack(intensities)
+            comp_old.data = np.zeros_like(comp_old.data)
+
+            abs_corr = None # initial
+
+            it = 0
+            MAX_ITERATIONS = 30
+
+            while True:
+                results = utils_eds.quantification_cross_section(
+                    int_stack.data,
+                    cross_sections=factors,
+                    dose=self._get_dose(method, **kwargs),
+                    absorption_correction=abs_corr)
+                composition.data = results[0] * 100.
+                number_of_atoms = composition._deepcopy_with_new_data(results[1])
+
+                res_max = np.max((composition - comp_old).data)
+
+                if not absorption_correction or res_max < (conv_crit/100):
+                    break
+                elif it >= MAX_ITERATIONS:
+                    raise Exception('Absorption correction failed as solution '
+                                    'did not converge after %d iterations'
+                                    % (MAX_ITERATIONS))
+
+                comp_old.data = composition.data
+                abs_corr = _get_abs_corr_cross_section(composition.split(),
+                                                       number_of_atoms,
+                                                       toa)
+
             composition.data = results[0] * 100
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
         else:
-            raise ValueError("Please specify method for quantification, "
-                             "as 'CL', 'zeta' or 'cross_section'.")
+            raise ValueError('Please specify method for quantification,'
+                             'as \'CL\', \'zeta\' or \'cross_section\'')
 
         composition = composition.split()
         if composition_units == 'atomic':
@@ -397,8 +477,7 @@ class EDSTEM_mixin:
         else:
             if method == 'cross_section':
                 composition = utils.material.atomic_to_weight(composition)
-        for i, intensity in enumerate(intensities):
-            xray_line = intensity.metadata.Sample.xray_lines[0]
+        for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
                 ' percent of ' + element
@@ -410,7 +489,9 @@ class EDSTEM_mixin:
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
-            if method == 'cross_section':
+        if method == 'cross_section':
+            for i, xray_line in enumerate(xray_lines):
+                element, line = utils_eds._get_element_and_line(xray_line)
                 number_of_atoms[i].metadata.General.title = \
                     'atom counts of ' + element
                 number_of_atoms[i].metadata.set_item("Sample.elements",
@@ -427,8 +508,9 @@ class EDSTEM_mixin:
         elif method == 'CL':
             return composition
         else:
-            raise ValueError("Please specify method for quantification, as "
-                             "'CL', 'zeta' or 'cross_section'.")
+            raise ValueError('Please specify method for quantification, as \
+            ''CL\', \'zeta\' or \'cross_section\'')
+
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
@@ -669,230 +751,6 @@ class EDSTEM_mixin:
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
 
-
-    def ac_quantification(self,
-                       intensities,
-                       method,
-                       factors='auto',
-                       composition_units='atomic',
-                       absorption_correction = False,
-                       tilt_stage=0,
-                       mass_thickness='auto',
-                       conv_crit = 0.5,
-                       navigation_mask=1.0,
-                       closing=True,
-                       plot_result=False,
-                       **kwargs):
-        """
-        Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
-        method, or ionization cross sections. The function iterates through
-        quantification function until two successive interations don't change
-        the final composition by a defined percentage critera (0.5% by default).
-
-        Parameters
-        ----------
-        intensities: list of signal
-            the intensitiy for each X-ray lines.
-        method: {'CL', 'zeta', 'cross_section'}
-            Set the quantification method: Cliff-Lorimer, zeta-factor, or
-            ionization cross sections.
-        factors: list of float
-            The list of kfactors, zeta-factors or cross sections in same order
-            as intensities. Note that intensities provided by Hyperspy are
-            sorted by the alphabetical order of the X-ray lines.
-            eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
-        composition_units: {'atomic', 'atomic'}
-            The quantification returns the composition in atomic percent by
-            default, but can also return weight percent if specified.
-        absorption_correction: {'False', True} bool
-            Specify whether or not an absorption correction should be applied.
-            'False' by default so absorption will not be applied unless
-            specfied.
-        tilt_stage : the sample holder tilt stage, used to calculate the
-            absorption pathways (in degrees).
-        mass_thickness: {'auto'}
-            mass_thickness in ***find out units*** (can be a single value or
-            have the same navigation dimension as the signal).
-            NB: Must be specified for 'CL' method, for 'zeta' or 'cross_section'
-            methods, first quantification step provides a mass_thickness
-            internally during quantification.
-        conv_crit: The convergence criterium defined as the percentage
-            difference between 2 successive iterations. 0.5% by default.
-        navigation_mask : None or float or signal
-            The navigation locations marked as True are not used in the
-            quantification. If int is given the vacuum_mask method is used to
-            generate a mask with the int value as threhsold.
-            Else provides a signal with the navigation shape.
-        closing: bool
-            If true, applied a morphologic closing to the mask obtained by
-            vacuum_mask.
-        plot_result : bool
-            If True, plot the calculated composition. If the current
-            object is a single spectrum it prints the result instead.
-        kwargs
-            The extra keyword arguments are passed to plot.
-
-        Returns
-        ------
-        A list of quantified elemental maps (signal) giving the composition of
-        the sample in weight or atomic percent with absorption correciton taken
-        into account based on the sample thickness estimate provided.
-
-        If the method is 'zeta' this function also returns the mass thickness
-        profile for the data.
-
-        If the method is 'cross_section' this function also returns the atom
-        counts for each element.
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> s.add_lines()
-        >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
-        >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
-        >>> s.plot(background_windows=bw)
-        >>> intensities = s.get_lines_intensity(background_windows=bw)
-        >>> res = s.quantification(intensities, kfactors, plot_result=True,
-        >>>                        composition_units='atomic')
-        Fe (Fe_Ka): Composition = 15.41 atomic percent
-        Pt (Pt_La): Composition = 84.59 atomic percent
-
-        See also
-        --------
-        vacuum_mask
-        """
-        if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
-        elif navigation_mask is not None:
-            navigation_mask = navigation_mask.data
-        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
-
-        composition = utils.stack(intensities, lazy=False)
-
-        if method == 'CL':
-            composition.data = utils_eds.quantification_cliff_lorimer(
-                composition.data, kfactors=factors,
-                mask=navigation_mask) * 100.
-
-        elif method == 'zeta':
-            int_stack = utils.stack(intensities)
-
-            comp_old = utils.stack(intensities)
-            comp_old.data = np.zeros_like(comp_old.data)
-
-            toa = self.get_take_off_angle()
-            abs_corr = None # initial
-
-            it = 0
-            MAX_ITERATIONS = 30
-
-            while True:
-                results = utils_eds.quantification_zeta_factor(
-                    int_stack.data,
-                    zfactors=factors,
-                    dose=self._get_dose(method),
-                    absorption_correction=abs_corr)
-                composition.data = results[0] * 100.
-                mass_thickness = intensities[0].deepcopy()
-                mass_thickness.data = results[1]
-
-                res_max = np.max((composition - comp_old).data)
-
-                if not absorption_correction or res_max < (conv_crit/100):
-                    break
-                elif it >= MAX_ITERATIONS:
-                    raise Exception('Absorption correction failed as solution '
-                                    'did not converge after %d iterations'
-                                    % (MAX_ITERATIONS))
-
-                comp_old.data = composition.data
-                abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
-                                                       mass_thickness,
-                                                       toa)
-
-            mass_thickness.metadata.General.title = 'Mass thickness'
-        elif method == 'cross_section':
-            int_stack = utils.stack(intensities)
-
-            comp_old = utils.stack(intensities)
-            comp_old.data = np.zeros_like(comp_old.data)
-
-            toa = self.get_take_off_angle()
-            abs_corr = None # initial
-
-            it = 0
-            MAX_ITERATIONS = 30
-
-            while True:
-                results = utils_eds.quantification_cross_section(
-                    int_stack.data,
-                    cross_sections=factors,
-                    dose=self._get_dose(method, **kwargs),
-                    absorption_correction=abs_corr)
-                composition.data = results[0] * 100.
-                number_of_atoms = composition._deepcopy_with_new_data(results[1])
-
-                res_max = np.max((composition - comp_old).data)
-
-                if not absorption_correction or res_max < (conv_crit/100):
-                    break
-                elif it >= MAX_ITERATIONS:
-                    raise Exception('Absorption correction failed as solution '
-                                    'did not converge after %d iterations'
-                                    % (MAX_ITERATIONS))
-
-                comp_old.data = composition.data
-                abs_corr = _get_abs_corr_cross_section(composition.split(),
-                                                       number_of_atoms,
-                                                       toa)
-
-            composition.data = results[0] * 100
-            number_of_atoms = composition._deepcopy_with_new_data(results[1])
-            number_of_atoms = number_of_atoms.split()
-        else:
-            raise ValueError('Please specify method for quantification,'
-                             'as \'CL\', \'zeta\' or \'cross_section\'')
-
-        composition = composition.split()
-        if composition_units == 'atomic':
-            if method != 'cross_section':
-                composition = utils.material.weight_to_atomic(composition)
-        else:
-            if method == 'cross_section':
-                composition = utils.material.atomic_to_weight(composition)
-        for i, xray_line in enumerate(xray_lines):
-            element, line = utils_eds._get_element_and_line(xray_line)
-            composition[i].metadata.General.title = composition_units + \
-                ' percent of ' + element
-            composition[i].metadata.set_item("Sample.elements", ([element]))
-            composition[i].metadata.set_item(
-                "Sample.xray_lines", ([xray_line]))
-            if plot_result and \
-                    composition[i].axes_manager.navigation_size == 1:
-                print("%s (%s): Composition = %.2f %s percent"
-                      % (element, xray_line, composition[i].data,
-                         composition_units))
-        if method == 'cross_section':
-            for i, xray_line in enumerate(xray_lines):
-                element, line = utils_eds._get_element_and_line(xray_line)
-                number_of_atoms[i].metadata.General.title = \
-                    'atom counts of ' + element
-                number_of_atoms[i].metadata.set_item("Sample.elements",
-                                                     ([element]))
-                number_of_atoms[i].metadata.set_item(
-                    "Sample.xray_lines", ([xray_line]))
-        if plot_result and composition[i].axes_manager.navigation_size != 1:
-            utils.plot.plot_signals(composition, **kwargs)
-        if method == 'zeta':
-            self.metadata.set_item("Sample.mass_thickness", mass_thickness)
-            return composition, mass_thickness
-        elif method == 'cross_section':
-            return composition, number_of_atoms
-        elif method == 'CL':
-            return composition
-        else:
-            raise ValueError('Please specify method for quantification, as \
-            ''CL\', \'zeta\' or \'cross_section\'')
 
 class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
     pass

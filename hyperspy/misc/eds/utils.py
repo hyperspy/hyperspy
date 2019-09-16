@@ -460,7 +460,8 @@ def _quantification_cliff_lorimer(intensities,
 
 def quantification_zeta_factor(intensities,
                                zfactors,
-                               dose):
+                               dose,
+                               absorption_correction=None):
     """
     Quantification using the zeta-factor method
 
@@ -516,14 +517,14 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
      # convert from cm^2/g to m^2/kg
     mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
     acf = mac * mass_thickness * csc_toa
-    acf.data = acf.data/(1.0 - np.exp(-(x.data)))
+    acf.data = acf.data/(1.0 - np.exp(-(acf.data)))
 
     return acf.data
 
 def quantification_cross_section(intensities,
                                  cross_sections,
                                  dose,
-                                 absorption_correction):
+                                 absorption_correction=None):
     """
     Quantification using EDX cross sections
     Calculate the atomic compostion and the number of atoms per pixel
@@ -601,12 +602,12 @@ def get_abs_corr_cross_section(no_of_atoms, mass_thickness, take_off_angle): # t
 
      # convert from cm^2/g to m^2/kg
     mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
-    
+
     constant = 1/(Av * math.sin(theta) * probe_area * 1E-16)
     expo = (rho * total_mass * constant)
     correction = expo/(1 - math.e**(-expo))
     acf = mac * mass_thickness * csc_toa
-    acf.data = acf.data/(1.0 - np.exp(-(x.data)))
+    acf.data = acf.data/(1.0 - np.exp(-(acf.data)))
 
     return acf.data
 
