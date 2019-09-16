@@ -30,6 +30,7 @@ from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.misc.elements import elements as elements_db
 
 _logger = logging.getLogger(__name__)
 
@@ -296,6 +297,7 @@ class EDSTEM_mixin:
                        navigation_mask = 1.0,
                        closing = True,
                        plot_result = False,
+                       probe_area = 'auto',
                        **kwargs):
         """
         Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
@@ -390,6 +392,36 @@ class EDSTEM_mixin:
         else:
             toa = take_off_angle
 
+        #determining illumination area for cross sections quantification.
+        if method == 'cross_section':
+            if probe_area == 'auto':
+                if probe_area in parameters:
+                    area = parameters.TEM.probe_area
+                else:
+                    if (self.axes_manager.navigation_dimension > 2 and
+                            navigation_axes is None):
+                        raise ValueError("With `probe_area='auto' and "
+                                         "navigation dimension > 2, you need "
+                                         "to specify the `navigation_axes` "
+                                         "parameter.")
+                    scales = []
+                    if navigation_axes is None:
+                        navigation_axes = self.axes_manager.navigation_axes
+                    for axis in navigation_axes:
+                        scales.append(
+                            axis.convert_to_units('nm', inplace=False)[0])
+                    if len(scales) == 1:
+                        area = scales[0] * scales[0]
+                    elif len(scales) == 2:
+                        area = scales[0] * scales[1]
+                    if scales[0] == 1 or scales[1] == 1:
+                        warnings.warn('Please note your probe_area is set to '
+                                      'the default value of 1 nm². The '
+                                      'function will still run. However if '
+                                      '1 nm² is not correct, please read the '
+                                      'user documentations for how to set '
+                                      'this properly.')
+
         if method == 'CL':
             int_stack = utils.stack(intensities)
 
@@ -404,16 +436,18 @@ class EDSTEM_mixin:
                     kfactors=factors,
                     absorption_correction=abs_corr)
                 composition.data = results * 100.
-                if thickness is not None:
-                    mass_thickness = intensities[0].deepcopy()
-                    mass_thickness.data = CL_get_mass_thickness(results, thickness)
-                else:
-                    raise Exception('Thickness is required for absorption'
-                                'correction with K-Factor Method. Result '
-                                'will contain no correction for absorption.')
+                if absorption_correction != False:
+                    if thickness is not None:
+                        mass_thickness = intensities[0].deepcopy()
+                        mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
+                                                                    thickness)
+                    else:
+                        warnings.warn('Thickness is required for absorption'\
+                                    'correction with K-Factor Method. Result '\
+                                    'will contain no correction for absorption.')
 
                 res_max = np.max((composition - comp_old).data)
-
+                it += 1
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
                 elif it >= MAX_ITERATIONS:
@@ -426,7 +460,7 @@ class EDSTEM_mixin:
                                                        mass_thickness,
                                                        toa)
 
-            mass_thickness.metadata.General.title = 'Mass thickness'
+                mass_thickness.metadata.General.title = 'Mass thickness'
 
 
         elif method == 'zeta':
@@ -448,7 +482,7 @@ class EDSTEM_mixin:
                 mass_thickness.data = results[1]
 
                 res_max = np.max((composition - comp_old).data)
-
+                it += 1
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
                 elif it >= MAX_ITERATIONS:
@@ -478,7 +512,7 @@ class EDSTEM_mixin:
                     absorption_correction=abs_corr)
                 composition.data = results[0] * 100.
                 number_of_atoms = composition._deepcopy_with_new_data(results[1])
-
+                it += 1
                 res_max = np.max((composition - comp_old).data)
 
                 if not absorption_correction or res_max < (conv_crit/100):
@@ -489,9 +523,9 @@ class EDSTEM_mixin:
                                     % (MAX_ITERATIONS))
 
                 comp_old.data = composition.data
-                abs_corr = _get_abs_corr_cross_section(composition.split(),
+                abs_corr = utils_eds.get_abs_corr_cross_section(composition.split(),
                                                        number_of_atoms,
-                                                       toa)
+                                                       toa, probe_area)
 
             composition.data = results[0] * 100
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
@@ -537,7 +571,7 @@ class EDSTEM_mixin:
             return composition, number_of_atoms
         elif method == 'CL':
             if absorption_correction != False:
-                return composition, mass thickness
+                return composition, mass_thickness
             else:
                 return composition
         else:
@@ -785,8 +819,7 @@ class EDSTEM_mixin:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
 
 
-    def CL_get_mass_thickness(weight_percent,
-                            thickness):
+    def CL_get_mass_thickness(self, weight_percent, thickness):
         """
         Creates a array of mass_thickness based on a known material composition and
         measured thickness. Required for absorption correction calcultions using the
@@ -815,16 +848,15 @@ class EDSTEM_mixin:
         else:
             thickness_map = thickness
 
-        xray_lines = [element.metadata.Sample.xray_lines[0] for element in weight_percent]
+        elements = [intensity.metadata.Sample.elements[0] for intensity in weight_percent]
         mass_thickness = np.zeros_like(weight_percent[0])
-        for element_composition in weight_percent:
-            density = elements_db[
-                element][
-                'Physical_properties'][
-                'density (g/cm^3)']
+        densities = np.array(
+            [elements_db[element]['Physical_properties']['density (g/cm^3)']
+                    for element in elements])
+        for density, element_composition in zip(densities, weight_percent):
             elemental_mt = element_composition * thickness_map * 1E-9 * density
             mass_thickness += elemental_mt
-    return mass_thickness
+        return mass_thickness
 
 
 class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
