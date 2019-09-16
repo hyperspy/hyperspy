@@ -350,6 +350,7 @@ def xray_lines_model(elements,
 
 def quantification_cliff_lorimer(intensities,
                                  kfactors,
+                                 absorption_correction=None,
                                  mask=None):
     """
     Quantification using Cliff-Lorimer
@@ -400,7 +401,11 @@ def quantification_cliff_lorimer(intensities,
         if len(index) > 1:
             ref_index, ref_index2 = index[:2]
             intens = _quantification_cliff_lorimer(
-                intensities, kfactors, ref_index, ref_index2)
+                intensities,
+                kfactors,
+                ref_index,
+                ref_index2,
+                absorption_correction=absorption_correction)
         else:
             intens = np.zeros_like(intensities)
             if len(index) == 1:
@@ -411,7 +416,8 @@ def quantification_cliff_lorimer(intensities,
 def _quantification_cliff_lorimer(intensities,
                                   kfactors,
                                   ref_index=0,
-                                  ref_index2=1):
+                                  ref_index2=1,
+                                  absorption_correction=None):
     """
     Quantification using Cliff-Lorimer
 
@@ -435,6 +441,9 @@ def _quantification_cliff_lorimer(intensities,
     if len(intensities) != len(kfactors):
         raise ValueError('The number of kfactors must match the size of the '
                          'first axis of intensities.')
+    if absorption_correction == None:
+            # default to ones
+        absorption_correction = np.ones_like(intensities, dtype='float')
     ab = np.zeros_like(intensities, dtype='float')
     composition = np.ones_like(intensities, dtype='float')
     # ab = Ia/Ib / kab
@@ -443,7 +452,7 @@ def _quantification_cliff_lorimer(intensities,
     other_index.pop(ref_index)
     for i in other_index:
         ab[i] = intensities[ref_index] * kfactors[ref_index]  \
-            / intensities[i] / kfactors[i]
+            / intensities[i] / (kfactors[i] * absorption_correction)
     # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
     for i in other_index:
         if i == ref_index2:
@@ -488,10 +497,10 @@ def quantification_zeta_factor(intensities,
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor, abs_corr in zip(intensities, zfactors, absorption_correction):
-        sumzi = sumzi + intensity * zfactor * abs_corr
-    for i, (intensity, zfactor, abs_corr) in enumerate(zip(intensities, zfactors, absorption_correction)):
-        composition[i] = intensity * zfactor * abs_corr / sumzi
+    for intensity, zfactor, absorption_correction in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + intensity * zfactor * absorption_correction
+    for i, (intensity, zfactor, absorption_correction) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * absorption_correction / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
 

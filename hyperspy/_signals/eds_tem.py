@@ -287,15 +287,15 @@ class EDSTEM_mixin:
                        intensities,
                        method,
                        factors,
-                       composition_units='atomic',
+                       composition_units = 'atomic',
                        absorption_correction = False,
-                       tilt_stage=0,
-                       take_off_angle='auto',
-                       mass_thickness='auto',
+                       tilt_stage = 0,
+                       take_off_angle = 'auto',
+                       thickness = None,
                        conv_crit = 0.5,
-                       navigation_mask=1.0,
-                       closing=True,
-                       plot_result=False,
+                       navigation_mask = 1.0,
+                       closing = True,
+                       plot_result = False,
                        **kwargs):
         """
         Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
@@ -381,6 +381,8 @@ class EDSTEM_mixin:
             navigation_mask = navigation_mask.data
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+        it = 0
+        MAX_ITERATIONS = 30
 
         composition = utils.stack(intensities, lazy=False)
         if take_off_angle == 'auto':
@@ -389,10 +391,43 @@ class EDSTEM_mixin:
             toa = take_off_angle
 
         if method == 'CL':
-            
-            composition.data = utils_eds.quantification_cliff_lorimer(
-                composition.data, kfactors=factors,
-                mask=navigation_mask) * 100.
+            int_stack = utils.stack(intensities)
+
+            comp_old = utils.stack(intensities)
+            comp_old.data = np.zeros_like(comp_old.data)
+
+            abs_corr = None # initial
+
+            while True:
+                results = utils_eds.quantification_cliff_lorimer(
+                    int_stack.data,
+                    kfactors=factors,
+                    absorption_correction=abs_corr)
+                composition.data = results * 100.
+                if thickness is not None:
+                    mass_thickness = intensities[0].deepcopy()
+                    mass_thickness.data = CL_get_mass_thickness(results, thickness)
+                else:
+                    raise Exception('Thickness is required for absorption'
+                                'correction with K-Factor Method. Result '
+                                'will contain no correction for absorption.')
+
+                res_max = np.max((composition - comp_old).data)
+
+                if not absorption_correction or res_max < (conv_crit/100):
+                    break
+                elif it >= MAX_ITERATIONS:
+                    raise Exception('Absorption correction failed as solution '
+                                    'did not converge after %d iterations'
+                                    % (MAX_ITERATIONS))
+
+                comp_old.data = composition.data
+                abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
+                                                       mass_thickness,
+                                                       toa)
+
+            mass_thickness.metadata.General.title = 'Mass thickness'
+
 
         elif method == 'zeta':
             int_stack = utils.stack(intensities)
@@ -401,9 +436,6 @@ class EDSTEM_mixin:
             comp_old.data = np.zeros_like(comp_old.data)
 
             abs_corr = None # initial
-
-            it = 0
-            MAX_ITERATIONS = 30
 
             while True:
                 results = utils_eds.quantification_zeta_factor(
@@ -430,16 +462,13 @@ class EDSTEM_mixin:
                                                        toa)
 
             mass_thickness.metadata.General.title = 'Mass thickness'
+
         elif method == 'cross_section':
             int_stack = utils.stack(intensities)
 
             comp_old = utils.stack(intensities)
             comp_old.data = np.zeros_like(comp_old.data)
-
             abs_corr = None # initial
-
-            it = 0
-            MAX_ITERATIONS = 30
 
             while True:
                 results = utils_eds.quantification_cross_section(
@@ -507,7 +536,10 @@ class EDSTEM_mixin:
         elif method == 'cross_section':
             return composition, number_of_atoms
         elif method == 'CL':
-            return composition
+            if absorption_correction != False:
+                return composition, mass thickness
+            else:
+                return composition
         else:
             raise ValueError('Please specify method for quantification, as \
             ''CL\', \'zeta\' or \'cross_section\'')
@@ -751,6 +783,48 @@ class EDSTEM_mixin:
             return live_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+
+
+    def CL_get_mass_thickness(weight_percent,
+                            thickness):
+        """
+        Creates a array of mass_thickness based on a known material composition and
+        measured thickness. Required for absorption correction calcultions using the
+        Cliff Lorimer method.
+
+        Input given by i*t*N, i the current, t the
+        acquisition time, and N the number of electron by unit electric charge.
+
+        Parameters
+        ----------
+
+        composition: stack of compositions as determined from an initial k_factor
+            quantification.
+            Probe current in nA
+        thickness: float or array
+            Either a float value for thickness in nm or an array equal to the size
+            of the EDX map with thickness at each position of the sample.
+
+        Returns
+        --------
+        Mass_thickness as an array in kg/m^2.
+
+        """
+        if type(thickness)==float or type(thickness)==int:
+            thickness_map = np.ones_like(weight_percent[0])*thickness
+        else:
+            thickness_map = thickness
+
+        xray_lines = [element.metadata.Sample.xray_lines[0] for element in weight_percent]
+        mass_thickness = np.zeros_like(weight_percent[0])
+        for element_composition in weight_percent:
+            density = elements_db[
+                element][
+                'Physical_properties'][
+                'density (g/cm^3)']
+            elemental_mt = element_composition * thickness_map * 1E-9 * density
+            mass_thickness += elemental_mt
+    return mass_thickness
 
 
 class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
