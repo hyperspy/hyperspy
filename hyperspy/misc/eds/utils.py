@@ -1,4 +1,3 @@
-
 import numpy as np
 import math
 from scipy import constants
@@ -489,10 +488,10 @@ def quantification_zeta_factor(intensities,
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor in zip(intensities, zfactors):
-        sumzi = sumzi + intensity * zfactor
-    for i, (intensity, zfactor) in enumerate(zip(intensities, zfactors)):
-        composition[i] = intensity * zfactor / sumzi
+    for intensity, zfactor, abs_corr in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + intensity * zfactor * abs_corr
+    for i, (intensity, zfactor, abs_corr) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * abs_corr / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
 

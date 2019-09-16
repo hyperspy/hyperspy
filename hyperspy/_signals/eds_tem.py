@@ -286,7 +286,7 @@ class EDSTEM_mixin:
     def quantification(self,
                        intensities,
                        method,
-                       factors='auto',
+                       factors,
                        composition_units='atomic',
                        absorption_correction = False,
                        tilt_stage=0,
@@ -379,6 +379,7 @@ class EDSTEM_mixin:
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
+
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
 
         composition = utils.stack(intensities, lazy=False)
