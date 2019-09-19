@@ -28,6 +28,8 @@ from skimage.feature.register_translation import _upsampled_dft
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
+from hyperspy.misc.signal_tools import _get_crop_range
+from hyperspy.roi import RectangularROI
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
@@ -703,7 +705,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         See also:
         ---------
         crop
-
+        crop_image_interactive
         """
         self._check_signal_dimension_equals_two()
         self.crop(self.axes_manager.signal_axes[1].index_in_axes_manager,
@@ -714,6 +716,36 @@ class Signal2D(BaseSignal, CommonSignal2D):
                   right)
         if convert_units:
             self.axes_manager.convert_units('signal')
+
+    def crop_image_interactive(self, color='green', coords=None):
+        '''Crops image interactively, returning a new signal.
+        If a plot does not already exist, one is created.
+
+        Parameters
+        ----------
+        color : str
+            Color of the 
+        coords : None or tuple of (bottom, top, left, right)
+            Default is None
+            If supplied, sets the starting placement of the rectangle in
+            calibrated signal units
+
+        See also:
+        ---------
+        crop
+        crop_image
+        '''
+        if not self._plot:
+            self.plot()
+        if coords:
+            crop_x_low, crop_x_high, crop_y_low, crop_y_high = coords
+        else:
+            crop_x_low, crop_x_high = _get_crop_range(self, 0)
+            crop_y_low, crop_y_high = _get_crop_range(self, 1)
+
+        rect = RectangularROI(crop_x_low, crop_y_low, crop_x_high, crop_y_high)    
+        crop = rect.interactive(self, color=color)
+        return crop
 
     def add_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear ramp to the signal.
