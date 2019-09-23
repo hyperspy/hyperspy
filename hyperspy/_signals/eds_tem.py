@@ -298,6 +298,7 @@ class EDSTEM_mixin:
                        closing = True,
                        plot_result = False,
                        probe_area = 'auto',
+                       max_iterations = 30,
                        **kwargs):
         """
         Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
@@ -345,6 +346,8 @@ class EDSTEM_mixin:
         plot_result : bool
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
+        max_iterations : int
+            An upper limit to the number of calculations for absorption correction.
         kwargs
             The extra keyword arguments are passed to plot.
 
@@ -384,7 +387,6 @@ class EDSTEM_mixin:
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
-        MAX_ITERATIONS = 30
 
         composition = utils.stack(intensities, lazy=False)
         if take_off_angle == 'auto':
@@ -451,10 +453,10 @@ class EDSTEM_mixin:
                 it += 1
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
-                elif it >= MAX_ITERATIONS:
+                elif it >= max_iterations:
                     raise Exception('Absorption correction failed as solution '
                                     'did not converge after %d iterations'
-                                    % (MAX_ITERATIONS))
+                                    % (max_iterations))
 
                 comp_old.data = composition.data
                 abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
@@ -483,10 +485,10 @@ class EDSTEM_mixin:
                 it += 1
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
-                elif it >= MAX_ITERATIONS:
+                elif it >= max_iterations:
                     raise Exception('Absorption correction failed as solution '
                                     'did not converge after %d iterations'
-                                    % (MAX_ITERATIONS))
+                                    % (max_iterations))
 
                 comp_old.data = composition.data
                 abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
@@ -515,10 +517,10 @@ class EDSTEM_mixin:
 
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
-                elif it >= MAX_ITERATIONS:
+                elif it >= max_iterations:
                     raise Exception('Absorption correction failed as solution '
                                     'did not converge after %d iterations'
-                                    % (MAX_ITERATIONS))
+                                    % (max_iterations))
 
                 comp_old.data = composition.data
                 abs_corr = utils_eds.get_abs_corr_cross_section(composition.split(),
