@@ -379,13 +379,18 @@ def quantification_cliff_lorimer(intensities,
         dim2 = reduce(lambda x, y: x * y, dim[1:])
         intens = intensities.reshape(dim[0], dim2)
         intens = intens.astype('float')
+        if absorption_correction is not None:
+            absorption_correction = absorption_correction.reshape(dim[0], dim2)
+        else:
+            # default to ones
+            absorption_correction = np.ones_like(intens, dtype='float')
         for i in range(dim2):
             index = np.where(intens[:, i] > min_intensity)[0]
             if len(index) > 1:
                 ref_index, ref_index2 = index[:2]
                 intens[:, i] = _quantification_cliff_lorimer(
-                    intens[:, i], kfactors, ref_index, ref_index2,
-                    absorption_correction=absorption_correction)
+                    intens[:, i], kfactors, absorption_correction[:, i],
+                    ref_index, ref_index2)
             else:
                 intens[:, i] = np.zeros_like(intens[:, i])
                 if len(index) == 1:
@@ -404,9 +409,9 @@ def quantification_cliff_lorimer(intensities,
             intens = _quantification_cliff_lorimer(
                 intensities,
                 kfactors,
+                absorption_correction,
                 ref_index,
-                ref_index2,
-                absorption_correction=absorption_correction)
+                ref_index2)
         else:
             intens = np.zeros_like(intensities)
             if len(index) == 1:
@@ -416,9 +421,10 @@ def quantification_cliff_lorimer(intensities,
 
 def _quantification_cliff_lorimer(intensities,
                                   kfactors,
+                                  absorption_correction,
                                   ref_index=0,
-                                  ref_index2=1,
-                                  absorption_correction=None):
+                                  ref_index2=1
+                                  ):
     """
     Quantification using Cliff-Lorimer
 
@@ -427,6 +433,9 @@ def _quantification_cliff_lorimer(intensities,
     intensities: numpy.array
         the intensities for each X-ray lines. The first axis should be the
         elements axis.
+    absorption_correction: numpy.array
+        value between 0 and 1 in order to correct the intensities based on
+        estimated absorption.
     kfactors: list of float
         The list of kfactor in same order as  intensities eg. kfactors =
         [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
@@ -442,11 +451,7 @@ def _quantification_cliff_lorimer(intensities,
     if len(intensities) != len(kfactors):
         raise ValueError('The number of kfactors must match the size of the '
                          'first axis of intensities.')
-    if absorption_correction is not None:
-        absorption_correction = absorption_correction
-    else:
-        # default to ones
-        absorption_correction = np.ones_like(intensities, dtype='float')
+
     ab = np.zeros_like(intensities, dtype='float')
     composition = np.ones_like(intensities, dtype='float')
     # ab = Ia/Ib / kab
@@ -454,9 +459,9 @@ def _quantification_cliff_lorimer(intensities,
     other_index.pop(ref_index)
     for i in other_index:
         ab[i] = intensities[ref_index] * kfactors[ref_index]  \
-            / intensities[i] / kfactors[i]
+            / (intensities[i] * absorption_correction[i]) / kfactors[i]
     # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
-    ab = ab * absorption_correction #is this a multiply or divide check?!?!?
+    ab = ab
     for i in other_index:
         if i == ref_index2:
             composition[ref_index] += ab[ref_index2]

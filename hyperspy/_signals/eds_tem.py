@@ -431,6 +431,8 @@ class EDSTEM_mixin:
             abs_corr = None # initial
 
             while True:
+                print('Iteration', it)
+                print(abs_corr)
                 results = utils_eds.quantification_cliff_lorimer(
                     int_stack.data,
                     kfactors=factors,
@@ -460,7 +462,7 @@ class EDSTEM_mixin:
                                                        mass_thickness,
                                                        toa)
 
-                mass_thickness.metadata.General.title = 'Mass thickness'
+            mass_thickness.metadata.General.title = 'Mass thickness'
 
 
         elif method == 'zeta':
