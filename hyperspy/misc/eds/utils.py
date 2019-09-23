@@ -452,7 +452,6 @@ def _quantification_cliff_lorimer(intensities,
     # ab = Ia/Ib / kab
     other_index = list(range(len(kfactors)))
     other_index.pop(ref_index)
-
     for i in other_index:
         ab[i] = intensities[ref_index] * kfactors[ref_index]  \
             / intensities[i] / kfactors[i]
@@ -580,13 +579,13 @@ def quantification_cross_section(intensities,
     return composition, number_of_atoms
 
 
-def get_abs_corr_cross_section(composition, no_of_atoms, take_off_angle, probe_area): # take_off_angle, temporary value for testing
+def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, probe_area): # take_off_angle, temporary value for testing
     """
     Calculate absorption correction terms.
 
     Parameters
     ----------
-    no_of_atoms: list of signal
+    number_of_atoms: list of signal
         Stack of maps with number of atoms per pixel.
     take_off_angle: float
         X-ray take-off angle in degrees.
@@ -594,21 +593,29 @@ def get_abs_corr_cross_section(composition, no_of_atoms, take_off_angle, probe_a
 
     toa_rad = np.radians(take_off_angle)
     Av = constants.Avogadro
-    parameters = no_of_atoms.metadata.Acquisition_instrument.TEM
-    elements = [intensity.metadata.Sample.elements[0] for intensity in no_of_atoms]
-    lines = [intensity.metadata.Sample.xray_lines[0] for intensity in no_of_atoms]
+    elements = [intensity.metadata.Sample.elements[0] for intensity in number_of_atoms]
+    lines = [intensity.metadata.Sample.xray_lines[0] for intensity in number_of_atoms]
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    print(atomic_weights)
-    number_of_atoms = (no_of_atoms).data
+    number_of_atoms = utils.stack(number_of_atoms).data
 
-     # convert from cm^2/g to m^2/kg
+    #calculate the total_mass per pixel, or mass thicknessself.
+    total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
+    for i, (weight) in enumerate(atomic_weights):
+        total_mass += (number_of_atoms[i] * weight)
+
+     # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
+
     mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=utils.material.atomic_to_weight(composition))) * 0.1
 
+    acf = np.zeros_like(number_of_atoms)
     constant = 1/(Av * math.sin(toa_rad) * probe_area * 1E-16)
-    expo = (rho * total_mass * constant)
-    acf = expo/(1 - math.e**(-expo))
+
+    #determine an absorption coeficcient per element per pixel.
+    for i, (weight) in enumerate(atomic_weights):
+        expo = (mac.data[i] * total_mass * constant)
+        acf[i] = expo/(1 - math.e**(-expo))
 
     return acf
 

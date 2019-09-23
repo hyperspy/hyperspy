@@ -395,6 +395,7 @@ class EDSTEM_mixin:
         #determining illumination area for cross sections quantification.
         if method == 'cross_section':
             if probe_area == 'auto':
+                parameters = self.metadata.Acquisition_instrument.TEM
                 if probe_area in parameters:
                     area = parameters.TEM.probe_area
                 else:
@@ -405,15 +406,14 @@ class EDSTEM_mixin:
                                          "to specify the `navigation_axes` "
                                          "parameter.")
                     scales = []
-                    if navigation_axes is None:
-                        navigation_axes = self.axes_manager.navigation_axes
+                    navigation_axes = self.axes_manager.navigation_axes
                     for axis in navigation_axes:
                         scales.append(
                             axis.convert_to_units('nm', inplace=False)[0])
                     if len(scales) == 1:
-                        area = scales[0] * scales[0]
+                        probe_area = scales[0] * scales[0]
                     elif len(scales) == 2:
-                        area = scales[0] * scales[1]
+                        probe_area = scales[0] * scales[1]
                     if scales[0] == 1 or scales[1] == 1:
                         warnings.warn('Please note your probe_area is set to '
                                       'the default value of 1 nm². The '
@@ -524,7 +524,7 @@ class EDSTEM_mixin:
 
                 comp_old.data = composition.data
                 abs_corr = utils_eds.get_abs_corr_cross_section(composition.split(),
-                                                       number_of_atoms,
+                                                       number_of_atoms.split(),
                                                        toa, probe_area)
 
             composition.data = results[0] * 100
@@ -564,6 +564,10 @@ class EDSTEM_mixin:
                     "Sample.xray_lines", ([xray_line]))
         if plot_result and composition[i].axes_manager.navigation_size != 1:
             utils.plot.plot_signals(composition, **kwargs)
+
+        if absorption_correction == 'True':
+            print('Conversion found after {0} interations.'.format(str(it)))
+
         if method == 'zeta':
             self.metadata.set_item("Sample.mass_thickness", mass_thickness)
             return composition, mass_thickness
