@@ -401,9 +401,12 @@ def quantification_cliff_lorimer(intensities,
                 intens[i][mask] = 0
         return intens
     else:
-        # intens = intensities.copy()
-        # intens = intens.astype('float')
         index = np.where(intensities > min_intensity)[0]
+        if absorption_correction is not None:
+            absorption_correction = absorption_correction
+        else:
+            # default to ones
+            absorption_correction = np.ones_like(intens, dtype='float')
         if len(index) > 1:
             ref_index, ref_index2 = index[:2]
             intens = _quantification_cliff_lorimer(
