@@ -31,6 +31,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.elements import elements as elements_db
+from tqdm import tqdm
 
 _logger = logging.getLogger(__name__)
 
@@ -387,6 +388,7 @@ class EDSTEM_mixin:
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
+        pbar = tqdm(total=max_iterations+1)
 
         composition = utils.stack(intensities, lazy=False)
         if take_off_angle == 'auto':
@@ -451,8 +453,10 @@ class EDSTEM_mixin:
 
                 res_max = np.max((composition - comp_old).data)
                 it += 1
+                pbar.update(1)
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
+                    pbar.close()
                 elif it >= max_iterations:
                     raise Exception('Absorption correction failed as solution '
                                     'did not converge after %d iterations'
@@ -483,8 +487,10 @@ class EDSTEM_mixin:
 
                 res_max = np.max((composition - comp_old).data)
                 it += 1
+                pbar.update(1)
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
+                    pbar.close()
                 elif it >= max_iterations:
                     raise Exception('Absorption correction failed as solution '
                                     'did not converge after %d iterations'
@@ -513,10 +519,12 @@ class EDSTEM_mixin:
                 composition.data = results[0] * 100.
                 number_of_atoms = composition._deepcopy_with_new_data(results[1])
                 it += 1
+                pbar.update(1)
                 res_max = np.max((composition - comp_old).data)
 
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
+                    pbar.close()
                 elif it >= max_iterations:
                     raise Exception('Absorption correction failed as solution '
                                     'did not converge after %d iterations'
