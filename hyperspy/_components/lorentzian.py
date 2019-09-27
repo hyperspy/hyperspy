@@ -21,6 +21,7 @@ import dask.array as da
 
 from hyperspy._components.expression import Expression
 
+
 def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     axis = signal.axes_manager.signal_axes[0]
     i1, i2 = axis.value_range_to_indices(x1, x2)
@@ -48,16 +49,20 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
         _abs = np.abs
         _argmin = np.argmin
 
-    cdf=_cumsum(data,i)
-    cdfnorm=cdf/_max(cdf,i).reshape(centre_shape)
-    
-    centre = X[_argmin(_abs(0.5-cdfnorm),i)]
-    gamma = (X[_argmin(_abs(0.75-cdfnorm),i)]-X[_argmin(_abs(0.25-cdfnorm),i)])/2
-    height = data.max(i)
+    cdf = _cumsum(data,i)
+    cdfnorm = cdf/_max(cdf, i).reshape(centre_shape)
+
+    icentre = _argmin(_abs(0.5 - cdfnorm), i)
+    igamma1 = _argmin(_abs(0.75 - cdfnorm), i)
+    igamma2 = _argmin(_abs(0.25 - cdfnorm), i)
     if isinstance(data, da.Array):
-        return da.compute(centre, height, gamma)
-    else:
-        return centre, height, gamma
+        icentre, igamma1, igamma2 = da.compute(icentre, igamma1, igamma2)
+    centre = X[icentre]
+    gamma = (X[igamma1] - X[igamma2]) / 2
+    height = data.max(i)
+
+    return centre, height, gamma
+
 
 class Lorentzian(Expression):
 

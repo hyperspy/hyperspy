@@ -39,8 +39,10 @@ def test_function():
     assert_allclose(g.function(2), 1.5)
     assert_allclose(g.function(1), 3)
 
+
+@pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned):
+def test_estimate_parameters_binned(only_current, binned, lazy):
     s = Signal1D(np.empty((100,)))
     s.metadata.Signal.binned = binned
     axis = s.axes_manager.signal_axes[0]
@@ -48,6 +50,8 @@ def test_estimate_parameters_binned(only_current, binned):
     axis.offset = -20
     g1 = Gaussian(50015.156, 10/sigma2fwhm, 10)
     s.data = g1.function(axis.axis)
+    if lazy:
+        s = s.as_lazy()
     g2 = Gaussian()
     factor = axis.scale if binned else 1
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
@@ -57,8 +61,10 @@ def test_estimate_parameters_binned(only_current, binned):
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
     assert abs(g2.sigma.value - g1.sigma.value) <= 0.1
 
+
+@pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("binned"), (True, False))
-def test_function_nd(binned):
+def test_function_nd(binned, lazy):
     s = Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 1
@@ -67,21 +73,26 @@ def test_function_nd(binned):
     s.data = g1.function(axis.axis)
     s.metadata.Signal.binned = binned
     s2 = stack([s] * 2)
+    if lazy:
+        s2 = s2.as_lazy()
     g2 = Gaussian()
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
     assert_allclose(g2.function_nd(axis.axis) * factor, s2.data)
 
+
 def test_util_fwhm_set():
     g1 = Gaussian()
     g1.fwhm = 1.0
     assert_allclose(g1.sigma.value, 1.0 / sigma2fwhm)
 
+
 def test_util_fwhm_get():
     g1 = Gaussian()
     g1.sigma.value = 1.0
     assert_allclose(g1.fwhm, 1.0 * sigma2fwhm)
+
 
 def test_util_fwhm_getset():
     g1 = Gaussian()
