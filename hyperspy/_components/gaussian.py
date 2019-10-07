@@ -98,8 +98,8 @@ class Gaussian(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
 
 
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
+    For convenience the `fwhm` and `height` attributes can be used to get and set
+    the full-with-half-maximum and height of the distribution, respectively.
 
 
     See also
@@ -200,3 +200,11 @@ class Gaussian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+        
+    @property
+    def height(self):
+        return self.A.value / (self.sigma.value * sqrt2pi)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * self.sigma.value * sqrt2pi

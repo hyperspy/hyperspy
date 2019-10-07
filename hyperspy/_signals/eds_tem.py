@@ -427,7 +427,7 @@ class EDSTEM_mixin:
                                       'this properly.')
 
         if method == 'CL':
-            int_stack = utils.stack(intensities)
+            int_stack = utils.stack(intensities, lazy=False)
 
             comp_old = utils.stack(intensities)
             comp_old.data = np.zeros_like(comp_old.data)
@@ -468,7 +468,7 @@ class EDSTEM_mixin:
                                                        toa)
 
         elif method == 'zeta':
-            int_stack = utils.stack(intensities)
+            int_stack = utils.stack(intensities, lazy=False)
 
             comp_old = utils.stack(intensities)
             comp_old.data = np.zeros_like(comp_old.data)

@@ -87,3 +87,20 @@ def test_util_fwhm_getset():
     g1 = Gaussian()
     g1.fwhm = 1.0
     assert_allclose(g1.fwhm, 1.0)
+
+def test_util_height_set():
+    g1 = Gaussian()
+    g1.sigma.value = 3.0
+    g1.height = 2.0/sqrt2pi
+    assert_allclose(g1.A.value, 6)
+
+def test_util_height_get():
+    g1 = Gaussian()
+    g1.sigma.value = 4.0
+    g1.A.value = sqrt2pi*8
+    assert_allclose(g1.height, 2)
+
+def test_util_height_getset():
+    g1 = Gaussian()
+    g1.height = 4.0
+    assert_allclose(g1.height, 4.0)

@@ -727,8 +727,7 @@ class HyperHeader(object):
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
                 self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                        'energy': tmp_d['Energy'],
-                                                        'width': tmp_d['Width']}
+                                                        'energy': tmp_d['Energy']}
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
@@ -822,12 +821,12 @@ class HyperHeader(object):
         """calculate and return real time for whole hypermap
         in seconds
         """
-        line_cnt_sum = np.sum(self.line_counter)
+        line_cnt_sum = np.sum(self.line_counter, dtype=np.float64)
         line_avg = self.dsp_metadata['LineAverage']
         pix_avg = self.dsp_metadata['PixelAverage']
         pix_time = self.dsp_metadata['PixelTime']
         width = self.image.width
-        real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
+        real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width * 1E-6
         return float(real_time)
 
     def gen_hspy_item_dict_basic(self):
