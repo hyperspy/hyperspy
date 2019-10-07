@@ -31,7 +31,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.elements import elements as elements_db
-from tqdm import tqdm
+from hyperspy.external.progressbar import progressbar
 
 _logger = logging.getLogger(__name__)
 
@@ -293,8 +293,8 @@ class EDSTEM_mixin:
                        absorption_correction = False,
                        tilt_stage = 0,
                        take_off_angle = 'auto',
-                       thickness = None,
-                       conv_crit = 0.5,
+                       thickness = 'auto',
+                       convergence_criterion = 0.5,
                        navigation_mask = 1.0,
                        closing = True,
                        plot_result = False,
@@ -319,27 +319,27 @@ class EDSTEM_mixin:
             as intensities. Note that intensities provided by Hyperspy are
             sorted by the alphabetical order of the X-ray lines.
             eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
-        composition_units: {'atomic', 'atomic'}
-            The quantification returns the composition in atomic percent by
+        composition_units: {'atomic', 'weight'}
+            The quantification returns the composition in 'atomic' percent by
             default, but can also return weight percent if specified.
-        absorption_correction: {'False', True} bool
+        absorption_correction: bool
             Specify whether or not an absorption correction should be applied.
             'False' by default so absorption will not be applied unless
             specfied.
         tilt_stage : the sample holder tilt stage, used to calculate the
             absorption pathways (in degrees).
-        mass_thickness: {'auto'}
-            mass_thickness in ***find out units*** (can be a single value or
+        thickness: {'auto'}
+            thickness in nm (can be a single value or
             have the same navigation dimension as the signal).
-            NB: Must be specified for 'CL' method, for 'zeta' or 'cross_section'
+            NB: Must be specified for 'CL' method. For 'zeta' or 'cross_section'
             methods, first quantification step provides a mass_thickness
             internally during quantification.
-        conv_crit: The convergence criterium defined as the percentage
+        convergence_criterion: The convergence criterium defined as the percentage
             difference between 2 successive iterations. 0.5% by default.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
-            quantification. If int is given the vacuum_mask method is used to
-            generate a mask with the int value as threhsold.
+            quantification. If float is given the vacuum_mask method is used to
+            generate a mask with the float value as threhsold.
             Else provides a signal with the navigation shape.
         closing: bool
             If true, applied a morphologic closing to the mask obtained by
@@ -388,7 +388,7 @@ class EDSTEM_mixin:
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
-        pbar = tqdm(total=max_iterations+1)
+        pbar = progressbar(total=max_iterations+1)
 
         composition = utils.stack(intensities, lazy=False)
         if take_off_angle == 'auto':
@@ -401,154 +401,134 @@ class EDSTEM_mixin:
             if probe_area == 'auto':
                 parameters = self.metadata.Acquisition_instrument.TEM
                 if probe_area in parameters:
-                    area = parameters.TEM.probe_area
+                    probe_area = parameters.TEM.probe_area
                 else:
-                    if (self.axes_manager.navigation_dimension > 2 and
-                            navigation_axes is None):
-                        raise ValueError("With `probe_area='auto' and "
-                                         "navigation dimension > 2, you need "
-                                         "to specify the `navigation_axes` "
-                                         "parameter.")
-                    scales = []
-                    navigation_axes = self.axes_manager.navigation_axes
-                    for axis in navigation_axes:
-                        scales.append(
-                            axis.convert_to_units('nm', inplace=False)[0])
-                    if len(scales) == 1:
-                        probe_area = scales[0] * scales[0]
-                    elif len(scales) == 2:
-                        probe_area = scales[0] * scales[1]
-                    if scales[0] == 1 or scales[1] == 1:
-                        warnings.warn('Please note your probe_area is set to '
-                                      'the default value of 1 nm². The '
-                                      'function will still run. However if '
-                                      '1 nm² is not correct, please read the '
-                                      'user documentations for how to set '
-                                      'this properly.')
+                    probe_area = self._get_probe_area(navigation_axes=None)
+
+        int_stack = utils.stack(intensities, lazy=False)
+
+        comp_old = utils.stack(intensities)
+        comp_old.data = np.zeros_like(comp_old.data)
+
+        abs_corr_factor = None # initial
 
         if method == 'CL':
-            int_stack = utils.stack(intensities, lazy=False)
-
-            comp_old = utils.stack(intensities)
-            comp_old.data = np.zeros_like(comp_old.data)
-
-            abs_corr = None # initial
-
-            while True:
-                results = utils_eds.quantification_cliff_lorimer(
-                    int_stack.data,
-                    kfactors=factors,
-                    absorption_correction=abs_corr)
-                composition.data = results * 100.
-                if absorption_correction != False:
-                    if thickness is not None:
-                        mass_thickness = intensities[0].deepcopy()
-                        mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
-                                                                    thickness)
-                        mass_thickness.metadata.General.title = 'Mass thickness'
-                    else:
-                        warnings.warn('Thickness is required for absorption'\
-                                    'correction with K-Factor Method. Result '\
-                                    'will contain no correction for absorption.')
-
-                res_max = np.max((composition - comp_old).data)
-                it += 1
-                pbar.update(1)
-                if not absorption_correction or res_max < (conv_crit/100):
-                    break
-                    pbar.close()
-                elif it >= max_iterations:
-                    raise Exception('Absorption correction failed as solution '
-                                    'did not converge after %d iterations'
-                                    % (max_iterations))
-
-                comp_old.data = composition.data
-                abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
-                                                       mass_thickness,
-                                                       toa)
+            quantification_method = utils_eds.quantification_cliff_lorimer
+            kwargs = {"intensities" : int_stack.data,
+                    "kfactors" : factors,
+                    "absorption_correction" : abs_corr_factor}
 
         elif method == 'zeta':
-            int_stack = utils.stack(intensities, lazy=False)
+            quantification_method = utils_eds.quantification_zeta_factor
+            kwargs = {"intensities" : int_stack.data,
+                    "zfactors" : factors,
+                    "dose" : self._get_dose(method),
+                    "absorption_correction" : abs_corr_factor}
 
-            comp_old = utils.stack(intensities)
-            comp_old.data = np.zeros_like(comp_old.data)
+        elif method =='cross_section':
+            quantification_method = utils_eds.quantification_cross_section
+            kwargs = {"intensities" : int_stack.data,
+                    "cross_sections" : factors,
+                    "dose" : self._get_dose(method, **kwargs),
+                    "absorption_correction" : abs_corr_factor}
 
-            abs_corr = None # initial
-
-            while True:
-                results = utils_eds.quantification_zeta_factor(
-                    int_stack.data,
-                    zfactors=factors,
-                    dose=self._get_dose(method),
-                    absorption_correction=abs_corr)
-                composition.data = results[0] * 100.
-                mass_thickness = intensities[0].deepcopy()
-                mass_thickness.data = results[1]
-
-                res_max = np.max((composition - comp_old).data)
-                it += 1
-                pbar.update(1)
-                if not absorption_correction or res_max < (conv_crit/100):
-                    break
-                    pbar.close()
-                elif it >= max_iterations:
-                    raise Exception('Absorption correction failed as solution '
-                                    'did not converge after %d iterations'
-                                    % (max_iterations))
-
-                comp_old.data = composition.data
-                abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
-                                                       mass_thickness,
-                                                       toa)
-
-            mass_thickness.metadata.General.title = 'Mass thickness'
-
-        elif method == 'cross_section':
-            int_stack = utils.stack(intensities)
-
-            comp_old = utils.stack(intensities)
-            comp_old.data = np.zeros_like(comp_old.data)
-            abs_corr = None # initial
-
-            while True:
-                results = utils_eds.quantification_cross_section(
-                    int_stack.data,
-                    cross_sections=factors,
-                    dose=self._get_dose(method, **kwargs),
-                    absorption_correction=abs_corr)
-                composition.data = results[0] * 100.
-                number_of_atoms = composition._deepcopy_with_new_data(results[1])
-                it += 1
-                pbar.update(1)
-                res_max = np.max((composition - comp_old).data)
-
-                if not absorption_correction or res_max < (conv_crit/100):
-                    break
-                    pbar.close()
-                elif it >= max_iterations:
-                    raise Exception('Absorption correction failed as solution '
-                                    'did not converge after %d iterations'
-                                    % (max_iterations))
-
-                comp_old.data = composition.data
-                abs_corr = utils_eds.get_abs_corr_cross_section(composition.split(),
-                                                       number_of_atoms.split(),
-                                                       toa, probe_area)
-
-            composition.data = results[0] * 100
-            number_of_atoms = composition._deepcopy_with_new_data(results[1])
-            number_of_atoms = number_of_atoms.split()
         else:
             raise ValueError('Please specify method for quantification,'
                              'as \'CL\', \'zeta\' or \'cross_section\'')
 
-        composition = composition.split()
+        # results = quantification_method(**kwargs)
+        #
+        # if method == 'CL':
+        #     composition.data = results * 100.
+        #     if absorption_correction:
+        #         if thickness is not None:
+        #             mass_thickness = intensities[0].deepcopy()
+        #             mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
+        #                                                     thickness)
+        #             mass_thickness.metadata.General.title = 'Mass thickness'
+        #         else:
+        #             warnings.warn('Thickness is required for absorption'\
+        #             'correction with K-Factor Method. Results will contain'\
+        #             'no correction for absorption.')
+        #
+        # elif method == 'zeta':
+        #     composition.data = results[0] * 100
+        #     mass_thickness = intensities[0].deepcopy()
+        #     mass_thickness.data = results[1]
+        #
+        # else:
+        #     composition.data = results[0] * 100.
+        #     number_of_atoms = composition._deepcopy_with_new_data(results[1])
+
+        while True:
+            results = quantification_method(**kwargs)
+
+            if method == 'CL':
+                composition.data = results * 100.
+                if absorption_correction:
+                    if thickness is not None:
+                        mass_thickness = intensities[0].deepcopy()
+                        mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
+                                                                thickness)
+                        mass_thickness.metadata.General.title = 'Mass thickness'
+                    else:
+                        warnings.warn('Thickness is required for absorption'\
+                        'correction with K-Factor Method. Results will contain'\
+                        'no correction for absorption.')
+
+            elif method == 'zeta':
+                composition.data = results[0] * 100
+                mass_thickness = intensities[0].deepcopy()
+                mass_thickness.data = results[1]
+
+            else:
+                composition.data = results[0] * 100.
+                number_of_atoms = composition._deepcopy_with_new_data(results[1])
+
+            if method == 'cross_section':
+                abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
+                                                       number_of_atoms.split(),
+                                                       toa,
+                                                       probe_area)
+                kwargs["absorption_correction"] = abs_corr_factor
+            else:
+                if absorption_correction:
+                    abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
+                                                       mass_thickness,
+                                                       toa)
+                    kwargs["absorption_correction"] = abs_corr_factor
+
+            res_max = np.max((composition - comp_old).data)
+            comp_old.data = composition.data
+
+            it += 1
+            pbar.update(1)
+            if not absorption_correction or abs(res_max) < convergence_criterion:
+                break
+                pbar.close()
+            elif it >= max_iterations:
+                raise Exception('Absorption correction failed as solution '
+                                'did not converge after %d iterations'
+                                % (max_iterations))
+
+
+
+        if method == 'cross_section':
+            number_of_atoms = composition._deepcopy_with_new_data(results[1])
+            number_of_atoms = number_of_atoms.split()
+            composition = composition.split()
+        else:
+            composition = composition.split()
+
+        #convert ouput units to selection as required.
         if composition_units == 'atomic':
             if method != 'cross_section':
                 composition = utils.material.weight_to_atomic(composition)
         else:
             if method == 'cross_section':
                 composition = utils.material.atomic_to_weight(composition)
+
+        #Label each of the elemental maps in the image stacks for composition.
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
@@ -561,6 +541,7 @@ class EDSTEM_mixin:
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
+        #For the cross section method this is repeated for the number of atom maps
         if method == 'cross_section':
             for i, xray_line in enumerate(xray_lines):
                 element, line = utils_eds._get_element_and_line(xray_line)
@@ -573,16 +554,18 @@ class EDSTEM_mixin:
         if plot_result and composition[i].axes_manager.navigation_size != 1:
             utils.plot.plot_signals(composition, **kwargs)
 
-        if absorption_correction == 'True':
-            print('Conversion found after {0} interations.'.format(str(it)))
+        if absorption_correction:
+            _logger.info(f'Conversion found after {it} interations.')
 
         if method == 'zeta':
+            mass_thickness.metadata.General.title = 'Mass thickness'
             self.metadata.set_item("Sample.mass_thickness", mass_thickness)
             return composition, mass_thickness
         elif method == 'cross_section':
             return composition, number_of_atoms
         elif method == 'CL':
-            if absorption_correction != False:
+            if absorption_correction:
+                mass_thickness.metadata.General.title = 'Mass thickness'
                 return composition, mass_thickness
             else:
                 return composition
@@ -728,6 +711,36 @@ class EDSTEM_mixin:
                             *args, **kwargs)
         return model
 
+
+    def _get_probe_area(self, navigation_axes=None):
+        """Calculates a pixel area which can be approximated to probe area,
+        when the beam is larger than or equal to pixel size.
+        """
+        if (self.axes_manager.navigation_dimension > 2 and
+                navigation_axes is None):
+            raise ValueError("With `probe_area='auto' and "
+                             "navigation dimension > 2, you need "
+                             "to specify the `navigation_axes` "
+                             "parameter.")
+        scales = []
+        navigation_axes = self.axes_manager.navigation_axes
+        for axis in navigation_axes:
+            scales.append(
+                axis.convert_to_units('nm', inplace=False)[0])
+        if len(scales) == 1:
+            probe_area = scales[0] * scales[0]
+        elif len(scales) == 2:
+            probe_area = scales[0] * scales[1]
+        if scales[0] == 1 or scales[1] == 1:
+            warnings.warn('Please note your probe_area is set to '
+                          'the default value of 1 nm². The '
+                          'function will still run. However if '
+                          '1 nm² is not correct, please read the '
+                          'user documentations for how to set '
+                          'this properly.')
+        return probe_area
+
+
     def _get_dose(self, method, beam_current='auto', live_time='auto',
                   probe_area='auto', navigation_axes=None, **kwargs):
         """
@@ -798,32 +811,10 @@ class EDSTEM_mixin:
         if method == 'cross_section':
             if probe_area == 'auto':
                 if probe_area in parameters:
-                    area = parameters.TEM.probe_area
+                    probe_area = parameters.TEM.probe_area
                 else:
-                    if (self.axes_manager.navigation_dimension > 2 and
-                            navigation_axes is None):
-                        raise ValueError("With `probe_area='auto' and "
-                                         "navigation dimension > 2, you need "
-                                         "to specify the `navigation_axes` "
-                                         "parameter.")
-                    scales = []
-                    if navigation_axes is None:
-                        navigation_axes = self.axes_manager.navigation_axes
-                    for axis in navigation_axes:
-                        scales.append(
-                            axis.convert_to_units('nm', inplace=False)[0])
-                    if len(scales) == 1:
-                        area = scales[0] * scales[0]
-                    elif len(scales) == 2:
-                        area = scales[0] * scales[1]
-                    if scales[0] == 1 or scales[1] == 1:
-                        warnings.warn('Please note your probe_area is set to '
-                                      'the default value of 1 nm². The '
-                                      'function will still run. However if '
-                                      '1 nm² is not correct, please read the '
-                                      'user documentations for how to set '
-                                      'this properly.')
-            return (live_time * beam_current * 1e-9) / (constants.e * area)
+                    probe_area = self._get_probe_area(navigation_axes=None)
+            return (live_time * beam_current * 1e-9) / (constants.e * probe_area)
             # 1e-9 is included here because the beam_current is in nA.
         elif method == 'zeta':
             return live_time * beam_current * 1e-9 / constants.e

@@ -231,17 +231,17 @@ class Test_quantification:
         res3 = s.quantification(intensities, method, kfactors,
                                composition_units,
                                absorption_correction=True,
-                               thickness=100.)
+                               thickness=300.)
         res4 = s.quantification(intensities, method, kfactors,
                                composition_units,
                                absorption_correction=True,
                                thickness=0.0001)
         np.testing.assert_allclose(res2[0][0].data, np.array([
-            [22.70775, 22.70775],
-            [22.70775, 22.70775]]), atol=1e-3)
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
         np.testing.assert_allclose(res3[0][0].data, np.array([
-            [22.70376, 22.70376],
-            [22.70376, 22.70376]]), atol=1e-3)
+            [22.6957, 22.6957],
+            [22.6957, 22.6957]]), atol=1e-3)
         np.testing.assert_allclose(res[0].data,
                                    res4[0][0].data, atol=1e-5)
 
@@ -270,8 +270,8 @@ class Test_quantification:
                                thickness=100.)
         assert res2 == res3
         np.testing.assert_allclose(res2[0][1].data, np.array([
-            [66.00624, 66.00624],
-            [66.00624, 66.00624]]), atol=1e-3)
+            [61.6284, 61.6284],
+            [61.6284, 61.6284]]), atol=1e-3)
 
     def test_quant_cross_section_units(self):
         s = self.signal.deepcopy()
@@ -287,10 +287,16 @@ class Test_quantification:
         res = s.quantification(intensities, method, factors)
         res2 = s2.quantification(intensities, method, factors)
         np.testing.assert_allclose(res[0][0].data, res2[0][0].data)
+        probe_area = s._get_probe_area()
         # Check that the quantification doesn't change the units of the signal
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(probe_area, 0.25, atol=1e-3)
 
+    def test_zeta_vs_cross_section(self):
+        s=self.signal
+
+        
     def test_quant_cross_section(self):
         s = self.signal
         method = 'cross_section'
@@ -315,8 +321,8 @@ class Test_quantification:
         res = s.quantification(intensities, method, factors,
                                 absorption_correction=True)
         np.testing.assert_allclose(res[0][0].data, np.array(
-            [[95.4233, 95.4233],
-             [95.4233, 95.4233]]), atol=1e-3)
+            [[95.3350, 95.3350],
+             [95.3350, 95.3350]]), atol=1e-3)
 
 
     def test_quant_zeros(self):
