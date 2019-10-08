@@ -30,17 +30,17 @@ class HeavisideStep(Expression):
         f(x) =
         \\begin{cases}
         0 & x<n\\\\
-        \\frac{A}{2} & x=n\\\\
-        A & x>n
+        A & x>=n
         \\end{cases}
 
     Parameters
     -----------
     n : float
-
+        Location parameter defining the x position of the step.
     A : float
-
-
+        Height parameter for x>n.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
     """
 
     def __init__(self, A=1., n=0., module="numpy", **kwargs):
