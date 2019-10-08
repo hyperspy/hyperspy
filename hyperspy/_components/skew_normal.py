@@ -17,9 +17,68 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import dask.array as da
+
 from hyperspy._components.expression import Expression
 from distutils.version import LooseVersion
 import sympy
+
+sqrt2pi = np.sqrt(2 * np.pi)
+
+
+def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
+    axis = signal.axes_manager.signal_axes[0]
+    i1, i2 = axis.value_range_to_indices(x1, x2)
+    X = axis.axis[i1:i2]
+    if only_current is True:
+        data = signal()[i1:i2]
+        X_shape = (len(X),)
+        i = 0
+        x0_shape = (1,)
+    else:
+        i = axis.index_in_array
+        data_gi = [slice(None), ] * len(signal.data.shape)
+        data_gi[axis.index_in_array] = slice(i1, i2)
+        data = signal.data[tuple(data_gi)]
+        X_shape = [1, ] * len(signal.data.shape)
+        X_shape[axis.index_in_array] = data.shape[i]
+        x0_shape = list(data.shape)
+        x0_shape[i] = 1
+
+    if isinstance(data, da.Array):
+        _sum = da.sum
+        _sqrt = da.sqrt
+        _abs = abs
+        _argmin = da.argmin
+        _take = da.take
+
+    else:
+        _sum = np.sum
+        _sqrt = np.sqrt
+        _abs = np.abs
+        _argmin = np.argmin
+        _take = np.take
+
+    a1 = np.sqrt(2 / np.pi)
+    b1 = (4 / np.pi - 1) * a1
+    m1 = _sum(X.reshape(X_shape) * data, i) / _sum(data, i)
+    m2 = _abs(_sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
+         / _sum(data, i))
+    m3 = _abs(_sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
+         / _sum(data, i))
+
+    x0 = m1 - a1 * (m3 / b1) ** (1 / 3)
+    scale = _sqrt(m2 + a1 ** 2 * (m3 / b1) ** (2 / 3))
+    delta = _sqrt(1 / (a1**2 + m2 * (b1 / m3) ** (2 / 3)))
+    shape = delta / _sqrt(1 - delta**2)
+
+    iheight = _argmin(_abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
+    if isinstance(data, da.Array):
+        x0, iheight, scale, shape = da.compute(x0, iheight, scale, shape)
+    # Take does not do the job. Get the right indexing mechanism
+    height = _take(data,iheight,i)
+
+    return x0, height, scale, shape
 
 
 class SkewNormal(Expression):
@@ -98,6 +157,74 @@ class SkewNormal(Expression):
 
         self.isbackground = False
         self.convolved = True
+
+
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
+        """Estimate the skew normal distribution by calculating the momenta.
+
+        Parameters
+        ----------
+        signal : Signal1D instance
+        x1 : float
+            Defines the left limit of the spectral range to use for the
+            estimation.
+        x2 : float
+            Defines the right limit of the spectral range to use for the
+            estimation.
+
+        only_current : bool
+            If False estimates the parameters for the full dataset.
+
+        Returns
+        -------
+        bool
+
+        Notes
+        -----
+        Adapted from Lin, Lee and Yen, Statistica Sinica 17, 909-927 (2007)
+        https://www.jstor.org/stable/24307705
+
+        Examples
+        --------
+
+        >>> g = hs.model.components1D.SkewNormal()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager._axes[-1].offset = -10
+        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
+        """
+
+        super(SkewNormal, self)._estimate_parameters(signal)
+        axis = signal.axes_manager.signal_axes[0]
+        x0, height, scale, shape = _estimate_skewnormal_parameters(signal, x1, 
+                                                             x2, only_current)
+        if only_current is True:
+            self.x0.value = x0
+            self.A.value = height * sqrt2pi
+            self.scale.value = scale
+            self.shape.value = shape
+            if self.binned:
+                self.A.value /= axis.scale
+            return True
+        else:
+            if self.A.map is None:
+                self._create_arrays()
+            self.A.map['values'][:] = height * sqrt2pi
+
+            if self.binned:
+                self.A.map['values'] /= axis.scale
+            self.A.map['is_set'][:] = True
+            self.x0.map['values'][:] = x0
+            self.x0.map['is_set'][:] = True
+            self.scale.map['values'][:] = scale
+            self.scale.map['is_set'][:] = True
+            self.shape.map['values'][:] = shape
+            self.shape.map['is_set'][:] = True
+            self.fetch_stored_values()
+            return True
 
     @property
     def mean(self):
