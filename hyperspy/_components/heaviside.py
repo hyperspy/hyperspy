@@ -18,10 +18,10 @@
 
 
 import numpy as np
-from hyperspy.component import Component
 
+from hyperspy._components.expression import Expression
 
-class HeavisideStep(Component):
+class HeavisideStep(Expression):
 
     r"""The Heaviside step function.
 
@@ -43,35 +43,24 @@ class HeavisideStep(Component):
 
     """
 
-    def __init__(self, A=1, n=0):
-        Component.__init__(self, ('n', 'A'))
-        self.A.value = A
-        self.n.value = n
+    def __init__(self, A=1., n=0., module="numpy", **kwargs):
+        super(HeavisideStep, self).__init__(
+            expression="where(x < n, 0, A)",
+            name="HeavisideStep",
+            A=A,
+            n=n,
+            position="n",
+            module=module,
+            autodoc=False,
+            **kwargs)
+
         self.isbackground = True
         self.convolved = False
 
         # Gradients
         self.A.grad = self.grad_A
-        self.n.grad = self.grad_n
 
-    def function(self, x):
-        x = np.asanyarray(x)
-        return np.where(x < self.n.value,
-                        0,
-                        np.where(x == self.n.value,
-                                 self.A.value * 0.5,
-                                 self.A.value)
-                        )
 
     def grad_A(self, x):
         x = np.asanyarray(x)
         return np.ones(x.shape)
-
-    def grad_n(self, x):
-        x = np.asanyarray(x)
-        return np.where(x < self.n.value,
-                        0,
-                        np.where(x == self.n.value,
-                                 0.5,
-                                 1)
-                        )
