@@ -50,14 +50,12 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
         _sqrt = da.sqrt
         _abs = abs
         _argmin = da.argmin
-        _take = da.take
 
     else:
         _sum = np.sum
         _sqrt = np.sqrt
         _abs = np.abs
         _argmin = np.argmin
-        _take = np.take
 
     a1 = np.sqrt(2 / np.pi)
     b1 = (4 / np.pi - 1) * a1
@@ -76,7 +74,12 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     if isinstance(data, da.Array):
         x0, iheight, scale, shape = da.compute(x0, iheight, scale, shape)
     # Take does not do the job. Get the right indexing mechanism
-    height = _take(data,iheight,i)
+    if only_current is True or signal.axes_manager.navigation_dimension == 0:
+        height = data[iheight]
+    elif signal.axes_manager.navigation_dimension == 1:
+        height = data.__getitem__((np.arange(signal.axes_manager.navigation_size), iheight))
+    else:
+        height = data.__getitem__((*np.indices(signal.axes_manager.navigation_shape), iheight))
 
     return x0, height, scale, shape
 
