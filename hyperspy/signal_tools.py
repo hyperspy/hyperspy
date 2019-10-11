@@ -943,6 +943,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Offset',
         'Polynomial',
         'Lorentzian',
+        'SkewNormal',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
@@ -1004,6 +1005,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line_range = 'full'
         elif self.background_type == 'Lorentzian':
             self.background_estimator = components1d.Lorentzian()
+            self.bg_line_range = 'full'
+        elif self.background_type == 'SkewNormal':
+            self.background_estimator = components1d.SkewNormal()
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):

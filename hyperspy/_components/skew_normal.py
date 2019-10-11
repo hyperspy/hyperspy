@@ -73,13 +73,13 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     iheight = _argmin(_abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
     if isinstance(data, da.Array):
         x0, iheight, scale, shape = da.compute(x0, iheight, scale, shape)
-    # Take does not do the job. Get the right indexing mechanism
+    # Dask array still as a problem with this fancy indexing!
     if only_current is True or signal.axes_manager.navigation_dimension == 0:
         height = data[iheight]
     elif signal.axes_manager.navigation_dimension == 1:
-        height = data.__getitem__((np.arange(signal.axes_manager.navigation_size), iheight))
+        height = data[np.arange(signal.axes_manager.navigation_size), iheight]
     else:
-        height = data.__getitem__((*np.indices(signal.axes_manager.navigation_shape), iheight))
+        height = data[(*np.indices(signal.axes_manager.navigation_shape), iheight)]
 
     return x0, height, scale, shape
 
