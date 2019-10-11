@@ -65,7 +65,7 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
 class Voigt(Component):
 
     """Voigt profile component with support for shirley background,
-    non_isochromaticity,transmission_function corrections and spin orbit
+    non_isochromaticity, transmission_function corrections and spin orbit
     splitting specially suited for Photoemission spectroscopy data analysis.
 
     f(x) = G(x)*L(x) where G(x) is the Gaussian function and L(x) is the
@@ -145,7 +145,8 @@ class Voigt(Component):
             return f
 
     def estimate_parameters(self, signal, E1, E2, only_current=False):
-        """Estimate the voigt function by calculating the momenta the gaussian.
+        """Estimate the Voigt function by calculating the momenta of the 
+        Gaussian.
 
         Parameters
         ----------
@@ -171,7 +172,7 @@ class Voigt(Component):
         Examples
         --------
 
-        >>> g = hs.model.components1D.Gaussian()
+        >>> g = hs.model.components1D.Voigt()
         >>> x = np.arange(-10,10, 0.01)
         >>> data = np.zeros((32,32,2000))
         >>> data[:] = g.function(x).reshape((1,1,2000))
