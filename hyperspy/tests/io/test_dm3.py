@@ -204,8 +204,8 @@ def test_read_SI_metadata():
     assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 1)
     assert_allclose(
-            md.Acquisition_instrument.TEM.Detector.EELS.dwell_time,
-            1.9950125E-2)
+        md.Acquisition_instrument.TEM.Detector.EELS.dwell_time,
+        1.9950125E-2)
 
 
 def test_read_EDS_metadata():

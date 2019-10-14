@@ -26,10 +26,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
-from distutils.version import LooseVersion
 import logging
 
 import hyperspy as hs
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -63,6 +63,9 @@ def contrast_stretching(data, saturated_pixels):
     if not 0 <= saturated_pixels <= 100:
         raise ValueError(
             "saturated_pixels must be a scalar in the range[0, 100]")
+    if np.ma.is_masked(data):
+        # If there is a mask, compressed the data to remove the masked data
+        data = np.ma.masked_less_equal(data, 0).compressed()
     vmin = np.nanpercentile(data, saturated_pixels / 2.)
     vmax = np.nanpercentile(data, 100 - saturated_pixels / 2.)
     return vmin, vmax
@@ -354,11 +357,11 @@ def plot_signals(signal_list, sync=True, navigator="auto",
                         **kwargs)
 
 
-def _make_heatmap_subplot(spectra):
+def _make_heatmap_subplot(spectra, **plot_kwargs):
     from hyperspy._signals.signal2d import Signal2D
     im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     im.metadata.General.title = spectra.metadata.General.title
-    im.plot()
+    im.plot(**plot_kwargs)
     return im._plot.signal_plot.ax
 
 
@@ -435,8 +438,8 @@ def _set_spectrum_xlabel(spectrum, ax):
 def _transpose_if_required(signal, expected_dimension):
     # EDS profiles or maps have signal dimension = 0 and navigation dimension
     # 1 or 2. For convenience transpose the signal if possible
-    if (signal.axes_manager.signal_dimension == 0 and 
-        signal.axes_manager.navigation_dimension == expected_dimension):
+    if (signal.axes_manager.signal_dimension == 0 and
+            signal.axes_manager.navigation_dimension == expected_dimension):
         return signal.T
     else:
         return signal
@@ -452,7 +455,7 @@ def plot_images(images,
                 suptitle_fontsize=18,
                 colorbar='multi',
                 centre_colormap="auto",
-                saturated_pixels=0,
+                saturated_pixels=None,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -474,7 +477,7 @@ def plot_images(images,
     ----------
     images : list of Signal2D or BaseSignal
         `images` should be a list of Signals to plot. For `BaseSignal` with
-        navigation dimensions 2 and signal dimension 0, the signal will be 
+        navigation dimensions 2 and signal dimension 0, the signal will be
         tranposed to form a `Signal2D`.
         Multi-dimensional images will have each plane plotted as a separate
         image.
@@ -704,7 +707,11 @@ def plot_images(images,
         return arg
     vmin = _check_arg(vmin, None, 'vmin')
     vmax = _check_arg(vmax, None, 'vmax')
-    saturated_pixels = _check_arg(saturated_pixels, 0, 'saturated_pixels')
+    if saturated_pixels is None:
+        saturated_pixels = preferences.Plot.saturated_pixels
+    saturated_pixels = _check_arg(saturated_pixels,
+                                  preferences.Plot.saturated_pixels,
+                                  'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -834,6 +841,7 @@ def plot_images(images,
     # 'single' scalebar
     if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
+        print(saturated_pixels)
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
         else:
@@ -1142,18 +1150,6 @@ def make_cmap(colors, name='my_colormap', position=None,
         switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string
     """
-    def _html_color_to_rgb(color_string):
-        """ convert #RRGGBB to an (R, G, B) tuple """
-        color_string = color_string.strip()
-        if color_string[0] == '#':
-            color_string = color_string[1:]
-        if len(color_string) != 6:
-            raise ValueError(
-                "input #{} is not in #RRGGBB format".format(color_string))
-        r, g, b = color_string[:2], color_string[2:4], color_string[4:]
-        r, g, b = [int(n, 16) / 255 for n in (r, g, b)]
-        return r, g, b
-
     bit_rgb = np.linspace(0, 1, 256)
 
     if position is None:
@@ -1168,8 +1164,7 @@ def make_cmap(colors, name='my_colormap', position=None,
 
     for pos, color in zip(position, colors):
         if isinstance(color, str):
-            color = _html_color_to_rgb(color)
-
+            color = mpl.colors.to_rgb(color)
         elif bit:
             color = (bit_rgb[color[0]],
                      bit_rgb[color[1]],
@@ -1205,7 +1200,7 @@ def plot_spectra(
     Parameters
     ----------
     spectra : list of Signal1D or BaseSignal
-        Ordered spectra list of signal to plot. If `style` is "cascade" or 
+        Ordered spectra list of signal to plot. If `style` is "cascade" or
         "mosaic" the spectra can have different size and axes. For `BaseSignal`
         with navigation dimensions 1 and signal dimension 0, the signal will be
         tranposed to form a `Signal1D`.
@@ -1297,11 +1292,8 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        if LooseVersion(mpl.__version__) >= "1.5.3":
-            color = itertools.cycle(
+        color = itertools.cycle(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"])
-        else:
-            color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
         if isinstance(line_style, str):
@@ -1376,7 +1368,7 @@ def plot_spectra(
     elif style == 'heatmap':
         if not isinstance(spectra, hyperspy.signal.BaseSignal):
             import hyperspy.utils
-            spectra = [_transpose_if_required(spectrum, 1) for spectrum in 
+            spectra = [_transpose_if_required(spectrum, 1) for spectrum in
                        spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():

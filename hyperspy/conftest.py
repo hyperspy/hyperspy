@@ -14,6 +14,7 @@ import hyperspy.api as hs
 
 matplotlib.rcParams['figure.max_open_warning'] = 25
 matplotlib.rcParams['interactive'] = False
+hs.preferences.Plot.saturated_pixels = 0.0
 
 
 @pytest.fixture(autouse=True)

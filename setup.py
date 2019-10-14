@@ -56,13 +56,15 @@ install_req = ['scipy>=0.15',
                'h5py>=2.3',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.18',
+               'dask[array]>=0.18, !=2.0',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
                'numexpr',
                'sparse',
                'imageio',
+               'pyyaml',
+               'PTable'
                ]
 
 extras_require = {
@@ -346,6 +348,7 @@ with update_version_when_dev() as version:
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+                'hyperspy_extension.yaml',
             ],
         },
         author=Release.authors['all'][0],
@@ -363,7 +366,6 @@ with update_version_when_dev() as version:
         },
         classifiers=[
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Development Status :: 4 - Beta",

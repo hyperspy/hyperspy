@@ -142,7 +142,6 @@ notation, specify the ``xaxis_type`` parameter:
    PCA scree plot with number-based axis labeling and a threshold value
    specified
 
-
 .. figure::  images/screeplot3.png
    :align:   center
    :width:   500

@@ -145,9 +145,9 @@ class MVA():
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
-            The result of the decomposition is stored internally. However, 
-            some algorithms generate some extra information that is not 
-            stored. If True (the default is False) return any extra 
+            The result of the decomposition is stored internally. However,
+            some algorithms generate some extra information that is not
+            stored. If True (the default is False) return any extra
             information if available
 
         Returns
@@ -392,7 +392,7 @@ class MVA():
                     explained_variance / explained_variance.sum()
                 number_significant_components = \
                     self._estimate_elbow_position(
-                            explained_variance_ratio)+ 1
+                        explained_variance_ratio) + 1
 
             # Store the results in learning_results
             target.factors = factors
@@ -489,7 +489,7 @@ class MVA():
                                 comp_list=None,
                                 mask=None,
                                 on_loadings=False,
-                                pretreatment=None,
+                                reverse_component_criterion='factors',
                                 compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
@@ -502,6 +502,7 @@ class MVA():
         number_of_components : int
             number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
+            BSS algorithms available.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If diff_order is 0, the signal is not differentiated.
@@ -517,7 +518,7 @@ class MVA():
             navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
-             to choose non contiguous components.
+            to choose non contiguous components.
         mask : bool numpy array or Signal instance.
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
@@ -525,7 +526,9 @@ class MVA():
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        pretreatment: dict
+        reverse_component_criterion : str {'factors', 'loadings'}
+            Use either the `factor` or the `loading` to determine if the 
+            component needs to be reversed.
         compute: bool
            If the decomposition results are lazy, compute the BSS components
            so that they are not lazy.
@@ -690,8 +693,8 @@ class MVA():
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
-        self._unmix_components(compute=compute)
-        self._auto_reverse_bss_component(lr)
+        self._unmix_components()
+        self._auto_reverse_bss_component(reverse_component_criterion)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
 
@@ -818,13 +821,22 @@ class MVA():
             lr.bss_factors = lr.bss_factors.compute()
             lr.bss_loadings = lr.bss_loadings.compute()
 
-    def _auto_reverse_bss_component(self, target):
-        n_components = target.bss_factors.shape[1]
+    def _auto_reverse_bss_component(self, reverse_component_criterion):
+        n_components = self.learning_results.bss_factors.shape[1]
         for i in range(n_components):
-            minimum = np.nanmin(target.bss_loadings[:, i])
-            maximum = np.nanmax(target.bss_loadings[:, i])
+            if reverse_component_criterion == 'factors':
+                values = self.learning_results.bss_factors
+            elif reverse_component_criterion == 'loadings':
+                values = self.learning_results.bss_loadings
+            else:
+                raise ValueError("`reverse_component_criterion` can take only "
+                                 "`factor` or `loading` as parameter.")
+            minimum = np.nanmin(values[:, i])
+            maximum = np.nanmax(values[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
+                _logger.info("Independent component {} reversed based on the "
+                             "{}".format(i, reverse_component_criterion))
 
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """
@@ -1101,7 +1113,7 @@ class MVA():
         # Some default formatting for signal markers
         if signal_fmt is None:
             signal_fmt = {'c': '#C24D52',
-                         'linestyle': '',
+                          'linestyle': '',
                           'marker': "^",
                           'markersize': 10,
                           'zorder': 3}
@@ -1153,19 +1165,19 @@ class MVA():
 
         if n_signal_pcs == n:
             ax.plot(range(index_offset, index_offset + n),
-                       s.isig[:n].data,
-                       **signal_fmt)
+                    s.isig[:n].data,
+                    **signal_fmt)
         elif n_signal_pcs > 0:
             ax.plot(range(index_offset, index_offset + n_signal_pcs),
-                       s.isig[:n_signal_pcs].data,
-                       **signal_fmt)
+                    s.isig[:n_signal_pcs].data,
+                    **signal_fmt)
             ax.plot(range(index_offset + n_signal_pcs, index_offset + n),
-                       s.isig[n_signal_pcs:n].data,
-                       **noise_fmt)
+                    s.isig[n_signal_pcs:n].data,
+                    **noise_fmt)
         else:
             ax.plot(range(index_offset, index_offset + n),
-                       s.isig[:n].data,
-                       **noise_fmt)
+                    s.isig[:n].data,
+                    **noise_fmt)
 
         if xaxis_labeling == 'cardinal':
             ax.xaxis.set_major_formatter(
@@ -1260,8 +1272,8 @@ class MVA():
 
     def _estimate_elbow_position(self, curve_values):
         """
-        Estimate the elbow position of a scree plot curve 
-        Used to estimate the number of significant components in 
+        Estimate the elbow position of a scree plot curve
+        Used to estimate the number of significant components in
         a PCA variance ratio plot or other "elbow" type curves
 
         Parameters
@@ -1275,23 +1287,23 @@ class MVA():
             as suggested in :ref:`[Satopää2011] <Satopää2011>`
         """
         maxpoints = min(20, len(curve_values) - 1)
-        # Find a line between first and last point 
+        # Find a line between first and last point
         # With a classic elbow scree plot the line from first to last
         # more or less defines a triangle
         # The elbow should be the point which is the
         # furthest distance from this line
-        
+
         y2 = np.log(curve_values[maxpoints])
         x2 = maxpoints
         y1 = np.log(curve_values[0])
         x1 = 0
-        # loop through the curve values and calculate 
+        # loop through the curve values and calculate
         distance = np.zeros(maxpoints)
         for i in range(maxpoints):
             y0 = np.log(curve_values[i])
             x0 = i
-            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))/\
-                          np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
+            distance[i] = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) /\
+                np.math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         # Point with the largest distance is the "elbow"
         elbow_position = np.argmax(distance)
         return elbow_position
