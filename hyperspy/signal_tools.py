@@ -1445,7 +1445,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.find()
 
 
-@add_gui_method(toolkey="Signal2D.find_peaks2D")
+@add_gui_method(toolkey="hyperspy.Signal2D.find_peaks2D")
 class PeaksFinder2D(t.HasTraits):
     method = t.Enum(
         'Local max',
