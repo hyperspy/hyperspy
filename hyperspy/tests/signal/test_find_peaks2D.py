@@ -110,9 +110,10 @@ class TestFindPeaks2D:
             pytest.skip("Parallel=True is ignored for lazy signal.")
 
         if method == 'cross_correlation':
-            disc = np.zeros((5, 5))
-            disc[1:4, 1:4] = 0.5
-            disc[2,2] = 1
+            disc = np.zeros((11, 11))
+            disc[2:9, 2:9] = 0.5
+            disc[4:7, 4:7] = 0.75
+            disc[5, 5] = 1
             peaks = dataset.find_peaks2D(method=method, parallel=parallel,
                                          interactive=False, template=disc)
         else:
