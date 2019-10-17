@@ -1457,20 +1457,20 @@ class PeaksFinder2D(t.HasTraits):
         'Difference of Gaussian',
         'Cross correlation',
         default='Local Max')
-    # For "local max" method
+    # For "Local max" method
     local_max_distance = t.Range(1, 20, value=3)
     local_max_threshold = t.Range(0, 20., value=10)
-    # For "max" method
+    # For "Max" method
     max_alpha = t.Range(0, 6., value=3)
     max_size = t.Range(1, 20, value=10)
-    # For "minmax" method
+    # For "Minmax" method
     minmax_separation = t.Range(0, 6., value=3)
     minmax_threshold = t.Range(0, 20., value=10)
     # For "Zaefferer" method
     zaefferer_grad_threshold = t.Range(0, 0.2, value=0.1)
     zaefferer_window_size = t.Range(2, 80, value=40)
     zaefferer_distance_cutoff = t.Range(1, 100., value=50)
-    # For "stat" method
+    # For "Stat" method
     stat_alpha = t.Range(0, 2., value=1)
     stat_window_radius = t.Range(5, 20, value=10)
     stat_convergence_ratio = t.Range(0, 0.1, value=0.05)
@@ -1487,13 +1487,71 @@ class PeaksFinder2D(t.HasTraits):
     dog_sigma_ratio = t.Range(0, 3.2, value=1.6)
     dog_threshold = t.Range(0, 0.4, value=0.2)
     dog_overlap = t.Range(0, 1., value=0.5)
+    # For "Cross correlation" method
+    xc_template = None
+    xc_separation = t.Range(0, 100., value=5.)
+    xc_threshold = t.Range(0, 10., value=0.5)
 
     random_navigation_position = t.Button()
     compute_over_navigation_axes = t.Button()
 
     show_navigation_sliders = t.Bool(False)
 
-    def __init__(self, signal):
+    def __init__(self, signal, method, **kwargs):
+        self._attribute_argument_mapping_local_max = {
+            'local_max_distance': 'min_distance',
+            'local_max_threshold': 'threshold_abs',
+            }
+        self._attribute_argument_mapping_max = {
+            'max_alpha': 'alpha',
+            'max_size': 'size',
+            }
+        self._attribute_argument_mapping_local_minmax = {
+            'minmax_separation': 'separation',
+            'minmax_threshold': 'threshold',
+            }
+        self._attribute_argument_mapping_local_zaefferer = {
+            'zaefferer_grad_threshold': 'grad_threshold',
+            'zaefferer_window_size': 'window_size',
+            'zaefferer_distance_cutoff': 'distance_cutoff',
+            }
+        self._attribute_argument_mapping_local_stat = {
+            'stat_alpha': 'alpha',
+            'stat_window_radius': 'window_radius',
+            'stat_convergence_ratio': 'convergence_ratio',
+            }
+        self._attribute_argument_mapping_local_log = {
+            'log_min_sigma': 'min_sigma',
+            'log_max_sigma': 'max_sigma',
+            'log_num_sigma': 'num_sigma',
+            'log_threshold': 'threshold',
+            'log_overlap': 'overlap',
+            'log_log_scale': 'log_scale',
+            }
+        self._attribute_argument_mapping_local_dog = {
+            'dog_min_sigma': 'min_sigma',
+            'dog_max_sigma': 'max_sigma',
+            'dog_sigma_ratio': 'sigma_ratio',
+            'dog_threshold': 'threshold',
+            'dog_overlap': 'overlap',
+            }
+        self._attribute_argument_mapping_local_xc = {
+            'xc_template': 'template',
+            'xc_separation': 'separation',
+            'xc_threshold': 'threshold',
+            } 
+
+        self._attribute_argument_mapping_dict = {
+            'local_max': self._attribute_argument_mapping_local_max,
+            'max': self._attribute_argument_mapping_max,
+            'minmax': self._attribute_argument_mapping_local_minmax,
+            'zaefferer': self._attribute_argument_mapping_local_zaefferer,
+            'stat': self._attribute_argument_mapping_local_stat,
+            'laplacian_of_gaussian': self._attribute_argument_mapping_local_log,
+            'difference_of_gaussian': self._attribute_argument_mapping_local_dog,
+            'cross_correlation': self._attribute_argument_mapping_local_xc,
+            }
+
         if signal.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(
                 signal.axes.signal_dimension, 2)
@@ -1510,7 +1568,20 @@ class PeaksFinder2D(t.HasTraits):
             self.show_navigation_sliders = True
             self.signal.axes_manager.events.indices_changed.connect(
                 self._update_peak_finding, [])
+        self._parse_paramaters_initial_values(**kwargs)
         self._update_peak_finding()
+
+    def _parse_paramaters_initial_values(self, **kwargs):
+        # Get the attribute to argument mapping for the current method
+        arg_mapping = self._attribute_argument_mapping_dict[
+            self._normalise_method_name(self.method)]
+        for attr, arg in arg_mapping.items():
+            if arg in kwargs.keys():
+                setattr(self, attr, kwargs[arg])
+        # As a convenience, if the template argument is provided, we keep it 
+        # even if the method is different, to be able to use it later.
+        if 'template' in kwargs.keys():
+            self.xc_template = kwargs['template']
 
     def _update_peak_finding(self, method=None):
         if method is None:
@@ -1525,55 +1596,24 @@ class PeaksFinder2D(t.HasTraits):
         self._update_peak_finding()
 
     def _set_parameters_observer(self):
-        for parameter in ['local_max_distance', 'local_max_threshold',
-                          'max_alpha', 'max_size',
-                          'minmax_separation', 'minmax_threshold',
-                          'zaefferer_grad_threshold', 'zaefferer_window_size',
-                          'zaefferer_distance_cutoff',
-                          'stat_alpha', 'stat_window_radius',
-                          'stat_convergence_ratio',
-                          'log_min_sigma', 'log_max_sigma', 'log_num_sigma',
-                          'log_threshold', 'log_overlap', 'log_log_scale',
-                          'dog_min_sigma', 'dog_max_sigma', 'dog_sigma_ratio',
-                          'dog_threshold', 'dog_overlap']:
-            self.on_trait_change(self._parameter_changed, parameter)
+        for parameters_mapping in self._attribute_argument_mapping_dict.values():
+            for parameter in list(parameters_mapping.keys()):
+                self.on_trait_change(self._parameter_changed, parameter)
 
-    def _get_parameters(self):
-        if self.method == "Local max":
-            return {"min_distance": self.local_max_distance,
-                    "threshold_abs": self.local_max_threshold}
-        if self.method == "Max":
-            return {"alpha": self.max_alpha, "size": self.max_size}
-        if self.method == "Minmax":
-            return {"separation": self.minmax_separation,
-                    "threshold": self.minmax_threshold}
-        if self.method == "Zaefferer":
-            return {"grad_threshold": self.zaefferer_grad_threshold,
-                    "window_size":  self.zaefferer_window_size,
-                    "distance_cutoff": self.zaefferer_distance_cutoff}
-        if self.method == "Stat":
-            return {"alpha": self.stat_alpha,
-                    "window_radius": self.stat_window_radius,
-                    "convergence_ratio": self.stat_convergence_ratio}
-        if self.method == "Laplacian of Gaussian":
-            return {"min_sigma": self.log_min_sigma,
-                    "max_sigma": self.log_max_sigma,
-                    "num_sigma": self.log_num_sigma,
-                    "threshold": self.log_threshold,
-                    "overlap": self.log_overlap,
-                    "log_scale": self.log_log_scale}
-        if self.method == "Difference of Gaussian":
-            return {"min_sigma": self.dog_min_sigma,
-                    "max_sigma": self.dog_max_sigma,
-                    "sigma_ratio": self.dog_sigma_ratio,
-                    "threshold": self.dog_threshold,
-                    "overlap": self.dog_overlap}
+    def _get_parameters(self, method):
+        # Get the attribute to argument mapping for the given method
+        arg_mapping = self._attribute_argument_mapping_dict[method]
+        # return argument and values as kwargs
+        return {arg: getattr(self, attr) for attr, arg in arg_mapping.items()}
+
+    def _normalise_method_name(self, method):
+        return method.lower().replace(' ', '_')
 
     def _find_peaks_current_index(self, method):
-        method = method.lower().replace(' ', '_')
+        method = self._normalise_method_name(method)
         self.peaks = self.signal.find_peaks2D(method, current_index=True,
                                               interactive=False,
-                                              **self._get_parameters())
+                                              **self._get_parameters(method))
 
     def _plot_markers(self):
         if hasattr(self.signal, '_plot') and self.signal._plot is not None:
@@ -1598,10 +1638,10 @@ class PeaksFinder2D(t.HasTraits):
         return marker_list
 
     def compute_navigation(self):
-        method = self.method.lower().replace(' ', '_')
+        method = self._normalise_method_name(self.method)
         with self.signal.axes_manager.events.indices_changed.suppress():
             self.signal.peaks = self.signal.find_peaks2D(
-                    method, current_index=False, **self._get_parameters())
+                method, current_index=False, **self._get_parameters(method))
 
     def set_random_navigation_position(self):
         index = np.random.randint(0, self.signal.axes_manager._max_index)

@@ -447,6 +447,9 @@ def find_peaks_xc(z, template, separation=5, threshold=0.5):
         (n_peaks, 2)
         Array of peak coordinates.
     """
+    if template is None:
+        # GUI set default value to None.
+        raise RuntimeError('The "template" argument is required.')
     response_image = match_template(z, template, pad_input=True)
     peaks = find_peaks_minmax(response_image,
                               separation=separation,

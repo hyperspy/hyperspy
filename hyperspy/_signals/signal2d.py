@@ -804,6 +804,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         **kwargs : associated with above methods.
 
+        Notes
+        -----
+        As a convenient, the 'local_max' method accepts the 'distance' and 
+        'threshold' argument, which will be map to the 'min_distance' and
+        'threshold_abs' of the skimage.feature.peak_local_max function.
+
         Returns
         -------
         peaks : structured numpy array
@@ -819,9 +825,17 @@ class Signal2D(BaseSignal, CommonSignal2D):
             'stat': find_peaks_stat,
             'laplacian_of_gaussian':  find_peaks_log,
             'difference_of_gaussian': find_peaks_dog,
-            'cross_correlation' : find_peaks_xc
+            'cross_correlation' : find_peaks_xc,
         }
-        if method in method_dict:
+        # As a convenience, we map 'distance' to 'min_distance' and
+        # 'threshold' to 'threshold_abs' when using the 'local_max' method to 
+        # match with the arguments of skimage.feature.peak_local_max.
+        if method == 'local_max':
+            if 'distance' in kwargs.keys():
+                kwargs['min_distance'] = kwargs.pop('distance')
+            if 'threshold' in kwargs.keys():
+                kwargs['threshold_abs'] = kwargs.pop('threshold')
+        if method in method_dict.keys():
             method_func = method_dict[method]
         else:
             raise NotImplementedError(f"The method `{method}` is not "
