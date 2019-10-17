@@ -26,7 +26,6 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import matplotlib.text as mpl_text
 import traits.api as t
-from traits.api import *
 
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
@@ -1230,7 +1229,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
-        m = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
+        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
                         title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
@@ -1540,34 +1539,34 @@ class PeaksFinder2D(t.HasTraits):
 
     def _get_parameters(self):
         if self.method == "Local max":
-            return {"min_distance":self.local_max_distance,
-                    "threshold_abs":self.local_max_threshold}
+            return {"min_distance": self.local_max_distance,
+                    "threshold_abs": self.local_max_threshold}
         if self.method == "Max":
-            return {"alpha":self.max_alpha, "size":self.max_size}
+            return {"alpha": self.max_alpha, "size": self.max_size}
         if self.method == "Minmax":
-            return {"separation":self.minmax_separation,
-                    "threshold":self.minmax_threshold}
+            return {"separation": self.minmax_separation,
+                    "threshold": self.minmax_threshold}
         if self.method == "Zaefferer":
-            return {"grad_threshold":self.zaefferer_grad_threshold,
-                    "window_size":self.zaefferer_window_size,
-                    "distance_cutoff":self.zaefferer_distance_cutoff}
+            return {"grad_threshold": self.zaefferer_grad_threshold,
+                    "window_size":  self.zaefferer_window_size,
+                    "distance_cutoff": self.zaefferer_distance_cutoff}
         if self.method == "Stat":
-            return {"alpha":self.stat_alpha,
-                    "window_radius":self.stat_window_radius,
-                    "convergence_ratio":self.stat_convergence_ratio}
+            return {"alpha": self.stat_alpha,
+                    "window_radius": self.stat_window_radius,
+                    "convergence_ratio": self.stat_convergence_ratio}
         if self.method == "Laplacian of Gaussian":
-            return {"min_sigma":self.log_min_sigma,
-                    "max_sigma":self.log_max_sigma,
-                    "num_sigma":self.log_num_sigma,
-                    "threshold":self.log_threshold,
-                    "overlap":self.log_overlap,
-                    "log_scale":self.log_log_scale}
+            return {"min_sigma": self.log_min_sigma,
+                    "max_sigma": self.log_max_sigma,
+                    "num_sigma": self.log_num_sigma,
+                    "threshold": self.log_threshold,
+                    "overlap": self.log_overlap,
+                    "log_scale": self.log_log_scale}
         if self.method == "Difference of Gaussian":
-            return {"min_sigma":self.dog_min_sigma,
-                    "max_sigma":self.dog_max_sigma,
-                    "sigma_ratio":self.dog_sigma_ratio,
-                    "threshold":self.dog_threshold,
-                    "overlap":self.dog_overlap}
+            return {"min_sigma": self.dog_min_sigma,
+                    "max_sigma": self.dog_max_sigma,
+                    "sigma_ratio": self.dog_sigma_ratio,
+                    "threshold": self.dog_threshold,
+                    "overlap": self.dog_overlap}
 
     def _find_peaks_current_index(self, method):
         method = method.lower().replace(' ', '_')
@@ -1620,8 +1619,6 @@ class DerivativeTextParameters(object):
 class DerivativeTextHandler(object):
 
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
-        x0, y0 = handlebox.xdescent, handlebox.ydescent
-        width, height = handlebox.width, handlebox.height
         patch = mpl_text.Text(
             text=orig_handle.my_text,
             color=orig_handle.my_color)
