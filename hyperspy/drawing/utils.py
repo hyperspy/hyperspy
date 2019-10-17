@@ -26,7 +26,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
-from distutils.version import LooseVersion
 import logging
 
 import hyperspy as hs
@@ -1151,18 +1150,6 @@ def make_cmap(colors, name='my_colormap', position=None,
         switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string
     """
-    def _html_color_to_rgb(color_string):
-        """ convert #RRGGBB to an (R, G, B) tuple """
-        color_string = color_string.strip()
-        if color_string[0] == '#':
-            color_string = color_string[1:]
-        if len(color_string) != 6:
-            raise ValueError(
-                "input #{} is not in #RRGGBB format".format(color_string))
-        r, g, b = color_string[:2], color_string[2:4], color_string[4:]
-        r, g, b = [int(n, 16) / 255 for n in (r, g, b)]
-        return r, g, b
-
     bit_rgb = np.linspace(0, 1, 256)
 
     if position is None:
@@ -1177,8 +1164,7 @@ def make_cmap(colors, name='my_colormap', position=None,
 
     for pos, color in zip(position, colors):
         if isinstance(color, str):
-            color = _html_color_to_rgb(color)
-
+            color = mpl.colors.to_rgb(color)
         elif bit:
             color = (bit_rgb[color[0]],
                      bit_rgb[color[1]],
@@ -1306,11 +1292,8 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        if LooseVersion(mpl.__version__) >= "1.5.3":
-            color = itertools.cycle(
+        color = itertools.cycle(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"])
-        else:
-            color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
         if isinstance(line_style, str):

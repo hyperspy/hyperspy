@@ -363,3 +363,14 @@ def test_singleton(lazy, ragged):
         assert not isinstance(_s, hs.signals.Signal1D)
         if lazy and not ragged:
             assert isinstance(_s, LazySignal)
+
+
+def test_map_ufunc(caplog):
+    data = np.arange(100, 200).reshape(10, 10)
+    s = hs.signals.Signal1D(data)
+    # check that it works and it raises a warning
+    caplog.clear()
+    # s.map(np.log)
+    assert np.log(s) == s.map(np.log)
+    np.testing.assert_allclose(s.data, np.log(data))
+    assert "can direcly operate on hyperspy signals" in caplog.records[0].message

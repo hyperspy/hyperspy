@@ -112,6 +112,35 @@ class TestRemoveBackground1DPowerLaw:
         assert np.allclose(s1.data[:10], np.zeros(10))
 
 
+@lazifyTestClass
+class TestRemoveBackground1DLorentzian:
+
+    def setup_method(self, method):
+        lorentzian = components1d.Lorentzian()
+        lorentzian.A.value = 10
+        lorentzian.centre.value = 10
+        lorentzian.gamma.value = 1
+        self.signal = signals.Signal1D(
+            lorentzian.function(np.arange(0, 20, 0.01)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+
+    def test_background_remove_lorentzian(self):
+        # Fast is not accurate
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Lorentzian',
+            show_progressbar=None)
+        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
+
+    def test_background_remove_lorentzian_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Lorentzian',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+
 def compare_axes_manager_metadata(s0, s1):
     assert s0.data.shape == s1.data.shape
     assert s0.axes_manager.shape == s1.axes_manager.shape
