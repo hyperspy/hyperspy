@@ -47,7 +47,7 @@ def clean_peaks(peaks):
         return peaks
 
 
-def find_peaks_minmax(z, separation=5., threshold=10.):
+def find_peaks_minmax(z, distance=5., threshold=10.):
     """Method to locate the positive peaks in an image by comparing maximum
     and minimum filtered images.
 
@@ -55,7 +55,7 @@ def find_peaks_minmax(z, separation=5., threshold=10.):
     ----------
     z : numpy.ndarray
         Matrix of image intensities.
-    separation : float
+    distance : float
         Expected distance between peaks.
     threshold : float
         Minimum difference between maximum and minimum filtered images.
@@ -67,9 +67,9 @@ def find_peaks_minmax(z, separation=5., threshold=10.):
         Peak pixel coordinates.
 
     """
-    data_max = ndi.filters.maximum_filter(z, separation)
+    data_max = ndi.filters.maximum_filter(z, distance)
     maxima = (z == data_max)
-    data_min = ndi.filters.minimum_filter(z, separation)
+    data_min = ndi.filters.minimum_filter(z, distance)
     diff = ((data_max - data_min) > threshold)
     maxima[diff == 0] = 0
     labeled, num_objects = ndi.label(maxima)
@@ -427,7 +427,7 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     return centers
 
 
-def find_peaks_xc(z, template, separation=5, threshold=0.5):
+def find_peaks_xc(z, template, distance=5, threshold=0.5):
     """Find peaks in the cross correlation between the image and a template.
 
     Parameters
@@ -436,7 +436,7 @@ def find_peaks_xc(z, template, separation=5, threshold=0.5):
         Array of image intensities.
     template : numpy.ndarray (square)
         Array containing a single bright disc, similar to those to detect.
-    separation : float
+    distance : float
         Expected distance between peaks.
     threshold : float
         Minimum difference between maximum and minimum filtered images.
@@ -447,12 +447,9 @@ def find_peaks_xc(z, template, separation=5, threshold=0.5):
         (n_peaks, 2)
         Array of peak coordinates.
     """
-    if template is None:
-        # GUI set default value to None.
-        raise RuntimeError('The "template" argument is required.')
     response_image = match_template(z, template, pad_input=True)
     peaks = find_peaks_minmax(response_image,
-                              separation=separation,
+                              distance=distance,
                               threshold=threshold)
 
     return clean_peaks(peaks)

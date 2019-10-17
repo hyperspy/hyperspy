@@ -1464,7 +1464,7 @@ class PeaksFinder2D(t.HasTraits):
     max_alpha = t.Range(0, 6., value=3)
     max_size = t.Range(1, 20, value=10)
     # For "Minmax" method
-    minmax_separation = t.Range(0, 6., value=3)
+    minmax_distance = t.Range(0, 6., value=3)
     minmax_threshold = t.Range(0, 20., value=10)
     # For "Zaefferer" method
     zaefferer_grad_threshold = t.Range(0, 0.2, value=0.1)
@@ -1489,7 +1489,7 @@ class PeaksFinder2D(t.HasTraits):
     dog_overlap = t.Range(0, 1., value=0.5)
     # For "Cross correlation" method
     xc_template = None
-    xc_separation = t.Range(0, 100., value=5.)
+    xc_distance = t.Range(0, 100., value=5.)
     xc_threshold = t.Range(0, 10., value=0.5)
 
     random_navigation_position = t.Button()
@@ -1507,7 +1507,7 @@ class PeaksFinder2D(t.HasTraits):
             'max_size': 'size',
             }
         self._attribute_argument_mapping_local_minmax = {
-            'minmax_separation': 'separation',
+            'minmax_distance': 'distance',
             'minmax_threshold': 'threshold',
             }
         self._attribute_argument_mapping_local_zaefferer = {
@@ -1537,7 +1537,7 @@ class PeaksFinder2D(t.HasTraits):
             }
         self._attribute_argument_mapping_local_xc = {
             'xc_template': 'template',
-            'xc_separation': 'separation',
+            'xc_distance': 'distance',
             'xc_threshold': 'threshold',
             } 
 
@@ -1568,6 +1568,13 @@ class PeaksFinder2D(t.HasTraits):
             self.show_navigation_sliders = True
             self.signal.axes_manager.events.indices_changed.connect(
                 self._update_peak_finding, [])
+        # Set initial parameters:
+        # As a convenience, if the template argument is provided, we keep it 
+        # even if the method is different, to be able to use it later.
+        if 'template' in kwargs.keys():
+            self.xc_template = kwargs['template']
+        if method is not None:
+            self.method = method.capitalize().replace('_', ' ')
         self._parse_paramaters_initial_values(**kwargs)
         self._update_peak_finding()
 
@@ -1578,10 +1585,6 @@ class PeaksFinder2D(t.HasTraits):
         for attr, arg in arg_mapping.items():
             if arg in kwargs.keys():
                 setattr(self, attr, kwargs[arg])
-        # As a convenience, if the template argument is provided, we keep it 
-        # even if the method is different, to be able to use it later.
-        if 'template' in kwargs.keys():
-            self.xc_template = kwargs['template']
 
     def _update_peak_finding(self, method=None):
         if method is None:
@@ -1590,6 +1593,8 @@ class PeaksFinder2D(t.HasTraits):
         self._plot_markers()
 
     def _method_changed(self, old, new):
+        if new == 'Cross correlation' and self.xc_template is None:
+            raise RuntimeError('The "template" argument is required.')
         self._update_peak_finding(method=new)
 
     def _parameter_changed(self, old, new):
