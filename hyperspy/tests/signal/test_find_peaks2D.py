@@ -80,7 +80,8 @@ def _generate_reference():
 
 
 PEAK_METHODS = ['local_max', 'max', 'minmax', 'zaefferer', 'stat',
-                'laplacian_of_gaussian', 'difference_of_gaussian', 'xc']
+                'laplacian_of_gaussian', 'difference_of_gaussian',
+                'cross_correlation']
 DATASETS = _generate_dataset()
 DATASETS_NAME = ["dense", "sparse_nav0d", "sparse_nav1d", "sparse_nav2d"]
 
@@ -101,14 +102,14 @@ class TestFindPeaks2D:
     @pytest.mark.parametrize('dataset_name', DATASETS_NAME)
     @pytest.mark.parametrize('parallel', [True, False])
     def test_find_peaks(self, method, dataset_name, parallel):
-        if method=='stat':
+        if method == 'stat':
             pytest.importorskip("sklearn")
         dataset = getattr(self, dataset_name)
         # Parallel is not used in `map` for lazy signal
         if parallel and dataset._lazy:
             pytest.skip("Parallel=True is ignored for lazy signal.")
 
-        if method=='xc':
+        if method == 'cross_correlation':
             disc = np.zeros((5, 5))
             disc[1:4, 1:4] = 0.5
             disc[2,2] = 1
@@ -149,11 +150,11 @@ class TestFindPeaks2D:
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('parallel', [True, False])
     def test_gets_right_answer(self, method, parallel):
-        if method=='stat':
+        if method == 'stat':
             pytest.importorskip("sklearn")
         ans = np.empty((1,), dtype=object)
         ans[0] = np.array([[self.xref, self.yref]])
-        if method=='xc':
+        if method == 'cross_correlation':
             disc = np.zeros((5, 5))
             disc[1:4, 1:4] = 0.5
             disc[2,2] = 1

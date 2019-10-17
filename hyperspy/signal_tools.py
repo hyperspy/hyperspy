@@ -1455,6 +1455,7 @@ class PeaksFinder2D(t.HasTraits):
         'Stat',
         'Laplacian of Gaussian',
         'Difference of Gaussian',
+        'Cross correlation',
         default='Local Max')
     # For "local max" method
     local_max_distance = t.Range(1, 20, value=3)

@@ -802,8 +802,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         %s
         %s
 
-        *args : associated with above methods
-
         **kwargs : associated with above methods.
 
         Returns
@@ -821,22 +819,22 @@ class Signal2D(BaseSignal, CommonSignal2D):
             'stat': find_peaks_stat,
             'laplacian_of_gaussian':  find_peaks_log,
             'difference_of_gaussian': find_peaks_dog,
-            'xc' : find_peaks_xc
+            'cross_correlation' : find_peaks_xc
         }
         if method in method_dict:
-            method = method_dict[method]
+            method_func = method_dict[method]
         else:
-            raise NotImplementedError("The method `{}` is not implemented. "
-                                      "See documentation for available "
-                                      "implementations.".format(method))
+            raise NotImplementedError(f"The method `{method}` is not "
+                                      "implemented. See documentation for "
+                                      "available implementations.")
         if interactive:
-            pf2D = PeaksFinder2D(self)
+            pf2D = PeaksFinder2D(self, method=method, **kwargs)
             return pf2D.gui(display=display, toolkit=toolkit)
 
         if current_index:
-            peaks = method(self.__call__(), **kwargs)
+            peaks = method_func(self.__call__(), **kwargs)
         else:
-            peaks = self.map(method, show_progressbar=show_progressbar,
+            peaks = self.map(method_func, show_progressbar=show_progressbar,
                              parallel=parallel, inplace=False,
                              ragged=True, **kwargs)
 
