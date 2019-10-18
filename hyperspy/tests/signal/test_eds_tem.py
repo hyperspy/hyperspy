@@ -295,8 +295,21 @@ class Test_quantification:
 
     def test_zeta_vs_cross_section(self):
         s=self.signal
+        factors = [3, 5]
+        method = 'zeta'
+        intensities = s.get_lines_intensity()
+        zfactors = utils_eds.edx_cross_section_to_zeta([3, 5], ['Al', 'Zn'])
+        factors2 = utils_eds.zeta_to_edx_cross_section(zfactors, ['Al', 'Zn'])
+        np.testing.assert_allclose(factors, factors2, atol=1e-3)
+        res = s.quantification(intensities,
+                            method,
+                            factors = utils_eds.edx_cross_section_to_zeta([22.402, 21.7132],
+                                                                ['Al','Zn']))
+        np.testing.assert_allclose(res[1].data, np.array(
+            [[2.7125736e-03, 2.7125736e-03],
+             [2.7125736e-03, 2.7125736e-03]]), atol=1e-3)
 
-        
+
     def test_quant_cross_section(self):
         s = self.signal
         method = 'cross_section'
@@ -312,6 +325,7 @@ class Test_quantification:
         np.testing.assert_allclose(res[0][0].data, np.array(
             [[49.4888856823, 49.4888856823],
                 [49.4888856823, 49.4888856823]]), atol=1e-3)
+
 
     def test_quant_cross_section_ac(self):
         s = self.signal
