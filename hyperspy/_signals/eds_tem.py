@@ -388,7 +388,8 @@ class EDSTEM_mixin:
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
-        pbar = progressbar(total=max_iterations+1)
+        if absorption_correction:
+            pbar = progressbar(total=max_iterations+1)
 
         composition = utils.stack(intensities, lazy=False)
         if take_off_angle == 'auto':
@@ -436,30 +437,6 @@ class EDSTEM_mixin:
             raise ValueError('Please specify method for quantification,'
                              'as \'CL\', \'zeta\' or \'cross_section\'')
 
-        # results = quantification_method(**kwargs)
-        #
-        # if method == 'CL':
-        #     composition.data = results * 100.
-        #     if absorption_correction:
-        #         if thickness is not None:
-        #             mass_thickness = intensities[0].deepcopy()
-        #             mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
-        #                                                     thickness)
-        #             mass_thickness.metadata.General.title = 'Mass thickness'
-        #         else:
-        #             warnings.warn('Thickness is required for absorption'\
-        #             'correction with K-Factor Method. Results will contain'\
-        #             'no correction for absorption.')
-        #
-        # elif method == 'zeta':
-        #     composition.data = results[0] * 100
-        #     mass_thickness = intensities[0].deepcopy()
-        #     mass_thickness.data = results[1]
-        #
-        # else:
-        #     composition.data = results[0] * 100.
-        #     number_of_atoms = composition._deepcopy_with_new_data(results[1])
-
         while True:
             results = quantification_method(**kwargs)
 
@@ -502,7 +479,8 @@ class EDSTEM_mixin:
             comp_old.data = composition.data
 
             it += 1
-            pbar.update(1)
+            if absorption_correction:
+                pbar.update(1)
             if not absorption_correction or abs(res_max) < convergence_criterion:
                 break
                 pbar.close()
