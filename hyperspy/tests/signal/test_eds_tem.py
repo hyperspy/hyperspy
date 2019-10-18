@@ -293,6 +293,7 @@ class Test_quantification:
         assert s.axes_manager[1].units == 'µm'
         np.testing.assert_allclose(probe_area, 0.25, atol=1e-3)
 
+
     def test_zeta_vs_cross_section(self):
         s=self.signal
         factors = [3, 5]
@@ -301,13 +302,19 @@ class Test_quantification:
         zfactors = utils_eds.edx_cross_section_to_zeta([3, 5], ['Al', 'Zn'])
         factors2 = utils_eds.zeta_to_edx_cross_section(zfactors, ['Al', 'Zn'])
         np.testing.assert_allclose(factors, factors2, atol=1e-3)
-        res = s.quantification(intensities,
-                            method,
-                            factors = utils_eds.edx_cross_section_to_zeta([22.402, 21.7132],
-                                                                ['Al','Zn']))
-        np.testing.assert_allclose(res[1].data, np.array(
-            [[2.7125736e-03, 2.7125736e-03],
-             [2.7125736e-03, 2.7125736e-03]]), atol=1e-3)
+
+        res = s.quantification(
+            intensities,
+            method,
+            factors = utils_eds.edx_cross_section_to_zeta([22.402, 21.7132],
+                                                          ['Al','Zn']))
+        res2 = s.quantification(intensities,
+                                method='cross_section',
+                                factors=[22.402, 21.7132])
+        np.testing.assert_allclose(res[0][0].data, res2[0][0].data, atol=1e-3)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[36.2969, 36.2969],
+             [36.2969, 36.2969]]), atol=1e-3)
 
 
     def test_quant_cross_section(self):
@@ -323,8 +330,8 @@ class Test_quantification:
             [[21961.616621, 21961.616621],
              [21961.616621, 21961.616621]]), atol=1e-3)
         np.testing.assert_allclose(res[0][0].data, np.array(
-            [[49.4888856823, 49.4888856823],
-                [49.4888856823, 49.4888856823]]), atol=1e-3)
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
 
 
     def test_quant_cross_section_ac(self):
@@ -334,9 +341,15 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
                                 absorption_correction=True)
+        zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
+        res2 = s.quantification(intensities, method='zeta', factors=[22.402, 21.7132],
+                                absorption_correction=True)
         np.testing.assert_allclose(res[0][0].data, np.array(
-            [[95.3350, 95.3350],
-             [95.3350, 95.3350]]), atol=1e-3)
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
 
 
     def test_quant_zeros(self):

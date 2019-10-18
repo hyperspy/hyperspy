@@ -606,15 +606,15 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, pro
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
+
     number_of_atoms = utils.stack(number_of_atoms).data
 
     #calculate the total_mass per pixel, or mass thicknessself.
     total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
     for i, (weight) in enumerate(atomic_weights):
-        total_mass += (number_of_atoms[i] * weight)
+        total_mass += (number_of_atoms[i] * weight / Av / probe_area / 1E-15)
 
      # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
-
     mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=utils.material.atomic_to_weight(composition))) * 0.1
 
     acf = np.zeros_like(number_of_atoms)
