@@ -672,7 +672,15 @@ number of atoms per pixel for each element.
   By default the function iterates the quantification function until of
   tolerance value of 0.5% up to a maximum number of iterations. The maximum
   number of iterations is set to 30 by default but can be increased by
-  specifying max_interations= in the function call.
+  specifying max_interations= in the function call. However, typically for TEM
+  experiments convergence is witness after less then 5 iterations.
+
+  At this stage no absorption correction is only implemented in a rudimentary
+  form and no knowledge of detector geometry has been incorporated. Absorption
+  correction is calculated on a pixel by pixel basis after having determined a
+  sample mass-thickness map. It therefore may be a source of error in
+  particularly inhomogeneous specimens. The accuracy of this function will be
+  improved in later versions of Hyperspy.  
 
   For example:
 
