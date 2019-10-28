@@ -679,6 +679,11 @@ number of atoms per pixel for each element.
   thin-film samples. Absorption correction is calculated on a pixel by pixel 
   basis after having determined a sample mass-thickness map. It therefore may
   be a source of error in particularly inhomogeneous specimens.
+  
+  Absorption correction can also only be applied to spectra from a single EDS
+  detector. For systems that consist of multiple detectors, such as the Thermo 
+  Fisher Super-X, it is therefore necessary to load the spectra from each
+  detector separately.
 
   For example:
 
