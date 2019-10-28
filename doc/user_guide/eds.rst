@@ -675,12 +675,10 @@ number of atoms per pixel for each element.
   specifying max_interations= in the function call. However, typically for TEM
   experiments convergence is witness after less then 5 iterations.
 
-  At this stage no absorption correction is only implemented in a rudimentary
-  form and no knowledge of detector geometry has been incorporated. Absorption
-  correction is calculated on a pixel by pixel basis after having determined a
-  sample mass-thickness map. It therefore may be a source of error in
-  particularly inhomogeneous specimens. The accuracy of this function will be
-  improved in later versions of Hyperspy.  
+  At this stage absorption correction is only applicable for parallel-sided, 
+  thin-film samples. Absorption correction is calculated on a pixel by pixel 
+  basis after having determined a sample mass-thickness map. It therefore may
+  be a source of error in particularly inhomogeneous specimens.
 
   For example:
 
