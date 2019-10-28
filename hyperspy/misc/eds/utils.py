@@ -237,7 +237,8 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
 
 def take_off_angle(tilt_stage,
                    azimuth_angle,
-                   elevation_angle):
+                   elevation_angle,
+                   beta_tilt=0.):
     """Calculate the take-off-angle (TOA).
 
     TOA is the angle with which the X-rays leave the surface towards
@@ -245,14 +246,17 @@ def take_off_angle(tilt_stage,
 
     Parameters
     ----------
-    tilt_stage: float
-        The tilt of the stage in degrees. The sample is facing the detector
+    alpha_tilt: float
+        The alpha-tilt of the stage in degrees. The sample is facing the detector
         when positively tilted.
     azimuth_angle: float
-        The azimuth of the detector in degrees. 0 is perpendicular to the tilt
-        axis.
+        The azimuth of the detector in degrees. 0 is perpendicular to the alpha
+        tilt axis.
     elevation_angle: float
         The elevation of the detector in degrees.
+    beta_tilt: float
+        The beta-tilt of the stage in degrees. The sample is facing positive 90
+        in the azimuthal direction when positively tilted.
 
     Returns
     -------
@@ -261,22 +265,21 @@ def take_off_angle(tilt_stage,
 
     Examples
     --------
-    >>> hs.eds.take_off_angle(tilt_stage=10.,
+    >>> hs.eds.take_off_angle(alpha_tilt=10., beta_tilt=0.
     >>>                          azimuth_angle=45., elevation_angle=22.)
     28.865971201155283
-
-    Notes
-    -----
-    Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597 (2007)
-
     """
 
-    a = math.radians(90 + tilt_stage)
-    b = math.radians(azimuth_angle)
-    c = math.radians(elevation_angle)
+    alpha = math.radians(tilt_stage)
+    beta = -math.radians(beta_tilt)
+    phi = math.radians(azimuth_angle)
+    theta = -math.radians(elevation_angle)
 
-    return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c) +
-                                  math.sin(a) * math.sin(c)))
+    return(90-math.degrees(np.arccos(math.sin(alpha)*math.cos(beta)*
+                                     math.cos(phi)*math.cos(theta)-
+                                     math.sin(beta)*math.sin(phi)*
+                                     math.cos(theta)-math.cos(alpha)*
+                                     math.cos(beta)*math.sin(theta))))
 
 
 def xray_lines_model(elements,
