@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
-from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
 _logger = logging.getLogger(__name__)
@@ -88,7 +87,8 @@ def estimate_variance_parameters(
         higher_than=None,
         return_results=False,
         plot_results=True,
-        weighted=False):
+        weighted=False,
+        store_results="ask"):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA),
@@ -106,10 +106,10 @@ def estimate_variance_parameters(
         The order of the polynomy.
     higher_than: float
         To restrict the fit to counts over the given value.
-
     return_results : Bool
-
     plot_results : Bool
+    store_results: {True, False, "ask"}, default "ask"
+        If True, it stores the result in the signal metadata
 
     Returns
     -------
@@ -149,11 +149,14 @@ def estimate_variance_parameters(
         message = ("Gain factor: %.2f\n" % results0['fit'][0] +
                    "Gain offset: %.2f\n" % results0['fit'][1] +
                    "Correlation factor: %.2f\n" % c)
-        is_ok = True
-        if hyperspy.defaults_parser.preferences.General.interactive is True:
-            is_ok = messagesui.information(
-                message + "Would you like to store the results?")
+        if store_results == "ask":
+            while is_ok not in ("Yes", "No"):
+                is_ok = input(
+                    message +
+                    "Would you like to store the results (Yes/No)?")
+            is_ok = is_ok == "Yes"
         else:
+            is_ok = store_results
             _logger.info(message)
         if is_ok:
             noisy_signal.metadata.set_item(
@@ -205,14 +208,16 @@ def ratio(edge_A, edge_B):
 
 
 def eels_constant(s, zlp, t):
-    """Calculate the constant of proportionality (k) in the relationship
+    r"""Calculate the constant of proportionality (k) in the relationship
     between the EELS signal and the dielectric function.
     dielectric function from a single scattering distribution (SSD) using
     the Kramers-Kronig relations.
 
-    $S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
-    {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
-    k\Im(\frac{-1}{\epsilon(E)})$
+        .. math::
+
+            S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
+            {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
+            k\Im(\frac{-1}{\epsilon(E)})
 
 
     Parameters
@@ -244,14 +249,14 @@ def eels_constant(s, zlp, t):
     # Mapped parameters
     try:
         e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-    except:
+    except BaseException:
         raise AttributeError("Please define the beam energy."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
         beta = s.metadata.Acquisition_instrument.\
             TEM.Detector.EELS.collection_angle
-    except:
+    except BaseException:
         raise AttributeError("Please define the collection semi-angle."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
@@ -268,18 +273,20 @@ def eels_constant(s, zlp, t):
             if zlp.axes_manager.signal_dimension == 0:
                 i0 = zlp.data
             else:
-                i0 = zlp.data.sum(axis.index_in_array)
+                i0 = zlp.integrate1D(axis.index_in_axes_manager).data
         else:
             raise ValueError('The ZLP signal dimensions are not '
                              'compatible with the dimensions of the '
                              'low-loss signal')
-        i0 = i0.reshape(
-            np.insert(i0.shape, axis.index_in_array, 1))
+        # The following prevents errors if the signal is a single spectrum
+        if len(i0) != 1:
+            i0 = i0.reshape(
+                np.insert(i0.shape, axis.index_in_array, 1))
     elif isinstance(zlp, numbers.Number):
         i0 = zlp
     else:
-        raise ValueError('The zero-loss peak input must be a Hyperspy signal\
-                         or a number.')
+        raise ValueError('The zero-loss peak input is not valid, it must be\
+                         in the BaseSignal class or a Number.')
 
     if isinstance(t, hyperspy.signal.BaseSignal):
         if (t.axes_manager.navigation_dimension ==

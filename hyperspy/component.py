@@ -17,23 +17,26 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import functools
-import warnings
 
 import numpy as np
+from dask.array import Array as dArray
 import traits.api as t
 from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
+from distutils.version import LooseVersion
 
-from hyperspy.defaults_parser import preferences
+import hyperspy
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
-from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
+from hyperspy.ui_registry import add_gui_method
+from IPython.display import display_pretty, display
+from hyperspy.misc.model_tools import current_component_values
+from hyperspy.misc.utils import get_object_package_info
 
 import logging
 
@@ -52,6 +55,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
         return super(NoneFloat, self).validate(object, name, value)
 
 
+@add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
 
     """Model parameter
@@ -204,7 +208,7 @@ class Parameter(t.HasTraits):
             load_from_dictionary(self, dictionary)
             return dictionary['self']
         else:
-            raise ValueError( "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
+            raise ValueError("_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
 
     def __repr__(self):
@@ -245,7 +249,7 @@ class Parameter(t.HasTraits):
                 inv = sympy.solveset(sympy.Eq(y, expr), x)
                 self._twin_inverse_sympy = lambdify(y, inv)
                 self._twin_inverse_function = None
-            except:
+            except BaseException:
                 # Not all may have a suitable solution.
                 self._twin_inverse_function = None
                 self._twin_inverse_sympy = None
@@ -516,8 +520,14 @@ class Parameter(t.HasTraits):
         if not indices:
             indices = (0,)
         if self.map['is_set'][indices]:
-            self.value = self.map['values'][indices]
-            self.std = self.map['std'][indices]
+            value = self.map['values'][indices]
+            std = self.map['std'][indices]
+            if isinstance(value, dArray):
+                value = value.compute()
+            if isinstance(std, dArray):
+                std = std.compute()
+            self.value = value
+            self.std = std
 
     def assign_current_value_to_all(self, mask=None):
         """Assign the current value attribute to all the  indices
@@ -546,10 +556,18 @@ class Parameter(t.HasTraits):
         shape = self._axes_manager._navigation_shape_in_array
         if not shape:
             shape = [1, ]
-        dtype_ = np.dtype([
-            ('values', 'float', self._number_of_elements),
-            ('std', 'float', self._number_of_elements),
-            ('is_set', 'bool', 1)])
+        # Shape-1 fields in dtypes won’t be collapsed to scalars in a future
+        # numpy version (see release notes numpy 1.17.0)
+        if self._number_of_elements > 1:
+            dtype_ = np.dtype([
+                ('values', 'float', self._number_of_elements),
+                ('std', 'float', self._number_of_elements),
+                ('is_set', 'bool')])
+        else:
+            dtype_ = np.dtype([
+                ('values', 'float'),
+                ('std', 'float'),
+                ('is_set', 'bool')])
         if (self.map is None or self.map.shape != shape or
                 self.map.dtype != dtype_):
             self.map = np.zeros(shape, dtype_)
@@ -625,7 +643,7 @@ class Parameter(t.HasTraits):
         """
         self.as_signal().plot(**kwargs)
 
-    def export(self, folder=None, name=None, format=None,
+    def export(self, folder=None, name=None, format="hspy",
                save_std=False):
         """Save the data to a file.
 
@@ -643,10 +661,12 @@ class Parameter(t.HasTraits):
               modified by appending a number to the file path.
         save_std : bool
             If True, also the standard deviation will be saved
+        format: str
+            The extension of any file format supported by HyperSpy, default hspy
 
         """
         if format is None:
-            format = preferences.General.default_export_format
+            format = "hspy"
         if name is None:
             name = self.component.name + '_' + self.name
         filename = incremental_filename(slugify(name) + '.' + format)
@@ -704,119 +724,8 @@ class Parameter(t.HasTraits):
         view = View(editable_traits, buttons=['OK', 'Cancel'])
         return view
 
-    def _interactive_slider_bounds(self, index=None):
-        """Guesstimates the bounds for the slider. They will probably have to
-        be changed later by the user.
-        """
-        fraction = 10.
-        _min, _max, step = None, None, None
-        value = self.value if index is None else self.value[index]
-        if self.bmin is not None:
-            _min = self.bmin
-        if self.bmax is not None:
-            _max = self.bmax
-        if _max is None and _min is not None:
-            _max = value + fraction * (value - _min)
-        if _min is None and _max is not None:
-            _min = value - fraction * (_max - value)
-        if _min is None and _max is None:
-            if self is self.component._position:
-                axis = self._axes_manager.signal_axes[-1]
-                _min = axis.axis.min()
-                _max = axis.axis.max()
-                step = np.abs(axis.scale)
-            else:
-                _max = value + np.abs(value * fraction)
-                _min = value - np.abs(value * fraction)
-        if step is None:
-            step = (_max - _min) * 0.001
-        return {'min': _min, 'max': _max, 'step': step}
 
-    def _interactive_update(self, value=None, index=None):
-        """Callback function for the widgets, to update the value
-        """
-        if value is not None:
-            if index is None:
-                self.value = value['new']
-            else:
-                self.value = self.value[:index] + (value['new'],) +\
-                    self.value[index + 1:]
-
-    def notebook_interaction(self, display=True):
-        """Creates interactive notebook widgets for the parameter, if
-        available.
-        Requires `ipywidgets` to be installed.
-        Parameters
-        ----------
-        display : bool
-            if True (default), attempts to display the parameter widget.
-            Otherwise returns the formatted widget object.
-        """
-        from ipywidgets import VBox
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-        try:
-            if self._number_of_elements == 1:
-                container = self._create_notebook_widget()
-            else:
-                children = [self._create_notebook_widget(index=i) for i in
-                            range(self._number_of_elements)]
-                container = VBox(children)
-            if not display:
-                return container
-            ip_display(container)
-        except TraitletError:
-            if display:
-                _logger.info('This function is only avialable when running in'
-                             ' a notebook')
-            else:
-                raise
-
-    def _create_notebook_widget(self, index=None):
-
-        from ipywidgets import (FloatSlider, FloatText, Layout, HBox)
-
-        widget_bounds = self._interactive_slider_bounds(index=index)
-        thismin = FloatText(value=widget_bounds['min'],
-                            description='min',
-                            layout=Layout(flex='0 1 auto',
-                                          width='auto'),)
-        thismax = FloatText(value=widget_bounds['max'],
-                            description='max',
-                            layout=Layout(flex='0 1 auto',
-                                          width='auto'),)
-        current_value = self.value if index is None else self.value[index]
-        current_name = self.name
-        if index is not None:
-            current_name += '_{}'.format(index)
-        widget = FloatSlider(value=current_value,
-                             min=thismin.value,
-                             max=thismax.value,
-                             step=widget_bounds['step'],
-                             description=current_name,
-                             layout=Layout(flex='1 1 auto', width='auto'))
-
-        def on_min_change(change):
-            if widget.max > change['new']:
-                widget.min = change['new']
-                widget.step = np.abs(widget.max - widget.min) * 0.001
-
-        def on_max_change(change):
-            if widget.min < change['new']:
-                widget.max = change['new']
-                widget.step = np.abs(widget.max - widget.min) * 0.001
-
-        thismin.observe(on_min_change, names='value')
-        thismax.observe(on_max_change, names='value')
-
-        this_observed = functools.partial(self._interactive_update,
-                                          index=index)
-
-        widget.observe(this_observed, names='value')
-        container = HBox((thismin, widget, thismax))
-        return container
-
-
+@add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
     __axes_manager = None
 
@@ -896,13 +805,14 @@ class Component(t.HasTraits):
 
     def _set_name(self, value):
         old_value = self._name
+        if old_value == value:
+            return
         if self.model:
             for component in self.model:
                 if value == component.name:
-                    if not (component is self):
-                        raise ValueError(
-                            "Another component already has "
-                            "the name " + str(value))
+                    raise ValueError(
+                        "Another component already has "
+                        "the name " + str(value))
             self._name = value
             setattr(self.model.components, slugify(
                 value, valid_variable_name=True), self)
@@ -921,6 +831,14 @@ class Component(t.HasTraits):
         for parameter in self.parameters:
             parameter._axes_manager = value
         self.__axes_manager = value
+
+    @property
+    def _is_navigation_multidimensional(self):
+        if (self._axes_manager is None or not
+                self._axes_manager.navigation_dimension):
+            return False
+        else:
+            return True
 
     def _get_active(self):
         if self.active_is_multidimensional is True:
@@ -955,9 +873,9 @@ class Component(t.HasTraits):
 
     def _get_long_description(self):
         if self.name:
-            text = '%s (%s component)' % (self.name, self._id_name)
+            text = '%s (%s component)' % (self.name, self.__class__.__name__)
         else:
-            text = '%s component' % self._id_name
+            text = '%s component' % self.__class__.__name__
         return text
 
     def _get_short_description(self):
@@ -965,7 +883,7 @@ class Component(t.HasTraits):
         if self.name:
             text += self.name
         else:
-            text += self._id_name
+            text += self.__class__.__name__
         text += ' component'
         return text
 
@@ -1056,7 +974,7 @@ class Component(t.HasTraits):
         for parameter in parameters:
             parameter.plot()
 
-    def export(self, folder=None, format=None, save_std=False,
+    def export(self, folder=None, format="hspy", save_std=False,
                only_free=True):
         """Plot the value of the parameters of the model
 
@@ -1067,12 +985,7 @@ class Component(t.HasTraits):
             `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be
-            the
-            extension of any format supported by HyperSpy. If None, the
-            default
-            format for exporting as defined in the `Preferences` will be
-             used.
+            The extension of the file format, default "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
@@ -1105,10 +1018,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    return ('%s = %s ± %s %s' % (parameter.name,
-                                                 parameter.value,
-                                                 parameter.std,
-                                                 parameter.units))
+                    print('%s = %s ± %s %s' % (parameter.name,
+                                               parameter.value,
+                                               parameter.std,
+                                               parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -1117,7 +1030,6 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-
         axis = self.model.axis.axis[self.model.channel_switches]
         component_array = self.function(axis)
         return component_array
@@ -1128,11 +1040,9 @@ class Component(t.HasTraits):
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__()
+        s = self.model.__call__(component_list=[self])
         if not self.active:
             s.fill(np.nan)
-        if self.model.signal.metadata.Signal.binned is True:
-            s *= self.model.signal.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
             self.charge()
@@ -1217,6 +1127,7 @@ class Component(t.HasTraits):
             _parameter.free = False
 
     def _estimate_parameters(self, signal):
+        self.binned = signal.metadata.Signal.binned
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
@@ -1225,11 +1136,13 @@ class Component(t.HasTraits):
         """Returns component as a dictionary
         For more information on method and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+
         Parameters
         ----------
         fullcopy : Bool (optional, False)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
+
         Returns
         -------
         dic : dictionary
@@ -1245,11 +1158,17 @@ class Component(t.HasTraits):
         dic = {
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
+        dic.update(get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        from hyperspy.model import _COMPONENTS
+        if self._id_name not in _COMPONENTS:
+            import dill
+            dic['_class_dump'] = dill.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
+
         Parameters
         ----------
         dict : dictionary
@@ -1265,6 +1184,7 @@ class Component(t.HasTraits):
                 component attributes.  For more information see
                 :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys() *
+
         Returns
         -------
         twin_dict : dictionary
@@ -1272,7 +1192,14 @@ class Component(t.HasTraits):
             the parameters of the component, to be later used for setting up
             correct twins.
         """
+
         if dic['_id_name'] == self._id_name:
+            if (self._id_name == "Polynomial" and 
+                    LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
+                # in HyperSpy 2.0 the polynomial definition changed
+                from hyperspy._components.polynomial import convert_to_polynomial
+                dic = convert_to_polynomial(dic)
+            load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:
                 idname = p['_id_name']
@@ -1283,42 +1210,22 @@ class Component(t.HasTraits):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
-            load_from_dictionary(self, dic)
             return id_dict
         else:
-            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+            raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
-    def notebook_interaction(self, display=True):
-        """Creates interactive notebook widgets for all component parameters,
-        if available.
-        Requires `ipywidgets` to be installed.
+    def print_current_values(self, only_free=False, fancy=True):
+        """Prints the current values of the component's parameters.
         Parameters
         ----------
-        display : bool
-            if True (default), attempts to display the widgets.
-            Otherwise returns the formatted widget object.
+        only_free : bool
+            If True, only free parameters will be printed.
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
         """
-        from ipywidgets import (Checkbox, VBox)
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-        try:
-            active = Checkbox(description='active', value=self.active)
-
-            def on_active_change(change):
-                self.active = change['new']
-            active.observe(on_active_change, names='value')
-
-            container = VBox([active])
-            for parameter in self.parameters:
-                container.children += parameter.notebook_interaction(False),
-
-            if not display:
-                return container
-            ip_display(container)
-        except TraitletError:
-            if display:
-                _logger.info('This function is only avialable when running in'
-                             ' a notebook')
-            else:
-                raise
+        if fancy:
+            display(current_component_values(self, only_free=only_free))
+        else:
+            display_pretty(current_component_values(
+                self, only_free=only_free))

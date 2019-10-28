@@ -40,7 +40,7 @@ class Test_metadata:
         s.axes_manager.signal_axes[0].name = "Energy"
         s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 3.1
         s.metadata.Acquisition_instrument.SEM.beam_energy = 15.0
-        s.metadata.Acquisition_instrument.SEM.tilt_stage = -38
+        s.metadata.Acquisition_instrument.SEM.Stage.tilt_alpha = -38
         s.metadata.Acquisition_instrument.SEM.Detector.EDS.azimuth_angle = 63
         s.metadata.Acquisition_instrument.SEM.Detector.EDS.elevation_angle = 35
         self.signal = s
@@ -86,7 +86,7 @@ class Test_metadata:
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
-        s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
+        s = s.rebin(scale=[2, 2, 1])
         assert (
             s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
             3.1 *
@@ -292,7 +292,7 @@ class Test_tools_bulk:
             mp.Sample.elements[0],
             mp.Acquisition_instrument.SEM.beam_energy,
             density='auto',
-            tilt=mp.Acquisition_instrument.SEM.tilt_stage)
+            tilt=mp.Acquisition_instrument.SEM.Stage.tilt_alpha)
         np.testing.assert_allclose(elec_range, 0.41350651162374225)
 
     def test_xray_range(self):

@@ -17,17 +17,61 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import warnings
+import logging
+
 import traits.api as t
 import numpy as np
 from scipy import constants
+
+from hyperspy.signal import BaseSetMetadataItems
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
-from hyperspy.decorators import only_interactive
-from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
-import hyperspy.gui.messages as messagesui
 from hyperspy.misc.eds import utils as utils_eds
-import warnings
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.misc.elements import elements as elements_db
+from hyperspy.external.progressbar import progressbar
+
+_logger = logging.getLogger(__name__)
+
+
+@add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_TEM")
+class EDSTEMParametersUI(BaseSetMetadataItems):
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    real_time = t.Float(t.Undefined,
+                        label='Real time (s)')
+    tilt_stage = t.Float(t.Undefined,
+                         label='Stage tilt (degree)')
+    live_time = t.Float(t.Undefined,
+                        label='Live time (s)')
+    probe_area = t.Float(t.Undefined,
+                         label='Beam/probe area (nm\xB2)')
+    azimuth_angle = t.Float(t.Undefined,
+                            label='Azimuth angle (degree)')
+    elevation_angle = t.Float(t.Undefined,
+                              label='Elevation angle (degree)')
+    energy_resolution_MnKa = t.Float(t.Undefined,
+                                     label='Energy resolution MnKa (eV)')
+    beam_current = t.Float(t.Undefined,
+                           label='Beam current (nA)')
+    mapping = {
+        'Acquisition_instrument.TEM.beam_energy': 'beam_energy',
+        'Acquisition_instrument.TEM.Stage.tilt_alpha': 'tilt_stage',
+        'Acquisition_instrument.TEM.Detector.EDS.live_time': 'live_time',
+        'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
+        'azimuth_angle',
+        'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
+        'elevation_angle',
+        'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
+        'energy_resolution_MnKa',
+        'Acquisition_instrument.TEM.beam_current':
+        'beam_current',
+        'Acquisition_instrument.TEM.probe_area':
+        'probe_area',
+        'Acquisition_instrument.TEM.Detector.EDS.real_time':
+        'real_time', }
 
 
 class EDSTEM_mixin:
@@ -53,9 +97,9 @@ class EDSTEM_mixin:
         mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
-        if "Acquisition_instrument.TEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.TEM.Stage.tilt_alpha" not in mp:
             mp.set_item(
-                "Acquisition_instrument.TEM.tilt_stage",
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.TEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -80,45 +124,14 @@ class EDSTEM_mixin:
                                   energy_resolution_MnKa=None,
                                   beam_current=None,
                                   probe_area=None,
-                                  real_time=None):
-        """Set the microscope parameters.
-
-        If no arguments are given, raises an interactive mode to fill
-        the values.
-
-        Parameters
-        ----------
-        beam_energy: float
-            The energy of the electron beam in keV
-        live_time : float
-            In seconds
-        tilt_stage : float
-            In degree
-        azimuth_angle : float
-            In degree
-        elevation_angle : float
-            In degree
-        energy_resolution_MnKa : float
-            In eV
-        beam_current: float
-            In nA
-        probe_area: float
-            In nm^2
-        real_time: float
-            In seconds
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> print(s.metadata.Acquisition_instrument.
-        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
-        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
-        >>> print(s.metadata.Acquisition_instrument.
-        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
-        133.312296
-        135.0
-
-        """
+                                  real_time=None,
+                                  display=True,
+                                  toolkit=None):
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa, beam_current,
+                probe_area, real_time]) == {None}:
+            tem_par = EDSTEMParametersUI(self)
+            return tem_par.gui(display=display, toolkit=toolkit)
         md = self.metadata
 
         if beam_energy is not None:
@@ -128,7 +141,9 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 live_time)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
+                tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -155,61 +170,48 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
 
-        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
-                elevation_angle, energy_resolution_MnKa]) == {None}:
-            self._are_microscope_parameters_missing()
+    set_microscope_parameters.__doc__ = \
+        """
+        Set the microscope parameters.
 
-    @only_interactive
-    def _set_microscope_parameters(self):
-        tem_par = TEMParametersUI()
-        mapping = {
-            'Acquisition_instrument.TEM.beam_energy':
-            'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.tilt_stage':
-            'tem_par.tilt_stage',
-            'Acquisition_instrument.TEM.Detector.EDS.live_time':
-            'tem_par.live_time',
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-            'tem_par.azimuth_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-            'tem_par.elevation_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            'tem_par.energy_resolution_MnKa',
-            'Acquisition_instrument.TEM.beam_current':
-            'tem_par.beam_current',
-            'Acquisition_instrument.TEM.probe_area':
-            'tem_par.probe_area',
-            'Acquisition_instrument.TEM.Detector.EDS.real_time':
-            'tem_par.real_time', }
-        for key, value in mapping.items():
-            if self.metadata.has_item(key):
-                exec('%s = self.metadata.%s' % (value, key))
-        tem_par.edit_traits()
+        If no arguments are given, raises an interactive mode to fill
+        the values.
 
-        mapping = {
-            'Acquisition_instrument.TEM.beam_energy':
-            tem_par.beam_energy,
-            'Acquisition_instrument.TEM.tilt_stage':
-            tem_par.tilt_stage,
-            'Acquisition_instrument.TEM.Detector.EDS.live_time':
-            tem_par.live_time,
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-            tem_par.azimuth_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-            tem_par.elevation_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            tem_par.energy_resolution_MnKa,
-            'Acquisition_instrument.TEM.beam_current':
-            tem_par.beam_current,
-            'Acquisition_instrument.TEM.probe_area':
-            tem_par.probe_area,
-            'Acquisition_instrument.TEM.Detector.EDS.real_time':
-            tem_par.real_time, }
+        Parameters
+        ----------
+        beam_energy: float
+            The energy of the electron beam in keV
+        live_time : float
+            In seconds
+        tilt_stage : float
+            In degree
+        azimuth_angle : float
+            In degree
+        elevation_angle : float
+            In degree
+        energy_resolution_MnKa : float
+            In eV
+        beam_current: float
+            In nA
+        probe_area: float
+            In nm\xB2
+        real_time: float
+            In seconds
+        {}
+        {}
 
-        for key, value in mapping.items():
-            if value != t.Undefined:
-                self.metadata.set_item(key, value)
-        self._are_microscope_parameters_missing()
+        Examples
+        --------
+        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        133.312296
+        135.0
+
+        """.format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
@@ -225,18 +227,8 @@ class EDSTEM_mixin:
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:
-            if preferences.General.interactive is True:
-                par_str = "The following parameters are missing:\n"
-                for par in missing_parameters:
-                    par_str += '%s\n' % par
-                par_str += 'Please set them in the following wizard'
-                is_ok = messagesui.information(par_str)
-                if is_ok:
-                    self._set_microscope_parameters()
-                else:
-                    return True
-            else:
-                return True
+            _logger.info("Missing parameters {}".format(missing_parameters))
+            return True
         else:
             return False
 
@@ -283,9 +275,9 @@ class EDSTEM_mixin:
         elif 'Acquisition_instrument.SEM' in ref.metadata:
             mp_ref = ref.metadata.Acquisition_instrument.SEM
         else:
-            raise ValueError("The reference has no metadata." +
-                             "Acquisition_instrument.TEM" +
-                             "\n or metadata.Acquisition_instrument.SEM ")
+            raise ValueError("The reference has no metadata "
+                             "'Acquisition_instrument.TEM '"
+                             "or 'metadata.Acquisition_instrument.SEM'.")
 
         mp = self.metadata
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
@@ -296,21 +288,30 @@ class EDSTEM_mixin:
     def quantification(self,
                        intensities,
                        method,
-                       factors='auto',
-                       composition_units='atomic',
-                       navigation_mask=1.0,
-                       closing=True,
-                       plot_result=False,
+                       factors,
+                       composition_units = 'atomic',
+                       absorption_correction = False,
+                       tilt_stage = 0,
+                       take_off_angle = 'auto',
+                       thickness = 'auto',
+                       convergence_criterion = 0.5,
+                       navigation_mask = 1.0,
+                       closing = True,
+                       plot_result = False,
+                       probe_area = 'auto',
+                       max_iterations = 30,
                        **kwargs):
         """
-        Quantification using Cliff-Lorimer, the zeta-factor method, or
-        ionization cross sections.
+        Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
+        method, or ionization cross sections. The function iterates through
+        quantification function until two successive interations don't change
+        the final composition by a defined percentage critera (0.5% by default).
 
         Parameters
         ----------
         intensities: list of signal
             the intensitiy for each X-ray lines.
-        method: 'CL' or 'zeta' or 'cross_section'
+        method: {'CL', 'zeta', 'cross_section'}
             Set the quantification method: Cliff-Lorimer, zeta-factor, or
             ionization cross sections.
         factors: list of float
@@ -318,13 +319,27 @@ class EDSTEM_mixin:
             as intensities. Note that intensities provided by Hyperspy are
             sorted by the alphabetical order of the X-ray lines.
             eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
-        composition_units: 'weight' or 'atomic'
-            The quantification returns the composition in atomic percent by
+        composition_units: {'atomic', 'weight'}
+            The quantification returns the composition in 'atomic' percent by
             default, but can also return weight percent if specified.
+        absorption_correction: bool
+            Specify whether or not an absorption correction should be applied.
+            'False' by default so absorption will not be applied unless
+            specfied.
+        tilt_stage : the sample holder tilt stage, used to calculate the
+            absorption pathways (in degrees).
+        thickness: {'auto'}
+            thickness in nm (can be a single value or
+            have the same navigation dimension as the signal).
+            NB: Must be specified for 'CL' method. For 'zeta' or 'cross_section'
+            methods, first quantification step provides a mass_thickness
+            internally during quantification.
+        convergence_criterion: The convergence criterium defined as the percentage
+            difference between 2 successive iterations. 0.5% by default.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
-            quantification. If int is given the vacuum_mask method is used to
-            generate a mask with the int value as threhsold.
+            quantification. If float is given the vacuum_mask method is used to
+            generate a mask with the float value as threhsold.
             Else provides a signal with the navigation shape.
         closing: bool
             If true, applied a morphologic closing to the mask obtained by
@@ -332,13 +347,16 @@ class EDSTEM_mixin:
         plot_result : bool
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
+        max_iterations : int
+            An upper limit to the number of calculations for absorption correction.
         kwargs
             The extra keyword arguments are passed to plot.
 
         Returns
         ------
         A list of quantified elemental maps (signal) giving the composition of
-        the sample in weight or atomic percent.
+        the sample in weight or atomic percent with absorption correciton taken
+        into account based on the sample thickness estimate provided.
 
         If the method is 'zeta' this function also returns the mass thickness
         profile for the data.
@@ -367,38 +385,128 @@ class EDSTEM_mixin:
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
-        xray_lines = self.metadata.Sample.xray_lines
+
+        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+        it = 0
+        if absorption_correction:
+            pbar = progressbar(total=max_iterations+1)
+
         composition = utils.stack(intensities, lazy=False)
+        if take_off_angle == 'auto':
+            toa = self.get_take_off_angle()
+        else:
+            toa = take_off_angle
+
+        #determining illumination area for cross sections quantification.
+        if method == 'cross_section':
+            if probe_area == 'auto':
+                parameters = self.metadata.Acquisition_instrument.TEM
+                if probe_area in parameters:
+                    probe_area = parameters.TEM.probe_area
+                else:
+                    probe_area = self._get_probe_area(navigation_axes=None)
+
+        int_stack = utils.stack(intensities, lazy=False)
+
+        comp_old = utils.stack(intensities)
+        comp_old.data = np.zeros_like(comp_old.data)
+
+        abs_corr_factor = None # initial
+
         if method == 'CL':
-            composition.data = utils_eds.quantification_cliff_lorimer(
-                composition.data, kfactors=factors,
-                mask=navigation_mask) * 100.
+            quantification_method = utils_eds.quantification_cliff_lorimer
+            kwargs = {"intensities" : int_stack.data,
+                    "kfactors" : factors,
+                    "absorption_correction" : abs_corr_factor}
+
         elif method == 'zeta':
-            results = utils_eds.quantification_zeta_factor(
-                composition.data, zfactors=factors,
-                dose=self._get_dose(method))
-            composition.data = results[0] * 100.
-            mass_thickness = intensities[0].deepcopy()
-            mass_thickness.data = results[1]
-            mass_thickness.metadata.General.title = 'Mass thickness'
-        elif method == 'cross_section':
-            results = utils_eds.quantification_cross_section(
-                composition.data,
-                cross_sections=factors,
-                dose=self._get_dose(method))
-            composition.data = results[0] * 100
-            number_of_atoms = composition._deepcopy_with_new_data(results[1])
-            number_of_atoms = number_of_atoms.split()
+            quantification_method = utils_eds.quantification_zeta_factor
+            kwargs = {"intensities" : int_stack.data,
+                    "zfactors" : factors,
+                    "dose" : self._get_dose(method),
+                    "absorption_correction" : abs_corr_factor}
+
+        elif method =='cross_section':
+            quantification_method = utils_eds.quantification_cross_section
+            kwargs = {"intensities" : int_stack.data,
+                    "cross_sections" : factors,
+                    "dose" : self._get_dose(method, **kwargs),
+                    "absorption_correction" : abs_corr_factor}
+
         else:
             raise ValueError('Please specify method for quantification,'
                              'as \'CL\', \'zeta\' or \'cross_section\'')
-        composition = composition.split()
+
+        while True:
+            results = quantification_method(**kwargs)
+
+            if method == 'CL':
+                composition.data = results * 100.
+                if absorption_correction:
+                    if thickness is not None:
+                        mass_thickness = intensities[0].deepcopy()
+                        mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
+                                                                thickness)
+                        mass_thickness.metadata.General.title = 'Mass thickness'
+                    else:
+                        warnings.warn('Thickness is required for absorption'\
+                        'correction with K-Factor Method. Results will contain'\
+                        'no correction for absorption.')
+
+            elif method == 'zeta':
+                composition.data = results[0] * 100
+                mass_thickness = intensities[0].deepcopy()
+                mass_thickness.data = results[1]
+
+            else:
+                composition.data = results[0] * 100.
+                number_of_atoms = composition._deepcopy_with_new_data(results[1])
+
+            if method == 'cross_section':
+                abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
+                                                       number_of_atoms.split(),
+                                                       toa,
+                                                       probe_area)
+                kwargs["absorption_correction"] = abs_corr_factor
+            else:
+                if absorption_correction:
+                    abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
+                                                       mass_thickness,
+                                                       toa)
+                    kwargs["absorption_correction"] = abs_corr_factor
+
+            res_max = np.max((composition - comp_old).data)
+            comp_old.data = composition.data
+
+            it += 1
+            if absorption_correction:
+                pbar.update(1)
+            if not absorption_correction or abs(res_max) < convergence_criterion:
+                break
+                pbar.close()
+            elif it >= max_iterations:
+                raise Exception('Absorption correction failed as solution '
+                                'did not converge after %d iterations'
+                                % (max_iterations))
+
+
+
+        if method == 'cross_section':
+            number_of_atoms = composition._deepcopy_with_new_data(results[1])
+            number_of_atoms = number_of_atoms.split()
+            composition = composition.split()
+        else:
+            composition = composition.split()
+
+        #convert ouput units to selection as required.
         if composition_units == 'atomic':
             if method != 'cross_section':
                 composition = utils.material.weight_to_atomic(composition)
         else:
             if method == 'cross_section':
                 composition = utils.material.atomic_to_weight(composition)
+
+        #Label each of the elemental maps in the image stacks for composition.
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
@@ -411,6 +519,7 @@ class EDSTEM_mixin:
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
+        #For the cross section method this is repeated for the number of atom maps
         if method == 'cross_section':
             for i, xray_line in enumerate(xray_lines):
                 element, line = utils_eds._get_element_and_line(xray_line)
@@ -422,16 +531,26 @@ class EDSTEM_mixin:
                     "Sample.xray_lines", ([xray_line]))
         if plot_result and composition[i].axes_manager.navigation_size != 1:
             utils.plot.plot_signals(composition, **kwargs)
+
+        if absorption_correction:
+            _logger.info(f'Conversion found after {it} interations.')
+
         if method == 'zeta':
+            mass_thickness.metadata.General.title = 'Mass thickness'
             self.metadata.set_item("Sample.mass_thickness", mass_thickness)
             return composition, mass_thickness
         elif method == 'cross_section':
             return composition, number_of_atoms
         elif method == 'CL':
-            return composition
+            if absorption_correction:
+                mass_thickness.metadata.General.title = 'Mass thickness'
+                return composition, mass_thickness
+            else:
+                return composition
         else:
             raise ValueError('Please specify method for quantification, as \
             ''CL\', \'zeta\' or \'cross_section\'')
+
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
@@ -570,8 +689,38 @@ class EDSTEM_mixin:
                             *args, **kwargs)
         return model
 
-    def _get_dose(self, method, beam_current='auto', real_time='auto',
-                  probe_area='auto'):
+
+    def _get_probe_area(self, navigation_axes=None):
+        """Calculates a pixel area which can be approximated to probe area,
+        when the beam is larger than or equal to pixel size.
+        """
+        if (self.axes_manager.navigation_dimension > 2 and
+                navigation_axes is None):
+            raise ValueError("With `probe_area='auto' and "
+                             "navigation dimension > 2, you need "
+                             "to specify the `navigation_axes` "
+                             "parameter.")
+        scales = []
+        navigation_axes = self.axes_manager.navigation_axes
+        for axis in navigation_axes:
+            scales.append(
+                axis.convert_to_units('nm', inplace=False)[0])
+        if len(scales) == 1:
+            probe_area = scales[0] * scales[0]
+        elif len(scales) == 2:
+            probe_area = scales[0] * scales[1]
+        if scales[0] == 1 or scales[1] == 1:
+            warnings.warn('Please note your probe_area is set to '
+                          'the default value of 1 nm². The '
+                          'function will still run. However if '
+                          '1 nm² is not correct, please read the '
+                          'user documentations for how to set '
+                          'this properly.')
+        return probe_area
+
+
+    def _get_dose(self, method, beam_current='auto', live_time='auto',
+                  probe_area='auto', navigation_axes=None, **kwargs):
         """
         Calculates the total electron dose for the zeta-factor or cross section
         methods of quantification.
@@ -589,18 +738,23 @@ class EDSTEM_mixin:
             A is the illuminated beam area or pixel area.
         beam_current: float
             Probe current in nA
-        real_time: float
-            Acquisiton time in s
-        probe_area: float
-            The illumination area of the electron beam in nm^2.
-            If not set the value is extracted from the scale axes_manager.
+        live_time: float
+            Acquisiton time in s, compensated for the dead time of the detector.
+        probe_area: float or 'auto'
+            The illumination area of the electron beam in nm².
+            If 'auto' the value is extracted from the scale axes_manager.
             Therefore we assume the probe is oversampling such that
             the illumination area can be approximated to the pixel area of the
             spectrum image.
+        navigation_axes : None or list of axis
+            Define which navigation axes to compute the illumination area.
+            Only necessary with method='cross_section' and probe_area='auto'
+            when the navigation dimension differs from the dimension intended
+            to be measured.
 
         Returns
         --------
-        Dose in electrons (zeta factor) or electrons per nm^2 (cross_section)
+        Dose in electrons (zeta factor) or electrons per nm² (cross_section)
 
         See also
         --------
@@ -609,55 +763,86 @@ class EDSTEM_mixin:
 
         parameters = self.metadata.Acquisition_instrument.TEM
 
-        if beam_current is 'auto':
+        if beam_current == 'auto':
             if 'beam_current' not in parameters:
-                raise Exception('Electron dose could not be calculated as\
-                     beam_current is not set.'
-                                'The beam current can be set by calling \
-                                set_microscope_parameters()')
+                raise Exception('Electron dose could not be calculated as '
+                                '`beam_current` is not set. The beam current '
+                                'can be set by calling '
+                                '`set_microscope_parameters()`')
             else:
                 beam_current = parameters.beam_current
 
-        if real_time == 'auto':
-            real_time = parameters.Detector.EDS.real_time
-            if 'real_time' not in parameters.Detector.EDS:
-                raise Exception('Electron dose could not be calculated as \
-                real_time is not set. '
-                                'The beam_current can be set by calling \
-                                set_microscope_parameters()')
-            elif real_time == 0.5:
+        if live_time == 'auto':
+            live_time = parameters.Detector.EDS.live_time
+            if 'live_time' not in parameters.Detector.EDS:
+                raise Exception('Electron dose could not be calculated as '
+                                'live_time is not set. '
+                                'The beam_current can be set by calling '
+                                '`set_microscope_parameters()`')
+            elif live_time == 1:
                 warnings.warn('Please note that your real time is set to '
-                              'the default value of 0.5 s. If this is not \
-                              correct, you should change it using '
-                              'set_microscope_parameters() and run \
-                              quantification again.')
+                              'the default value of 0.5 s. If this is not '
+                              'correct, you should change it using '
+                              '`set_microscope_parameters()` and run the '
+                              'quantification again.')
 
         if method == 'cross_section':
             if probe_area == 'auto':
                 if probe_area in parameters:
-                    area = parameters.TEM.probe_area
+                    probe_area = parameters.TEM.probe_area
                 else:
-                    pixel1 = self.axes_manager[0].scale
-                    pixel2 = self.axes_manager[1].scale
-                    if pixel1 == 1 or pixel2 == 1:
-                        warnings.warn('Please note your probe_area is set to'
-                                      'the default value of 1 nm^2. The \
-                                      function will still run. However if'
-                                      '1 nm^2 is not correct, please read the \
-                                      user documentations for how to set this \
-                                      properly.')
-                    area = pixel1 * pixel2
-            return (real_time * beam_current * 1e-9) / (constants.e * area)
+                    probe_area = self._get_probe_area(navigation_axes=None)
+            return (live_time * beam_current * 1e-9) / (constants.e * probe_area)
             # 1e-9 is included here because the beam_current is in nA.
         elif method == 'zeta':
-            return real_time * beam_current * 1e-9 / constants.e
+            return live_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+
+
+    def CL_get_mass_thickness(self, weight_percent, thickness):
+        """
+        Creates a array of mass_thickness based on a known material composition and
+        measured thickness. Required for absorption correction calcultions using the
+        Cliff Lorimer method.
+
+        Input given by i*t*N, i the current, t the
+        acquisition time, and N the number of electron by unit electric charge.
+
+        Parameters
+        ----------
+
+        composition: stack of compositions as determined from an initial k_factor
+            quantification.
+            Probe current in nA
+        thickness: float or array
+            Either a float value for thickness in nm or an array equal to the size
+            of the EDX map with thickness at each position of the sample.
+
+        Returns
+        --------
+        Mass_thickness as an array in kg/m^2.
+
+        """
+        if type(thickness)==float or type(thickness)==int:
+            thickness_map = np.ones_like(weight_percent[0])*thickness
+        else:
+            thickness_map = thickness
+
+        elements = [intensity.metadata.Sample.elements[0] for intensity in weight_percent]
+        mass_thickness = np.zeros_like(weight_percent[0])
+        densities = np.array(
+            [elements_db[element]['Physical_properties']['density (g/cm^3)']
+                    for element in elements])
+        for density, element_composition in zip(densities, weight_percent):
+            elemental_mt = element_composition * thickness_map * 1E-9 * density
+            mass_thickness += elemental_mt
+        return mass_thickness
 
 
 class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
     pass
 
 
-class LazyEDSTEMSpectrum(EDSTEM_mixin, LazyEDSSpectrum):
+class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):
     pass

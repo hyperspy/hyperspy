@@ -20,12 +20,12 @@ from functools import wraps
 
 import numpy as np
 import dask.array as da
-import h5py
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
 
 def format_title(thing):
@@ -95,8 +95,12 @@ class ComplexSignal_mixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not np.issubdtype(self.data.dtype, complex):
-            self.data = self.data.astype(complex)
+        # _plot_kwargs store the plot kwargs argument for convenience when
+        # plotting ROI in order to use the same plotting options than the
+        # original plot
+        self._plot_kwargs = {}
+        if not np.issubdtype(self.data.dtype, np.complexfloating):
+            self.data = self.data.astype(np.complexfloating)
 
     def change_dtype(self, dtype):
         """Change the data type.
@@ -108,7 +112,7 @@ class ComplexSignal_mixin:
             complex dtypes are allowed. If real valued properties are required use `real`,
             `imag`, `amplitude` and `phase` instead.
         """
-        if np.issubdtype(dtype, complex):
+        if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError(
@@ -116,8 +120,8 @@ class ComplexSignal_mixin:
 
     @format_title('angle')
     def angle(self, angle, deg=False):
-        """Return the angle (also known as phase or argument). If the data is real, the angle is 0
-        for positive values and 2$\pi$ for negative values.
+        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        for positive values and :math:`2\pi` for negative values.
 
         Parameters
         ----------
@@ -149,11 +153,8 @@ class ComplexSignal_mixin:
         seed : int, optional
             Unwrapping 2D or 3D images uses random initialization. This sets the
             seed of the PRNG to achieve deterministic behavior.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {Bool, None, int}
-            Perform the operation parallely
+        %s
+        %s
 
         Returns
         -------
@@ -178,25 +179,40 @@ class ComplexSignal_mixin:
             phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    def plot(self, navigator="auto", axes_manager=None,
-             representation='cartesian', same_axes=True, **kwargs):
+    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
+    def __call__(self, axes_manager=None, power_spectrum=False,
+                 fft_shift=False):
+        value = super().__call__(axes_manager=axes_manager,
+                                 fft_shift=fft_shift)
+        if power_spectrum:
+            value = np.abs(value)**2
+        return value
+
+    def plot(self, power_spectrum=False, navigator="auto", axes_manager=None,
+             representation='cartesian', norm="auto", fft_shift=False,
+             same_axes=True, **kwargs):
         """%s
+        %s
         %s
         %s
 
         """
+        if norm is "auto":
+            norm = 'log' if power_spectrum else 'linear'
+
+        kwargs.update({'norm': norm,
+                       'fft_shift': fft_shift,
+                       'navigator': navigator,
+                       'axes_manager': self.axes_manager})
         if representation == 'cartesian':
-            if same_axes and self.axes_manager.signal_dimension == 1:
+            if ((same_axes and self.axes_manager.signal_dimension == 1) or
+                    power_spectrum):
+                kwargs['power_spectrum'] = power_spectrum
                 super().plot(**kwargs)
             else:
-                self.real.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
-                self.imag.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
+                self.real.plot(**kwargs)
+                self.imag.plot(**kwargs)
         elif representation == 'polar':
             if same_axes and self.axes_manager.signal_dimension == 1:
                 amp = self.amplitude
@@ -204,18 +220,19 @@ class ComplexSignal_mixin:
                 amp.imag = self.phase
                 amp.plot(**kwargs)
             else:
-                self.amplitude.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
-                self.phase.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
+                self.amplitude.plot(**kwargs)
+                self.phase.plot(**kwargs)
         else:
             raise ValueError('{}'.format(representation) +
                              'is not a valid input for representation (use "cartesian" or "polar")!')
-    plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
+
+        self._plot_kwargs = {'power_spectrum': power_spectrum,
+                             'representation': representation,
+                             'norm': norm,
+                             'fft_shift': fft_shift,
+                             'same_axes': same_axes}
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING,
+                     KWARGS_DOCSTRING)
 
 
 class ComplexSignal(ComplexSignal_mixin, BaseSignal):
@@ -262,16 +279,16 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
 
-class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
+class LazyComplexSignal(ComplexSignal, LazySignal):
 
     @format_title('absolute')
     def _get_amplitude(self):
-        amplitude = da.numpy_compat.builtins.abs(self)
-        return super()._get_amplitude(amplitude)
+        amplitude = abs(self)
+        return super(ComplexSignal, self)._get_amplitude(amplitude)
 
     def _get_phase(self):
         phase = self._deepcopy_with_new_data(da.angle(self.data))
-        return super()._get_phase(phase)
+        return super(ComplexSignal, self)._get_phase(phase)
 
     def _set_real(self, real):
         if isinstance(real, BaseSignal):
@@ -294,11 +311,11 @@ class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
     def _set_phase(self, phase):
         if isinstance(phase, BaseSignal):
             phase = phase.data.real
-        self.data = da.numpy_compat.builtins.abs(self.data) * \
+        self.data = abs(self.data) * \
             da.exp(1j * phase)
         self.events.data_changed.trigger(self)
 
     def angle(self, deg=False):
         angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
-        return super().angle(angle, deg=deg)
+        return super(ComplexSignal, self).angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__

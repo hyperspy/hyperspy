@@ -18,7 +18,7 @@
 
 import numpy as np
 from hyperspy.component import Component
-from .gaussian import Gaussian
+from hyperspy._components.gaussian import Gaussian
 
 
 class Vignetting(Component):
@@ -43,7 +43,7 @@ class Vignetting(Component):
         self.side_vignetting = False
         self.fix_side_vignetting()
         self.gaussian = Gaussian()
-        self.gaussian.origin.free, self.gaussian.A.free = False, False
+        self.gaussian.centre.free, self.gaussian.A.free = False, False
         self.sigma.value = 1.
         self.gaussian.A.value = 1.
         self.extension_nch = 100

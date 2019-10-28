@@ -1,7 +1,21 @@
-# -*- coding: utf-8 -*-
-"""
-"""
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from contextlib import contextmanager
 import warnings
 import re
@@ -107,7 +121,7 @@ def all_warnings():
 
 @contextmanager
 def assert_warns(message=None, category=None):
-    """Context for use in testing to catch known warnings matching regexes
+    r"""Context for use in testing to catch known warnings matching regexes
 
     Parameters
     ----------
@@ -134,7 +148,7 @@ def assert_warns(message=None, category=None):
     If you use the "|" operator in a pattern, you can catch one of several warnings.
     Finally, you can use "|\A\Z" in a pattern to signify it as optional.
     """
-    if isinstance(message, (str, re._pattern_type)):
+    if isinstance(message, (str, type(re.compile('')))):
         message = [message]
     elif message is None:
         message = tuple()
@@ -142,7 +156,7 @@ def assert_warns(message=None, category=None):
         # enter context
         yield w
         # exited user context, check the recorded warnings
-        remaining = [m for m in message if '\A\Z' not in m.split('|')]
+        remaining = [m for m in message if r'\A\Z' not in m.split('|')]
         for warn in w:
             found = False
             for match in message:
@@ -163,21 +177,11 @@ def assert_warns(message=None, category=None):
             raise ValueError(msg)
 
 
-def reset_rcParams_default():
-    import matplotlib.pyplot as plt
-    plt.rcParams.clear()
-    plt.rcParams.update(plt.rcParamsDefault)
-
-
 @simple_decorator
 def update_close_figure(function):
     def wrapper():
         signal = function()
-
         p = signal._plot
-        p.signal_plot.update()
-        if hasattr(p, 'navigation_plot'):
-            p.navigation_plot.update()
         p.close()
 
     return wrapper
@@ -233,3 +237,8 @@ def sanitize_dict(dictionary):
         elif value is not None:
             new_dictionary[key] = value
     return new_dictionary
+
+
+def check_running_tests_in_CI():
+    if 'CI' in os.environ:
+        return os.environ.get('CI')

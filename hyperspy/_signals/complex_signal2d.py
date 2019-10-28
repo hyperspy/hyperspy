@@ -47,9 +47,9 @@ class Complex2Dmixin:
             Offset of the ramp at the fulcrum.
         Notes
         -----
-            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
-            the axis with the according scale taken into account. Both are available via the
-            `axes_manager` of the signal.
+            The fulcrum of the linear ramp is at the origin and the slopes are
+            given in units of the axis with the according scale taken into
+            account. Both are available via the `axes_manager` of the signal.
 
         """
         phase = self.phase
@@ -57,11 +57,14 @@ class Complex2Dmixin:
         self.phase = phase
 
     def plot(self,
+             power_spectrum=False,
+             norm="auto",
+             fft_shift=False,
              colorbar=True,
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             saturated_pixels=0,
+             saturated_pixels=None,
              vmin=None,
              vmax=None,
              no_nans=False,
@@ -75,6 +78,9 @@ class Complex2Dmixin:
 
         """
         super().plot(
+            power_spectrum=power_spectrum,
+            norm=norm,
+            fft_shift=fft_shift,
             colorbar=colorbar,
             scalebar=scalebar,
             scalebar_color=scalebar_color,
@@ -86,8 +92,8 @@ class Complex2Dmixin:
             centre_colormap=centre_colormap,
             **kwargs
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
-                     COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
+                     PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
 
 class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
@@ -96,7 +102,7 @@ class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
     pass
 
 
-class LazyComplexSignal2D(Complex2Dmixin, LazyComplexSignal, CommonSignal2D):
+class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 2-dimensional data."""
     pass

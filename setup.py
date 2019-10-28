@@ -18,6 +18,15 @@
 
 from __future__ import print_function
 
+import hyperspy.Release as Release
+from distutils.errors import CompileError, DistutilsPlatformError
+import distutils.ccompiler
+import distutils.sysconfig
+import itertools
+import subprocess
+import os
+import warnings
+from setuptools import setup, Extension, Command
 import sys
 
 v = sys.version_info
@@ -28,52 +37,57 @@ if v[0] != 3:
     print(error, file=sys.stderr)
     sys.exit(1)
 
-from setuptools import setup, Extension, Command
-
-import warnings
-
-import os
-import subprocess
-import fileinput
-import itertools
-import re
 
 # stuff to check presence of compiler:
-import distutils.sysconfig
-import distutils.ccompiler
-from distutils.errors import CompileError, DistutilsPlatformError
+
 
 setup_path = os.path.dirname(__file__)
 
-import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'ipython>=2.0',
-               'matplotlib>=1.2',
-               'numpy>=1.10',
+               'matplotlib>=2.2.3',
+               'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
-               'traitsui>=5.0',
                'natsort',
                'requests',
                'tqdm>=0.4.9',
                'sympy',
                'dill',
-               'h5py',
-               'python-dateutil',
+               'h5py>=2.3',
+               'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.13, !=0.14',
-               'scikit-image']
+               'dask[array]>=0.18, !=2.0',
+               'scikit-image>=0.13',
+               'pint>=0.8',
+               'statsmodels',
+               'numexpr',
+               'sparse',
+               'imageio',
+               'pyyaml',
+               'PTable'
+               ]
 
 extras_require = {
     "learning": ['scikit-learn'],
-    "bcf": ['lxml'],
-    "gui-jupyter": ["ipywidgets"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
+    "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
+    "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
+    "speed": ["numba", "cython"],
+    # bug in pip: matplotib is ignored here because it is already present in
+    # install_requires.
+    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
+    # required to build the docs
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
-extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
-# the hack to deal with setuptools + installing the package in ReadTheDoc:
-if 'readthedocs.org' in sys.executable:
-    install_req = []
+# Don't include "tests" and "docs" requirements since "all" is designed to be
+# used for user installation.
+runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
+                          if x not in ["tests", "build-doc"]}
+extras_require["all"] = list(itertools.chain(*list(
+    runtime_extras_require.values())))
+
+extras_require["dev"] = list(itertools.chain(*list(extras_require.values())))
 
 
 def update_version(version):
@@ -90,26 +104,19 @@ def update_version(version):
 
 # Extensions. Add your extension here:
 raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
-                            ['hyperspy/io_plugins/unbcf_fast.pyx']),
+                            [os.path.join('hyperspy', 'io_plugins', 'unbcf_fast.pyx')]),
                   ]
 
 cleanup_list = []
 for leftover in raw_extensions:
     path, ext = os.path.splitext(leftover.sources[0])
     if ext in ('.pyx', '.py'):
-        cleanup_list.append(os.path.join(setup_path, path + '.c*'))
+        cleanup_list.append(''.join([os.path.join(setup_path, path), '.c*']))
         if os.name == 'nt':
-            cleanup_list.append(
-                os.path.join(
-                    setup_path,
-                    path +
-                    '.cpython-*.pyd'))
+            bin_ext = '.cpython-*.pyd'
         else:
-            cleanup_list.append(
-                os.path.join(
-                    setup_path,
-                    path +
-                    '.cpython-*.so'))
+            bin_ext = '.cpython-*.so'
+        cleanup_list.append(''.join([os.path.join(setup_path, path), bin_ext]))
 
 
 def count_c_extensions(extensions):
@@ -166,8 +173,8 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path,
-                                   'hyperspy/misc/etc/test_compilers.c')])
+    compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
+                                   'test_compilers.c')])
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
@@ -179,60 +186,6 @@ Installation will continue in 5 sec...""")
     extensions = []
     from time import sleep
     sleep(5)  # wait 5 secs for user to notice the message
-
-
-# HOOKS ######
-post_checout_hook_file = os.path.join(setup_path, '.git/hooks/post-checkout')
-git_dir = os.path.join(setup_path, '.git')
-hook_ignorer = os.path.join(setup_path, '.hook_ignore')
-
-
-def find_post_checkout_cleanup_line():
-    """find the line index in the git post-checkout hooks
-    'rm extension1 extension2 ...'"""
-    with open(post_checout_hook_file, 'r') as pchook:
-        hook_lines = pchook.readlines()
-        for i in range(1, len(hook_lines), 1):
-            if re.search('#cleanup_cythonized_and_compiled:',
-                         hook_lines[i]) is not None:
-                return i + 1
-
-# generate some git hook to clean up and re-build_ext --inplace
-# after changing branches:
-if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
-    exec_str = sys.executable
-    recythonize_str = ' '.join([exec_str,
-                                os.path.join(setup_path, 'setup.py'),
-                                'clean --all build_ext --inplace\n'])
-    if os.name == 'nt':
-        exec_str = exec_str.replace('\\', '/')
-        recythonize_str = recythonize_str.replace('\\', '/')
-        for i in range(len(cleanup_list)):
-            cleanup_list[i] = cleanup_list[i].replace('\\', '/')
-    if (not os.path.exists(post_checout_hook_file)):
-        with open(post_checout_hook_file, 'w') as pchook:
-            pchook.write('#!/bin/sh\n')
-            pchook.write('#cleanup_cythonized_and_compiled:\n')
-            pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
-            pchook.write(recythonize_str)
-        hook_mode = 0o777  # make it executable
-        os.chmod(post_checout_hook_file, hook_mode)
-    else:
-        with open(post_checout_hook_file, 'r') as pchook:
-            hook_lines = pchook.readlines()
-        if re.search(r'#!/bin/.*?sh', hook_lines[0]) is not None:
-            line_n = find_post_checkout_cleanup_line()
-            if line_n is not None:
-                hook_lines[line_n] = 'rm ' + \
-                    ' '.join([i for i in cleanup_list]) + '\n'
-                hook_lines[line_n + 1] = recythonize_str
-            else:
-                hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
-                hook_lines.append(
-                    'rm ' + ' '.join([i for i in cleanup_list]) + '\n')
-                hook_lines.append(recythonize_str)
-            with open(post_checout_hook_file, 'w') as pchook:
-                pchook.writelines(hook_lines)
 
 
 class Recythonize(Command):
@@ -265,22 +218,22 @@ class update_version_when_dev:
 
         # Get the hash from the git repository if available
         self.restore_version = False
-        git_master_path = ".git/refs/heads/master"
-        if "+dev" in self.release_version and \
-                os.path.isfile(git_master_path):
+        if self.release_version.endswith(".dev"):
             p = subprocess.Popen(["git", "describe",
                                   "--tags", "--dirty", "--always"],
-                                 stdout=subprocess.PIPE)
+                                 stdout=subprocess.PIPE,
+                                 shell=True)
             stdout = p.communicate()[0]
             if p.returncode != 0:
                 # Git is not available, we keep the version as is
                 self.restore_version = False
+                self.version = self.release_version
             else:
                 gd = stdout[1:].strip().decode()
                 # Remove the tag
                 gd = gd[gd.index("-") + 1:]
-                self.version = self.release_version.replace("+dev", "-git-")
-                self.version += gd
+                self.version = self.release_version + "+git."
+                self.version += gd.replace("-", ".")
                 update_version(self.version)
                 self.restore_version = True
         else:
@@ -309,7 +262,6 @@ with update_version_when_dev() as version:
                   'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
-                  'hyperspy.gui',
                   'hyperspy.utils',
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
@@ -339,12 +291,29 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        test_require=["pytest>=3.0.2"],
+        tests_require=["pytest>=3.0.2"],
         extras_require=extras_require,
         package_data={
             'hyperspy':
             [
+                'tests/drawing/*.png',
+                'tests/drawing/data/*.hspy',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_model1d/*.png',
+                'tests/drawing/plot_model/*.png',
+                'tests/drawing/plot_roi/*.png',
                 'misc/eds/example_signals/*.hdf5',
+                'misc/holography/example_signals/*.hdf5',
+                'tests/drawing/plot_mva/*.png',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_widgets/*.png',
+                'tests/drawing/plot_signal_tools/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
@@ -355,7 +324,6 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
                 'tests/io/dm3_locale/*.dm3',
-                'tests/io/edax_files.zip',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
@@ -364,23 +332,23 @@ with update_version_when_dev() as version:
                 'tests/io/FEI_old/*.npy',
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
+                'tests/io/hdf5_files/*.hspy',
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
-                'tests/io/bcf_data/*.bcf',
-                'tests/io/bcf_data/*.json',
-                'tests/io/bcf_data/*.npy',
+                'tests/io/bruker_data/*.bcf',
+                'tests/io/bruker_data/*.json',
+                'tests/io/bruker_data/*.npy',
+                'tests/io/bruker_data/*.spx',
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
-                'tests/drawing/plot_signal/*.png',
-                'tests/drawing/plot_signal1d/*.png',
-                'tests/drawing/plot_signal2d/*.png',
-                'tests/drawing/plot_markers/*.png',
+                'tests/io/emd_files/fei_emd_files.zip',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+                'hyperspy_extension.yaml',
             ],
         },
         author=Release.authors['all'][0],
@@ -398,6 +366,8 @@ with update_version_when_dev() as version:
         },
         classifiers=[
             "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

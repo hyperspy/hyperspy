@@ -3581,3 +3581,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                           'name': 'molybdenum'}}}
 
 elements_db = utils.DictionaryTreeBrowser(elements)
+
+# read dictionary of atomic numbers from HyperSpy, and add the elements that
+# do not currently exist in the database (in case anyone is doing EDS on
+# Ununpentium...)
+atomic_number2name = dict((p.General_properties.Z, e)
+                          for (e, p) in elements_db)
+atomic_number2name.update({93: 'Np', 94: 'Pu', 95: 'Am', 96: 'Cm', 97: 'Bk',
+                           98: 'Cf', 99: 'Es', 100: 'Fm', 101: 'Md', 102: 'No',
+                           103: 'Lr', 104: 'Rf', 105: 'Db', 106: 'Sg',
+                           107: 'Bh', 108: 'Hs', 109: 'Mt', 110: 'Ds',
+                           111: 'Rg', 112: 'Cp', 113: 'Uut', 114: 'Uuq',
+                           115: 'Uup', 116: 'Uuh', 117: 'Uus', 118: 'Uuo',
+                           119: 'Uue'})
