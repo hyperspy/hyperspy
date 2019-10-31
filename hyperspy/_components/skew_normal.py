@@ -71,15 +71,27 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     shape = delta / _sqrt(1 - delta**2)
 
     iheight = _argmin(_abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
+    # height is the value of the function at x0, shich has to be computed 
+    # differently for dask array (lazy) and depending on the dimension
     if isinstance(data, da.Array):
         x0, iheight, scale, shape = da.compute(x0, iheight, scale, shape)
-    # Dask array still as a problem with this fancy indexing!
-    if only_current is True or signal.axes_manager.navigation_dimension == 0:
-        height = data[iheight]
-    elif signal.axes_manager.navigation_dimension == 1:
-        height = data[np.arange(signal.axes_manager.navigation_size), iheight]
-    else:
-        height = data[(*np.indices(signal.axes_manager.navigation_shape), iheight)]
+        if only_current is True or signal.axes_manager.navigation_dimension == 0:
+            height = data.vindex[iheight].compute()
+        elif signal.axes_manager.navigation_dimension == 1:
+            height = data.vindex[np.arange(signal.axes_manager.navigation_size), 
+                          iheight].compute()
+        else:
+            height = data.vindex[(*np.indices(signal.axes_manager.navigation_shape), 
+                          iheight)].compute()
+    else: 
+        if only_current is True or signal.axes_manager.navigation_dimension == 0:
+            height = data[iheight]
+        elif signal.axes_manager.navigation_dimension == 1:
+            height = data[np.arange(signal.axes_manager.navigation_size), 
+                          iheight]
+        else:
+            height = data[(*np.indices(signal.axes_manager.navigation_shape), 
+                          iheight)]
 
     return x0, height, scale, shape
 
