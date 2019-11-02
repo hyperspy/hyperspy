@@ -262,15 +262,12 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         return super().angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
-    def argand_diagram(self, plot=True, size=[256, 256], display_range=None):
+    def argand_diagram(self, size=[256, 256], display_range=None):
         """
         Calculate and plot Argand diagram of complex signal
 
         Parameters
         ----------
-        plot : bool, optional
-            Enable plotting of argand diagram
-            (Default: True)
         size : [int, int], optional
             Size of the Argand plot in pixels
             (Default: [256, 256])
@@ -279,6 +276,19 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
             (if not specified explicitly in the bins parameters): [[xmin, xmax], [ymin, ymax]].
             All values outside of this range will be considered outliers and not tallied in the histogram.
             (Default: None)
+
+        Returns
+        -------
+        sap:
+            Argand diagram plot as Signal2D
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> holo = hs.datasets.example_signals.object_hologram()
+        >>> ref = hs.datasets.example_signals.reference_hologram()
+        >>> w = holo.reconstruct_phase(ref)
+        >>> w.argand_diagram(display_range=[-3, 3]).plot()
 
         """
         im = self.imag.data.ravel()
@@ -302,9 +312,6 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         sap.axes_manager.signal_axes[1].name = 'Imaginary'
         sap.axes_manager.signal_axes[1].offset = ap[2][0]
         sap.axes_manager.signal_axes[1].scale = np.abs(ap[2][0] - ap[2][1])
-
-        if plot:
-            sap.plot()
 
         return sap
 
