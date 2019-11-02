@@ -20,7 +20,6 @@ from functools import wraps
 
 import numpy as np
 import dask.array as da
-import matplotlib.pyplot as plt
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal2d import Signal2D
