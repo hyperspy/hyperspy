@@ -1,7 +1,8 @@
 
 import numpy as np
-from hyperspy.misc.test_utils import assert_warns
+import pytest
 
+from hyperspy.misc.test_utils import assert_warns
 from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
@@ -211,7 +212,7 @@ def test_comparison_quantification():
 
     np.testing.assert_allclose([q.data for q in quant_model],
                                [q.data for q in atomic_percent],
-                               rtol=0.25E-1)
+                               rtol=0.5E-1)
 
 
 @lazifyTestClass

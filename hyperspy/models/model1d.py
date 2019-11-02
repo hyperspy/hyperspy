@@ -32,7 +32,7 @@ from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.utils import signal_range_from_roi
 
 
-@add_gui_method(toolkey="Model1D.fit_component")
+@add_gui_method(toolkey="hyperspy.Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
 
     def __init__(self, model, component, signal_range=None,

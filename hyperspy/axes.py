@@ -202,7 +202,7 @@ class UnitConversion:
         self._units = s
 
 
-@add_gui_method(toolkey="DataAxis")
+@add_gui_method(toolkey="hyperspy.DataAxis")
 class DataAxis(t.HasTraits, UnitConversion):
     name = t.Str()
     units = t.Str()
@@ -628,7 +628,7 @@ class DataAxis(t.HasTraits, UnitConversion):
         self._set_quantity(value, 'offset')
 
 
-@add_gui_method(toolkey="AxesManager")
+@add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.
@@ -1496,7 +1496,7 @@ class AxesManager(t.HasTraits):
 
     def gui_navigation_sliders(self, title="", display=True, toolkit=None):
         return get_gui(self=self.navigation_axes,
-                       toolkey="navigation_sliders",
+                       toolkey="hyperspy.navigation_sliders",
                        display=display,
                        toolkit=toolkit,
                        title=title)
