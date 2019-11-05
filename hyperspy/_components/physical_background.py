@@ -392,9 +392,6 @@ class Physical_background(Component):
             
         if self._whitelist['absorption_model'] is 'quadrilateral':
             f=np.where((x>0.17) & (x<(E0)),(emission*absorption*Window*coating*Backscatter),0)
-            self._whitelist['emission']=emission
-            self._whitelist['absorption']=absorption
-            self._whitelist['Backscatter']=Backscatter
             if not np.all(np.isfinite(f)): #avoid "residuals are not finite in the initial point"
                 self.coefficients.store_current_value_in_array()
                 return 1
