@@ -261,7 +261,7 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         return super().angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
-    def argand_diagram(self, size=[256, 256], display_range=None):
+    def argand_diagram(self, size=[256, 256], range=None):
         """
         Calculate and plot Argand diagram of complex signal
 
@@ -270,7 +270,7 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         size : [int, int], optional
             Size of the Argand plot in pixels
             (Default: [256, 256])
-        display_range : array_like, shape(2,2) or shape(2,) optional
+        range : array_like, shape(2,2) or shape(2,) optional
             The position of the edges of the diagram
             (if not specified explicitly in the bins parameters): [[xmin, xmax], [ymin, ymax]].
             All values outside of this range will be considered outliers and not tallied in the histogram.
@@ -278,8 +278,8 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
 
         Returns
         -------
-        sap:
-            Argand diagram plot as Signal2D
+        argand_diagram:
+            Argand diagram as Signal2D
 
         Examples
         --------
@@ -287,32 +287,31 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         >>> holo = hs.datasets.example_signals.object_hologram()
         >>> ref = hs.datasets.example_signals.reference_hologram()
         >>> w = holo.reconstruct_phase(ref)
-        >>> w.argand_diagram(display_range=[-3, 3]).plot()
+        >>> w.argand_diagram(range=[-3, 3]).plot()
 
         """
         im = self.imag.data.ravel()
         re = self.real.data.ravel()
 
-        if display_range:
-            if np.asarray(display_range).shape == (2, ):
-                display_range = [[display_range[0], display_range[1]],
-                                 [display_range[0], display_range[1]]]
-            elif np.asarray(display_range).shape != (2, 2):
+        if range:
+            if np.asarray(range).shape == (2,):
+                range = [[range[0], range[1]],
+                         [range[0], range[1]]]
+            elif np.asarray(range).shape != (2, 2):
                 raise ValueError('display_range should be array_like, shape(2,2) or shape(2,).')
 
-        ap = np.histogram2d(re, im, bins=size, range=display_range)
-        sap = Signal2D(ap[0].T)
-        sap.metadata = self.metadata.deepcopy()
-        sap.metadata.General.title = 'Argand diagram of {}'.format(self.metadata.General.title)
-        sap.metadata.Signal.signal_type = 'signal2d'
-        sap.axes_manager.signal_axes[0].name = 'Real'
-        sap.axes_manager.signal_axes[0].offset = ap[1][0]
-        sap.axes_manager.signal_axes[0].scale = np.abs(ap[1][0] - ap[1][1])
-        sap.axes_manager.signal_axes[1].name = 'Imaginary'
-        sap.axes_manager.signal_axes[1].offset = ap[2][0]
-        sap.axes_manager.signal_axes[1].scale = np.abs(ap[2][0] - ap[2][1])
+        argand_diagram, real_edges, imag_edges = np.histogram2d(re, im, bins=size, range=range)
+        argand_diagram = Signal2D(argand_diagram.T)
+        argand_diagram.metadata = self.metadata.deepcopy()
+        argand_diagram.metadata.General.title = 'Argand diagram of {}'.format(self.metadata.General.title)
+        argand_diagram.axes_manager.signal_axes[0].name = 'Real'
+        argand_diagram.axes_manager.signal_axes[0].offset = real_edges[0]
+        argand_diagram.axes_manager.signal_axes[0].scale = np.abs(real_edges[0] - real_edges[1])
+        argand_diagram.axes_manager.signal_axes[1].name = 'Imaginary'
+        argand_diagram.axes_manager.signal_axes[1].offset = imag_edges[0]
+        argand_diagram.axes_manager.signal_axes[1].scale = np.abs(imag_edges[0] - imag_edges[1])
 
-        return sap
+        return argand_diagram
 
 
 class LazyComplexSignal(ComplexSignal, LazySignal):

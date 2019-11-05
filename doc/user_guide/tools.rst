@@ -1666,8 +1666,8 @@ Calculate and display Argand diagram
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes it is convenient to visualize a complex signal as a plot of its
-imaginary part versus real one. In this case so called Argand diagram can be
-calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
+imaginary part versus real one. In this case so called Argand diagrams can
+be calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
 method, which returns the plot as a
 :py:class:`~._signals.complex_signal.Signal2D`. Optional arguments ``size``
 and ``display_range`` can be used to change the size (and therefore

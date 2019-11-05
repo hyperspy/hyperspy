@@ -148,8 +148,8 @@ def test_argand_diagram():
 
     # 2. Test ComplexSignal1D with specified range
     s2d = hs.signals.ComplexSignal((amp * np.exp(1j * phase)).reshape((4, 16)))
-    ap2d = s2d.argand_diagram(size=[7, 7], display_range=[-12., 13.])
-    ap2d_a = s2d.argand_diagram(size=[7, 7], display_range=[[-12., 11.], [-10., 13.]])
+    ap2d = s2d.argand_diagram(size=[7, 7], range=[-12., 13.])
+    ap2d_a = s2d.argand_diagram(size=[7, 7], range=[[-12., 11.], [-10., 13.]])
     ap2_ref = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 13.], [-12., 13.]])
     ap2_ref_a = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 11.], [-10., 13.]])
 
@@ -167,7 +167,7 @@ def test_argand_diagram():
 
     # 3. Test raises:
     with pytest.raises(ValueError):
-        s1d.argand_diagram(display_range=[-12., 11., -10., 13.])
+        s1d.argand_diagram(range=[-12., 11., -10., 13.])
 
 
 if __name__ == '__main__':
