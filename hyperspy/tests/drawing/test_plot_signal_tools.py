@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 import matplotlib.pyplot as plt
 
-from hyperspy import signals, components1d
+from hyperspy import signals, components1d, datasets
 from hyperspy._signals.signal1d import BackgroundRemoval
 from hyperspy.signal_tools import ImageContrastEditor
 
@@ -81,4 +81,14 @@ def test_plot_contrast_editor_norm(norm):
         s2.plot(norm=norm)
         ceditor2 = ImageContrastEditor(s._plot.signal_plot)
     assert ceditor.norm == norm.capitalize()
+
+
+def test_plot_contrast_editor_complex():
+    s = datasets.example_signals.object_hologram()
+    fft = s.fft(True)
+    fft.plot(True)
+    ceditor = ImageContrastEditor(fft._plot.signal_plot)
+    assert ceditor.bins == 250
+    np.testing.assert_allclose(ceditor._vmin, 3.18984955E5)
+    np.testing.assert_allclose(ceditor._vmax, 1.3251668250480E13)
 
