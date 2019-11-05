@@ -560,6 +560,8 @@ The generated intensity increases rapidly with decreasing Xray energy but at ene
    
     Absorption of the emitted Bremsstrahlung
     
+Other models of emission are available for this function (see Small et al. 1987, Castellano et l. 2004)
+    
 b) Absorption in the sample
 
 The absorption correction is based upon a simplified representation of the x-ray depth distribution known as Love & Scott model. A quadrilateral profile is assumed for the distribution of x-ray generation. This simplification has been detailed in (Sewell et al 1985). This model has shown a good robustness and seems to be adapted for the quantitative analysis of both heavy and light elements.
