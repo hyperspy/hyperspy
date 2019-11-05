@@ -95,9 +95,14 @@ PLOT2D_DOCSTRING = \
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
+            This is ignored if `vmin` or `vmax` is provided.
             If None (default value), the value from the preferences is used.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data.
+            `vmin` and `vmax` are used to normalise the displayed data. It can
+            be a float or a string. If string, it should be formatted as 'xth', 
+            where 'x' must be an float in the [0, 100] range. 'x' is used to 
+            compute the x-th percentile of the data. See 
+            :py:func:`numpy.percentile` for more information.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}

@@ -65,6 +65,8 @@ class ImagePlot(BlittedFigure):
         self.data_function = None
         # Args to pass to `__call__`
         self.data_function_kwargs = {}
+        # The data to be plotted, depends on self.data_function_kwargs
+        self._current_data = None
         self.pixel_units = None
         self.colorbar = True
         self._colorbar = None
@@ -103,6 +105,21 @@ class ImagePlot(BlittedFigure):
         self.linscale = 0.1
         self._is_rgb = False
 
+    def _parse_vmin_vmax_user(self, value, attribute):
+        if value is None:
+            return
+        elif isinstance(value, float):
+            return value
+        elif isinstance(value, str):
+            if self._current_data is None:
+                self._update_data()
+            return np.nanpercentile(self._current_data,
+                                    float(value.split("th")[0]))
+        raise ValueError(f"{value} is not a valid for the {attribute} "
+                         "argument. A valid value must be a float or string "
+                         "formatted as 'xth', where x is an float between 0 "
+                         "and 100.")
+
     @property
     def vmax(self):
         if self._vmax_user is not None:
@@ -112,7 +129,7 @@ class ImagePlot(BlittedFigure):
 
     @vmax.setter
     def vmax(self, vmax):
-        self._vmax_user = vmax
+        self._vmax_user = self._parse_vmin_vmax_user(vmax, 'vmax')
 
     @property
     def vmin(self):
@@ -123,7 +140,7 @@ class ImagePlot(BlittedFigure):
 
     @vmin.setter
     def vmin(self, vmin):
-        self._vmin_user = vmin
+        self._vmin_user = self._parse_vmin_vmax_user(vmin, 'vmin')
 
     @property
     def axes_ticks(self):
@@ -180,7 +197,11 @@ class ImagePlot(BlittedFigure):
                         yaxis.axis[-1] + yaxis.scale / 2.,
                         yaxis.axis[0] - yaxis.scale / 2.)
         self._calculate_aspect()
-        if self.saturated_pixels is None:
+        if self.saturated_pixels is not None:
+            if self._vmin_user or self._vmax_user:
+                _logger.info("The 'saturated_pixels' is ignored because the ",
+                             "the 'vmin' or the 'vmax' argument is set.")
+        else:
             self.saturated_pixels = preferences.Plot.saturated_pixels
 
     def _calculate_aspect(self):
@@ -260,6 +281,11 @@ class ImagePlot(BlittedFigure):
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.data_function_kwargs = data_function_kwargs
+        # We need to set the vmin and vmax value now (and not before) because
+        # it may depends on self.data_function_kwargs attribute
+        for attribute in ['vmin', 'vmax']:
+            if attribute in kwargs.keys():
+                setattr(self, attribute, kwargs.pop(attribute))
         self.configure()
         if self.figure is None:
             self.create_figure()

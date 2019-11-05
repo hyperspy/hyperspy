@@ -86,9 +86,11 @@ def test_plot_contrast_editor_norm(norm):
 def test_plot_contrast_editor_complex():
     s = datasets.example_signals.object_hologram()
     fft = s.fft(True)
-    fft.plot(True)
+    # Specify saturated_pixels=0 to be consistent with
+    fft.plot(True, saturated_pixels=0)
     ceditor = ImageContrastEditor(fft._plot.signal_plot)
     assert ceditor.bins == 250
-    np.testing.assert_allclose(ceditor._vmin, 3.18984955E5)
-    np.testing.assert_allclose(ceditor._vmax, 1.3251668250480E13)
-
+    np.testing.assert_allclose(ceditor._vmin, fft._plot.signal_plot.vmin)
+    np.testing.assert_allclose(ceditor._vmax, fft._plot.signal_plot.vmax)
+    np.testing.assert_allclose(ceditor._vmin, 1.495977361e+3)
+    np.testing.assert_allclose(ceditor._vmax, 3.568838458887e+17)
