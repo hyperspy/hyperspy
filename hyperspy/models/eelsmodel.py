@@ -23,7 +23,6 @@ import logging
 from hyperspy.models.model1d import Model1D
 from hyperspy.components1d import EELSCLEdge
 from hyperspy.components1d import PowerLaw
-from hyperspy.defaults_parser import preferences
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 
@@ -101,12 +100,6 @@ class EELSModel(Model1D):
     def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
             self._signal = value
-            if self.signal._are_microscope_parameters_missing():
-                raise ValueError(
-                    "The required microscope parameters are not defined in "
-                    "the EELS spectrum signal metadata. Use "
-                    "``set_microscope_parameters`` to set them."
-                )
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
@@ -188,6 +181,12 @@ class EELSModel(Model1D):
         ----------
         e_shells : list of strings
         """
+        if self.signal._are_microscope_parameters_missing():
+            raise ValueError(
+                "The required microscope parameters are not defined in "
+                "the EELS spectrum signal metadata. Use "
+                "``set_microscope_parameters`` to set them."
+            )
         if e_shells is None:
             e_shells = list(self.signal.subshells)
         e_shells.sort()
@@ -494,7 +493,6 @@ class EELSModel(Model1D):
         ea = self.axis.axis[self.channel_switches]
         if start_energy is None:
             start_energy = ea[0]
-        preedge_safe_window_width = self._preedge_safe_window_width
         # Declare variables
         active_edges = self._active_edges
         edge = active_edges[edgenumber]

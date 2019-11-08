@@ -25,22 +25,25 @@ from hyperspy.component import Component
 
 class Arctan(Component):
 
-    """Arctan function component
+    r"""Arctan function component.
 
-    f(x) = A*arctan{k*(x-x0)}
+    .. math::
+    
+        f(x) = A \cdot \arctan\left[ k \left( x-x_0 \right)\right]
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     k      |     k     |
-    +------------+-----------+
-    |     x      |     x     |
-    +------------+-----------+
-    |     x0     |     x0    |
-    +------------+-----------+
+    ============ =============
+    Variable      Parameter 
+    ============ =============
+    :math:`A`     A 
+    :math:`k`     k 
+    :math:`x_0`   x0 
+    ============ =============
+
+    Parameters
+    -----------
+    A : float
+    k : float
+    x0 : float
 
     """
 
@@ -59,7 +62,7 @@ class Arctan(Component):
         self._whitelist['minimum_at_zero'] = ('init', minimum_at_zero)
 
         self.isbackground = False
-        self.isconvolved = False
+        self.convolved = False
         self._position = self.x0
 
     def function(self, x):

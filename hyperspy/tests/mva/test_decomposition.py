@@ -21,6 +21,9 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+from hyperspy.decorators import lazifyTestClass
+from tempfile import TemporaryDirectory
+from os.path import join
 
 
 class TestNdAxes:
@@ -91,6 +94,34 @@ class TestNdAxes:
         np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
 
 
+@lazifyTestClass
+class TestGetModel:
+    def setup_method(self, method):
+        np.random.seed(100)
+        sources = signals.Signal1D(np.random.standard_t(.5, size=(3, 100)))
+        np.random.seed(100)
+        maps = signals.Signal2D(np.random.standard_t(.5, size=(3, 4, 5)))
+        self.s = (sources.inav[0] * maps.inav[0].T
+                  + sources.inav[1] * maps.inav[1].T
+                  + sources.inav[2] * maps.inav[2].T)
+
+    def test_get_decomposition_model(self):
+        s = self.s
+        s.decomposition(algorithm='svd')
+        sc = self.s.get_decomposition_model(3)
+        rms = np.sqrt(((sc.data - s.data)**2).sum())
+        assert rms < 5e-7
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_get_bss_model(self):
+        s = self.s
+        s.decomposition(algorithm='svd')
+        s.blind_source_separation(3)
+        sc = self.s.get_bss_model()
+        rms = np.sqrt(((sc.data - s.data)**2).sum())
+        assert rms < 5e-7
+
+
 class TestGetExplainedVarinaceRatio:
 
     def setup_method(self, method):
@@ -106,6 +137,31 @@ class TestGetExplainedVarinaceRatio:
     def test_no_evr(self):
         with pytest.raises(AttributeError):
             self.s.get_explained_variance_ratio()
+
+
+class TestEstimateElbowPosition:
+
+    def setup_method(self, method):
+        s = signals.BaseSignal(np.empty(1))
+        s.learning_results.explained_variance_ratio = \
+            np.asarray([10e-1, 5e-2, 9e-3, 1e-3, 9e-5, 5e-5, 3.0e-5,
+                        2.2e-5, 1.9e-5, 1.8e-5, 1.7e-5, 1.6e-5])
+        self.s = s
+
+    def test_elbow_position(self):
+        variance = self.s.learning_results.explained_variance_ratio
+        elbow = self.s._estimate_elbow_position(variance)
+        assert elbow == 4
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_store_number_significant_components(self):
+        np.random.seed(1)
+        s = signals.Signal1D(np.random.random((20, 100)))
+        s.decomposition()
+        assert s.learning_results.number_significant_components == 2
+        # Check that number_significant_components is reset properly
+        s.decomposition(algorithm='nmf', output_dimension=2)
+        assert s.learning_results.number_significant_components is None
 
 
 class TestReverseDecompositionComponent:
@@ -218,32 +274,70 @@ class TestReturnInfo:
         for algorithm in ["svd", "fast_svd"]:
             print(algorithm)
             assert self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=1) is None
+                algorithm=algorithm, return_info=True, output_dimension=2) is None
 
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_true(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
-                output_dimension=1) is not None
+                output_dimension=2) is not None
         for algorithm in ["sklearn_pca", "nmf",
-                          "sparse_pca", "mini_batch_sparse_pca", ]:
+                          "sparse_pca", "mini_batch_sparse_pca"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
-                output_dimension=1) is not None
+                output_dimension=2) is not None
 
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_false(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
-                output_dimension=1) is None
+                output_dimension=2) is None
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
-                output_dimension=1) is None
+                output_dimension=2) is None
+
+
+class TestNonFloatTypeError:
+
+    def setup_method(self, method):
+        self.s_int = signals.Signal1D(
+            (np.random.random((20, 100)) * 20).astype('int'))
+        self.s_float = signals.Signal1D(np.random.random((20, 100)))
+
+    def test_decomposition_error(self):
+        self.s_float.decomposition()
+        with pytest.raises(TypeError):
+            self.s_int.decomposition()
+
+
+class TestLoadDecompositionResults:
+
+    def setup_method(self, method):
+        self.s = signals.Signal1D([[1.1, 1.2, 1.4, 1.3], [1.5, 1.5, 1.4, 1.2]])
+
+    def test_load_decomposition_results(self):
+        # Test whether the sequence of loading learning results and then
+        # saving the signal causes errors. See #2093.
+        with TemporaryDirectory() as tmpdir:
+            self.s.decomposition()
+            fname1 = join(tmpdir, "results.npz")
+            self.s.learning_results.save(fname1)
+            self.s.learning_results.load(fname1)
+            fname2 = join(tmpdir, "output.hspy")
+            self.s.save(fname2)
+            assert isinstance(
+                self.s.learning_results.decomposition_algorithm, str)

@@ -135,6 +135,7 @@ assignment by
 and :py:meth:`~._signals.hologram_image.HologramImage.estimate_sideband_size`
 methods. This, however, is not recommended for not experienced users.
 
+.. _holography.stats-label:
 
 Further processing of complex wave and phase
 --------------------------------------------

@@ -75,13 +75,18 @@ Almost all file readers support accessing the data without reading it to memory
 analysing large files. To load a file without loading it to memory simply set
 ``lazy`` to ``True`` e.g.:
 
+The units of the navigation and signal axes can be converted automatically 
+during loading using the ``convert_units`` parameter. If `True`, the 
+``convert_to_units`` method of the ``axes_manager`` will be used for the conversion 
+and if set to `False`, the units will not be converted. The default is `False`.
+
 .. code-block:: python
 
     >>> s = hs.load("filename.hspy", lazy=True)
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
-.. load-multiple-label::
+.. load-multiple-label:
 
 Loading multiple files
 ----------------------
@@ -197,9 +202,11 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | Bruker's bcf       |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
+    | Bruker's spx       |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
     | EMD (NCEM)         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | EMD (FEI)          |    Yes |    No  |    Yes |
+    | EMD (Velox)        |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
     | Protochips log     |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
@@ -243,9 +250,6 @@ filename e.g.:
     >>> s.save('test.hdf5')
 
 
-.. versionadded:: 0.8
-    Saving list, tuples and signals present in :py:attr:`~.metadata`.
-
 When saving to ``hspy``, all supported objects in the signal's
 :py:attr:`~.metadata` is stored. This includes  lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,
@@ -282,7 +286,26 @@ intensity<get_lines_intensity>`):
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Mn_La at 0.63 keV, dimensions: (|)>,
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Zr_La at 2.04 keV, dimensions: (|)>]
 
+.. versionadded:: 1.3.1
+    ``chunks`` keyword argument
 
+By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
+possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
+``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
+    >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
+
+Note that currently it is not possible to pass different customised chunk shapes to all signals and
+arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving 
+will be applied to all arrays contained in the signal.
+
+By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
+what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`` does not impose the
+constrain of storing at least one signal per chunks. For example, for the signal in the example above
+passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -295,7 +318,7 @@ NetCDF
 ------
 
 This was the default format in HyperSpy's predecessor, EELSLab, but it has been
-superseeded by :ref:`HDF5` in HyperSpy. We provide only reading capabilities
+superseded by :ref:`HDF5` in HyperSpy. We provide only reading capabilities
 but we do not support writing to this format.
 
 Note that only NetCDF files written by EELSLab are supported.
@@ -311,7 +334,7 @@ MRC
 
 This is a format widely used for tomographic data. Our implementation is based
 on `this specification
-<http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also
+<https://www2.mrc-lmb.cam.ac.uk/research/locally-developed-software/image-processing-software/>`_. We also
 partly support FEI's custom header. We do not provide writing features for this
 format, but, as it is an open format, we may implement this feature in the
 future on demand.
@@ -342,25 +365,35 @@ PyPI:       https://pypi.python.org/pypi/mrcz
 Citation:   Submitted.
 Preprint:   http://www.biorxiv.org/content/early/2017/03/13/116533
 
+Support for this format is not enabled by default. In order to enable it
+install the `mrcz` and optionally the `blosc` Python packages.
+
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-`do_async`:   currently supported within Hyperspy for writing only, this will save
-              the file in a background thread and return immediately. Defaults
-              to `False`.
+`do_async`: 
+  currently supported within Hyperspy for writing only, this will save 
+  the file in a background thread and return immediately. Defaults
+  to `False`.
+
 .. Warning::
 
     There is no method currently implemented within Hyperspy to tell if an
     asychronous write has finished.
 
-`compressor`: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
-              Defaults to `None`.
-`clevel`:     The compression level, an `int` from 1 to 9. Defaults to 1.
-`n_threads`:  The number of threads to use for `blosc` compression. Defaults to
-              the maximum number of virtual cores (including Intel Hyperthreading)
-              on your system, which is recommended for best performance. If \
-              `do_asyc = True` you may wish to leave one thread free for the
-              Python GIL.
+
+`compressor`: 
+  The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`]. Defaults to `None`.
+
+`clevel`: 
+  The compression level, an `int` from 1 to 9. Defaults to 1.
+
+`n_threads`: 
+  The number of threads to use for `blosc` compression. Defaults to
+  the maximum number of virtual cores (including Intel Hyperthreading)
+  on your system, which is recommended for best performance. If \
+  `do_asyc = True` you may wish to leave one thread free for the
+  Python GIL.
 
 The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for
 general use. If speed is critical, use 'lz4' (LZ4) with `clevel=9`. Integer data
@@ -480,9 +513,9 @@ bio-scientific imaging. See `the library webpage
 
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of tiff
-files is compatible with ImageJ/Fiji and Gatan Digital Micrograph softwares.
+files is compatible with ImageJ/Fiji and Gatan Digital Micrograph software.
 HyperSpy can also import the scale and the units from tiff files saved using
-FEI and Zeiss SEM softwares.
+FEI and Zeiss SEM software.
 
 .. code-block:: python
 
@@ -553,17 +586,30 @@ available publicly available from EDAX and are on Github
 SpcMap-spd.file.format.pdf>`_, and
 `.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
 
+Extra loading arguments for SPD file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- `spc_fname` : {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
+- `ipr_fname` : {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
+- **kwargs: remaining arguments are passed to the Numpy ``memmap`` function.
+
+Extra loading arguments for SPD and SPC files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is read, or just the important parts for import into HyperSpy.
+
+
 .. _fei-format:
 
-FEI TIA ser and emi
+FEI TIA SER and EMI
 -------------------
 
 HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the
-problem.
+`issues tracker <https://github.com/hyperspy/hyperspy/issues>`_ to make us 
+aware of the problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
 by doing so, the information that is stored in the emi file is lost.
@@ -572,9 +618,18 @@ Therefore strongly recommend to load using the ``.emi`` file instead.
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
 
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- `only_valid_data` : bool, in case of series or linescan data with the 
+acquisition stopped before the end: if True, load only the acquired data. 
+If False, the empty data are filled with zeros. The default is False and this 
+default value will change to True in version 2.0.
+
 .. _unf-format:
 
-SEMPER unf binary format
+SEMPER UNF binary format
 ------------------------
 
 SEMPER is a fully portable system of programs for image processing, particularly
@@ -624,11 +679,16 @@ header in a plain-text format. The reader extracts the measured temperature
 along the time axis, as well as the date and calibration constants stored in
 the header.
 
+Bruker's formats
+----------------
+Bruker's Esprit(TM) software and hardware allows to acquire and save the data
+in different kind of formats. Hyperspy can read two main basic formats: bcf
+and spx.
 
 .. _bcf-format:
 
 Bruker composite file
-----------------
+^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
 hybrid (virtual file system/container with xml and binary data, optionally
@@ -645,7 +705,7 @@ Note that Bruker Esprit uses a similar format for EBSD data, but it is not
 currently supported by HyperSpy.
 
 Extra loading arguments
-^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++
 
 - `select_type` : one of (None, 'spectrum', 'image'). If specified, only the corresponding type of data, either spectrum or image, is returned. By default (None), all data are loaded.
 - `index` : one of (None, int, "all"). Allow to select the index of the dataset in the bcf file, which can contains several datasets. Default None value result in loading the first dataset. When set to 'all', all available datasets will be loaded and returned as separate signals.
@@ -683,6 +743,14 @@ recorded by setting the 'cutoff_at_kV' kwarg to higher value:
 Note that setting downsample to >1 currently locks out using SEM imagery
 as navigator in the plotting.
 
+.. _spx-format:
+
+SPX format
+^^^^^^^^^^
+
+Hyperspy can read Bruker's spx format (single spectra format based on XML).
+The format contains extensive list of details and parameters of EDS analyses
+which are mapped in hyperspy to metadata and original_metadata dictionaries.
 
 .. _emd-format:
 
@@ -699,23 +767,45 @@ EMD (NCEM)
 This EMD format was developed by Colin Ophus at the National Center for
 Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
 
+For files containing several datasets, the `dataset_name` argument can be
+used to select a specific one:
 
-EMD (FEI)
-^^^^^^^^^
+.. code-block:: python
 
-This is a non-compliant variant of the standard EMD format developed by FEI.
-HyperSpy supports importing images, EDS spectrum and EDS
+    >>> s = hs.load("adatafile.emd", dataset_name="/experimental/science_data_1")
+
+
+Or several by using a list:
+
+.. code-block:: python
+
+    >>> s = hs.load("adatafile.emd",
+    ...             dataset_name=[
+    ...                 "/experimental/science_data_1",
+    ...                 "/experimental/science_data_1"])
+
+
+asdf
+
+.. _emd_fei-format:
+
+EMD (Velox)
+^^^^^^^^^^^
+
+This is a non-compliant variant of the standard EMD format developed by 
+Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS
 spectrum streams (spectrum images stored in a sparse format). For spectrum
 streams, there are several loading options (described below) to control the frames
 and detectors to load and if to sum them on loading.  The default is
 to import the sum over all frames and over all detectors in order to decrease
 the data size in memory.
 
-Note that pruned FEI EMD files only contain the spectrum image in a proprietary
-format that HyperSpy cannot read. Therefore,
-don't prune FEI EMD files in you intend to read them with HyperSpy.
-Note also that loading a spectrum image can be slow if `numba
-<http://numba.pydata.org/>`_ is not installed.
+
+.. note::
+
+    Pruned Velox EMD files only contain the spectrum image in a proprietary
+    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in 
+    you intend to read them with HyperSpy.
 
 .. code-block:: python
 
@@ -726,9 +816,15 @@ Note also that loading a spectrum image can be slow if `numba
 
 .. note::
 
-    To enable lazy loading of spectrum images in this format it may be
-    necessary to install `sparse <http://sparse.pydata.org/en/latest/>`_. See
-    See also :ref:`install-with-python-installers`.
+    Currently only lazy uncompression rather than lazy loading is implemented. 
+    This means that it is not currently possible to read EDS SI Veloz EMD files 
+    with size bigger than the available memory.
+
+
+.. note::
+
+    Loading a spectrum image can be slow if 
+    `numba <http://numba.pydata.org/>`_ is not installed.
 
 
 .. warning::
@@ -800,3 +896,44 @@ to a quantity. Since there is a small fluctuation in the step of the time axis,
 the reader assumes that the step is constant and takes its mean, which is a
 good approximation. Further release of HyperSpy will read the time axis more
 precisely by supporting non-linear axis.
+
+
+Reading data generated by HyperSpy using other software packages
+================================================================
+
+The following scripts may help reading data generated by HyperSpy using
+other software packages.
+
+.. _import-rpl:
+
+ImportRPL Digital Micrograph plugin
+-----------------------------------
+
+
+This Digital Micrograph plugin is designed to import Ripple files into Digital Micrograph.
+It is used to ease data transit between DigitalMicrograph and HyperSpy without losing
+the calibration using the extra keywords that HyperSpy adds to the standard format.
+
+When executed it will ask for 2 files:
+
+#. The riple file with the data  format and calibrations
+#. The data itself in raw format.
+
+If a file with the same name and path as the riple file exits
+with raw or bin extension it is opened directly without prompting
+
+ImportRPL was written by Luiz Fernando Zagonel.
+
+
+`Download ImportRPL <https://github.com/downloads/hyperspy/ImportRPL/ImportRPL.s>`_
+
+.. _hyperspy-matlab:
+
+readHyperSpyH5 MATLAB Plugin
+----------------------------
+
+This MATLAB script is designed to import HyperSpy's saved HDF5 files (``.hspy`` extension).
+Like the Digital Micrograph script above, it is used to easily transfer data
+from HyperSpy to MATLAB, while retaining spatial calibration information.
+
+Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.

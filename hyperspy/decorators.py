@@ -101,7 +101,9 @@ def interactive_range_selector(cm):
         if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
-            get_gui(range_selector, toolkey="interactive_range_selector")
+            get_gui(
+                range_selector,
+                toolkey="hyperspy.interactive_range_selector")
         else:
             cm(self, *args, **kwargs)
     return wrapper

@@ -137,6 +137,32 @@ class GUIs(t.HasTraits):
         desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
 
 
+class PlotConfig(t.HasTraits):
+    saturated_pixels = t.CFloat(0.05,
+                                label='Saturated pixels',
+                                desc='Set the default saturated_pixels for '
+                                'plotting images.'
+                                )
+    dims_024_increase = t.Str('right',
+                              label='Navigate right'
+                              )
+    dims_024_decrease = t.Str('left',
+                              label='Navigate left',
+                              )
+    dims_135_increase = t.Str('down',
+                              label='Navigate down',
+                              )
+    dims_135_decrease = t.Str('up',
+                              label='Navigate up',
+                              )
+    modifier_dims_01 = t.Enum(['ctrl', 'alt', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 1st and 2nd dimensions')  # 0 elem is default
+    modifier_dims_23 = t.Enum(['shift', 'alt', 'ctrl', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
+    modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
+
+
 class EDSConfig(t.HasTraits):
     eds_mn_ka = t.CFloat(130.,
                          label='Energy resolution at Mn Ka (eV)',
@@ -163,6 +189,7 @@ template = {
     'GUIs': GUIs(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
+    'Plot': PlotConfig(),
 }
 
 # Set the enums defaults
@@ -198,6 +225,7 @@ def dictionary_from_template(template):
         dictionary[section] = traited_class.get()
     return dictionary
 
+
 config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
@@ -227,23 +255,26 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
-@add_gui_method(toolkey="Preferences")
+@add_gui_method(toolkey="hyperspy.Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
     GUIs = t.Instance(GUIs)
+    Plot = t.Instance(PlotConfig)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 
+
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
     General=template['General'],
     GUIs=template['GUIs'],
+    Plot=template['Plot'],
 )
 
 if preferences.General.logger_on:

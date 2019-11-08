@@ -25,19 +25,16 @@
 
 
 import re
-import numbers
 import json
 import os
 from datetime import datetime
 import time
 import logging
-from tempfile import mkdtemp
-import os.path as path
+import traits.api as t
 
 import h5py
 import numpy as np
 import dask.array as da
-from dask import delayed
 from dateutil import tz
 import pint
 
@@ -52,8 +49,12 @@ full_support = False  # Hopefully?
 # Recognised file extension
 file_extensions = ('emd', 'EMD')
 default_extension = 0
+# Reading capabilities
+reads_images = True
+reads_spectrum = True
+reads_spectrum_image = True
 # Writing features
-writes = True
+writes = True  # Only Berkeley emd
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -297,7 +298,7 @@ class EMD(object):
             signal.metadata.General.title = name
         else:
             # Take title of Signal!
-            if signal.metadata.General.title is not '':
+            if signal.metadata.General.title != '':
                 name = signal.metadata.General.title
             else:  # Take default!
                 name = '__unnamed__'
@@ -320,7 +321,7 @@ class EMD(object):
         self.signals[name] = signal
 
     @classmethod
-    def load_from_emd(cls, filename, lazy=False):
+    def load_from_emd(cls, filename, lazy=False, dataset_name=None):
         """Construct :class:`~.EMD` object from an emd-file.
 
         Parameters
@@ -331,6 +332,12 @@ class EMD(object):
         False : bool, optional
             If False (default) loads data to memory. If True, enables loading
             only if requested.
+        dataset_name : string or iterable, optional
+            Only add dataset with specific name. Note, this has to be the full
+            group path in the file. For example `/experimental/science_data'.
+            If the dataset is not found, an IOError with the possible
+            datasets will be raised. Several names can be specified
+            in the form of a list.
 
         Returns
         -------
@@ -369,16 +376,37 @@ class EMD(object):
                     'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
-        # One node should remain, the data node (named 'data', 'signals',
-        # 'experiments', ...)!
-        assert len(node_list) == 1, 'Dataset location is ambiguous!'
-        data_group = emd_file.get(node_list[0])
-        if data_group is not None:
-            for name, group in data_group.items():
-                if isinstance(group, h5py.Group):
-                    if group.attrs.get('emd_group_type') == 1:
-                        emd._read_signal_from_group(
-                            name, group, lazy)
+        dataset_in_file_list = []
+        for node in node_list:
+            data_group = emd_file.get(node)
+            if data_group is not None:
+                for group in data_group.values():
+                    name = group.name
+                    if isinstance(group, h5py.Group):
+                        if group.attrs.get('emd_group_type') == 1:
+                            dataset_in_file_list.append(name)
+        if len(dataset_in_file_list) == 0:
+            raise IOError("No datasets found in {0}".format(filename))
+        dataset_read_list = []
+        if dataset_name is not None:
+            if isinstance(dataset_name, str):
+                dataset_name = [dataset_name]
+
+            for temp_dataset_name in dataset_name:
+                if temp_dataset_name in dataset_in_file_list:
+                    dataset_read_list.append(temp_dataset_name)
+                else:
+                    raise IOError(
+                        "Dataset with name {0} not found in the file. "
+                        "Possible datasets are {1}.".format(
+                            temp_dataset_name,
+                            ', '.join(dataset_in_file_list)))
+        else:
+            dataset_read_list = dataset_in_file_list
+        for dataset_read in dataset_read_list:
+            group = emd_file[dataset_read]
+            emd._read_signal_from_group(dataset_read, group, lazy)
+
         # Close file and return EMD object:
         if not lazy:
             emd_file.close()
@@ -472,8 +500,8 @@ def fei_check(filename):
     with h5py.File(filename, 'r') as f:
         if 'Version' in list(f.keys()):
             version = f.get('Version')
-            v_dict = json.loads(version.value[0].decode('utf-8'))
-            if v_dict['format'] == 'Velox':
+            v_dict = json.loads(version[0].decode('utf-8'))
+            if v_dict['format'] in ['Velox', 'DevelopersKit']:
                 return True
 
 
@@ -483,13 +511,31 @@ def _get_keys_from_group(group):
 
 
 def _parse_sub_data_group_metadata(sub_data_group):
-    metadata_array = sub_data_group['Metadata'][:].T[0]
+    metadata_array = sub_data_group['Metadata'][:, 0].T
     mdata_string = metadata_array.tostring().decode("utf-8")
     return json.loads(mdata_string.rstrip('\x00'))
 
 
 def _parse_metadata(data_group, sub_group_key):
     return _parse_sub_data_group_metadata(data_group[sub_group_key])
+
+
+def _parse_detector_name(original_metadata):
+    try:
+        name = original_metadata['BinaryResult']['Detector']
+    except KeyError:
+        # if the `BinaryResult/Detector` is not available, there should be
+        # only one detector in `Detectors`
+        name = original_metadata['Detectors']['Detector-01']['DetectorName']
+    return name
+
+
+def _get_detector_metadata_dict(om, detector_name):
+    detectors_dict = om['Detectors']
+    # find detector dict from the detector_name
+    for key in detectors_dict:
+        if detectors_dict[key]['DetectorName'] == detector_name:
+            return detectors_dict[key]
 
 
 class FeiEMDReader(object):
@@ -526,6 +572,7 @@ class FeiEMDReader(object):
         self.SI_data_dtype = SI_dtype
         self.load_SI_image_stack = load_SI_image_stack
         self.lazy = lazy
+        self.detector_name = None
 
         self.original_metadata = {}
         try:
@@ -554,7 +601,7 @@ class FeiEMDReader(object):
         elif select_type is None:
             pass
         else:
-            raise ValueError("`select_type` parameter takes only: `None`, ",
+            raise ValueError("`select_type` parameter takes only: `None`, "
                              "'single_spectrum', 'images' or 'spectrum_image'.")
 
         if self.im_type == 'Image':
@@ -605,7 +652,8 @@ class FeiEMDReader(object):
                                             spectrum_sub_group_key)
         original_metadata.update(self.original_metadata)
 
-        dispersion, offset = self._get_dispersion_offset(original_metadata)
+        dispersion, offset, unit = self._get_dispersion_offset(
+            original_metadata)
         axes = []
         if len(data.shape) == 2:
             if data.shape[0] == 1:
@@ -660,12 +708,8 @@ class FeiEMDReader(object):
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
         original_metadata.update(self.original_metadata)
-        try:
-            self.detector_name = original_metadata['BinaryResult']['Detector']
-        except KeyError:
-            # if the `BinaryResult/Detector` is not available, there should be
-            # only one detector in `Detectors`
-            self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
+        if 'Detector' in original_metadata['BinaryResult'].keys():
+            self.detector_name = _parse_detector_name(original_metadata)
 
         read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         h5data = image_sub_group['Data']
@@ -679,7 +723,13 @@ class FeiEMDReader(object):
                     chunks=h5data.chunks),
                 axes=[2, 0, 1])
         else:
-            data = np.rollaxis(np.array(h5data), axis=2)
+            # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
+            # Change back to standard API once issue #977 is fixed.
+            # Preallocate the numpy array and use read_direct method, which is
+            # much faster in case of chunked data.
+            data = np.empty(h5data.shape)
+            h5data.read_direct(data)
+            data = np.rollaxis(data, axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -699,14 +749,14 @@ class FeiEMDReader(object):
             i = 0
         else:
             frame_time = original_metadata['Scan']['FrameTime']
-            scale_time = self._convert_scale_units(
+            frame_time, time_unit = self._convert_scale_units(
                 frame_time, 's', 2 * data.shape[0])
             axes.append({'index_in_array': 0,
                          'name': 'Time',
                          'offset': 0,
-                         'scale': scale_time[0],
+                         'scale': frame_time,
                          'size': data.shape[0],
-                         'units': scale_time[1],
+                         'units': time_unit,
                          'navigate': True})
             i = 1
         scale_x = self._convert_scale_units(
@@ -735,6 +785,10 @@ class FeiEMDReader(object):
 
         md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'image'
+        if self.detector_name is not None:
+            original_metadata['DetectorMetadata'] = _get_detector_metadata_dict(
+                original_metadata,
+                self.detector_name)
         if hasattr(self, 'map_label_dict'):
             if image_sub_group_key in self.map_label_dict:
                 md['General']['title'] = self.map_label_dict[image_sub_group_key]
@@ -743,33 +797,55 @@ class FeiEMDReader(object):
                 'axes': axes,
                 'metadata': md,
                 'original_metadata': original_metadata,
-                'mapping': self._get_mapping(map_selected_element=False)}
+                'mapping': self._get_mapping(map_selected_element=False,
+                                             parse_individual_EDS_detector_metadata=False)}
+
+    def _parse_frame_time(self, original_metadata, factor=1):
+        try:
+            frame_time = original_metadata['Scan']['FrameTime']
+            time_unit = 's'
+        except KeyError:
+            frame_time, time_unit = None, t.Undefined
+
+        frame_time, time_unit = self._convert_scale_units(
+            frame_time, time_unit, factor)
+        return frame_time, time_unit
 
     def _parse_image_display(self):
-        image_display_group = self.p_grp.get('Displays/ImageDisplay')
-        key_list = _get_keys_from_group(image_display_group)
-        self.map_label_dict = {}
-        for key in key_list:
-            v = json.loads(image_display_group[key].value[0].decode('utf-8'))
-            data_key = v['dataPath'].split('/')[-1]  # key in data group
-            self.map_label_dict[data_key] = v['display']['label']
+        try:
+            image_display_group = self.p_grp.get('Displays/ImageDisplay')
+            key_list = _get_keys_from_group(image_display_group)
+            self.map_label_dict = {}
+            for key in key_list:
+                v = json.loads(
+                    image_display_group[key][0].decode('utf-8'))
+                data_key = v['dataPath'].split('/')[-1]  # key in data group
+                self.map_label_dict[data_key] = v['display']['label']
+        except KeyError:
+            _logger.warning("The image label can't be read from the metadata.")
+            pass
 
     def _parse_metadata_group(self, group, group_name):
         d = {}
-        for group_key in _get_keys_from_group(group):
-            subgroup = group.get(group_key)
-            if hasattr(subgroup, 'keys'):
-                sub_dict = {}
-                for subgroup_key in _get_keys_from_group(subgroup):
-                    v = json.loads(
-                        subgroup[subgroup_key].value[0].decode('utf-8'))
-                    sub_dict[subgroup_key] = v
-            else:
-                sub_dict = json.loads(subgroup.value[0].decode('utf-8'))
-            d[group_key] = sub_dict
+        try:
+            for group_key in _get_keys_from_group(group):
+                subgroup = group.get(group_key)
+                if hasattr(subgroup, 'keys'):
+                    sub_dict = {}
+                    for subgroup_key in _get_keys_from_group(subgroup):
+                        v = json.loads(
+                            subgroup[subgroup_key][0].decode('utf-8'))
+                        sub_dict[subgroup_key] = v
+                else:
+                    sub_dict = json.loads(subgroup[0].decode('utf-8'))
+                d[group_key] = sub_dict
+        except IndexError:
+            _logger.warning("Some metadata can't be read.")
         self.original_metadata.update({group_name: d})
 
     def _read_spectrum_stream(self):
+        if not self.load_SI:
+            return
         self.detector_name = 'EDS'
         # Try to read the number of frames from Data/SpectrumImage
         try:
@@ -779,7 +855,7 @@ class FeiEMDReader(object):
                     sig[next(iter(sig))]
                     ["SpectrumImageSettings"][0].decode("utf8")
                 )["endFramePosition"])
-        except Exception as e:
+        except Exception:
             _logger.exception(
                 "Failed to read the number of frames from Data/SpectrumImage")
             self.number_of_frames = None
@@ -794,10 +870,10 @@ class FeiEMDReader(object):
 
         spectrum_stream_group = self.d_grp.get("SpectrumStream")
         if spectrum_stream_group is None:
-            _logger.warning("No spectrum stream is present in the file. It ",
-                            "is possible that the file has been pruned: use ",
+            _logger.warning("No spectrum stream is present in the file. It "
+                            "is possible that the file has been pruned: use "
                             "Velox to read the spectrum image (proprietary "
-                            "format). If you want to open FEI emd file with ",
+                            "format). If you want to open FEI emd file with "
                             "HyperSpy don't prune the file when saving it in "
                             "Velox.")
             return
@@ -838,7 +914,8 @@ class FeiEMDReader(object):
 
         pixel_size, offsets, original_units = \
             streams[0].get_pixelsize_offset_unit()
-        dispersion, offset = self._get_dispersion_offset(original_metadata)
+        dispersion, offset, unit = self._get_dispersion_offset(
+            original_metadata)
 
         scale_x = self._convert_scale_units(
             pixel_size['width'], original_units, spectrum_image_shape[1])
@@ -853,13 +930,14 @@ class FeiEMDReader(object):
         axes = []
         # add a supplementary axes when we import all frames individualy
         if not self.sum_frames:
-            frame_time = float(original_metadata['Scan']['FrameTime'])
+            frame_time, time_unit = self._parse_frame_time(original_metadata,
+                                                           spectrum_image_shape[i])
             axes.append({'index_in_array': i,
                          'name': 'Time',
                          'offset': 0,
                          'scale': frame_time,
                          'size': spectrum_image_shape[i],
-                         'units': 's',
+                         'units': time_unit,
                          'navigate': True})
             i = 1
         axes.extend([{'index_in_array': i,
@@ -881,7 +959,7 @@ class FeiEMDReader(object):
                       'offset': offset,
                       'scale': dispersion,
                       'size': spectrum_image_shape[i + 2],
-                      'units': 'keV',
+                      'units': unit,
                       'navigate': False}])
 
         md = self._get_metadata_dict(original_metadata)
@@ -894,18 +972,26 @@ class FeiEMDReader(object):
                                       'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
-                                      'mapping': self._get_mapping()})
+                                      'mapping': self._get_mapping(
+                                          parse_individual_EDS_detector_metadata=not self.sum_frames)})
 
     def _get_dispersion_offset(self, original_metadata):
-        for detectorname, detector in original_metadata['Detectors'].items():
-            if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
-                dispersion = float(
-                    detector['Dispersion']) / 1000.0 * self.rebin_energy
-                offset = float(
-                    detector['OffsetEnergy']) / 1000.0
-                return dispersion, offset
+        try:
+            for detectorname, detector in original_metadata['Detectors'].items(
+            ):
+                if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
+                    dispersion = float(
+                        detector['Dispersion']) / 1000.0 * self.rebin_energy
+                    offset = float(
+                        detector['OffsetEnergy']) / 1000.0
+                    return dispersion, offset, 'keV'
+        except KeyError:
+            _logger.warning("The spectrum calibration can't be loaded.")
+            return 1, 0, t.Undefined
 
     def _convert_scale_units(self, value, units, factor=1):
+        if units == t.Undefined:
+            return value, units
         factor /= 2
         v = np.float(value) * self.ureg(units)
         converted_v = (factor * v).to_compact()
@@ -916,21 +1002,34 @@ class FeiEMDReader(object):
     def _get_metadata_dict(self, om):
         meta_gen = {}
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
-        meta_gen['title'] = self.detector_name
-        # We have only one entry in the original_metadata, so we can't use the
-        # mapping of the original_metadata to set the date and time in the
-        # metadata: need to set manually here
-        unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
-        date, time = self._convert_datetime(unix_time).split('T')
-        meta_gen['date'] = date
-        meta_gen['time'] = time
+        if self.detector_name is not None:
+            meta_gen['title'] = self.detector_name
+        # We have only one entry in the original_metadata, so we can't use
+        # the mapping of the original_metadata to set the date and time in
+        # the metadata: need to set it manually here
+        try:
+            if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+            # Workaround when the 'AcquisitionStartDatetime' key is missing
+            # This timestamp corresponds to when the data is stored
+            elif (not isinstance(om['CustomProperties'], str) and
+                  'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys()):
+                unix_time = float(
+                    om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value']) / 1E6
+            date, time = self._convert_datetime(unix_time).split('T')
+            meta_gen['date'] = date
+            meta_gen['time'] = time
+            meta_gen['time_zone'] = self._get_local_time_zone()
+        except (UnboundLocalError):
+            pass
 
         meta_sig = {}
         meta_sig['signal_type'] = ''
 
         return {'General': meta_gen, 'Signal': meta_sig}
 
-    def _get_mapping(self, map_selected_element=True):
+    def _get_mapping(self, map_selected_element=True,
+                     parse_individual_EDS_detector_metadata=True):
         mapping = {
             'Acquisition.AcquisitionStartDatetime.DateTime': (
                 "General.time_zone", lambda x: self._get_local_time_zone()),
@@ -944,22 +1043,47 @@ class FeiEMDReader(object):
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha",
-                lambda x: '{:.2f}'.format(float(x))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.BetaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_beta",
-                lambda x: '{:.2f}'.format(float(x))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.Position.x': (
                 "Acquisition_instrument.TEM.Stage.x",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'Stage.Position.y': (
                 "Acquisition_instrument.TEM.Stage.y",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'Stage.Position.z': (
                 "Acquisition_instrument.TEM.Stage.z",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'ImportedDataParameter.Number_of_frames': (
-                "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None)
+                "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None),
+            'DetectorMetadata.ElevationAngle': (
+                "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
+                lambda x: round(float(x), 3)),
+            'DetectorMetadata.Gain': (
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                lambda x: float(x)),
+            'DetectorMetadata.Offset': (
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                lambda x: float(x)),
         }
+
+        # Parse individual metadata for each EDS detector
+        if parse_individual_EDS_detector_metadata:
+            mapping.update({
+                'DetectorMetadata.AzimuthAngle': (
+                    "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
+                    lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                'DetectorMetadata.LiveTime': (
+                    "Acquisition_instrument.TEM.Detector.EDS.live_time",
+                    lambda x: '{:.6f}'.format(float(x))),
+                'DetectorMetadata.RealTime': (
+                    "Acquisition_instrument.TEM.Detector.EDS.real_time",
+                    lambda x: '{:.6f}'.format(float(x))),
+                'DetectorMetadata.DetectorName': (
+                    "General.title", None),
+            })
 
         # Add selected element
         if map_selected_element:
@@ -1008,7 +1132,7 @@ class FeiSpectrumStream(object):
         # Parse acquisition settings to get bin_count and dtype
         acquisition_settings_group = stream_group['AcquisitionSettings']
         acquisition_settings = json.loads(
-            acquisition_settings_group.value[0].decode('utf-8'))
+            acquisition_settings_group[0].decode('utf-8'))
         self.bin_count = int(acquisition_settings['bincount'])
         if self.bin_count % self.reader.rebin_energy != 0:
             raise ValueError('The `rebin_energy` needs to be a divisor of the',
@@ -1110,7 +1234,7 @@ def file_reader(filename, log_info=False,
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
-        emd = EMD.load_from_emd(filename, lazy)
+        emd = EMD.load_from_emd(filename, lazy, **kwds)
         if log_info:
             emd.log_info()
         for signal in emd.signals.values():
