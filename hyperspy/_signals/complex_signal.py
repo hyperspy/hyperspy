@@ -26,6 +26,7 @@ from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+from hyperspy.misc.utils import parse_quantity
 
 
 def format_title(thing):
@@ -304,12 +305,28 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         argand_diagram = Signal2D(argand_diagram.T)
         argand_diagram.metadata = self.metadata.deepcopy()
         argand_diagram.metadata.General.title = 'Argand diagram of {}'.format(self.metadata.General.title)
-        argand_diagram.axes_manager.signal_axes[0].name = 'Real'
+
+        if self.real.metadata.Signal.has_item('quantity'):
+            quantity_real, units_real = parse_quantity(self.real.metadata.Signal.quantity)
+            argand_diagram.axes_manager.signal_axes[0].name = quantity_real
+        else:
+            argand_diagram.axes_manager.signal_axes[0].name = 'Real'
+            units_real = None
         argand_diagram.axes_manager.signal_axes[0].offset = real_edges[0]
         argand_diagram.axes_manager.signal_axes[0].scale = np.abs(real_edges[0] - real_edges[1])
-        argand_diagram.axes_manager.signal_axes[1].name = 'Imaginary'
+
+        if self.imag.metadata.Signal.has_item('quantity'):
+            quantity_imag, units_imag = parse_quantity(self.imag.metadata.Signal.quantity)
+            argand_diagram.axes_manager.signal_axes[1].name = quantity_imag
+        else:
+            argand_diagram.axes_manager.signal_axes[1].name = 'Imaginary'
+            units_imag = None
         argand_diagram.axes_manager.signal_axes[1].offset = imag_edges[0]
         argand_diagram.axes_manager.signal_axes[1].scale = np.abs(imag_edges[0] - imag_edges[1])
+        if units_real:
+            argand_diagram.axes_manager.signal_axes[0].units = units_real
+        if units_imag:
+            argand_diagram.axes_manager.signal_axes[1].units = units_imag
 
         return argand_diagram
 

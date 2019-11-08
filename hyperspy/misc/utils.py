@@ -133,6 +133,36 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
+def parse_quantity(quantity, sep=['(', '['], end_sep=[')', ']']):
+    """Parse quantity of the signal outputting quantity and
+    units separately if applicable
+
+    Parameters
+    ----------
+    quantity : string
+    sep : list of string
+        Possible separators for units
+    end_sep : list of (string or None)
+        Separator endings corresponding to `sep`. Same length as `sep`.
+
+    Returns
+    -------
+    quantity_name : string
+    units : string
+    """
+
+    if not(len(sep) == len(end_sep)):
+        raise ValueError('Attributes `sep` and `end_sep` must have the same length.')
+    for i, separator in enumerate(sep):
+        q_split = quantity.split(separator)
+        if len(q_split) == 2:
+            quantity_name = q_split[0]
+            units = q_split[1].split(end_sep[i])[0]
+            return quantity_name, units
+
+    return quantity, None
+
+
 _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
