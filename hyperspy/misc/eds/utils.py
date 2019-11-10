@@ -443,8 +443,8 @@ def _quantification_cliff_lorimer(intensities,
     if len(intensities) != len(kfactors):
         raise ValueError('The number of kfactors must match the size of the '
                          'first axis of intensities.')
-    ab = np.zeros_like(intensities, dtype='float')
-    composition = np.ones_like(intensities, dtype='float')
+    ab = np.zeros(intensities.shape, dtype='float')
+    composition = np.ones(intensities.shape, dtype='float')
     # ab = Ia/Ib / kab
 
     other_index = list(range(len(kfactors)))
