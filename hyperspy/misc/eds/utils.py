@@ -4,7 +4,6 @@ import math
 from scipy import constants
 
 from hyperspy.misc.elements import elements as elements_db
-from functools import reduce
 
 eV2keV = 1000.
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -366,6 +365,9 @@ def quantification_cliff_lorimer(intensities,
     mask: array of bool
         The mask with the dimension of intensities[0]. If a pixel is True,
         the composition is set to zero.
+    min_intensity: float
+        The lowest value an element can be in order to calculate its fraction.
+        Must be above zero to prevent dividing by zero.
 
     Return
     ------
@@ -374,36 +376,41 @@ def quantification_cliff_lorimer(intensities,
     """
     # Value used as an threshold to prevent using zeros as denominator
     min_intensity = 0.1
-    dim = intensities.shape
-    if len(dim) > 1:
-        dim2 = reduce(lambda x, y: x * y, dim[1:])
-        intens = intensities.reshape(dim[0], dim2)
+    original_shape = intensities.shape # (elements, *navigation_shape)
+    if len(original_shape) > 1: # if signal has navigation shape
+        n_elements = intensities.shape[0]
+        n_pixels = np.prod(original_shape[1:])
+        intens = intensities.reshape((n_elements, n_pixels))
         intens = intens.astype('float')
-        for i in range(dim2):
+        for i in range(n_pixels):
             index = np.where(intens[:, i] > min_intensity)[0]
             if len(index) > 1:
+                # Due to k-factors, we only need to compare any two elements
+                # as long as they have enough intensity. We feed the index of 
+                # two elements with enough intensity to the quantification algorithm.
+                # TODO Could consider giving the indices with highest intensity,
+                # instead of first two?
                 ref_index, ref_index2 = index[:2]
                 intens[:, i] = _quantification_cliff_lorimer(
                     intens[:, i], kfactors, ref_index, ref_index2)
+            elif len(index) == 1:
+                intens[:, i] = 0.
+                intens[index[0], i] = 1.
             else:
-                intens[:, i] = np.zeros_like(intens[:, i])
-                if len(index) == 1:
-                    intens[index[0], i] = 1.
-        intens = intens.reshape(dim)
+                intens[:, i] = 0.
+        intens = intens.reshape(original_shape)
         if mask is not None:
-            for i in range(dim[0]):
+            for i in range(n_elements):
                 intens[i][mask] = 0
         return intens
     else:
-        # intens = intensities.copy()
-        # intens = intens.astype('float')
         index = np.where(intensities > min_intensity)[0]
         if len(index) > 1:
             ref_index, ref_index2 = index[:2]
             intens = _quantification_cliff_lorimer(
                 intensities, kfactors, ref_index, ref_index2)
         else:
-            intens = np.zeros_like(intensities)
+            intens = np.zeros(intensities.shape)
             if len(index) == 1:
                 intens[index[0]] = 1.
         return intens
@@ -483,8 +490,8 @@ def quantification_zeta_factor(intensities,
     shape as intensities and mass thickness in kg/m^2.
     """
 
-    sumzi = np.zeros_like(intensities[0], dtype='float')
-    composition = np.zeros_like(intensities, dtype='float')
+    sumzi = np.zeros(intensities[0].shape, dtype='float')
+    composition = np.zeros(intensities.shape, dtype='float')
     for intensity, zfactor in zip(intensities, zfactors):
         sumzi = sumzi + intensity * zfactor
     for i, (intensity, zfactor) in enumerate(zip(intensities, zfactors)):
