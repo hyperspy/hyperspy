@@ -94,8 +94,6 @@ the npoints keyword.
 Kramers-Kronig Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.7
-
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
 The :py:meth:`~._signals.eels.EELSSpectrum_mixin.kramers_kronig_analysis`
@@ -271,10 +269,8 @@ overlapping. This method is executed automatically when e.g. components are
 added or removed from the model, but sometimes is necessary to call it
 manually.
 
-.. versionadded:: 0.7.1
-
-   Sometimes it is desirable to disable the automatic adjustment of the fine
-   structure width. It is possible to suspend this feature by calling
-   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`.
-   To resume it use
-   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`
+Sometimes it is desirable to disable the automatic adjustment of the fine
+structure width. It is possible to suspend this feature by calling
+:py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`.
+To resume it use
+:py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`

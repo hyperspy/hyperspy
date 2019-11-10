@@ -24,7 +24,9 @@ import traits.api as t
 from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
+from distutils.version import LooseVersion
 
+import hyperspy
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
@@ -32,6 +34,9 @@ from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
+from IPython.display import display_pretty, display
+from hyperspy.misc.model_tools import current_component_values
+from hyperspy.misc.utils import get_object_package_info
 
 import logging
 
@@ -50,7 +55,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
         return super(NoneFloat, self).validate(object, name, value)
 
 
-@add_gui_method(toolkey="Parameter")
+@add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
 
     """Model parameter
@@ -551,10 +556,18 @@ class Parameter(t.HasTraits):
         shape = self._axes_manager._navigation_shape_in_array
         if not shape:
             shape = [1, ]
-        dtype_ = np.dtype([
-            ('values', 'float', self._number_of_elements),
-            ('std', 'float', self._number_of_elements),
-            ('is_set', 'bool', 1)])
+        # Shape-1 fields in dtypes won’t be collapsed to scalars in a future
+        # numpy version (see release notes numpy 1.17.0)
+        if self._number_of_elements > 1:
+            dtype_ = np.dtype([
+                ('values', 'float', self._number_of_elements),
+                ('std', 'float', self._number_of_elements),
+                ('is_set', 'bool')])
+        else:
+            dtype_ = np.dtype([
+                ('values', 'float'),
+                ('std', 'float'),
+                ('is_set', 'bool')])
         if (self.map is None or self.map.shape != shape or
                 self.map.dtype != dtype_):
             self.map = np.zeros(shape, dtype_)
@@ -712,7 +725,7 @@ class Parameter(t.HasTraits):
         return view
 
 
-@add_gui_method(toolkey="Component")
+@add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
     __axes_manager = None
 
@@ -819,6 +832,14 @@ class Component(t.HasTraits):
             parameter._axes_manager = value
         self.__axes_manager = value
 
+    @property
+    def _is_navigation_multidimensional(self):
+        if (self._axes_manager is None or not
+                self._axes_manager.navigation_dimension):
+            return False
+        else:
+            return True
+
     def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
@@ -852,9 +873,9 @@ class Component(t.HasTraits):
 
     def _get_long_description(self):
         if self.name:
-            text = '%s (%s component)' % (self.name, self._id_name)
+            text = '%s (%s component)' % (self.name, self.__class__.__name__)
         else:
-            text = '%s component' % self._id_name
+            text = '%s component' % self.__class__.__name__
         return text
 
     def _get_short_description(self):
@@ -862,7 +883,7 @@ class Component(t.HasTraits):
         if self.name:
             text += self.name
         else:
-            text += self._id_name
+            text += self.__class__.__name__
         text += ' component'
         return text
 
@@ -1115,11 +1136,13 @@ class Component(t.HasTraits):
         """Returns component as a dictionary
         For more information on method and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+
         Parameters
         ----------
         fullcopy : Bool (optional, False)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
+
         Returns
         -------
         dic : dictionary
@@ -1135,15 +1158,17 @@ class Component(t.HasTraits):
         dic = {
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
+        dic.update(get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        from hyperspy.model import components
-        if self._id_name not in components.__dict__.keys():
+        from hyperspy.model import _COMPONENTS
+        if self._id_name not in _COMPONENTS:
             import dill
             dic['_class_dump'] = dill.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
+
         Parameters
         ----------
         dict : dictionary
@@ -1159,6 +1184,7 @@ class Component(t.HasTraits):
                 component attributes.  For more information see
                 :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys() *
+
         Returns
         -------
         twin_dict : dictionary
@@ -1168,6 +1194,11 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
+            if (self._id_name == "Polynomial" and 
+                    LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
+                # in HyperSpy 2.0 the polynomial definition changed
+                from hyperspy._components.polynomial import convert_to_polynomial
+                dic = convert_to_polynomial(dic)
             load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:
@@ -1183,3 +1214,18 @@ class Component(t.HasTraits):
         else:
             raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+    def print_current_values(self, only_free=False, fancy=True):
+        """Prints the current values of the component's parameters.
+        Parameters
+        ----------
+        only_free : bool
+            If True, only free parameters will be printed.
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
+        """
+        if fancy:
+            display(current_component_values(self, only_free=only_free))
+        else:
+            display_pretty(current_component_values(
+                self, only_free=only_free))

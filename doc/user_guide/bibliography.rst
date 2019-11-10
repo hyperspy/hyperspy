@@ -176,7 +176,8 @@ Bibliography
 :ref:`[Schaffer2004] <Schaffer2004>`
    Bernhard Schaffer, Werner Grogger and Gerald
    Kothleitner. “Automated Spatial Drift Correction for EFTEM
-   Image Series.” Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+   Image Series.” Ultramicroscopy 102, no. 1 (December 2004): 27–36
+   [`link <https://doi.org/10.1016/j.ultramic.2004.08.003>`_].
 
 .. _Guizar2008:
 
@@ -184,7 +185,16 @@ Bibliography
    Manuel Guizar-Sicairos, Samuel T. Thurman, and James R. Fienup,
    “Efficient subpixel image registration algorithms",
    Optics Letters 33, 156-158 (2008). DOI:10.1364/OL.33.000156
+   [`link <https://doi.org/10.1364/OL.33.000156>`_].
 
+.. _Satopää2011:
+
+:ref:`[Satopää2011] <Satopää2011>`
+   Ville Satopää, Jeannie Albrecht, David Irwin, Barath Raghavan. 
+   "Finding a "Kneedle" in a Haystack: Detecting Knee Points in System Behavior.
+   31st International Conference on Distributed Computing Systems Workshops", 
+   pp. 166-171, Minneapolis, Minnesota, USA, June 2011 
+   [`link <https://doi.org/10.1109/ICDCSW.2011.20>`_].
 
 
 

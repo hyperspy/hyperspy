@@ -298,7 +298,7 @@ class EMD(object):
             signal.metadata.General.title = name
         else:
             # Take title of Signal!
-            if signal.metadata.General.title is not '':
+            if signal.metadata.General.title != '':
                 name = signal.metadata.General.title
             else:  # Take default!
                 name = '__unnamed__'
@@ -855,7 +855,7 @@ class FeiEMDReader(object):
                     sig[next(iter(sig))]
                     ["SpectrumImageSettings"][0].decode("utf8")
                 )["endFramePosition"])
-        except Exception as e:
+        except Exception:
             _logger.exception(
                 "Failed to read the number of frames from Data/SpectrumImage")
             self.number_of_frames = None

@@ -18,23 +18,31 @@
 
 from hyperspy._components.expression import Expression
 
+
 class Exponential(Expression):
 
-    """Exponential function component
+    r"""Exponential function component.
 
     .. math::
-    
-        f(x) = A*e^{-x/k}
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     k      |    tau    |
-    +------------+-----------+
+        f(x) = A\cdot\exp\left(-\frac{x}{\tau}\right)
 
+    ============= =============
+    Variable       Parameter 
+    ============= =============
+    :math:`A`      A     
+    :math:`\tau`   tau    
+    ============= =============
+
+
+    Parameters
+    -----------
+    A: float
+        Maximum intensity
+    tau: float
+        Scale parameter (time constant)
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
     """
 
     def __init__(self, A=1., tau=1., module="numexpr", **kwargs):

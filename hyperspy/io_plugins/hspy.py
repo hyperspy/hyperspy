@@ -26,7 +26,7 @@ import h5py
 import numpy as np
 import dask.array as da
 from traits.api import Undefined
-from hyperspy.misc.utils import ensure_unicode, multiply
+from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
 
 _logger = logging.getLogger(__name__)
@@ -203,6 +203,16 @@ def hdfgroup2signaldict(group, lazy=False):
             group[original_metadata], lazy=lazy),
         'attributes': {}
     }
+    if "package" in group.attrs:
+        # HyperSpy version is >= 1.5
+        exp["package"] = group.attrs["package"]
+        exp["package_version"] = group.attrs["package_version"]
+    else:
+        # Prior to v1.4 we didn't store the package information. Since there
+        # were already external package we cannot assume any package provider so
+        # we leave this empty.
+        exp["package"] = ""
+        exp["package_version"] = ""
 
     data = group['data']
     if lazy:
@@ -407,7 +417,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
                 tmp = np.array(value)
         except ValueError:
             tmp = np.array([[0]])
-        if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
+        if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
             dict2hdfgroup(dict(zip(
                 [str(i) for i in range(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
@@ -533,6 +543,15 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
         else:
             # Optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+
+    if data.dtype == np.dtype('O'):
+        # For saving ragged array
+        # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
+        group.require_dataset(key,
+                              chunks,
+                              dtype=h5py.special_dtype(vlen=data[0].dtype),
+                              **kwds)
+        group[key][:] = data[:]
 
     maxshape = tuple(None for _ in data.shape)
 
@@ -665,6 +684,7 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
 
 
 def write_signal(signal, group, **kwds):
+    group.attrs.update(get_object_package_info(signal))
     if default_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"

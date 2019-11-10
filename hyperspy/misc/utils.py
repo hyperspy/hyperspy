@@ -26,10 +26,16 @@ import codecs
 import collections
 import unicodedata
 from contextlib import contextmanager
+import importlib
+
+import numpy as np
+
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 
-import numpy as np
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 def attrsetter(target, attrs, value):
@@ -790,7 +796,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from itertools import zip_longest
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
@@ -1053,3 +1058,41 @@ def add_scalar_axis(signal):
                     offset=0,
                     name="Scalar",
                     navigate=False)
+
+
+def get_object_package_info(obj):
+    """Get info about object package
+
+    Returns
+    -------
+    dic: dict
+        Dictionary containing ``package`` and ``package_version`` (if available)
+    """
+    dic = {}
+    # Note that the following can be "__main__" if the component was user
+    # defined
+    dic["package"] = obj.__module__.split(".")[0]
+    if dic["package"] != "__main__":
+        try:
+            dic["package_version"] = importlib.import_module(
+                dic["package"]).__version__
+        except AttributeError:
+            dic["package_version"] = ""
+            _logger.warning(
+                "The package {package} does not set its version in " +
+                "{package}.__version__. Please report this issue to the " +
+                "{package} developers.".format(package=dic["package"]))
+    else:
+        dic["package_version"] = ""
+    return dic
+
+
+def print_html(f_text, f_html):
+    """Print html version when in Jupyter Notebook"""
+    class PrettyText:
+        def __repr__(self):
+            return f_text()
+
+        def _repr_html_(self):
+            return f_html()
+    return PrettyText()
