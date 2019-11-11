@@ -291,7 +291,6 @@ class EDSTEM_mixin:
                        factors,
                        composition_units = 'atomic',
                        absorption_correction = False,
-                       tilt_stage = 0,
                        take_off_angle = 'auto',
                        thickness = 'auto',
                        convergence_criterion = 0.5,
@@ -326,8 +325,9 @@ class EDSTEM_mixin:
             Specify whether or not an absorption correction should be applied.
             'False' by default so absorption will not be applied unless
             specfied.
-        tilt_stage : the sample holder tilt stage, used to calculate the
-            absorption pathways (in degrees).
+        take_off_angle : {'auto'}
+            The angle between the sample surface and the vector along which
+            X-rays travel to reach the centre of the detector.
         thickness: {'auto'}
             thickness in nm (can be a single value or
             have the same navigation dimension as the signal).
