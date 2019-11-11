@@ -449,8 +449,8 @@ class EDSTEM_mixin:
                                                                 thickness)
                         mass_thickness.metadata.General.title = 'Mass thickness'
                     else:
-                        warnings.warn('Thickness is required for absorption'\
-                        'correction with K-Factor Method. Results will contain'\
+                        warnings.warn('Thickness is required for absorption '\
+                        'correction with K-Factor Method. Results will contain '\
                         'no correction for absorption.')
 
             elif method == 'zeta':
@@ -821,7 +821,7 @@ class EDSTEM_mixin:
 
         Returns
         --------
-        Mass_thickness as an array in kg/m^2.
+        Mass_thickness as an array in kg/m².
 
         """
         if type(thickness)==float or type(thickness)==int:
