@@ -91,6 +91,7 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.gaussianhf.GaussianHF`
 * :py:class:`~._components.lorentzian.Lorentzian`
 * :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.pes_voigt.PESVoigt`
 * :py:class:`~._components.skew_normal.SkewNormal`
 * :py:class:`~._components.polynomial.Polynomial`
 * :py:class:`~._components.logistic.Logistic`

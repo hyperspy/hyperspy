@@ -20,9 +20,11 @@ import numpy as np
 import math
 
 from hyperspy.component import Component
+from hyperspy._components.gaussian import _estimate_gaussian_parameters
+
 
 sqrt2pi = math.sqrt(2 * math.pi)
-
+sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     """Voigt lineshape.
@@ -108,6 +110,28 @@ class Voigt(Component):
             from hyperspy._components.voigt import Voigt
             self.__class__ = Voigt
             self.__init__(**kwargs)
+            
+    @property
+    def sigma(self):
+        if legacy is False:
+            return super().gwidth.value / sigma2fwhm
+
+    @sigma.setter
+    def sigma(self, value):
+        if legacy is False:
+            super(Voigt, self.__class__).gwidth.value.fset(self, value 
+                                                                 * sigma2fwhm)
+
+    @property
+    def gamma(self):
+        if legacy is False:
+            return super().lwidth.value
+
+    @gamma.setter
+    def gamma(self, value):
+        if legacy is False:
+            super(Voigt, self.__class__).lwidth.value.fset(self, value)
+
 
 class PESVoigt(Component):
 
@@ -228,58 +252,38 @@ class PESVoigt(Component):
         Examples
         --------
 
-        >>> g = hs.model.components1D.Voigt()
-        >>> x = np.arange(-10,10, 0.01)
-        >>> data = np.zeros((32,32,2000))
-        >>> data[:] = g.function(x).reshape((1,1,2000))
-        >>> s = hs.signals.Signal1D({'data' : data})
-        >>> s.axes_manager.axes[-1].offset = -10
-        >>> s.axes_manager.axes[-1].scale = 0.01
-        >>> g.estimate_parameters(s, -10,10, False)
+        >>> g = hs.model.components1D.PESVoigt()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager._axes[-1].offset = -10
+        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
 
         """
-        super(Voigt, self)._estimate_parameters(signal)
+        super(PESVoigt, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        centre, height, sigma = _estimate_gaussian_parameters(signal, E1, E2,
+                                                              only_current)
 
-        energy2index = axis._get_index
-        i1 = energy2index(E1) if energy2index(E1) else 0
-        i2 = energy2index(E2) if energy2index(E2) else len(axis.axis) - 1
-        X = axis.axis[i1:i2]
         if only_current is True:
-            data = signal()[i1:i2]
-            X_shape = (len(X),)
-            i = 0
-            center_shape = (1,)
-        else:
-            # TODO: write the rest of the code to estimate the parameters of
-            # the full dataset
-            i = axis.index_in_array
-            data_gi = [slice(None), ] * len(signal.data.shape)
-            data_gi[axis.index_in_array] = slice(i1, i2)
-            data = signal.data[data_gi]
-            X_shape = [1, ] * len(signal.data.shape)
-            X_shape[axis.index_in_array] = data.shape[i]
-            center_shape = list(data.shape)
-            center_shape[i] = 1
-
-        center = np.sum(X.reshape(X_shape) * data, i
-                        ) / np.sum(data, i)
-
-        sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - center.reshape(
-            center_shape)) ** 2 * data, i) / np.sum(data, i)))
-        height = data.max(i)
-        if only_current is True:
-            self.centre.value = center
-            self.FWHM.value = sigma * 2.3548200450309493
+            self.centre.value = centre
+            self.FWHM.value = sigma * sigma2fwhm
             self.area.value = height * sigma * sqrt2pi
+            if self.binned:
+                self.area.value /= axis.scale
             return True
         else:
             if self.area.map is None:
-                self.create_arrays(signal.axes_manager.navigation_shape)
+                self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
+            if self.binned:
+                self.area.map['values'][:] /= axis.scale
             self.area.map['is_set'][:] = True
-            self.FWHM.map['values'][:] = sigma * 2.3548200450309493
+            self.FWHM.map['values'][:] = sigma * sigma2fwhm
             self.FWHM.map['is_set'][:] = True
-            self.centre.map['values'][:] = center
+            self.centre.map['values'][:] = centre
             self.centre.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True
