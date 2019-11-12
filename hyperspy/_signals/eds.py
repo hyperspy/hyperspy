@@ -706,7 +706,7 @@ class EDS_mixin:
         tilt_stage = mp.Stage.tilt_alpha
         azimuth_angle = mp.Detector.EDS.azimuth_angle
         elevation_angle = mp.Detector.EDS.elevation_angle
-        if tilt_beta in mp:
+        if mp.Stage.tilt_beta:
             beta_tilt = mp.Stage.tilt_beta
         else:
             beta_tilt = 0
