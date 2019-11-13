@@ -310,7 +310,7 @@ def xray_lines_model(elements,
 
     Example
     -------
-    >>> s = utils_eds.simulate_model(['Cu', 'Fe'], beam_energy=30)
+    >>> s = xray_lines_model(['Cu', 'Fe'], beam_energy=30)
     >>> s.plot()
     """
     from hyperspy._signals.eds_tem import EDSTEMSpectrum

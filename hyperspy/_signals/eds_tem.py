@@ -48,7 +48,7 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
     live_time = t.Float(t.Undefined,
                         label='Live time (s)')
     probe_area = t.Float(t.Undefined,
-                         label='Beam/probe area (nm\xB2)')
+                         label='Beam/probe area (nm²)')
     azimuth_angle = t.Float(t.Undefined,
                             label='Azimuth angle (degree)')
     elevation_angle = t.Float(t.Undefined,
@@ -195,7 +195,7 @@ class EDSTEM_mixin:
         beam_current: float
             In nA
         probe_area: float
-            In nm\xB2
+            In nm²
         real_time: float
             In seconds
         {}
@@ -696,7 +696,6 @@ class EDSTEM_mixin:
                             *args, **kwargs)
         return model
 
-
     def _get_probe_area(self, navigation_axes):
         """Calculates a pixel area which can be approximated to probe area,
         when the beam is larger than or equal to pixel size.
@@ -732,7 +731,7 @@ class EDSTEM_mixin:
 
 
     def _get_dose(self, method, beam_current='auto', live_time='auto',
-                  probe_area='auto', navigation_axes=None, **kwargs):
+                  probe_area='auto'):
         """
         Calculates the total electron dose for the zeta-factor or cross section
         methods of quantification.
@@ -758,11 +757,6 @@ class EDSTEM_mixin:
             Therefore we assume the probe is oversampling such that
             the illumination area can be approximated to the pixel area of the
             spectrum image.
-        navigation_axes : None or list of axis
-            Define which navigation axes to compute the illumination area.
-            Only necessary with method='cross_section' and probe_area='auto'
-            when the navigation dimension differs from the dimension intended
-            to be measured.
 
         Returns
         --------
@@ -776,33 +770,23 @@ class EDSTEM_mixin:
         parameters = self.metadata.Acquisition_instrument.TEM
 
         if beam_current == 'auto':
-            if 'beam_current' not in parameters:
-                raise Exception('Electron dose could not be calculated as '
-                                '`beam_current` is not set. The beam current '
-                                'can be set by calling '
-                                '`set_microscope_parameters()`')
-            else:
-                beam_current = parameters.beam_current
+            beam_current = parameters.get_item('beam_current')
+            if beam_current is None:
+                raise Exception('Electron dose could not be calculated as the '
+                                'beam current is not set. It can set using '
+                                '`set_microscope_parameters()`.')
 
         if live_time == 'auto':
-            live_time = parameters.Detector.EDS.live_time
-            if 'live_time' not in parameters.Detector.EDS:
+            live_time = parameters.get_item('Detector.EDS.live_time')
+            if live_time is None:
                 raise Exception('Electron dose could not be calculated as '
-                                'live_time is not set. '
-                                'The beam_current can be set by calling '
-                                '`set_microscope_parameters()`')
-            elif live_time == 1:
-                warnings.warn('Please note that your real time is set to '
-                              'the default value of 0.5 s. If this is not '
-                              'correct, you should change it using '
-                              '`set_microscope_parameters()` and run the '
-                              'quantification again.')
+                                'live time is not set. It can set using '
+                                '`set_microscope_parameters()`.')
 
         if method == 'cross_section':
             if probe_area == 'auto':
-                if probe_area in parameters:
-                    probe_area = parameters.TEM.probe_area
-                else:
+                probe_area = parameters.get_item('probe_area')
+                if probe_area is None:
                     probe_area = self._get_probe_area(
                         navigation_axes=self.axes_manager.navigation_axes)
             return (live_time * beam_current * 1e-9) / (constants.e * probe_area)
@@ -810,7 +794,7 @@ class EDSTEM_mixin:
         elif method == 'zeta':
             return live_time * beam_current * 1e-9 / constants.e
         else:
-            raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+            raise Exception("Method need to be 'zeta' or 'cross_section'.")
 
 
     def CL_get_mass_thickness(self, weight_percent, thickness):
