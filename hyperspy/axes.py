@@ -31,6 +31,7 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
+from hyperspy.exceptions import NonLinearAccessError
 
 
 import warnings
@@ -781,6 +782,7 @@ class FunctionalDataAxis(BaseDataAxis):
         self.__init__(**d, axis=self.axis)
 
     def crop(self, start=None, end=None):
+        raise ValueError('Function still needs to be implemented')
         # TODO
         pass
 
@@ -1358,6 +1360,8 @@ class AxesManager(t.HasTraits):
         """
         convert_navigation = convert_signal = True
 
+        if not self[axes].is_linear:
+            raise NonLinearAccessError()
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
             convert_navigation = (len(self.navigation_axes) > 0)
