@@ -23,6 +23,7 @@ import logging
 import traits.api as t
 import numpy as np
 from scipy import constants
+import pint
 
 from hyperspy.signal import BaseSetMetadataItems
 from hyperspy import utils
@@ -409,7 +410,8 @@ class EDSTEM_mixin:
                 if probe_area in parameters:
                     probe_area = parameters.TEM.probe_area
                 else:
-                    probe_area = self._get_probe_area(navigation_axes=None)
+                    probe_area = self._get_probe_area(
+                        navigation_axes=self.axes_manager.navigation_axes)
 
         int_stack = utils.stack(intensities, lazy=False)
 
@@ -695,30 +697,31 @@ class EDSTEM_mixin:
         return model
 
 
-    def _get_probe_area(self, navigation_axes=None):
+    def _get_probe_area(self, navigation_axes):
         """Calculates a pixel area which can be approximated to probe area,
         when the beam is larger than or equal to pixel size.
-        ** Please note ** It is assumed that any navigation axes are solely
-        spatial axes. Inclusion of any time axes into the navigation axes many
-        produce erroneous results with this function.
+        The probe area can be calculated automatically only when the navigation
+        dimension is 2 and the units have the fimension of a length.
         """
-        if (self.axes_manager.navigation_dimension > 2 and
-                navigation_axes is None):
-            raise ValueError("The navigation axes corresponding to the probe "
-                             "are ambiguous, you need to specify the "
-                             "navigation_axes parameter. Or you should specify "
-                             "a probe_area when calling the EDX quantification "
-                             "function")
         scales = []
-        navigation_axes = self.axes_manager.navigation_axes
+        error_message = ("The navigation axes corresponding to the probe "
+                         "are ambiguous and the probe area can not be "
+                         "calculated automatically.")
+
+        if len(navigation_axes) > 2:
+            raise ValueError(error_message)
+
         for axis in navigation_axes:
-            scales.append(
-                axis.convert_to_units('nm', inplace=False)[0])
+            try:
+                scales.append(axis.convert_to_units('nm', inplace=False)[0])
+            except pint.DimensionalityError:
+                raise ValueError(error_message)
+
         if len(scales) == 1:
             probe_area = scales[0] * scales[0]
         elif len(scales) == 2:
             probe_area = scales[0] * scales[1]
-        if scales[0] == 1 or scales[1] == 1:
+        if probe_area == 1:
             warnings.warn('Please note your probe_area is set to '
                           'the default value of 1 nm². The '
                           'function will still run. However if '
@@ -800,7 +803,8 @@ class EDSTEM_mixin:
                 if probe_area in parameters:
                     probe_area = parameters.TEM.probe_area
                 else:
-                    probe_area = self._get_probe_area(navigation_axes=None)
+                    probe_area = self._get_probe_area(
+                        navigation_axes=self.axes_manager.navigation_axes)
             return (live_time * beam_current * 1e-9) / (constants.e * probe_area)
             # 1e-9 is included here because the beam_current is in nA.
         elif method == 'zeta':
