@@ -50,6 +50,7 @@ def test_function():
     assert_allclose(g.function(0), 6.28e-3, rtol=1e-3)
     assert_allclose(g.function(g.mean), 2.855, rtol=1e-3)
 
+
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy):
@@ -90,7 +91,7 @@ def test_function_nd(binned, lazy):
     factor = axis.scale if binned else 1
     assert g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
-    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data,0.06)
+    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, 0.06)
 
 
 def test_util_mean_get():

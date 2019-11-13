@@ -61,9 +61,9 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     b1 = (4 / np.pi - 1) * a1
     m1 = _sum(X.reshape(X_shape) * data, i) / _sum(data, i)
     m2 = _abs(_sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
-         / _sum(data, i))
+              / _sum(data, i))
     m3 = _abs(_sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
-         / _sum(data, i))
+              / _sum(data, i))
 
     x0 = m1 - a1 * (m3 / b1) ** (1 / 3)
     scale = _sqrt(m2 + a1 ** 2 * (m3 / b1) ** (2 / 3))
@@ -71,27 +71,27 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     shape = delta / _sqrt(1 - delta**2)
 
     iheight = _argmin(_abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
-    # height is the value of the function at x0, shich has to be computed 
+    # height is the value of the function at x0, shich has to be computed
     # differently for dask array (lazy) and depending on the dimension
     if isinstance(data, da.Array):
         x0, iheight, scale, shape = da.compute(x0, iheight, scale, shape)
         if only_current is True or signal.axes_manager.navigation_dimension == 0:
             height = data.vindex[iheight].compute()
         elif signal.axes_manager.navigation_dimension == 1:
-            height = data.vindex[np.arange(signal.axes_manager.navigation_size), 
-                          iheight].compute()
+            height = data.vindex[np.arange(signal.axes_manager.navigation_size),
+                                 iheight].compute()
         else:
-            height = data.vindex[(*np.indices(signal.axes_manager.navigation_shape), 
-                          iheight)].compute()
-    else: 
+            height = data.vindex[(*np.indices(signal.axes_manager.navigation_shape),
+                                  iheight)].compute()
+    else:
         if only_current is True or signal.axes_manager.navigation_dimension == 0:
             height = data[iheight]
         elif signal.axes_manager.navigation_dimension == 1:
-            height = data[np.arange(signal.axes_manager.navigation_size), 
+            height = data[np.arange(signal.axes_manager.navigation_size),
                           iheight]
         else:
-            height = data[(*np.indices(signal.axes_manager.navigation_shape), 
-                          iheight)]
+            height = data[(*np.indices(signal.axes_manager.navigation_shape),
+                           iheight)]
 
     return x0, height, scale, shape
 
@@ -173,7 +173,6 @@ class SkewNormal(Expression):
         self.isbackground = False
         self.convolved = True
 
-
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the skew normal distribution by calculating the momenta.
 
@@ -214,8 +213,8 @@ class SkewNormal(Expression):
 
         super(SkewNormal, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        x0, height, scale, shape = _estimate_skewnormal_parameters(signal, x1, 
-                                                             x2, only_current)
+        x0, height, scale, shape = _estimate_skewnormal_parameters(signal, x1,
+                                                                   x2, only_current)
         if only_current is True:
             self.x0.value = x0
             self.A.value = height * sqrt2pi
@@ -254,8 +253,8 @@ class SkewNormal(Expression):
     @property
     def skewness(self):
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
-        return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 - \
-            2 * delta**2 / np.pi)**(3/2)
+        return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 -
+                                                                2 * delta**2 / np.pi)**(3/2)
 
     @property
     def mode(self):
