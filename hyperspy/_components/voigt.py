@@ -27,20 +27,21 @@ from distutils.version import LooseVersion
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
+
 class Voigt(Expression):
 
     r"""Voigt component.
-    
+
     Symmetric peak shape based on the convolution of a Lorentzian and Normal 
     (Gaussian) distribution. In this case using an approximate formula by David 
     (see Notes).
-    
+
     .. math:: 
         z(x) &= \frac{x + i \gamma}{\sqrt{2} \sigma} \\
         w(z) &= \frac{e^{-z^2} \text{erf}(-i z)}{\sqrt{2 \pi} \sigma} \\
         f(x) &= A \Re\left\{ w \left[ z(x-x_0) \right] \right\}
-    
-    
+
+
     ============== =============
     Variable        Parameter 
     ============== =============
@@ -49,8 +50,8 @@ class Voigt(Expression):
     :math:`\gamma`  gamma
     :math:`\sigma`  sigma
     ============== =============
-    
-    
+
+
     Parameters
     -----------
     centre : float
@@ -61,19 +62,19 @@ class Voigt(Expression):
         HWHM=:math:`\gamma` of the Lorentzian distribution.
     gwidth: float
         FWHM=:math:`2 \sigma \sqrt(2 \log(2))` of the Gaussian distribution.
-    
-    
+
+
     For convenience the `sigma` and `gamma` attributes can also be used to set 
     set and get the width of the Gaussian and Lorentzian parts of the 
     distribution, respectively.
-        
+
     Notes
     -----
     W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64,
     doi:10.1107/S0021889886089999
     """
 
-    def __init__(self, centre=0., area=1., lwidth=0.2, gwidth=0.05, 
+    def __init__(self, centre=0., area=1., lwidth=0.2, gwidth=0.05,
                  module="scipy", **kwargs):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
@@ -104,7 +105,6 @@ class Voigt(Expression):
 
         self.isbackground = False
         self.convolved = True
-
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the Voigt function by calculating the momenta of the 
@@ -169,7 +169,6 @@ class Voigt(Expression):
             self.centre.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
-
 
     @property
     def sigma(self):

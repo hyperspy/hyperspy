@@ -26,6 +26,7 @@ from hyperspy._components.gaussian import _estimate_gaussian_parameters
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
+
 def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     """Voigt lineshape.
 
@@ -63,8 +64,9 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     V = wofz(z) / (math.sqrt(2 * np.pi) * sigma)
     return scale * V.real
 
-# Legacy class to be removed in v2.0
+
 class Voigt(Component):
+    # Legacy class to be removed in v2.0
 
     """This is the legacy Voigt profile component dedicated to photoemission 
     spectroscopy data analysis that will renamed to `PESVoigt` v2.0. To use
@@ -103,14 +105,14 @@ class Voigt(Component):
                 "This component will become `PESVoigt`."
                 "To use the new API set `legacy=False`.")
             deprecation_warning(msg)
-            
+
             self.__class__ = PESVoigt
             self.__init__(**kwargs)
         else:
             from hyperspy._components.voigt import Voigt
             self.__class__ = Voigt
             self.__init__(**kwargs)
-            
+
     @property
     def sigma(self):
         if legacy is False:
@@ -119,8 +121,8 @@ class Voigt(Component):
     @sigma.setter
     def sigma(self, value):
         if legacy is False:
-            super(Voigt, self.__class__).gwidth.value.fset(self, value 
-                                                                 * sigma2fwhm)
+            super(Voigt, self.__class__).gwidth.value.fset(self, value
+                                                           * sigma2fwhm)
 
     @property
     def gamma(self):
@@ -136,14 +138,14 @@ class Voigt(Component):
 class PESVoigt(Component):
 
     """ Voigt component for photoemission spectroscopy data analysis.
-    
+
     Voigt profile component with support for shirley background,
     non_isochromaticity, transmission_function corrections and spin orbit
     splitting specially suited for photoemission spectroscopy data analysis.
-    
+
     .. math:: 
         f(x) = G(x) \cdot L(x) 
-        
+
     where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
     Lorentzian function.
 
@@ -166,7 +168,7 @@ class PESVoigt(Component):
     spin_orbit_splitting : Bool
     spin_orbit_branching_ratio : float
     spin_orbit_splitting_energy : float
-    
+
     """
 
     def __init__(self):
@@ -178,7 +180,7 @@ class PESVoigt(Component):
             'resolution',
             'shirley_background',
             'non_isochromaticity',
-           'transmission_function'))
+            'transmission_function'))
         self._position = self.centre
         self.FWHM.value = 1
         self.gamma.value = 0
@@ -197,7 +199,7 @@ class PESVoigt(Component):
         self.spin_orbit_splitting_energy = 0.61
         self.isbackground = False
         self.convolved = True
-        
+
     def function(self, x):
         area = self.area.value * self.transmission_function.value
         centre = self.centre.value
