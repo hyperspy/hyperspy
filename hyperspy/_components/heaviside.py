@@ -21,6 +21,7 @@ import numpy as np
 
 from hyperspy._components.expression import Expression
 
+
 class HeavisideStep(Expression):
 
     r"""The Heaviside step function.
@@ -43,7 +44,7 @@ class HeavisideStep(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
     """
 
-    def __init__(self, A=1., n=0., module="numpy", compute_gradients=False, 
+    def __init__(self, A=1., n=0., module="numpy", compute_gradients=False,
                  **kwargs):
         super(HeavisideStep, self).__init__(
             expression="where(x < n, 0, A)",
@@ -61,7 +62,6 @@ class HeavisideStep(Expression):
 
         # Gradients
         self.A.grad = self.grad_A
-
 
     def grad_A(self, x):
         x = np.asanyarray(x)

@@ -21,6 +21,7 @@ import numpy as np
 
 from hyperspy.components1d import HeavisideStep
 
+
 def test_function():
     g = HeavisideStep()
     g.A.value = 3
@@ -28,4 +29,3 @@ def test_function():
     assert g.function(1) == 0.
     assert g.function(2) == 3.
     assert g.function(3) == 3.
-
