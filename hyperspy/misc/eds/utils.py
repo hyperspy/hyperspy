@@ -344,8 +344,8 @@ def xray_lines_model(elements,
                         weight_percent / 100 * ratio_line
                     m.append(g)
     else:
-        raise ValueError("The number of elements specified is not the same \
-                         as the number of weight_percents")
+        raise ValueError("The number of elements specified is not the same "
+                         "as the number of weight_percents")
 
     s.data = m.as_signal().data
     return s

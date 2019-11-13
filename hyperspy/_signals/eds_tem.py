@@ -347,6 +347,11 @@ class EDSTEM_mixin:
         plot_result : bool
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
+        probe_area = {'auto'}
+            This allows the user to specify the probe_area for interaction with
+            the sample needed specifically for the cross_section method of
+            quantification. When left as 'auto' the pixel area is used,
+            calculated from the navigation axes information.
         max_iterations : int
             An upper limit to the number of calculations for absorption correction.
         kwargs
@@ -434,8 +439,8 @@ class EDSTEM_mixin:
                     "absorption_correction" : abs_corr_factor}
 
         else:
-            raise ValueError('Please specify method for quantification,'
-                             'as \'CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError('Please specify method for quantification, '
+                             'as \'CL\', \'zeta\' or \'cross_section\'.')
 
         while True:
             results = quantification_method(**kwargs)
@@ -449,8 +454,8 @@ class EDSTEM_mixin:
                                                                 thickness)
                         mass_thickness.metadata.General.title = 'Mass thickness'
                     else:
-                        warnings.warn('Thickness is required for absorption '\
-                        'correction with K-Factor Method. Results will contain '\
+                        warnings.warn('Thickness is required for absorption '
+                        'correction with k-factor method. Results will contain '
                         'no correction for absorption.')
 
             elif method == 'zeta':
@@ -693,13 +698,17 @@ class EDSTEM_mixin:
     def _get_probe_area(self, navigation_axes=None):
         """Calculates a pixel area which can be approximated to probe area,
         when the beam is larger than or equal to pixel size.
+        ** Please note ** It is assumed that any navigation axes are solely
+        spatial axes. Inclusion of any time axes into the navigation axes many
+        produce erroneous results with this function.
         """
         if (self.axes_manager.navigation_dimension > 2 and
                 navigation_axes is None):
-            raise ValueError("With `probe_area='auto' and "
-                             "navigation dimension > 2, you need "
-                             "to specify the `navigation_axes` "
-                             "parameter.")
+            raise ValueError("The navigation axes corresponding to the probe "
+                             "are ambiguous, you need to specify the "
+                             "navigation_axes parameter. Or you should specify "
+                             "a probe_area when calling the EDX quantification "
+                             "function")
         scales = []
         navigation_axes = self.axes_manager.navigation_axes
         for axis in navigation_axes:
