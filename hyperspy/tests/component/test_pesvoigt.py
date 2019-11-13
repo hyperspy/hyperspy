@@ -32,11 +32,12 @@ TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 def test_function():
     g = PESVoigt()
     g.area.value = 5
-    g.FWHM.value=0.5
-    g.gamma.value=0.2
-    g.centre.value=1
+    g.FWHM.value = 0.5
+    g.gamma.value = 0.2
+    g.centre.value = 1
     assert_allclose(g.function(0), 0.35380168)
     assert_allclose(g.function(1), 5.06863535)
+
 
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
@@ -47,16 +48,16 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     axis.scale = .05
     axis.offset = -5
     g1 = PESVoigt()
-    g1.centre.value=1
-    g1.area.value=5.
-    g1.gamma.value=0.001
-    g1.FWHM.value=0.5
+    g1.centre.value = 1
+    g1.area.value = 5.
+    g1.gamma.value = 0.001
+    g1.FWHM.value = 0.5
     s.data = g1.function(axis.axis)
     if lazy:
         s = s.as_lazy()
     g2 = PESVoigt()
     factor = axis.scale if binned else 1
-    assert g2.estimate_parameters(s, axis.low_value, axis.high_value, 
+    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
     assert_allclose(g2.FWHM.value, 1, 0.5)
