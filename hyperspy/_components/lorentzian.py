@@ -16,7 +16,52 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
+import dask.array as da
+
 from hyperspy._components.expression import Expression
+
+
+def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
+    axis = signal.axes_manager.signal_axes[0]
+    i1, i2 = axis.value_range_to_indices(x1, x2)
+    X = axis.axis[i1:i2]
+    if only_current is True:
+        data = signal()[i1:i2]
+        i = 0
+        centre_shape = (1,)
+    else:
+        i = axis.index_in_array
+        data_gi = [slice(None), ] * len(signal.data.shape)
+        data_gi[axis.index_in_array] = slice(i1, i2)
+        data = signal.data[tuple(data_gi)]
+        centre_shape = list(data.shape)
+        centre_shape[i] = 1
+
+    if isinstance(data, da.Array):
+        _cumsum = da.cumsum
+        _max = da.max
+        _abs = da.fabs
+        _argmin = da.argmin
+    else:
+        _cumsum = np.cumsum
+        _max = np.max
+        _abs = np.abs
+        _argmin = np.argmin
+
+    cdf = _cumsum(data,i)
+    cdfnorm = cdf/_max(cdf, i).reshape(centre_shape)
+
+    icentre = _argmin(_abs(0.5 - cdfnorm), i)
+    igamma1 = _argmin(_abs(0.75 - cdfnorm), i)
+    igamma2 = _argmin(_abs(0.25 - cdfnorm), i)
+    if isinstance(data, da.Array):
+        icentre, igamma1, igamma2 = da.compute(icentre, igamma1, igamma2)
+    centre = X[icentre]
+    gamma = (X[igamma1] - X[igamma2]) / 2
+    height = data.max(i)
+
+    return centre, height, gamma
 
 
 class Lorentzian(Expression):
@@ -51,8 +96,8 @@ class Lorentzian(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
 
 
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
+    For convenience the `fwhm` and `height` attributes can be used to get and set
+    the full-with-half-maximum and height of the distribution, respectively.
     """
 
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
@@ -80,6 +125,74 @@ class Lorentzian(Expression):
         self.isbackground = False
         self.convolved = True
 
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
+        """Estimate the Lorentzian by calculating the median (centre) and half 
+        the interquartile range (gamma).
+        
+        Note that an insufficient range will affect the accuracy of this 
+        method. 
+
+        Parameters
+        ----------
+        signal : Signal1D instance
+        x1 : float
+            Defines the left limit of the spectral range to use for the
+            estimation.
+        x2 : float
+            Defines the right limit of the spectral range to use for the
+            estimation.
+
+        only_current : bool
+            If False estimates the parameters for the full dataset.
+
+        Returns
+        -------
+        bool
+
+        Notes
+        -----
+        Adapted from gaussian.py and
+        https://en.wikipedia.org/wiki/Cauchy_distribution
+
+        Examples
+        --------
+
+        >>> g = hs.model.components1D.Lorentzian()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager._axes[-1].offset = -10
+        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
+        """
+        
+        super(Lorentzian, self)._estimate_parameters(signal)
+        axis = signal.axes_manager.signal_axes[0]
+        centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
+                                                              only_current)
+        if only_current is True:
+            self.centre.value = centre
+            self.gamma.value = gamma
+            self.A.value = height * gamma * np.pi
+            if self.binned:
+                self.A.value /= axis.scale
+            return True
+        else:
+            if self.A.map is None:
+                self._create_arrays()
+            self.A.map['values'][:] = height * gamma * np.pi
+
+            if self.binned:
+                self.A.map['values'] /= axis.scale
+            self.A.map['is_set'][:] = True
+            self.gamma.map['values'][:] = gamma
+            self.gamma.map['is_set'][:] = True
+            self.centre.map['values'][:] = centre
+            self.centre.map['is_set'][:] = True
+            self.fetch_stored_values()
+            return True
+
     @property
     def fwhm(self):
         return self.gamma.value * 2
@@ -87,3 +200,11 @@ class Lorentzian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.gamma.value = value / 2
+
+    @property
+    def height(self):
+        return self.A.value / (self.gamma.value * np.pi)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * self.gamma.value * np.pi
