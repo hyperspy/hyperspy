@@ -17,6 +17,7 @@
 
 
 import numpy as np
+import pytest
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
@@ -287,15 +288,51 @@ class Test_quantification:
         res = s.quantification(intensities, method, factors)
         res2 = s2.quantification(intensities, method, factors)
         np.testing.assert_allclose(res[0][0].data, res2[0][0].data)
-        probe_area = s._get_probe_area()
         # Check that the quantification doesn't change the units of the signal
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
-        np.testing.assert_allclose(probe_area, 0.25, atol=1e-3)
 
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0, 1], ['x', 'y']))
+    def test_get_probe_area(self, axes):
+        s = self.signal
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 0.5/1000
+        if axes == "nav_axes":
+            axes = s.axes_manager.navigation_axes
+        np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0], ['x']))
+    def test_get_probe_area_line_scan(self, axes):
+        s = self.signal.inav[0]
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        if axes == "nav_axes":
+            axes = s.axes_manager.navigation_axes
+        np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0], ['x']))
+    def test_get_probe_area_line_scan_other_nav_axes(self, axes):
+        s = self.signal
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[1].name = 'time'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 's'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 10
+        if axes == "nav_axes" or axes is None:
+            axes = s.axes_manager.navigation_axes
+            with pytest.raises(ValueError):
+                s.get_probe_area(axes)
+        else:
+            np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
 
     def test_zeta_vs_cross_section(self):
-        s=self.signal
+        s = self.signal
         factors = [3, 5]
         method = 'zeta'
         intensities = s.get_lines_intensity()
