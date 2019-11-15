@@ -32,5 +32,5 @@ def test_xray_lines_near_energy():
 def test_takeoff_angle():
     np.testing.assert_allclose(40.,take_off_angle(30.,0.,10.))
     np.testing.assert_allclose(40.,take_off_angle(0.,90.,10.,beta_tilt=30.))
-    np.testing.assert_allclose(0.25-(1/(2**0.5)),take_off_angle(45.,45.,45.,
+    np.testing.assert_allclose(73.15788376370121,take_off_angle(45.,45.,45.,
                                45.))
