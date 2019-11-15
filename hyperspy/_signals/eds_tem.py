@@ -701,13 +701,14 @@ class EDSTEM_mixin:
         """
         Calculates a pixel area which can be approximated to probe area,
         when the beam is larger than or equal to pixel size.
-        The probe area can be calculated only when the navigation dimension
-        is less than 2 and all the units have the dimensions of length.
+        The probe area can be calculated only when the number of navigation
+        dimension are less than 2 and all the units have the dimensions of
+        length.
 
         Parameters
         ----------
-        navigation_axes : DataAxis, string or integer (or list of) 
-            Navigation axes corresponding to the probe area. If string or 
+        navigation_axes : DataAxis, string or integer (or list of)
+            Navigation axes corresponding to the probe area. If string or
             integer, the provided value is used to index the ``axes_manager``.
 
         Returns
@@ -752,9 +753,9 @@ class EDSTEM_mixin:
             probe_area = scales[0] * scales[1]
 
         if probe_area == 1:
-            warnings.warn("Please note that the probe area have been "
+            warnings.warn("Please note that the probe area has been "
                           "calculated to be 1 nm², meaning that it is highly "
-                          "that the scale of the navigation axes have not "
+                          "likley that the scale of the navigation axes have not "
                           "been set correctly. Please read the user "
                           "guide for how to set this.")
         return probe_area
