@@ -478,7 +478,7 @@ Mn Ka to the peak energy (`energy_resolution_MnKa` in the metadata):
    Iron map as computed and displayed by ``get_lines_intensity``
 
 The X-ray lines defined in `metadata.Sample.Xray_lines` are used by default.
-The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`, see :ref:`plotting several images<plot.images>` 
+The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`, see :ref:`plotting several images<plot.images>`
 for more information in setting plotting parameters.
 
 .. code-block:: python
@@ -541,7 +541,8 @@ can be plotted using :py:meth:`~._signals.eds.EDS_mixin.plot`:
 EDS Quantification
 ------------------
 
-HyperSpy now includes three methods for EDS quantification:
+HyperSpy now includes three methods for EDS quantification with or without
+absorption correction:
 
 * Cliff-Lorimer
 * Zeta-factors
@@ -663,6 +664,43 @@ number of atoms per pixel for each element.
     rather than spectrum images, the pixel area should be added to the
     metadata as above.
 
+    Absorption Correction
+    ^^^^^^^^^^^^^^^^^^^^^^
+
+  Absorption correction can be included into any of the three quantification
+  methods by adding the parameter absorption_correction=True to the function.
+  By default the function iterates the quantification function until of
+  tolerance value of 0.5% up to a maximum number of iterations. The maximum
+  number of iterations is set to 30 by default but can be increased by
+  specifying max_interations= in the function call. However, typically for TEM
+  experiments convergence is witness after less then 5 iterations.
+
+  At this stage absorption correction is only applicable for parallel-sided, 
+  thin-film samples. Absorption correction is calculated on a pixel by pixel 
+  basis after having determined a sample mass-thickness map. It therefore may
+  be a source of error in particularly inhomogeneous specimens.
+  
+  Absorption correction can also only be applied to spectra from a single EDS
+  detector. For systems that consist of multiple detectors, such as the Thermo 
+  Fisher Super-X, it is therefore necessary to load the spectra from each
+  detector separately.
+
+  For example:
+
+  .. code-block: python
+          >>> s.quantification(intensities, method='cross_section',
+          >>>                  factors=factors, absorption_correction=True)
+
+  However for the kfactor method the user must additionally provide a sample
+  thickness (in nm) either as a single float value or as a numpy array with the
+  same dimensions as the navigation axes. If this is done the calculated
+  mass_thickness is additionally outputted from the function as well as the
+  composition maps for each element.
+
+  .. code-block: python
+          >>> s.quantification(intensities, method='CL',
+          >>>                  factors=factors, absorption_correction=True
+          >>>                   thickness = 100.)
 
 .. _eds_fitting-label:
 
