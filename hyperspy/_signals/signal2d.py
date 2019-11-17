@@ -594,6 +594,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
         The statistical analysis approach to the translation estimation
         when using `reference`='stat' roughly follows [1]_ . If you use
         it please cite their article.
+        
+        Raises
+        ------
+        NonLinearAxisError
+            If one of the signal axes is not a linear axis.
 
         References
         ----------
@@ -640,6 +645,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                            shifts[:, 0].max() > 0 else 0)
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
+            if (not xaxis.is_linear) or (not yaxis.is_linear):
+                raise NonLinearAxisError()
             padding = []
             for i in range(self.data.ndim):
                 if i == xaxis.index_in_array:

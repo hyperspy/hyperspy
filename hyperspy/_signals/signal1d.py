@@ -408,6 +408,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NonLinearAxisError
+            If the signal axis is not a linear axis.
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -416,6 +418,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
+        
+        if not axis.is_linear:
+            raise NonLinearAxisError()
 
         # Figure out min/max shifts, and translate to shifts in index as well
         minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
