@@ -373,6 +373,8 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
     bool_array = data < data_onset_value
     bool_array[data_max_i:] = False
     data_onset_i = len(bool_array) - np.argmax(bool_array[::-1])
+    if data_max_i < data_onset_i:
+        return np.nan
 
     data_onset_i0 = data_onset_i - 1
 
