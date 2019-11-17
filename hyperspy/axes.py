@@ -31,7 +31,7 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
-from hyperspy.exceptions import NonLinearAccessError
+from hyperspy.exceptions import NonLinearAxisError
 
 
 import warnings
@@ -1357,11 +1357,15 @@ class AxesManager(t.HasTraits):
             first axis is used for all axes. If `False`, convert all axes
             individually.
         %s
+        
+        Note
+        ----
+        Requires a linear axis.
         """
         convert_navigation = convert_signal = True
 
         if not self[axes].is_linear:
-            raise NonLinearAccessError()
+            raise NonLinearAxisError()
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
             convert_navigation = (len(self.navigation_axes) > 0)
