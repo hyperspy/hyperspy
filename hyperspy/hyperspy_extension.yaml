@@ -252,6 +252,7 @@ GUI:
     - hyperspy.Line2DROI
     - hyperspy.Model
     - hyperspy.Model1D.fit_component
+    - hyperspy.EELSModel.estimate_and_set_coreloss_edge_onset
     - hyperspy.microscope_parameters_EELS
     - hyperspy.microscope_parameters_EDS_TEM
     - hyperspy.microscope_parameters_EDS_SEM

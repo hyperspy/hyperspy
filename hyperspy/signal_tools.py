@@ -243,7 +243,7 @@ class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
 
-@add_gui_method(toolkey="EELSModel.estimate_and_set_coreloss_edge_onset")
+@add_gui_method(toolkey="hyperspy.EELSModel.estimate_and_set_coreloss_edge_onset")
 class EstimateAndSetCorelossEdgeOnset(SpanSelectorInSignal1D):
 
     only_current = t.Bool(
