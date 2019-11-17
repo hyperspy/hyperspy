@@ -148,7 +148,7 @@ def assert_warns(message=None, category=None):
     If you use the "|" operator in a pattern, you can catch one of several warnings.
     Finally, you can use "|\A\Z" in a pattern to signify it as optional.
     """
-    if isinstance(message, (str, re._pattern_type)):
+    if isinstance(message, (str, type(re.compile('')))):
         message = [message]
     elif message is None:
         message = tuple()

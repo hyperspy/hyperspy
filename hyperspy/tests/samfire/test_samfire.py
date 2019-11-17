@@ -312,7 +312,7 @@ class TestSamfireMain:
 
     @pytest.mark.xfail(
         reason="Sometimes it fails in CirCleCI for no know reason.")
-    def test_multiprocessed(self, mpl_cleanup):
+    def test_multiprocessed(self):
         self.model.fit()
         samf = self.model.create_samfire(ipyparallel=False)
         samf.plot_every = np.nan
@@ -331,7 +331,7 @@ class TestSamfireMain:
                     mask = np.logical_and(n_c._active_array, fitmask)
                 else:
                     mask = fitmask
-                print(o_c._id_name, n_c._id_name, p1._id_name, p._id_name)
+                print(o_c.__class__.__name__, n_c.__class__.__name__, p1._id_name, p._id_name)
                 print(p.map['values'][:4, :4])
                 print('----------------------------')
                 print(p1.map['values'][:4, :4])

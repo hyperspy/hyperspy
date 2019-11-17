@@ -138,6 +138,11 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
+    saturated_pixels = t.CFloat(0.05,
+                                label='Saturated pixels',
+                                desc='Set the default saturated_pixels for '
+                                'plotting images.'
+                                )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )
@@ -250,7 +255,7 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
-@add_gui_method(toolkey="Preferences")
+@add_gui_method(toolkey="hyperspy.Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)

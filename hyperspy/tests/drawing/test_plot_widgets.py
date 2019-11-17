@@ -83,7 +83,7 @@ class TestPlotLine2DWidget():
         nt.assert_almost_equal(self.line2d.get_line_length(),
                                np.sqrt(x**2 + y**2))
 
-    def test_change_size(self, mpl_cleanup):
+    def test_change_size(self):
         # Need to plot the signal to set the mpl axis to the widget
         self.im.plot()
         self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
@@ -100,7 +100,7 @@ class TestPlotLine2DWidget():
         self.line2d.size = (4.0, )
         assert self.line2d.size == (4.0, )
 
-    def test_change_size_snap_size(self, mpl_cleanup):
+    def test_change_size_snap_size(self):
         # Need to plot the signal to set the mpl axis to the widget
         self.im.plot()
         self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
@@ -132,7 +132,7 @@ class TestPlotLine2DWidget():
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_line2d(self, mpl_cleanup):
+    def test_plot_line2d(self):
         self.im.plot()
         self.line2d.color = 'green'
         self.line2d.position = ([12.0, 60.0], [36.0, 96.0])
@@ -170,7 +170,7 @@ class TestPlotRangeWidget():
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_range(self, mpl_cleanup):
+    def test_plot_range(self):
         self.s.plot()
         self.range.set_mpl_ax(self.s._plot.signal_plot.ax)
         assert self.range.ax == self.s._plot.signal_plot.ax
@@ -203,7 +203,7 @@ class TestPlotRangeWidget():
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_range_Signal2D(self, mpl_cleanup):
+    def test_plot_range_Signal2D(self):
         im = Signal2D(np.arange(10 * 10).reshape((10, 10)))
         im.axes_manager[0].scale = 0.1
         im.axes_manager[1].scale = 5
@@ -227,7 +227,7 @@ class TestPlotRangeWidget():
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_ModifiableSpanSelector(self, mpl_cleanup):
+    def test_plot_ModifiableSpanSelector(self):
         self.s.plot()
         from hyperspy.drawing._widgets.range import ModifiableSpanSelector
         ax = self.s._plot.signal_plot.ax

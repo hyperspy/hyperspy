@@ -32,7 +32,7 @@ from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.utils import signal_range_from_roi
 
 
-@add_gui_method(toolkey="Model1D.fit_component")
+@add_gui_method(toolkey="hyperspy.Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
 
     def __init__(self, model, component, signal_range=None,
@@ -54,7 +54,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.only_current = only_current
         if signal_range == "interactive":
             if (not hasattr(self.model, '_plot') or self.model._plot is None or
-                not self.model._plot.is_active):
+                    not self.model._plot.is_active):
                 self.model.plot()
             self.span_selector_switch(on=True)
 

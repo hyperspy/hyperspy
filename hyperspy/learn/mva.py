@@ -145,8 +145,10 @@ class MVA():
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
-            The result of the decomposition is stored internally. However, some algorithms generate some extra
-            information that is not stored. If True (the default is False) return any extra information if available
+            The result of the decomposition is stored internally. However,
+            some algorithms generate some extra information that is not
+            stored. If True (the default is False) return any extra
+            information if available
 
         Returns
         -------
@@ -238,6 +240,7 @@ class MVA():
             # algorithms
             explained_variance = None
             explained_variance_ratio = None
+            number_significant_components = None
             mean = None
 
             if algorithm == 'svd':
@@ -382,13 +385,16 @@ class MVA():
                     explained_variance_ratio is None:
                 explained_variance_ratio = \
                     explained_variance / explained_variance.sum()
+                number_significant_components = \
+                    self._estimate_elbow_position(
+                        explained_variance_ratio) + 1
 
             # Store the results in learning_results
-
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
             target.explained_variance_ratio = explained_variance_ratio
+            target.number_significant_components = number_significant_components
             target.decomposition_algorithm = algorithm
             target.poissonian_noise_normalized = \
                 normalize_poissonian_noise
@@ -478,7 +484,7 @@ class MVA():
                                 comp_list=None,
                                 mask=None,
                                 on_loadings=False,
-                                pretreatment=None,
+                                reverse_component_criterion='factors',
                                 compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
@@ -491,6 +497,7 @@ class MVA():
         number_of_components : int
             number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
+            BSS algorithms available.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If diff_order is 0, the signal is not differentiated.
@@ -506,7 +513,7 @@ class MVA():
             navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
-             to choose non contiguous components.
+            to choose non contiguous components.
         mask : bool numpy array or Signal instance.
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
@@ -514,7 +521,9 @@ class MVA():
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        pretreatment: dict
+        reverse_component_criterion : str {'factors', 'loadings'}
+            Use either the `factor` or the `loading` to determine if the 
+            component needs to be reversed.
         compute: bool
            If the decomposition results are lazy, compute the BSS components
            so that they are not lazy.
@@ -679,8 +688,8 @@ class MVA():
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
-        self._unmix_components(compute=compute)
-        self._auto_reverse_bss_component(lr)
+        self._unmix_components()
+        self._auto_reverse_bss_component(reverse_component_criterion)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
 
@@ -807,13 +816,22 @@ class MVA():
             lr.bss_factors = lr.bss_factors.compute()
             lr.bss_loadings = lr.bss_loadings.compute()
 
-    def _auto_reverse_bss_component(self, target):
-        n_components = target.bss_factors.shape[1]
+    def _auto_reverse_bss_component(self, reverse_component_criterion):
+        n_components = self.learning_results.bss_factors.shape[1]
         for i in range(n_components):
-            minimum = np.nanmin(target.bss_loadings[:, i])
-            maximum = np.nanmax(target.bss_loadings[:, i])
+            if reverse_component_criterion == 'factors':
+                values = self.learning_results.bss_factors
+            elif reverse_component_criterion == 'loadings':
+                values = self.learning_results.bss_loadings
+            else:
+                raise ValueError("`reverse_component_criterion` can take only "
+                                 "`factor` or `loading` as parameter.")
+            minimum = np.nanmin(values[:, i])
+            maximum = np.nanmax(values[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
+                _logger.info("Independent component {} reversed based on the "
+                             "{}".format(i, reverse_component_criterion))
 
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """
@@ -941,7 +959,8 @@ class MVA():
         return s
 
     def plot_explained_variance_ratio(self, n=30, log=True, threshold=0,
-                                      hline='auto', xaxis_type='index',
+                                      hline='auto', vline=False,
+                                      xaxis_type='index',
                                       xaxis_labeling=None, signal_fmt=None,
                                       noise_fmt=None, fig=None, ax=None,
                                       **kwargs):
@@ -972,6 +991,12 @@ class MVA():
             draw in the case  ``threshold`` is an int, or not given.
             If True, (and ``threshold`` is an int), the line will be drawn
             through the last component defined as signal.
+            If False, the line will not be drawn in any circumstance.
+        vline: {True, False} : Default : False
+            Whether or not to draw a vertical line illustrating an estimate of
+            the number of significant components. If True, the line will be
+            drawn at the the knee or elbow position of the curve indicating the
+            number of significant components.
             If False, the line will not be drawn in any circumstance.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
@@ -1052,6 +1077,15 @@ class MVA():
             if n_signal_pcs == 0:
                 hline = False
 
+        if vline == True:
+            if self.learning_results.number_significant_components is None:
+                vline = False
+            else:
+                index_number_significant_components =\
+                    self.learning_results.number_significant_components - 1
+        else:
+            vline = False
+
         # Handling hline logic
         if hline == 'auto':
             # Set cutoff to threshold if float
@@ -1074,15 +1108,17 @@ class MVA():
         # Some default formatting for signal markers
         if signal_fmt is None:
             signal_fmt = {'c': '#C24D52',
-                          's': 100,
+                          'linestyle': '',
                           'marker': "^",
+                          'markersize': 10,
                           'zorder': 3}
 
         # Some default formatting for noise markers
         if noise_fmt is None:
             noise_fmt = {'c': '#4A70B0',
-                         's': 100,
+                         'linestyle': '',
                          'marker': 'o',
+                         'markersize': 10,
                          'zorder': 3}
 
         # Sane defaults for xaxis labeling
@@ -1102,10 +1138,17 @@ class MVA():
             ax = fig.add_subplot(111)
 
         if log:
-            ax.semilogy()
+            ax.set_yscale("log")
 
         if hline:
             ax.axhline(cutoff,
+                       linewidth=2,
+                       color='gray',
+                       linestyle='dashed',
+                       zorder=1)
+
+        if vline:
+            ax.axvline(index_number_significant_components,
                        linewidth=2,
                        color='gray',
                        linestyle='dashed',
@@ -1116,20 +1159,20 @@ class MVA():
             index_offset = 1
 
         if n_signal_pcs == n:
-            ax.scatter(range(index_offset, index_offset + n),
-                       s.isig[:n].data,
-                       **signal_fmt)
+            ax.plot(range(index_offset, index_offset + n),
+                    s.isig[:n].data,
+                    **signal_fmt)
         elif n_signal_pcs > 0:
-            ax.scatter(range(index_offset, index_offset + n_signal_pcs),
-                       s.isig[:n_signal_pcs].data,
-                       **signal_fmt)
-            ax.scatter(range(index_offset + n_signal_pcs, index_offset + n),
-                       s.isig[n_signal_pcs:n].data,
-                       **noise_fmt)
+            ax.plot(range(index_offset, index_offset + n_signal_pcs),
+                    s.isig[:n_signal_pcs].data,
+                    **signal_fmt)
+            ax.plot(range(index_offset + n_signal_pcs, index_offset + n),
+                    s.isig[n_signal_pcs:n].data,
+                    **noise_fmt)
         else:
-            ax.scatter(range(index_offset, index_offset + n),
-                       s.isig[:n].data,
-                       **noise_fmt)
+            ax.plot(range(index_offset, index_offset + n),
+                    s.isig[:n].data,
+                    **noise_fmt)
 
         if xaxis_labeling == 'cardinal':
             ax.xaxis.set_major_formatter(
@@ -1222,6 +1265,44 @@ class MVA():
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
+    def _estimate_elbow_position(self, curve_values):
+        """
+        Estimate the elbow position of a scree plot curve
+        Used to estimate the number of significant components in
+        a PCA variance ratio plot or other "elbow" type curves
+
+        Parameters
+        ----------
+        curve_values : :class:`numpy.ndarray`
+
+        Returns
+        -------
+        elbow position : int
+            Index of the elbow position in the input array,
+            as suggested in :ref:`[Satopää2011] <Satopää2011>`
+        """
+        maxpoints = min(20, len(curve_values) - 1)
+        # Find a line between first and last point
+        # With a classic elbow scree plot the line from first to last
+        # more or less defines a triangle
+        # The elbow should be the point which is the
+        # furthest distance from this line
+
+        y2 = np.log(curve_values[maxpoints])
+        x2 = maxpoints
+        y1 = np.log(curve_values[0])
+        x1 = 0
+        # loop through the curve values and calculate
+        distance = np.zeros(maxpoints)
+        for i in range(maxpoints):
+            y0 = np.log(curve_values[i])
+            x0 = i
+            distance[i] = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) /\
+                np.math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        # Point with the largest distance is the "elbow"
+        elbow_position = np.argmax(distance)
+        return elbow_position
+
 
 class LearningResults(object):
     # Decomposition
@@ -1229,6 +1310,7 @@ class LearningResults(object):
     loadings = None
     explained_variance = None
     explained_variance_ratio = None
+    number_significant_components = None
     decomposition_algorithm = None
     poissonian_noise_normalized = None
     output_dimension = None
@@ -1247,13 +1329,15 @@ class LearningResults(object):
     signal_mask = None
 
     def save(self, filename, overwrite=None):
-        """Save the result of the decomposition and demixing analysis
+        """
+        Save the result of the decomposition and demixing analysis
+
         Parameters
         ----------
         filename : string
         overwrite : {True, False, None}
-            If True(False) overwrite(don't overwrite) the file if it exists.
-            If None (default) ask what to do if file exists.
+            If True (False) overwrite(don't overwrite) the file if it exists.
+            If None (default), ask what to do if file exists.
         """
         kwargs = {}
         for attribute in [
@@ -1271,16 +1355,21 @@ class LearningResults(object):
             np.savez(filename, **kwargs)
 
     def load(self, filename):
-        """Load the results of a previous decomposition and
-         demixing analysis from a file.
+        """
+        Load the results of a previous decomposition and demixing analysis
+        from a file.
+
         Parameters
         ----------
         filename : string
         """
-        decomposition = np.load(filename)
+        decomposition = np.load(filename, allow_pickle=True)
         for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
+            # Unwrap values stored as 0D numpy arrays to raw datatypes
+            if isinstance(value, np.ndarray) and value.ndim == 0:
+                value = value.item()
             setattr(self, key, value)
         _logger.info("\n%s loaded correctly" % filename)
         # For compatibility with old version ##################
@@ -1318,11 +1407,6 @@ class LearningResults(object):
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-        #
-        # Output_dimension is an array after loading, convert it to int
-        if hasattr(self, 'output_dimension') and self.output_dimension \
-                is not None:
-            self.output_dimension = int(self.output_dimension)
         _logger.info(self._summary())
 
     def summary(self):

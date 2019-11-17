@@ -27,10 +27,20 @@ try:
     blosc_installed = True
 except BaseException:
     blosc_installed = False
+try:
+    import mrcz
+    mrcz_installed = True
+except BaseException:
+    mrcz_installed = False
 
 from hyperspy.io import load, save
 from hyperspy import signals
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+
+
+pytestmark = pytest.mark.skipif(
+    not mrcz_installed, reason="mrcz not installed")
+
 
 #==============================================================================
 # MRCZ Test
