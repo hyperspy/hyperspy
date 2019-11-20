@@ -44,6 +44,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
+from hyperspy.exceptions import NonLinearAxisError
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
@@ -2397,12 +2398,18 @@ class BaseSignal(FancySlicing,
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
+            for axis in self.axes_manager._axes:
+                if axis.is_linear is False:
+                    raise NonLinearAxisError()
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
                                            for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
         else:
             if len(scale) != len(self.data.shape):
                 raise ValueError("Wrong scale size")
+            for axis in self.axes_manager._axes:
+                if axis.is_linear is False:
+                    raise NonLinearAxisError()
             factors = np.array([scale[axis.index_in_axes_manager]
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
@@ -2448,6 +2455,10 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             The resulting cropped signal.
 
+        Note
+        ----
+        Currently requires a linear axis.
+
         Examples
         --------
         >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
@@ -2464,6 +2475,9 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
+        # TODO: Adapt so that it works if a non_linear_axis exists, but is not
+        # changed; for new_shape, a non_linear_axis should be interpolated to a
+        # linear grid
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale,)
@@ -2546,6 +2560,10 @@ class BaseSignal(FancySlicing,
             [<Signal1D, title: , dimensions: (3, 1|2)>,
             <Signal1D, title: , dimensions: (3, 2|2)>]
 
+        Note
+        ----
+        Requires a linear axis.
+
         Returns
         -------
         splitted : list
@@ -2571,6 +2589,9 @@ class BaseSignal(FancySlicing,
 
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
+        
+        if self.axes_manager[axis].is_linear is False:
+            raise NonLinearAxisError()
 
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
@@ -2657,8 +2678,7 @@ class BaseSignal(FancySlicing,
             return
 
         # We need to store the original shape and coordinates to be used
-        # by
-        # the fold function only if it has not been already stored by a
+        # by the fold function only if it has not been already stored by a
         # previous unfold
         folding = self.metadata._HyperSpy.Folding
         if folding.unfolded is False:
@@ -3296,8 +3316,11 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         axis2 = s.axes_manager[axis]
-        new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
-        axis2.offset = new_offset
+        if not self.axes_manager[axis].is_linear:
+            axis2.axes_manager[axis].axis = self.axes_manager[axis].axis[:-1]
+        else: 
+            new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
+            axis2.offset = new_offset
         s.get_dimensions_from_data()
         if out is None:
             return s
@@ -3330,13 +3353,18 @@ class BaseSignal(FancySlicing,
             Note that the size of the data on the given ``axis`` decreases by
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
-
+        
+        Note
+        ----
+        Requires a linear axis.
+        
         See also
         --------
         diff, integrate1D, integrate_simpson
 
         """
-
+        if not self.axes_manager[axis].is_linear:
+            raise NonLinearAxisError()
         der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
         der = out or der
         axis = self.axes_manager[axis]
@@ -3428,8 +3456,8 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        For further information see the documentation of
-        :py:func:`numpy.fft.fftn`
+        Requires a linear axis. For further information see the documentation
+        of :py:func:`numpy.fft.fftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -3443,6 +3471,8 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+        if any([not axs.is_linear for axs in self.axes_manager[axes]]): 
+            raise NonLinearAxisError()
         if isinstance(self.data, da.Array):
             if shift:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
@@ -3513,14 +3543,16 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        For further information see the documentation of
-        :py:func:`numpy.fft.ifftn`
+        Requires a linear axis. For further information see the documentation
+        of :py:func:`numpy.fft.ifftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+        if any([not axs.is_linear for axs in self.axes_manager[axes]]): 
+            raise NonLinearAxisError()
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
@@ -3889,6 +3921,10 @@ class BaseSignal(FancySlicing,
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10)).T
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
+        Note
+        ----
+        Currently requires a linear axis.
+
         """
         # Sepate ndkwargs
         ndkwargs = ()
@@ -3896,6 +3932,9 @@ class BaseSignal(FancySlicing,
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 
+        # TODO: Consider support for non linear signal axis
+        if any([not ax.is_linear for ax in self.axes_manager.signal_axes]): 
+            raise NonLinearAxisError()
         # Check if the signal axes have inhomogeneous scales and/or units and
         # display in warning if yes.
         scale = set()

@@ -190,6 +190,16 @@ class NavigationSizeError(Exception):
             self.navigation_size, self.expected_navigation_size)
 
 
+class NonLinearAxisError(Exception):
+
+    def __init__(self):
+        self.error = f"The called function does not support the use of a non "\
+                     "linear axis"
+
+    def __str__(self):
+        return repr(self.error)
+
+
 class VisibleDeprecationWarning(UserWarning):
 
     """Visible deprecation warning.

@@ -1161,9 +1161,12 @@ class Line2DROI(BaseInteractiveROI):
         Notes
         -----
         The destination point is included in the profile, in contrast to
-        standard numpy indexing.
+        standard numpy indexing. Requires linear navigation axes.
 
         """
+        if (not axis[0].is_linear) or (not axis[1].is_linear):
+            raise NonLinearAxisError()        
+        
         import scipy.ndimage as nd
         # Convert points coordinates from axes units to pixels
         p0 = ((src[0] - axes[0].offset) / axes[0].scale,

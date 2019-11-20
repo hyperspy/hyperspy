@@ -348,8 +348,11 @@ class LazySignal(BaseSignal):
                     "The output shape %s does not match  the shape of "
                     "`out` %s" % (new_data.shape, out.data.shape))
         axis2 = s.axes_manager[axis]
-        new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
-        axis2.offset = new_offset
+        if not self.axes_manager[axis].is_linear:
+            axis2.axes_manager[axis].axis = self.axes_manager[axis].axis[:-1]
+        else:
+            new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
+            axis2.offset = new_offset
         s.get_dimensions_from_data()
         if out is None:
             return s
