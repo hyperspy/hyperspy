@@ -801,7 +801,7 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
                  offset=0.):
         self.expression = "scale * x + offset"
         super().__init__(index_in_array, name, units, navigate, size=size,
-                         expression=self.expression, scale=scale, 
+                         expression=self.expression, scale=scale,
                          offset=offset)
         self.update_axis()
         self.on_trait_change(self.update_axis,
@@ -1357,15 +1357,13 @@ class AxesManager(t.HasTraits):
             first axis is used for all axes. If `False`, convert all axes
             individually.
         %s
-        
+
         Note
         ----
         Requires a linear axis.
         """
         convert_navigation = convert_signal = True
 
-        if not self[axes].is_linear:
-            raise NonLinearAxisError()
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
             convert_navigation = (len(self.navigation_axes) > 0)
@@ -1385,6 +1383,10 @@ class AxesManager(t.HasTraits):
         else:
             raise TypeError(
                 'Axes type `{}` is not correct.'.format(type(axes)))
+
+        for axis in axes:
+            if not axis.is_linear:
+                raise NonLinearAxisError()
 
         if isinstance(units, str) or units is None:
             units = [units] * len(axes)

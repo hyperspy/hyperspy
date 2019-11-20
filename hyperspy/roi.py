@@ -1141,11 +1141,13 @@ class Line2DROI(BaseInteractiveROI):
         cval : float, optional
             If `mode` is 'constant', what constant value to use outside the
             image.
+
         Returns
         -------
         return_value : array
             The intensity profile along the scan line. The length of the
             profile is the ceil of the computed length of the scan line.
+
         Examples
         --------
         >>> x = np.array([[1, 1, 1, 2, 2, 2]])
@@ -1158,14 +1160,16 @@ class Line2DROI(BaseInteractiveROI):
                [0, 0, 0, 0, 0, 0]])
         >>> profile_line(img, (2, 1), (2, 4))
         array([ 1.,  1.,  2.,  2.])
+
         Notes
         -----
         The destination point is included in the profile, in contrast to
         standard numpy indexing. Requires linear navigation axes.
 
         """
-        if (not axis[0].is_linear) or (not axis[1].is_linear):
-            raise NonLinearAxisError()        
+        for axis in axes:
+            if not axis.is_linear:
+                raise NonLinearAxisError()        
         
         import scipy.ndimage as nd
         # Convert points coordinates from axes units to pixels
