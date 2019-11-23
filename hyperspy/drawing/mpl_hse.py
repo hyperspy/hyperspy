@@ -74,32 +74,38 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self):
+    def plot_signal(self, **kwargs):
+        super().plot_signal()
         if self.signal_plot is not None:
-            self.signal_plot.plot()
+            self.signal_plot.plot(**kwargs)
             return
         # Create the figure
-        self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
-        if self.axes_manager.signal_axes[0].units is not Undefined:
-            self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
-        self.ylabel = self.quantity_label
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
-        sf.xlabel = self.xlabel
-        sf.ylabel = self.ylabel
         sf.axis = self.axis
         if sf.ax is None:
             sf.create_axis()
         sf.axes_manager = self.axes_manager
         sf.pointer = self.pointer
         sf.resizable_pointer = self._resizable_pointer
+
+        self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
+        if self.axes_manager.signal_axes[0].units is not Undefined:
+            self.xlabel += ' ({})'.format(
+                self.axes_manager.signal_axes[0].units)
+        self.ylabel = self.quantity_label if self.quantity_label != '' \
+            else 'Intensity'
+        sf.xlabel = self.xlabel
+        sf.ylabel = self.ylabel
+
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         sl = signal1d.Signal1DLine()
         is_complex = np.iscomplexobj(self.signal_data_function())
         sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
         if self.pointer is not None:
             color = self.pointer.color
@@ -121,7 +127,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             sf.add_line(sl)
 
         self.signal_plot = sf
-        sf.plot()
+        sf.plot(**kwargs)
         if sf.figure is not None:
             if self.axes_manager.navigation_axes:
                 self.signal_plot.figure.canvas.mpl_connect(
@@ -177,6 +183,13 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             rl.events.closed.connect(
                 lambda: rl.pointer.events.resized_am.disconnect(
                     rl._auto_update_line), [])
+        if hasattr(self.signal_plot.figure, 'tight_layout'):
+            try:
+                self.signal_plot.figure.tight_layout()
+            except BaseException:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:

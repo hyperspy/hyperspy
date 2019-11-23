@@ -28,9 +28,17 @@ For more details see each component docstring.
 ====================================================================
 """
 
-from hyperspy._components.gaussian2d import Gaussian2D
-from hyperspy._components.expression import Expression
 
+from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
+import importlib
+
+_g = globals()
+for _component, _specs in _EXTENSIONS["components2D"].items():
+    _g[_component] = getattr(
+        importlib.import_module(
+            _specs["module"]), _component)
+
+del importlib
 # Generating the documentation
 
 # Grab all the currently defined globals and make a copy of the keys

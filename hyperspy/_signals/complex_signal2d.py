@@ -57,11 +57,14 @@ class Complex2Dmixin:
         self.phase = phase
 
     def plot(self,
+             power_spectrum=False,
+             norm="auto",
+             fft_shift=False,
              colorbar=True,
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             saturated_pixels=0,
+             saturated_pixels=None,
              vmin=None,
              vmax=None,
              no_nans=False,
@@ -75,6 +78,9 @@ class Complex2Dmixin:
 
         """
         super().plot(
+            power_spectrum=power_spectrum,
+            norm=norm,
+            fft_shift=fft_shift,
             colorbar=colorbar,
             scalebar=scalebar,
             scalebar_color=scalebar_color,
@@ -86,8 +92,8 @@ class Complex2Dmixin:
             centre_colormap=centre_colormap,
             **kwargs
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
-                     COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
+                     PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
 
 class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):

@@ -32,7 +32,7 @@ from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.utils import signal_range_from_roi
 
 
-@add_gui_method(toolkey="Model1D.fit_component")
+@add_gui_method(toolkey="hyperspy.Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
 
     def __init__(self, model, component, signal_range=None,
@@ -54,7 +54,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.only_current = only_current
         if signal_range == "interactive":
             if (not hasattr(self.model, '_plot') or self.model._plot is None or
-                not self.model._plot.is_active):
+                    not self.model._plot.is_active):
                 self.model.plot()
             self.span_selector_switch(on=True)
 
@@ -624,7 +624,8 @@ class Model1D(BaseModel):
                self._jacobian(param, y)).sum(1)
         return gls
 
-    def _model2plot(self, axes_manager, out_of_range2nans=True):
+    def _model2plot(self, axes_manager, out_of_range2nans=True, **kwargs):
+        # Need **kwargs to allow `resizable_pointer` be passed
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager

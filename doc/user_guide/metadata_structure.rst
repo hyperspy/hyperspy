@@ -21,6 +21,7 @@ in the following sections of this chapter.
     ├── Acquisition_instrument
     │   ├── SEM
     │   │   ├── Detector
+    │   │   │   ├── detector_type
     │   │   │   └── EDS
     │   │   │       ├── azimuth_angle (º)
     │   │   │       ├── elevation_angle (º)
@@ -91,6 +92,8 @@ in the following sections of this chapter.
     │   ├── thickness
     │   └── xray_lines
     └── Signal
+        ├── FFT
+        │   └── shifted
         ├── Noise_properties
         │   ├── Variance_linear_model
         │   │   ├── correlation_factor
@@ -289,6 +292,11 @@ All instruments can contain a "Detector" node with information about the
 detector used to acquire the signal. EDX and EELS detectors should follow the
 following structure:
 
+detector_type
+    type: Str
+
+    The type of the detector, e.g. SE for SEM
+
 EELS
 ^^^^
 
@@ -446,6 +454,17 @@ quantity
 
     The name of the quantity of the "intensity axis" with the units in round
     brackets if required, for example Temperature (K).
+
+
+FFT
+---
+
+shifted
+    type: bool.
+
+    Specify if the FFT has the zero-frequency component shifted to the center of 
+    the signal.
+
 
 Noise_properties
 ----------------

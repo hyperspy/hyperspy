@@ -211,7 +211,8 @@ class Model2D(BaseModel):
     def _gradient_ls(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _model2plot(self, axes_manager, out_of_range2nans=True):
+    def _model2plot(self, axes_manager, out_of_range2nans=True, **kwargs):
+        # Need **kwargs to allow `resizable_pointer` be passed
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager

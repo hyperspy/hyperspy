@@ -1,6 +1,10 @@
+"""Functions for generating artificial data.
+
+For use in things like docstrings or to test HyperSpy functionalities.
+
+"""
+
 import numpy as np
-from hyperspy import components1d, components2d
-from hyperspy.signals import EELSSpectrum, Signal2D
 
 
 def get_low_loss_eels_signal():
@@ -25,13 +29,17 @@ def get_low_loss_eels_signal():
     get_core_loss_eels_line_scan_signal : get EELS core loss line scan
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(-100, 400, 0.5)
     zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
     plasmon = components1d.Gaussian(A=100, centre=60, sigma=20)
 
     data = zero_loss.function(x)
     data += plasmon.function(x)
-    data += np.random.random(size=len(x))*0.7
+    data += np.random.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -40,14 +48,23 @@ def get_low_loss_eels_signal():
     s.axes_manager[0].name = 'Electron energy loss'
     s.axes_manager[0].units = 'eV'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
-def get_core_loss_eels_signal():
+def get_core_loss_eels_signal(add_powerlaw=False):
     """Get an artificial core loss electron energy loss spectrum.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
+
+    Some random noise is also added to the spectrum, to simulate
+    experimental noise.
+
+    Parameters
+    ----------
+    add_powerlaw : bool
+        If True, adds a powerlaw background to the spectrum.
+        Default False.
 
     Returns
     -------
@@ -55,8 +72,24 @@ def get_core_loss_eels_signal():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> import hs.datasets.artifical_data as ad
+    >>> s = ad.get_core_loss_eels_signal()
     >>> s.plot()
+
+    With the powerlaw background
+
+    >>> s = ad.get_core_loss_eels_signal(add_powerlaw=True)
+    >>> s.plot()
+
+    To make the noise the same for multiple spectra, which can
+    be useful for testing fitting routines
+
+    >>> np.random.seed(seed=10)
+    >>> s1 = ad.get_core_loss_eels_signal()
+    >>> np.random.seed(seed=10)
+    >>> s2 = ad.get_core_loss_eels_signal()
+    >>> (s1.data == s2.data).all()
+    True
 
     See also
     --------
@@ -66,6 +99,10 @@ def get_core_loss_eels_signal():
     get_core_loss_eels_line_scan_signal : get EELS core loss line scan
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(400, 800, 1)
     arctan = components1d.Arctan(A=1, k=0.2, x0=688)
     arctan.minimum_at_zero = True
@@ -75,7 +112,11 @@ def get_core_loss_eels_signal():
     data = arctan.function(x)
     data += mn_l3_g.function(x)
     data += mn_l2_g.function(x)
-    data += np.random.random(size=len(x))*0.7
+    data += np.random.random(size=len(x)) * 0.7
+
+    if add_powerlaw:
+        powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
+        data += powerlaw.function(x)
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -83,7 +124,7 @@ def get_core_loss_eels_signal():
     s.axes_manager[0].name = 'Electron energy loss'
     s.axes_manager[0].units = 'eV'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
@@ -108,6 +149,10 @@ def get_low_loss_eels_line_scan_signal():
     get_core_loss_eels_line_scan_signal : core loss signal with the same size
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(-100, 400, 0.5)
     zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
     plasmon = components1d.Gaussian(A=100, centre=60, sigma=20)
@@ -117,7 +162,7 @@ def get_low_loss_eels_line_scan_signal():
     data = np.zeros((12, len(x)))
     for i in range(12):
         data[i] += data_signal
-        data[i] += np.random.random(size=len(x))*0.7
+        data[i] += np.random.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -128,7 +173,7 @@ def get_low_loss_eels_line_scan_signal():
     s.axes_manager.navigation_axes[0].name = 'Probe position'
     s.axes_manager.navigation_axes[0].units = 'nm'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
@@ -153,6 +198,10 @@ def get_core_loss_eels_line_scan_signal():
     get_low_loss_eels_line_scan_signal : get low loss signal with the same size
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(400, 800, 1)
     arctan_mn = components1d.Arctan(A=1, k=0.2, x0=688)
     arctan_mn.minimum_at_zero = True
@@ -173,7 +222,7 @@ def get_core_loss_eels_line_scan_signal():
         data[i] += arctan_fe.function(x) * fe_intensity[i]
         data[i] += fe_l3_g.function(x) * fe_intensity[i]
         data[i] += fe_l2_g.function(x) * fe_intensity[i]
-        data[i] += np.random.random(size=len(x))*0.7
+        data[i] += np.random.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -183,14 +232,20 @@ def get_core_loss_eels_line_scan_signal():
     s.axes_manager.navigation_axes[0].name = 'Probe position'
     s.axes_manager.navigation_axes[0].units = 'nm'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
-def get_core_loss_eels_model():
+def get_core_loss_eels_model(add_powerlaw=False):
     """Get an artificial core loss electron energy loss model.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
+
+    Parameters
+    ----------
+    add_powerlaw : bool
+        If True, adds a powerlaw background to the spectrum.
+        Default False.
 
     Returns
     -------
@@ -198,7 +253,13 @@ def get_core_loss_eels_model():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_model()
+    >>> import hs.datasets.artifical_data as ad
+    >>> s = ad.get_core_loss_eels_model()
+    >>> s.plot()
+
+    With the powerlaw background
+
+    >>> s = ad.get_core_loss_eels_model(add_powerlaw=True)
     >>> s.plot()
 
     See also
@@ -207,9 +268,8 @@ def get_core_loss_eels_model():
     get_core_loss_eels_signal : get a model instead of a signal
 
     """
-    s = get_core_loss_eels_signal()
+    s = get_core_loss_eels_signal(add_powerlaw=add_powerlaw)
     m = s.create_model(auto_background=False, GOS='hydrogenic')
-    m.fit()
     return m
 
 
@@ -226,6 +286,9 @@ def get_atomic_resolution_tem_signal2d():
     >>> s.plot()
 
     """
+    from hyperspy.signals import Signal2D
+    from hyperspy import components2d
+    
     sX, sY = 2, 2
     x_array, y_array = np.mgrid[0:200, 0:200]
     image = np.zeros_like(x_array, dtype=np.float32)
@@ -235,5 +298,6 @@ def get_atomic_resolution_tem_signal2d():
             gaussian2d.centre_x.value = x
             gaussian2d.centre_y.value = y
             image += gaussian2d.function(x_array, y_array)
+    
     s = Signal2D(image)
     return s

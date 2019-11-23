@@ -1,11 +1,12 @@
 import pytest
 import requests
 from hyperspy.misc.eels.eelsdb import eelsdb
-
+from requests.exceptions import SSLError
+import warnings
 
 def eelsdb_down():
     try:
-        request = requests.get('http://api.eelsdb.eu',)
+        request = requests.get('http://api.eelsdb.eu', verify=False)
         return False
     except requests.exceptions.ConnectionError:
         return True
@@ -13,21 +14,42 @@ def eelsdb_down():
 
 @pytest.mark.skipif(eelsdb_down(), reason="Unable to connect to EELSdb")
 def test_eelsdb_eels():
-    ss = eelsdb(
-        title="Boron Nitride Multiwall Nanotube",
-        formula="BN",
-        spectrum_type="coreloss",
-        edge="K",
-        min_energy=370,
-        max_energy=1000,
-        min_energy_compare="gt",
-        max_energy_compare="lt",
-        resolution="0.7 eV",
-        resolution_compare="lt",
-        max_n=2,
-        order="spectrumMin",
-        order_direction='DESC',
-        monochromated=False, )
+    try:
+        ss = eelsdb(
+            title="Boron Nitride Multiwall Nanotube",
+            formula="BN",
+            spectrum_type="coreloss",
+            edge="K",
+            min_energy=370,
+            max_energy=1000,
+            min_energy_compare="gt",
+            max_energy_compare="lt",
+            resolution="0.7 eV",
+            resolution_compare="lt",
+            max_n=2,
+            order="spectrumMin",
+            order_direction='DESC',
+            monochromated=False, )
+    except SSLError:
+        warnings.warn(
+            "The https://eelsdb.eu certificate seems to be invalid. "
+            "Consider notifying the issue to the EELSdb webmaster.")
+        ss = eelsdb(
+            title="Boron Nitride Multiwall Nanotube",
+            formula="BN",
+            spectrum_type="coreloss",
+            edge="K",
+            min_energy=370,
+            max_energy=1000,
+            min_energy_compare="gt",
+            max_energy_compare="lt",
+            resolution="0.7 eV",
+            resolution_compare="lt",
+            max_n=2,
+            order="spectrumMin",
+            order_direction='DESC',
+            monochromated=False,
+            verify_certificate=False)
     assert len(ss) == 2
     md = ss[0].metadata
     assert md.General.author == "Odile Stephan"
@@ -44,8 +66,12 @@ def test_eelsdb_eels():
 
 @pytest.mark.skipif(eelsdb_down(), reason="Unable to connect to EELSdb")
 def test_eelsdb_xas():
-    ss = eelsdb(
-        spectrum_type="xrayabs", max_n=1,)
+    try:
+        ss = eelsdb(
+            spectrum_type="xrayabs", max_n=1,)
+    except SSLError:
+        ss = eelsdb(
+            spectrum_type="xrayabs", max_n=1, verify_certificate=False)
     assert len(ss) == 1
     md = ss[0].metadata
     assert md.Signal.signal_type == "XAS"

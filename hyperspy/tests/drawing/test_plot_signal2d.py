@@ -68,7 +68,7 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
 @pytest.mark.parametrize("normalization", ['single', 'global'])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_rgb_image(mpl_cleanup, normalization):
+def test_rgb_image(normalization):
     w = 20
     data = np.arange(1, w * w + 1).reshape(w, w)
     ch1 = hs.signals.Signal2D(data)
@@ -85,22 +85,24 @@ def _generate_parameter():
         for colorbar in [True, False]:
             for axes_ticks in [True, False]:
                 for centre_colormap in [True, False]:
-                    parameters.append([scalebar, colorbar, axes_ticks,
-                                       centre_colormap])
+                    for min_aspect in [0.2, 0.7]:
+                        parameters.append([scalebar, colorbar, axes_ticks,
+                                           centre_colormap, min_aspect])
     return parameters
 
 
 @pytest.mark.parametrize(("scalebar", "colorbar", "axes_ticks",
-                          "centre_colormap"),
+                          "centre_colormap", "min_aspect"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot(mpl_cleanup, scalebar, colorbar, axes_ticks, centre_colormap):
+def test_plot(scalebar, colorbar, axes_ticks, centre_colormap, min_aspect):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal.plot(scalebar=scalebar,
                           colorbar=colorbar,
                           axes_ticks=axes_ticks,
-                          centre_colormap=centre_colormap)
+                          centre_colormap=centre_colormap,
+                          min_aspect=min_aspect)
     return test_plot.signal._plot.signal_plot.figure
 
 
@@ -111,11 +113,30 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_scale():
+    test_plot = _TestPlot(ndim=0, sdim=2)
+    test_plot.signal += 1  # need to avoid zeros in log
+    test_plot.signal.plot(norm='log')
+    return test_plot.signal._plot.signal_plot.figure
+
+
+@pytest.mark.parametrize("fft_shift", [True, False])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_FFT(fft_shift):
+    s = hs.datasets.example_signals.object_hologram()
+    s2 = s.isig[:128, :128].fft()
+    s2.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
+    return s2._plot.signal_plot.figure
+
+
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
                                             (None, None)))
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
+def test_plot_multiple_images_list(vmin, vmax):
     # load red channel of raccoon as an image
     image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
     image0.metadata.General.title = 'Rocky Raccoon - R'
@@ -151,6 +172,20 @@ def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
                         labelwrap=20, vmin=vmin, vmax=vmax)
     return plt.gcf()
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_rgb_image():
+    # load rgb imimagesage
+    rgb = hs.signals.Signal1D(scipy.misc.face())
+    rgb.change_dtype("rgb8")
+    rgb.metadata.General.title = 'RGB'
+    axesRGB = rgb.axes_manager
+    axesRGB[0].name = "x"
+    axesRGB[1].name = "y"
+    axesRGB[0].units = "cm"
+    axesRGB[1].units = "cm"
+    rgb.plot()
+    return plt.gcf()
 
 class _TestIteratedSignal:
 
@@ -194,7 +229,7 @@ class _TestIteratedSignal:
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_default(mpl_cleanup):
+def test_plot_images_default():
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal)
     return plt.gcf()
@@ -202,7 +237,7 @@ def test_plot_images_default(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_list(mpl_cleanup):
+def test_plot_images_cmap_list():
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal,
                         axes_decor='off',
@@ -212,7 +247,7 @@ def test_plot_images_cmap_list(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_list_w_diverging(mpl_cleanup):
+def test_plot_images_cmap_list_w_diverging():
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal,
                         axes_decor='off',
@@ -222,7 +257,7 @@ def test_plot_images_cmap_list_w_diverging(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_mpl_colors(mpl_cleanup):
+def test_plot_images_cmap_mpl_colors():
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal,
                         axes_decor='off',
@@ -233,14 +268,11 @@ def test_plot_images_cmap_mpl_colors(mpl_cleanup):
 def test_plot_images_cmap_mpl_colors_w_single_cbar():
     # This should give an error, so test for that
     test_im_plot = _TestIteratedSignal()
-    with pytest.raises(ValueError) as val_error:
+    with pytest.raises(ValueError):
         hs.plot.plot_images(test_im_plot.signal,
                             axes_decor='off',
                             cmap='mpl_colors',
                             colorbar='single')
-    assert str(val_error.value) == 'Cannot use a single colorbar with ' \
-                                   'multiple colormaps. Please check for ' \
-                                   'compatible arguments.'
 
 
 def test_plot_images_bogus_cmap():
@@ -257,7 +289,7 @@ def test_plot_images_bogus_cmap():
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_one_string(mpl_cleanup):
+def test_plot_images_cmap_one_string():
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal,
                         axes_decor='off',
@@ -268,7 +300,7 @@ def test_plot_images_cmap_one_string(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_make_cmap_bittrue(mpl_cleanup):
+def test_plot_images_cmap_make_cmap_bittrue():
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal,
                         axes_decor='off',
@@ -285,7 +317,7 @@ def test_plot_images_cmap_make_cmap_bittrue(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_make_cmap_bitfalse(mpl_cleanup):
+def test_plot_images_cmap_make_cmap_bitfalse():
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal,
                         axes_decor='off',
@@ -302,7 +334,7 @@ def test_plot_images_cmap_make_cmap_bitfalse(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_multi_signal(mpl_cleanup):
+def test_plot_images_cmap_multi_signal():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
@@ -320,7 +352,7 @@ def test_plot_images_cmap_multi_signal(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_multi_w_rgb(mpl_cleanup):
+def test_plot_images_cmap_multi_w_rgb():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
@@ -342,25 +374,25 @@ def test_plot_images_cmap_multi_w_rgb(mpl_cleanup):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_single_image(mpl_cleanup):
+def test_plot_images_single_image():
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, saturated_pixels=0.1)
     return plt.gcf()
 
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_single_image_stack(mpl_cleanup):
+def test_plot_images_single_image_stack():
     image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, saturated_pixels=0.1)
     return plt.gcf()
 
 
-def test_plot_images_multi_signal_w_axes_replot(mpl_cleanup):
+def test_plot_images_multi_signal_w_axes_replot():
     imdata = np.random.rand(3, 5, 5)
     imgs = hs.signals.Signal2D(imdata)
     img_list = [imgs, imgs.inav[:2], imgs.inav[0]]
@@ -388,7 +420,7 @@ def test_plot_images_multi_signal_w_axes_replot(mpl_cleanup):
                                               [10.0, 20.0], [10.0, None, 20.0]])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_saturated_pixels(mpl_cleanup, saturated_pixels):
+def test_plot_images_saturated_pixels(saturated_pixels):
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
@@ -401,7 +433,7 @@ def test_plot_images_saturated_pixels(mpl_cleanup, saturated_pixels):
 @pytest.mark.parametrize("colorbar", ['single', 'multi', None])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_colorbar(mpl_cleanup, colorbar):
+def test_plot_images_colorbar(colorbar):
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
@@ -427,3 +459,42 @@ def test_plot_images_not_signal():
 
     with pytest.raises(ValueError):
         hs.plot.plot_images('not a list of signal')
+
+
+def test_plot_images_tranpose():
+    a = hs.signals.BaseSignal(np.arange(100).reshape(10, 10))
+    b = hs.signals.BaseSignal(np.arange(100).reshape(10, 10)).T
+
+    hs.plot.plot_images([a, b.T])
+    hs.plot.plot_images([a, b])
+
+
+def test_plot_with_non_finite_value():
+    s = hs.signals.Signal2D(np.array([[np.nan, 2.0] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[np.nan, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[-np.inf, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[np.inf, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+
+@pytest.mark.parametrize("cmap", ['gray', None])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_negative_value(cmap):
+    s = hs.signals.Signal2D(np.arange(10*10).reshape(10, 10))
+    s -= 5*10
+    if cmap:
+        s.plot(norm='log', cmap=cmap)
+    else:
+        s.plot(norm='log')
+    return plt.gcf()

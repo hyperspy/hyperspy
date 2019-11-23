@@ -353,9 +353,18 @@ class BaseInteractiveROI(BaseROI):
             'widget' argument.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
-            interactivel on any roi attribute change.
+            interactively on any roi attribute change.
 
         """
+        if hasattr(signal, '_plot_kwargs'):
+            kwargs.update({'_plot_kwargs': signal._plot_kwargs})
+            # in case of complex signal, it is possible to shift the signal
+            # during plotting, if so this is currently not supported and we
+            # raise a NotImplementedError
+            if signal._plot.signal_data_function_kwargs.get(
+                    'fft_shift', False):
+                raise NotImplementedError('ROIs are not supported when data '
+                                          'are shifted during plotting.')
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
@@ -515,7 +524,7 @@ def guess_vertical_or_horizontal(axes, signal):
             "Could not find valid widget type for the given `axes` value")
 
 
-@add_gui_method(toolkey="Point1DROI")
+@add_gui_method(toolkey="hyperspy.Point1DROI")
 class Point1DROI(BasePointROI):
 
     """Selects a single point in a 1D space. The coordinate of the point in the
@@ -559,7 +568,7 @@ class Point1DROI(BasePointROI):
             self.value)
 
 
-@add_gui_method(toolkey="Point2DROI")
+@add_gui_method(toolkey="hyperspy.Point2DROI")
 class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
@@ -600,7 +609,7 @@ class Point2DROI(BasePointROI):
             self.x, self.y)
 
 
-@add_gui_method(toolkey="SpanROI")
+@add_gui_method(toolkey="hyperspy.SpanROI")
 class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
@@ -659,7 +668,7 @@ class SpanROI(BaseInteractiveROI):
             self.right)
 
 
-@add_gui_method(toolkey="RectangularROI")
+@add_gui_method(toolkey="hyperspy.RectangularROI")
 class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
@@ -797,7 +806,7 @@ class RectangularROI(BaseInteractiveROI):
             self.bottom)
 
 
-@add_gui_method(toolkey="CircleROI")
+@add_gui_method(toolkey="hyperspy.CircleROI")
 class CircleROI(BaseInteractiveROI):
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
@@ -960,7 +969,7 @@ class CircleROI(BaseInteractiveROI):
                 self.r_inner)
 
 
-@add_gui_method(toolkey="Line2DROI")
+@add_gui_method(toolkey="hyperspy.Line2DROI")
 class Line2DROI(BaseInteractiveROI):
 
     x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
@@ -1061,6 +1070,50 @@ class Line2DROI(BaseInteractiveROI):
         p1 = np.array((self.x2, self.y2), dtype=np.float)
         d_row, d_col = p1 - p0
         return np.hypot(d_row, d_col)
+
+    def angle(self, axis='horizontal', units='degrees'):
+        """"Angle between ROI line and selected axis
+
+        Parameters
+        ----------
+        axis : str, {'horizontal', 'vertical'}, optional
+            Select axis against which the angle of the ROI line is measured.
+            'x' is alias to 'horizontal' and 'y' is 'vertical'
+            (Default: 'horizontal')
+        units : str, {'degrees', 'radians'}
+            The angle units of the output
+            (Default: 'degrees')
+
+        Returns
+        -------
+        angle : float
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> hs.roi.Line2DROI(0., 0., 1., 2., 1)
+        >>> r.angle()
+        63.43494882292201
+        """
+
+        x = self.x2 - self.x1
+        y = self.y2 - self.y1
+
+        if units == 'degrees':
+            conversation = 180. / np.pi
+        elif units == 'radians':
+            conversation = 1.
+        else:
+            raise ValueError(
+                "Units are not recognized. Use  either 'degrees' or 'radians'.")
+
+        if axis == 'horizontal':
+            return np.arctan2(y, x) * conversation
+        elif axis == 'vertical':
+            return np.arctan2(x, y) * conversation
+        else:
+            raise ValueError("Axis is not recognized. "
+                             "Use  either 'horizontal' or 'vertical'.")
 
     @staticmethod
     def profile_line(img, src, dst, axes, linewidth=1,

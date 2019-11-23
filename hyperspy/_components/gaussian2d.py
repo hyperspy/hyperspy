@@ -17,66 +17,72 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import numpy as np
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
-pi2 = 2 * math.pi
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class Gaussian2D(Component):
-    """Normalized 2D elliptical gaussian function component
+class Gaussian2D(Expression):
+    r"""Normalized 2D elliptical Gaussian function component.
 
     .. math::
 
-        f(x,y) = \\frac{A}{2\\pi s_x s_y}e^{-\\frac{\\left(x-x0\\right)
-        ^{2}}{2s_{x}^{2}}\\frac{\\left(y-y0\\right)^{2}}{2s_{y}^{2}}}
+        f(x,y) = \frac{A}{2\pi s_x s_y}\exp\left[-\frac{\left(x-x_0\right)
+        ^{2}}{2s_{x}^{2}}\frac{\left(y-y_0\right)^{2}}{2s_{y}^{2}}\right]
 
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |      a     | amplitude |
-    +------------+-----------+
-    |    x0,y0   |  centre   |
-    +------------+-----------+
-    |   s_x,s_y  |   sigma   |
-    +------------+-----------+
+    =============== =============
+    Variable         Parameter 
+    =============== =============
+    :math:`A`        A 
+    :math:`s_x,s_y`  sigma_x/y 
+    :math:`x_0,y_0`  centre_x/y 
+    =============== =============
+
+
+    Parameters
+    ----------
+    A : float
+        Amplitude (height of the peak scaled by :math:`2 \pi s_x s_y`).
+    sigma_x : float
+        Width (scale parameter) of the Gaussian distribution in `x` direction.
+    sigma_y : float
+        Width (scale parameter) of the Gaussian distribution in `y` direction.
+    centre_x : float
+        Location of the Gaussian maximum (peak position) in `x` direction.
+    centre_x : float
+        Location of the Gaussian maximum (peak position) in `y` direction.
+
+
+    For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get 
+    and set the full-with-half-maxima along the two axes.
     """
 
-    def __init__(self,
-                 A=1.,
-                 sigma_x=1.,
-                 sigma_y=1.,
-                 centre_x=0.,
-                 centre_y=0.,
-                 ):
-        Component.__init__(self, ['A',
-                                  'sigma_x',
-                                  'sigma_y',
-                                  'centre_x',
-                                  'centre_y',
-                                  ])
-        self.A.value = A
-        self.sigma_x.value = sigma_x
-        self.sigma_y.value = sigma_y
-        self.centre_x.value = centre_x
-        self.centre_y.value = centre_y
+    def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
+                 centre_y=0, module="numexpr", **kwargs):
+        super(Gaussian2D, self).__init__(
+            expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
+                       exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
+                       + (y - centre_y) ** 2 / (2 * sigma_y ** 2)))",
+            name="Gaussian2D",
+            A=A,
+            sigma_x=sigma_x,
+            sigma_y=sigma_y,
+            centre_x=centre_x,
+            centre_y=centre_y,
+            position=("centre_x", "centre_y"),
+            module=module,
+            autodoc=False,
+            **kwargs)
 
-# TODO: add boundaries and gradients for enhancement
+        # Boundaries
+        self.A.bmin = 0.
 
-    def function(self, x, y):
-        A = self.A.value
-        sx = self.sigma_x.value
-        sy = self.sigma_y.value
-        x0 = self.centre_x.value
-        y0 = self.centre_y.value
+        self.sigma_x.bmin = 0.
+        self.sigma_y.bmin = 0.
 
-        return A * (1 / (sx * sy * pi2)) * np.exp(-((x - x0) ** 2
-                                                    / (2 * sx ** 2)
-                                                    + (y - y0) ** 2
-                                                    / (2 * sy ** 2)))
+        self.isbackground = False
+        self.convolved = True
 
     @property
     def fwhm_x(self):

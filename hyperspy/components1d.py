@@ -31,28 +31,23 @@ For more details see each component docstring.
 ====================================================================
 """
 
-from hyperspy._components.arctan import Arctan
-from hyperspy._components.bleasdale import Bleasdale
-from hyperspy._components.heaviside import HeavisideStep
-from hyperspy._components.eels_double_power_law import DoublePowerLaw
-from hyperspy._components.eels_cl_edge import EELSCLEdge
-from hyperspy._components.error_function import Erf
-from hyperspy._components.exponential import Exponential
-from hyperspy._components.gaussian import Gaussian
-from hyperspy._components.gaussianhf import GaussianHF
-from hyperspy._components.logistic import Logistic
-from hyperspy._components.lorentzian import Lorentzian
-from hyperspy._components.offset import Offset
-from hyperspy._components.power_law import PowerLaw
-from hyperspy._components.pes_see import SEE
-from hyperspy._components.rc import RC
-from hyperspy._components.eels_vignetting import Vignetting
-from hyperspy._components.voigt import Voigt
-from hyperspy._components.scalable_fixed_pattern import ScalableFixedPattern
-from hyperspy._components.polynomial import Polynomial
-from hyperspy._components.pes_core_line_shape import PESCoreLineShape
-from hyperspy._components.volume_plasmon_drude import VolumePlasmonDrude
-from hyperspy._components.expression import Expression
+
+# -*- coding: utf-8 -*-
+from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
+import importlib
+
+_g = globals()
+for _component, _specs in _EXTENSIONS["components1D"].items():
+    # Don't add the new Polynomial to the API.
+    # To use it the old `Polynomial` has a `legacy` keyword.
+    # TODO: remove in HyperSpy v2.0
+    if _component == "eab91275-88db-4855-917a-cdcbe7209592":
+        continue
+    _g[_component] = getattr(
+        importlib.import_module(
+            _specs["module"]), _component)
+
+del importlib, _component, _specs, _g
 
 # Generating the documentation
 

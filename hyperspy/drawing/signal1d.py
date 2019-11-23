@@ -21,11 +21,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import logging
+import inspect
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.test_utils import ignore_warning
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Signal1DFigure(BlittedFigure):
@@ -40,7 +46,6 @@ class Signal1DFigure(BlittedFigure):
         self.right_ax = None
         self.ax_lines = list()
         self.right_ax_lines = list()
-        self.ax_markers = list()
         self.axes_manager = None
         self.right_axes_manager = None
         self.pointer = None
@@ -117,16 +122,16 @@ class Signal1DFigure(BlittedFigure):
             line.axes_manager = self.axes_manager
         line.pointer = self.pointer
         line.resizable_pointer = self.resizable_pointer
-        line.hspy_figure = self        
+        line.hspy_figure = self
 
-    def plot(self):
+    def plot(self, data_function_kwargs={}, **kwargs):
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_title(self.title)
         x_axis_upper_lims = []
         x_axis_lower_lims = []
         for line in self.ax_lines:
-            line.plot()
+            line.plot(data_function_kwargs=data_function_kwargs, **kwargs)
             x_axis_lower_lims.append(line.axis.axis[0])
             x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:
@@ -157,18 +162,20 @@ class Signal1DFigure(BlittedFigure):
                 pass
 
     def _on_close(self):
+        _logger.debug('Closing Signal1DFigure.')
         if self.figure is None:
             return  # Already closed
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
         super(Signal1DFigure, self)._on_close()
+        _logger.debug('Signal1DFigure Closed.')
 
     def update(self):
         for marker in self.ax_markers:
             marker.update()
         for line in self.ax_lines + self.right_ax_lines:
             # save on figure rendering and do it at the end
-            line.update(render_figure=False)
+            line._auto_update_line(render_figure=False)
         if self.ax.figure.canvas.supports_blit:
             self.ax.hspy_fig._update_animated()
         else:
@@ -218,10 +225,13 @@ class Signal1DLine(object):
         self.ax = None
         # Data attributes
         self.data_function = None
+        # args to pass to `__call__`
+        self.data_function_kwargs = {}
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
         self._plot_imag = False
+        self.norm = 'linear'
 
         # Properties
         self.line = None
@@ -327,16 +337,26 @@ class Signal1DLine(object):
     def _get_pointer_text(self):
         return self.hspy_figure._get_pointer_text(pointer=self.pointer)
 
-    def plot(self, data=1):
-        f = self.data_function
-        if self._plot_imag is False:
-            data = f(self.axes_manager, self.resizable_pointer).real
-        else:
-            data = f(self.axes_manager, self.resizable_pointer).imag
+    def plot(self, data=1, data_function_kwargs={}, norm='linear'):
+        self.data_function_kwargs = data_function_kwargs
+        self.norm = norm
+        data = self._get_data()
         if self.line is not None:
             self.line.remove()
-        self.line, = self.ax.plot(self.axis.axis, data,
-                                  **self.line_properties)
+
+        if norm == 'log':
+            plot = self.ax.semilogy
+        elif (isinstance(norm, mpl.colors.Normalize) or
+              (inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize))
+              ):
+            raise ValueError("Matplotlib Normalize instance or subclass can "
+                             "be used for Signal2D only.")
+        elif norm not in ["auto", "linear"]:
+            raise ValueError("`norm` paramater should be 'auto', 'linear' or "
+                             "'log' for Signal1D.")
+        else:
+            plot = self.ax.plot
+        self.line, = plot(self.axis.axis, data, **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
@@ -351,6 +371,17 @@ class Signal1DLine(object):
                                      animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
 
+    def _get_data(self, real_part=False):
+        if self._plot_imag and not real_part:
+            ydata = self.data_function(axes_manager=self.axes_manager,
+                                       resizable_pointer=self.resizable_pointer,
+                                       **self.data_function_kwargs).imag
+        else:
+            ydata = self.data_function(axes_manager=self.axes_manager,
+                                       resizable_pointer=self.resizable_pointer,
+                                       **self.data_function_kwargs).real
+        return ydata
+
     def _auto_update_line(self, *args, **kwargs):
         """Updates the line plot only if `auto_update` is `True`.
 
@@ -358,23 +389,21 @@ class Signal1DLine(object):
 
         """
         if self.auto_update:
-            # if markers are plotted, we don't render the figure now but when
-            # once the markers have been updated
-            kwargs['render_figure'] = (len(self.ax.hspy_fig.ax_markers) == 0)
+            if 'render_figure' not in kwargs.keys():
+                # if markers are plotted, we don't render the figure now but
+                # once the markers have been updated
+                kwargs['render_figure'] = (
+                    len(self.ax.hspy_fig.ax_markers) == 0)
             self.update(self, *args, **kwargs)
 
     def update(self, force_replot=False, render_figure=True):
         """Update the current spectrum figure"""
         if force_replot is True:
             self.close()
-            self.plot()
-        if self._plot_imag is False:
-            ydata = self.data_function(self.axes_manager,
-                                       self.resizable_pointer).real
-        else:
-            ydata = self.data_function(self.axes_manager,
-                                       self.resizable_pointer).imag
+            self.plot(data_function_kwargs=self.data_function_kwargs,
+                      norm=self.norm)
 
+        ydata = self._get_data()
         old_xaxis = self.line.get_xdata()
         if len(old_xaxis) != self.axis.size or \
                 np.any(np.not_equal(old_xaxis, self.axis.axis)):
@@ -390,14 +419,26 @@ class Signal1DLine(object):
             y2 += 2
             y1, y2 = np.clip((y1, y2), 0, len(ydata - 1))
             clipped_ydata = ydata[y1:y2]
-            y_max, y_min = (np.nanmax(clipped_ydata),
-                            np.nanmin(clipped_ydata))
+            with ignore_warning(category=RuntimeWarning):
+                # In case of "All-NaN slices"
+                y_max, y_min = (np.nanmax(clipped_ydata),
+                                np.nanmin(clipped_ydata))
+
             if self._plot_imag:
-                yreal = self.data_function(self.axes_manager,
-                                           self.resizable_pointer).real
+                # Add real plot
+                yreal = self._get_data(real_part=True)
                 clipped_yreal = yreal[y1:y2]
-                y_min = min(y_min, clipped_yreal.min())
-                y_max = max(y_max, clipped_yreal.max())
+                with ignore_warning(category=RuntimeWarning):
+                    # In case of "All-NaN slices"
+                    y_min = min(y_min, np.nanmin(clipped_yreal))
+                    y_max = max(y_max, np.nanmin(clipped_yreal))
+            if y_min == y_max:
+                # To avoid matplotlib UserWarning when calling `set_ylim`
+                y_min, y_max = y_min - 0.1, y_max + 0.1
+            if not np.isfinite(y_min):
+                y_min = None  # data are -inf or all NaN
+            if not np.isfinite(y_max):
+                y_max = None  # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self._get_pointer_text())
@@ -408,6 +449,7 @@ class Signal1DLine(object):
                 self.ax.figure.canvas.draw_idle()
 
     def close(self):
+        _logger.debug('Closing `Signal1DLine`.')
         if self.line in self.ax.lines:
             self.ax.lines.remove(self.line)
         if self.text and self.text in self.ax.texts:
@@ -421,6 +463,7 @@ class Signal1DLine(object):
             self.ax.figure.canvas.draw_idle()
         except BaseException:
             pass
+        _logger.debug('`Signal1DLine` closed.')
 
 
 def _plot_component(factors, idx, ax=None, cal_axis=None,
