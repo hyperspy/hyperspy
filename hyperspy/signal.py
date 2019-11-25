@@ -2140,7 +2140,8 @@ class BaseSignal(FancySlicing,
 
         self._plot.plot(resizable_pointer=resizable_pointer,
                         pointer_operation=pointer_operation, 
-                        picker_tolerance=picker_tolerance, **kwargs)
+                        picker_tolerance=picker_tolerance,
+                        **kwargs)
         # need both condition: in case we replot without pointer
         # (`pointer_size` from previous plot but `self._plot.pointer` is None)
         if self._plot.pointer and resizable_pointer and pointer_size is not None:

@@ -158,6 +158,16 @@ def key_press_handler_custom(event, canvas):
         key_press_handler(event, canvas, canvas.manager.toolbar)
 
 
+def get_pointer_operation(pointer_operation):
+    if pointer_operation is None:
+        pointer_operation = preferences.Plot.pointer_operation
+    if pointer_operation == 'sum':
+        pointer_operation = np.sum
+    elif pointer_operation == 'mean':
+        pointer_operation = np.mean
+    return pointer_operation
+
+
 def on_figure_window_close(figure, function):
     """Connects a close figure signal to a given function.
 

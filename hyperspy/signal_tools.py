@@ -270,19 +270,18 @@ class Smoothing(t.HasTraits):
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
 
-    def __init__(self, signal, pointer_operation=np.sum):
+    def __init__(self, signal):
         self.ax = None
         self.data_line = None
         self.smooth_line = None
         self.signal = signal
         self.single_spectrum = self.signal.get_current_signal().deepcopy()
         self.axis = self.signal.axes_manager.signal_axes[0].axis
-        self.pointer_operation = pointer_operation
         self.plot()
 
     def plot(self):
         if self.signal._plot is None or not self.signal._plot.is_active:
-            self.signal.plot(pointer_operation=self.pointer_operation)
+            self.signal.plot()
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
         self.original_color = l1.line.get_color()

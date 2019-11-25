@@ -55,10 +55,12 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
         resizable_pointer : bool, default True
-            If True, the pointer will be resizable.
-        pointer_operation : numpy function, default np.sum
+            If True, the pointer will be resizable. Not supported for model
+            plotting.
+        pointer_operation : {None | 'sum' | 'mean'}, default None
             Set the operation to perform over the navigation area selected by
             the pointer.
+            If None (default), the value from the preferences is used.
         """
 
 

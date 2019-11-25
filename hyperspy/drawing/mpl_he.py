@@ -21,7 +21,7 @@ import logging
 
 from traits.api import Undefined
 
-from hyperspy.drawing import widgets, signal1d, image
+from hyperspy.drawing import widgets, signal1d, image, utils
 
 
 _logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class MPL_HyperExplorer(object):
         self._pointer_nav_dim = None
         self._pointer_size = None
         self._resizable_pointer = False
-        self._pointer_operation = np.sum
+        self._pointer_operation = None
 
     def plot_signal(self):
         # This method should be implemented by the subclasses.
@@ -166,7 +166,7 @@ class MPL_HyperExplorer(object):
         else:
             return False
 
-    def plot(self, resizable_pointer=False, pointer_operation=np.sum, 
+    def plot(self, resizable_pointer=False, pointer_operation=None, 
              picker_tolerance=10.0, **kwargs):
         self._resizable_pointer = resizable_pointer
         # Parse the kwargs for plotting complex data
@@ -175,7 +175,8 @@ class MPL_HyperExplorer(object):
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
         if self.pointer is None:
             pointer, param_dict = self.assign_pointer()
-            self._pointer_operation = pointer_operation
+            self._pointer_operation = utils.get_pointer_operation(
+                pointer_operation)
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager, **param_dict)
                 self.pointer.color = 'red'
