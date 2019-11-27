@@ -390,6 +390,7 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
         return super(ComplexSignal, self).angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
-    def argand_diagram(self, *kwargs):
-        raise NotImplementedError('Argand diagram is not implemented for Lazy signals.'
-                                  'Use `compute()` method to convert your signal to a regular one.')
+    def argand_diagram(self, *args, **kwargs):
+        raise NotImplementedError("Argand diagram is not implemented for lazy "
+                                  "signals. Use `compute()` to convert the "
+                                  "signal to a regular one.")
