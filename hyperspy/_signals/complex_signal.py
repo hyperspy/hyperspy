@@ -389,3 +389,7 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
         angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
         return super(ComplexSignal, self).angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
+
+    def argand_diagram(self, *kwargs):
+        raise NotImplementedError('Argand diagram is not implemented for Lazy signals.'
+                                  'Use `compute()` method to convert your signal to a regular one.')
