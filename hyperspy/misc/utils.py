@@ -138,34 +138,42 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
-def parse_quantity(quantity, sep=['(', '['], end_sep=[')', ']']):
-    """Parse quantity of the signal outputting quantity and
-    units separately if applicable
+def parse_quantity(quantity, opening='(', closing=')'):
+    """Parse quantity of the signal outputting quantity and units separately. 
+    It looks for the last matching opening and closing separator.
 
     Parameters
     ----------
     quantity : string
-    sep : list of string
-        Possible separators for units
-    end_sep : list of (string or None)
-        Separator endings corresponding to `sep`. Same length as `sep`.
+    opening : string
+        Separator used to define the beginning of the units
+    closing : string
+        Separator used to define the end of the units
 
     Returns
     -------
     quantity_name : string
-    units : string
+    quantity_units : string
     """
 
-    if not(len(sep) == len(end_sep)):
-        raise ValueError('Attributes `sep` and `end_sep` must have the same length.')
-    for i, separator in enumerate(sep):
-        q_split = quantity.split(separator)
-        if len(q_split) == 2:
-            quantity_name = q_split[0]
-            units = q_split[1].split(end_sep[i])[0]
-            return quantity_name, units
-
-    return quantity, None
+    # open_bracket keep track of the currently open brackets
+    open_bracket = 0
+    for index, c in enumerate(quantity.strip()[::-1]):
+        if c == closing:
+            # we find an closing, increment open_bracket
+            open_bracket += 1
+        if c == opening:
+            # we find a opening, decrement open_bracket
+            open_bracket -= 1
+            if open_bracket == 0:
+                # we found the matching bracket and we will use the index
+                break
+    if index + 1 == len(quantity):
+        return quantity, ""
+    else:
+        quantity_name = quantity[:-index-1].strip()
+        quantity_units = quantity[-index:-1].strip()
+        return quantity_name, quantity_units
 
 
 _slugify_strip_re_data = ''.join(
