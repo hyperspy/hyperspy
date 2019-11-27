@@ -37,6 +37,10 @@ from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
+class toto(object):
+    def __init__(self):
+        pass
+
 
 class SpanSelectorInSignal1D(t.HasTraits):
     ss_left_value = t.Float(np.nan)
