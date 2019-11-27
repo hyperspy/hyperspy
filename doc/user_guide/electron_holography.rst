@@ -81,7 +81,7 @@ hologram should be provided to the method either as Hyperspy's
     >>> reference_hologram = hs.datasets.example_signals.reference_hologram()
     >>> wave_image = im.reconstruct_phase(reference_hologram,
     ...                                   sb_position=sb_position,
-    ...                                   sb_size=sb_sb_size)
+    ...                                   sb_size=sb_size)
 
 Using the reconstructed wave, one can access its amplitude and phase (also
 unwrapped phase) using
@@ -121,10 +121,11 @@ diameter of the sideband as follows:
 
 .. code-block:: python
 
+    >>> out_size = int(2*sb_size.data)
     >>> wave_image = im.reconstruct_phase(reference_hologram,
     ...                                   sb_position=sb_position,
-    ...                                   sb_size=sb_sb_size,
-    ...                                   output_shape=(2*sb_size, 2*sb_size))
+    ...                                   sb_size=sb_size,
+    ...                                   output_shape=(out_size, out_size))
 
 Note that the
 :py:meth:`~._signals.hologram_image.HologramImage.reconstruct_phase`
@@ -135,6 +136,24 @@ and :py:meth:`~._signals.hologram_image.HologramImage.estimate_sideband_size`
 methods. This, however, is not recommended for not experienced users.
 
 .. _holography.stats-label:
+
+Further processing of complex wave and phase
+--------------------------------------------
+Once the complex electron wave reconstructed it :ref:`can be processed the same way as any other complex signal
+<complex_data-label>`. A useful tool to explore the complex data is :ref:`Argand plot <complex.argand>`, which can be
+calculated and displayed as follows:
+
+.. _holo.argand-example:
+
+.. code-block:: python
+
+    >>> ad = wave_image.argand_diagram(display_range=[-3, 3])
+    >>> ad.plot(scalebar=False)
+
+.. figure:: images/holography_argand_diagram.png
+  :align: center
+
+  Argand diagram of the reconstructed complex wave.
 
 Getting hologram statistics
 --------------------------
