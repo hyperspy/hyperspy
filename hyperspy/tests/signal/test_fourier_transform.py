@@ -54,18 +54,18 @@ def test_fft_signal2d(lazy):
     assert isinstance(im_fft, ComplexSignal2D)
     assert isinstance(im_ifft, Signal2D)
 
-    assert_allclose(im.data,  im_ifft.data, atol=1e-3)
+    assert_allclose(im.data, im_ifft.data, atol=1e-3)
 
     im_fft = im.inav[0].fft()
     im_ifft = im_fft.ifft()
-    assert_allclose(im.inav[0].data,  im_ifft.data, atol=1e-3)
+    assert_allclose(im.inav[0].data, im_ifft.data, atol=1e-3)
 
     im_fft = im.inav[0, 0].fft()
     im_ifft = im_fft.ifft()
-    assert_allclose(im.inav[0, 0].data,  im_ifft.data, atol=1e-3)
+    assert_allclose(im.inav[0, 0].data, im_ifft.data, atol=1e-3)
     assert_allclose(im_fft.data, np.fft.fft2(im.inav[0, 0]).data)
 
-    im_fft = im.inav[0, 0].fft(shifted=True)
+    im_fft = im.inav[0, 0].fft(shift=True)
     axis = im_fft.axes_manager.signal_axes[0]
     assert axis.offset == -axis.high_value
 
@@ -76,7 +76,12 @@ def test_fft_signal2d(lazy):
     assert im_ifft.metadata.has_item('Signal.FFT') is False
 
     assert_allclose(im.inav[0, 0].data, im_ifft.data, atol=1e-3)
-    assert_allclose(im_fft.data, np.fft.fftshift(np.fft.fft2(im.inav[0, 0]).data))
+    assert_allclose(im_fft.data, np.fft.fftshift(
+        np.fft.fft2(im.inav[0, 0]).data))
+
+    assert im.fft(apodization=True) == im.apply_apodization().fft()
+    for apodization in ['hann', 'hamming', 'tukey']:
+        assert im.fft(apodization=apodization) == im.apply_apodization(window=apodization).fft()
 
 
 @pytest.mark.parametrize('lazy', [True, False])
@@ -97,25 +102,30 @@ def test_fft_signal1d(lazy):
     assert s_ifft.axes_manager.signal_axes[0].scale == 6.
     assert isinstance(s_fft, ComplexSignal1D)
     assert isinstance(s_ifft, Signal1D)
-    assert_allclose(s.data,  s_ifft.data, atol=1e-3)
+    assert_allclose(s.data, s_ifft.data, atol=1e-3)
 
     s_fft = s.inav[0].fft()
     s_ifft = s_fft.ifft()
-    assert_allclose(s.inav[0].data,  s_ifft.data, atol=1e-3)
+    assert_allclose(s.inav[0].data, s_ifft.data, atol=1e-3)
 
     s_fft = s.inav[0, 0].fft()
     s_ifft = s_fft.ifft()
-    assert_allclose(s.inav[0, 0].data,  s_ifft.data, atol=1e-3)
+    assert_allclose(s.inav[0, 0].data, s_ifft.data, atol=1e-3)
 
     s_fft = s.inav[0, 0, 0].fft()
     s_ifft = s_fft.ifft()
-    assert_allclose(s.inav[0, 0, 0].data,  s_ifft.data, atol=1e-3)
+    assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
     assert_allclose(np.fft.fft(s.inav[0, 0, 0].data), s_fft.data)
 
-    s_fft = s.inav[0, 0, 0].fft(shifted=True)
-    s_ifft = s_fft.ifft(shifted=True)
+    s_fft = s.inav[0, 0, 0].fft(shift=True)
+    s_ifft = s_fft.ifft(shift=True)
     assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
-    assert_allclose(np.fft.fftshift(np.fft.fft(s.inav[0, 0, 0].data)), s_fft.data)
+    assert_allclose(np.fft.fftshift(
+        np.fft.fft(s.inav[0, 0, 0].data)), s_fft.data)
+
+    assert s.fft(apodization=True) == s.apply_apodization().fft()
+    for apodization in ['hann', 'hamming', 'tukey']:
+        assert s.fft(apodization=apodization) == s.apply_apodization(window=apodization).fft()
 
 
 def test_nul_signal():

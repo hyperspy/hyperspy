@@ -24,13 +24,18 @@ import types
 from io import StringIO
 import codecs
 import collections
-import tempfile
 import unicodedata
 from contextlib import contextmanager
+import importlib
+
+import numpy as np
+
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 
-import numpy as np
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 def attrsetter(target, attrs, value):
@@ -133,6 +138,44 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
+def parse_quantity(quantity, opening='(', closing=')'):
+    """Parse quantity of the signal outputting quantity and units separately. 
+    It looks for the last matching opening and closing separator.
+
+    Parameters
+    ----------
+    quantity : string
+    opening : string
+        Separator used to define the beginning of the units
+    closing : string
+        Separator used to define the end of the units
+
+    Returns
+    -------
+    quantity_name : string
+    quantity_units : string
+    """
+
+    # open_bracket keep track of the currently open brackets
+    open_bracket = 0
+    for index, c in enumerate(quantity.strip()[::-1]):
+        if c == closing:
+            # we find an closing, increment open_bracket
+            open_bracket += 1
+        if c == opening:
+            # we find a opening, decrement open_bracket
+            open_bracket -= 1
+            if open_bracket == 0:
+                # we found the matching bracket and we will use the index
+                break
+    if index + 1 == len(quantity):
+        return quantity, ""
+    else:
+        quantity_name = quantity[:-index-1].strip()
+        quantity_units = quantity[-index:-1].strip()
+        return quantity_name, quantity_units
+
+
 _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
@@ -152,7 +195,7 @@ def slugify(value, valid_variable_name=False):
         try:
             # Convert to unicode using the default encoding
             value = str(value)
-        except:
+        except BaseException:
             # Try latin1. If this does not work an exception is raised.
             value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
@@ -593,7 +636,7 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
         string = stuff
     try:
         string = string.decode(encoding)
-    except:
+    except BaseException:
         string = string.decode(encoding2, errors='ignore')
     return string
 
@@ -791,7 +834,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from itertools import zip_longest
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
@@ -946,7 +988,7 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._iterate_signal()
+    iterators = tuple(signal[1]._cycle_signal()
                       if isinstance(signal[1], BaseSignal) else signal[1]
                       for signal in iterating_kwargs)
     # make all kwargs iterating for simplicity:
@@ -1054,3 +1096,41 @@ def add_scalar_axis(signal):
                     offset=0,
                     name="Scalar",
                     navigate=False)
+
+
+def get_object_package_info(obj):
+    """Get info about object package
+
+    Returns
+    -------
+    dic: dict
+        Dictionary containing ``package`` and ``package_version`` (if available)
+    """
+    dic = {}
+    # Note that the following can be "__main__" if the component was user
+    # defined
+    dic["package"] = obj.__module__.split(".")[0]
+    if dic["package"] != "__main__":
+        try:
+            dic["package_version"] = importlib.import_module(
+                dic["package"]).__version__
+        except AttributeError:
+            dic["package_version"] = ""
+            _logger.warning(
+                "The package {package} does not set its version in " +
+                "{package}.__version__. Please report this issue to the " +
+                "{package} developers.".format(package=dic["package"]))
+    else:
+        dic["package_version"] = ""
+    return dic
+
+
+def print_html(f_text, f_html):
+    """Print html version when in Jupyter Notebook"""
+    class PrettyText:
+        def __repr__(self):
+            return f_text()
+
+        def _repr_html_(self):
+            return f_html()
+    return PrettyText()

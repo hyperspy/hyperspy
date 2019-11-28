@@ -22,8 +22,10 @@ import tempfile
 import numbers
 import logging
 from distutils.version import LooseVersion
+import importlib
 
 import numpy as np
+import dill
 import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
@@ -35,7 +37,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
-from hyperspy import components1d, components2d
+from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.signal import BaseSignal
 from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
@@ -48,18 +50,34 @@ from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.misc.model_tools import current_model_values
+from IPython.display import display_pretty, display
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
+
 
 _logger = logging.getLogger(__name__)
 
-# components is just a container for all (1D and 2D) components, to be able to
-# search in a single object for matching components when recreating a model.
+_COMPONENTS = ALL_EXTENSIONS["components1D"]
+_COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
 
-class DummyComponentsContainer:
-    pass
-components = DummyComponentsContainer()
-components.__dict__.update(components1d.__dict__)
-components.__dict__.update(components2d.__dict__)
+def reconstruct_component(comp_dictionary, **init_args):
+    _id = comp_dictionary['_id_name']
+    if _id in _COMPONENTS:
+        _class = getattr(
+            importlib.import_module(
+                _COMPONENTS[_id]["module"]), _COMPONENTS[_id]["class"])
+    elif "_class_dump" in comp_dictionary:
+        # When a component is not registered using the extension mechanism,
+        # it is serialized using dill.
+        _class = dill.loads(comp_dictionary['_class_dump'])
+    else:
+        raise ImportError(
+            f'Loading the {comp_dictionary["class"]} component ' +
+            'failed because the component is provided by the ' +
+            f'{comp_dictionary["package"]} Python package, but ' +
+            f'{comp_dictionary["package"]} is not installed.')
+    return _class(**init_args)
 
 
 class ModelComponents(object):
@@ -86,7 +104,7 @@ class ModelComponents(object):
                 ans += "\n"
                 name_string = c.name
                 variable_name = slugify(name_string, valid_variable_name=True)
-                component_type = c._id_name
+                component_type = c.__class__.__name__
 
                 variable_name = shorten_name(variable_name, 19)
                 name_string = shorten_name(name_string, 19)
@@ -99,7 +117,7 @@ class ModelComponents(object):
         return ans
 
 
-@add_gui_method(toolkey="Model")
+@add_gui_method(toolkey="hyperspy.Model")
 class BaseModel(list):
 
     """Model and data fitting tools applicable to signals of both one and two
@@ -110,7 +128,7 @@ class BaseModel(list):
 
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predifined components available in the in the :mod:`components`
+    are many predefined components available in the in the :mod:`components`
     module. If needed, new components can be created easily using the code of
     existing components as a template.
 
@@ -135,7 +153,7 @@ class BaseModel(list):
         Reduced chi-squared.
     components : `ModelComponents` instance
         The components of the model are attributes of this class. This provides
-        a convinient way to access the model components when working in IPython
+        a convenient way to access the model components when working in IPython
         as it enables tab completion.
 
     Methods
@@ -204,7 +222,7 @@ class BaseModel(list):
 
         self.events = Events()
         self.events.fitted = Event("""
-            Event that triggers after fitting changed at least one paramter.
+            Event that triggers after fitting changed at least one parameter.
 
             The event triggers after the fitting step was finished, and only of
             at least one of the parameters changed.
@@ -246,7 +264,7 @@ class BaseModel(list):
                 Other keyword arguments are passed onto `BaseSignal.save()`
         """
         if self.signal is None:
-            raise ValueError("Currently cannot store models with no signal")
+            raise ValueError("Currently cannot save models with no signal")
         else:
             self.store(name)
             self.signal.save(file_name, **kwargs)
@@ -280,7 +298,7 @@ class BaseModel(list):
                     if 'init' in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
-                self.append(getattr(components, comp['_id_name'])(**init_args))
+                self.append(reconstruct_component(comp, **init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
             for comp in dic['components']:
@@ -334,7 +352,7 @@ class BaseModel(list):
         if thing.name:
             name_string = thing.name
         else:
-            name_string = thing._id_name
+            name_string = thing.__class__.__name__
 
         if name_string in component_name_list:
             temp_name_string = name_string
@@ -405,31 +423,27 @@ class BaseModel(list):
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, parallel=None):
         """Returns a recreation of the dataset using the model.
-        the spectral range that is not fitted is filled with nans.
+        The spectral range that is not fitted is filled with nans.
 
         Parameters
         ----------
-        component_list : list of hyperspy components, optional
+        component_list : list of HyperSpy components, optional
             If a list of components is given, only the components given in the
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+            Default True.
+        %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        parallel : bool, int
-            If True or more than 1, perform the recreation parallely using as
-            many threads as specified. If True, as many threads as CPU cores
-            available are used.
+        %s
 
         Returns
         -------
-        spectrum : An instance of the same class as `spectrum`.
+        BaseSignal : An instance of the same class as `BaseSignal`.
 
         Examples
         --------
@@ -443,6 +457,8 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         if parallel is None:
             parallel = preferences.General.parallel
         if out is None:
@@ -465,9 +481,12 @@ class BaseModel(list):
             parallel = int(parallel)
         if parallel < 2:
             parallel = False
+        if out_of_range_to_nan is True:
+            channel_switches_backup = copy.copy(self.channel_switches)
+            self.channel_switches[:] = True
+
         if parallel is False:
             self._as_signal_iter(component_list=component_list,
-                                 out_of_range_to_nan=out_of_range_to_nan,
                                  show_progressbar=show_progressbar, data=data)
         else:
             am = self.axes_manager
@@ -478,7 +497,6 @@ class BaseModel(list):
             if not len(nav_shape) or size < 4:
                 # no or not enough navigation, just run without threads
                 return self.as_signal(component_list=component_list,
-                                      out_of_range_to_nan=out_of_range_to_nan,
                                       show_progressbar=show_progressbar,
                                       out=signal, parallel=False)
             parallel = min(parallel, size / 2)
@@ -499,14 +517,19 @@ class BaseModel(list):
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],
                         component_list=component_list,
-                        out_of_range_to_nan=out_of_range_to_nan,
-                        show_progressbar=thing[2] + 1),
+                        show_progressbar=thing[2] + 1 if show_progressbar else False),
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
+
+        if out_of_range_to_nan is True:
+            self.channel_switches[:] = channel_switches_backup
+
         return signal
 
-    def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
-                        show_progressbar=None, data=None):
+    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
+
+    def _as_signal_iter(self, component_list=None, show_progressbar=None,
+                        data=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
@@ -526,9 +549,6 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
-            if out_of_range_to_nan is True:
-                channel_switches_backup = copy.copy(self.channel_switches)
-                self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
             enabled = show_progressbar and (maxval > 0)
             pbar = progressbar(total=maxval, disable=not enabled,
@@ -539,12 +559,10 @@ class BaseModel(list):
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
                 pbar.update(1)
-            if out_of_range_to_nan is True:
-                self.channel_switches[:] = channel_switches_backup
 
     @property
     def _plot_active(self):
-        if self._plot is not None and self._plot.is_active() is True:
+        if self._plot is not None and self._plot.is_active:
             return True
         else:
             return False
@@ -554,19 +572,20 @@ class BaseModel(list):
             return
         for i, component in enumerate(components):
             component.events.active_changed.connect(
-                self._model_line.update, [])
+                self._model_line._auto_update_line, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
-                    self._model_line.update, [])
+                    self._model_line._auto_update_line, [])
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
             return
         for component in components:
-            component.events.active_changed.disconnect(self._model_line.update)
+            component.events.active_changed.disconnect(
+                self._model_line._auto_update_line)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
-                    self._model_line.update)
+                    self._model_line._auto_update_line)
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -580,11 +599,12 @@ class BaseModel(list):
         """
         if self._plot_active is True and self._suspend_update is False:
             try:
-                self._update_model_line()
+                if self._model_line is not None:
+                    self._model_line.update()
                 for component in [component for component in self if
                                   component.active is True]:
                     self._update_component_line(component)
-            except:
+            except BaseException:
                 self._disconnect_parameters2update_plot(components=self)
 
     @contextmanager
@@ -599,14 +619,14 @@ class BaseModel(list):
         es = EventSuppressor()
         es.add(self.axes_manager.events.indices_changed)
         if self._model_line:
-            f = self._model_line.update
+            f = self._model_line._auto_update_line
             for c in self:
                 es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
         for c in self:
             if hasattr(c, '_model_plot_line'):
-                f = c._model_plot_line.update
+                f = c._model_plot_line._auto_update_line
                 es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
@@ -620,26 +640,16 @@ class BaseModel(list):
         if update_on_resume is True:
             self.update_plot()
 
-    def _update_model_line(self):
-        if (self._plot_active is True and
-                self._model_line is not None):
-            self._model_line.update()
-
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    def _update_model_line(self):
-        if (self._plot_active is True and
-                self._model_line is not None):
-            self._model_line.update()
-
     @staticmethod
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
@@ -647,7 +657,7 @@ class BaseModel(list):
     @staticmethod
     def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
@@ -780,7 +790,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        only_fixed : bool
+        only_fixed : bool, optional
             If True, only the fixed parameters are fetched.
 
         See Also
@@ -794,14 +804,27 @@ class BaseModel(list):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
 
-    def _fetch_values_from_p0(self, p_std=None):
-        """Fetch the parameter values from the output of the optimzer `self.p0`
+    def fetch_values_from_array(self, array, array_std=None):
+        """Fetch the parameter values from the given array, optionally also
+        fetching the standard deviations.
 
         Parameters
         ----------
-        p_std : array
-            array containing the corresponding standard deviatio
-            n
+        array : array
+            array with the parameter values
+        array_std : {None, array}
+            array with the standard deviations of parameters
+        """
+        self.p0 = array
+        self._fetch_values_from_p0(p_std=array_std)
+
+    def _fetch_values_from_p0(self, p_std=None):
+        """Fetch the parameter values from the output of the optimizer `self.p0`
+
+        Parameters
+        ----------
+        p_std : array, optional
+            array containing the corresponding standard deviation.
 
         """
         comp_p_std = None
@@ -900,7 +923,7 @@ class BaseModel(list):
         fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
                  "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
-            The optimization algorithm used to perform the fitting. Deafault
+            The optimization algorithm used to perform the fitting. Default
             is "leastsq".
 
                 "leastsq" performs least-squares optimization, and supports
@@ -927,10 +950,13 @@ class BaseModel(list):
             If `variance` is a `Signal` instance of the same `navigation_dimension`
             as the signal, and `method` is "ls", then weighted least squares
             is performed.
-        method : {'ls', 'ml'}
+        method : {'ls', 'ml', 'custom'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
-            'fitter' is "leastsq", "odr" or "mpfit".
+            'fitter' is "leastsq", "odr" or "mpfit". 'custom' allows passing
+            your own minimisation function as a kwarg "min_function", with
+            optional gradient kwarg "min_function_grad". See User Guide for
+            details.
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
@@ -992,6 +1018,20 @@ class BaseModel(list):
                 # this has to be done before setting the p0,
                 # so moved things around
                 self.ensure_parameters_in_bounds()
+        min_function = kwargs.pop('min_function', None)
+        min_function_grad = kwargs.pop('min_function_grad', None)
+        if method == 'custom':
+            if not callable(min_function):
+                raise ValueError('Custom minimization requires "min_function" '
+                                 'kwarg with a callable')
+            if grad is not False:
+                if min_function_grad is None:
+                    raise ValueError('Custom gradient function should be '
+                                     'supplied with "min_function_grad" kwarg')
+            from functools import partial
+            min_function = partial(min_function, self)
+            if callable(min_function_grad):
+                min_function_grad = partial(min_function_grad, self)
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -1012,12 +1052,12 @@ class BaseModel(list):
                 grad_ml = self._gradient_ml
                 grad_ls = self._gradient_ls
 
-            if method == 'ml':
+            if method in ['ml', 'custom']:
                 weights = None
                 if fitter in ("leastsq", "odr", "mpfit"):
                     raise NotImplementedError(
-                        "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit" or "odr" optimizers')
+                        '"leastsq", "mpfit" and "odr" optimizers only support'
+                        'least squares ("ls") method')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -1043,7 +1083,7 @@ class BaseModel(list):
                 weights = 1. / np.sqrt(variance)
             else:
                 raise ValueError(
-                    'method must be "ls" or "ml" but %s given' %
+                    'method must be "ls", "ml" or "custom" but %s given' %
                     method)
             args = (self.signal()[np.where(self.channel_switches)],
                     weights)
@@ -1102,7 +1142,7 @@ class BaseModel(list):
                     self.signal()[np.where(self.channel_switches)],
                     sx=None,
                     sy=(1 / weights if weights is not None else None))
-                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
+                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
                 myoutput = myodr.run()
                 result = myoutput.beta
                 self.p_std = myoutput.sd_beta
@@ -1122,7 +1162,7 @@ class BaseModel(list):
                               'y': self.signal()[self.channel_switches],
                               'weights': weights},
                           autoderivative=autoderivative,
-                          quiet=1)
+                          quiet=1, **kwargs)
                 self.p0 = m.params
 
                 if hasattr(self, 'axis') and (self.axis.size > len(self.p0)) \
@@ -1140,6 +1180,9 @@ class BaseModel(list):
                 elif method == "ls":
                     tominimize = self._errfunc2
                     fprime = grad_ls
+                elif method == 'custom':
+                    tominimize = min_function
+                    fprime = min_function_grad
 
                 # OPTIMIZERS
                 # Derivative-free methods
@@ -1215,22 +1258,20 @@ class BaseModel(list):
         Parameters
         ----------
 
-        mask : {None, numpy.array}
+        mask : NumPy array, optional
             To mask (do not fit) at certain position pass a numpy.array
             of type bool where True indicates that the data will not be
             fitted at the given position.
         fetch_only_fixed : bool
             If True, only the fixed parameters values will be updated
-            when changing the positon.
+            when changing the positon. Default False.
         autosave : bool
             If True, the result of the fit will be saved automatically
-            with a frequency defined by autosave_every.
+            with a frequency defined by autosave_every. Default False.
         autosave_every : int
             Save the result of fitting every given number of spectra.
-
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+            Default 10.
+        %s
         interactive_plot : bool
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
@@ -1297,6 +1338,8 @@ class BaseModel(list):
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
+
+    multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.
@@ -1461,35 +1504,29 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True, skip_multi=False):
-        """Print the value of each parameter of the model.
-
+    def print_current_values(self, only_free=False, only_active=False,
+                             component_list=None, fancy=True):
+        """Prints the current values of the parameters of all components.
         Parameters
         ----------
         only_free : bool
-            If True, only the value of the parameters that are free will
-            be printed.
-        skip_multi : bool
-            If True, parameters with attribute "__iter__" are not printed
-
+            If True, only components with free parameters will be printed. Within these,
+            only parameters which are free will be printed.
+        only_active : bool
+            If True, only values of active components will be printed
+        component_list : None or list of components.
+            If None, print all components.
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
         """
-        print("Components\tParameter\tValue")
-        for component in self:
-            if component.active:
-                if component.name:
-                    print(component.name)
-                else:
-                    print(component._id_name)
-                parameters = component.free_parameters if only_free \
-                    else component.parameters
-                for parameter in parameters:
-                    if hasattr(parameter.value, '__iter__'):
-                        if not skip_multi:
-                            for idx in range(len(parameter.value)):
-                                print("\t\t%s[%d]\t%g" % (parameter.name, idx,
-                                                          parameter.value[idx]))
-                    else:
-                        print("\t\t%s\t%g" % (parameter.name, parameter.value))
+        if fancy:
+            display(current_model_values(
+                model=self, only_free=only_free, only_active=only_active,
+                component_list=component_list))
+        else:
+            display_pretty(current_model_values(
+                model=self, only_free=only_free, only_active=only_active,
+                component_list=component_list))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
@@ -1590,11 +1627,11 @@ class BaseModel(list):
         Parameters
         ----------
         parameter_name : string
-            Name of the parameter whos value will be changed
+            Name of the parameter whose value will be changed
         value : number
             The new value of the parameter
         component_list : list of hyperspy components, optional
-            A list of components whos parameters will changed. The components
+            A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
 
         only_current : bool, default False
@@ -1695,7 +1732,7 @@ class BaseModel(list):
         value : bool
             The new value of the 'active' parameter
         component_list : list of hyperspy components, optional
-            A list of components whos parameters will changed. The components
+            A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
 
         only_current : bool, default False
@@ -1739,7 +1776,7 @@ class BaseModel(list):
                 if component.name:
                     if component.name == value:
                         component_list.append(component)
-                elif component._id_name == value:
+                elif component.__class__.__name__ == value:
                     component_list.append(component)
             if component_list:
                 if len(component_list) == 1:
@@ -1813,7 +1850,7 @@ class ModelSpecialSlicers(object):
                 flags_str, value = v
                 if 'init' in parse_flag_string(flags_str):
                     init_args[k] = value
-            _model.append(getattr(components, comp._id_name)(**init_args))
+            _model.append(comp.__class__(**init_args))
         copy_slice_from_whitelist(self.model,
                                   _model,
                                   dims,

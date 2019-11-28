@@ -151,6 +151,10 @@ class SamfirePool(ParallelPool):
         self.samf = samfire
         mall = samfire.model
         model = mall.inav[mall.axes_manager.indices]
+        if model.signal.metadata.has_item('Signal.Noise_properties.variance'):
+            var = model.signal.metadata.Signal.Noise_properties.variance
+            if var._lazy:
+                var.compute()
         model.store('z')
         m_dict = model.signal._to_dictionary(False)
         m_dict['models'] = model.signal.models._models.as_dictionary()
@@ -263,14 +267,14 @@ class SamfirePool(ParallelPool):
         needed_number: {None, int}
             The number of jobs to add. If None (default), adds `need_pixels`
         """
+        def test_func(worker, ind, value_dict):
+            return worker.run_pixel(ind, value_dict)
         if needed_number is None:
             needed_number = self.need_pixels
         for ind, value_dict in self.samf.generate_values(needed_number):
             if self.is_multiprocessing:
                 self.shared_queue.put(('run_pixel', (ind, value_dict)))
             elif self.is_ipyparallel:
-                def test_func(worker, ind, value_dict):
-                    return worker.run_pixel(ind, value_dict)
                 self.results.append((self.pool.apply_async(test_func,
                                                            self.rworker, ind,
                                                            value_dict), ind))

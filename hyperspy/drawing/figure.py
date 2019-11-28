@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import logging
 
 from hyperspy.events import Event, Events
+from hyperspy.drawing import utils
 
 
 _logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ _logger = logging.getLogger(__name__)
 class BlittedFigure(object):
 
     def __init__(self):
+        self._draw_event_cid = None
         self._background = None
         self.events = Events()
         self.events.closed = Event("""
@@ -38,53 +40,55 @@ class BlittedFigure(object):
                 obj:  SpectrumFigure instances
                     The instance that triggered the event.
             """, arguments=["obj"])
+        self.title = ""
+        self.ax_markers = list()
 
-    def _set_background(self):
-        if self.figure:
-            canvas = self.figure.canvas
-            if canvas.supports_blit:
-                self._background = canvas.copy_from_bbox(self.figure.bbox)
+    def create_figure(self, **kwargs):
+        """Create matplotlib figure
 
-    def _on_draw(self, *args):
-        if self.figure:
-            canvas = self.figure.canvas
-            canvas.mpl_disconnect(self.draw_event_cid)
-            if canvas.supports_blit:
-                self._set_background()
-                self._draw_animated()
-            else:
-                canvas.draw_idle()
-            self.draw_event_cid = canvas.mpl_connect(
-                'draw_event', self._on_draw)
+        Parameters
+        ----------
+        **kwargs
+            All keyword arguments are passed to ``plt.figure``.
+
+        """
+        self.figure = utils.create_figure(
+            window_title="Figure " + self.title if self.title
+            else None, **kwargs)
+        utils.on_figure_window_close(self.figure, self._on_close)
+        if self.figure.canvas.supports_blit:
+            self._draw_event_cid = self.figure.canvas.mpl_connect(
+                'draw_event', self._on_blit_draw)
+
+    def _on_blit_draw(self, *args):
+        fig = self.figure
+        # As draw doesn't draw animated elements, in its current state the
+        # canvas only contains the backgroud. The following line simply stores
+        # it for the consumption of _update_animated.
+        self._background = fig.canvas.copy_from_bbox(fig.bbox)
+        # draw does not draw animated elements, so we must draw them
+        # manually
+        self._draw_animated()
 
     def _draw_animated(self):
-        if self.ax.figure and self.figure.axes:
-            canvas = self.ax.figure.canvas
-            if canvas.supports_blit:
-                canvas.restore_region(self._background)
-            for ax in self.figure.axes:
-                artists = []
-                artists.extend(ax.images)
-                artists.extend(ax.collections)
-                artists.extend(ax.patches)
-                artists.extend(ax.lines)
-                artists.extend(ax.texts)
-                artists.extend(ax.artists)
-                artists.append(ax.get_yaxis())
-                artists.append(ax.get_xaxis())
-                try:
-                    [ax.draw_artist(a) for a in artists if
-                     a.get_animated() is True]
-                except AttributeError:
-                    # The method was called before draw. This is a quick
-                    # fix. Properly fixing the issue involves avoiding
-                    # calling this method too early in the code.
-                    _logger.warning('Please report this warning to the '
-                                    'developers: `_draw_animated` was called '
-                                    'before `draw`.')
-                    pass
-            if canvas.supports_blit:
-                canvas.blit(self.figure.bbox)
+        """Draw animated plot elements
+
+        """
+        for ax in self.figure.axes:
+            # Create a list of animated artists and draw them.
+            artists = sorted(ax.get_children(), key=lambda x: x.zorder)
+            for artist in artists:
+                if artist.get_animated():
+                    ax.draw_artist(artist)
+
+    def _update_animated(self):
+        _logger.debug('Updating animated.')
+        canvas = self.ax.figure.canvas
+        # As the background haven't changed, we can simply restore it.
+        canvas.restore_region(self._background)
+        # Now it is when we draw the animated elements using the blit method
+        self._draw_animated()
+        canvas.blit(self.figure.bbox)
 
     def add_marker(self, marker):
         marker.ax = self.ax
@@ -94,20 +98,27 @@ class BlittedFigure(object):
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
     def _on_close(self):
+        _logger.debug('Closing `BlittedFigure`.')
         if self.figure is None:
+            _logger.debug('`BlittedFigure` already closed.')
             return  # Already closed
         for marker in self.ax_markers:
-            marker.close(update_plot=False)
+            marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
-        self.figure.canvas.mpl_disconnect(self.draw_event_cid)
+        if self._draw_event_cid:
+            self.figure.canvas.mpl_disconnect(self._draw_event_cid)
+            self._draw_event_cid = None
+        plt.close(self.figure)
         self.figure = None
+        self.ax = None
+        self._background = None
+        _logger.debug('`BlittedFigure` closed.')
 
     def close(self):
-        figure = self.figure
+        _logger.debug('`close` `BlittedFigure` called.')
         self._on_close()   # Needs to trigger serially for a well defined state
-        plt.close(figure)
 
     @property
     def title(self):

@@ -6,6 +6,10 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.misc.test_utils import ignore_warning
+
+
+RTOL = 1E-6
 
 
 class TestModelJacobians:
@@ -472,7 +476,7 @@ class TestModel1D:
             getattr(m.components,
                     slugify(g1.name, valid_variable_name=True)) is g1)
 
-    def test_components_class_change_name_del_default(self):
+    def test_components_class_change_name_del_default2(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
@@ -492,7 +496,7 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components1D.Gaussian()
         m.append(g4)
-        p = hs.model.components1D.Polynomial(3)
+        p = hs.model.components1D.Polynomial(3, legacy=False)
         m.append(p)
 
         g1.A.value = 3.
@@ -530,10 +534,19 @@ class TestModel1D:
         g4.centre.bmax = -1
         g4.sigma.value = 1
         g4.sigma.bmin = 10
+        p.a0.value = 1
+        p.a1.value = 2
+        p.a2.value = 3
+        p.a3.value = 4
+        p.a0.bmin = 2
+        p.a1.bmin = 2
+        p.a2.bmin = 2
+        p.a3.bmin = 2
+        p.a0.bmax = 3
+        p.a1.bmax = 3
+        p.a2.bmax = 3
+        p.a3.bmax = 3
 
-        p.coefficients.value = (1, 2, 3, 4)
-        p.coefficients.bmin = 2
-        p.coefficients.bmax = 3
         m.ensure_parameters_in_bounds()
         np.testing.assert_allclose(g1.A.value, 3.)
         np.testing.assert_allclose(g2.A.value, 1.)
@@ -550,8 +563,10 @@ class TestModel1D:
         np.testing.assert_allclose(g3.sigma.value, 0.)
         np.testing.assert_allclose(g4.sigma.value, 1)
 
-        np.testing.assert_allclose(p.coefficients.value, (2, 2, 3, 3))
-
+        np.testing.assert_almost_equal(p.a0.value, 2)
+        np.testing.assert_almost_equal(p.a1.value, 2)
+        np.testing.assert_almost_equal(p.a2.value, 3)
+        np.testing.assert_almost_equal(p.a3.value, 3)
 
 class TestModel2D:
 
@@ -584,6 +599,29 @@ class TestModel2D:
         np.testing.assert_allclose(gt.centre_y.value, -5.)
         np.testing.assert_allclose(gt.sigma_x.value, 1.)
         np.testing.assert_allclose(gt.sigma_y.value, 2.)
+
+
+class TestModelPrintCurrentValues:
+
+    def setup_method(self, method):
+        np.random.seed(1)
+        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = 10
+        m = s.create_model()
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Offset())
+        self.s = s
+        self.m = m
+
+    @pytest.mark.parametrize("only_free", [True, False])
+    @pytest.mark.parametrize("skip_multi", [True, False])
+    def test_print_current_values(self, only_free, skip_multi):
+        self.m.print_current_values(only_free, skip_multi)
+
+    def test_print_current_values_component_list(self):
+        self.m.print_current_values(component_list=list(self.m))
 
 
 @lazifyTestClass
@@ -620,13 +658,14 @@ class TestModelFitBinned:
 
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, 1)
-        np.testing.assert_allclose(self.m[0].centre.value, -0.110610727064)
-        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, RTOL)
+        np.testing.assert_allclose(
+            self.m[0].centre.value, -0.110610727064, RTOL)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, RTOL)
 
     def test_fit_mpfit(self):
         self.m.fit(fitter="mpfit")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610718444,
                                    atol=1E-6)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707614,
@@ -634,7 +673,7 @@ class TestModelFitBinned:
 
     def test_fit_odr(self):
         self.m.fit(fitter="odr")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
                                    atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
@@ -653,7 +692,7 @@ class TestModelFitBinned:
 
     def test_fit_odr_grad(self):
         self.m.fit(fitter="odr", grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
                                    atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
@@ -662,7 +701,7 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -671,15 +710,15 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
-        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966, RTOL)
 
     def test_fit_bounded_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -688,7 +727,7 @@ class TestModelFitBinned:
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -697,16 +736,16 @@ class TestModelFitBinned:
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
-        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966, RTOL)
 
     def test_fit_bounded_bad_starting_values_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -727,27 +766,27 @@ class TestModelWeighted:
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Polynomial(1, legacy=False))
         self.m = m
 
     def test_fit_leastsq_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (9.9165596693502778, 1.6628238107916631)):
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
+        (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9165596548961972, 1.6628247412317521)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -757,7 +796,7 @@ class TestModelWeighted:
             fitter="Nelder-Mead",
             method="ls",
         )
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9137288425667442, 1.8446013472266145)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -765,7 +804,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596391487121, 0.16628254242532492)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -773,7 +812,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596548961943, 0.16628247412317315)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -781,7 +820,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596295068958, 0.16628257462820528)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -792,7 +831,7 @@ class TestModelWeighted:
             method="ls",
         )
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99136169230026261, 0.18483060534056939)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -857,16 +896,19 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
+@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @lazifyTestClass
 class TestModelSignalVariance:
 
     def setup_method(self, method):
-        variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
-            (2, 100)))
+        variance = hs.signals.Signal1D(
+            np.arange(100, 300, dtype="float64").reshape((2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10
+        np.random.seed(1)
         s.add_gaussian_noise(std)
+        np.random.seed(1)
         s.add_poissonian_noise()
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
@@ -877,10 +919,10 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
-        np.testing.assert_allclose(self.m.red_chisq.data[0],
-                                   0.79693355673230915)
-        np.testing.assert_allclose(self.m.red_chisq.data[1],
-                                   0.91453032901427167)
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109,
+                                   atol=1e-5)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
+                                   atol=1e-5)
 
 
 @lazifyTestClass
@@ -1000,6 +1042,61 @@ class TestSetCurrentValuesTo:
         assert (self.comps[1].offset.map["values"] == 2).all()
 
 
+def test_fetch_values_from_arrays():
+    m = hs.signals.Signal1D(np.arange(10)).create_model()
+    gaus = hs.model.components1D.Gaussian(A=100, sigma=10, centre=3)
+    m.append(gaus)
+    values = np.array([1.2, 3.4, 5.6])
+    stds = values - 1
+    m.fetch_values_from_array(values, array_std=stds)
+    parameters = sorted(gaus.free_parameters, key=lambda x: x.name)
+    for v, s, p in zip(values, stds, parameters):
+        assert p.value == v
+        assert p.std == s
+
+
+def sets_second_parameter_to_two(model, parameters, data, weights=None):
+    return np.abs(parameters[1] - 2)
+
+
+class TestCustomOptimisation:
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D([1., 2, 3, 5, 7, 12, 8, 6, 3, 2, 2])
+        # data that should fit with A=49, centre=5.13, sigma=2.0
+        self.m = s.create_model()
+        self.m.append(hs.model.components1D.Gaussian())
+
+    def test_custom_function(self):
+        m = self.m
+        m.fit(method='custom', min_function=sets_second_parameter_to_two,
+              fitter='TNC')
+        assert m[0].centre.value == 2.
+
+    def test_no_function(self):
+        with pytest.raises(ValueError):
+            self.m.fit(method='custom')
+
+    def test_no_gradient(self):
+        with pytest.raises(ValueError):
+            self.m.fit(method='custom',
+                       min_function=lambda *args: 1,
+                       grad=True
+                       )
+
+    def test_custom_gradient_function(self):
+        from unittest import mock
+        gradf = mock.Mock(return_value=[10, 1, 10])
+        self.m.fit(method='custom',
+                   fitter='BFGS',
+                   min_function=sets_second_parameter_to_two,
+                   grad=True,
+                   min_function_grad=gradf)
+        assert gradf.called
+        assert all([args[0] is self.m for args, kwargs in
+                    gradf.call_args_list])
+
+
 class TestAsSignal:
 
     def setup_method(self, method):
@@ -1030,19 +1127,22 @@ class TestAsSignal:
                                   show_progressbar=False, parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_simple(self, parallel):
         s = self.m.as_signal(show_progressbar=False, parallel=parallel)
         assert np.all(s.data == 4.)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_simple(self, parallel):
         s = self.m.as_signal(component_list=[0], show_progressbar=False,
                              parallel=parallel)
         assert np.all(s.data == 2.)
         assert self.m[1].active
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
@@ -1055,7 +1155,8 @@ class TestAsSignal:
             s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
         assert self.m[0].active_is_multidimensional
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
@@ -1101,31 +1202,31 @@ class TestAdjustPosition:
         self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 
-    def test_enable_adjust_position(self, mpl_cleanup):
+    def test_enable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         assert len(self.m._position_widgets) == 1
         # Check that both line and label was added
         assert len(list(self.m._position_widgets.values())[0]) == 2
 
-    def test_disable_adjust_position(self, mpl_cleanup):
+    def test_disable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
 
-    def test_enable_all(self, mpl_cleanup):
+    def test_enable_all(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 2
 
-    def test_enable_all_zero_start(self, mpl_cleanup):
+    def test_enable_all_zero_start(self):
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 1
 
-    def test_manual_close(self, mpl_cleanup):
+    def test_manual_close(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
@@ -1137,3 +1238,23 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
+
+
+def test_as_signal_parallel():
+    import numpy as np
+    import hyperspy.api as hs
+
+    np.random.seed(1)
+    s = hs.signals.Signal1D(np.random.random((50, 10)))
+
+    m = s.create_model()
+    m.append(hs.model.components1D.PowerLaw())
+    m.set_signal_range(2, 5)
+    m.multifit(show_progressbar=False)
+
+    s1 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+    s2 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+
+    np.testing.assert_allclose(s1, s2)

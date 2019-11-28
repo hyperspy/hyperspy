@@ -19,9 +19,10 @@ import numpy as np
 import pytest
 
 from hyperspy.misc.test_utils import update_close_figure, sanitize_dict
-from hyperspy.signals import Signal2D, Signal1D
-from hyperspy.utils import markers
+from hyperspy.signals import Signal2D, Signal1D, BaseSignal
+from hyperspy.utils import markers, stack
 from hyperspy.drawing.marker import dict2marker
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 
 default_tol = 2.0
@@ -136,17 +137,29 @@ class TestMarkers:
         m = markers.point(x=5, y=5)
         s.add_marker(m, plot_marker=False)
 
-    def test_add_marker_signal1d_navigation_dim(self, mpl_cleanup):
+    def test_add_marker_signal1d_navigation_dim(self):
         s = Signal1D(np.zeros((3, 50, 50)))
         m0 = markers.point(5, 5)
         m1 = markers.point((5, 10), (10, 15))
-        m2 = markers.point(np.zeros((50, 3)), np.zeros((50, 3)))
+        m2 = markers.point(np.zeros((3, 50)), np.zeros((3, 50)))
         s.add_marker(m0)
         with pytest.raises(ValueError):
             s.add_marker(m1)
         s.add_marker(m2)
 
-    def test_add_marker_signal2d_navigation_dim(self, mpl_cleanup):
+    def test_add_marker_signal2d_navigation_dim_vertical_line(self):
+        s = Signal2D(np.arange(2 * 3 * 8 * 9).reshape(2, 3, 8, 9))
+        marker_pos_list = [[1, 3, 5], [2, 4, 6]]
+        m = markers.vertical_line(marker_pos_list)
+        s.add_marker(m)
+        s.axes_manager.indices = (0, 1)
+        for iy, temp_marker_list in enumerate(marker_pos_list):
+            for ix, value in enumerate(temp_marker_list):
+                s.axes_manager.indices = (ix, iy)
+                vertical_line = s._plot.signal_plot.figure.axes[0].lines[1]
+                assert value == vertical_line.get_data()[0]
+
+    def test_add_marker_signal2d_navigation_dim(self):
         s = Signal2D(np.zeros((3, 50, 50)))
         m0 = markers.point(5, 5)
         m1 = markers.point((5, 10), (10, 15))
@@ -156,7 +169,7 @@ class TestMarkers:
             s.add_marker(m1)
         s.add_marker(m2)
 
-    def test_add_markers_as_list(self, mpl_cleanup):
+    def test_add_markers_as_list(self):
         s = Signal1D(np.arange(10))
         marker_list = []
         for i in range(12):
@@ -166,7 +179,7 @@ class TestMarkers:
 
 class Test_permanent_markers:
 
-    def test_add_permanent_marker(self, mpl_cleanup):
+    def test_add_permanent_marker(self):
         s = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
@@ -178,7 +191,7 @@ class Test_permanent_markers:
         s.add_marker(m, permanent=True, plot_marker=False)
         assert list(s.metadata.Markers)[0][1] == m
 
-    def test_remove_permanent_marker_name(self, mpl_cleanup):
+    def test_remove_permanent_marker_name(self):
         s = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
         m.name = 'test'
@@ -187,7 +200,7 @@ class Test_permanent_markers:
         del s.metadata.Markers.test
         assert len(list(s.metadata.Markers)) == 0
 
-    def test_permanent_marker_names(self, mpl_cleanup):
+    def test_permanent_marker_names(self):
         s = Signal1D(np.arange(10))
         m0 = markers.point(x=5, y=5)
         m1 = markers.point(x=5, y=5)
@@ -200,14 +213,14 @@ class Test_permanent_markers:
         assert s.metadata.Markers.test1 == m1
         assert m1.name == 'test1'
 
-    def test_add_permanent_marker_twice(self, mpl_cleanup):
+    def test_add_permanent_marker_twice(self):
         s = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         with pytest.raises(ValueError):
             s.add_marker(m, permanent=True)
 
-    def test_add_permanent_marker_twice_different_signal(self, mpl_cleanup):
+    def test_add_permanent_marker_twice_different_signal(self):
         s0 = Signal1D(np.arange(10))
         s1 = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
@@ -215,7 +228,7 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s1.add_marker(m, permanent=True)
 
-    def test_add_several_permanent_markers(self, mpl_cleanup):
+    def test_add_several_permanent_markers(self):
         s = Signal1D(np.arange(10))
         m_point = markers.point(x=5, y=5)
         m_line = markers.line_segment(x1=5, x2=10, y1=5, y2=10)
@@ -237,7 +250,7 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s.add_marker(m_rect, permanent=True)
 
-    def test_add_markers_as_list(self, mpl_cleanup):
+    def test_add_markers_as_list(self):
         s = Signal1D(np.arange(10))
         marker_list = []
         for i in range(10):
@@ -245,7 +258,7 @@ class Test_permanent_markers:
         s.add_marker(marker_list, permanent=True)
         assert len(s.metadata.Markers) == 10
 
-    def test_add_markers_as_list_add_same_twice(self, mpl_cleanup):
+    def test_add_markers_as_list_add_same_twice(self):
         s = Signal1D(np.arange(10))
         marker_list = []
         for i in range(10):
@@ -254,7 +267,7 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s.add_marker(marker_list, permanent=True)
 
-    def test_add_markers_as_list_add_different_twice(self, mpl_cleanup):
+    def test_add_markers_as_list_add_different_twice(self):
         s = Signal1D(np.arange(10))
         marker_list0 = []
         for i in range(10):
@@ -267,13 +280,13 @@ class Test_permanent_markers:
         s.add_marker(marker_list1, permanent=True)
         assert len(s.metadata.Markers) == 20
 
-    def test_add_permanent_marker_signal2d(self, mpl_cleanup):
+    def test_add_permanent_marker_signal2d(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         assert list(s.metadata.Markers)[0][1] == m
 
-    def test_deepcopy_permanent_marker(self, mpl_cleanup):
+    def test_deepcopy_permanent_marker(self):
         x, y, color, name = 2, 9, 'blue', 'test_point'
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=x, y=y, color=color)
@@ -371,7 +384,7 @@ def _test_plot_rectange_markers():
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_rectange_markers(mpl_cleanup):
+def test_plot_rectange_markers():
     im = _test_plot_rectange_markers()
     return im._plot.signal_plot.figure
 
@@ -396,7 +409,7 @@ def _test_plot_point_markers():
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_point_markers(mpl_cleanup):
+def test_plot_point_markers():
     s = _test_plot_point_markers()
     return s._plot.signal_plot.figure
 
@@ -420,14 +433,14 @@ def _test_plot_text_markers():
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_text_markers_nav(mpl_cleanup):
+def test_plot_text_markers_nav():
     s = _test_plot_text_markers()
     return s._plot.navigator_plot.figure
 
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_text_markers_sig(mpl_cleanup):
+def test_plot_text_markers_sig():
     s = _test_plot_text_markers()
     return s._plot.signal_plot.figure
 
@@ -454,7 +467,7 @@ def _test_plot_line_markers():
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_line_markers(mpl_cleanup):
+def test_plot_line_markers():
     im = _test_plot_line_markers()
     return im._plot.signal_plot.figure
 
@@ -462,3 +475,64 @@ def test_plot_line_markers(mpl_cleanup):
 @update_close_figure
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_eds_lines():
+    a = EDS_TEM_Spectrum()
+    s = stack([a, a * 5])
+    s.plot(True)
+    s.axes_manager.navigation_axes[0].index = 1
+    return s._plot.signal_plot.figure
+
+
+def test_iterate_markers():
+    from skimage.feature import peak_local_max
+    import scipy.misc
+    ims = BaseSignal(scipy.misc.face()).as_signal2D([1, 2])
+    index = np.array([peak_local_max(im.data, min_distance=100,
+                                     num_peaks=4) for im in ims])
+    # Add multiple markers
+    for i in range(4):
+        xs = index[:, i, 1]
+        ys = index[:, i, 0]
+        m = markers.point(x=xs, y=ys, color='red')
+        ims.add_marker(m, plot_marker=True, permanent=True)
+        m = markers.text(x=10 + xs, y=10 + ys, text=str(i), color='k')
+        ims.add_marker(m, plot_marker=True, permanent=True)
+    xs = index[:, :, 1]
+    ys = index[:, :, 0]
+    m = markers.rectangle(np.min(xs, 1),
+                          np.min(ys, 1),
+                          np.max(xs, 1),
+                          np.max(ys, 1),
+                          color='green')
+    ims.add_marker(m, plot_marker=True, permanent=True)
+
+    for im in ims:
+        m_original = ims.metadata.Markers
+        m_iterated = im.metadata.Markers
+        for key in m_original.keys():
+            mo = m_original[key]
+            mi = m_iterated[key]
+            assert mo.__class__.__name__ == mi.__class__.__name__
+            assert mo.name == mi.name
+            assert mo.get_data_position('x1') == mi.get_data_position('x1')
+            assert mo.get_data_position('y1') == mi.get_data_position('y1')
+            assert mo.get_data_position('text') == mi.get_data_position('text')
+            assert mo.marker_properties['color'] == \
+                mi.marker_properties['color']
+
+
+@update_close_figure
+def test_plot_eds_markers_close():
+    s = EDS_TEM_Spectrum()
+    s.plot(True)
+    return s
+
+
+def test_plot_eds_markers_no_energy():
+    s = EDS_TEM_Spectrum()
+    del s.metadata.Acquisition_instrument.TEM.beam_energy
+    s.plot(True)

@@ -1,21 +1,24 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |AppVeyor|_ |Coveralls|_ |pypi_version|_  |rtd|_ |gitter|_ |saythanks|_
+|Travis|_ |AppVeyor|_ |Coveralls|_ |rtd|_  |pypi_version|_  |python_version|_ |gitter|_ |saythanks|_
 
-.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_minor
+.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_patch
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
-.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_minor
-.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_minor
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_patch
+.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_patch
 
-.. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg
-.. _Coveralls: https://coveralls.io/r/hyperspy/hyperspy
+.. |Coveralls| image:: https://coveralls.io/repos/github/hyperspy/hyperspy/badge.svg?branch=RELEASE_next_minor
+.. _Coveralls: https://coveralls.io/github/hyperspy/hyperspy?branch=RELEASE_next_minor
+
+.. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
+.. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
 
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
 
-.. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
-.. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
+.. |python_version| image:: https://img.shields.io/pypi/pyversions/hyperspy.svg?style=flat
+.. _python_version: https://pypi.python.org/pypi/hyperspy
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
@@ -39,10 +42,8 @@ of signals.
 
 HyperSpy is released under the GPL v3 license.
 
-.. warning::
-
-    **Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
-    HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
+**Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
+HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
 
 
 Contributing
@@ -56,5 +57,5 @@ Cite
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.583693.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.583693
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.3396791.svg
+.. _DOI: https://doi.org/10.5281/zenodo.3396791

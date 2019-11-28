@@ -25,12 +25,22 @@ from time import perf_counter, sleep
 try:
     import blosc
     blosc_installed = True
-except:
+except BaseException:
     blosc_installed = False
+try:
+    import mrcz
+    mrcz_installed = True
+except BaseException:
+    mrcz_installed = False
 
 from hyperspy.io import load, save
 from hyperspy import signals
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+
+
+pytestmark = pytest.mark.skipif(
+    not mrcz_installed, reason="mrcz not installed")
+
 
 #==============================================================================
 # MRCZ Test
@@ -39,7 +49,7 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 #==============================================================================
 tmpDir = tempfile.gettempdir()
 
-MAX_ASYNC_TIME = 2.0
+MAX_ASYNC_TIME = 10.0
 dtype_list = ['float32', 'int8', 'int16', 'uint16', 'complex64']
 
 
@@ -111,6 +121,9 @@ class TestPythonMrcz:
                     break
                 except IOError:
                     sleep(0.001)
+            print("Time to save file: {} s".format(
+                perf_counter() - (t_stop - MAX_ASYNC_TIME)))
+            sleep(0.005)
 
         reSignal = load(mrcName)
         try:

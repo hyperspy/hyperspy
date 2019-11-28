@@ -85,10 +85,7 @@ class MarkerBase(object):
                 self._marker_properties[key] = item
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._draw_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self._render_figure()
 
     def _to_dictionary(self):
         marker_dict = {
@@ -171,18 +168,18 @@ class MarkerBase(object):
         else:
             return data[ind].item()[()]
 
-    def plot(self, update_plot=True):
+    def plot(self, render_figure=True):
         """
         Plot a marker which has been added to a signal.
 
         Parameters
         ----------
-        update_plot : bool, optional, default True
-            If True, will update the plot after adding the marker.
-            If False, the marker will be added to the plot, but will not
-            be visualized until the plot is updated. This is useful when
-            plotting many markers, since updating the plot after adding
-            each marker will slow things down.
+        render_figure : bool, optional, default True
+            If True, will render the figure after adding the marker.
+            If False, the marker will be added to the plot, but will the figure
+            will not be rendered. This is useful when plotting many markers,
+            since rendering the figure after adding each marker will slow
+            things down.
         """
         if self.ax is None:
             raise AttributeError(
@@ -190,24 +187,26 @@ class MarkerBase(object):
                 "figure using `s._plot.signal_plot.add_marker(m)` or " +
                 "`s._plot.navigator_plot.add_marker(m)`")
         self._plot_marker()
-        animated = self.ax.figure.canvas.supports_blit
-        self.marker.set_animated(animated)
-        if update_plot:
-            if animated:
-                self.ax.hspy_fig._draw_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+        self.marker.set_animated(self.ax.figure.canvas.supports_blit)
+        if render_figure:
+            self._render_figure()
 
-    def close(self, update_plot=True):
+    def _render_figure(self):
+        if self.ax.figure.canvas.supports_blit:
+            self.ax.hspy_fig._update_animated()
+        else:
+            self.ax.figure.canvas.draw_idle()
+
+    def close(self, render_figure=True):
         """Remove and disconnect the marker.
 
         Parameters
         ----------
-        update_plot : bool, optional, default True
-            If True, the figure is updated after removing the marker.
-            If False, the figure is not updated after removing the marker.
-            This is useful when many markers are added to a figure,
-            since updating the plot after removing each marker will slow
+        render_figure : bool, optional, default True
+            If True, the figure is rendered after removing the marker.
+            If False, the figure is not rendered after removing the marker.
+            This is useful when many markers are removed from a figure,
+            since rendering the figure after removing each marker will slow
             things down.
         """
         if self._closing:
@@ -217,11 +216,8 @@ class MarkerBase(object):
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
-        if update_plot:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._draw_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+        if render_figure:
+            self._render_figure()
 
 
 def dict2marker(marker_dict, marker_name):
@@ -245,7 +241,7 @@ def dict2marker(marker_dict, marker_name):
     else:
         _log = logging.getLogger(__name__)
         _log.warning(
-            "Marker {} with marker type {} "
+            "Marker {} with marker type {} "
             "not recognized".format(marker_name, marker_type))
         return(False)
     marker.set_data(**marker_dict['data'])
