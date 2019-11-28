@@ -26,6 +26,9 @@ from hyperspy.signals import Signal1D
 from hyperspy.components1d import PESVoigt
 from hyperspy.utils import stack
 
+#Legacy test, to be removed in v2.0
+from hyperspy.components1d import Voigt
+
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
@@ -63,3 +66,15 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert_allclose(g2.FWHM.value, 1, 0.5)
     assert_allclose(g1.area.value, g2.area.value * factor, 0.04)
     assert_allclose(g2.centre.value, 1, 1e-3)
+
+
+#Legacy test, to be removed in v2.0
+def test_legacy():
+    g = Voigt(legacy=True)
+    g.area.value = 5
+    g.FWHM.value = 0.5
+    g.gamma.value = 0.2
+    g.centre.value = 1
+    assert_allclose(g.function(0), 0.35380168)
+    assert_allclose(g.function(1), 5.06863535)
+

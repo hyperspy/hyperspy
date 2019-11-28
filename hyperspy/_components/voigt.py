@@ -33,13 +33,21 @@ class Voigt(Expression):
     r"""Voigt component.
 
     Symmetric peak shape based on the convolution of a Lorentzian and Normal 
-    (Gaussian) distribution. In this case using an approximate formula by David 
-    (see Notes).
+    (Gaussian) distribution:
+    
+        .. math:: 
+        f(x) = G(x) \cdot L(x) 
+
+    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
+    Lorentzian function. In this case using an approximate formula by David 
+    (see Notes). This approximation improves on the pseudo-Voigt function
+    (linear combination instead of convolution of the distributions) and is,
+    to a very good approximation, equivalent to a Voigt function:
 
     .. math:: 
         z(x) &= \frac{x + i \gamma}{\sqrt{2} \sigma} \\
-        w(z) &= \frac{e^{-z^2} \text{erf}(-i z)}{\sqrt{2 \pi} \sigma} \\
-        f(x) &= A \Re\left\{ w \left[ z(x-x_0) \right] \right\}
+        w(z) &= \frac{e^{-z^2} \text{erfc}(-i z)}{\sqrt{2 \pi} \sigma} \\
+        f(x) &= A \cdot \Re\left\{ w \left[ z(x - x_0) \right] \right\}
 
 
     ============== =============
@@ -139,8 +147,8 @@ class Voigt(Expression):
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
         >>> s = hs.signals.Signal1D(data)
-        >>> s.axes_manager._axes[-1].offset = -10
-        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> s.axes_manager.axes[-1].offset = -10
+        >>> s.axes_manager.axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
 
         """

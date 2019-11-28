@@ -28,34 +28,50 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
-    """Voigt lineshape.
+    r"""Voigt lineshape.
 
-    The voigt peak is the convolution of a Lorentz peak with a Gaussian peak.
+    The voigt peak is the convolution of a Lorentz peak with a Gaussian peak:
+    
+    .. math:: 
+        f(x) = G(x) \cdot L(x) 
 
-    The formula used to calculate this is::
+    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
+    Lorentzian function. In this case using an approximate formula by David 
+    (see Notes). This approximation improves on the pseudo-Voigt function
+    (linear combination instead of convolution of the distributions) and is,
+    to a very good approximation, equivalent to a Voigt function:
 
-        z(x) = (x + 1j gamma) / (sqrt(2) sigma)
-        w(z) = exp(-z**2) erfc(-1j z) / (sqrt(2 pi) sigma)
+    .. math:: 
+        z(x) &= \frac{x + i \gamma}{\sqrt{2} \sigma} \\
+        w(z) &= \frac{e^{-z^2} \text{erfc}(-i z)}{\sqrt{2 \pi} \sigma} \\
+        f(x) &= A \cdot \Re\left\{ w \left[ z(x - x_0) \right] \right\}
 
-        V(x) = scale Re(w(z(x-center)))
+
+    ============== =============
+    Variable        Parameter 
+    ============== =============
+    :math:`x_0`     center 
+    :math:`A`       scale
+    :math:`\gamma`  gamma
+    :math:`\sigma`  sigma
+    ============== =============
+    
 
     Parameters
     ----------
     gamma : real
-       The half-width half-maximum of the Lorentzian
+       The half-width half-maximum of the Lorentzian.
     FWHM : real
-       The FWHM of the Gaussian
+       The FWHM=:math:`2 \sigma \sqrt(2 \log(2))` of the Gaussian.
     center : real
-       Location of the center of the peak
+       Location of the center of the peak.
     scale : real
-       Value at the highest point of the peak
+       Value at the highest point of the peak.
 
     Notes
     -----
     Ref: W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64
-
-    adjusted to use stddev and HWHM rather than FWHM parameters
-
+    doi:10.1107/S0021889886089999
     """
     # wofz function = w(z) = Fad[d][e][y]eva function = exp(-z**2)erfc(-iz)
     from scipy.special import wofz
@@ -69,11 +85,17 @@ class Voigt(Component):
     # Legacy class to be removed in v2.0
 
     """This is the legacy Voigt profile component dedicated to photoemission 
-    spectroscopy data analysis that will renamed to `PESVoigt` v2.0. To use
-    the new Voigt lineshape component set `legacy=False`. 
+    spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
+    the new Voigt lineshape component set `legacy=False`. See the
+    documentation of ``hyperspy._components.voigt.Voigt`` for details on the
+    usage of the new Voigt component. 
 
-    f(x) = G(x)*L(x) where G(x) is the Gaussian function and L(x) is the
-    Lorentzian function
+    .. math:: 
+        f(x) = G(x) \cdot L(x) 
+
+    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
+    Lorentzian function. This component uses an approximate formula by David 
+    (see Notes).
 
     Attributes
     ----------
@@ -95,6 +117,7 @@ class Voigt(Component):
     -----
     Uses an approximate formula according to
     W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64.
+    doi:10.1107/S0021889886089999
     """
 
     def __init__(self, legacy=True, **kwargs):
@@ -147,7 +170,8 @@ class PESVoigt(Component):
         f(x) = G(x) \cdot L(x) 
 
     where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
-    Lorentzian function.
+    Lorentzian function. This component uses an approximate formula by David 
+    (see Notes).
 
 
     Parameters
@@ -169,6 +193,11 @@ class PESVoigt(Component):
     spin_orbit_branching_ratio : float
     spin_orbit_splitting_energy : float
 
+    Notes
+    -----
+    Uses an approximate formula according to
+    W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64.
+    doi:10.1107/S0021889886089999
     """
 
     def __init__(self):
@@ -259,8 +288,8 @@ class PESVoigt(Component):
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
         >>> s = hs.signals.Signal1D(data)
-        >>> s.axes_manager._axes[-1].offset = -10
-        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> s.axes_manager.axes[-1].offset = -10
+        >>> s.axes_manager.axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
 
         """
