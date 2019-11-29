@@ -193,7 +193,7 @@ class NavigationSizeError(Exception):
 class NonLinearAxisError(Exception):
 
     def __init__(self):
-        self.error = ("Non linear axis are not supported.")
+        self.error = ("Non linear axes are not supported.")
 
     def __str__(self):
         return repr(self.error)

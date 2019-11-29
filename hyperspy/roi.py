@@ -888,6 +888,10 @@ class CircleROI(BaseInteractiveROI):
         else:
             axes = self._parse_axes(axes, signal.axes_manager)
 
+        for axis in axes:
+            if not axis.is_linear:
+                raise NonLinearAxisError()
+
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
         cx = self.cx + 0.5001 * axes[0].scale
@@ -1169,7 +1173,7 @@ class Line2DROI(BaseInteractiveROI):
         """
         for axis in axes:
             if not axis.is_linear:
-                raise NonLinearAxisError()        
+                raise NonLinearAxisError()
         
         import scipy.ndimage as nd
         # Convert points coordinates from axes units to pixels

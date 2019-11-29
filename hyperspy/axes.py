@@ -529,7 +529,7 @@ class BaseDataAxis(t.HasTraits):
             return self.axis[index]
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value, if between the limits.
 
         Parameters
         ----------
@@ -782,9 +782,37 @@ class FunctionalDataAxis(BaseDataAxis):
         self.__init__(**d, axis=self.axis)
 
     def crop(self, start=None, end=None):
-        raise ValueError('Function still needs to be implemented')
-        # TODO
-        pass
+        """Crop the axis in place.
+
+        Parameters
+        ----------
+        start : int, float, or None
+            The beginning of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        end : int, float, or None
+            The end of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        """
+        
+        if start is None:
+            start = 0
+        if end is None:
+            end = self.size
+        # Use `_get_positive_index` to support reserved indexing
+        i1 = self._get_positive_index(self._get_index(start))
+        i2 = self._get_positive_index(self._get_index(end))
+
+        # Not sure, if we should support unordered values or not...
+        if i1 > i2:
+            raise ValueError("The `start` value must be lower than the `end` "
+                             "value.")
+
+        self.x0 = self.x0[i1:i2]
+        self.update_axis()
 
 
 class LinearDataAxis(FunctionalDataAxis, UnitConversion):

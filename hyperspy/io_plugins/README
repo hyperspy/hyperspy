@@ -7,7 +7,7 @@ All the read/write plugins must provide a python file containing:
 
         # Plugin characteristics
         # ----------------------
-	format_name = <String>
+	    format_name = <String>
         description = <String>
         full_support = <Bool>	# Whether all the Hyperspy features are supported
         # Recognised file extension
