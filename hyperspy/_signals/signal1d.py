@@ -1087,7 +1087,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         background_type : str
             The type of component which should be used to fit the background.
             Possible components: PowerLaw, Gaussian, Offset, Polynomial, 
-            Lorentzian.
+            Lorentzian, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
@@ -1154,6 +1154,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
                         polynomial_order, legacy=False)
             elif background_type == 'Lorentzian':
                 background_estimator = components1d.Lorentzian()
+            elif background_type == 'Voigt':
+                with ignore_warning(message="The API of the `Voigt` component"):
+                    background_estimator = components1d.Voigt(legacy=False)
             else:
                 raise ValueError(
                     "Background type: " +

@@ -82,7 +82,7 @@ class Voigt(Expression):
     doi:10.1107/S0021889886089999
     """
 
-    def __init__(self, centre=0., area=1., lwidth=0.2, gwidth=0.05,
+    def __init__(self, centre=10., area=1., lwidth=0.2, gwidth=0.05,
                  module="scipy", **kwargs):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:

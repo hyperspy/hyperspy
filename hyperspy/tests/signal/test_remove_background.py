@@ -33,7 +33,7 @@ class TestRemoveBackground1DGaussian:
         gaussian.centre.value = 10
         gaussian.sigma.value = 1
         self.signal = signals.Signal1D(
-            gaussian.function(np.arange(0, 20, 0.01)))
+            gaussian.function(np.arange(0, 20, 0.02)))
         self.signal.axes_manager[0].scale = 0.01
         self.signal.metadata.Signal.binned = False
 
@@ -121,7 +121,7 @@ class TestRemoveBackground1DLorentzian:
         lorentzian.centre.value = 10
         lorentzian.gamma.value = 1
         self.signal = signals.Signal1D(
-            lorentzian.function(np.arange(0, 20, 0.01)))
+            lorentzian.function(np.arange(0, 20, 0.03)))
         self.signal.axes_manager[0].scale = 0.01
         self.signal.metadata.Signal.binned = False
 
@@ -137,6 +137,36 @@ class TestRemoveBackground1DLorentzian:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Lorentzian',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+@lazifyTestClass
+class TestRemoveBackground1DVoigt:
+
+    def setup_method(self, method):
+        voigt = components1d.Voigt(legacy=False)
+        voigt.area.value = 5
+        voigt.centre.value = 10
+        voigt.lwidth.value = 0.2
+        voigt.gwidth.value = 0.5
+        self.signal = signals.Signal1D(
+            voigt.function(np.arange(0, 20, 0.03)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+
+    def test_background_remove_voigt(self):
+        # resort to fast=False as estimator guesses only Gaussian width
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Voigt',
+            show_progressbar=None,
+            fast=False)
+        assert np.allclose(np.zeros(len(s1.data)), s1.data)
+
+    def test_background_remove_voigt_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Voigt',
             fast=False)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
@@ -159,7 +189,8 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
 @pytest.mark.parametrize('background_type',
-                         ['Power Law', 'Polynomial', 'Offset'])
+                         ['Power Law', 'Polynomial', 'Offset', 'Gaussian',
+                          'Lorentzian', 'Voigt'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,
@@ -167,9 +198,16 @@ def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       plot_remainder,
                                                       background_type):
     if nav_dim == 0:
-        s = signals.Signal1D(np.arange(10, 100)[::-1])
+        if background_type == ('Voigt'): # speeds up the test
+            s = signals.Signal1D(np.hstack((np.arange(10, 50),
+                                            np.arange(10, 50)[::-1])))
+        else: 
+            s = signals.Signal1D(np.arange(10, 100)[::-1])
     else:
-        s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
+        if background_type == ('Voigt'): # avoids warning
+            s = signals.Signal1D(np.tile(np.exp(np.arange(0, 100)[::-1]),(2, 1)))
+        else:
+            s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
     s.axes_manager[0].name = 'axis0'
     s.axes_manager[0].units = 'units0'
     s.axes_manager[0].scale = 0.9
