@@ -10,6 +10,7 @@ HyperSpy Developer Guide
     :maxdepth: 2
 
     intro.rst
+    git.rst
     testing.rst
     writing_docs.rst
     coding_style.rst
