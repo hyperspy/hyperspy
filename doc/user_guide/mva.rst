@@ -106,11 +106,11 @@ signal, as opposed to noise. Alternatively, by providing an integer value
 for ``threshold``, the line will be drawn at the specified component (see
 below).  The number of significant components can be estimated and a vertical
 line drawn to represent this by specifying ``vline`` as ``True``. In this case,
-the elbow or knee is found in the variance plot by estimating the distance 
-from each point in the variance plot to a line joining the first and last 
-points of the plot and selecting the point where this distance is largest. 
-In the case of multiple occurrences of a maximum value the index corresponding 
-to the first occurrence is returned. As the index of the first component is zero, 
+the elbow or knee is found in the variance plot by estimating the distance
+from each point in the variance plot to a line joining the first and last
+points of the plot and selecting the point where this distance is largest.
+In the case of multiple occurrences of a maximum value the index corresponding
+to the first occurrence is returned. As the index of the first component is zero,
 the number of significant PCA components is the elbow index position + 1.
 
 .. figure::  images/screeplot_elbow_method.png
@@ -146,7 +146,7 @@ notation, specify the ``xaxis_type`` parameter:
    :align:   center
    :width:   500
 
-   PCA scree plot with number-based axis labeling and an estimate of the no of significant 
+   PCA scree plot with number-based axis labeling and an estimate of the no of significant
    positions based on the "elbow" position
 
 
@@ -238,7 +238,18 @@ following code. You must set the ``output_dimension`` when using RPCA.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='RPCA_GoDec',
-   ...                 output_dimension=3)
+                       output_dimension=3)
+
+RPCA solvers work by using regularization, in a similar manner to lasso or ridge
+regression, to enforce the low-rank constraint on the data. The regularization
+parameter, "lambda1", defaults to 1/sqrt(n_samples), but it is recommended that you
+explore the behaviour of different values.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='RPCA_GoDec',
+                       output_dimension=3,
+                       lambda1=0.1)
 
 HyperSpy also implements an *online* algorithm for RPCA developed by Feng et
 al. :ref:`[Feng2013] <Feng2013>`. This minimizes memory usage, making it
@@ -248,18 +259,19 @@ algorithm.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3)
+                       output_dimension=3)
 
 The online RPCA implementation sets several default parameters that are
-usually suitable for most datasets. However, to improve the convergence you can
+usually suitable for most datasets, including the regularization parameter
+highlighted above. However, to improve the convergence you can
 "train" the algorithm with the first few samples of your dataset. For example,
 the following code will train ORPCA using the first 32 samples of the data.
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 training_samples=32)
+                       output_dimension=3,
+                       training_samples=32)
 
 Finally, online RPCA includes three alternative methods to the default
 closed-form solver, which can again improve both the convergence and speed
@@ -271,8 +283,8 @@ additional parameters:
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 method='BCD')
+                       output_dimension=3,
+                       method='BCD')
 
 The second is based on stochastic gradient descent (SGD), and takes an
 additional parameter to set the learning rate. The learning rate dictates
@@ -283,11 +295,11 @@ finding the correct minima. Usually a value between 1 and 2 works well:
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 method='SGD',
-   ...                 subspace_learning_rate=1.1)
+                       output_dimension=3,
+                       method='SGD',
+                       subspace_learning_rate=1.1)
 
-The third method is Momentum Stochastic Gradient Descent (MomentumSGD), 
+The third method is Momentum Stochastic Gradient Descent (MomentumSGD),
 which typically improves the convergence properties of stochastic gradient
 descent. This takes the further parameter "momentum", which should be a
 fraction between 0 and 1.
@@ -295,10 +307,10 @@ fraction between 0 and 1.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 method='MomentumSGD',
-   ...                 subspace_learning_rate=1.1,
-   ...                 subspace_momentum=0.5)
+                       output_dimension=3,
+                       method='MomentumSGD',
+                       subspace_learning_rate=1.1,
+                       subspace_momentum=0.5)
 
 Using the SGD or MomentumSGD methods enables the subspace, subspace,
 i.e. the underlying low-rank component, to be tracked as it changes
@@ -332,12 +344,15 @@ In a similar manner to the online, robust methods that complement PCA above,
 HyperSpy includes an online robust NMF method. This is based on the OPGD (Online
 Proximal Gradient Descent) algorithm of :ref:`[Zhao2016] <Zhao2016>`.
 
-Note that this requires "output_dimension" to be specified.
+Note that this requires "output_dimension" to be specified. As before, you can
+control the regularization applied via the parameter "lambda1", which by default
+is set to 1/sqrt(n_samples).
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORNMF',
-                       output_dimension=3)
+                       output_dimension=3,
+                       lambda1=0.1)
 
 As with ORPCA described above, the MomentumSGD method  is useful for scenarios
 where the subspace, i.e. the underlying low-rank component, is changing over time.
