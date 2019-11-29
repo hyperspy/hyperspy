@@ -71,13 +71,15 @@ Scree plots
 PCA will sort the components in the dataset in order of decreasing
 variance. It is often useful to estimate the dimensionality of the data by
 plotting the explained variance against the component index. This plot is
-sometimes called a scree plot and it should drop quickly,
-eventually becoming a slowly descending line.
+sometimes called a scree plot. For most datasets, the values in a scree plot
+will decay rapidly, eventually becoming a slowly descending line.
 
 The point at which the scree plot becomes linear (often referred to as
 the `elbow`) is generally judged to be a good estimation of the dimensionality
 of the data (or equivalently, the number of components that should be retained
-- see below).
+- see below). Components to the left of the elbow are considered part of the "signal",
+while components to the right are considered to be "noise", and thus do not explain
+any significant features of the data.
 
 To obtain a scree plot for your dataset, run the
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
@@ -97,21 +99,25 @@ To obtain a scree plot for your dataset, run the
    ``xaxis_labeling``, ``signal_fmt``, ``noise_fmt``, ``threshold``,
    ``xaxis_type`` keyword arguments.
 
-The default options for this method will plot a bare scree plot, but the
-method's arguments allow for a great deal of customization. For
-example, by specifying a ``threshold`` value, a cutoff line will be drawn at
+The default options for this method will plot a simple scree plot as above, but the
+method can be customized via its arguments.
+
+By specifying a ``threshold`` value, a cutoff line will be drawn at
 the total variance specified, and the components above this value will be
 styled distinctly from the remaining components to show which are considered
-signal, as opposed to noise. Alternatively, by providing an integer value
-for ``threshold``, the line will be drawn at the specified component (see
-below).  The number of significant components can be estimated and a vertical
-line drawn to represent this by specifying ``vline`` as ``True``. In this case,
-the elbow or knee is found in the variance plot by estimating the distance
+signal, as opposed to noise.
+
+Alternatively, by providing an integer value for ``threshold``, the line will
+be drawn at the specified component (see below). The number of significant
+components can be estimated and a vertical line drawn to represent this by
+specifying ``vline`` as ``True``.
+
+In this case, the elbow or knee is found in the variance plot by estimating the distance
 from each point in the variance plot to a line joining the first and last
-points of the plot and selecting the point where this distance is largest.
-In the case of multiple occurrences of a maximum value the index corresponding
-to the first occurrence is returned. As the index of the first component is zero,
-the number of significant PCA components is the elbow index position + 1.
+points of the plot, and then selecting the point where this distance is largest.
+If multiple maxima are found, the index corresponding to the first occurrence is returned.
+As the index of the first component is zero, the number of significant PCA
+components is the elbow index position + 1.
 
 .. figure::  images/screeplot_elbow_method.png
    :align:   center
@@ -125,7 +131,7 @@ develop a figure of your liking. See the documentation of
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
 
 Note that in the above figure, the first component has index 0. This is because
-Python uses zero based indexing i.e. the initial element of a sequence is found
+Python uses zero-based indexing i.e. the initial element of a sequence is found
 at index 0. To switch to a "number-based" (rather than "index-based")
 notation, specify the ``xaxis_type`` parameter:
 
@@ -149,12 +155,11 @@ notation, specify the ``xaxis_type`` parameter:
    PCA scree plot with number-based axis labeling and an estimate of the no of significant
    positions based on the "elbow" position
 
-
-Sometimes it can be useful to get the explained variance ratio as a spectrum,
-for example to plot several scree plots obtained using
-different data pre-treatmentd in the same figure using
-:py:func:`~.drawing.utils.plot_spectra`. This can be achieved using
-:py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
+Sometimes it can be useful to get the explained variance ratio as a spectrum.
+For example, to plot several scree plots obtained with
+different data pre-treatments in the same figure, you can combine
+:py:func:`~.drawing.utils.plot_spectra` with
+:py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`.
 
 
 Denoising
@@ -167,8 +172,7 @@ is also known as *dimensionality reduction*.
 
 To perform this operation with HyperSpy, run the
 :py:meth:`~.learn.mva.MVA.get_decomposition_model` method, usually after
-estimating the dimension of your data using a scree plot. For
-example:
+estimating the dimension of your data using a scree plot. For example:
 
 .. code-block:: python
 
@@ -242,7 +246,7 @@ following code. You must set the ``output_dimension`` when using RPCA.
 
 RPCA solvers work by using regularization, in a similar manner to lasso or ridge
 regression, to enforce the low-rank constraint on the data. The regularization
-parameter, "lambda1", defaults to 1/sqrt(n_samples), but it is recommended that you
+parameter, "lambda1", defaults to ``1/sqrt(n_samples)``, but it is recommended that you
 explore the behaviour of different values.
 
 .. code-block:: python
@@ -346,7 +350,7 @@ Proximal Gradient Descent) algorithm of :ref:`[Zhao2016] <Zhao2016>`.
 
 Note that this requires "output_dimension" to be specified. As before, you can
 control the regularization applied via the parameter "lambda1", which by default
-is set to 1/sqrt(n_samples).
+is set to ``1/sqrt(n_samples)``.
 
 .. code-block:: python
 
