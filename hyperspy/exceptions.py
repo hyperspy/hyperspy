@@ -18,6 +18,10 @@
 
 # custom exceptions
 
+class test():
+    def __init__(self):
+        pass
+
 
 class ByteOrderError(Exception):
 

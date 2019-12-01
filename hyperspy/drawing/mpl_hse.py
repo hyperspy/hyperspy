@@ -23,8 +23,10 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.drawing import signal1d
 
+from hyperspy.drawing import  signal1d, utils
+
+from hyperspy import interactive,roi
 
 class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
@@ -33,13 +35,21 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
     """
 
-    def __init__(self):
-        super(MPL_HyperSignal1D_Explorer, self).__init__()
+    def __init__(self,number_of_rois=1,signal=None):
+        super(MPL_HyperSignal1D_Explorer, self).__init__(number_of_rois=number_of_rois,signal=signal)
         self.xlabel = ''
         self.ylabel = ''
         self.right_pointer = None
         self._right_pointer_on = False
         self._auto_update_plot = True
+        self.signal=signal
+        self.number_of_rois=number_of_rois
+        self.ROIS=[]# a list of the ROIS pertaining to the hyperimage
+        self.ROI2DS=[]# a list of the sub-hyperimages pertaining to the hyperimage
+        self.LINES=[]#a list of all the Hyperspy lines. ROIs and Lines should be kept synchronized
+        self.ROIS1DSIGNALS=[]#  a list of the summed signal from the ROIs
+        self.DATAFUNCTIONS=[]# a list of callback function for the lines (aka data_functions)
+        self.colors=utils.ColorCycle()._color_cycle#colors will have 7 values, so if you want more than 7
 
     @property
     def auto_update_plot(self):
@@ -138,6 +148,54 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                     'key_press_event', self.key2switch_right_pointer)
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
+        spimleft=self.axes_manager[0].offset
+        spimright=self.axes_manager[0].size*self.axes_manager[0].scale+self.axes_manager[0].offset
+        spimtop=self.axes_manager[1].offset
+        spimbottom=self.axes_manager[1].size*self.axes_manager[1].scale+self.axes_manager[1].offset
+
+        roiswidth=(spimright-spimleft)/(2*self.number_of_rois)
+        roisheight=(spimbottom-spimtop)/(2*self.number_of_rois)
+        def get_data(signal):
+            def local_get_data(axes_manager,**kwargs):
+                return signal.data
+                #return self.signal.inav[0:0].data
+            return local_get_data
+
+
+        for i in range(self.number_of_rois):
+            pass
+
+            left=spimleft+i*roiswidth
+            right=left+roiswidth
+            top=spimtop+i*roisheight
+            bottom=top+roisheight
+            Roi = roi.RectangularROI(left=left, right=right, top=top, bottom=bottom)
+            self.ROIS.append(Roi)
+            #
+            Roi2D = Roi.interactive(self.signal, navigation_signal = self.signal,color=self.colors[i])
+            #Roi2D = Roi.interactive(self.signal,color=self.colors[i])
+            self.ROI2DS.append(Roi2D)
+            SpectrumRoi = interactive.interactive(Roi2D.sum, axis = (0,1))
+            #name=os.path.splitext(spimobject.metadata.General.original_filename)[0]
+            #SpectrumRoi.metadata.General.title=name+"ROI"+str(i)
+            self.ROIS1DSIGNALS.append(SpectrumRoi)
+
+            print("inside the roi creation")
+            theline=signal1d.Signal1DLine()
+            theline.line_properties={'type':'line','color':self.colors[i]}
+            #for some reason (wrong variable bounding???? anyways sounds like a scope issue), the next commented line does not work
+            #DATAFUNCTIONS.append(lambda axes_manager: spimroisignal[i].data)
+            #the following lines works
+            self.DATAFUNCTIONS.append(get_data(self.ROIS1DSIGNALS[i]))
+            theline.autoscale = True
+            self.LINES.append(theline)
+            self.LINES[i].data_function=self.DATAFUNCTIONS[i]
+            sf.add_line(theline)
+            theline.plot_indices=True
+            theline.plot()
+            SpectrumRoi.events.data_changed.connect(self.LINES[i].update,kwargs=[])
+
+
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":
