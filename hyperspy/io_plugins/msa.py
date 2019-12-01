@@ -40,6 +40,7 @@ file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 # Writing capabilities
 writes = [(1, 0), ]
+non_linear_axis = False
 # ----------------------
 
 # For a description of the EMSA/MSA format, incluiding the meaning of the

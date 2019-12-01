@@ -46,6 +46,7 @@ file_extensions = ser_extensions + emi_extensions
 default_extension = 0
 # Writing capabilities
 writes = False
+non_linear_axis = False
 # ----------------------
 
 data_types = {

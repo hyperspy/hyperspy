@@ -32,6 +32,8 @@ file_extensions = ['mrc', 'MRC', 'mrcz', 'MRCZ']
 default_extension = 2
 # Writing capabilities:
 writes = True
+non_linear_axis = False
+# ----------------------
 
 
 _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',

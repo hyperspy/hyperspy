@@ -41,6 +41,8 @@ file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0
 # Writing capabilities
 writes = False
+non_linear_axis = False
+# ----------------------
 
 
 def get_std_dtype_list(endianess='<'):

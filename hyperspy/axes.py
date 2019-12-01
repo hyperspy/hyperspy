@@ -1226,6 +1226,14 @@ class AxesManager(t.HasTraits):
             navigation_extent.append(navigation_axis.high_value)
         return tuple(navigation_extent)
 
+    @property
+    def all_linear(self):
+        if all([axis.is_linear for axis in self._axes]):
+            return 'True'
+        else:
+            return 'False'
+            
+
     def remove(self, axes):
         """Remove one or more axes
         """

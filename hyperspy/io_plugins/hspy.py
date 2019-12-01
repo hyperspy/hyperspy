@@ -43,7 +43,9 @@ file_extensions = ['hspy', 'hdf5']
 default_extension = 0
 # Writing capabilities
 writes = True
-version = "3.0"
+non_linear_axis = True
+version = "3.1"
+# ----------------------
 
 # -----------------------
 # File format description
@@ -73,6 +75,9 @@ version = "3.0"
 # Experiments instance
 #
 # CHANGES
+#
+# v3.1
+# - add read support for non-linear DataAxis and FunctionalDataAxis
 #
 # v3.0
 # - add Camera and Stage node
@@ -231,6 +236,10 @@ def hdfgroup2signaldict(group, lazy=False):
                     axis[key] = bool(item)
                 else:
                     axis[key] = ensure_unicode(item)
+            if 'x0' in group['axis-%i' % i].keys():
+                axis['x0'] = group['axis-%i/x0' % i][()]
+            if 'axis' in group['axis-%i' % i].keys():
+                axis['axis'] = group['axis-%i/axis' % i][()]
         except KeyError:
             break
     if len(axes) != len(exp['data'].shape):  # broke from the previous loop

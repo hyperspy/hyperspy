@@ -21,6 +21,8 @@ All the read/write plugins must provide a python file containing:
         writes_images = <Bool>
         writes_spectrum = <Bool>
         writes_spectrum_image = <Bool>
+        # Support for non linear axis
+        non_linear_axis = <Bool>
 
     - A function called file_reader with at least one attribute: filename
 

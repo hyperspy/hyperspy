@@ -515,6 +515,7 @@ def save(filename, signal, overwrite=None, **kwds):
         # Check if the writer can write
         sd = signal.axes_manager.signal_dimension
         nd = signal.axes_manager.navigation_dimension
+        nla = signal.axes_manager.all_linear
         if writer.writes is False:
             raise ValueError('Writing to this format is not '
                              'supported, supported file extensions are: %s ' %
@@ -526,6 +527,13 @@ def save(filename, signal, overwrite=None, **kwds):
                           (sd, nd) in plugin.writes]
             raise IOError('This file format cannot write this data. '
                           'The following formats can: %s' %
+                          strlist2enumeration(yes_we_can))
+        if writer.non_linear_axis is not True and nla is not True:
+            yes_we_can = [plugin.format_name for plugin in io_plugins
+                          if plugin.non_linear_axis is True]
+            raise IOError('Writing to this format is not supported for non '
+                          'linear axes.'
+                          'Use one of the following formats: %s' %
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         is_file = os.path.isfile(filename)
