@@ -254,6 +254,9 @@ class Signal1DLine(object):
         self._line_properties = {}
         self.type = "line"
         self.exponent_position=None# a list of the x positions (ie, fitting the spine position) for the exponent
+        self.time=0 # for debugging purpose
+        self.axbackground=None
+
 
     @property
     def get_complex(self):
@@ -363,6 +366,7 @@ class Signal1DLine(object):
                              "'log' for Signal1D.")
         else:
             plot = self.ax.plot
+
         self.line, = plot(self.axis.axis, data, **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
@@ -377,6 +381,8 @@ class Signal1DLine(object):
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
+
+
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
@@ -403,6 +409,12 @@ class Signal1DLine(object):
 
     def update(self, force_replot=False, render_figure=True):
         """Update the current spectrum figure"""
+        #for debugging purpose
+        #if abs(time.time()-self.time)<0.3:
+            #return
+        #self.time=time.time()
+
+
         if force_replot is True:
             self.close()
             self.plot(data_function_kwargs=self.data_function_kwargs,
@@ -410,6 +422,7 @@ class Signal1DLine(object):
 
         ydata = self._get_data()
         old_xaxis = self.line.get_xdata()
+
         if len(old_xaxis) != self.axis.size or \
                 np.any(np.not_equal(old_xaxis, self.axis.axis)):
             self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
@@ -448,12 +461,24 @@ class Signal1DLine(object):
 
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
+
         if render_figure:
             if self.ax.figure.canvas.supports_blit:
                 #my tests showed using update_animated was longer than using draw_idle
                 #self.ax.hspy_fig._update_animated()
+
+                #In case the solution with blit does not work... use only draw_idle!
+                #self.ax.figure.canvas.draw_idle()
+
+                #the following seems to work, but I have no idea why!
+
+                self.axbackground = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
+                self.ax.draw_artist(self.line)
+                self.ax.figure.canvas.blit(self.ax.bbox)
+                self.ax.figure.canvas.restore_region(self.axbackground)
+                self.ax.figure.canvas.flush_events()
                 self.ax.figure.canvas.draw_idle()
-                #self.ax.figure.canvas.draw()
+
 
             else:
                 self.ax.figure.canvas.draw_idle()

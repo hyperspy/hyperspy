@@ -192,9 +192,10 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             self.LINES.append(theline)
             self.LINES[i].data_function=self.DATAFUNCTIONS[i]
             self.signal_plot.add_line(theline)
-            theline.plot_indices=True
+            theline.plot_indices=False
             theline.plot()
             SpectrumRoi.events.data_changed.connect(self.LINES[i].update,kwargs=[])
+            #SpectrumRoi.events.data_changed.connect(self.signal_plot.update,kwargs=[])
             #SpectrumRoi.events.data_changed.connect(print_result,kwargs=[])
 
     def key2switch_right_pointer(self, event):
