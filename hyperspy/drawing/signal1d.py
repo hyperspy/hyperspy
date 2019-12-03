@@ -21,8 +21,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.ticker as mtick
 import logging
 import inspect
+import time
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
@@ -62,6 +64,8 @@ class Signal1DFigure(BlittedFigure):
             'line': utils.ColorCycle(),
             'step': utils.ColorCycle(),
             'scatter': utils.ColorCycle(), }
+        #spines
+        self.spine_spacing=1
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -79,9 +83,33 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
         plt.tight_layout()
 
+    def make_patch_spines_invisible(self,ax):
+        """
+        from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
+        :param ax:
+        :return:
+        """
+        ax.set_frame_on(True)
+        ax.patch.set_visible(False)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+
     def add_line(self, line, ax='left'):
+
         if ax == 'left':
-            line.ax = self.ax
+           #largely inspired from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
+            line.ax = self.ax.twinx()
+            line.ax.hspy_fig = self
+            line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
+            line.ax.spines["right"].set_position(("axes", self.spine_spacing))
+            self.spine_spacing+=0.15
+            line.exponent_position=self.spine_spacing
+            self.make_patch_spines_invisible(line.ax)
+
+            line.ax.spines["right"].set_visible(True)
+            line.ax.ticklabel_format(axis='y', style='sci',scilimits=(0,0),useOffset=True)
+            line.ax.yaxis.label.set_color(line.color)
+            line.ax.tick_params(axis='y', colors=line.color)
             if line.axes_manager is None:
                 line.axes_manager = self.axes_manager
             self.ax_lines.append(line)
@@ -108,6 +136,14 @@ class Signal1DFigure(BlittedFigure):
             if rgba_color in self._color_cycles[line.type].color_cycle:
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
+        self.ax.figure.canvas.draw_idle()
+        if hasattr(self.figure, 'tight_layout'):
+            try:
+                self.figure.tight_layout()
+            except BaseException:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.ax.set_xlabel(self.xlabel)
@@ -217,6 +253,7 @@ class Signal1DLine(object):
         self.text_position = (-0.1, 1.05,)
         self._line_properties = {}
         self.type = "line"
+        self.exponent_position=None# a list of the x positions (ie, fitting the spine position) for the exponent
 
     @property
     def get_complex(self):
@@ -408,13 +445,20 @@ class Signal1DLine(object):
             if not np.isfinite(y_max):
                 y_max = None  # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
+
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
         if render_figure:
             if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
+                #my tests showed using update_animated was longer than using draw_idle
+                #self.ax.hspy_fig._update_animated()
+                self.ax.figure.canvas.draw_idle()
+                #self.ax.figure.canvas.draw()
+
             else:
                 self.ax.figure.canvas.draw_idle()
+        #this last line is to make sure that the exponents are on their respetive spines
+        self.ax.yaxis.get_offset_text().set_x(self.exponent_position)
 
     def close(self):
         _logger.debug('Closing `Signal1DLine`.')

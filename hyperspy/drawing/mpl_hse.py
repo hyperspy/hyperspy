@@ -148,6 +148,11 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                     'key_press_event', self.key2switch_right_pointer)
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
+
+        self.create_rois_and_lines()
+
+
+    def create_rois_and_lines(self):
         spimleft=self.axes_manager[0].offset
         spimright=self.axes_manager[0].size*self.axes_manager[0].scale+self.axes_manager[0].offset
         spimtop=self.axes_manager[1].offset
@@ -160,10 +165,11 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 return signal.data
                 #return self.signal.inav[0:0].data
             return local_get_data
-
+        #for debugging purpose only
+        def print_result():
+            print(self.ROIS1DSIGNALS[0].data.sum())
 
         for i in range(self.number_of_rois):
-            pass
 
             left=spimleft+i*roiswidth
             right=left+roiswidth
@@ -171,16 +177,11 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             bottom=top+roisheight
             Roi = roi.RectangularROI(left=left, right=right, top=top, bottom=bottom)
             self.ROIS.append(Roi)
-            #
             Roi2D = Roi.interactive(self.signal, navigation_signal = self.signal,color=self.colors[i])
-            #Roi2D = Roi.interactive(self.signal,color=self.colors[i])
             self.ROI2DS.append(Roi2D)
             SpectrumRoi = interactive.interactive(Roi2D.sum, axis = (0,1))
-            #name=os.path.splitext(spimobject.metadata.General.original_filename)[0]
-            #SpectrumRoi.metadata.General.title=name+"ROI"+str(i)
-            self.ROIS1DSIGNALS.append(SpectrumRoi)
 
-            print("inside the roi creation")
+            self.ROIS1DSIGNALS.append(SpectrumRoi)
             theline=signal1d.Signal1DLine()
             theline.line_properties={'type':'line','color':self.colors[i]}
             #for some reason (wrong variable bounding???? anyways sounds like a scope issue), the next commented line does not work
@@ -190,12 +191,11 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             theline.autoscale = True
             self.LINES.append(theline)
             self.LINES[i].data_function=self.DATAFUNCTIONS[i]
-            sf.add_line(theline)
+            self.signal_plot.add_line(theline)
             theline.plot_indices=True
             theline.plot()
             SpectrumRoi.events.data_changed.connect(self.LINES[i].update,kwargs=[])
-
-
+            #SpectrumRoi.events.data_changed.connect(print_result,kwargs=[])
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":
