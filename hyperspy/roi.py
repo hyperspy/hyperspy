@@ -529,6 +529,18 @@ class Point1DROI(BasePointROI):
 
     """Selects a single point in a 1D space. The coordinate of the point in the
     1D space is stored in the 'value' trait.
+
+    `Point1DROI` behaves like a one-element tuple containing the value of `value`.
+
+
+    Example
+    -------
+
+    >>> roi = hs.roi.Point1DROI(0.5) 
+    >>> value, = roi
+    >>> print(value)
+    0.5
+
     """
     value = t.CFloat(t.Undefined)
     _ndim = 1
@@ -546,6 +558,9 @@ class Point1DROI(BasePointROI):
     def _get_ranges(self):
         ranges = ((self.value,),)
         return ranges
+
+    def __getitem__(self, i):
+        return (self.value,)[i]
 
     def _set_from_widget(self, widget):
         self.value = widget.position[0]
@@ -573,6 +588,19 @@ class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
     the 2D space are stored in the traits 'x' and 'y'.
+
+    `Point2DROI` behaves like a tuple containing the coordinates
+    of the point `(x, y)`.
+
+
+    Example
+    -------
+
+    >>> roi = hs.roi.Point2DROI(3, 5)
+    >>> x, y = roi
+    >>> print(x, y)
+    3 5
+
     """
     x, y = (t.CFloat(t.Undefined),) * 2
     _ndim = 2
@@ -594,6 +622,9 @@ class Point2DROI(BasePointROI):
         ranges = ((self.x,), (self.y,),)
         return ranges
 
+    def __getitem__(self, i):
+        return (self.x, self.y)[i]
+
     def _set_from_widget(self, widget):
         self.x, self.y = widget.position
 
@@ -614,6 +645,17 @@ class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
     the 1D space are stored in the traits 'left' and 'right'.
+
+    `SpanROI` behaves like a tuple containing the left and right values.
+
+    Example
+    -------
+
+    >>> roi = hs.roi.SpanROI(-3, 5)
+    >>> left, right = roi
+    >>> print(left, right)
+    3 5
+
     """
     left, right = (t.CFloat(t.Undefined),) * 2
     _ndim = 1
@@ -645,6 +687,9 @@ class SpanROI(BaseInteractiveROI):
         ranges = ((self.left, self.right),)
         return ranges
 
+    def __getitem__(self, i):
+        return (self.left, self.right)[i]
+
     def _set_from_widget(self, widget):
         value = (widget.position[0], widget.position[0] + widget.size[0])
         self.left, self.right = value
@@ -675,6 +720,16 @@ class RectangularROI(BaseInteractiveROI):
     the 2D space are stored in the traits 'left', 'right', 'top' and 'bottom'.
     Convenience properties 'x', 'y', 'width' and 'height' are also available,
     but cannot be used for initialization.
+
+    `RectangularROI` behaves like a tuple containing `(left, right, top, bottom)`.
+
+    Example
+    -------
+
+    >>> roi = hs.roi.RectangularROI(left=0, right=10, top=20, bottom=20.5)
+    >>> left, right, top, bottom = roi
+    >>> print(left, right, top, bottom)
+    0 10 20 20.5
     """
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -784,6 +839,9 @@ class RectangularROI(BaseInteractiveROI):
     def _get_ranges(self):
         ranges = ((self.left, self.right), (self.top, self.bottom),)
         return ranges
+
+    def __getitem__(self, i):
+        return (self.left, self.right, self.top, self.bottom)[i]
 
     def _set_from_widget(self, widget):
         p = np.array(widget.position)
