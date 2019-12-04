@@ -339,9 +339,9 @@ def test_rgba16():
     assert (s.data == data).all()
 
 def test_nonlinearaxis():
-    axis = DataAxis(axis = 1/np.arange(data.size), navigate=False)
-    s = Signal1D(data, axes=(axis.get_axis_dictionary(), ))
-    s.save('tmp.hdf5', overwrite=True)
+    axis = DataAxis(axis = 1/np.arange(data.size), navigate = False)
+    s = Signal1D(data, axes = (axis.get_axis_dictionary(), ))
+    s.save('tmp.hdf5', overwrite = True)
     s2 = load('tmp.hdf5')
     np.testing.assert_array_almost_equal(s.axes_manager[0].axis, 
                                          s2.axes_manager[0].axis)

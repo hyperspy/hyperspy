@@ -23,6 +23,7 @@ import pytest
 from unittest.mock import patch
 
 from hyperspy.signals import Signal1D
+from hyperspy.axes import DataAxis
 
 
 DIRPATH = os.path.dirname(__file__)
@@ -85,3 +86,23 @@ class TestIOOverwriting:
 
     def teardown_method(self, method):
         self._clean_file()
+
+class TestNonLinearAxisCheck:
+
+    def setup_method(self, method):
+        axis = DataAxis(axis = 1/np.arange(10), navigate = False)
+        self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(), ))
+        # make sure we start from a clean state
+    
+    def test_io_nonlinear(self):
+        assert(self.s.axes_manager[0].is_linear == False)
+        self.s.save('tmp.hspy', overwrite = True)
+        with pytest.raises(OSError):
+            self.s.save('tmp.msa', overwrite = True)
+
+    def teardown_method(self):
+        if os.path.exists('tmp.hspy'):
+            os.remove('tmp.hspy')
+        if os.path.exists('tmp.msa'):
+            os.remove('tmp.msa')
+            

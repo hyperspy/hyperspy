@@ -1237,10 +1237,10 @@ class AxesManager(t.HasTraits):
 
     @property
     def all_linear(self):
-        if all([axis.is_linear for axis in self._axes]):
-            return 'True'
+        if any([axis.is_linear == False for axis in self._axes]):
+            return False
         else:
-            return 'False'
+            return True
             
 
     def remove(self, axes):
