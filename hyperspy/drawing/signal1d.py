@@ -39,7 +39,7 @@ _logger = logging.getLogger(__name__)
 class Signal1DFigure(BlittedFigure):
 
     """
-    Signal1DFigure has also an 'axis' property that has to be properly defined avec initialization
+    Signal1DFigure has also an 'axis' property that has to be properly defined at initialization
     """
 
     def __init__(self, title=""):
@@ -96,17 +96,22 @@ class Signal1DFigure(BlittedFigure):
 
     def add_line(self, line, ax='left'):
 
+
+
         if ax == 'left':
-           #largely inspired from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
             line.ax = self.ax.twinx()
-            line.ax.hspy_fig = self
-            line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
+       #largely inspired from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
+
             line.ax.spines["right"].set_position(("axes", self.spine_spacing))
             self.spine_spacing+=0.15
             line.exponent_position=self.spine_spacing
-            self.make_patch_spines_invisible(line.ax)
+            #self.make_patch_spines_invisible(line.ax)
 
             line.ax.spines["right"].set_visible(True)
+            line.ax.hspy_fig = self
+            #you need to change the figure ax to the last line; otherwise, you might add a ROI to the wrong ax, then it would be responsive form the UI
+            self.ax=line.ax
+            line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             line.ax.ticklabel_format(axis='y', style='sci',scilimits=(0,0),useOffset=True)
             line.ax.yaxis.label.set_color(line.color)
             line.ax.tick_params(axis='y', colors=line.color)
@@ -136,7 +141,7 @@ class Signal1DFigure(BlittedFigure):
             if rgba_color in self._color_cycles[line.type].color_cycle:
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
-        self.ax.figure.canvas.draw_idle()
+        self.ax.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -380,7 +385,9 @@ class Signal1DLine(object):
                                      fontsize=12,
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
+        #self.axbackground = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
         self.ax.figure.canvas.draw_idle()
+
 
 
 
@@ -470,14 +477,32 @@ class Signal1DLine(object):
                 #In case the solution with blit does not work... use only draw_idle!
                 #self.ax.figure.canvas.draw_idle()
 
-                #the following seems to work, but I have no idea why!
+                #the following seems to work (not sure why, but the following order of actions have to be kept this way)
+                #note that the axbackground should be initialized when the corresponding ROI widget is selected
+                #otherwise we have the wrong background displayed until the roi is released
+                #this probably requires modifying roi.BaseInteractiveROI to add a "on_selected" event
+
+                #if we add the next line, it is slower still workable, and the shadow disseapears...
+                #self.ax.figure.canvas.draw_idle()
+
 
                 self.axbackground = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
                 self.ax.draw_artist(self.line)
                 self.ax.figure.canvas.blit(self.ax.bbox)
+
                 self.ax.figure.canvas.restore_region(self.axbackground)
+                #don't forget the flush_events here...
                 self.ax.figure.canvas.flush_events()
                 self.ax.figure.canvas.draw_idle()
+
+
+                #the following is a copy of a working version
+                #self.axbackground = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
+                #self.ax.draw_artist(self.line)
+                #self.ax.figure.canvas.blit(self.ax.bbox)
+                #self.ax.figure.canvas.restore_region(self.axbackground)
+                #self.ax.figure.canvas.flush_events()
+                #self.ax.figure.canvas.draw_idle()
 
 
             else:

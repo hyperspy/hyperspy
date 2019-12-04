@@ -46,8 +46,8 @@ class MPL_HyperExplorer(object):
         self.signal_plot = None
         self.navigator_plot = None
         self.axis = None
-        self.pointer = None
-        self._pointer_nav_dim = None
+        # self.pointer = None
+        # self._pointer_nav_dim = None
 
     def plot_signal(self):
         # This method should be implemented by the subclasses.
@@ -103,7 +103,7 @@ class MPL_HyperExplorer(object):
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()
-            self.pointer.set_mpl_ax(sf.ax)
+            #self.pointer.set_mpl_ax(sf.ax)
             if self.axes_manager.navigation_dimension > 1:
                 self._get_navigation_sliders()
                 for axis in self.axes_manager.navigation_axes[:-2]:
@@ -142,7 +142,7 @@ class MPL_HyperExplorer(object):
 
             imf.title = title
             imf.plot(**kwds)
-            self.pointer.set_mpl_ax(imf.ax)
+            #self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 
     def _get_navigation_sliders(self):
@@ -168,34 +168,34 @@ class MPL_HyperExplorer(object):
         for key in ['power_spectrum', 'fft_shift']:
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
-        if self.pointer is None:
-            pointer = self.assign_pointer()
-            if pointer is not None:
-                self.pointer = pointer(self.axes_manager)
-                self.pointer.color = 'red'
-                self.pointer.connect_navigate()
+        # if self.pointer is None:
+        #     pointer = self.assign_pointer()
+        #     if pointer is not None:
+        #         self.pointer = pointer(self.axes_manager)
+        #         self.pointer.color = 'red'
+        #         self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
         self.plot_signal(**kwargs)
 
-    def assign_pointer(self):
-        if self.navigator_data_function is None:
-            nav_dim = 0
-        elif self.navigator_data_function == "slider":
-            nav_dim = 0
-        else:
-            nav_dim = len(self.navigator_data_function().shape)
-
-        if nav_dim == 2:  # It is an image
-            if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.SquareWidget
-            else:  # It is the image of a "spectrum stack"
-                Pointer = widgets.HorizontalLineWidget
-        elif nav_dim == 1:  # It is a spectrum
-            Pointer = widgets.VerticalLineWidget
-        else:
-            Pointer = None
-        self._pointer_nav_dim = nav_dim
-        return Pointer
+    # def assign_pointer(self):
+    #     if self.navigator_data_function is None:
+    #         nav_dim = 0
+    #     elif self.navigator_data_function == "slider":
+    #         nav_dim = 0
+    #     else:
+    #         nav_dim = len(self.navigator_data_function().shape)
+    #
+    #     if nav_dim == 2:  # It is an image
+    #         if self.axes_manager.navigation_dimension > 1:
+    #             Pointer = widgets.SquareWidget
+    #         else:  # It is the image of a "spectrum stack"
+    #             Pointer = widgets.HorizontalLineWidget
+    #     elif nav_dim == 1:  # It is a spectrum
+    #         Pointer = widgets.VerticalLineWidget
+    #     else:
+    #         Pointer = None
+    #     self._pointer_nav_dim = nav_dim
+    #     return Pointer
 
     def _on_navigator_plot_closing(self):
         self.navigator_plot = None

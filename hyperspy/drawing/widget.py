@@ -86,6 +86,7 @@ class WidgetBase(object):
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
 
+
     def _get_axes(self):
         return self._axes
 
@@ -338,6 +339,7 @@ class DraggableWidgetBase(WidgetBase):
                 self.axes = self.axes_manager.signal_axes[0:1]
         else:
             self._pos = np.array([0.])
+
 
     def _set_axes(self, axes):
         super(DraggableWidgetBase, self)._set_axes(axes)
@@ -701,6 +703,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         if self.picked:
             self._drag_store = (self.position, self.size)
 
+
     def _apply_changes(self, old_size, old_position):
         """Evalutes whether the widget has been moved/resized, and triggers
         the correct events and updates the patch geometry. This function has
@@ -971,6 +974,7 @@ class ResizersMixin(object):
         `_onmousemove` to ease dragging code (prevent widget center/corner
         snapping to mouse).
         """
+
         if event.artist in self._resizer_handles:
             corner = self._resizer_handles.index(event.artist)
             self.resizer_picked = corner
