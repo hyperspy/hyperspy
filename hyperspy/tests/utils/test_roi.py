@@ -76,6 +76,10 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
+    def test_point1d_getitem(self):
+        r = Point1DROI(35)
+        assert (35,) == tuple(r)
+
     def test_point2d_image(self):
         s = self.s_i
         r = Point2DROI(35, 40)
@@ -95,6 +99,10 @@ class TestROIs():
                 s.axes_manager.signal_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[..., int(2 / scale), int(1 / scale)])
+
+    def test_point2d_getitem(self):
+        r = Point2DROI(1, 2)
+        assert tuple(r) == (1, 2)
 
     def test_span_spectrum_nav(self):
         s = self.s_s
@@ -139,6 +147,10 @@ class TestROIs():
         assert w2._pos[0] == 0
         assert w2._size[0] == 12
 
+    def test_spanroi_getitem(self):
+        r = SpanROI(15, 30)
+        assert tuple(r) == (15, 30)
+
     def test_widget_initialisation(self):
         s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         s.axes_manager[0].scale = 0.5
@@ -172,6 +184,10 @@ class TestROIs():
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
+
+    def test_rectroi_getitem(self):
+        r = RectangularROI(left=2.3, top=5.6, right=3.5, bottom=12.2)
+        assert tuple(r) == (2.3, 3.5, 5.6, 12.2)
 
     def test_rect_image_boundary_roi(self):
         s = self.s_i
