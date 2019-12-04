@@ -1671,8 +1671,19 @@ using them as tuples:
 * :py:class:`~.roi.RectangularROI`
 
 For example, the method :py:meth:`~._signals.signal2d.align2D` takes a ``roi``
-argument with the left, right, top, bottom coordinates of the ROI. Handifly,
+argument with the left, right, top, bottom coordinates of the ROI. Handily,
 we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+    >>> im = hs.signals.Signal2D(np.random.random((10,30,30))
+    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5))
+    >>> tuple(roi)
+    (2.0, 10.0, 0.0, 5.0)
+    >>> im.align2D(roi=roi)
+
 
 
 All ROIs have a :meth:`gui` method that displays an user interface if
