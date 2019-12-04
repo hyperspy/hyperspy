@@ -31,6 +31,8 @@ import pytest
 from distutils.version import LooseVersion
 
 from hyperspy.io import load
+from hyperspy.axes import DataAxis
+from hyperspy.axes import FunctionalDataAxis
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -336,7 +338,34 @@ def test_rgba16():
         "test_rgba16.npy"))
     assert (s.data == data).all()
 
-
+def test_nonlinearaxis():
+    axis = DataAxis(axis = 1/np.arange(data.size), navigate=False)
+    s = Signal1D(data, axes=(axis.get_axis_dictionary(), ))
+    s.save('tmp.hdf5', overwrite=True)
+    s2 = load('tmp.hdf5')
+    np.testing.assert_array_almost_equal(s.axes_manager[0].axis, 
+                                         s2.axes_manager[0].axis)
+    assert(s2.axes_manager[0].is_linear == False)
+    assert(s2.axes_manager[0].navigate == False)
+    assert(s2.axes_manager[0].size == data.size)
+    
+def test_functionalaxis():
+    ax0 = 300 + np.arange(data.size)
+    axis = FunctionalDataAxis(size=data.size, expression='a / x0',  a=1240, 
+                              x0=ax0[::-1], name = 'Energy', units = 'eV')
+    s = Signal1D(data[::-1], axes=(axis.get_axis_dictionary(), ))
+    s.save('tmp.hdf5', overwrite=True)
+    s2 = load('tmp.hdf5')
+    np.testing.assert_array_almost_equal(s.axes_manager[0].axis, 
+                                         s2.axes_manager[0].axis)
+    assert(s2.axes_manager[0].is_linear == False)
+    assert(s2.axes_manager[0].navigate == False)
+    assert(s2.axes_manager[0].size == data.size)
+    assert(s2.axes_manager[0].name == 'Energy')
+    assert(s2.axes_manager[0].units == 'eV')
+    assert(s2.axes_manager[0]._expression == 'a / x0')
+    assert(s2.axes_manager[0].a == 1240)
+    
 class TestLoadingOOMReadOnly:
 
     def setup_method(self, method):

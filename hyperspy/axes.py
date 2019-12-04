@@ -743,7 +743,10 @@ class FunctionalDataAxis(BaseDataAxis):
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        self.axis = self.function(x=np.arange(self.size), **kwargs)
+        if 'x0' in self.parameters_list:
+            self.axis = self.function(self.x0, **kwargs)
+        else:
+            self.axis = self.function(x=np.arange(self.size), **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
         self.size = len(self.axis)
@@ -806,11 +809,17 @@ class FunctionalDataAxis(BaseDataAxis):
         i1 = self._get_positive_index(self._get_index(start))
         i2 = self._get_positive_index(self._get_index(end))
 
-        # Not sure, if we should support unordered values or not...
+        # Create x0 array if it does not exist
+        if not 'x0' in self.parameters_list:
+            self.parameters_list.append('x0')
+            self.x0=np.arange(self.size)
+            self._expression = self._expression.replace('x','x0')
+            self.compile_function()
+        # Functional data axis needs to support reverse order
         if i1 > i2:
-            raise ValueError("The `start` value must be lower than the `end` "
-                             "value.")
-
+            i0 = i1
+            i1 = i2
+            i2 = i0
         self.x0 = self.x0[i1:i2]
         self.update_axis()
 
