@@ -1642,7 +1642,7 @@ order to increase responsiveness.
 
 
 ROIs can be used in place of slices when indexing and to define a
-signal range in functions taken a ``signal_range`` argument. For example:
+signal range in functions that take the ``signal_range`` argument. For example:
 
 .. code-block:: python
 
@@ -1656,6 +1656,23 @@ signal range in functions taken a ``signal_range`` argument. For example:
 
 .. versionadded:: 1.3
     :meth:`gui` method.
+
+.. versionadded:: 1.6
+    New :meth:`__getitem__` method for :py:class:`~.roi.Point1DROI`,
+    :py:class:`~.roi.Point2DROI`, :py:class:`~.roi.SpanROI` and
+    :py:class:`~.roi.RectangularROI`.
+
+In addition the following ROIs have a :meth:`__getitem__` method that enables
+using them as tuples:
+
+* :py:class:`~.roi.Point1DROI`
+* :py:class:`~.roi.Point2DROI`
+* :py:class:`~.roi.SpanROI`
+* :py:class:`~.roi.RectangularROI`
+
+For example, the method :py:meth:`~._signals.signal2d.align2D` takes a ``roi``
+argument with the left, right, top, bottom coordinates of the ROI. Handifly,
+we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
 
 
 All ROIs have a :meth:`gui` method that displays an user interface if
