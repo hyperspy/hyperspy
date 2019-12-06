@@ -1769,6 +1769,25 @@ underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
 algorithm described in :ref:`[Herraez] <Herraez>`.
 
 
+.. _complex.argand:
+
+Calculate and display Argand diagram
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes it is convenient to visualize a complex signal as a plot of its
+imaginary part versus real one. In this case so called Argand diagrams can
+be calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
+method, which returns the plot as a
+:py:class:`~._signals.complex_signal.Signal2D`. Optional arguments ``size``
+and ``display_range`` can be used to change the size (and therefore
+resolution) of the plot and to change the range for the display of the
+plot respectively. The last one is especially useful in order to zoom
+into specific regions of the plot or to limit the plot in case of noisy
+data points.
+
+An example of calculation of Aragand diagram is :ref:`shown for electron
+holography data <holo.argand-example>`.
+
 Add a linear phase ramp
 ^^^^^^^^^^^^^^^^^^^^^^^
 
