@@ -241,7 +241,8 @@ class EELSSpectrum_mixin:
             in integers, the range will be in index values. If given floats,
             the range will be in spectrum values. Useful if there are features
             in the spectrum which are more intense than the ZLP.
-            Default is searching in the whole signal.
+            Default is searching in the whole signal. Note that ROIs can be used
+            in place of a tuple.
         %s
         %s
 

@@ -775,7 +775,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If l and r are floats the `signal_range` will be in axis units (for
             example eV). If l and r are integers the `signal_range` will be in
             index units. When `signal_range` is "interactive" (default) the
-            range is selected using a GUI.
+            range is selected using a GUI. Note that ROIs can be used
+            in place of a tuple.
 
         Returns
         --------
