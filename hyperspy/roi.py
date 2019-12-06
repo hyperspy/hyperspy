@@ -238,6 +238,9 @@ class BaseROI(t.HasTraits):
 
         return axes_out
 
+    def __getitem__(self, *args, **kwargs):
+        return self._tuple.__getitem__(*args, **kwargs)
+
 
 def _get_mpl_ax(plot, axes):
     """
@@ -501,7 +504,7 @@ class BasePointROI(BaseInteractiveROI):
 
 
 def guess_vertical_or_horizontal(axes, signal):
-    # Figure out whether to use horizontal or veritcal line:
+    # Figure out whether to use horizontal or vertical line:
     if axes[0].navigate:
         plotdim = len(signal._plot.navigator_data_function().shape)
         axdim = signal.axes_manager.navigation_dimension
@@ -548,6 +551,7 @@ class Point1DROI(BasePointROI):
     def __init__(self, value):
         super(Point1DROI, self).__init__()
         self.value = value
+        self._tuple = (self.value,)
 
     def is_valid(self):
         return self.value != t.Undefined
@@ -559,8 +563,6 @@ class Point1DROI(BasePointROI):
         ranges = ((self.value,),)
         return ranges
 
-    def __getitem__(self, i):
-        return (self.value,)[i]
 
     def _set_from_widget(self, widget):
         self.value = widget.position[0]
@@ -608,6 +610,7 @@ class Point2DROI(BasePointROI):
     def __init__(self, x, y):
         super(Point2DROI, self).__init__()
         self.x, self.y = x, y
+        self._tuple = (self.x, self.y)
 
     def is_valid(self):
         return t.Undefined not in (self.x, self.y)
@@ -621,9 +624,6 @@ class Point2DROI(BasePointROI):
     def _get_ranges(self):
         ranges = ((self.x,), (self.y,),)
         return ranges
-
-    def __getitem__(self, i):
-        return (self.x, self.y)[i]
 
     def _set_from_widget(self, widget):
         self.x, self.y = widget.position
@@ -664,6 +664,8 @@ class SpanROI(BaseInteractiveROI):
         super(SpanROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
         self.left, self.right = left, right
+        self._tuple = (self.left, self.right)
+
 
     def is_valid(self):
         return (t.Undefined not in (self.left, self.right) and
@@ -686,9 +688,6 @@ class SpanROI(BaseInteractiveROI):
     def _get_ranges(self):
         ranges = ((self.left, self.right),)
         return ranges
-
-    def __getitem__(self, i):
-        return (self.left, self.right)[i]
 
     def _set_from_widget(self, widget):
         value = (widget.position[0], widget.position[0] + widget.size[0])
@@ -738,6 +737,7 @@ class RectangularROI(BaseInteractiveROI):
         super(RectangularROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
         self.top, self.bottom, self.left, self.right = top, bottom, left, right
+        self._tuple = (left, right, top, bottom)
 
     def is_valid(self):
         return (t.Undefined not in (self.top, self.bottom,
@@ -840,9 +840,6 @@ class RectangularROI(BaseInteractiveROI):
         ranges = ((self.left, self.right), (self.top, self.bottom),)
         return ranges
 
-    def __getitem__(self, i):
-        return (self.left, self.right, self.top, self.bottom)[i]
-
     def _set_from_widget(self, widget):
         p = np.array(widget.position)
         s = np.array(widget.size)
@@ -876,6 +873,9 @@ class CircleROI(BaseInteractiveROI):
         self.cx, self.cy, self.r = cx, cy, r
         if r_inner:
             self.r_inner = r_inner
+            self._tuple = (self.cx, self.cy, self.r, self.r_inner)
+        else:
+            self._tuple = (self.cx, self.cy, self.r)
 
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and
@@ -940,6 +940,7 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
+
 
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
@@ -1037,6 +1038,7 @@ class Line2DROI(BaseInteractiveROI):
         super(Line2DROI, self).__init__()
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
+        self._tuple = (self.x1, self.y1, self.x2, self.y2)
 
     def is_valid(self):
         return t.Undefined not in (self.x1, self.y1, self.x2, self.y2)
