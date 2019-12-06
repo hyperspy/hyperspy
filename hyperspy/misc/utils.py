@@ -1074,14 +1074,6 @@ def iterable_not_string(thing):
         not isinstance(thing, str)
 
 
-def signal_range_from_roi(signal_range):
-    from hyperspy.roi import SpanROI
-    if isinstance(signal_range, SpanROI):
-        return (signal_range.left, signal_range.right)
-    else:
-        return signal_range
-
-
 def deprecation_warning(msg):
     warnings.warn(msg, VisibleDeprecationWarning)
 
