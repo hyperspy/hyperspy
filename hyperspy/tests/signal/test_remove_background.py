@@ -53,6 +53,35 @@ class TestRemoveBackground1DGaussian:
 
 
 @lazifyTestClass
+class TestRemoveBackground1DLorentzian:
+
+    def setup_method(self, method):
+        lorentzian = components1d.Lorentzian()
+        lorentzian.A.value = 10
+        lorentzian.centre.value = 10
+        lorentzian.gamma.value = 1
+        self.signal = signals.Signal1D(
+            lorentzian.function(np.arange(0, 20, 0.03)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+
+    def test_background_remove_lorentzian(self):
+        # Fast is not accurate
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Lorentzian',
+            show_progressbar=None)
+        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
+
+    def test_background_remove_lorentzian_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Lorentzian',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+
+@lazifyTestClass
 class TestRemoveBackground1DPowerLaw:
 
     def setup_method(self, method):
@@ -113,32 +142,34 @@ class TestRemoveBackground1DPowerLaw:
 
 
 @lazifyTestClass
-class TestRemoveBackground1DLorentzian:
+class TestRemoveBackground1DSkewNormal:
 
     def setup_method(self, method):
-        lorentzian = components1d.Lorentzian()
-        lorentzian.A.value = 10
-        lorentzian.centre.value = 10
-        lorentzian.gamma.value = 1
+        skewnormal = components1d.SkewNormal()
+        skewnormal.A.value = 3
+        skewnormal.x0.value = 1
+        skewnormal.scale.value = 2
+        skewnormal.shape.value = 10
         self.signal = signals.Signal1D(
-            lorentzian.function(np.arange(0, 20, 0.03)))
+            skewnormal.function(np.arange(0, 10, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
         self.signal.metadata.Signal.binned = False
 
-    def test_background_remove_lorentzian(self):
+    def test_background_remove_skewnormal(self):
         # Fast is not accurate
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='Lorentzian',
+            background_type='SkewNormal',
             show_progressbar=None)
         assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
 
-    def test_background_remove_lorentzian_full_fit(self):
+    def test_background_remove_skewnormal_full_fit(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='Lorentzian',
+            background_type='SkewNormal',
             fast=False)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
 
 @lazifyTestClass
 class TestRemoveBackground1DVoigt:
@@ -167,33 +198,6 @@ class TestRemoveBackground1DVoigt:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Voigt',
-
-@lazifyTestClass
-class TestRemoveBackground1DSkewNormal:
-
-    def setup_method(self, method):
-        lorentzian = components1d.SkewNormal()
-        lorentzian.A.value = 3
-        lorentzian.x0.value = 1
-        lorentzian.scale.value = 2
-        lorentzian.shape.value = 10
-        self.signal = signals.Signal1D(
-            lorentzian.function(np.arange(0, 10, 0.01)))
-        self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
-
-    def test_background_remove_skewnormal(self):
-        # Fast is not accurate
-        s1 = self.signal.remove_background(
-            signal_range=(None, None),
-            background_type='SkewNormal',
-            show_progressbar=None)
-        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
-
-    def test_background_remove_lorentzian_full_fit(self):
-        s1 = self.signal.remove_background(
-            signal_range=(None, None),
-            background_type='SkewNormal',
             fast=False)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
@@ -216,8 +220,8 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
 @pytest.mark.parametrize('background_type',
-                         ['Power Law', 'Polynomial', 'Offset', 'Gaussian',
-                          'Lorentzian', 'SkewNormal', 'Voigt'])
+                         ['Gaussian', 'Lorentzian', 'Polynomial', 'Power Law',
+                          'Offset', 'SkewNormal', 'Voigt'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,
@@ -225,14 +229,15 @@ def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       plot_remainder,
                                                       background_type):
     if nav_dim == 0:
-        if background_type == ('Voigt'): # speeds up the test
+        if background_type == ('Voigt'):  # speeds up the test
             s = signals.Signal1D(np.hstack((np.arange(10, 50),
                                             np.arange(10, 50)[::-1])))
-        else: 
+        else:
             s = signals.Signal1D(np.arange(10, 100)[::-1])
     else:
-        if background_type == ('Voigt'): # avoids warning
-            s = signals.Signal1D(np.tile(np.exp(np.arange(0, 100)[::-1]),(2, 1)))
+        if background_type == ('Voigt'):  # avoids warning
+            s = signals.Signal1D(
+                np.tile(np.exp(np.arange(0, 100)[::-1]), (2, 1)))
         else:
             s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
     s.axes_manager[0].name = 'axis0'
