@@ -21,6 +21,7 @@ import copy
 
 import numpy as np
 from traits.api import Undefined
+import matplotlib.pyplot as plt
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 
@@ -44,12 +45,14 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self._auto_update_plot = True
         self.signal=signal
         self.number_of_rois=number_of_rois
-        self.number_of_slices=1
+        self.number_of_slices=self.number_of_rois# the idea here is that you may want 1 filtered map per spatio-spectral feature
         self.ROIS=[]# a list of the ROIS pertaining to the hyperimage
         self.ROI2DS=[]# a list of the sub-hyperimages pertaining to the hyperimage
         self.LINES=[]#a list of all the Hyperspy lines. ROIs and Lines should be kept synchronized
         self.ROIS1DSIGNALS=[]#  a list of the summed signal from the ROIs
         self.DATAFUNCTIONS=[]# a list of callback function for the lines (aka data_functions)
+        self.MAPROIS=[]# a list of filtered maps
+        self.FILTERED_MAPS_PLOT=[]#list of plots with the filtered maps
         self.colors=utils.ColorCycle()._color_cycle#colors will have 7 values, so if you want more than 7
 
     @property
@@ -182,10 +185,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         #toto=self.signal.inav[0:1,0:1].squeeze().squeeze()
         #toto.plot()
         #NB: at the moment, only one slice
-        i=0
-        left=spectrumleft+i*slicewidth
-        right=left+slicewidth
-        Roi=roi.SpanROI(left=left,right=right)
+
         #in the following, we are creating a "fake" MPLhse
         #it is an hack to make possible to draw and use a SpanROI to select spectral ranges
         #probably the good solution would be to subclass MPLhse or MPhe...
@@ -199,12 +199,24 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             return self.ROIS1DSIGNALS[-1].data
         self.ROIS1DSIGNALS[-1]._plot.signal_data_function=toto
         self.ROIS1DSIGNALS[-1]._plot.plot_navigation=self
-        Roi1D=Roi.interactive(self.signal.as_signal2D((0,1)),navigation_signal=self.ROIS1DSIGNALS[-1])
-        maproi=interactive.interactive(Roi1D.sum, axis = (0))
-        maproi.plot()
+
+        for i in range(self.number_of_slices):
+            left=spectrumleft+i*slicewidth
+            right=left+slicewidth
+            Roi=roi.SpanROI(left=left,right=right)
+            Roi1D=Roi.interactive(self.signal.as_signal2D((0,1)),navigation_signal=self.ROIS1DSIGNALS[-1],color=self.colors[i])
+            maproi=interactive.interactive(Roi1D.sum, axis = (0))
+            self.MAPROIS.append(maproi)
+            maproi.signal_title="Filtered map "+self.signal_title
+            maproi.plot()
+            self.FILTERED_MAPS_PLOT.append(maproi._plot.signal_plot)
+            for key,item in plt.gca().spines.items():
+                item.set_color(self.colors[i])
+                item.set_linewidth(5)
 
         for i in range(self.number_of_rois):
-            self.ROIS[i].interactive(self.signal, navigation_signal = maproi,color=self.colors[i])
+            for maproi in self.MAPROIS:
+                self.ROIS[i].interactive(self.signal, navigation_signal = maproi,color=self.colors[i])
 
 
     def create_rois_and_lines(self):

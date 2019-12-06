@@ -97,24 +97,36 @@ class Signal1DFigure(BlittedFigure):
     def add_line(self, line, ax='left'):
 
 
-
+        # i am not using the "right" axis anymore, but keep it here for backward compatibality
         if ax == 'left':
-            line.ax = self.ax.twinx()
+            if not self.ax_lines:
+                line.ax=self.ax
+                line.exponent_position=0
+                line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
+            else:
+                line.ax = self.ax.twinx()
        #largely inspired from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
 
-            line.ax.spines["right"].set_position(("axes", self.spine_spacing))
-            self.spine_spacing+=0.15
-            line.exponent_position=self.spine_spacing
-            #self.make_patch_spines_invisible(line.ax)
+                line.ax.spines["right"].set_position(("axes", self.spine_spacing))
 
-            line.ax.spines["right"].set_visible(True)
+                line.exponent_position=self.spine_spacing
+                line.ax.yaxis.offsetText.set_position((self.spine_spacing,1))
+                self.spine_spacing+=0.15
+                #position the exponent at the right position
+
+                self.make_patch_spines_invisible(line.ax)
+
+                line.ax.spines["right"].set_visible(True)
+            #line.ax.spines["right"]
             line.ax.hspy_fig = self
-            #you need to change the figure ax to the last line; otherwise, you might add a ROI to the wrong ax, then it would be responsive form the UI
-            self.ax=line.ax
+            #sometimes you need to change the figure ax to the last line; otherwise, you might add a ROI to the wrong ax, then it would be responsive form the UI
+            #obviously not now...
+            #self.ax=line.ax
             line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             line.ax.ticklabel_format(axis='y', style='sci',scilimits=(0,0),useOffset=True)
             line.ax.yaxis.label.set_color(line.color)
             line.ax.tick_params(axis='y', colors=line.color)
+
             if line.axes_manager is None:
                 line.axes_manager = self.axes_manager
             self.ax_lines.append(line)
