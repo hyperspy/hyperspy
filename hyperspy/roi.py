@@ -238,9 +238,6 @@ class BaseROI(t.HasTraits):
 
         return axes_out
 
-    def __getitem__(self, *args, **kwargs):
-        return self._tuple.__getitem__(*args, **kwargs)
-
 
 def _get_mpl_ax(plot, axes):
     """
@@ -551,7 +548,11 @@ class Point1DROI(BasePointROI):
     def __init__(self, value):
         super(Point1DROI, self).__init__()
         self.value = value
-        self._tuple = (self.value,)
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.value,)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return self.value != t.Undefined
@@ -610,7 +611,11 @@ class Point2DROI(BasePointROI):
     def __init__(self, x, y):
         super(Point2DROI, self).__init__()
         self.x, self.y = x, y
-        self._tuple = (self.x, self.y)
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.x, self.y)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return t.Undefined not in (self.x, self.y)
@@ -664,7 +669,11 @@ class SpanROI(BaseInteractiveROI):
         super(SpanROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
         self.left, self.right = left, right
-        self._tuple = (self.left, self.right)
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.left, self.right)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
 
     def is_valid(self):
@@ -737,7 +746,11 @@ class RectangularROI(BaseInteractiveROI):
         super(RectangularROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
         self.top, self.bottom, self.left, self.right = top, bottom, left, right
-        self._tuple = (left, right, top, bottom)
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.left, self.right, self.top, self.bottom)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return (t.Undefined not in (self.top, self.bottom,
@@ -873,9 +886,14 @@ class CircleROI(BaseInteractiveROI):
         self.cx, self.cy, self.r = cx, cy, r
         if r_inner:
             self.r_inner = r_inner
-            self._tuple = (self.cx, self.cy, self.r, self.r_inner)
+
+    def __getitem__(self, *args, **kwargs):
+        if self.r_inner:
+            _tuple = (self.cx, self.cy, self.r, self.r_inner)
         else:
-            self._tuple = (self.cx, self.cy, self.r)
+            _tuple = (self.cx, self.cy, self.r)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and
@@ -1039,6 +1057,10 @@ class Line2DROI(BaseInteractiveROI):
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
         self._tuple = (self.x1, self.y1, self.x2, self.y2)
+
+    def __getitem__(self, *args, **kwargs):
+        return self._tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return t.Undefined not in (self.x1, self.y1, self.x2, self.y2)
