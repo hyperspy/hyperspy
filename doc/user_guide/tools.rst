@@ -1641,15 +1641,13 @@ order to increase responsiveness.
     signal range in functions taken a ``signal_range`` argument.
 
 
-ROIs can be used in place of slices when indexing and to define a
-signal range in functions that take the ``signal_range`` argument. For example:
+ROIs can be used in place of slices when indexing. For example:
 
 .. code-block:: python
 
     >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
-    >>> s.remove_background(signal_range=roi, background_type="Polynomial")
     >>> im = hs.datasets.example_signals.object_hologram()
     >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
     >>> imc = im.isig[roi]
@@ -1663,7 +1661,7 @@ signal range in functions that take the ``signal_range`` argument. For example:
     :py:class:`~.roi.RectangularROI`.
 
 In addition the following ROIs have a :meth:`__getitem__` method that enables
-using them as tuples:
+using them in place of tuples:
 
 * :py:class:`~.roi.Point1DROI`
 * :py:class:`~.roi.Point2DROI`
