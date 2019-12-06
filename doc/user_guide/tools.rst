@@ -1656,21 +1656,12 @@ ROIs can be used in place of slices when indexing. For example:
     :meth:`gui` method.
 
 .. versionadded:: 1.6
-    New :meth:`__getitem__` method for :py:class:`~.roi.Point1DROI`,
-    :py:class:`~.roi.Point2DROI`, :py:class:`~.roi.SpanROI` and
-    :py:class:`~.roi.RectangularROI`.
+    New :meth:`__getitem__` method for all ROIs.
 
-In addition the following ROIs have a :meth:`__getitem__` method that enables
-using them in place of tuples:
-
-* :py:class:`~.roi.Point1DROI`
-* :py:class:`~.roi.Point2DROI`
-* :py:class:`~.roi.SpanROI`
-* :py:class:`~.roi.RectangularROI`
-
-For example, the method :py:meth:`~._signals.signal2d.align2D` takes a ``roi``
-argument with the left, right, top, bottom coordinates of the ROI. Handily,
-we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+In addition the following all ROIs have a :meth:`__getitem__` method that enables
+using them in place of tuples. For example, the method :py:meth:`~._signals.signal2d.align2D` takes a
+ ``roi`` argument with the left, right, top, bottom coordinates of the ROI.
+ Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
 
 .. code-block:: python
 
