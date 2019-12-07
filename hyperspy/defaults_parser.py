@@ -138,11 +138,16 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.05,
-                                label='Saturated pixels',
-                                desc='Set the default saturated_pixels for '
-                                'plotting images.'
-                                )
+    vmin = t.CFloat(0.05,
+                    label='vmin x-th percentile',
+                    desc='Set the default vmin for plotting image using '
+                    'the x-th percentile.'
+                    )
+    vmax = t.CFloat(0.05,
+                    label='vmax x-th percentile',
+                    desc='Set the default vmax for plotting image using '
+                    'the x-th percentile.'
+                    )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )

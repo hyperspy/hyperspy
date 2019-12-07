@@ -546,7 +546,6 @@ class ImageContrastEditor(t.HasTraits):
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.1, 3.0, 1.0)
-    saturated_pixels = t.Range(0.0, 5.0, preferences.Plot.saturated_pixels)
     norm = t.Enum(
         'Linear',
         'Power',

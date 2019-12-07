@@ -91,13 +91,7 @@ PLOT2D_DOCSTRING = \
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds.
-            For example, the low and high bounds of a value of 1 are the 0.5%
-            and 99.5% percentiles. It must be in the [0, 100] range.
-            This is ignored if `vmin` or `vmax` is provided.
-            If None (default value), the value from the preferences is used.
-        vmin, vmax : scalar, optional
+        vmin, vmax : {scalar, str}, optional
             `vmin` and `vmax` are used to normalise the displayed data. It can
             be a float or a string. If string, it should be formatted as 'xth', 
             where 'x' must be an float in the [0, 100] range. 'x' is used to 

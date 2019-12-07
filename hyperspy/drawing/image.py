@@ -105,21 +105,6 @@ class ImagePlot(BlittedFigure):
         self.linscale = 0.1
         self._is_rgb = False
 
-    def _parse_vmin_vmax_user(self, value, attribute):
-        if value is None:
-            return
-        elif isinstance(value, float):
-            return value
-        elif isinstance(value, str):
-            if self._current_data is None:
-                self._update_data()
-            return np.nanpercentile(self._current_data,
-                                    float(value.split("th")[0]))
-        raise ValueError(f"{value} is not a valid for the {attribute} "
-                         "argument. A valid value must be a float or string "
-                         "formatted as 'xth', where x is an float between 0 "
-                         "and 100.")
-
     @property
     def vmax(self):
         if self._vmax_user is not None:
@@ -129,7 +114,7 @@ class ImagePlot(BlittedFigure):
 
     @vmax.setter
     def vmax(self, vmax):
-        self._vmax_user = self._parse_vmin_vmax_user(vmax, 'vmax')
+        self._vmax_user = vmax
 
     @property
     def vmin(self):
@@ -140,7 +125,7 @@ class ImagePlot(BlittedFigure):
 
     @vmin.setter
     def vmin(self, vmin):
-        self._vmin_user = self._parse_vmin_vmax_user(vmin, 'vmin')
+        self._vmin_user = vmin
 
     @property
     def axes_ticks(self):
@@ -198,11 +183,12 @@ class ImagePlot(BlittedFigure):
                         yaxis.axis[0] - yaxis.scale / 2.)
         self._calculate_aspect()
         if self.saturated_pixels is not None:
-            if self._vmin_user or self._vmax_user:
-                _logger.info("The 'saturated_pixels' is ignored because the ",
-                             "the 'vmin' or the 'vmax' argument is set.")
-        else:
-            self.saturated_pixels = preferences.Plot.saturated_pixels
+            _logger.warning("`saturated_pixels` is deprecated and will be "
+                            "removed in 2.0. Please use `vmin` and `vmax` "
+                            "instead.")
+            self._vmin_user = self.saturated_pixels / 2
+            self._vmax_user = 100 - self.saturated_pixels / 2
+
 
     def _calculate_aspect(self):
         xaxis = self.xaxis
@@ -227,7 +213,7 @@ class ImagePlot(BlittedFigure):
             return
         with ignore_warning(category=RuntimeWarning):
             # In case of "All-NaN slices"
-            vmin, vmax = utils.contrast_stretching(data, self.saturated_pixels)
+            vmin, vmax = utils.contrast_stretching(data, self.vmin, self.vmax)
         if vmin == np.nan:
             vmin = None
         if vmax == np.nan:
@@ -281,11 +267,6 @@ class ImagePlot(BlittedFigure):
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.data_function_kwargs = data_function_kwargs
-        # We need to set the vmin and vmax value now (and not before) because
-        # it may depends on self.data_function_kwargs attribute
-        for attribute in ['vmin', 'vmax']:
-            if attribute in kwargs.keys():
-                setattr(self, attribute, kwargs.pop(attribute))
         self.configure()
         if self.figure is None:
             self.create_figure()
@@ -406,12 +387,17 @@ class ImagePlot(BlittedFigure):
             self.ax.format_coord = format_coord
 
             old_vmin, old_vmax = self.vmin, self.vmax
+            for attribute in ['vmin', 'vmax']:
+                if attribute in kwargs.keys():
+                    setattr(self, attribute, kwargs.pop(attribute))
+
             self.optimize_contrast(data, optimize_contrast)
             # Use _vmin_auto and _vmax_auto if optimize_contrast is True
             if optimize_contrast:
                 vmin, vmax = self._vmin_auto, self._vmax_auto
             else:
-                vmin, vmax = self.vmin, self.vmax
+                vmin, vmax = utils.contrast_stretching(
+                    data, self.vmin, self.vmax)
             # If there is an image, any of the contrast bounds have changed and
             # the new contrast bounds are not the same redraw the colorbar.
             if (ims and (old_vmin != vmin or old_vmax != vmax) and
@@ -493,8 +479,6 @@ class ImagePlot(BlittedFigure):
                         'vmin': vmin,
                         'vmax': vmax,
                         'norm': norm}
-
-                    
                 )
             new_args.update(kwargs)
             self.ax.imshow(data,

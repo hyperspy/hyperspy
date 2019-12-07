@@ -378,7 +378,7 @@ def test_plot_images_single_image():
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="0.05th")
     return plt.gcf()
 
 
@@ -388,7 +388,7 @@ def test_plot_images_single_image_stack():
     image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="0.05th")
     return plt.gcf()
 
 
@@ -416,16 +416,19 @@ def test_plot_images_multi_signal_w_axes_replot():
     return f
 
 
-@pytest.mark.parametrize("saturated_pixels", [5.0, [0.0, 20.0, 40.0],
-                                              [10.0, 20.0], [10.0, None, 20.0]])
+@pytest.mark.parametrize("percentile", ["2.5th",
+                                        ["0th", "10th", "20th"],
+                                        ["5th", "10th"],
+                                        ["5th", None, "10th"]])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_saturated_pixels(saturated_pixels):
+def test_plot_images_vmin_vmax_percentile(percentile):
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
     ax = hs.plot.plot_images([image0, image0, image0],
-                             saturated_pixels=saturated_pixels,
+                             vmin=percentile,
+                             vmax=percentile,
                              axes_decor='off')
     return ax[0].figure
 
