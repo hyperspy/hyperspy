@@ -42,9 +42,6 @@ from hyperspy.defaults_parser import preferences
 
 _logger = logging.getLogger(__name__)
 
-class toto(object):
-    def __init__(self):
-        pass
 
 
 class SpanSelectorInSignal1D(t.HasTraits):

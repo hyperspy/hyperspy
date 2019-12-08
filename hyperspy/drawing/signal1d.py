@@ -68,7 +68,7 @@ class Signal1DFigure(BlittedFigure):
         self.spine_spacing=1
 
     def create_axis(self):
-        self.ax = self.figure.add_subplot(111)
+        self.ax = self.figure.add_subplot(111,picker=True)
         animated = self.figure.canvas.supports_blit
         self.ax.yaxis.set_animated(animated)
         self.ax.xaxis.set_animated(animated)
@@ -97,14 +97,17 @@ class Signal1DFigure(BlittedFigure):
     def add_line(self, line, ax='left'):
 
 
-        # i am not using the "right" axis anymore, but keep it here for backward compatibality
+        # i am not using the "right" axis anymore, but keep it here for backward compatibility
         if ax == 'left':
             if not self.ax_lines:
                 line.ax=self.ax
                 line.exponent_position=0
                 line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             else:
-                line.ax = self.ax.twinx()
+                line.ax = self.ax.twinx()# twinx is difficult with picker use from mpl_toolkits.axes_grid1 import host_subplot instead
+                #see https://github.com/matplotlib/matplotlib/issues/5581
+                #see snippet at the end of the file
+
        #largely inspired from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
 
                 line.ax.spines["right"].set_position(("axes", self.spine_spacing))
@@ -583,3 +586,29 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         ax.step(x, loadings[idx])
     else:
         raise ValueError('View not supported')
+
+# #snippet for an alternative to twinx that would support picking with multiple axes
+# from matplotlib import pyplot as plt
+# from mpl_toolkits.axes_grid1 import host_subplot
+# from numpy import arange, sin,cos, pi
+#
+# host_a = host_subplot(111)
+# para_a = host_a.twin()
+# para2=host_a.twin()
+#
+#
+# t = arange(0.0, 3.0, 0.01)
+# s = sin(2*pi*t)
+# u=cos(2*pi*t)
+# v=s*u
+# line, = host_a.plot(t, s, picker=5)
+# host_a.yaxis.label.set_color('red')
+#
+# otherline,=para_a.plot(t, u, picker=5)
+# thirdline,=para2.plot(t, v, picker=5)
+# host_a.spines['left'].set_picker(5)
+#
+# def onpick(event):
+#     print("picked")
+# plt.gcf().canvas.mpl_connect('pick_event', onpick)
+#
