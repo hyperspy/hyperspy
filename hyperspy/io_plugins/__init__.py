@@ -24,8 +24,8 @@ from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
                                  protochips, edax, bruker)
 
 
-io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
-              blockfile, dens, emd, protochips, edax, bruker]
+io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, 
+              semper_unf, blockfile, dens, emd, protochips, edax, bruker]
 
 
 _logger = logging.getLogger(__name__)
@@ -59,6 +59,14 @@ try:
 except ImportError:
     _logger.info('The mrcz IO plugin is not available because '
                  'the mrcz Python package is not installed.')
+
+try:
+    from hyperspy.io_plugins import nexus
+    io_plugins.append(nexus)
+except ImportError:
+    _logger.info('The nexus IO plugin is not available because '
+                 'the nexusformat Python package is not installed.')
+
 default_write_ext = set()
 for plugin in io_plugins:
     if plugin.writes:
