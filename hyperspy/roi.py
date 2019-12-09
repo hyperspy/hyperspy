@@ -1056,10 +1056,13 @@ class Line2DROI(BaseInteractiveROI):
         super(Line2DROI, self).__init__()
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
-        self._tuple = (self.x1, self.y1, self.x2, self.y2)
 
     def __getitem__(self, *args, **kwargs):
-        return self._tuple.__getitem__(*args, **kwargs)
+        if self.linewidth:
+            _tuple = (self.x1, self.y1, self.x2, self.y2, self.linewidth)
+        else:
+            _tuple = (self.x1, self.y1, self.x2, self.y2)
+        return _tuple.__getitem__(*args, **kwargs)
 
 
     def is_valid(self):
