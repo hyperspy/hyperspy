@@ -876,6 +876,13 @@ class RectangularROI(BaseInteractiveROI):
 
 @add_gui_method(toolkey="hyperspy.CircleROI")
 class CircleROI(BaseInteractiveROI):
+    """Selects a circular or annular region in a 2D space. The coordinates of
+    the center of the circle are stored in the 'cx' and 'cy' attributes. The
+    radious in the `r` attribute. If an internal radious is defined using the
+    `r_inner` attribute, then an annular region is selected instead.
+    `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
+    cy, r, r_inner)` when `r_inner` is not `None`.
+    """
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -1048,6 +1055,11 @@ class CircleROI(BaseInteractiveROI):
 
 @add_gui_method(toolkey="hyperspy.Line2DROI")
 class Line2DROI(BaseInteractiveROI):
+    """Selects a line of a given width in 2D space. The coordinates of the end points of the line are stored in the `x1`, `y1`, `x2`, `y2` attributes.
+    The length is available in the `length` attribute and the method `angle` computes the angle of the line with the axes.
+
+    `Line2DROI` can be used in place of a tuple containing the coordinates of the two end-points of the line and the linewdith `(x1, y1, x2, y2, linewidth)`.
+    """
 
     x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
     _ndim = 2
@@ -1058,10 +1070,8 @@ class Line2DROI(BaseInteractiveROI):
         self.linewidth = linewidth
 
     def __getitem__(self, *args, **kwargs):
-        if self.linewidth:
-            _tuple = (self.x1, self.y1, self.x2, self.y2, self.linewidth)
-        else:
-            _tuple = (self.x1, self.y1, self.x2, self.y2)
+        _tuple = (self.x1, self.y1, self.x2, self.y2, self.linewidth)
+        _tuple = (self.x1, self.y1, self.x2, self.y2)
         return _tuple.__getitem__(*args, **kwargs)
 
 
