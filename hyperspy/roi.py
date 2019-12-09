@@ -530,7 +530,7 @@ class Point1DROI(BasePointROI):
     """Selects a single point in a 1D space. The coordinate of the point in the
     1D space is stored in the 'value' trait.
 
-    `Point1DROI` behaves like a one-element tuple containing the value of `value`.
+    `Point1DROI` can be used in place of a tuple containing the value of `value`.
 
 
     Example
@@ -592,7 +592,7 @@ class Point2DROI(BasePointROI):
     """Selects a single point in a 2D space. The coordinates of the point in
     the 2D space are stored in the traits 'x' and 'y'.
 
-    `Point2DROI` behaves like a tuple containing the coordinates
+    `Point2DROI` can be used in place of a tuple containing the coordinates
     of the point `(x, y)`.
 
 
@@ -651,7 +651,7 @@ class SpanROI(BaseInteractiveROI):
     """Selects a range in a 1D space. The coordinates of the range in
     the 1D space are stored in the traits 'left' and 'right'.
 
-    `SpanROI` behaves like a tuple containing the left and right values.
+    `SpanROI` can be used in place of a tuple containing the left and right values.
 
     Example
     -------
@@ -729,7 +729,7 @@ class RectangularROI(BaseInteractiveROI):
     Convenience properties 'x', 'y', 'width' and 'height' are also available,
     but cannot be used for initialization.
 
-    `RectangularROI` behaves like a tuple containing `(left, right, top, bottom)`.
+    `RectangularROI` can be used in place of a tuple containing `(left, right, top, bottom)`.
 
     Example
     -------
