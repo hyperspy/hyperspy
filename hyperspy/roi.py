@@ -895,7 +895,7 @@ class CircleROI(BaseInteractiveROI):
             self.r_inner = r_inner
 
     def __getitem__(self, *args, **kwargs):
-        if self.r_inner:
+        if self.r_inner and self.r_inner is not t.Undefined:
             _tuple = (self.cx, self.cy, self.r, self.r_inner)
         else:
             _tuple = (self.cx, self.cy, self.r)
@@ -1071,7 +1071,6 @@ class Line2DROI(BaseInteractiveROI):
 
     def __getitem__(self, *args, **kwargs):
         _tuple = (self.x1, self.y1, self.x2, self.y2, self.linewidth)
-        _tuple = (self.x1, self.y1, self.x2, self.y2)
         return _tuple.__getitem__(*args, **kwargs)
 
 

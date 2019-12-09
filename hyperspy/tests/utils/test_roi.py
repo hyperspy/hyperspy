@@ -296,6 +296,18 @@ class TestROIs():
         assert np.sum(r_signal.sum().data) == (n**2 - 3 * 4) * 4
         assert np.sum(r_ann_signal.sum().data) == 4 * 5 * 4
 
+    def test_circle_getitem(self):
+        r = CircleROI(20, 25, 20)
+        assert tuple(r) == (20, 25, 20)
+
+    def test_annulus_getitem(self):
+        r_ann = CircleROI(20, 25, 20, 15)
+        assert tuple(r_ann) == (20, 25, 20, 15)
+
+    def test_2d_line_getitem(self):
+        r = Line2DROI(10, 10, 150, 50, 5)
+        assert tuple(r) == (10, 10, 150, 50, 5)
+
     def test_2d_line_spec_plot(self):
         r = Line2DROI(10, 10, 150, 50, 5)
         s = self.s_s
