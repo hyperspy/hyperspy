@@ -31,7 +31,7 @@ import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline, signal_range_from_roi)
+    isiterable, closest_power_of_two, underline)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
@@ -241,7 +241,8 @@ class EELSSpectrum_mixin:
             in integers, the range will be in index values. If given floats,
             the range will be in spectrum values. Useful if there are features
             in the spectrum which are more intense than the ZLP.
-            Default is searching in the whole signal.
+            Default is searching in the whole signal. Note that ROIs can be used
+            in place of a tuple.
         %s
         %s
 
@@ -271,7 +272,6 @@ class EELSSpectrum_mixin:
         more information read its docstring.
 
         """
-        signal_range = signal_range_from_roi(signal_range)
 
         def substract_from_offset(value, signals):
             if isinstance(value, da.Array):

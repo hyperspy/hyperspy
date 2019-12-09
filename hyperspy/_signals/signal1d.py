@@ -38,7 +38,6 @@ from hyperspy.signal_tools import SpikesRemoval
 from hyperspy.models.model1d import Model1D
 
 
-from hyperspy.misc.utils import signal_range_from_roi
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
     Signal1DCalibration,
@@ -776,7 +775,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If l and r are floats the `signal_range` will be in axis units (for
             example eV). If l and r are integers the `signal_range` will be in
             index units. When `signal_range` is "interactive" (default) the
-            range is selected using a GUI.
+            range is selected using a GUI. Note that ROIs can be used
+            in place of a tuple.
 
         Returns
         --------
@@ -813,7 +813,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
             "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
             "instead.")
         deprecation_warning(msg)
-        signal_range = signal_range_from_roi(signal_range)
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
@@ -826,7 +825,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         return integrated_signal1D
 
     def _integrate_in_range_commandline(self, signal_range):
-        signal_range = signal_range_from_roi(signal_range)
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
@@ -1033,7 +1031,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
             zero_fill=False, show_progressbar=None):
-        signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
         model.append(background_estimator)
@@ -1194,7 +1191,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         self._check_signal_dimension_equals_one()
         try:
-            left_value, right_value = signal_range_from_roi(left_value)
+            left_value, right_value = left_value
         except TypeError:
             # It was not a ROI, we carry on
             pass
