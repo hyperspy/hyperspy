@@ -3331,7 +3331,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None, rechunk=True):
+    def derivative(self, axis, order=1, out=None, rechunk=True, legacy=True, **kwargs):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
 
@@ -3366,12 +3366,23 @@ class BaseSignal(FancySlicing,
         diff, integrate1D, integrate_simpson
 
         """
-        if not self.axes_manager[axis].is_linear:
-            raise NonLinearAxisError()
-        der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
-        der = out or der
-        axis = self.axes_manager[axis]
-        der.data /= axis.scale ** order
+        if not self.axes_manager[axis].is_linear or not legacy:
+            n = order
+            der_data = self.data
+            while n:
+                der_data = np.gradient(der_data, self.axes_manager[axis].axis,
+                **kwargs)
+                n -= 1
+            if out:
+                out.data = der_data
+            else:
+                der = self._deepcopy_with_new_data(der_data)
+        else:
+            der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
+            axis = self.axes_manager[axis]
+            der.data /= axis.scale ** order
+            if out:
+                out.data = der.data
         if out is None:
             return der
         else:
