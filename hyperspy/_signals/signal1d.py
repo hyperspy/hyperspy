@@ -898,6 +898,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
         More information about the filter in `scipy.signal.savgol_filter`.
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_linear():
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-linear axes. ")
+            "Consider using `smooth_lowess` instead."
         if (polynomial_order is not None and
                 window_length is not None):
             axis = self.axes_manager.signal_axes[0]
@@ -996,6 +1000,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If the signal dimension is not 1.
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_linear():
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-linear axes. ")
+            "Consider using `smooth_lowess` instead."
         if smoothing_parameter is None:
             smoother = SmoothingTV(self)
             return smoother.gui(display=display, toolkit=toolkit)
@@ -1025,6 +1033,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         """
+        if not self.axes_manager.signal_axes[0].is_linear():
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-linear axes. ")
+            "Consider using `smooth_lowess` instead."
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:

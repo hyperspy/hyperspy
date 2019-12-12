@@ -355,8 +355,11 @@ class Smoothing(t.HasTraits):
             pass
 
     def diff_model2plot(self, axes_manager=None):
-        smoothed = np.diff(self.model2plot(axes_manager),
-                           self.differential_order)
+        n = self.differential_order
+        smoothed = self.model2plot(axes_manager)
+        while n:
+            smoothed = np.gradient(smoothed, self.axis)
+            n -= 1
         return smoothed
 
     def close(self):
