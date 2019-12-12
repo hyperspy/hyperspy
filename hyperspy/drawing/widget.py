@@ -171,6 +171,17 @@ class WidgetBase(object):
         if hasattr(super(WidgetBase, self), '_add_patch_to'):
             super(WidgetBase, self)._add_patch_to(ax)
 
+    def set_picker(self, picker):
+        """ Set the `picker` option of the widget.
+
+        picker: {None | float | boolean | callable}
+            Default is 5.
+            See matplotlib.artist.Artist.set_picker documentation.
+        """
+
+        for p in self.patch:
+            p.set_picker(picker)
+
     def set_mpl_ax(self, ax):
         """Set the matplotlib Axes that the widget will draw to. If the widget
         on state is True, it will also add the patch to the Axes, and connect
@@ -183,7 +194,7 @@ class WidgetBase(object):
             self.disconnect()
         self.ax = ax
         canvas = ax.figure.canvas
-        if self.is_on() is True:
+        if self.is_on():
             self._add_patch_to(ax)
             self.connect(ax)
             canvas.draw_idle()
@@ -210,8 +221,8 @@ class WidgetBase(object):
         """Connect to the matplotlib Axes' events.
         """
         on_figure_window_close(ax.figure, self.close)
-        if self._navigating:
-            self.connect_navigate()
+#        if self._navigating:
+#            self.connect_navigate()
 
     def connect_navigate(self):
         """Connect to the axes_manager such that changes in the widget or in
@@ -225,7 +236,7 @@ class WidgetBase(object):
         self._navigating = True
 
     def disconnect_navigate(self):
-        """Disconnect a previous naivgation connection.
+        """Disconnect a previous navigation connection.
         """
         self.axes_manager.events.indices_changed.disconnect(self._on_navigate)
         self._navigating = False
@@ -351,6 +362,9 @@ class DraggableWidgetBase(WidgetBase):
         for i in range(len(self.axes)):
             idx.append(self.axes[i].value2index(self._pos[i]))
         return tuple(idx)
+
+    def get_size_in_indices(self):
+        return np.array([1])
 
     def _set_indices(self, value):
         """Sets the position of the widget (by indices). The dimensions should
@@ -547,6 +561,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             self._size = np.array([1])
         self.size_step = 1      # = one step in index space
         self._snap_size = True
+        self._previous_position = self.position
         self.events.resized = Event(doc="""
             Event that triggers when the widget was resized.
 
@@ -560,6 +575,22 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 obj:
                     The widget that was resized.
             """, arguments=['obj'])
+        self.events.resized_am = Event(doc="""
+            Event that triggers when the widget was resized without changing
+            the top left corner. This is designed to be compatible with the 
+            axes_manager events and avoid triggering redundant event.
+
+            The event triggers after the internal state of the widget has been
+            updated. This event does not differentiate on how the size of
+            the widget was changed, so it is the responsibility of the user
+            to suppress events as neccessary to avoid closed loops etc.
+
+            Arguments:
+            ----------
+                obj:
+                    The widget that was resized.
+            """, arguments=['obj'])
+
         self.no_events_while_dragging = False
         self._drag_store = None
 
@@ -616,6 +647,18 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     snap_all = property(lambda s: s.snap_size and s.snap_position,
                         lambda s, v: s._set_snap_all(v))
 
+    def set_picker(self, picker):
+        """ Set the `picker` option of the widget.
+
+        picker: {None | float | boolean | callable}
+            Default is 5.
+            See matplotlib.artist.Artist.set_picker documentation.
+        """
+        if hasattr(self, '_resizer_handles'):
+            for p in self._resizer_handles:
+                p.set_picker(picker)
+        super(ResizableDraggableWidgetBase, self).set_picker(picker)
+
     def increase_size(self):
         """Increment all sizes by 1. Applied via 'size' property.
         """
@@ -631,9 +674,13 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _size_changed(self):
         """Triggers resize and changed events, and updates the patch.
         """
+        # Trigger resized_am only if the top left corner did not moved
+        if (self.position == self._previous_position):
+            self.events.resized_am.trigger(self)
         self.events.resized.trigger(self)
         self.events.changed.trigger(self)
         self._update_patch_size()
+        self._previous_position = self.position
 
     def get_size_in_indices(self):
         """Gets the size property converted to the index space (via 'axes'
@@ -729,6 +776,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                     self.events.moved.trigger(self)
                 if resized:
                     self.events.resized.trigger(self)
+                    # Trigger resized_am only if the top left corner did not moved
+                    if not moved:
+                        self.events.resized_am.trigger(self)
                 self.events.changed.trigger(self)
 
     def button_release(self, event):
@@ -824,6 +874,9 @@ class ResizersMixin(object):
         resize_pixel_size : {tuple | None}
             Size of the resize handles in screen pixels. If None, it is set
             equal to the size of one 'data-pixel' (image pixel size).
+        resize_tolerance : {None | bool, float, function}
+            Default is 10.0. Set the `picker` option of the handle.
+            See matplotlib.artist.Artist.set_picker documentation.
         resizer_picked : {False | int}
             Inidcates which, if any, resizer was selected the last time the
             widget was picked. `False` if another patch was picked, or the
@@ -837,6 +890,7 @@ class ResizersMixin(object):
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
         self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        self.resize_tolerance = 10.0
         self._resizers = resizers
         self._resizer_handles = []
         self._resizers_on = False
@@ -948,7 +1002,7 @@ class ResizersMixin(object):
         for i in range(len(pos)):
             r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
                               fill=True, lw=0, fc=self.resize_color,
-                              picker=True,)
+                              picker=self.resize_tolerance,)
             self._resizer_handles.append(r)
 
     def set_on(self, value):
@@ -980,8 +1034,10 @@ class ResizersMixin(object):
                 self._set_resizers(True, self.ax)
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
-            self.pick_offset = (x - self._pos[0], y - self._pos[1])
-            self.resizer_picked = False
+            # Workaround for mpl_he pointer initialisation
+            if x is not None and y is not None:
+                self.pick_offset = (x - self._pos[0], y - self._pos[1])
+                self.resizer_picked = False
         else:
             self._set_resizers(False, self.ax)
         if hasattr(super(ResizersMixin, self), 'onpick'):

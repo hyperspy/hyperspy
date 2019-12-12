@@ -424,16 +424,18 @@ class SmoothingSavitzkyGolay(Smoothing):
             old,
             new)
 
-    def diff_model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def diff_model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
             differential_order=self.differential_order)
         return self.single_spectrum.data
 
-    def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
@@ -469,8 +471,9 @@ class SmoothingLowess(Smoothing):
     def _number_of_iterations_changed(self, old, new):
         self.update_lines()
 
-    def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_lowess(
             smoothing_parameter=self.smoothing_parameter,
             number_of_iterations=self.number_of_iterations,
@@ -492,8 +495,9 @@ class SmoothingTV(Smoothing):
     def _smoothing_parameter_changed(self, old, new):
         self.update_lines()
 
-    def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_tv(
             smoothing_parameter=self.smoothing_parameter,
             show_progressbar=False)
@@ -521,7 +525,7 @@ class ButterworthFilter(Smoothing):
     def _order_changed(self, old, new):
         self.update_lines()
 
-    def model2plot(self, axes_manager=None):
+    def model2plot(self, axes_manager=None, resizable_pointer=False):
         b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
         smoothed = sp.signal.filtfilt(b, a, self.signal())
@@ -1049,7 +1053,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.rm_line.autoscale = False
         self.rm_line.plot()
 
-    def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
+    def bg_to_plot(self, axes_manager=None, fill_with=np.nan, **kwargs):
+        # Need **kwargs to allow `resizable_pointer` be passed
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
             self.signal, self.ss_left_value, self.ss_right_value,
@@ -1077,7 +1082,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             to_return *= self.axis.scale
         return to_return
 
-    def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
+    def rm_to_plot(self, axes_manager=None, fill_with=np.nan, **kwargs):
+        # Need **kwargs to allow `resizable_pointer` be passed
         return self.signal() - self.bg_line.line.get_ydata()
 
     def span_selector_changed(self):
@@ -1380,7 +1386,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
         return left, right
 
-    def get_interpolated_spectrum(self, axes_manager=None):
+    def get_interpolated_spectrum(self, axes_manager=None, *args, **kwargs):
         data = self.signal().copy()
         axis = self.signal.axes_manager.signal_axes[0]
         left, right = self.get_interpolation_range()

@@ -140,8 +140,12 @@ class GUIs(t.HasTraits):
 class PlotConfig(t.HasTraits):
     saturated_pixels = t.CFloat(0.05,
                                 label='Saturated pixels',
-                                desc='Set the default saturated_pixels for '
+                                desc='the default saturated_pixels for '
                                 'plotting images.'
+                                )
+    pointer_operation = t.Enum(['sum', 'mean'],
+                                label='Pointer operation',
+                                desc='the default operation for the pointer.'
                                 )
     dims_024_increase = t.Str('right',
                               label='Navigate right'

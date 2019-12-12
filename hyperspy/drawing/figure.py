@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import textwrap
+import traits.api as t
 import matplotlib.pyplot as plt
 import logging
 
@@ -128,3 +129,21 @@ class BlittedFigure(object):
     def title(self, value):
         # Wrap the title so that each line is not longer than 60 characters.
         self._title = textwrap.fill(value, 60)
+
+    def _get_pointer_text(self, pointer=None):
+        ind = []
+        # For no resizable pointer
+        if pointer is None:
+            pointer = self.pointer
+        # We don't always have a pointer
+        if pointer is None:
+            return
+        try:
+            pointer_size = pointer.get_size_in_indices().tolist()
+        except AttributeError:
+            pointer_size = [1 for i in self.axes_manager.indices]
+        for axis, pointer_size in zip(pointer.axes_manager.navigation_axes,
+                                      pointer_size):
+            index = axis.index
+            ind.append("{}:{}".format(index, index + pointer_size))
+        return "\n".join(ind)

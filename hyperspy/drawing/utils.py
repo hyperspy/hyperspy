@@ -158,6 +158,16 @@ def key_press_handler_custom(event, canvas):
         key_press_handler(event, canvas, canvas.manager.toolbar)
 
 
+def get_pointer_operation(pointer_operation):
+    if pointer_operation is None:
+        pointer_operation = preferences.Plot.pointer_operation
+    if pointer_operation == 'sum':
+        pointer_operation = np.sum
+    elif pointer_operation == 'mean':
+        pointer_operation = np.mean
+    return pointer_operation
+
+
 def on_figure_window_close(figure, function):
     """Connects a close figure signal to a given function.
 
@@ -188,7 +198,6 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     array: RGB matrix
 
     """
-#    from widgets import cursors
     height, width = im_list[0].data.shape[:2]
     rgb = np.zeros((height, width, 3))
     rgb[:, :, 0] = im_list[0].data.squeeze()
@@ -207,7 +216,6 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
         ax.frameon = False
         ax.set_axis_off()
         ax.imshow(rgb, interpolation='nearest')
-#        cursors.set_mpl_ax(ax)
         figure.canvas.draw_idle()
     else:
         return rgb

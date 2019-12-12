@@ -1979,11 +1979,20 @@ class BaseSignal(FancySlicing,
             axes.append({'size': int(s), })
         return axes
 
-    def __call__(self, axes_manager=None, fft_shift=False):
+    def __call__(self, axes_manager=None, resizable_pointer=False,
+                 fft_shift=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        value = np.atleast_1d(self.data.__getitem__(
-            axes_manager._getitem_tuple))
+        if resizable_pointer and hasattr(self._plot, 'pointer'):
+            indices = axes_manager.indices
+            size = self._plot.pointer.get_size_in_indices()
+            array_slices = [slice(indices[i], indices[i] + size[i], None)
+                            for i in range(len(self._plot.pointer.axes))]
+            value = self._plot._pointer_operation(
+                self.data[tuple(array_slices)],
+                axis=tuple(self.axes_manager.navigation_indices_in_array))
+        else:
+            value = self.data.__getitem__(axes_manager._getitem_tuple)
         if isinstance(value, da.Array):
             value = np.asarray(value)
         if fft_shift:
@@ -1991,18 +2000,24 @@ class BaseSignal(FancySlicing,
         return value
 
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
-             **kwargs):
+             resizable_pointer=True, pointer_operation=np.sum, 
+             picker_tolerance=10.0, **kwargs):
         """%s
         %s
         %s
         """
+
+        pointer_size = None
         if self._plot is not None:
+            # before recreating a he, save the pointer size to restore later
+            pointer_size = self._plot._pointer_size
             try:
                 self._plot.close()
             except BaseException:
                 # If it was already closed it will raise an exception,
                 # but we want to carry on...
                 pass
+
         if ('power_spectrum' in kwargs and
                 not self.metadata.Signal.get_item('FFT', False)):
             _logger.warning('The option `power_spectrum` is considered only '
@@ -2114,19 +2129,24 @@ class BaseSignal(FancySlicing,
             elif navigator is None:
                 self._plot.navigator_data_function = None
             elif navigator == "data":
-                if np.issubdtype(self.data.dtype, np.complexfloating):
-                    self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
-                        self.data)
-                else:
-                    self._plot.navigator_data_function = lambda axes_manager=None: self.data
+                self._plot.navigator_data_function = (
+                    lambda axes_manager=None, *args, **kwargs: np.abs(self.data))
             elif navigator == "spectrum":
                 self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
-                    "navigator must be one of \"spectrum\",\"auto\","
-                    " \"slider\", None, a Signal instance")
+                    'The `navigator` parameter must be one of "spectrum", '
+                    '"auto", "slider", None or a Signal instance')
 
-        self._plot.plot(**kwargs)
+        self._plot.plot(resizable_pointer=resizable_pointer,
+                        pointer_operation=pointer_operation, 
+                        picker_tolerance=picker_tolerance,
+                        **kwargs)
+        # need both condition: in case we replot without pointer
+        # (`pointer_size` from previous plot but `self._plot.pointer` is None)
+        if self._plot.pointer and resizable_pointer and pointer_size is not None:
+            self._plot.pointer.set_size_in_indices(pointer_size)
+            self._plot.signal_plot.update()
         self.events.data_changed.connect(self.update_plot, [])
         if self._plot.signal_plot:
             self._plot.signal_plot.events.closed.connect(
@@ -4315,7 +4335,8 @@ class BaseSignal(FancySlicing,
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
 
-    def get_current_signal(self, auto_title=True, auto_filename=True):
+    def get_current_signal(self, auto_title=True, auto_filename=True,
+                           auto_pointer=False):
         """Returns the data at the current coordinates as a
         :py:class:`~hyperspy.signal.BaseSignal` subclass.
 
@@ -4332,6 +4353,12 @@ class BaseSignal(FancySlicing,
             (which is always the case when the Signal has been read from a
             file), the filename stored in the metadata is modified by
             appending an underscore and the current indices in parentheses.
+        auto_pointer : bool
+            If False, returns the signal at the current position as given by
+            the axes_manager.
+            If True, returns the plotted signal, which may depend on the 
+            position and the size of the pointer, but also on the operation 
+            performed on the navigation axes during plotting.
 
         Returns
         -------
@@ -4365,7 +4392,7 @@ class BaseSignal(FancySlicing,
                     marker.set_data(**key_dict)
 
         cs = self.__class__(
-            self(),
+            self(resizable_pointer=auto_pointer),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary(),
             attributes={'_lazy': False})

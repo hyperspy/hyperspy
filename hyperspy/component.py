@@ -208,8 +208,10 @@ class Parameter(t.HasTraits):
             load_from_dictionary(self, dictionary)
             return dictionary['self']
         else:
-            raise ValueError("_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
-                    \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
+            raise ValueError('_id_name of parameter and dictionary do not match:'
+                             '\nparameter._id_name = {}'
+                             '\ndictionary["_id_name"] = {}'.format(self._id_name,
+                                                                    dictionary['_id_name']))
 
     def __repr__(self):
         text = ''
@@ -626,7 +628,8 @@ class Parameter(t.HasTraits):
         return s
 
     def plot(self, **kwargs):
-        """Plot parameter signal.
+        """Plot parameter signal. This method only works when the navigation
+        dimension is greater than 0.
 
         Parameters
         ----------
@@ -641,7 +644,11 @@ class Parameter(t.HasTraits):
 
         >>> parameter.plot(vmin=0, vmax=1) #doctest: +SKIP
         """
-        self.as_signal().plot(**kwargs)
+        if self._axes_manager and len(self._axes_manager.navigation_axes) > 0:
+            self.as_signal().plot(**kwargs)
+        else:
+            _logger.warning('This method only works when the navigation '
+                            'dimension is greater than 0.')
 
     def export(self, folder=None, name=None, format="hspy",
                save_std=False):
@@ -1034,7 +1041,8 @@ class Component(t.HasTraits):
         component_array = self.function(axis)
         return component_array
 
-    def _component2plot(self, axes_manager, out_of_range2nans=True):
+    def _component2plot(self, axes_manager, out_of_range2nans=True, **kwargs):
+        # Need **kwargs to allow `resizable_pointer` be passed
         old_axes_manager = None
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager

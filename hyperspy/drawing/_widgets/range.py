@@ -90,6 +90,10 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.patch[0].set_color(self.color)
         self.patch[0].set_alpha(self.alpha)
 
+    def set_picker(self, picker):
+        if self.span is not None:
+            self.span.tolerance = picker
+
     def _span_changed(self, widget):
         r = self._get_range()
         pr = widget.range

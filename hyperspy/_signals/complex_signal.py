@@ -184,9 +184,9 @@ class ComplexSignal_mixin:
     unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 
     def __call__(self, axes_manager=None, power_spectrum=False,
-                 fft_shift=False):
+                 fft_shift=False, **kwargs):
         value = super().__call__(axes_manager=axes_manager,
-                                 fft_shift=fft_shift)
+                                 fft_shift=fft_shift, **kwargs)
         if power_spectrum:
             value = np.abs(value)**2
         return value

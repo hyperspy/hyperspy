@@ -623,7 +623,8 @@ class Model1D(BaseModel):
                self._jacobian(param, y)).sum(1)
         return gls
 
-    def _model2plot(self, axes_manager, out_of_range2nans=True):
+    def _model2plot(self, axes_manager, out_of_range2nans=True, **kwargs):
+        # Need **kwargs to allow `resizable_pointer` be passed
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager
@@ -642,7 +643,8 @@ class Model1D(BaseModel):
 
     def plot(self, plot_components=False, **kwargs):
         """Plots the current spectrum to the screen and a map with a
-        cursor to explore the SI.
+        cursor to explore the SI. Resizable pointer is not supported for model 
+        plotting.
 
         Parameters
         ----------
@@ -650,12 +652,13 @@ class Model1D(BaseModel):
             If True, add a line per component to the signal figure.
         kwargs:
             All extra keyword arguements are passed to ``Signal1D.plot``
-
-
         """
+        if kwargs.get('resizable_pointer', False):
+            raise ValueError("Resizable pointer is not supported for model "
+                             "plotting.")
 
         # If new coordinates are assigned
-        self.signal.plot(**kwargs)
+        self.signal.plot(resizable_pointer=False, **kwargs)
         _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()

@@ -16,11 +16,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import partial
+import numpy as np
 import logging
 
 from traits.api import Undefined
 
-from hyperspy.drawing import widgets, signal1d, image
+from hyperspy.drawing import widgets, signal1d, image, utils
 
 
 _logger = logging.getLogger(__name__)
@@ -46,6 +47,9 @@ class MPL_HyperExplorer(object):
         self.axis = None
         self.pointer = None
         self._pointer_nav_dim = None
+        self._pointer_size = None
+        self._resizable_pointer = False
+        self._pointer_operation = None
 
     def plot_signal(self):
         # This method should be implemented by the subclasses.
@@ -142,6 +146,7 @@ class MPL_HyperExplorer(object):
             imf.plot(**kwds)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
+            self.navigator_plot.resizable_pointer = self._resizable_pointer
 
     def _get_navigation_sliders(self):
         try:
@@ -161,21 +166,32 @@ class MPL_HyperExplorer(object):
         else:
             return False
 
-    def plot(self, **kwargs):
+    def plot(self, resizable_pointer=False, pointer_operation=None, 
+             picker_tolerance=10.0, **kwargs):
+        self._resizable_pointer = resizable_pointer
         # Parse the kwargs for plotting complex data
         for key in ['power_spectrum', 'fft_shift']:
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
         if self.pointer is None:
-            pointer = self.assign_pointer()
+            pointer, param_dict = self.assign_pointer()
+            self._pointer_operation = utils.get_pointer_operation(
+                pointer_operation)
             if pointer is not None:
-                self.pointer = pointer(self.axes_manager)
+                self.pointer = pointer(self.axes_manager, **param_dict)
                 self.pointer.color = 'red'
                 self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
+            if pointer is not None:
+                self.pointer.set_picker(picker_tolerance)
         self.plot_signal(**kwargs)
+        if self.pointer is not None:
+            if self._resizable_pointer:
+                self.pointer.events.resized_am.connect(
+                        self.signal_plot.update, [])
 
     def assign_pointer(self):
+        param_dict = {}
         if self.navigator_data_function is None:
             nav_dim = 0
         elif self.navigator_data_function == "slider":
@@ -185,18 +201,39 @@ class MPL_HyperExplorer(object):
 
         if nav_dim == 2:  # It is an image
             if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.SquareWidget
+                if self._resizable_pointer:
+                    Pointer = widgets.RectangleWidget
+                else:
+                    Pointer = widgets.SquareWidget
             else:  # It is the image of a "spectrum stack"
-                Pointer = widgets.HorizontalLineWidget
+                if self._resizable_pointer:
+                    # Is Matplotlib SpanSelector compatible with imshow?
+                    # TODO: Need to check which version of matplotlib are 
+                    # supporting this
+                    Pointer = widgets.RangeWidget
+                    param_dict['direction'] = 'vertical'
+                else:
+                    Pointer = widgets.HorizontalLineWidget
         elif nav_dim == 1:  # It is a spectrum
-            Pointer = widgets.VerticalLineWidget
+            if self._resizable_pointer:
+                Pointer = widgets.RangeWidget
+                param_dict['direction'] = 'horizontal'
+            else:
+                Pointer = widgets.VerticalLineWidget
         else:
             Pointer = None
+            self._resizable_pointer = False
         self._pointer_nav_dim = nav_dim
-        return Pointer
+        return Pointer, param_dict
 
     def _on_navigator_plot_closing(self):
         self.navigator_plot = None
+        if self.pointer is not None:
+            # backup the pointer_size to restore it when the plot is reopened
+            if self._resizable_pointer:
+                self._pointer_size = self.pointer.get_size_in_indices()
+                self.pointer.events.resized_am.disconnect(
+                        self.signal_plot.update)
 
     def close(self):
         if self.is_active:

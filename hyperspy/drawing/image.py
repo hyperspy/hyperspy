@@ -80,9 +80,12 @@ class ImagePlot(BlittedFigure):
         self._xlabel = ''
         self.plot_indices = True
         self._text = None
-        self._text_position = (0, 1.05,)
+        self._text_position = (0, 1.01,)
         self.axes_manager = None
         self.axes_off = False
+        self.pointer = None
+        self.resizable_pointer = False
+        self.plot_indices = True
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -264,15 +267,25 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-
-        if (not self.axes_manager or self.axes_manager.navigation_size == 0):
+        # Not sure why is this if loop is necessary...
+        if self.resizable_pointer:
+            data = self.data_function(
+                self.axes_manager, self.resizable_pointer)
+        else:
+            data = self.data_function(self.axes_manager)
+        if rgb_tools.is_rgbx(data):
+            self.colorbar = False
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+        self.optimize_contrast(data)
+        if (not self.axes_manager or
+                self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
             if self._text is not None:
                 self._text.remove()
             self._text = self.ax.text(
                 *self._text_position,
-                s=str(self.axes_manager.indices),
+                s=self._get_pointer_text(),
                 transform=self.ax.transAxes,
                 fontsize=12,
                 color='red',
@@ -320,6 +333,7 @@ class ImagePlot(BlittedFigure):
         # self._current_data caches the displayed data.
         self._current_data =  self.data_function(
                 axes_manager=self.axes_manager,
+                resizable_pointer=self.resizable_pointer,
                 **self.data_function_kwargs)
 
     def update(self, data_changed=True, **kwargs):
@@ -357,7 +371,8 @@ class ImagePlot(BlittedFigure):
             else:
                 self.centre_colormap = False
         redraw_colorbar = False
-
+        data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+        numrows, numcols = data.shape[:2]
 
         for marker in self.ax_markers:
             marker.update()
@@ -429,7 +444,7 @@ class ImagePlot(BlittedFigure):
         redraw_colorbar = redraw_colorbar and self.colorbar
 
         if self.plot_indices is True:
-            self._text.set_text(self.axes_manager.indices)
+            self._text.set_text(self._get_pointer_text())
         if self.no_nans:
             data = np.nan_to_num(data)
 
@@ -467,8 +482,6 @@ class ImagePlot(BlittedFigure):
                         'vmin': vmin,
                         'vmax': vmax,
                         'norm': norm}
-
-                    
                 )
             new_args.update(kwargs)
             self.ax.imshow(data,

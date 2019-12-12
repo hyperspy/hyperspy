@@ -48,6 +48,9 @@ class Signal1DFigure(BlittedFigure):
         self.right_ax_lines = list()
         self.axes_manager = None
         self.right_axes_manager = None
+        self.pointer = None
+        self.right_pointer = None
+        self.resizable_pointer = False
 
         # Labels
         self.xlabel = ''
@@ -76,7 +79,7 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
-        plt.tight_layout()
+        self._tight_layout()
 
     def add_line(self, line, ax='left'):
         if ax == 'left':
@@ -85,17 +88,23 @@ class Signal1DFigure(BlittedFigure):
                 line.axes_manager = self.axes_manager
             self.ax_lines.append(line)
             line.sf_lines = self.ax_lines
+            line.pointer = self.pointer
+            line.resizable_pointer = self.resizable_pointer
+            line.hspy_figure = self
         elif ax == 'right':
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
-        line.axes_manager.events.indices_changed.connect(
-            line._auto_update_line, [])
-        self.events.closed.connect(
-            lambda: line.axes_manager.events.indices_changed.disconnect(
-                line._auto_update_line), [])
+            line.pointer = self.right_pointer
+            line.resizable_pointer = self.resizable_pointer
+            line.hspy_figure = self
+            line.axes_manager.events.indices_changed.connect(
+                line._auto_update_line, [])
+            self.events.closed.connect(
+                lambda: line.axes_manager.events.indices_changed.disconnect(
+                    line._auto_update_line), [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -107,6 +116,13 @@ class Signal1DFigure(BlittedFigure):
             if rgba_color in self._color_cycles[line.type].color_cycle:
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
+
+    def _set_line(self, line):
+        if line.axes_manager is None:
+            line.axes_manager = self.axes_manager
+        line.pointer = self.pointer
+        line.resizable_pointer = self.resizable_pointer
+        line.hspy_figure = self
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.ax.set_xlabel(self.xlabel)
@@ -127,14 +143,23 @@ class Signal1DFigure(BlittedFigure):
                 self.update), [])
 
         self.ax.figure.canvas.draw_idle()
+        self._tight_layout()
+        self.figure.canvas.draw()
+
+    def _tight_layout(self):
         if hasattr(self.figure, 'tight_layout'):
             try:
-                self.figure.tight_layout()
+                nav_length = len(self.axes_manager.navigation_shape)
+                # Add enough height to display the indices of the navigation axis
+                if nav_length > 1:
+                    top = 1 - 0.035 * (nav_length - 1.5)
+                else:
+                    top = None
+                self.figure.tight_layout(rect=[None, None, None, top])
             except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
-        self.figure.canvas.draw()
 
     def _on_close(self):
         _logger.debug('Closing Signal1DFigure.')
@@ -212,8 +237,11 @@ class Signal1DLine(object):
         self.line = None
         self.autoscale = False
         self.plot_indices = False
+        self.pointer_size = None
+        self.hspy_figure = None
+        self.resizable_pointer = False
         self.text = None
-        self.text_position = (-0.1, 1.05,)
+        self.text_position = (-0.05, 1.03)
         self._line_properties = {}
         self.type = "line"
 
@@ -306,6 +334,9 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
+    def _get_pointer_text(self):
+        return self.hspy_figure._get_pointer_text(pointer=self.pointer)
+
     def plot(self, data=1, data_function_kwargs={}, norm='linear'):
         self.data_function_kwargs = data_function_kwargs
         self.norm = norm
@@ -333,7 +364,7 @@ class Signal1DLine(object):
             if self.text is not None:
                 self.text.remove()
             self.text = self.ax.text(*self.text_position,
-                                     s=str(self.axes_manager.indices),
+                                     s=self._get_pointer_text(),
                                      transform=self.ax.transAxes,
                                      fontsize=12,
                                      color=self.line.get_color(),
@@ -343,9 +374,11 @@ class Signal1DLine(object):
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
             ydata = self.data_function(axes_manager=self.axes_manager,
+                                       resizable_pointer=self.resizable_pointer,
                                        **self.data_function_kwargs).imag
         else:
             ydata = self.data_function(axes_manager=self.axes_manager,
+                                       resizable_pointer=self.resizable_pointer,
                                        **self.data_function_kwargs).real
         return ydata
 
@@ -408,7 +441,7 @@ class Signal1DLine(object):
                 y_max = None  # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
-            self.text.set_text(self.axes_manager.indices)
+            self.text.set_text(self._get_pointer_text())
         if render_figure:
             if self.ax.figure.canvas.supports_blit:
                 self.ax.hspy_fig._update_animated()

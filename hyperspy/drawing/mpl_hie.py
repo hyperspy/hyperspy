@@ -56,6 +56,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
+        imf.pointer = self.pointer
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
         imf.colorbar = colorbar
@@ -68,6 +69,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
+        imf.resizable_pointer = self._resizable_pointer
         imf.min_aspect = min_aspect
         imf.norm = norm
         imf.gamma = gamma

@@ -68,8 +68,9 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if value == self._right_pointer_on:
             return
         self._right_pointer_on = value
-        if value is True:
-            self.add_right_pointer()
+        if value:
+            if self.right_pointer is None:
+                self.add_right_pointer()
         else:
             self.remove_right_pointer()
 
@@ -86,6 +87,9 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if sf.ax is None:
             sf.create_axis()
         sf.axes_manager = self.axes_manager
+        sf.pointer = self.pointer
+        sf.resizable_pointer = self._resizable_pointer
+
         self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' ({})'.format(
@@ -143,27 +147,25 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if event.key == "e":
             self.right_pointer_on = not self.right_pointer_on
 
-    def add_right_pointer(self, **kwargs):
+    def add_right_pointer(self, picker_tolerance=10):
         if self.signal_plot.right_axes_manager is None:
             self.signal_plot.right_axes_manager = \
                 copy.deepcopy(self.axes_manager)
         if self.right_pointer is None:
-            pointer = self.assign_pointer()
-            self.right_pointer = pointer(
-                self.signal_plot.right_axes_manager)
+            right_pointer, param_dict = self.assign_pointer()
+            self.right_pointer = right_pointer(
+                self.signal_plot.right_axes_manager, **param_dict)
             # The following is necessary because e.g. a line pointer does not
             # have size
             if hasattr(self.pointer, "size"):
                 self.right_pointer.size = self.pointer.size
             self.right_pointer.color = 'blue'
+            self.right_pointer.set_picker(picker_tolerance)
             self.right_pointer.connect_navigate()
             self.right_pointer.set_mpl_ax(self.navigator_plot.ax)
 
-        if self.right_pointer is not None:
-            for axis in self.axes_manager.navigation_axes[
-                    self._pointer_nav_dim:]:
-                self.signal_plot.right_axes_manager._axes[
-                    axis.index_in_array] = axis
+        for axis in self.axes_manager.navigation_axes[self._pointer_nav_dim:]:
+            self.signal_plot.right_axes_manager._axes[axis.index_in_array] = axis
         rl = signal1d.Signal1DLine()
         rl.autoscale = True
         rl.data_function = self.signal_data_function
@@ -172,9 +174,15 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.signal_plot.create_right_axis()
         self.signal_plot.add_line(rl, ax='right')
         rl.plot_indices = True
-        rl.text_position = (1., 1.05,)
-        rl.plot(**kwargs)
+        rl.text_position = (1.0, 1.03,)
+        rl.pointer = self.right_pointer
+        rl.plot()
         self.right_pointer_on = True
+        if rl.resizable_pointer:
+            rl.pointer.events.resized_am.connect(rl._auto_update_line, [])
+            rl.events.closed.connect(
+                lambda: rl.pointer.events.resized_am.disconnect(
+                    rl._auto_update_line), [])
         if hasattr(self.signal_plot.figure, 'tight_layout'):
             try:
                 self.signal_plot.figure.tight_layout()
