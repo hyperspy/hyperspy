@@ -57,7 +57,7 @@ def centering_and_whitening(X):
 
 def get_derivative(signal, diff_axes, diff_order):
     if signal.axes_manager.signal_dimension == 1:
-        signal = signal.diff(order=diff_order, axis=-1)
+        signal = signal.derivative(order=diff_order, axis=-1)
     else:
         # n-d signal case.
         # Compute the differences for each signal axis, unfold the
