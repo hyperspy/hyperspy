@@ -3947,20 +3947,23 @@ class BaseSignal(FancySlicing,
                 ndkwargs += ((key, value),)
 
         # TODO: Consider support for non linear signal axis
-        if any([not ax.is_linear for ax in self.axes_manager.signal_axes]): 
-            raise NonLinearAxisError()
-        # Check if the signal axes have inhomogeneous scales and/or units and
-        # display in warning if yes.
-        scale = set()
-        units = set()
-        for i in range(len(self.axes_manager.signal_axes)):
-            scale.add(self.axes_manager.signal_axes[i].scale)
-            units.add(self.axes_manager.signal_axes[i].units)
-        if len(units) != 1 or len(scale) != 1:
+        if any([not ax.is_linear for ax in self.axes_manager.signal_axes]):
             _logger.warning(
-                "The function you applied does not take into "
-                "account the difference of units and of scales in-between"
-                " axes.")
+                "At least one axis of the signal is non-linear. Can your "
+                "`function` operate on non-linear axes?")
+        else:
+            # Check if the signal axes have inhomogeneous scales and/or units and
+            # display in warning if yes.
+            scale = set()
+            units = set()
+            for i in range(len(self.axes_manager.signal_axes)):
+                scale.add(self.axes_manager.signal_axes[i].scale)
+                units.add(self.axes_manager.signal_axes[i].units)
+            if len(units) != 1 or len(scale) != 1:
+                _logger.warning(
+                    "The function you applied does not take into "
+                    "account the difference of units and of scales in-between"
+                    " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
