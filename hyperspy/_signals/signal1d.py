@@ -306,7 +306,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis = axis[~signal_mask]
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
-        der = np.abs(np.gradient(dc, axis, -1))
+        der = np.abs(np.gradient(dc, axis, axis=-1))
         n = ((~navigation_mask).sum() if navigation_mask else
              self.axes_manager.navigation_size)
 
