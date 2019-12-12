@@ -1242,6 +1242,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                                       navigation_mask=self.navigation_mask)
 
     def detect_spike(self):
+        print("detect spike")
         axis = self.signal.axes_manager.signal_axes[-1].axis
         derivative = np.gradient(self.signal(), axis)
         if self.signal_mask is not None:
