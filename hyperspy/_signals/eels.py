@@ -498,7 +498,7 @@ class EELSSpectrum_mixin:
                                     window_length=window_length,
                                     differential_order=1)
         else:
-            s = s.diff(-1)
+            s = s.derivative(-1)
         if tol is None:
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]

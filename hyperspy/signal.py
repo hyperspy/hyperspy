@@ -3319,7 +3319,7 @@ class BaseSignal(FancySlicing,
         if not self.axes_manager[axis].is_linear:
             raise NotImplementedError(
             "Performing a numerical difference on a non-linear axis "
-            "is not implemented. Please use `derivative` instead."
+            "is not implemented. Consider using `derivative` instead."
         )
         else:
             new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)

@@ -300,11 +300,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         self._check_signal_dimension_equals_one()
         dc = self.data
+        axis = self.axes_manager.signal_axes[0].axis
         if signal_mask is not None:
             dc = dc[..., ~signal_mask]
+            axis = axis[~signal_mask]
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
-        der = np.abs(np.diff(dc, 1, -1))
+        der = np.abs(np.gradient(dc, axis, -1))
         n = ((~navigation_mask).sum() if navigation_mask else
              self.axes_manager.navigation_size)
 

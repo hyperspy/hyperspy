@@ -1239,13 +1239,14 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                                       navigation_mask=self.navigation_mask)
 
     def detect_spike(self):
-        derivative = np.diff(self.signal())
+        axis = self.signal.axes_manager.signal_axes[-1].axis
+        derivative = np.gradient(self.signal(), axis)
         if self.signal_mask is not None:
-            derivative[self.signal_mask[:-1]] = 0
+            derivative[self.signal_mask] = 0
         if self.argmax is not None:
             left, right = self.get_interpolation_range()
             self._temp_mask[left:right] = True
-            derivative[self._temp_mask[:-1]] = 0
+            derivative[self._temp_mask] = 0
         if abs(derivative.max()) >= self.threshold:
             self.argmax = derivative.argmax()
             self.derivmax = abs(derivative.max())
