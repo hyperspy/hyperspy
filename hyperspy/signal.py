@@ -3308,6 +3308,11 @@ class BaseSignal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
+        if not self.axes_manager[axis].is_linear:
+            raise NotImplementedError(
+            "Performing a numerical difference on a non-linear axis "
+            "is not implemented. Consider using `derivative` instead."
+        )
         s = out or self._deepcopy_with_new_data(None)
         data = np.diff(self.data, n=order,
                        axis=self.axes_manager[axis].index_in_array)
@@ -3316,14 +3321,8 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         axis2 = s.axes_manager[axis]
-        if not self.axes_manager[axis].is_linear:
-            raise NotImplementedError(
-            "Performing a numerical difference on a non-linear axis "
-            "is not implemented. Consider using `derivative` instead."
-        )
-        else:
-            new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
-            axis2.offset = new_offset
+        new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
+        axis2.offset = new_offset
         s.get_dimensions_from_data()
         if out is None:
             return s
@@ -3331,7 +3330,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None, rechunk=True, legacy=True, **kwargs):
+    def derivative(self, axis, order=1, out=None, rechunk=True, legacy=False, **kwargs):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
 
