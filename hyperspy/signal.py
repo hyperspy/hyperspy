@@ -3330,7 +3330,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None, rechunk=True, legacy=False, **kwargs):
+    def derivative(self, axis, order=1, out=None, **kwargs):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
 
@@ -3347,7 +3347,6 @@ class BaseSignal(FancySlicing,
         order: int
             The order of the derivative.
         %s
-        %s
 
         Returns
         -------
@@ -3356,37 +3355,32 @@ class BaseSignal(FancySlicing,
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
         
-        Note
-        ----
-        Requires a linear axis.
-        
+        Notes
+        -----
+        This function uses numpy.gradient to perform the derivative. See its
+        documentation for implementation details.
+
         See also
         --------
         diff, integrate1D, integrate_simpson
 
         """
-        if not self.axes_manager[axis].is_linear or not legacy:
-            n = order
-            der_data = self.data
-            while n:
-                der_data = np.gradient(der_data, self.axes_manager[axis].axis,
-                **kwargs)
-                n -= 1
-            if out:
-                out.data = der_data
-            else:
-                der = self._deepcopy_with_new_data(der_data)
-        else:
-            der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
-            axis = self.axes_manager[axis]
-            der.data /= axis.scale ** order
-            if out:
-                out.data = der.data
-        if out is None:
-            return der
-        else:
+        # rechunk was a valid keyword up to HyperSpy 1.6
+        if "rechunk" in kwargs:
+            del kwargs["rechunk"]
+        n = order
+        der_data = self.data
+        while n:
+            der_data = np.gradient(
+                der_data, self.axes_manager[axis].axis,
+                axis=self.axes_manager[axis].index_in_array, **kwargs)
+            n -= 1
+        if out:
+            out.data = der_data
             out.events.data_changed.trigger(obj=out)
-    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
+        else:
+            return self._deepcopy_with_new_data(der_data)
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
         """Calculate the integral of a Signal along an axis using
