@@ -620,8 +620,8 @@ class MVA():
                                      diff_order=diff_order)
             if mask is not None:
                 # The following is a little trick to dilate the mask as
-                # required when operation on the differences. It exploits the
-                # fact that np.diff autimatically "dilates" nans. The trick has
+                # required when operating on differences. It exploits the
+                # fact that np.diff automatically "dilates" nans. The trick has
                 # a memory penalty which should be low compare to the total
                 # memory required for the core application in most cases.
                 mask_diff_axes = (
