@@ -113,12 +113,13 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
+@pytest.mark.parametrize("percentile", [None, "1th"])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_log_scale():
+def test_plot_log_scale(percentile):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal += 1  # need to avoid zeros in log
-    test_plot.signal.plot(norm='log')
+    test_plot.signal.plot(norm='log', vmin=percentile, vmax=percentile)
     return test_plot.signal._plot.signal_plot.figure
 
 

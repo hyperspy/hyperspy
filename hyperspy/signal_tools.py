@@ -546,6 +546,9 @@ class ImageContrastEditor(t.HasTraits):
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.1, 3.0, 1.0)
+    vmin_percentile = t.Range(0.0, 100.0, preferences.Plot.vmin)
+    vmax_percentile = t.Range(0.0, 100.0, preferences.Plot.vmax)
+
     norm = t.Enum(
         'Linear',
         'Power',
@@ -570,21 +573,28 @@ class ImageContrastEditor(t.HasTraits):
         self.hspy_fig.create_figure()
         self.create_axis()
 
-        # Copy the original value to be used when resetting the display
-        self.gamma_original = copy.deepcopy(self.image.gamma)
-        self.saturated_pixels_original = copy.deepcopy(
-                self.image.saturated_pixels)
-        self.vmin_original = copy.deepcopy(self.image.vmin)
-        self.vmax_original = copy.deepcopy(self.image.vmax)
-        self.linthresh_original = copy.deepcopy(self.image.linthresh)
-        self.linscale_original = copy.deepcopy(self.image.linscale)
         # self._vmin and self._vmax are used to compute the histogram
         # by default, the image display used these, except when there is a span
         # selector on the histogram
-        self._vmin, self._vmax = self.image.vmin, self.image.vmax
-
+        self._vmin, self._vmax = self.image._vmin, self.image._vmax
         self.gamma = self.image.gamma
-        self.saturated_pixels = self.image.saturated_pixels
+        self.linthresh = self.image.linthresh
+        self.linscale = self.image.linscale
+        if self.image._vmin_percentile is not None:
+            self.vmin_percentile = float(
+                self.image._vmin_percentile.split('th')[0])
+        if self.image._vmax_percentile is not None:
+            self.vmax_percentile = float(
+                self.image._vmax_percentile.split('th')[0])
+
+        # Copy the original value to be used when resetting the display
+        self.vmin_original = copy.deepcopy(self._vmin)
+        self.vmax_original = copy.deepcopy(self._vmax)
+        self.gamma_original = copy.deepcopy(self.gamma)
+        self.linthresh_original = copy.deepcopy(self.linthresh)
+        self.linscale_original = copy.deepcopy(self.linscale)
+        self.vmin_percentile_original = copy.deepcopy(self.vmin_percentile)
+        self.vmax_percentile_original = copy.deepcopy(self.vmax_percentile)
 
         if self.image.norm == 'auto':
             self.norm = 'Linear'
@@ -595,7 +605,6 @@ class ImageContrastEditor(t.HasTraits):
         self.span_selector = None
         self.span_selector_switch(on=True)
 
-        self._reset(auto=False, update=False, indices_changed=False)
         self.plot_histogram()
 
         if self.image.axes_manager is not None:
@@ -617,18 +626,33 @@ class ImageContrastEditor(t.HasTraits):
         self.hspy_fig.ax = self.ax
 
     def _gamma_changed(self, old, new):
+        #TODO: sort out gamma with span selector
         if self._vmin == self._vmax:
             return
         self.image.gamma = new
         if hasattr(self, "hist"):
-            self.image.update(optimize_contrast=True, data_changed=False)
+            vmin, vmax = self._get_current_range()
+            self.image.update(
+                data_changed=False, auto_contrast=False, vmin=vmin, vmax=vmax)
             self.update_line()
 
-    def _saturated_pixels_changed(self, old, new):
-        self.image.saturated_pixels = new
+    def _vmin_percentile_changed(self, old, new):
+        if isinstance(new, str):
+            new = float(new.split('th')[0])
+        self.image.vmin = f"{new}th"
         # Before the tool is fully initialised
         if hasattr(self, "hist"):
             self._reset(indices_changed=False)
+            self._reset_span_selector()
+
+    def _vmax_percentile_changed(self, old, new):
+        if isinstance(new, str):
+            new = float(new.split('th')[0])
+        self.image.vmax = f"{new}th"
+        # Before the tool is fully initialised
+        if hasattr(self, "hist"):
+            self._reset(indices_changed=False)
+            self._reset_span_selector()
 
     def _auto_changed(self, old, new):
         # Do something only if auto is ticked
@@ -669,8 +693,9 @@ class ImageContrastEditor(t.HasTraits):
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
 
-        self.image.vmin, self.image.vmax = self._get_current_range()
-        self.image.update(optimize_contrast=False, data_changed=False)
+        self._vmin, self._vmax = self._get_current_range()
+        self.image.update(data_changed=False, auto_contrast=False,
+                          vmin=self._vmin, vmax=self._vmax)
         self.update_line()
 
     def _get_data(self):
@@ -771,8 +796,7 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            # No span selector, so we use the saturated_pixels value to 
-            # calculate the vim and vmax values 
+            # No span selector, so we use the default vim and vmax values 
             self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
@@ -785,20 +809,24 @@ class ImageContrastEditor(t.HasTraits):
     def reset(self):
         # Reset the display as original
         self._reset_original_settings()
+        self._reset_span_selector()
 
-        # Remove the span selector and set the new one ready to use
-        self.span_selector_switch(False)
-        self.span_selector_switch(True)
-        self._reset(indices_changed=False)
+    def _reset_span_selector(self):
+        if self.span_selector and self.span_selector.rect.get_x() > 0:
+            # Remove the span selector and set the new one ready to use
+            self.span_selector_switch(False)
+            self.span_selector_switch(True)
+            self._reset(indices_changed=False)
 
     def _reset_original_settings(self):
         self.norm = self.norm_original.capitalize()
         self.gamma = self.gamma_original
         self.linthresh = self.linthresh_original
         self.linscale = self.linscale_original
-        self.saturated_pixels = self.saturated_pixels_original
         self._vmin = self.vmin_original
         self._vmax = self.vmax_original
+        self.vmin_pecentile = self.vmin_pecentile_original
+        self.vmax_pecentile = self.vmax_pecentile_original
 
     def _get_current_range(self):
         if self.span_selector._get_span_width() != 0:
@@ -813,12 +841,12 @@ class ImageContrastEditor(t.HasTraits):
             if self.auto:
                 # reset the `_*_user` value so that the contrast of the image
                 # get updated automatically after closing the contrast tool
-                self.image._vmin_user = None
-                self.image._vmax_user = None
+                self.image.vmin = None
+                self.image.vmax = None
             self.image.connect()
         self.hspy_fig.close()
 
-    def _reset(self, auto=None, update=True, indices_changed=True):
+    def _reset(self, auto=None, indices_changed=True):
         # indices_changed is used for the connection to the indices_changed
         # event of the axes_manager, which will require to update the displayed
         # image
@@ -826,27 +854,20 @@ class ImageContrastEditor(t.HasTraits):
         if auto is None:
             auto = self.auto
 
-        if indices_changed:
-            self.image._update_data()
-        # Get the vmin and vmax values
-        if auto:
-            self.image.optimize_contrast(self._get_data(),
-                                         ignore_user_values=True)
-            self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
-
-        if update:
-            if self.norm.lower() == 'log' and self._vmin <= 0:
-                # With norm='log', get the smallest positive value
-                data = self._get_data()
-                self._vmin = np.nanmin(np.where(data > 0, data, np.inf))
-                self.image.update(data_changed=False)
-            if not auto:
-                # if we don't use "image.optimize_contrast", the image vmin and
-                # vmax need to be udpated
-                self.image.vmin, self.image.vmax = self._vmin, self._vmax
-            self._set_xaxis()
-            self.update_histogram()
-            self.update_span_selector_traits()
+        if self.norm.lower() == 'log' and self._vmin <= 0:
+            data = self._get_data()
+            # With norm='log', get the smallest positive value
+            vmin = np.nanmin(np.where(data > 0, data, np.inf))
+        else:
+            vmin = None
+        self.image.update(
+            data_changed=indices_changed, auto_contrast=auto, vmin=vmin)
+        if auto is True:
+            # when auto is False, self,_vmin and self._vmax stay the same
+            self._vmin, self._vmax = self.image._vmin, self.image._vmax
+        self._set_xaxis()
+        self.update_histogram()
+        self.update_span_selector_traits()
 
     def _show_help_fired(self):
         from pyface.message_dialog import information
@@ -865,9 +886,13 @@ IMAGE_CONTRAST_EDITOR_HELP = \
 
 <p><b>Norm</b>: Normalisation used to display the image.</p>
 
-<p><b>Saturated pixels</b>: The percentage of pixels that are left out of the bounds.
-For example, the low and high bounds of a value of 1 are the 0.5% and 99.5% 
-percentiles. It must be in the [0, 100] range.</p>
+<p><b>vmin</b>: The percentage of pixels that are left out of the lower bounds.
+For example, the low bounds of a value of 1 is the 0.5% percentiles.
+It must be in the [0, 100] range.</p>
+
+<p><b>vmax</b>: The percentage of pixels that are left out of the high bounds.
+For example, the high bounds of a value of 1 is the 0.5% percentiles.
+It must be in the [0, 100] range.</p>
 
 <p><b>Gamma</b>: Paramater of the power law transform (also known as gamma 
 correction). <i>(not compatible with the 'log' norm)</i>.</p>
