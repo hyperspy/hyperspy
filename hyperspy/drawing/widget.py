@@ -839,7 +839,7 @@ class ResizersMixin(object):
         self.resizer_picked = False
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
-        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        self.resize_pixel_size = (10, 10)  # Set to None to make one data pixel
         self._resizers = resizers
         self._resizer_handles = []
         self._resizers_on = False

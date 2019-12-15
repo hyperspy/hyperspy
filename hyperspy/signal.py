@@ -1990,7 +1990,7 @@ class BaseSignal(FancySlicing,
             value = np.fft.fftshift(value)
         return value
 
-    def plot(self, navigator="auto", axes_manager=None, plot_markers=True, number_of_rois=1,
+    def plot(self, navigator="auto", axes_manager=None, plot_markers=True, number_of_rois=1,number_of_slices=0,
              **kwargs):
         """%s
         %s
@@ -2020,7 +2020,7 @@ class BaseSignal(FancySlicing,
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSignal1D_Explorer(number_of_rois=number_of_rois,signal=self)
+            self._plot = mpl_hse.MPL_HyperSignal1D_Explorer(number_of_rois=number_of_rois,number_of_slices=number_of_slices,signal=self)
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:

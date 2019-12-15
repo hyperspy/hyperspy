@@ -36,8 +36,8 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
     """
 
-    def __init__(self,number_of_rois=1,signal=None):
-        super(MPL_HyperSignal1D_Explorer, self).__init__(number_of_rois=number_of_rois,signal=signal)
+    def __init__(self,number_of_rois=1,number_of_slices=0,signal=None):
+        super(MPL_HyperSignal1D_Explorer, self).__init__(number_of_rois=number_of_rois,number_of_slices=number_of_slices,signal=signal)
         self.xlabel = ''
         self.ylabel = ''
         #self.right_pointer = None
@@ -45,7 +45,8 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self._auto_update_plot = True
         self.signal=signal
         self.number_of_rois=number_of_rois
-        self.number_of_slices=self.number_of_rois# the idea here is that you may want 1 filtered map per spatio-spectral feature
+        self.number_of_slices=number_of_slices
+        #self.number_of_slices=self.number_of_rois# the idea here is that you may want 1 filtered map per spatio-spectral feature
         self.ROIS=[]# a list of the ROIS pertaining to the hyperimage
         self.ROI2DS=[]# a list of the sub-hyperimages pertaining to the hyperimage
         self.LINES=[]#a list of all the Hyperspy lines. ROIs and Lines should be kept synchronized
@@ -171,10 +172,12 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         #         self.navigator_plot.figure.canvas.mpl_connect(
         #             'key_press_event', self.axes_manager.key_navigator)
         if self.signal.data.ndim == 3:
-            self.create_rois_and_lines()
+            if self.number_of_rois>0:
+                self.create_rois_and_lines()
         sf.plot(**kwargs)
         if self.signal.data.ndim == 3:
-            self.create_slices()
+            if self.number_of_slices>0:
+                self.create_slices()
         #sf.plot(**kwargs)
 
     def create_slices(self):
@@ -230,7 +233,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         def get_data(signal):
             def local_get_data(axes_manager,**kwargs):
                 return signal.data
-                #return self.signal.inav[0:0].data
+
             return local_get_data
         #for debugging purpose only
         def print_result():
