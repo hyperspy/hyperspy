@@ -74,15 +74,18 @@ class ImagePlot(BlittedFigure):
         self.figure = None
         self.ax = None
         self.title = ''
-        # numeric values
+        # user provided numeric values
         self._vmin_numeric = None
         self._vmax_numeric = None
-        # percentile values
+        # user provided percentile values
         self._vmin_percentile = None
         self._vmax_percentile = None
         # default values used when the numeric and percentile are None  
         self._vmin_default = f"{preferences.Plot.vmin}th"
         self._vmax_default = f"{preferences.Plot.vmax}th"
+        # use to store internally the numeric value of contrast
+        self._vmin = None
+        self._vmax = None
         self._ylabel = ''
         self._xlabel = ''
         self.plot_indices = True
@@ -428,7 +431,7 @@ class ImagePlot(BlittedFigure):
                 return f'x={x:1.4g}, y={y:1.4g}'
             self.ax.format_coord = format_coord
 
-            old_vmin, old_vmax = self.vmin, self.vmax
+            old_vmin, old_vmax = self._vmin, self._vmax
 
             if auto_contrast:
                 vmin, vmax = self._calculate_vmin_max(data, auto_contrast,
@@ -589,7 +592,7 @@ class ImagePlot(BlittedFigure):
                 self.quantity_label = self.quantity_label.replace(
                     'Power spectral density', '')
 
-    def set_contrast(self, vmin, vmax):
+    def set_contrast(self, vmin, vmax, auto_contrast=True):
         self.vmin, self.vmax = vmin, vmax
         self.update(data_changed=False)
 
