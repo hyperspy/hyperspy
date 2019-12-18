@@ -674,22 +674,6 @@ class ImageContrastEditor(t.HasTraits):
         if hasattr(self, "hist"):
             self._reset(indices_changed=False)
 
-    # @property
-    # def vmin(self):
-    #     self._get_current_range()[0]
-
-    # @property
-    # def vmax(self):
-    #     self._get_current_range()[1]
-
-    # @vmin.setter
-    # def vmin(self, value):
-    #     self._vmin = value
-
-    # @vmax.setter
-    # def vmax(self, value):
-    #     self._vmax = value
-
     def span_selector_switch(self, on):
         if on is True:
             self.span_selector = \

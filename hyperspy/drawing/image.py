@@ -217,7 +217,7 @@ class ImagePlot(BlittedFigure):
                             "removed in 2.0. Please use `vmin` and `vmax` "
                             "instead.")
             self._vmin_percentile = self.saturated_pixels / 2
-            self._vmax_percentile = 100 - self.saturated_pixels / 2
+            self._vmax_percentile = self.saturated_pixels / 2
 
 
     def _calculate_aspect(self):
@@ -592,9 +592,9 @@ class ImagePlot(BlittedFigure):
                 self.quantity_label = self.quantity_label.replace(
                     'Power spectral density', '')
 
-    def set_contrast(self, vmin, vmax, auto_contrast=True):
+    def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax
-        self.update(data_changed=False)
+        self.update(data_changed=False, auto_contrast=True)
 
     def optimize_colorbar(self,
                           number_of_ticks=5,
