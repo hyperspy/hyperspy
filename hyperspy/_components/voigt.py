@@ -66,15 +66,16 @@ class Voigt(Expression):
         Location of the maximum of the peak.
     area : float
         Intensity below the peak.
-    lwidth : float
-        HWHM=:math:`\gamma` of the Lorentzian distribution.
-    gwidth: float
-        FWHM=:math:`2 \sigma \sqrt(2 \log(2))` of the Gaussian distribution.
+    gamma : float
+        :math:`\gamma` = HWHM of the Lorentzian distribution.
+    sigma: float
+        :math:`2 \sigma \sqrt(2 \log(2))` = FWHM of the Gaussian distribution.
 
 
-    For convenience the `sigma` and `gamma` attributes can also be used to set 
-    set and get the width of the Gaussian and Lorentzian parts of the 
-    distribution, respectively.
+    For convenience the `gwidth` and `lwidth` attributes can also be used to 
+    set and get the FWHM of the Gaussian and Lorentzian parts of the
+    distribution, respectively. For backwards compatability, `FWHM` is another
+    alias for the Gaussian width.
 
     Notes
     -----
@@ -82,7 +83,7 @@ class Voigt(Expression):
     doi:10.1107/S0021889886089999
     """
 
-    def __init__(self, centre=10., area=1., lwidth=0.2, gwidth=0.05,
+    def __init__(self, centre=10., area=1., gamma=0.2, sigma=0.1,
                  module="scipy", **kwargs):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
@@ -90,26 +91,28 @@ class Voigt(Expression):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
             raise ImportError("The `Voigt` component requires "
                               "SymPy >= 1.3")
+        # We use `_gamma` internally to workaround the use of the `gamma`
+        # function in sympy
         super(Voigt, self).__init__(
             expression="area * real(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
-                z = (x - centre + 1j * lwidth) / (sigma * sqrt(2.0)); \
-                sigma = gwidth / (2 * sqrt(2 * log(2)))",
+                z = (x - centre + 1j * _gamma) / (sigma * sqrt(2.0))",
             name="Voigt",
             centre=centre,
             area=area,
-            lwidth=lwidth,
-            gwidth=gwidth,
+            gamma=gamma,
+            sigma=sigma,
             position="centre",
             module=module,
             autodoc=False,
+            rename_pars={"_gamma": "gamma"},
             **kwargs,
         )
 
         # Boundaries
         self.area.bmin = 0.
-        self.lwidth.bmin = 0.
-        self.gwidth.bmin = 0.
+        self.gamma.bmin = 0.
+        self.sigma.bmin = 0.
 
         self.isbackground = False
         self.convolved = True
@@ -159,7 +162,7 @@ class Voigt(Expression):
 
         if only_current is True:
             self.centre.value = centre
-            self.gwidth.value = sigma * sigma2fwhm
+            self.sigma.value = sigma
             self.area.value = height * sigma * sqrt2pi
             if self.binned:
                 self.area.value /= axis.scale
@@ -171,25 +174,33 @@ class Voigt(Expression):
             if self.binned:
                 self.area.map['values'][:] /= axis.scale
             self.area.map['is_set'][:] = True
-            self.gwidth.map['values'][:] = sigma * sigma2fwhm
-            self.gwidth.map['is_set'][:] = True
+            self.sigma.map['values'][:] = sigma
+            self.sigma.map['is_set'][:] = True
             self.centre.map['values'][:] = centre
             self.centre.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
 
     @property
-    def sigma(self):
-        return self.gwidth.value / sigma2fwhm
+    def gwidth(self):
+        return self.sigma.value * sigma2fwhm
 
-    @sigma.setter
-    def sigma(self, value):
-        self.gwidth.value = value * sigma2fwhm
+    @gwidth.setter
+    def gwidth(self, value):
+        self.sigma.value = value / sigma2fwhm
 
     @property
-    def gamma(self):
-        return self.lwidth.value
+    def FWHM(self):
+        return self.sigma.value * sigma2fwhm
 
-    @gamma.setter
-    def gamma(self, value):
-        self.lwidth.value = value
+    @FWHM.setter
+    def FWHM(self, value):
+        self.sigma.value = value / sigma2fwhm
+
+    @property
+    def lwidth(self):
+        return self.gamma.value * 2
+
+    @lwidth.setter
+    def lwidth(self, value):
+        self.gamma.value = value / 2

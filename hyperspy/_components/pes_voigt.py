@@ -137,25 +137,36 @@ class Voigt(Component):
             self.__init__(**kwargs)
 
     @property
-    def sigma(self):
+    def gwidth(self):
         if legacy is False:
-            return super().gwidth.value / sigma2fwhm
+            return super().sigma.value * sigma2fwhm
 
-    @sigma.setter
-    def sigma(self, value):
+    @gwidth.setter
+    def gwidth(self, value):
         if legacy is False:
-            super(Voigt, self.__class__).gwidth.value.fset(self, value
-                                                           * sigma2fwhm)
+            super(Voigt, self.__class__).sigma.value.fset(self, value
+                                                                / sigma2fwhm)
 
     @property
-    def gamma(self):
+    def FWHM(self):
         if legacy is False:
-            return super().lwidth.value
+            return super().sigma.value * sigma2fwhm
 
-    @gamma.setter
-    def gamma(self, value):
+    @FWHM.setter
+    def FWHM(self, value):
         if legacy is False:
-            super(Voigt, self.__class__).lwidth.value.fset(self, value)
+            super(Voigt, self.__class__).sigma.value.fset(self, value
+                                                                / sigma2fwhm)
+
+    @property
+    def lwidth(self):
+        if legacy is False:
+            return super().gamma.value * 2
+
+    @lwidth.setter
+    def lwidth(self, value):
+        if legacy is False:
+            super(Voigt, self.__class__).gamma.value.fset(self, value / 2)
 
 
 class PESVoigt(Component):

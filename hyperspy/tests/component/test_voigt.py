@@ -32,11 +32,11 @@ TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 def test_function():
     g = Voigt(legacy=False)
     g.area.value = 5
-    g.gwidth.value = 0.5
-    g.lwidth.value = 0.2
+    g.sigma.value = 0.5
+    g.gamma.value = 0.2
     g.centre.value = 1
-    assert_allclose(g.function(0), 0.35380168)
-    assert_allclose(g.function(1), 5.06863535)
+    assert_allclose(g.function(0), 0.78853024)
+    assert_allclose(g.function(1), 2.97832092)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -47,7 +47,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     axis = s.axes_manager.signal_axes[0]
     axis.scale = .05
     axis.offset = -5
-    g1 = Voigt(centre=1, area=5, lwidth=0.001, gwidth=0.5, legacy=False)
+    g1 = Voigt(centre=1, area=5, gamma=0.001, sigma=0.5, legacy=False)
     s.data = g1.function(axis.axis)
     if lazy:
         s = s.as_lazy()
@@ -56,8 +56,8 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g2.gwidth.value, 0.5, 0.04)
-    assert_allclose(g1.area.value, g2.area.value * factor, 0.04)
+    assert_allclose(g2.sigma.value, 0.5, 0.01)
+    assert_allclose(g1.area.value, g2.area.value * factor, 0.01)
     assert_allclose(g2.centre.value, 1, 1e-3)
 
 
@@ -69,7 +69,7 @@ def test_function_nd(binned, lazy):
     axis = s.axes_manager.signal_axes[0]
     axis.scale = .05
     axis.offset = -5
-    g1 = Voigt(centre=1, area=5, lwidth=0, gwidth=0.5, legacy=False)
+    g1 = Voigt(centre=1, area=5, gamma=0, sigma=0.5, legacy=False)
     s.data = g1.function(axis.axis)
     s2 = stack([s] * 2)
     if lazy:
@@ -81,37 +81,47 @@ def test_function_nd(binned, lazy):
     assert_allclose(g2.function_nd(axis.axis) * factor, s2.data)
 
 
-def test_util_gamma_set():
+def test_util_lwidth_set():
     g1 = Voigt(legacy=False)
-    g1.gamma = 3.0
-    assert_allclose(g1.lwidth.value, g1.gamma)
+    g1.lwidth = 3.0
+    assert_allclose(g1.lwidth / 2, g1.gamma.value)
 
-
-def test_util_gamma_get():
+def test_util_lwidth_get():
     g1 = Voigt(legacy=False)
-    g1.lwidth.value = 3.0
-    assert_allclose(g1.lwidth.value, g1.gamma)
+    g1.gamma.value = 3.0
+    assert_allclose(g1.lwidth / 2, g1.gamma.value)
 
-
-def test_util_gamma_getset():
+def test_util_lwidth_getset():
     g1 = Voigt(legacy=False)
-    g1.gamma = 3.0
-    assert_allclose(g1.gamma, 3.0)
+    g1.lwidth = 3.0
+    assert_allclose(g1.lwidth, 3.0)
 
-
-def test_util_sigma_set():
+def test_util_gwidth_set():
     g1 = Voigt(legacy=False)
-    g1.sigma = 1.0
-    assert_allclose(g1.gwidth.value, 1.0 * (2 * np.sqrt(2 * np.log(2))))
+    g1.gwidth = 1.0
+    assert_allclose(g1.sigma.value, 1.0 / (2 * np.sqrt(2 * np.log(2))))
 
-
-def test_util_sigma_get():
+def test_util_gwidth_get():
     g1 = Voigt(legacy=False)
-    g1.gwidth.value = 1.0
-    assert_allclose(g1.sigma, 1.0 / (2 * np.sqrt(2 * np.log(2))))
+    g1.sigma.value = 1.0
+    assert_allclose(g1.gwidth, 1.0 * (2 * np.sqrt(2 * np.log(2))))
 
-
-def test_util_sigma_getset():
+def test_util_gwidth_getset():
     g1 = Voigt(legacy=False)
-    g1.sigma = 1.0
-    assert_allclose(g1.sigma, 1.0)
+    g1.gwidth = 1.0
+    assert_allclose(g1.gwidth, 1.0)
+
+def test_util_FWHM_set():
+    g1 = Voigt(legacy=False)
+    g1.FWHM = 1.0
+    assert_allclose(g1.sigma.value, 1.0 / (2 * np.sqrt(2 * np.log(2))))
+
+def test_util_FWHM_get():
+    g1 = Voigt(legacy=False)
+    g1.sigma.value = 1.0
+    assert_allclose(g1.FWHM, 1.0 * (2 * np.sqrt(2 * np.log(2))))
+
+def test_util_FWHM_getset():
+    g1 = Voigt(legacy=False)
+    g1.FWHM = 1.0
+    assert_allclose(g1.FWHM, 1.0)
