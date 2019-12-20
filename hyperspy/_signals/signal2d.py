@@ -22,7 +22,6 @@ import numpy.ma as ma
 import dask.array as da
 import scipy as sp
 import logging
-from scipy.fftpack import fftn, ifftn
 from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
@@ -98,11 +97,11 @@ def fft_correlation(in1, in2, normalize=False):
     size = s1 + s2 - 1
     # Use 2**n-sized FFT
     fsize = (2 ** np.ceil(np.log2(size))).astype("int")
-    fprod = fftn(in1, fsize)
-    fprod *= fftn(in2, fsize).conjugate()
+    fprod = np.fft.fftn(in1, fsize)
+    fprod *= np.fft.fftn(in2, fsize).conjugate()
     if normalize is True:
         fprod = np.nan_to_num(fprod / np.absolute(fprod))
-    ret = ifftn(fprod).real.copy()
+    ret = np.fft.ifftn(fprod).real.copy()
     return ret, fprod
 
 
