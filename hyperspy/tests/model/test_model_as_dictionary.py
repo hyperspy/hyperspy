@@ -19,7 +19,6 @@
 import numpy as np
 
 import pytest
-from numpy.testing import assert_allclose
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.component import Parameter, Component
@@ -58,7 +57,7 @@ class TestParameterDictionary:
         self.par.name = 'asd'
         self.par._id_name = 'newone'
         self.par.twin_function_expr = "x * x"
-        self.par.twin_inverse_function_expr = "x * x + 1"
+        self.par.twin_inverse_function_expr = "sqrt(x)"
         self.par._axes_manager = DummyAxesManager()
         self.par._create_array()
         self.par.value = 1
