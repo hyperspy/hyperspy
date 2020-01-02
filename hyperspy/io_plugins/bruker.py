@@ -1024,8 +1024,8 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
     The method is only meant to be used if for some
     reason c (generated with cython) version of the parser is not compiled.
 
-    Arguments:
-    ---------
+    Parameters
+    ----------
     virtual_file -- virtual file handle returned by SFS_reader instance
         or by object inheriting it (e.g. BCF_reader instance)
     shape -- numpy shape
@@ -1036,8 +1036,8 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
     to be properly calculated otherwise wrong output or segfault
     is expected
 
-    Returns:
-    ---------
+    Return
+    ------
     numpy array of bruker hypermap, with (y, x, E) shape.
     """
     iter_data, size_chnk = virtual_file.get_iter_and_properties()[:2]

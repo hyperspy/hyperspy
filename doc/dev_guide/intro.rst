@@ -1,5 +1,5 @@
 ﻿﻿Introduction
-============
+=============
 
 This guide is intended to give people who want to start contributing
 to HyperSpy a foothold to kick-start the process.
