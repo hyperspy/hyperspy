@@ -259,7 +259,8 @@ def run_apidoc(_):
     cur_dir = os.path.normpath(os.path.dirname(__file__))
     output_path = os.path.join(cur_dir, 'api')
     modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
-    main(['-e', '-f', '-P', '-o', output_path, modules])
+    exclude_pattern = "../hyperspy/tests/*"
+    main(['-e', '-f', '-P', '-o', output_path, modules, exclude_pattern])
 
 
 def setup(app):
