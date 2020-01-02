@@ -685,15 +685,13 @@ class EELSSpectrum_mixin:
                                     extrapolate_coreloss=True):
         """Performs Fourier-ratio deconvolution.
 
-        The core-loss should have the background removed. To reduce
-         the noise amplication the result is convolved with a
-        Gaussian function.
+        The core-loss should have the background removed. To reduce the noise 
+        amplication the result is convolved with a Gaussian function.
 
         Parameters
         ----------
         ll: EELSSpectrum
             The corresponding low-loss (ll) EELSSpectrum.
-
         fwhm : float or None
             Full-width half-maximum of the Gaussian function by which
             the result of the deconvolution is convolved. It can be
@@ -703,7 +701,7 @@ class EELSSpectrum_mixin:
         threshold : {None, float}
             Truncation energy to estimate the intensity of the
             elastic scattering. If None the threshold is taken as the
-             first minimum after the ZLP centre.
+            first minimum after the ZLP centre.
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
 
