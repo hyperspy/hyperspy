@@ -57,7 +57,7 @@ def centering_and_whitening(X):
 
 def get_derivative(signal, diff_axes, diff_order):
     if signal.axes_manager.signal_dimension == 1:
-        signal = signal.diff(order=diff_order, axis=-1)
+        signal = signal.derivative(order=diff_order, axis=-1)
     else:
         # n-d signal case.
         # Compute the differences for each signal axis, unfold the
@@ -620,8 +620,8 @@ class MVA():
                                      diff_order=diff_order)
             if mask is not None:
                 # The following is a little trick to dilate the mask as
-                # required when operation on the differences. It exploits the
-                # fact that np.diff autimatically "dilates" nans. The trick has
+                # required when operating on differences. It exploits the
+                # fact that np.diff automatically "dilates" nans. The trick has
                 # a memory penalty which should be low compare to the total
                 # memory required for the core application in most cases.
                 mask_diff_axes = (

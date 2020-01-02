@@ -3308,6 +3308,11 @@ class BaseSignal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
+        if not self.axes_manager[axis].is_linear:
+            raise NotImplementedError(
+            "Performing a numerical difference on a non-linear axis "
+            "is not implemented. Consider using `derivative` instead."
+        )
         s = out or self._deepcopy_with_new_data(None)
         data = np.diff(self.data, n=order,
                        axis=self.axes_manager[axis].index_in_array)
@@ -3316,11 +3321,8 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         axis2 = s.axes_manager[axis]
-        if not self.axes_manager[axis].is_linear:
-            axis2.axes_manager[axis].axis = self.axes_manager[axis].axis[:-1]
-        else: 
-            new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
-            axis2.offset = new_offset
+        new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
+        axis2.offset = new_offset
         s.get_dimensions_from_data()
         if out is None:
             return s
@@ -3328,7 +3330,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None, rechunk=True):
+    def derivative(self, axis, order=1, out=None, **kwargs):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
 
@@ -3345,7 +3347,6 @@ class BaseSignal(FancySlicing,
         order: int
             The order of the derivative.
         %s
-        %s
 
         Returns
         -------
@@ -3354,26 +3355,32 @@ class BaseSignal(FancySlicing,
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
         
-        Note
-        ----
-        Requires a linear axis.
-        
+        Notes
+        -----
+        This function uses numpy.gradient to perform the derivative. See its
+        documentation for implementation details.
+
         See also
         --------
         diff, integrate1D, integrate_simpson
 
         """
-        if not self.axes_manager[axis].is_linear:
-            raise NonLinearAxisError()
-        der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
-        der = out or der
-        axis = self.axes_manager[axis]
-        der.data /= axis.scale ** order
-        if out is None:
-            return der
-        else:
+        # rechunk was a valid keyword up to HyperSpy 1.6
+        if "rechunk" in kwargs:
+            del kwargs["rechunk"]
+        n = order
+        der_data = self.data
+        while n:
+            der_data = np.gradient(
+                der_data, self.axes_manager[axis].axis,
+                axis=self.axes_manager[axis].index_in_array, **kwargs)
+            n -= 1
+        if out:
+            out.data = der_data
             out.events.data_changed.trigger(obj=out)
-    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
+        else:
+            return self._deepcopy_with_new_data(der_data)
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
         """Calculate the integral of a Signal along an axis using
@@ -3933,20 +3940,23 @@ class BaseSignal(FancySlicing,
                 ndkwargs += ((key, value),)
 
         # TODO: Consider support for non linear signal axis
-        if any([not ax.is_linear for ax in self.axes_manager.signal_axes]): 
-            raise NonLinearAxisError()
-        # Check if the signal axes have inhomogeneous scales and/or units and
-        # display in warning if yes.
-        scale = set()
-        units = set()
-        for i in range(len(self.axes_manager.signal_axes)):
-            scale.add(self.axes_manager.signal_axes[i].scale)
-            units.add(self.axes_manager.signal_axes[i].units)
-        if len(units) != 1 or len(scale) != 1:
+        if any([not ax.is_linear for ax in self.axes_manager.signal_axes]):
             _logger.warning(
-                "The function you applied does not take into "
-                "account the difference of units and of scales in-between"
-                " axes.")
+                "At least one axis of the signal is non-linear. Can your "
+                "`function` operate on non-linear axes?")
+        else:
+            # Check if the signal axes have inhomogeneous scales and/or units and
+            # display in warning if yes.
+            scale = set()
+            units = set()
+            for i in range(len(self.axes_manager.signal_axes)):
+                scale.add(self.axes_manager.signal_axes[i].scale)
+                units.add(self.axes_manager.signal_axes[i].units)
+            if len(units) != 1 or len(scale) != 1:
+                _logger.warning(
+                    "The function you applied does not take into "
+                    "account the difference of units and of scales in-between"
+                    " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.

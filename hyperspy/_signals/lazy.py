@@ -313,6 +313,11 @@ class LazySignal(BaseSignal):
         self._make_lazy(rechunk=True)
 
     def diff(self, axis, order=1, out=None, rechunk=True):
+        if not self.axes_manager[axis].is_linear:
+            raise NotImplementedError(
+            "Performing a numerical difference on a non-linear axis "
+            "is not implemented. Consider using `derivative` instead."
+        )
         arr_axis = self.axes_manager[axis].index_in_array
 
         def dask_diff(arr, n, axis):
@@ -348,11 +353,8 @@ class LazySignal(BaseSignal):
                     "The output shape %s does not match  the shape of "
                     "`out` %s" % (new_data.shape, out.data.shape))
         axis2 = s.axes_manager[axis]
-        if not self.axes_manager[axis].is_linear:
-            axis2.axes_manager[axis].axis = self.axes_manager[axis].axis[:-1]
-        else:
-            new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
-            axis2.offset = new_offset
+        new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
+        axis2.offset = new_offset
         s.get_dimensions_from_data()
         if out is None:
             return s

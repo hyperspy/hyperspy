@@ -754,8 +754,8 @@ class TestDerivative:
 
     def test_derivative_data(self):
         der = self.s.derivative(axis=0, order=4)
-        nt.assert_allclose(der.data, np.sin(
-            der.axes_manager[0].axis), atol=1e-2)
+        nt.assert_allclose(der.data[4:-4], np.sin(
+            der.axes_manager[0].axis[4:-4]), atol=1e-2)
 
 
 @lazifyTestClass
@@ -1118,11 +1118,10 @@ def test_lazy_reduce_rechunk():
 
 def test_lazy_diff_rechunk():
     s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
-    for rm in (s.derivative, s.diff):
-        # The data has been rechunked
-        assert rm(axis=-1).data.chunks == ((10,), (99,))
-        assert rm(axis=-1, rechunk=False).data.chunks == ((1,) *
-                                                          10, (1,) * 99)  # The data has not been rechunked
+    # The data has been rechunked
+    assert s.diff(axis=-1).data.chunks == ((10,), (99,))
+    assert s.diff(axis=-1, rechunk=False).data.chunks == ((1,) *
+                                                      10, (1,) * 99)  # The data has not been rechunked
 
 
 def test_spikes_removal_tool():
