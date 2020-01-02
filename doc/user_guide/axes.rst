@@ -81,6 +81,7 @@ chop them into two chunks (signal and navigation), and then swap those chunks,
 at least when printing. As an example:
 
 .. code-block:: bash
+
     (a1, a2, a3, a4, a5, a6) # original (numpy)
     (a6, a5, a4, a3, a2, a1) # reverse
     (a6, a5) (a4, a3, a2, a1) # chop
@@ -210,7 +211,7 @@ navigation dimensions:
 
 
 Summary of axis properties
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``name`` (str) and ``units`` (str) are basic parameters describing an axis
   used in plotting. The latter enables the :ref:`conversion of units
@@ -238,7 +239,7 @@ defined:
 * :py:class:`~.axes.DataAxis` defined by a vector ``axis``, 
 * :py:class:`~.axes.FunctionalDataAxis` defined by a function ``expression`` or 
 * :py:class:`~.axes.LinearDataAxis` defined by the initial value ``offset``
-and spacing ``scale``.
+  and spacing ``scale``.
 
 The main disambiguation is whether the
 axis is **linear**, where the data points are equidistantly spaced, or
