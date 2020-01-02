@@ -1143,10 +1143,10 @@ def make_cmap(colors, name='my_colormap', position=None,
         list containing the values (from [0,1]) that dictate the position
         of each color within the colormap. If None (default), the colors
         will be equally-spaced within the colorbar.
-    bit : boolean
+    bit : bool
         True if RGB colors are given in 8-bit [0 to 255] or False if given
         in arithmetic basis [0 to 1] (default)
-    register : boolean
+    register : bool
         switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string
     """

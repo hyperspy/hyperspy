@@ -1304,11 +1304,11 @@ class EELSSpectrum_mixin:
             a low-loss EELS spectrum, and it will be used to simulate the
             effect of multiple scattering by convolving it with the EELS
             spectrum.
-        auto_background : boolean, default True
+        auto_background : bool, default True
             If True, and if spectrum is an EELS instance adds automatically
             a powerlaw to the model and estimate the parameters by the
             two-area method.
-        auto_add_edges : boolean, default True
+        auto_add_edges : bool, default True
             If True, and if spectrum is an EELS instance, it will
             automatically add the ionization edges as defined in the
             Signal1D instance. Adding a new element to the spectrum using
