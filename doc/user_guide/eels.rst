@@ -169,6 +169,7 @@ Conveniently, all the EELS core-loss components of the added elements are added
 automatically, names after its element symbol.
 
 .. code-block:: python
+
     >>> m.components.N_K
     <N_K (EELSCLEdge component)>
     >>> m.components.B_K

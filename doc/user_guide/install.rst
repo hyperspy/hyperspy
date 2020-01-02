@@ -251,6 +251,7 @@ installing from source in a conda environment, these can be obtained beforehand
 by installing and removing hyperspy from that environment;
 
 .. code-block:: bash
+
     $ conda install hyperspy
     $ conda remove hyperspy
     $ pip install -e ./

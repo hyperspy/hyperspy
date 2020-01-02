@@ -129,7 +129,6 @@ Getting help
 When using IPython, the documentation (docstring in Python jargon) can be
 accessed by adding a question mark to the name of a function. e.g.:
 
-
 .. code-block:: python
 
     >>> hs?
@@ -322,6 +321,7 @@ chop it into two chunks (signal and navigation), and then swap those chunks, at
 least when printing. As an example:
 
 .. code-block:: bash
+
     (a1, a2, a3, a4, a5, a6) # original (numpy)
     (a6, a5, a4, a3, a2, a1) # reverse
     (a6, a5) (a4, a3, a2, a1) # chop
