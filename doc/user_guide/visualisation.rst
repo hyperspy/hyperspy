@@ -400,6 +400,8 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
+.. _visualization_3D_EDS-label:
+
 Using Mayavi to visualize 3D data
 =================================
 
