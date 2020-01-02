@@ -3347,6 +3347,8 @@ class BaseSignal(FancySlicing,
         order: int
             The order of the derivative.
         %s
+        **kwargs : dict
+            All extra keyword arguments are passed to :py:func:`numpy.gradient`
 
         Returns
         -------
@@ -3354,7 +3356,7 @@ class BaseSignal(FancySlicing,
             Note that the size of the data on the given ``axis`` decreases by
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
-        
+
         Notes
         -----
         This function uses numpy.gradient to perform the derivative. See its
