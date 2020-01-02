@@ -48,6 +48,9 @@ in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:class:`~.axes.AxesManager` attribute.
 
+
+.. _signal_initialization:
+
 Signal initialization
 ---------------------
 

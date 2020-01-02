@@ -14,6 +14,7 @@ HyperSpy User Guide
     what_is_new.rst
     install.rst
     getting_started.rst
+    axes.rst
     tools.rst
     signal1d.rst
     signal2d.rst
