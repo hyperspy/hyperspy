@@ -166,7 +166,7 @@ class TestFunctionalDataAxis:
     def setup_method(self, method):
         expression = "a * x + b"
         self.axis = FunctionalDataAxis(size=10, expression=expression,
-                                       a=0.1, b=10)
+                                       a=0.1, b=10, offset=0)
 
     def _test_initialisation_parameters(self, axis):
         assert axis.a == 0.1
@@ -182,13 +182,26 @@ class TestFunctionalDataAxis:
         assert isinstance(axis, FunctionalDataAxis)
         self._test_initialisation_parameters(axis)
 
+    @pytest.mark.parametrize("use_indices", (True, False))
+    def test_crop(self, use_indices):
+        axis = self.axis
+        print(axis.axis)
+        start, end = 10.1, 10.8
+        if use_indices:
+            start = axis.value2index(start)
+            end = axis.value2index(end)
+        axis.crop(start, end)
+        assert axis.size == 7
+        np.testing.assert_almost_equal(axis.axis[0], 10.1)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.7)
+
 
 class TestReciprocalDataAxis:
 
     def setup_method(self, method):
         expression = "a / (x + 1) + b"
         self.axis = FunctionalDataAxis(size=10, expression=expression,
-                                       a=0.1, b=10)
+                                       a=0.1, b=10, offset=0)
 
     def _test_initialisation_parameters(self, axis):
         assert axis.a == 0.1
@@ -205,6 +218,19 @@ class TestReciprocalDataAxis:
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
         self._test_initialisation_parameters(axis)        
+
+    @pytest.mark.parametrize("use_indices", (True, False))
+    def test_crop(self, use_indices):
+        axis = self.axis
+        print(axis.axis)
+        start, end = 10.05, 10.02
+        if use_indices:
+            start = axis.value2index(start)
+            end = axis.value2index(end)
+        axis.crop(start, end)
+        assert axis.size == 3
+        np.testing.assert_almost_equal(axis.axis[0], 10.05)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.025)
 
 
 class TestLinearDataAxis:
