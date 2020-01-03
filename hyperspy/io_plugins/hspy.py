@@ -236,8 +236,6 @@ def hdfgroup2signaldict(group, lazy=False):
                     axis[key] = bool(item)
                 else:
                     axis[key] = ensure_unicode(item)
-            if 'x0' in group['axis-%i' % i].keys():
-                axis['x0'] = group['axis-%i/x0' % i][()]
             if 'axis' in group['axis-%i' % i].keys():
                 axis['axis'] = group['axis-%i/axis' % i][()]
         except KeyError:
