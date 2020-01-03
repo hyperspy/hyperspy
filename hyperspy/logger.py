@@ -19,8 +19,8 @@ def set_log_level(level):
                 - 'DEBUG'
                 - 'NOTSET'
 
-    Example use
-    -----------
+    Example
+    -------
 
     For normal logging of hyperspy functions, you can set the log level like
     this:

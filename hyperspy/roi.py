@@ -335,8 +335,8 @@ class BaseInteractiveROI(BaseROI):
         """Creates an interactively sliced Signal (sliced by this ROI) via
         hyperspy.interactive.
 
-        Arguments:
-        ----------
+        Arguments
+        ---------
         signal : Signal
             The source signal to slice
         navigation_signal : Signal, None or "same" (default)
@@ -408,8 +408,8 @@ class BaseInteractiveROI(BaseROI):
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
 
-        Arguments:
-        ----------
+        Arguments
+        ---------
         signal : Signal
             The signal to witch the widget is added. This is used to determine
             with plot to add the widget to, and it supplies the axes_manager
@@ -417,13 +417,16 @@ class BaseInteractiveROI(BaseROI):
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
             The DataAxis in the collection can be either of the following:
-                * a tuple of:
-                    - DataAxis. These will not be checked with
-                      signal.axes_manager.
-                    - anything that will index signal.axes_manager
-                * For any other value, it will check whether the navigation
-                  space can fit the right number of axis, and use that if it
-                  fits. If not, it will try the signal space.
+
+            * a tuple of:
+
+                - DataAxis. These will not be checked with signal.axes_manager.
+                - anything that will index signal.axes_manager
+
+            * For any other value, it will check whether the navigation
+              space can fit the right number of axis, and use that if it
+              fits. If not, it will try the signal space.
+
         widget : Widget or None (default)
             If specified, this is the widget that will be added. If None, the
             default widget will be used, as given by _get_widget_type().

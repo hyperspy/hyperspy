@@ -552,9 +552,10 @@ def quantification_cross_section(intensities,
     Quantification using EDX cross sections
     Calculate the atomic compostion and the number of atoms per pixel
     from the raw X-ray intensity
+
     Parameters
     ----------
-    intensity : numpy.array
+    intensity : numpy.ndarray
         The integrated intensity for each X-ray line, where the first axis
         is the element axis.
     cross_sections : list of floats

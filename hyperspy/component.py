@@ -687,19 +687,19 @@ class Parameter(t.HasTraits):
         fullcopy : Bool (optional, False)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
+
         Returns
         -------
-        dic : dictionary with the following keys:
-            _id_name : string
-                _id_name of the original parameter, used to create the
-                dictionary. Has to match with the self._id_name
-            _twins : list
-                a list of ids of the twins of the parameter
-            _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the
-                parameter attributes.  For more information see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
+        dic : dict
+            A dictionary, containing at least the following fields:
+
+            * _id_name: _id_name of the original parameter, used to create the
+              dictionary. Has to match with the self._id_name
+            * _twins: a list of ids of the twins of the parameter
+            * _whitelist: a dictionary, which keys are used as keywords to match
+              with the parameter attributes. For more information see
+              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys()
 
         """
         dic = {'_twins': [id(t) for t in self._twins]}
@@ -982,24 +982,20 @@ class Component(t.HasTraits):
         ----------
         folder : str or None
             The path to the folder where the file will be saved. If
-            `None` the
-            current folder is used by default.
+            `None` the current folder is used by default.
         format : str
             The extension of the file format, default "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
-            If True, only the value of the parameters that are free will
-             be
+            If True, only the value of the parameters that are free will be
             exported.
 
         Notes
         -----
         The name of the files will be determined by each the Component
-        and
-        each Parameter name attributes. Therefore, it is possible to
-        customise
-        the file names modify the name attributes.
+        and each Parameter name attributes. Therefore, it is possible to
+        customise the file names modify the name attributes.
 
         """
         if only_free:
@@ -1133,8 +1129,8 @@ class Component(t.HasTraits):
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary
-        For more information on method and conventions, see
+        """Returns component as a dictionary. For more information on method 
+        and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
@@ -1145,15 +1141,15 @@ class Component(t.HasTraits):
 
         Returns
         -------
-        dic : dictionary
+        dic : dict
             A dictionary, containing at least the following fields:
-            parameters : list
-                a list of dictionaries of the parameters, one per
-            _whitelist : dictionary
-                a dictionary with keys used as references saved attributes, for
-                more information, see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
+
+            * parameters: a list of dictionaries of the parameters, one per
+              component.
+            * _whitelist: a dictionary with keys used as references saved
+              attributes, for more information, see
+              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys()
         """
         dic = {
             'parameters': [

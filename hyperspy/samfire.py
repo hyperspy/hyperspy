@@ -404,7 +404,7 @@ class Samfire:
         """Changes current strategy to a new one. Certain rules apply:
         diffusion -> diffusion : resets all "ignored" pixels
         diffusion -> segmenter : saves already calculated pixels to be ignored
-            when(if) subsequently diffusion strategy is run
+        when(if) subsequently diffusion strategy is run
 
         Parameters
         ----------

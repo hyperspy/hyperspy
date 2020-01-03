@@ -554,9 +554,8 @@ def plot_images(images,
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values
         Values should be supplied as used in pyplot.subplots_adjust(),
-        and can be:
-            'left', 'bottom', 'right', 'top', 'wspace' (width),
-            and 'hspace' (height)
+        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and 
+        'hspace' (height)
     tight_layout : bool, optional
         If true, hyperspy will attempt to improve image placement in
         figure using matplotlib's tight_layout
@@ -1241,7 +1240,7 @@ def plot_spectra(
         or 'heatmap' style.
     **kwargs
         remaining keyword arguments are passed to matplotlib.figure() or
-        matplotlib.subplots(). Has no effect on 'heatmap' style.
+        `matplotlib.subplots. Has no effect on 'heatmap' style.
 
     Example
     -------
