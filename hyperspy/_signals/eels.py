@@ -1018,7 +1018,7 @@ class EELSSpectrum_mixin:
         dielectric function from a single scattering distribution (SSD) using
         the Kramers-Kronig relations.
 
-        It uses the FFT method as in [Egerton2011]_.  The SSD is an
+        It uses the FFT method as in [*]_.  The SSD is an
         EELSSpectrum instance containing SSD low-loss EELS with no zero-loss
         peak. The internal loop is devised to approximately subtract the
         surface plasmon contribution supposing an unoxidized planar surface and
@@ -1098,7 +1098,7 @@ class EELSSpectrum_mixin:
 
         Notes
         -----
-        This method is based in Egerton's Matlab code [Egerton2011]_ with some
+        This method is based in Egerton's Matlab code [*]_ with some
         minor differences:
 
         * The integrals are performed using the simpsom rule instead of using
@@ -1106,8 +1106,8 @@ class EELSSpectrum_mixin:
         * The wrap-around problem when computing the ffts is workarounded by
           padding the signal instead of substracting the reflected tail.
 
-        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
-           Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
+        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
+           Microscope", Springer-Verlag, 2011.
 
         """
         output = {}

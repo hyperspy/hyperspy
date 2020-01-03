@@ -35,7 +35,7 @@ class DielectricFunction_mixin:
         rule.
 
         The Bethe f-sum rule gives rise to two definitions of the effective
-        number (see [egerton2011]_), neff1 and neff2:
+        number (see [*]_), neff1 and neff2:
 
         .. math::
 
@@ -65,7 +65,7 @@ class DielectricFunction_mixin:
 
         Notes
         -----
-        .. [egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy 
+        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy 
            in the Electron Microscope", Springer-Verlag, 2011.
 
         """
