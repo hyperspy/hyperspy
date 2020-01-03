@@ -3024,6 +3024,13 @@ class BaseSignal(FancySlicing,
             A new Signal containing the sum of the provided Signal along the
             specified axes.
 
+        Note
+        ----
+        If you intend to calculate the numerical integral, please use the
+        :py:meth:`integrate1D` function instead. To avoid erroneous misuse of the
+        `sum` function as integral, it raises a warning when working with 
+        a non-linear axis.
+
         See also
         --------
         max, min, mean, std, var, indexmax, indexmin, valuemax, valuemin
@@ -3038,8 +3045,19 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
+
         if axis is None:
             axis = self.axes_manager.navigation_axes
+
+        axes = self.axes_manager[axis]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if any([not ax.is_linear for ax in axes]):
+            warnings.warn("You are summing over a non-linear axis. The result "
+                          "can not be used as an approximation of the "
+                          "integral of the signal. For this functionality, "
+                          "use integrate1D instead.")
+
         return self._apply_function_on_data_and_remove_axis(
             np.sum, axis, out=out, rechunk=rechunk)
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
@@ -3229,6 +3247,14 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
+        axes = self.axes_manager[axis]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if any([not ax.is_linear for ax in axes]):
+            warnings.warn("You are summing over a non-linear axis. The result "
+                          "can not be used as an approximation of the "
+                          "integral of the signal. For this functionaliy, "
+                          "use integrate1D instead.")
         return self._apply_function_on_data_and_remove_axis(
             np.nansum, axis, out=out, rechunk=rechunk)
     nansum.__doc__ %= (NAN_FUNC.format('sum'))
@@ -3295,6 +3321,13 @@ class BaseSignal(FancySlicing,
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, the `x` dimension is N, ``der``'s `x` dimension is N - 2.
 
+        Note
+        ----
+        If you intend to calculate the numerical derivative, please use the
+        proper :py:meth:`derivative` function instead. To avoid erroneous
+        misuse of the `diff` function as derivative, it raises an error when
+        when working with a non-linear axis.
+        
         See also
         --------
         derivative, integrate1D, integrate_simpson
@@ -3364,7 +3397,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        diff, integrate1D, integrate_simpson
+        integrate1D, integrate_simpson
 
         """
         # rechunk was a valid keyword up to HyperSpy 1.6
@@ -3401,7 +3434,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        diff, derivative, integrate1D
+        derivative, integrate1D
 
         Examples
         --------
@@ -3619,7 +3652,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        integrate_simpson, diff, derivative
+        integrate_simpson, derivative
 
         Examples
         --------
