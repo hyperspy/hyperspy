@@ -178,8 +178,8 @@ class TestRemoveBackground1DVoigt:
         voigt = components1d.Voigt(legacy=False)
         voigt.area.value = 5
         voigt.centre.value = 10
-        voigt.lwidth.value = 0.2
-        voigt.gwidth.value = 0.5
+        voigt.gamma.value = 0.2
+        voigt.sigma.value = 0.5
         self.signal = signals.Signal1D(
             voigt.function(np.arange(0, 20, 0.03)))
         self.signal.axes_manager[0].scale = 0.01
