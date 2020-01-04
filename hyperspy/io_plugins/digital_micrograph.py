@@ -27,6 +27,7 @@ import dateutil.parser
 
 import numpy as np
 import traits.api as t
+from copy import deepcopy
 
 import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
@@ -1054,8 +1055,8 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
             imd.append(
                 {'data': data,
                  'axes': axes,
-                 'metadata': mp,
-                 'original_metadata': dm.tags_dict,
+                 'metadata': deepcopy(mp),
+                 'original_metadata': deepcopy(dm.tags_dict),
                  'post_process': post_process,
                  'mapping': image.get_mapping(),
                  })
