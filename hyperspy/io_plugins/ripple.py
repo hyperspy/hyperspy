@@ -688,12 +688,12 @@ def write_rpl(filename, keys_dictionary, encoding='ascii'):
 def write_raw(filename, signal, record_by):
     """Writes the raw file object
 
-    Parameters:
-    -----------
-    filename : string
+    Parameters
+    ----------
+    filename : str
         the filename, either with the extension or without it
-    record_by : string
-     'vector' or 'image'
+    record_by : str
+         'vector' or 'image'
 
         """
     filename = os.path.splitext(filename)[0] + '.raw'

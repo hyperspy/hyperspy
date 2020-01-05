@@ -102,8 +102,8 @@ class LineInSignal1D(t.HasTraits):
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     position : float
         The position of the vertical line in the one dimensional signal. Moving
         the line changes the position but the reverse is not true.
