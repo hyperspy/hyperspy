@@ -238,12 +238,14 @@ man_pages = [
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       'hyperspyweb': ('http://hyperspy.org/', None),
+                       'hyperspyweb': ('https://hyperspy.org/', None),
                        'matplotlib': ('https://matplotlib.org', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
                        'dask': ('https://docs.dask.org/en/latest', None),
-                       'astroML': ('https://www.astroml.org/', None)}
+                       'astroML': ('https://www.astroml.org/', None),
+                       'sklearn': ('https://scikit-learn.org/stable', None),
+                       }
 
 graphviz_output_format = "svg"
 
