@@ -708,6 +708,7 @@ class FunctionalDataAxis(BaseDataAxis):
     scale = t.CFloat()
     offset = t.CFloat()
     def __init__(self,
+                 expression,
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
@@ -715,7 +716,6 @@ class FunctionalDataAxis(BaseDataAxis):
                  size=1.,
                  scale=1.,
                  offset=0.,
-                 expression=None,
                  **parameters):
         super().__init__(index_in_array, name, units, navigate)
         self.size = size
