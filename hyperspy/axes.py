@@ -705,7 +705,8 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
-
+    scale = t.Float()
+    offset = t.Float()
     def __init__(self,
                  index_in_array=None,
                  name=t.Undefined,
@@ -721,8 +722,8 @@ class FunctionalDataAxis(BaseDataAxis):
         self.scale = scale
         self.offset = offset
 
-        self.parameters_list = [key for key in parameters.keys()]
-        self._expression = expression
+        self.parameters_list = [key for key in parameters.keys()] + ["scale", "offset"]
+        self._expression = expression + " + offset; x = scale * x"
         self.compile_function()
 
         # Set the value of the parameters
@@ -730,16 +731,16 @@ class FunctionalDataAxis(BaseDataAxis):
             setattr(self, kwarg, value)
 
         self.update_axis()
+        self.on_trait_change(self.update_axis,
+                             ['scale', 'offset', 'size'])
 
     def compile_function(self):
         from sympy.utilities.lambdify import lambdify
         from hyperspy._components.expression import _parse_substitutions
         expr = _parse_substitutions(self._expression)
-
         variables = ["x"]
         parameters = [symbol for symbol in expr.free_symbols
                       if symbol.name not in variables]
-
         self.function = lambdify(variables + parameters, expr.evalf(),
                                  dummify=False)
 
@@ -747,8 +748,7 @@ class FunctionalDataAxis(BaseDataAxis):
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        x0 = self.scale * np.arange(self.size) + self.offset
-        self.axis = self.function(x=x0, **kwargs)
+        self.axis = self.function(x=np.arange(self.size), **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
         self.size = len(self.axis)
@@ -789,7 +789,6 @@ class FunctionalDataAxis(BaseDataAxis):
         self.__init__(**d, axis=self.axis)
 
     def crop(self, start=None, end=None):
-        
         """Crop the axis in place.
 
         Parameters
@@ -826,30 +825,7 @@ class FunctionalDataAxis(BaseDataAxis):
         self.offset = x0[i1]
         self.size = i2 - i1
         self.update_axis()
-
     crop.__doc__ = DataAxis.crop.__doc__
-
-
-class LinearDataAxis(FunctionalDataAxis, UnitConversion):
-    scale = t.Float()
-    offset = t.Float()
-
-    def __init__(self,
-                 index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
-                 navigate=t.Undefined,
-                 size=1.,
-                 scale=1.,
-                 offset=0.):
-        self.expression = "x"
-        super().__init__(index_in_array, name, units, navigate, size=size,
-                         expression=self.expression, scale=scale,
-                         offset=offset)
-        self.update_axis()
-        self.on_trait_change(self.update_axis,
-                             ['scale', 'offset', 'size'])
-        self._is_linear = True
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
@@ -877,6 +853,39 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
             self.scale *= step
 
         return my_slice
+
+    @property
+    def scale_as_quantity(self):
+        return self._get_quantity('scale')
+
+    @scale_as_quantity.setter
+    def scale_as_quantity(self, value):
+        self._set_quantity(value, 'scale')
+
+    @property
+    def offset_as_quantity(self):
+        return self._get_quantity('offset')
+
+    @offset_as_quantity.setter
+    def offset_as_quantity(self, value):
+        self._set_quantity(value, 'offset')
+
+
+class LinearDataAxis(FunctionalDataAxis, UnitConversion):
+    def __init__(self,
+                 index_in_array=None,
+                 name=t.Undefined,
+                 units=t.Undefined,
+                 navigate=t.Undefined,
+                 size=1.,
+                 scale=1.,
+                 offset=0.):
+        self.expression = "x"
+        super().__init__(index_in_array, name, units, navigate, size=size,
+                         expression=self.expression, scale=scale,
+                         offset=offset)
+        self.update_axis()
+        self._is_linear = True
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
@@ -955,52 +964,6 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
 
         """
         return super().update_from(axis, attributes)
-
-    def crop(self, start=None, end=None):
-        """Crop the axis in place.
-
-        Parameters
-        ----------
-        start : int, float, or None
-            The beginning of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        end : int, float, or None
-            The end of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        """
-        if start is None:
-            start = 0
-        if end is None:
-            end = self.size
-        # Use `_get_positive_index` to support reserved indexing
-        i1 = self._get_positive_index(self._get_index(start))
-        i2 = self._get_positive_index(self._get_index(end))
-
-        self.offset = self.index2value(i1)
-        self.size = i2 - i1
-        self.update_axis()
-
-    crop.__doc__ = DataAxis.crop.__doc__
-
-    @property
-    def scale_as_quantity(self):
-        return self._get_quantity('scale')
-
-    @scale_as_quantity.setter
-    def scale_as_quantity(self, value):
-        self._set_quantity(value, 'scale')
-
-    @property
-    def offset_as_quantity(self):
-        return self._get_quantity('offset')
-
-    @offset_as_quantity.setter
-    def offset_as_quantity(self, value):
-        self._set_quantity(value, 'offset')
 
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
