@@ -713,7 +713,7 @@ class FunctionalDataAxis(BaseDataAxis):
                  navigate=t.Undefined,
                  size=1.,
                  scale=1.,
-                 offset=1.,
+                 offset=0.,
                  expression=None,
                  **parameters):
         super().__init__(index_in_array, name, units, navigate)
