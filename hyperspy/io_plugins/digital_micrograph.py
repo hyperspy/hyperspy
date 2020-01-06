@@ -1052,6 +1052,12 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
                                     dtype=image.dtype)
             else:
                 data = image.get_data()
+            # in the event there are multiple signals contained within this
+            # DM file, it is important to make a "deepcopy" of the metadata
+            # and original_metadata, since they are changed in each iteration
+            # of the "for image in images" loop, and using shallow copies
+            # will result in the final signal's metadata being used for all
+            # of the contained signals
             imd.append(
                 {'data': data,
                  'axes': axes,
