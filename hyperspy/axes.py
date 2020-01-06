@@ -705,8 +705,8 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
-    scale = t.Float()
-    offset = t.Float()
+    scale = t.CFloat()
+    offset = t.CFloat()
     def __init__(self,
                  index_in_array=None,
                  name=t.Undefined,
@@ -721,8 +721,10 @@ class FunctionalDataAxis(BaseDataAxis):
         self.size = size
         self.scale = scale
         self.offset = offset
-
-        self.parameters_list = [key for key in parameters.keys()] + ["scale", "offset"]
+        for parameter in parameters:
+            self.add_trait(name, t.CFloat(parameters[parameter]))
+        self.parameters_list = [key for key in parameters.keys()] + ["scale",
+        "offset"]
         self._expression = expression + " + offset; x = scale * x"
         self.compile_function()
 
@@ -731,8 +733,7 @@ class FunctionalDataAxis(BaseDataAxis):
             setattr(self, kwarg, value)
 
         self.update_axis()
-        self.on_trait_change(self.update_axis,
-                             ['scale', 'offset', 'size'])
+        self.on_trait_change(self.update_axis, self.parameters_list + ["size"])
 
     def compile_function(self):
         from sympy.utilities.lambdify import lambdify
