@@ -33,6 +33,7 @@ from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
 from hyperspy.exceptions import NonLinearAxisError
+from hyperspy._components.expression import _parse_substitutions
 
 
 import warnings
@@ -722,7 +723,6 @@ class FunctionalDataAxis(BaseDataAxis):
         self.offset = offset
         self._expression = expression
         # Compile function
-        from hyperspy._components.expression import _parse_substitutions
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
         expr_parameters = [symbol.name for symbol in expr.free_symbols
