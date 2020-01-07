@@ -719,8 +719,6 @@ class FunctionalDataAxis(BaseDataAxis):
                  **parameters):
         super().__init__(index_in_array, name, units, navigate)
         self.size = size
-        self.scale = scale
-        self.offset = offset
         self._expression = expression
         # Compile function
         expr = _parse_substitutions(self._expression)
@@ -739,7 +737,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
 
-        expr = _parse_substitutions(self._expression + " + offset; x = scale * x")
+        expr = _parse_substitutions(self._expression + " + offset; x = scale * (x+x0)")
         expr_parameters = [symbol for symbol in expr.free_symbols
                            if symbol.name not in variables]
         self._function = lambdify(variables + expr_parameters, expr.evalf(),

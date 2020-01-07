@@ -164,28 +164,30 @@ class TestDataAxis:
 class TestFunctionalDataAxis:
 
     def setup_method(self, method):
-        expression = "a * x + b"
-        self.axis = FunctionalDataAxis(size=10, expression=expression,
-                                       a=0.1, b=10, offset=0)
-
-    def _test_initialisation_parameters(self, axis):
-        assert axis.a == 0.1
-        assert axis.b == 10
-        assert hasattr(axis, 'function')
-        np.testing.assert_allclose(axis.axis, np.linspace(10, 10.9, 10))
+        expression = "x ** power"
+        self.axis = FunctionalDataAxis(
+            size=10,
+            expression=expression,
+            power=2,
+            offset=10,
+            scale=0.1,)
 
     def test_initialisation_parameters(self):
-        self._test_initialisation_parameters(self.axis)
+        axis = self.axis
+        assert axis.scale == 0.1
+        assert axis.offset == 10
+        assert axis.power == 2
+        np.testing.assert_allclose(
+            axis.axis,
+            axis.offset + (np.arange(10) * axis.scale)**2)
 
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
-        self._test_initialisation_parameters(axis)
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
         axis = self.axis
-        print(axis.axis)
         start, end = 10.1, 10.8
         if use_indices:
             start = axis.value2index(start)
