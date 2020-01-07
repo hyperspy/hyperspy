@@ -25,6 +25,7 @@ import dask.array as da
 import traits.api as t
 from traits.trait_errors import TraitError
 import pint
+from sympy.utilities.lambdify import lambdify
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
@@ -705,8 +706,6 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
-    scale = t.CFloat()
-    offset = t.CFloat()
     def __init__(self,
                  expression,
                  index_in_array=None,
@@ -721,29 +720,37 @@ class FunctionalDataAxis(BaseDataAxis):
         self.size = size
         self.scale = scale
         self.offset = offset
-        for parameter in parameters:
-            self.add_trait(name, t.CFloat(parameters[parameter]))
-        self.parameters_list = [key for key in parameters.keys()] + ["scale",
-        "offset"]
-        self._expression = expression + " + offset; x = scale * x"
-        self.compile_function()
-
-        # Set the value of the parameters
-        for kwarg, value in parameters.items():
-            setattr(self, kwarg, value)
-
-        self.update_axis()
-        self.on_trait_change(self.update_axis, self.parameters_list + ["size"])
-
-    def compile_function(self):
-        from sympy.utilities.lambdify import lambdify
+        self._expression = expression
+        # Compile function
         from hyperspy._components.expression import _parse_substitutions
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
-        parameters = [symbol for symbol in expr.free_symbols
-                      if symbol.name not in variables]
-        self.function = lambdify(variables + parameters, expr.evalf(),
+        expr_parameters = [symbol.name for symbol in expr.free_symbols
+                           if symbol.name not in variables]
+        # Raise an error if the expression contains reserved parameter names.
+        invalid_parameters = {"offset", "scale"}
+        if invalid_parameters.intersection(expr_parameters):
+            raise ValueError(
+                f"The expression contains the following invalid parameter names "
+                f"{invalid_parameters.intersection(expr_parameters)}."
+                 "Please consider choosing a different name for those parameters.")
+        if set(parameters) != set(expr_parameters):
+            raise ValueError(
+                "The values of the following expression parameters "
+                f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
+
+        expr = _parse_substitutions(self._expression + " + offset; x = scale * x")
+        expr_parameters = [symbol for symbol in expr.free_symbols
+                           if symbol.name not in variables]
+        self.function = lambdify(variables + expr_parameters, expr.evalf(),
                                  dummify=False)
+        parameters.update({"scale": scale, "offset": offset})
+        for parameter in parameters.keys():
+            self.add_trait(parameter, t.CFloat(parameters[parameter]))
+        self.parameters_list = list(parameters.keys())
+
+        self.update_axis()
+        self.on_trait_change(self.update_axis, self.parameters_list + ["size"])
 
     def update_axis(self):
         kwargs = {}
@@ -752,7 +759,6 @@ class FunctionalDataAxis(BaseDataAxis):
         self.axis = self.function(x=np.arange(self.size), **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
-        self.size = len(self.axis)
 
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -804,7 +810,7 @@ class FunctionalDataAxis(BaseDataAxis):
             the value is taken as the axis index. If type is ``float`` the index
             is calculated using the axis calibration. If `start`/`end` is
             ``None`` the method crops from/to the low/high end of the axis.
-            
+
         Note
         ----
         When cropping an axis with descending axis values based on the axis
@@ -1211,7 +1217,6 @@ class AxesManager(t.HasTraits):
             return False
         else:
             return True
-            
 
     def remove(self, axes):
         """Remove one or more axes
