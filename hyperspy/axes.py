@@ -742,7 +742,7 @@ class FunctionalDataAxis(BaseDataAxis):
         expr = _parse_substitutions(self._expression + " + offset; x = scale * x")
         expr_parameters = [symbol for symbol in expr.free_symbols
                            if symbol.name not in variables]
-        self.function = lambdify(variables + expr_parameters, expr.evalf(),
+        self._function = lambdify(variables + expr_parameters, expr.evalf(),
                                  dummify=False)
         parameters.update({"scale": scale, "offset": offset})
         for parameter in parameters.keys():
@@ -756,7 +756,7 @@ class FunctionalDataAxis(BaseDataAxis):
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        self.axis = self.function(x=np.arange(self.size), **kwargs)
+        self.axis = self._function(x=np.arange(self.size), **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
 
