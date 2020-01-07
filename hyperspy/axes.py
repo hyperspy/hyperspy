@@ -888,9 +888,15 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
                  scale=1.,
                  offset=0.):
         self.expression = "x"
-        super().__init__(index_in_array, name, units, navigate, size=size,
-                         expression=self.expression, scale=scale,
-                         offset=offset)
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            size=size,
+            expression=self.expression,
+            scale=scale,
+            offset=offset)
         self.update_axis()
         self._is_linear = True
 
