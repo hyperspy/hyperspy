@@ -21,7 +21,7 @@ import logging
 from datetime import datetime, timedelta
 from dateutil import parser
 import pint
-from hyperspy.external.tifffile import imsave, TiffFile, TIFF
+from tifffile import imsave, TiffFile, TIFF
 import traits.api as t
 import numpy as np
 
