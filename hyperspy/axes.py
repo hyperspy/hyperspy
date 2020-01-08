@@ -716,7 +716,8 @@ class FunctionalDataAxis(BaseDataAxis):
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
 
-        self._function = lambdify(variables + expr_parameters, expr.evalf(), dummify=False)
+        self._function = lambdify(
+            variables + expr_parameters, expr.evalf(), dummify=False)
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
@@ -725,10 +726,15 @@ class FunctionalDataAxis(BaseDataAxis):
         self.on_trait_change(self.update_axis, self.parameters_list + ["size"])
 
     def update_axis(self):
+        if self.x is not None:
+            if self.size != len(self.x):
+                raise ValueError(
+                    "It is not possible to change the size attribute of this type of axis.")
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        x = self.x if self.x is not None else np.arange(self.size, dtype="float")
+        x = self.x if self.x is not None else np.arange(
+            self.size, dtype="float")
         self.axis = self._function(x=x, **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
@@ -756,9 +762,9 @@ class FunctionalDataAxis(BaseDataAxis):
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d.update({'size': self.size,})
+        d.update({'size': self.size, })
         if self.x is not None:
-            d.update({'x': self.x,})
+            d.update({'x': self.x, })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
