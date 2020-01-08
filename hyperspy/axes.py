@@ -821,7 +821,7 @@ class FunctionalDataAxis(BaseDataAxis):
 
         """
         my_slice = self._get_array_slices(slice_)
-        if self.x:
+        if self.x is not None:
             self.x = self.x[my_slice]
         else:
             self.x = np.arange(self.size, dtype="float")[my_slice]
@@ -998,6 +998,18 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
     @offset_as_quantity.setter
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
+
+    def convert_to_functional_data_axis(self, expression, units=None, name=None):
+        d = super()._get_axis_dictionary()
+        axes_manager = self.axes_manager
+        if units:
+            d["units"] = units
+        if name:
+            d["name"] = name
+        self.__class__ = FunctionalDataAxis
+        self.__init__(expression=expression, x=self.axis, **d)
+        self.axes_manager = axes_manager
+
 
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
