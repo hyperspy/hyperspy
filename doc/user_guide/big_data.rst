@@ -307,7 +307,7 @@ requested, the way to the root is found and evaluated in the correct sequence
 on the correct blocks.
 
 The "magic" is performed by (for the sake of simplicity) storing the data not
-as ``numpy.ndarray``, but ``dask.array.Array`` (see 
+as ``numpy.ndarray``, but ``dask.array.Array`` (see the
 `dask documentation <https://dask.readthedocs.io/en/latest/>`_). ``dask`` 
 offers a couple of advantages:
 
@@ -321,7 +321,7 @@ offers a couple of advantages:
   and resources.
 * **Able to extend to a distributed computing environment (clusters)**.
   :py:``dask.distributed`` (see 
-  `dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers 
+  `the dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers 
   a straightforward way to expand the effective memory for computations to that 
   of a cluster, which allows performing the operations significantly faster 
   than on a single machine.
