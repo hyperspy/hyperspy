@@ -1042,8 +1042,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             only_current=False)
         if fast and not self._lazy:
             try:
-                axis = self.axes_manager.signal_axes[0].axis
-                result = self - background_estimator.function_nd(axis)
+                axis = self.axes_manager.signal_axes[0]
+                scale_factor = axis.scale if self.metadata.Signal.binned else 1
+                bkg = background_estimator.function_nd(axis.axis) * scale_factor
+                result = self - bkg
             except MemoryError:
                 result = self - model.as_signal(
                     show_progressbar=show_progressbar)
