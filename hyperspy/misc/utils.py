@@ -116,6 +116,44 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
+def parse_quantity(quantity, opening='(', closing=')'):
+    """Parse quantity of the signal outputting quantity and units separately. 
+    It looks for the last matching opening and closing separator.
+
+    Parameters
+    ----------
+    quantity : string
+    opening : string
+        Separator used to define the beginning of the units
+    closing : string
+        Separator used to define the end of the units
+
+    Returns
+    -------
+    quantity_name : string
+    quantity_units : string
+    """
+
+    # open_bracket keep track of the currently open brackets
+    open_bracket = 0
+    for index, c in enumerate(quantity.strip()[::-1]):
+        if c == closing:
+            # we find an closing, increment open_bracket
+            open_bracket += 1
+        if c == opening:
+            # we find a opening, decrement open_bracket
+            open_bracket -= 1
+            if open_bracket == 0:
+                # we found the matching bracket and we will use the index
+                break
+    if index + 1 == len(quantity):
+        return quantity, ""
+    else:
+        quantity_name = quantity[:-index-1].strip()
+        quantity_units = quantity[-index:-1].strip()
+        return quantity_name, quantity_units
+
+
 _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
@@ -1012,14 +1050,6 @@ def multiply(iterable):
 def iterable_not_string(thing):
     return isinstance(thing, collections.Iterable) and \
         not isinstance(thing, str)
-
-
-def signal_range_from_roi(signal_range):
-    from hyperspy.roi import SpanROI
-    if isinstance(signal_range, SpanROI):
-        return (signal_range.left, signal_range.right)
-    else:
-        return signal_range
 
 
 def deprecation_warning(msg):

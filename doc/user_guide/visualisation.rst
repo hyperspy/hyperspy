@@ -713,8 +713,7 @@ Plotting several spectra
 
 :py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the
 same figure. It supports different styles, the default
-being "overlap". The default style is configurable in :ref:`preferences
-<configuring-hyperspy-label>`.
+being "overlap".
 
 .. versionadded:: 1.5
    Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 

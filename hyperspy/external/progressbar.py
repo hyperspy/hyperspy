@@ -16,7 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from tqdm import tqdm, tqdm_notebook
+from distutils.version import LooseVersion
+from tqdm import __version__ as tqdm_version
+
+if LooseVersion(tqdm_version) >= LooseVersion("4.36.0"):
+    # API change for 5.0 https://github.com/tqdm/tqdm/pull/800
+    from tqdm import tqdm
+    from tqdm.notebook import tqdm as tqdm_notebook
+else:
+    from tqdm import tqdm, tqdm_notebook
+
 from hyperspy.defaults_parser import preferences
 
 
