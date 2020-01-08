@@ -25,6 +25,7 @@ from hyperspy.decorators import lazifyTestClass
 
 
 @lazifyTestClass
+@pytest.mark.parametrize('binning', (True, False))
 class TestRemoveBackground1DGaussian:
 
     def setup_method(self, method):
@@ -35,16 +36,17 @@ class TestRemoveBackground1DGaussian:
         self.signal = signals.Signal1D(
             gaussian.function(np.arange(0, 20, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
 
-    def test_background_remove_gaussian(self):
+    def test_background_remove_gaussian(self, binning):
+        self.signal.metadata.Signal.binned = binning
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
             show_progressbar=None)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
-    def test_background_remove_gaussian_full_fit(self):
+    def test_background_remove_gaussian_full_fit(self, binning):
+        self.signal.metadata.Signal.binned = binning
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',

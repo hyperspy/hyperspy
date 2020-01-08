@@ -5,7 +5,7 @@ env:
   global:
     - ENV=conda
     - MINIMAL_ENV=false
-    - DEPS="numpy ipython scipy matplotlib traits natsort requests tqdm sympy dill h5py python-dateutil ipyparallel dask scikit-image pint numexpr statsmodels sparse imageio pyyaml PTable"
+    - DEPS="numpy ipython scipy matplotlib traits natsort requests tqdm sympy dill h5py python-dateutil ipyparallel dask scikit-image pint numexpr statsmodels sparse imageio pyyaml PTable tifffile"
     - DEPS_OPTIONAL="scikit-learn mrcz numba cython"
     - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
     - MPLBACKEND="agg"
