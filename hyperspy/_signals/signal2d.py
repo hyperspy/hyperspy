@@ -386,7 +386,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             as reference are limited to the given value.
         roi : tuple of ints or floats (left, right, top, bottom)
              Define the region of interest. If int(float) the position
-             is given axis index(value).
+             is given axis index(value). Note that ROIs can be used
+            in place of a tuple.
         sobel : bool
             apply a sobel filter for edge enhancement
         medfilter :  bool

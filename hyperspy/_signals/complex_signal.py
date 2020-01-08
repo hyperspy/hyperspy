@@ -22,10 +22,12 @@ import numpy as np
 import dask.array as da
 
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.misc.utils import parse_quantity
 
 
 def format_title(thing):
@@ -278,6 +280,74 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         return super().angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
+    def argand_diagram(self, size=[256, 256], range=None):
+        """
+        Calculate and plot Argand diagram of complex signal
+
+        Parameters
+        ----------
+        size : [int, int], optional
+            Size of the Argand plot in pixels
+            (Default: [256, 256])
+        range : array_like, shape(2,2) or shape(2,) optional
+            The position of the edges of the diagram
+            (if not specified explicitly in the bins parameters): [[xmin, xmax], [ymin, ymax]].
+            All values outside of this range will be considered outliers and not tallied in the histogram.
+            (Default: None)
+
+        Returns
+        -------
+        argand_diagram:
+            Argand diagram as Signal2D
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> holo = hs.datasets.example_signals.object_hologram()
+        >>> ref = hs.datasets.example_signals.reference_hologram()
+        >>> w = holo.reconstruct_phase(ref)
+        >>> w.argand_diagram(range=[-3, 3]).plot()
+
+        """
+        im = self.imag.data.ravel()
+        re = self.real.data.ravel()
+
+        if range:
+            if np.asarray(range).shape == (2,):
+                range = [[range[0], range[1]],
+                         [range[0], range[1]]]
+            elif np.asarray(range).shape != (2, 2):
+                raise ValueError('display_range should be array_like, shape(2,2) or shape(2,).')
+
+        argand_diagram, real_edges, imag_edges = np.histogram2d(re, im, bins=size, range=range)
+        argand_diagram = Signal2D(argand_diagram.T)
+        argand_diagram.metadata = self.metadata.deepcopy()
+        argand_diagram.metadata.General.title = 'Argand diagram of {}'.format(self.metadata.General.title)
+
+        if self.real.metadata.Signal.has_item('quantity'):
+            quantity_real, units_real = parse_quantity(self.real.metadata.Signal.quantity)
+            argand_diagram.axes_manager.signal_axes[0].name = quantity_real
+        else:
+            argand_diagram.axes_manager.signal_axes[0].name = 'Real'
+            units_real = None
+        argand_diagram.axes_manager.signal_axes[0].offset = real_edges[0]
+        argand_diagram.axes_manager.signal_axes[0].scale = np.abs(real_edges[0] - real_edges[1])
+
+        if self.imag.metadata.Signal.has_item('quantity'):
+            quantity_imag, units_imag = parse_quantity(self.imag.metadata.Signal.quantity)
+            argand_diagram.axes_manager.signal_axes[1].name = quantity_imag
+        else:
+            argand_diagram.axes_manager.signal_axes[1].name = 'Imaginary'
+            units_imag = None
+        argand_diagram.axes_manager.signal_axes[1].offset = imag_edges[0]
+        argand_diagram.axes_manager.signal_axes[1].scale = np.abs(imag_edges[0] - imag_edges[1])
+        if units_real:
+            argand_diagram.axes_manager.signal_axes[0].units = units_real
+        if units_imag:
+            argand_diagram.axes_manager.signal_axes[1].units = units_imag
+
+        return argand_diagram
+
 
 class LazyComplexSignal(ComplexSignal, LazySignal):
 
@@ -319,3 +389,8 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
         angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
         return super(ComplexSignal, self).angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
+
+    def argand_diagram(self, *args, **kwargs):
+        raise NotImplementedError("Argand diagram is not implemented for lazy "
+                                  "signals. Use `compute()` to convert the "
+                                  "signal to a regular one.")
