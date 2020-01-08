@@ -842,22 +842,6 @@ class FunctionalDataAxis(BaseDataAxis):
         self.update_axis()
         return my_slice
 
-    @property
-    def scale_as_quantity(self):
-        return self._get_quantity('scale')
-
-    @scale_as_quantity.setter
-    def scale_as_quantity(self, value):
-        self._set_quantity(value, 'scale')
-
-    @property
-    def offset_as_quantity(self):
-        return self._get_quantity('offset')
-
-    @offset_as_quantity.setter
-    def offset_as_quantity(self, value):
-        self._set_quantity(value, 'offset')
-
 
 class LinearDataAxis(FunctionalDataAxis, UnitConversion):
     def __init__(self,
@@ -880,6 +864,30 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
             offset=offset)
         self.update_axis()
         self._is_linear = True
+
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and
+        change the offset and scale of the LinearDataAxis accordingly.
+        Parameters
+        ----------
+        slice_ : {float, int, slice}
+        Returns
+        -------
+        my_slice : slice
+        """
+        my_slice = self._get_array_slices(slice_)
+        start, step = my_slice.start, my_slice.step
+
+        if start is None:
+            if step is None or step > 0:
+                start = 0
+            else:
+                start = self.size - 1
+        self.offset = self.index2value(start)
+        if step is not None:
+            self.scale *= step
+
+        return my_slice
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
@@ -958,6 +966,51 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
 
         """
         return super().update_from(axis, attributes)
+
+    def crop(self, start=None, end=None):
+        """Crop the axis in place.
+        Parameters
+        ----------
+        start : int, float, or None
+            The beginning of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        end : int, float, or None
+            The end of the cropping interval. If type is ``int``,
+            the value is taken as the axis index. If type is ``float`` the index
+            is calculated using the axis calibration. If `start`/`end` is
+            ``None`` the method crops from/to the low/high end of the axis.
+        """
+        if start is None:
+            start = 0
+        if end is None:
+            end = self.size
+        # Use `_get_positive_index` to support reserved indexing
+        i1 = self._get_positive_index(self._get_index(start))
+        i2 = self._get_positive_index(self._get_index(end))
+
+        self.offset = self.index2value(i1)
+        self.size = i2 - i1
+        self.update_axis()
+
+    crop.__doc__ = DataAxis.crop.__doc__
+
+    @property
+    def scale_as_quantity(self):
+        return self._get_quantity('scale')
+
+    @scale_as_quantity.setter
+    def scale_as_quantity(self, value):
+        self._set_quantity(value, 'scale')
+
+    @property
+    def offset_as_quantity(self):
+        return self._get_quantity('offset')
+
+    @offset_as_quantity.setter
+    def offset_as_quantity(self, value):
+        self._set_quantity(value, 'offset')
 
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
