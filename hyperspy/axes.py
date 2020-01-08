@@ -709,40 +709,33 @@ class DataAxis(BaseDataAxis):
 class FunctionalDataAxis(BaseDataAxis):
     def __init__(self,
                  expression,
+                 x=None,
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
-                 size=1.,
-                 scale=1.,
-                 offset=0.,
+                 size=t.Undefined,
                  **parameters):
         super().__init__(index_in_array, name, units, navigate)
-        self.size = size
+        self.x = x
+        if self.x is not None:
+            self.size = len(x)
+        elif size is t.Undefined:
+            raise ValueError("Please provide either `x` or `size`.")
+        else:
+            self.size = size
         self._expression = expression
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
-        expr_parameters = [symbol.name for symbol in expr.free_symbols
+        expr_parameters = [symbol for symbol in expr.free_symbols
                            if symbol.name not in variables]
-        # Raise an error if the expression contains reserved parameter names.
-        invalid_parameters = {"offset", "scale"}
-        if invalid_parameters.intersection(expr_parameters):
-            raise ValueError(
-                f"The expression contains the following invalid parameter names "
-                f"{invalid_parameters.intersection(expr_parameters)}."
-                 "Please consider choosing a different name for those parameters.")
-        if set(parameters) != set(expr_parameters):
+        if set(parameters) != set([parameter.name for parameter in expr_parameters]):
             raise ValueError(
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
 
-        expr = _parse_substitutions(self._expression + " + offset; x = scale * (x+x0)")
-        expr_parameters = [symbol for symbol in expr.free_symbols
-                           if symbol.name not in variables]
-        self._function = lambdify(variables + expr_parameters, expr.evalf(),
-                                 dummify=False)
-        parameters.update({"scale": scale, "offset": offset})
+        self._function = lambdify(variables + expr_parameters, expr.evalf(), dummify=False)
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
@@ -754,7 +747,8 @@ class FunctionalDataAxis(BaseDataAxis):
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        self.axis = self._function(x=np.arange(self.size), **kwargs)
+        x = self.x if self.x is not None else np.arange(self.size, dtype="float")
+        self.axis = self._function(x=x, **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
 
@@ -816,19 +810,13 @@ class FunctionalDataAxis(BaseDataAxis):
         order.
         """
 
-        if start is None:
-            start = 0
-        if end is None:
-            end = self.size
+        slice_ = self._get_array_slices(slice(start, end))
 
-        # Use `_get_positive_index` to support reserved indexing
-        i1 = self._get_positive_index(self._get_index(start))
-        i2 = self._get_positive_index(self._get_index(end))
-
-        x0 = self.scale * np.arange(self.size) + self.offset
-
-        self.offset = x0[i1]
-        self.size = i2 - i1
+        if self.x is not None:
+            self.x = self.x[slice_]
+        else:
+            self.x = np.arange(self.size, dtype="float")[slice_]
+        self.size = len(self.x)
         self.update_axis()
     crop.__doc__ = DataAxis.crop.__doc__
 
@@ -846,17 +834,12 @@ class FunctionalDataAxis(BaseDataAxis):
 
         """
         my_slice = self._get_array_slices(slice_)
-        start, step = my_slice.start, my_slice.step
-
-        if start is None:
-            if step is None or step > 0:
-                start = 0
-            else:
-                start = self.size - 1
-        self.offset = self.index2value(start)
-        if step is not None:
-            self.scale *= step
-
+        if self.x:
+            self.x = self.x[my_slice]
+        else:
+            self.x = np.arange(self.size, dtype="float")[my_slice]
+        self.size = len(self.x)
+        self.update_axis()
         return my_slice
 
     @property
@@ -885,7 +868,7 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
                  size=1.,
                  scale=1.,
                  offset=0.):
-        self.expression = "x"
+        self.expression = "offset + scale * x"
         super().__init__(
             index_in_array=index_in_array,
             name=name,

@@ -243,8 +243,6 @@ class TestLinearDataAxis:
     def _test_initialisation_parameters(self, axis):
         assert axis.scale == 0.1
         assert axis.offset == 10
-        assert hasattr(axis, 'function')
-        assert hasattr(axis, '_expression')
         def func(x): return axis.scale* x + axis.offset
         np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
