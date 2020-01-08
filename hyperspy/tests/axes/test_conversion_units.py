@@ -64,7 +64,7 @@ class TestUnitConversion:
                 category=UserWarning):
             self.uc._convert_compact_units()
         assert self.uc.units == 'toto'
-        nt.assert_almost_equal(self.uc.scale, 1.0E-3)
+        np.testing.assert_almost_equal(self.uc.scale, 1.0E-3)
 
     def test_convert_to_units(self):
         self._set_units_scale_size(t.Undefined, 1.0)
@@ -77,7 +77,7 @@ class TestUnitConversion:
         out = self.uc._convert_units('µm')
         assert out is None
         assert self.uc.units == 'µm'
-        nt.assert_almost_equal(self.uc.scale, 1E3)
+        np.testing.assert_almost_equal(self.uc.scale, 1E3)
 
         self._set_units_scale_size('µm', 0.5)
         out = self.uc._convert_units('nm')
@@ -151,7 +151,7 @@ class TestUnitConversion:
         self._set_units_scale_size('1/m', 0.01E9, 256)
         self.uc._convert_compact_units()
         assert self.uc.units == '1 / µm'
-        nt.assert_almost_equal(self.uc.scale, 10.0)
+        np.testing.assert_almost_equal(self.uc.scale, 10.0)
 
         # high camera length diffraction
         self._set_units_scale_size('1/m', 0.1E9, 4096)
@@ -248,9 +248,9 @@ class TestLinearDataAxis:
 
     def test_convert_to_units(self):
         self.axis.convert_to_units(units='µm')
-        nt.assert_almost_equal(self.axis.scale, 12E-6)
+        np.testing.assert_almost_equal(self.axis.scale, 12E-6)
         assert self.axis.units == 'µm'
-        nt.assert_almost_equal(self.axis.offset, 0.005)
+        np.testing.assert_almost_equal(self.axis.offset, 0.005)
 
     def test_units_not_supported_by_pint_warning_raised(self):
         # raising a warning, not converting scale
@@ -259,7 +259,7 @@ class TestLinearDataAxis:
                 message="not supported for conversion.",
                 category=UserWarning):
             self.axis.convert_to_units('m')
-        nt.assert_almost_equal(self.axis.scale, 12E-12)
+        np.testing.assert_almost_equal(self.axis.scale, 12E-12)
         assert self.axis.units == 'toto'
 
     def test_units_not_supported_by_pint_warning_raised2(self):
@@ -418,16 +418,16 @@ class TestAxesManager:
         self.am.convert_units(units=['µm', 'nm', 'meV'], same_units=False)
         np.testing.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['x'].units == 'nm'
-        nt.assert_almost_equal(self.am['y'].scale, 0.5E-3)
+        np.testing.assert_almost_equal(self.am['y'].scale, 0.5E-3)
         assert self.am['y'].units == 'µm'
-        nt.assert_almost_equal(self.am['energy'].scale, 5E3)
+        np.testing.assert_almost_equal(self.am['energy'].scale, 5E3)
         assert self.am['energy'].units == 'meV'
 
     def test_convert_to_units_list_same_units(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=True)
-        nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
+        np.testing.assert_almost_equal(self.am2['x'].scale, 0.0015)
         assert self.am2['x'].units == 'µm'
-        nt.assert_almost_equal(self.am2['energy'].scale,
+        np.testing.assert_almost_equal(self.am2['energy'].scale,
                                self.axes_list2[1]['scale'])
         assert self.am2['energy'].units == self.axes_list2[1]['units']
         np.testing.assert_almost_equal(self.am2['energy2'].scale,
@@ -436,9 +436,9 @@ class TestAxesManager:
 
     def test_convert_to_units_list_signal2D(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=False)
-        nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
+        np.testing.assert_almost_equal(self.am2['x'].scale, 0.0015)
         assert self.am2['x'].units == 'µm'
-        nt.assert_almost_equal(self.am2['energy'].scale, 2500)
+        np.testing.assert_almost_equal(self.am2['energy'].scale, 2500)
         assert self.am2['energy'].units == 'meV'
         np.testing.assert_almost_equal(self.am2['energy2'].scale, 5.0)
         assert self.am2['energy2'].units == 'eV'

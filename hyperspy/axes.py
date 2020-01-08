@@ -456,14 +456,6 @@ class BaseDataAxis(t.HasTraits):
 
         """
         my_slice = self._get_array_slices(slice_)
-        start, step = my_slice.start, my_slice.step
-
-        if start is None:
-            if step is None or step > 0:
-                start = 0
-            else:
-                start = self.size - 1
-
         self.axis = self.axis[my_slice]
         self.update_axis()
 
@@ -689,20 +681,9 @@ class DataAxis(BaseDataAxis):
             is calculated using the axis calibration. If `start`/`end` is
             ``None`` the method crops from/to the low/high end of the axis.
         """
-        if start is None:
-            start = 0
-        if end is None:
-            end = self.size
-        # Use `_get_positive_index` to support reserved indexing
-        i1 = self._get_positive_index(self._get_index(start))
-        i2 = self._get_positive_index(self._get_index(end))
 
-        # Not sure, if we should support unordered values or not...
-        if i1 > i2:
-            raise ValueError("The `start` value must be lower than the `end` "
-                             "value.")
-
-        self.axis = self.axis[i1:i2]
+        slice_ = self._get_array_slices(slice(start, end))
+        self.axis = self.axis[slice_]
         self.size = len(self.axis)
 
 
