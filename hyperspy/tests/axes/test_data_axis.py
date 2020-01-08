@@ -168,18 +168,14 @@ class TestFunctionalDataAxis:
         self.axis = FunctionalDataAxis(
             size=10,
             expression=expression,
-            power=2,
-            offset=10,
-            scale=0.1,)
+            power=2,)
 
     def test_initialisation_parameters(self):
         axis = self.axis
-        assert axis.scale == 0.1
-        assert axis.offset == 10
         assert axis.power == 2
         np.testing.assert_allclose(
             axis.axis,
-            axis.offset + (np.arange(10) * axis.scale)**2)
+            np.arange(10)**2)
 
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
@@ -188,14 +184,14 @@ class TestFunctionalDataAxis:
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
         axis = self.axis
-        start, end = 10.1, 10.8
+        start, end = 3.9, 72.6
         if use_indices:
-            start = axis.value2index(start)
-            end = axis.value2index(end)
+            start = 2
+            end = -1
         axis.crop(start, end)
         assert axis.size == 7
-        np.testing.assert_almost_equal(axis.axis[0], 10.1)
-        np.testing.assert_almost_equal(axis.axis[-1], 10.7)
+        np.testing.assert_almost_equal(axis.axis[0], 4.)
+        np.testing.assert_almost_equal(axis.axis[-1], 64.)
 
 
 class TestReciprocalDataAxis:
@@ -203,13 +199,11 @@ class TestReciprocalDataAxis:
     def setup_method(self, method):
         expression = "a / (x + 1) + b"
         self.axis = FunctionalDataAxis(size=10, expression=expression,
-                                       a=0.1, b=10, offset=0)
+                                       a=0.1, b=10)
 
     def _test_initialisation_parameters(self, axis):
         assert axis.a == 0.1
         assert axis.b == 10
-        assert hasattr(axis, 'function')
-        assert hasattr(axis, '_expression')
         def func(x): return 0.1 / (x + 1) + 10
         np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
@@ -219,12 +213,11 @@ class TestReciprocalDataAxis:
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
-        self._test_initialisation_parameters(axis)        
+        self._test_initialisation_parameters(axis)
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
         axis = self.axis
-        print(axis.axis)
         start, end = 10.05, 10.02
         if use_indices:
             start = axis.value2index(start)
@@ -243,7 +236,7 @@ class TestLinearDataAxis:
     def _test_initialisation_parameters(self, axis):
         assert axis.scale == 0.1
         assert axis.offset == 10
-        def func(x): return axis.scale* x + axis.offset
+        def func(x): return axis.scale * x + axis.offset
         np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
     def test_initialisation_parameters(self):
@@ -252,7 +245,7 @@ class TestLinearDataAxis:
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, LinearDataAxis)
-        self._test_initialisation_parameters(axis)  
+        self._test_initialisation_parameters(axis)
 
     def test_value_range_to_indices_in_range(self):
         assert self.axis.is_linear

@@ -775,9 +775,9 @@ class FunctionalDataAxis(BaseDataAxis):
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d.update({'size': self.size,
-                  'scale': self.scale,
-                  'offset': self.offset})
+        d.update({'size': self.size,})
+        if self.x is not None:
+            d.update({'x': self.x,})
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
