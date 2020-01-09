@@ -537,6 +537,9 @@ class MVA():
 
         """
         from hyperspy.signal import BaseSignal
+        if self._lazy:
+            raise NotImplementedError("Blind source separation is not "
+                                      "implemented for lazy signal.")
 
         lr = self.learning_results
 

@@ -116,10 +116,14 @@ class TestGetModel:
     def test_get_bss_model(self):
         s = self.s
         s.decomposition(algorithm='svd')
-        s.blind_source_separation(3)
-        sc = self.s.get_bss_model()
-        rms = np.sqrt(((sc.data - s.data)**2).sum())
-        assert rms < 5e-7
+        if self.s._lazy:
+            with pytest.raises(NotImplementedError):
+                s.blind_source_separation(3)
+        else:
+            s.blind_source_separation(3)
+            sc = self.s.get_bss_model()
+            rms = np.sqrt(((sc.data - s.data)**2).sum())
+            assert rms < 5e-7
 
 
 class TestGetExplainedVarinaceRatio:

@@ -122,12 +122,12 @@ class TestBSS1D:
     def test_mask_diff_order_1_on_loadings(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
-        # `blind_source_separation_method`. If the mask is not correctely
+        # `blind_source_separation_method`. If the mask is not correctly
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_navigation_signal(dtype="bool")
         mask.isig[5] = True
         self.s.learning_results.loadings[5, :] = np.nan
-        self.s.blind_source_separation(3, diff_order=1, mask=mask,
+        self.s.blind_source_separation(2, diff_order=1, mask=mask,
                                        on_loadings=True)
 
 
