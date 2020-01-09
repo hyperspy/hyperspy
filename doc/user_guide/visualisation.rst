@@ -289,6 +289,8 @@ The same example with the feature disabled:
    Divergent color map with ``Centre colormap`` disabled.
 
 
+.. _plot.customize_navigator:
+
 Customizing the "navigator"
 ===========================
 
@@ -449,6 +451,8 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
     The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Ultramicroscopy, 148, p. 158-167 (2015).
+
+
 .. _plot_spectra:
 
 Plotting multiple signals
@@ -974,7 +978,7 @@ same time:
 The navigator can be specified by using the navigator argument, where the
 different options are "auto", None, "spectrum", "slider" or Signal.
 For more details about the different navigators,
-see :ref:`navigator_options`.
+see :ref:`the navigator options<plot.customize_navigator>`.
 To specify the navigator:
 
 .. code-block:: python

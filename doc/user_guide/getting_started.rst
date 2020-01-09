@@ -76,14 +76,15 @@ which in specific cases can lead to warnings when importing HyperSpy. Most of th
 there is nothing to worry about — the warnings simply inform you of several choices you have.
 There may be several causes for a warning, for example:
 
-* not all the GUIs packages are installed. If none is installed, we reccomend you to install
+- not all the GUIs packages are installed. If none is installed, we reccomend you to install
   at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
   data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
   :ref:`preferences <configuring-hyperspy-label>` as explained below.
-* the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
+- the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
   backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
-   * If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
-   * Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
+
+   - If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
+   - Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
      and if you don't want to see the (harmless) warning, make sure that you have the
      ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
      GUI in the :ref:`preferences <configuring-hyperspy-label>`.
@@ -131,9 +132,9 @@ accessed by adding a question mark to the name of a function. e.g.:
 
 .. code-block:: python
 
-    >>> hs?
-    >>> hs.load?
-    >>> hs.signals?
+   >>> hs?
+   >>> hs.load?
+   >>> hs.signals?
 
 This syntax is a shortcut to the standard way one of displaying the help
 associated to a given functions (docstring in Python jargon) and it is one of
