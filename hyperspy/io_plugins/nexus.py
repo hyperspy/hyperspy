@@ -143,6 +143,8 @@ def nx_metadata_search_for_keys(a_dict,nxdict_keys):
             v=a_dict[correct_item]
             for key in keys[:-1]:
                 p = p.setdefault(key,{})
+            # this is a workaround for a fault on
+            # windows pc's....
             for i in range(2):
                 try:
                         p[keys[-1]] = v.nxvalue
@@ -151,6 +153,20 @@ def nx_metadata_search_for_keys(a_dict,nxdict_keys):
     return dct
 
    
+def nexus_metadata_reader(filename,**kwargs):
+    """
+    
+    Read the metadata from a nexus file       
+    
+    """
+    fin = nx.load(filename)
+    # search for NXdata sets...
+    mapping = kwargs.get('mapping',{})
+    # strip out the metadata (basically everything other than NXdata)
+    metadata = nx_metadata_search_for_keys(fin,mapping.keys())
+    
+    return metadata    
+
 def file_reader(filename,lazy=True,**kwargs):
     """
     
@@ -165,7 +181,7 @@ def file_reader(filename,lazy=True,**kwargs):
     fin = nx.load(filename)
     # search for NXdata sets...
     mapping = kwargs.get('mapping',{})
-    datakey = kwargs.get('datakey',"")
+    datakey = kwargs.get('datakey',[""])    
     datasets = []
     for dkey in datakey:
         dset= nx_data_search(fin,dkey)
@@ -201,17 +217,27 @@ def file_reader(filename,lazy=True,**kwargs):
                     index_name = ax + "_indices"
                     ind_in_array = int(NXfield_to_float(dataentry.attrs[index_name]))
                     named_axes.remove(ind_in_array)
-                    nav_list.append({   
-                        'size': data.shape[ind_in_array],
-                        'index_in_array': ind_in_array,
-                        'name': axname,
-                        'scale': abs(NXfield_to_float(dataentry[ax][1])-\
-                                     NXfield_to_float(dataentry[ax][0])),
-                        'offset': min(NXfield_to_float(dataentry[ax][0]),\
-                                      NXfield_to_float(dataentry[ax][-1]) ),
-                        'units': 'mm',
-                        'navigate': True,
-                        })
+                    if is_linear_axis(dataentry[ax]):
+                        nav_list.append({   
+                           # 'size': data.shape[ind_in_array],
+                            'index_in_array': ind_in_array,
+                            'name': axname,
+                            'scale': abs(NXfield_to_float(dataentry[ax][1])-\
+                                         NXfield_to_float(dataentry[ax][0])),
+                            'offset': min(NXfield_to_float(dataentry[ax][0]),\
+                                          NXfield_to_float(dataentry[ax][-1]) ),
+                            'units': 'mm',
+                            'navigate': True,
+                            })
+                    else:
+                        nav_list.append({   
+                            'index_in_array': ind_in_array,
+                            'name': axname,
+                            'axis' : dataentry[ax],
+                            'units': 'mm',
+                            'navigate': True,
+                            })
+                        
             for i,ax in enumerate(axes_list):
                 if ax == ".":
                     if(len(data.shape)==len(axes_list)):
@@ -288,6 +314,12 @@ def NXfield_to_float(value):
             if len(value)==1:
                 value = value[0]
     return value
+
+def is_linear_axis(data):
+    
+    steps = np.diff(data)
+    est_steps = np.array([steps[0]]*len(steps))
+    return np.allclose(est_steps,steps,rtol=1.0e-5)
 
 
 def guess_signal_type(data):
