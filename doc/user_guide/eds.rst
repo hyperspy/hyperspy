@@ -12,7 +12,7 @@ This chapter describes step-by-step the analysis of an EDS
 spectrum (SEM or TEM).
 
 .. NOTE::
-    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_.
 
 Spectrum loading and parameters
 -------------------------------
@@ -388,7 +388,7 @@ Plotting
 --------
 
 You can visualize an EDS spectrum using the
-:py:meth:`~._signals.eds.EDSSpectrum.plot` method (see
+:py:meth:`~._signals.eds.EDS_mixin.plot` method (see
 :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
@@ -411,13 +411,11 @@ An example of multi-dimensional EDS data (e.g. 3D SEM-EDS) is given in
 Plotting X-ray lines
 ^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.8
-
 X-ray lines can be added as plot labels with
-:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are either retrieved
-from "metadata.Sample.Xray_lines", or selected with the same method as
+:py:meth:`~._signals.eds.EDS_mixin.plot`. The lines are either retrieved
+from `metadata.Sample.Xray_lines`, or selected with the same method as
 :py:meth:`~._signals.eds.EDS_mixin.add_lines` using the elements in
-"metadata.Sample.elements".
+`metadata.Sample.elements`.
 
 .. code-block:: python
 
@@ -451,8 +449,6 @@ You can also select a subset of lines to label:
 Geting the intensity of an X-ray line
 -------------------
 
-.. versionadded:: 0.8
-
 The sample and data used in this section are described in
 :ref:`[Rossouw2015] <Rossouw2015>`, and can be downloaded using:
 
@@ -468,7 +464,7 @@ The sample and data used in this section are described in
     >>>     z.extractall()
 
 The width of integration is defined by extending the energy resolution of
-Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
+Mn Ka to the peak energy (`energy_resolution_MnKa` in the metadata):
 
 .. code-block:: python
 
@@ -481,16 +477,22 @@ Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
 
    Iron map as computed and displayed by ``get_lines_intensity``
 
-The X-ray lines defined in "metadata.Sample.Xray_lines" (see above)
-are used by default:
+The X-ray lines defined in `metadata.Sample.Xray_lines` are used by default.
+The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`, see :ref:`plotting several images<plot.images>`
+for more information in setting plotting parameters.
 
 .. code-block:: python
 
     >>> s = hs.load('core_shell.hdf5')
-    >>> s.set_lines(['Fe_Ka', 'Pt_La'])
-    >>> s.get_lines_intensity()
-    [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
-    <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
+    >>> s.metadata.Sample
+    ├── elements = ['Fe', 'Pt']
+    └── xray_lines =['Fe_Ka', 'Pt_La']
+    >>> eds_maps = s.get_lines_intensity()
+    >>> hs.plot.plot_images(eds_maps, axes_decor='off', scalebar='all')
+
+.. figure::  images/EDS_get_lines_intensity_all.png
+   :align:   center
+   :width:   500
 
 Finally, the windows of integration can be visualised using
 :py:meth:`~._signals.eds.EDS_mixin.plot` method:
@@ -511,8 +513,6 @@ Finally, the windows of integration can be visualised using
 
 Background subtraction
 ^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.8
 
 The background can be subtracted from the X-ray intensities with
 :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
@@ -541,11 +541,8 @@ can be plotted using :py:meth:`~._signals.eds.EDS_mixin.plot`:
 EDS Quantification
 ------------------
 
-.. versionadded:: 0.8 EDS Quantification
-
-.. versionadded:: 1.0 zeta-factors and ionization cross sections
-
-HyperSpy now includes three methods for EDS quantification:
+HyperSpy now includes three methods for EDS quantification with or without
+absorption correction:
 
 * Cliff-Lorimer
 * Zeta-factors
@@ -667,6 +664,43 @@ number of atoms per pixel for each element.
     rather than spectrum images, the pixel area should be added to the
     metadata as above.
 
+    Absorption Correction
+    ^^^^^^^^^^^^^^^^^^^^^^
+
+  Absorption correction can be included into any of the three quantification
+  methods by adding the parameter absorption_correction=True to the function.
+  By default the function iterates the quantification function until of
+  tolerance value of 0.5% up to a maximum number of iterations. The maximum
+  number of iterations is set to 30 by default but can be increased by
+  specifying max_interations= in the function call. However, typically for TEM
+  experiments convergence is witness after less then 5 iterations.
+
+  At this stage absorption correction is only applicable for parallel-sided, 
+  thin-film samples. Absorption correction is calculated on a pixel by pixel 
+  basis after having determined a sample mass-thickness map. It therefore may
+  be a source of error in particularly inhomogeneous specimens.
+  
+  Absorption correction can also only be applied to spectra from a single EDS
+  detector. For systems that consist of multiple detectors, such as the Thermo 
+  Fisher Super-X, it is therefore necessary to load the spectra from each
+  detector separately.
+
+  For example:
+
+  .. code-block: python
+          >>> s.quantification(intensities, method='cross_section',
+          >>>                  factors=factors, absorption_correction=True)
+
+  However for the kfactor method the user must additionally provide a sample
+  thickness (in nm) either as a single float value or as a numpy array with the
+  same dimensions as the navigation axes. If this is done the calculated
+  mass_thickness is additionally outputted from the function as well as the
+  composition maps for each element.
+
+  .. code-block: python
+          >>> s.quantification(intensities, method='CL',
+          >>>                  factors=factors, absorption_correction=True
+          >>>                   thickness = 100.)
 
 .. _eds_fitting-label:
 

@@ -90,6 +90,13 @@ class Test2D:
         s.crop(0, 2, 2.)
         nt.assert_array_almost_equal(s.data, d[2:4, :])
 
+    def test_crop_start_end_equal(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.crop(0, 2, 2)
+        with pytest.raises(ValueError):
+            s.crop(0, 2., 2.)
+
     def test_crop_float_no_unit_convertion_signal1D(self):
         # Should convert the unit to eV
         d = np.arange(5 * 10 * 2000).reshape(5, 10, 2000)
@@ -196,8 +203,8 @@ class Test2D:
         s.crop(1, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_crop_image_unit_convertion_signal2D(self):
@@ -245,8 +252,8 @@ class Test2D:
         s.crop_image(0, 5.0, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_split_axis0(self):

@@ -25,17 +25,22 @@ from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 class Offset(Component):
 
-    """Component to add a constant value in the y-axis
+    r"""Component to add a constant value in the y-axis.
 
-    f(x) = k + x
+    .. math::
+    
+        f(x) = k + x
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     k      |  offset   |
-    +------------+-----------+
+    ============ =============
+    Variable      Parameter 
+    ============ =============
+    :math:`k`     offset   
+    ============ =============
 
+    Parameters
+    -----------
+    offset : float 
+        
     """
 
     def __init__(self, offset=0.):
@@ -107,8 +112,12 @@ class Offset(Component):
         """%s
 
         """
-        x = axis[np.newaxis, :]
-        o = self.offset.map['values'][..., np.newaxis]
+        if self._is_navigation_multidimensional:
+            x = axis[np.newaxis, :]
+            o = self.offset.map['values'][..., np.newaxis]
+        else:
+            x = axis
+            o = self.offset.value
         return self._function(x, o)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

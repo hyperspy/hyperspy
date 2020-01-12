@@ -5,7 +5,7 @@ environment:
 
   global:
     TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
-    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits"
+    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits pyyaml PTable statsmodels"
     MPLBACKEND: "agg"
 
   matrix:
@@ -16,12 +16,6 @@ environment:
      - PY_VERSION: 3.6
        PLATFORM: x64
      - PY_VERSION: 3.6
-       PLATFORM: x86
-       TAG_SCENARIO: true
-     - PY_VERSION: 3.5
-       PLATFORM: x64
-       TAG_SCENARIO: true
-     - PY_VERSION: 3.5
        PLATFORM: x86
        TAG_SCENARIO: true
 
@@ -65,13 +59,11 @@ install:
 
   # Install the dependencies of hyperspy.
   - ps: Add-AppveyorMessage "Installing conda packages..."
-  - if "%PLATFORM%"=="x64" set DEPS=%DEPS% mrcz
+  - if "%PLATFORM%"=="x64" set DEPS=%DEPS% mrcz tifffile
   - "conda install -y %DEPS% %TEST_DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "pip install .[tests]"
-  # install pillow with pip as workaround for the DLL issue on win64 from defaults
-  - "pip install -I pillow"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

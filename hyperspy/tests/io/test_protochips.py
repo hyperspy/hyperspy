@@ -35,7 +35,7 @@ generate_numpy_file = False
 
 def create_numpy_file(filename, obj):
     gen = (obj._data_dictionary[key] for key in obj.logged_quantity_name_list)
-    data = np.vstack(gen)
+    data = np.vstack(list(gen))
     np.save(filename, data.T)
 
 #######################
@@ -173,7 +173,7 @@ class TestProtochipsGasCellCSVReader():
     def test_read_data(self):
         gen = (self.pgc._data_dictionary[key]
                for key in self.pgc.logged_quantity_name_list)
-        data = np.vstack(gen)
+        data = np.vstack(list(gen))
         expected_data = np.load(os.path.join(
             dirpath, 'protochips_gas_cell.npy'))
         np.testing.assert_allclose(data.T, expected_data)
@@ -241,7 +241,7 @@ class TestProtochipsElectricalCSVReader():
     def test_read_data(self):
         gen = (self.pa._data_dictionary[key]
                for key in self.pa.logged_quantity_name_list)
-        data = np.vstack(gen)
+        data = np.vstack(list(gen))
         expected_data = np.load(os.path.join(
             dirpath, 'protochips_electrical.npy'))
         np.testing.assert_allclose(data.T, expected_data)
@@ -281,7 +281,7 @@ class TestProtochipsThermallCSVReader():
     def test_read_data(self):
         gen = (self.pt._data_dictionary[key]
                for key in self.pt.logged_quantity_name_list)
-        data = np.vstack(gen)
+        data = np.vstack(list(gen))
         expected_data = np.load(os.path.join(
             dirpath, 'protochips_thermal.npy'))
         np.testing.assert_allclose(data.T, expected_data)
@@ -334,7 +334,7 @@ class TestProtochipsElectrothermalCSVReader():
     def test_read_data(self):
         gen = (self.pet._data_dictionary[key]
                for key in self.pet.logged_quantity_name_list)
-        data = np.vstack(gen)
+        data = np.vstack(list(gen))
         expected_data = np.load(os.path.join(dirpath,
                                              self.filename.replace('.csv', '.npy')))
         np.testing.assert_allclose(data.T, expected_data)

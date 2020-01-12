@@ -131,6 +131,53 @@ def test_get_unwrapped_phase_3D(parallel, lazy):
     assert_allclose(phase_unwrapped.data, phase)
 
 
+def test_argand_diagram():
+    # 0. Set up phase and amplitude and real and imaginary parts
+    amp = np.random.rand() * 10. * np.random.rand(64)
+    phase = np.random.rand(64) * 3. * np.pi
+    re = amp * np.cos(phase)
+    im = amp * np.sin(phase)
+
+    # 1. Test ComplexSignal1D
+    s1d = hs.signals.ComplexSignal((amp * np.exp(1j * phase)))
+    s1d.metadata.General.title = 'Test signal'
+    s1d.metadata.Signal.quantity = 'Test quantity (Test units)'
+    ap1d = s1d.argand_diagram(size=[7, 7])
+    ap1_ref = np.histogram2d(re, im, bins=[7, 7])
+    assert np.allclose(ap1d.data, ap1_ref[0].T)
+    assert ap1d.metadata.General.title == 'Argand diagram of Test signal'
+
+    # 2. Test ComplexSignal1D with specified range
+    s2d = hs.signals.ComplexSignal((amp * np.exp(1j * phase)).reshape((4, 16)))
+    s2d.metadata.Signal.quantity = 'Test quantity (Test units)'
+    ap2d = s2d.argand_diagram(size=[7, 7], range=[-12., 13.])
+    ap2d_a = s2d.argand_diagram(size=[7, 7], range=[[-12., 11.], [-10., 13.]])
+    ap2_ref = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 13.], [-12., 13.]])
+    ap2_ref_a = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 11.], [-10., 13.]])
+
+    x_axis = ap2d_a.axes_manager.signal_axes[0]
+    y_axis = ap2d_a.axes_manager.signal_axes[1]
+
+    assert np.allclose(ap2d.data, ap2_ref[0].T)
+    assert np.allclose(ap2d_a.data, ap2_ref_a[0].T)
+
+    assert x_axis.offset == -12.
+    assert np.allclose(x_axis.scale, np.gradient(ap2_ref_a[2]))
+
+    assert y_axis.offset == -10.
+    assert np.allclose(y_axis.scale, np.gradient(ap2_ref_a[1]))
+
+    assert x_axis.units == 'Test units'
+    assert y_axis.units == 'Test units'
+
+    # 3. Test raises:
+    with pytest.raises(ValueError):
+        s1d.argand_diagram(range=[-12., 11., -10., 13.])
+    with pytest.raises(NotImplementedError):
+        s1d = s1d.as_lazy()
+        s1d.argand_diagram()
+
+
 if __name__ == '__main__':
 
     import pytest

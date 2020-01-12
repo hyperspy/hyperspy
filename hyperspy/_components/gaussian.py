@@ -68,25 +68,49 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
 
 class Gaussian(Expression):
 
-    """Normalized gaussian function component
+    r"""Normalized Gaussian function component.
 
     .. math::
 
-        f(x) = \\frac{A}{\\sqrt{2\\pi sigma^{2}}}exp\\left[-\\frac{\\left(x-centre\\right)^{2}}{2sigma^{2}}\\right]
+        f(x) = \frac{A}{\sigma \sqrt{2\pi}}\exp\left[
+               -\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
+
+    ============== ===========
+    Variable        Parameter
+    ============== ===========
+    :math:`A`       A
+    :math:`\sigma`  sigma
+    :math:`x_0`     centre
+    ============== ===========
 
 
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
+    Parameters
+    -----------
+    A : float
+        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` 
+        implements the Gaussian function with a height parameter 
+        corresponding to the peak height.
+    sigma : float
+        Scale parameter of the Gaussian distribution. 
+    centre : float
+        Location of the Gaussian maximum (peak position).
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
+
+    For convenience the `fwhm` and `height` attributes can be used to get and set
+    the full-with-half-maximum and height of the distribution, respectively.
+
 
     See also
     --------
     hyperspy._components.gaussianhf.GaussianHF
-
     """
 
     def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
         super(Gaussian, self).__init__(
-            expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 / (2 * sigma**2))",
+            expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
+                        / (2 * sigma**2))",
             name="Gaussian",
             A=A,
             sigma=sigma,
@@ -107,7 +131,7 @@ class Gaussian(Expression):
         self.convolved = True
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the gaussian by calculating the momenta.
+        """Estimate the Gaussian by calculating the momenta.
 
         Parameters
         ----------
@@ -141,8 +165,8 @@ class Gaussian(Expression):
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
-
         """
+        
         super(Gaussian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
@@ -176,3 +200,11 @@ class Gaussian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+        
+    @property
+    def height(self):
+        return self.A.value / (self.sigma.value * sqrt2pi)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * self.sigma.value * sqrt2pi

@@ -11,61 +11,25 @@ widgets externally (usually for testing or customisation purposes).
 
 '''
 
-import functools
-import types
+import importlib
 
 from hyperspy.misc.utils import isiterable
+from hyperspy.extensions import ALL_EXTENSIONS
 
 
-UI_REGISTRY = {}
+UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["GUI"]["toolkeys"]}
 
 TOOLKIT_REGISTRY = set()
 KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))
 
 
-def register_widget(toolkit, toolkey):
-    """Decorator to register a UI widget.
-
-    Parameters
-    ----------
-    f: function
-        Function that returns or display the UI widget. The signature must
-        include ``obj``, ``display`` and ``**kwargs``.
-    toolkit: string
-        The name of the widget toolkit e.g. ipywidgets
-    toolkey: string
-        The "key" of the tool for which the widget provides an interface. If
-        the toolkey is not in the ``UI_REGISTRY`` dictionary a ``NameError``
-        is raised.
-
-    Returns
-    -------
-    widgets: dictionary or None
-        Dictionary containing the widget objects if display is False, else None.
-
-    """
-    if not toolkey in UI_REGISTRY:
-        raise NameError("%s is not a registered toolkey" % toolkey)
-    TOOLKIT_REGISTRY.add(toolkit)
-
-    def decorator(f):
-        UI_REGISTRY[toolkey][toolkit] = f
-        return f
-    return decorator
-
-
-def register_toolkey(toolkey):
-    """Register a toolkey.
-
-    Parameters
-    ----------
-    toolkey: string
-
-    """
-    if toolkey in UI_REGISTRY:
-        raise NameError(
-            "Another tool has been registered with the same name.")
-    UI_REGISTRY[toolkey] = {}
+if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
+    for toolkit, widgets in ALL_EXTENSIONS["GUI"]["widgets"].items():
+        TOOLKIT_REGISTRY.add(toolkit)
+        for toolkey, specs in widgets.items():
+            if not toolkey in UI_REGISTRY:
+                raise NameError("%s is not a registered toolkey" % toolkey)
+            UI_REGISTRY[toolkey][toolkit] = specs
 
 
 def _toolkits_to_string(toolkits):
@@ -87,7 +51,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     if not TOOLKIT_REGISTRY:
         raise ImportError(
             "No toolkit registered. Install hyperspy_gui_ipywidgets or "
-            "hyperspy_gui_traitsui GUI elements. If hyperspy_gui_traits"
+            "hyperspy_gui_traitsui GUI elements. If hyperspy_gui_traitsui"
             "is installed, initialize a toolkit supported by traitsui "
             "before importing HyperSpy."
         )
@@ -148,10 +112,22 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
         widgets = {}
     available_toolkits = set()
     used_toolkits = set()
-    for toolkit, f in UI_REGISTRY[toolkey].items():
+    for toolkit, specs in UI_REGISTRY[toolkey].items():
+        f = getattr(
+            importlib.import_module(
+                specs["module"]),
+            specs["function"])
         if toolkit in toolkits:
             used_toolkits.add(toolkit)
-            thisw = f(obj=self, display=display, **kwargs)
+            try:
+                thisw = f(obj=self, display=display, **kwargs)
+            except NotImplementedError as e:
+                # traitsui raises this exception when the backend is
+                # not supported
+                if toolkit == "traitsui":
+                    pass
+                else:
+                    raise e
             if not display:
                 widgets[toolkit] = thisw
         else:
@@ -175,15 +151,16 @@ def get_partial_gui(toolkey):
     return pg
 
 
-DISPLAY_DT = """display: bool
-    If True, display the user interface widgets. If False, return the widgets
-    container in a dictionary, usually for customisation or testing."""
+DISPLAY_DT = """display : bool
+            If True, display the user interface widgets. If False, return the
+            widgets container in a dictionary, usually for customisation or
+            testing."""
 
-TOOLKIT_DT = """toolkit: str, iterable of strings or None
-    If None (default), all available widgets are displayed or returned. If
-    string, only the widgets of the selected toolkit are displayed if available.
-    If an interable of toolkit strings, the widgets of all listed toolkits are
-    displayed or returned."""
+TOOLKIT_DT = """toolkit : str, iterable of strings or None
+            If None (default), all available widgets are displayed or returned.
+            If string, only the widgets of the selected toolkit are displayed
+            if available. If an interable of toolkit strings, the widgets of
+            all listed toolkits are displayed or returned."""
 GUI_DT = """Display or return interactive GUI element if available.
 
 Parameters
@@ -196,15 +173,9 @@ Parameters
 
 def add_gui_method(toolkey):
     def decorator(cls):
-        register_toolkey(toolkey)
         # Not using functools.partialmethod because it is not possible to set
         # the docstring that way.
         setattr(cls, "gui", get_partial_gui(toolkey))
         setattr(cls.gui, "__doc__", GUI_DT)
         return cls
     return decorator
-
-
-register_toolkey("interactive_range_selector")
-register_toolkey("navigation_sliders")
-register_toolkey("load")
