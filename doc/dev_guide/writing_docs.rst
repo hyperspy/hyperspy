@@ -42,7 +42,7 @@ or
 When writing documentation, the Python package `sphobjinv
 <https://github.com/bskinn/sphobjinv>`_ can be useful for writing
 cross-references. For example, to find how to write a cross-reference to
-:py:method:`hyperspy.signal.BaseSignal.set_signal_type`, use:
+:py:meth:`hyperspy.signal.BaseSignal.set_signal_type`, use:
 
 
 .. code-block:: bash
@@ -51,4 +51,4 @@ cross-references. For example, to find how to write a cross-reference to
   
   Name                                                      Score 
   ---------------------------------------------------------  -------
-  :py:method:`hyperspy.signal.BaseSignal.set_signal_type`      90  
+  :py:meth:`hyperspy.signal.BaseSignal.set_signal_type`      90  

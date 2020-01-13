@@ -642,14 +642,15 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
 
 
 def swapelem(obj, i, j):
-    """Swaps element having index i with
-    element having index j in object obj IN PLACE.
+    """Swaps element having index i with element having index j in object obj 
+    IN PLACE.
 
-    E.g.
+    Example
+    -------
     >>> L = ['a', 'b', 'c']
     >>> spwapelem(L, 1, 2)
     >>> print(L)
-        ['a', 'c', 'b']
+    ['a', 'c', 'b']
 
     """
     if len(obj) > 1:

@@ -1582,9 +1582,8 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
   :align:   center
   :width:   500
 
-Notably,
-since ROIs are independent from the signals they sub-select, the widget can be
-plotted on a different signal altogether.
+Notably, since ROIs are independent from the signals they sub-select, the widget
+can be plotted on a different signal altogether.
 
 .. code-block:: python
 
@@ -1640,6 +1639,10 @@ order to increase responsiveness.
     ROIs can be used in place of slices when indexing and to define a
     signal range in functions taken a ``signal_range`` argument.
 
+.. _roi-slice-label:
+
+Slicing using ROIs
+^^^^^^^^^^^^^^^^^^
 
 ROIs can be used in place of slices when indexing. For example:
 
@@ -1658,10 +1661,11 @@ ROIs can be used in place of slices when indexing. For example:
 .. versionadded:: 1.6
     New :meth:`__getitem__` method for all ROIs.
 
-In addition the following all ROIs have a :meth:`__getitem__` method that enables
-using them in place of tuples. For example, the method :py:meth:`~._signals.signal2d.align2D` takes a
- ``roi`` argument with the left, right, top, bottom coordinates of the ROI.
- Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+In addition the following all ROIs have a py:meth:`__getitem__` method that enables
+using them in place of tuples.
+For example, the method :py:meth:`~._signals.signal2d.align2D` takes a ``roi``
+argument with the left, right, top, bottom coordinates of the ROI.
+Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
 
 .. code-block:: python
 
