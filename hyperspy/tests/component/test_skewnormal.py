@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import itertools
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
@@ -25,7 +26,9 @@ import sympy
 
 from hyperspy.components1d import SkewNormal
 from hyperspy.signals import Signal1D
+from hyperspy.utils import stack
 
+TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
                                 LooseVersion("1.3"),
@@ -48,28 +51,47 @@ def test_function():
     assert_allclose(g.function(g.mean), 2.855, rtol=1e-3)
 
 
-def test_fit(A=1, x0=0, shape=1, scale=1, noise=0.01):
-    """
-    Creates a simulated noisy skew normal distribution based on the input
-    parameters and fits a skew normal component to this data.
-    """
-    # create skew normal signal and add noise
-    g = SkewNormal(A=A, x0=x0, scale=scale, shape=shape)
-    x = np.arange(x0 - scale * 3, x0 + scale * 3, step=0.01 * scale)
-    s = Signal1D(g.function(x))
-    s.axes_manager.signal_axes[0].axis = x
-    s.add_gaussian_noise(std=noise * A)
-    # fit skew normal component to signal
+@pytest.mark.parametrize(("lazy"), (True, False))
+@pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+def test_estimate_parameters_binned(only_current, binned, lazy):
+    s = Signal1D(np.empty((300,)))
+    s.metadata.Signal.binned = binned
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = 0.2
+    axis.offset = -10
+    g1 = SkewNormal(A=2, x0=2, scale=10, shape=5)
+    s.data = g1.function(axis.axis)
+    if lazy:
+        s = s.as_lazy()
     g2 = SkewNormal()
-    m = s.create_model()
-    m.append(g2)
-    g2.x0.bmin = x0 - scale * 3  # prevent parameters to run away
-    g2.x0.bmax = x0 + scale * 3
-    g2.x0.bounded = True
-    m.fit(bounded=True)
-    m.print_current_values()  # print out parameter values
-    m.plot()  # plot fit
-    return m
+    factor = axis.scale if binned else 1
+    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
+                                  only_current=only_current)
+    assert g2.binned == binned
+    assert_allclose(g1.A.value, g2.A.value * factor)
+    assert abs(g2.x0.value - g1.x0.value) <= 0.002
+    assert abs(g2.shape.value - g1.shape.value) <= 0.01
+    assert abs(g2.scale.value - g1.scale.value) <= 0.01
+
+
+@pytest.mark.parametrize(("lazy"), (True, False))
+@pytest.mark.parametrize(("binned"), (True, False))
+def test_function_nd(binned, lazy):
+    s = Signal1D(np.empty((300,)))
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = 0.2
+    axis.offset = -10
+    g1 = SkewNormal(A=2, x0=2, scale=10, shape=5)
+    s.data = g1.function(axis.axis)
+    s.metadata.Signal.binned = binned
+    s2 = stack([s] * 2)
+    if lazy:
+        s2 = s2.as_lazy()
+    g2 = SkewNormal()
+    factor = axis.scale if binned else 1
+    assert g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
+    assert g2.binned == binned
+    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, 0.06)
 
 
 def test_util_mean_get():

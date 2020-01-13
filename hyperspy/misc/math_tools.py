@@ -90,8 +90,8 @@ def hann_window_nth_order(m, order):
     """
     Calculates 1D Hann window of nth order
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     m : int
         number of points in window (typically the length of a signal)
     order : int

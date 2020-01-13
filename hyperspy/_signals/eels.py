@@ -31,7 +31,7 @@ import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline, signal_range_from_roi)
+    isiterable, closest_power_of_two, underline)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
@@ -241,7 +241,8 @@ class EELSSpectrum_mixin:
             in integers, the range will be in index values. If given floats,
             the range will be in spectrum values. Useful if there are features
             in the spectrum which are more intense than the ZLP.
-            Default is searching in the whole signal.
+            Default is searching in the whole signal. Note that ROIs can be used
+            in place of a tuple.
         %s
         %s
 
@@ -271,7 +272,6 @@ class EELSSpectrum_mixin:
         more information read its docstring.
 
         """
-        signal_range = signal_range_from_roi(signal_range)
 
         def substract_from_offset(value, signals):
             if isinstance(value, da.Array):
@@ -685,15 +685,13 @@ class EELSSpectrum_mixin:
                                     extrapolate_coreloss=True):
         """Performs Fourier-ratio deconvolution.
 
-        The core-loss should have the background removed. To reduce
-         the noise amplication the result is convolved with a
-        Gaussian function.
+        The core-loss should have the background removed. To reduce the noise 
+        amplication the result is convolved with a Gaussian function.
 
         Parameters
         ----------
         ll: EELSSpectrum
             The corresponding low-loss (ll) EELSSpectrum.
-
         fwhm : float or None
             Full-width half-maximum of the Gaussian function by which
             the result of the deconvolution is convolved. It can be
@@ -703,7 +701,7 @@ class EELSSpectrum_mixin:
         threshold : {None, float}
             Truncation energy to estimate the intensity of the
             elastic scattering. If None the threshold is taken as the
-             first minimum after the ZLP centre.
+            first minimum after the ZLP centre.
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
 
@@ -1020,7 +1018,7 @@ class EELSSpectrum_mixin:
         dielectric function from a single scattering distribution (SSD) using
         the Kramers-Kronig relations.
 
-        It uses the FFT method as in [Egerton2011]_.  The SSD is an
+        It uses the FFT method as in [*]__.  The SSD is an
         EELSSpectrum instance containing SSD low-loss EELS with no zero-loss
         peak. The internal loop is devised to approximately subtract the
         surface plasmon contribution supposing an unoxidized planar surface and
@@ -1100,7 +1098,7 @@ class EELSSpectrum_mixin:
 
         Notes
         -----
-        This method is based in Egerton's Matlab code [Egerton2011]_ with some
+        This method is based in Egerton's Matlab code [*]__ with some
         minor differences:
 
         * The integrals are performed using the simpsom rule instead of using
@@ -1108,8 +1106,8 @@ class EELSSpectrum_mixin:
         * The wrap-around problem when computing the ffts is workarounded by
           padding the signal instead of substracting the reflected tail.
 
-        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
-           Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
+        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
+           Microscope", Springer-Verlag, 2011.
 
         """
         output = {}
@@ -1306,11 +1304,11 @@ class EELSSpectrum_mixin:
             a low-loss EELS spectrum, and it will be used to simulate the
             effect of multiple scattering by convolving it with the EELS
             spectrum.
-        auto_background : boolean, default True
+        auto_background : bool, default True
             If True, and if spectrum is an EELS instance adds automatically
             a powerlaw to the model and estimate the parameters by the
             two-area method.
-        auto_add_edges : boolean, default True
+        auto_add_edges : bool, default True
             If True, and if spectrum is an EELS instance, it will
             automatically add the ionization edges as defined in the
             Signal1D instance. Adding a new element to the spectrum using

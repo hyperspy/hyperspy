@@ -22,8 +22,7 @@ from itertools import chain
 import numpy as np
 import scipy.linalg
 
-from hyperspy.misc.machine_learning.import_sklearn import (
-    fast_svd, sklearn_installed)
+from hyperspy.misc.machine_learning.import_sklearn import fast_svd, sklearn_installed
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -35,8 +34,7 @@ def _thresh(X, lambda1):
     return np.sign(X) * ((res > 0) * res)
 
 
-def rpca_godec(X, rank, fast=False, lambda1=None,
-               power=None, tol=None, maxiter=None):
+def rpca_godec(X, rank, fast=False, lambda1=None, power=None, tol=None, maxiter=None):
     """
     This function performs Robust PCA with missing or corrupted data,
     using the GoDec algorithm.
@@ -81,9 +79,12 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
 
     """
     if fast is True and sklearn_installed is True:
+
         def svd(X):
             return fast_svd(X, rank)
+
     else:
+
         def svd(X):
             return scipy.linalg.svd(X, full_matrices=False)
 
@@ -101,20 +102,16 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
 
     # Check options if None
     if lambda1 is None:
-        _logger.warning("Threshold 'lambda1' is set to "
-                        "default: 1 / sqrt(nsamples)")
+        _logger.warning("Threshold 'lambda1' is set to " "default: 1 / sqrt(nsamples)")
         lambda1 = 1.0 / np.sqrt(n)
     if power is None:
-        _logger.warning("Number of power iterations not specified. "
-                        "Defaulting to 0")
+        _logger.warning("Number of power iterations not specified. " "Defaulting to 0")
         power = 0
     if tol is None:
-        _logger.warning("Convergence tolerance not specifed. "
-                        "Defaulting to 1e-3")
+        _logger.warning("Convergence tolerance not specifed. " "Defaulting to 1e-3")
         tol = 1e-3
     if maxiter is None:
-        _logger.warning("Maximum iterations not specified. "
-                        "Defaulting to 1e3")
+        _logger.warning("Maximum iterations not specified. " "Defaulting to 1e3")
         maxiter = 1e3
 
     # Initialize L and E
@@ -129,7 +126,7 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
         Y2 = np.random.randn(n, rank)
         for i in range(power + 1):
             Y2 = np.dot(L.T, np.dot(L, Y2))
-        Q, tmp = scipy.linalg.qr(Y2, mode='economic')
+        Q, tmp = scipy.linalg.qr(Y2, mode="economic")
 
         # Estimate the new low-rank and sparse matrices
         Lnew = np.dot(np.dot(L, Q), Q.T)
@@ -141,10 +138,10 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
 
         # Check convergence
         eps = np.linalg.norm(A)
-        if (eps < tol):
+        if eps < tol:
             _logger.info("Converged to %f in %d iterations" % (eps, itr))
             break
-        elif (itr >= maxiter):
+        elif itr >= maxiter:
             _logger.warning("Maximum iterations reached")
             break
 
@@ -169,7 +166,7 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
     # Chop small singular values which
     # likely arise from numerical noise
     # in the SVD.
-    S[rank:] = 0.
+    S[rank:] = 0.0
 
     return Xhat, Ehat, Ghat, U, S, V
 
@@ -214,18 +211,30 @@ def _updatecol(X, A, B, I):
 
 
 class ORPCA:
-
-    def __init__(self, rank, fast=False, lambda1=None, lambda2=None,
-                 method=None, init=None, training_samples=None,
-                 subspace_learning_rate=None, subspace_momentum=None,
-                 learning_rate=None, momentum=None):
+    def __init__(
+        self,
+        rank,
+        fast=False,
+        lambda1=None,
+        lambda2=None,
+        method=None,
+        init=None,
+        training_samples=None,
+        subspace_learning_rate=None,
+        subspace_momentum=None,
+        learning_rate=None,
+        momentum=None,
+    ):
 
         self.nfeatures = None
         self.normalize = False
         if fast is True and sklearn_installed is True:
+
             def svd(X):
                 return fast_svd(X, rank)
+
         else:
+
             def svd(X):
                 return scipy.linalg.svd(X, full_matrices=False)
 
@@ -234,43 +243,50 @@ class ORPCA:
 
         # Check options if None
         if method is None:
-            _logger.warning("No method specified. Defaulting to "
-                            "'CF' (closed-form solver)")
-            method = 'CF'
+            _logger.warning(
+                "No method specified. Defaulting to " "'CF' (closed-form solver)"
+            )
+            method = "CF"
         if init is None:
-            _logger.warning("No initialization specified. Defaulting to "
-                            "'qr' initialization")
-            init = 'qr'
+            _logger.warning(
+                "No initialization specified. Defaulting to " "'qr' initialization"
+            )
+            init = "qr"
         if training_samples is None:
-            if init == 'qr':
+            if init == "qr":
                 if rank >= 10:
                     training_samples = rank
                 else:
                     training_samples = 10
-                _logger.warning("Number of training samples for 'qr' method "
-                                "not specified. Defaulting to %d samples" %
-                                training_samples)
+                _logger.warning(
+                    "Number of training samples for 'qr' method "
+                    "not specified. Defaulting to %d samples" % training_samples
+                )
         if subspace_learning_rate is None:
-            if method in ('SGD', 'MomentumSGD'):
-                _logger.warning("Learning rate for SGD algorithm is "
-                                "set to default: 1.0")
+            if method in ("SGD", "MomentumSGD"):
+                _logger.warning(
+                    "Learning rate for SGD algorithm is " "set to default: 1.0"
+                )
                 subspace_learning_rate = 1.0
         if subspace_momentum is None:
-            if method == 'MomentumSGD':
-                _logger.warning("Momentum parameter for SGD algorithm is "
-                                "set to default: 0.5")
+            if method == "MomentumSGD":
+                _logger.warning(
+                    "Momentum parameter for SGD algorithm is " "set to default: 0.5"
+                )
                 subspace_momentum = 0.5
 
         if learning_rate is not None:
             warnings.warn(
                 "The argument `learning_rate` has been deprecated and may "
                 "be removed in future. Please use `subspace_learning_rate` instead.",
-                VisibleDeprecationWarning)
+                VisibleDeprecationWarning,
+            )
         if momentum is not None:
             warnings.warn(
                 "The argument `momentum` has been deprecated and may "
                 "be removed in future. Please use `subspace_momentum` instead.",
-                VisibleDeprecationWarning)
+                VisibleDeprecationWarning,
+            )
 
         self.rank = rank
         self.lambda1 = lambda1
@@ -282,14 +298,15 @@ class ORPCA:
         self.subspace_momentum = subspace_momentum
 
         # Check options are valid
-        if method not in ('CF', 'BCD', 'SGD', 'MomentumSGD'):
+        if method not in ("CF", "BCD", "SGD", "MomentumSGD"):
             raise ValueError("'method' not recognised")
-        if not isinstance(init, np.ndarray) and init not in ('qr', 'rand'):
+        if not isinstance(init, np.ndarray) and init not in ("qr", "rand"):
             raise ValueError("'method' not recognised")
-        if init == 'qr' and training_samples < rank:
-            raise ValueError(
-                "'training_samples' must be >= 'output_dimension'")
-        if method == 'MomentumSGD' and (subspace_momentum > 1. or subspace_momentum < 0.):
+        if init == "qr" and training_samples < rank:
+            raise ValueError("'training_samples' must be >= 'output_dimension'")
+        if method == "MomentumSGD" and (
+            subspace_momentum > 1.0 or subspace_momentum < 0.0
+        ):
             raise ValueError("'subspace_momentum' must be a float between 0 and 1")
 
     def _setup(self, X, normalize=False):
@@ -307,12 +324,16 @@ class ORPCA:
         self.iterating = iterating
 
         if self.lambda1 is None:
-            _logger.warning("Nuclear norm regularization parameter "
-                            "is set to default: 1 / sqrt(nfeatures)")
+            _logger.warning(
+                "Nuclear norm regularization parameter "
+                "is set to default: 1 / sqrt(nfeatures)"
+            )
             self.lambda1 = 1.0 / np.sqrt(m)
         if self.lambda2 is None:
-            _logger.warning("Sparse regularization parameter "
-                            "is set to default: 1 / sqrt(nfeatures)")
+            _logger.warning(
+                "Sparse regularization parameter "
+                "is set to default: 1 / sqrt(nfeatures)"
+            )
             self.lambda2 = 1.0 / np.sqrt(m)
 
         self.L = self._initialize(X)
@@ -321,10 +342,10 @@ class ORPCA:
         self.E = []
 
         # Extra variables for CF and BCD methods
-        if self.method in ('CF', 'BCD'):
+        if self.method in ("CF", "BCD"):
             self.A = np.zeros((self.rank, self.rank))
             self.B = np.zeros((m, self.rank))
-        if self.method == 'MomentumSGD':
+        if self.method == "MomentumSGD":
             self.vnew = np.zeros_like(self.L)
         return X
 
@@ -333,28 +354,28 @@ class ORPCA:
         iterating = self.iterating
 
         # Initialize the subspace estimate
-        if self.init in ('qr', 'rand'):
-            if self.init == 'qr':
+        if self.init in ("qr", "rand"):
+            if self.init == "qr":
                 if iterating:
-                    Y2 = np.stack([next(X) for _ in range(self.training_samples)],
-                                  axis=-1)
+                    Y2 = np.stack(
+                        [next(X) for _ in range(self.training_samples)], axis=-1
+                    )
                     X = chain(iter(Y2.T.copy()), X)
                 else:
-                    Y2 = X[:self.training_samples, :].T
-            elif self.init == 'rand':
+                    Y2 = X[: self.training_samples, :].T
+            elif self.init == "rand":
                 Y2 = np.random.randn(m, self.rank)
-            L, _ = scipy.linalg.qr(Y2, mode='economic')
-            return L[:, :self.rank]
+            L, _ = scipy.linalg.qr(Y2, mode="economic")
+            return L[:, : self.rank]
         elif isinstance(self.init, np.ndarray):
             if init.ndim != 2:
                 raise ValueError("'init' has to be a two-dimensional matrix")
             init_m, init_r = init.shape
             if init_m != m or init_r != self.rank:
-                raise ValueError(
-                    "'init' has to be of shape [nfeatures x rank]")
+                raise ValueError("'init' has to be of shape [nfeatures x rank]")
             return init.copy()
         else:
-            raise ValueError('Bad initialization options')
+            raise ValueError("Bad initialization options")
 
     def fit(self, X, iterating=None):
         if self.nfeatures is None:
@@ -383,32 +404,38 @@ class ORPCA:
             if not iterating:
                 self.E.append(e)
 
-            if self.method == 'CF':
+            if self.method == "CF":
                 # Closed-form solution
                 self.A += np.outer(r, r.T)
                 self.B += np.outer((z - e), r.T)
                 self.L = np.dot(self.B, scipy.linalg.inv(self.A + self.I))
-            elif self.method == 'BCD':
+            elif self.method == "BCD":
                 # Block-coordinate descent
                 self.A += np.outer(r, r.T)
                 self.B += np.outer((z - e), r.T)
                 self.L = _updatecol(self.L, self.A, self.B, self.I)
-            elif self.method == 'SGD':
+            elif self.method == "SGD":
                 # Stochastic gradient descent
-                learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
-                                                       lambda1 * self.t)
-                self.L -= (np.dot(self.L, np.outer(r, r.T))
-                           - np.outer((z - e), r.T)
-                           + lambda1 * self.L) / learn
-            elif self.method == 'MomentumSGD':
+                learn = self.subspace_learning_rate * (
+                    1 + self.subspace_learning_rate * lambda1 * self.t
+                )
+                self.L -= (
+                    np.dot(self.L, np.outer(r, r.T))
+                    - np.outer((z - e), r.T)
+                    + lambda1 * self.L
+                ) / learn
+            elif self.method == "MomentumSGD":
                 # Stochastic gradient descent with momentum
-                learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
-                                                       lambda1 * self.t)
+                learn = self.subspace_learning_rate * (
+                    1 + self.subspace_learning_rate * lambda1 * self.t
+                )
                 vold = self.subspace_momentum * self.vnew
-                self.vnew = (np.dot(self.L, np.outer(r, r.T))
-                             - np.outer((z - e), r.T)
-                             + lambda1 * self.L) / learn
-                self.L -= (vold + self.vnew)
+                self.vnew = (
+                    np.dot(self.L, np.outer(r, r.T))
+                    - np.outer((z - e), r.T)
+                    + lambda1 * self.L
+                ) / learn
+                self.L -= vold + self.vnew
             self.t += 1
 
     def project(self, X):
@@ -438,23 +465,27 @@ class ORPCA:
         # Chop small singular values which
         # likely arise from numerical noise
         # in the SVD.
-        S[self.rank:] = 0.
+        S[self.rank :] = 0.0
         if len(self.E):
             return Xhat.T, Ehat, U, S, V
         else:
             return Xhat.T, 1, U, S, V
 
 
-def orpca(X, rank, fast=False,
-          lambda1=None,
-          lambda2=None,
-          method=None,
-          init=None,
-          training_samples=None,
-          subspace_learning_rate=None,
-          subspace_momentum=None,
-          learning_rate=None,
-          momentum=None):
+def orpca(
+    X,
+    rank,
+    fast=False,
+    lambda1=None,
+    lambda2=None,
+    method=None,
+    init=None,
+    training_samples=None,
+    subspace_learning_rate=None,
+    subspace_momentum=None,
+    learning_rate=None,
+    momentum=None,
+):
     """
     This function performs Online Robust PCA
     with missing or corrupted data.
@@ -479,13 +510,13 @@ def orpca(X, rank, fast=False,
         'MomentumSGD' - Stochastic gradient descent with momentum
         If None, set to 'CF'
     init : {None, 'qr', 'rand', np.ndarray}
-        'qr'   - QR-based initialization
-        'rand' - Random initialization
-        np.ndarray if the shape [nfeatures x rank].
-        If None, set to 'qr'
+        * 'qr'   - QR-based initialization
+        * 'rand' - Random initialization
+        * np.ndarray if the shape [nfeatures x rank].
+        * If None (default), set to 'qr'
     training_samples : {None, integer}
         Specifies the number of training samples to use in
-        the 'qr' initialization
+        the 'qr' initialization.
         If None, set to 10
     subspace_learning_rate : {None, float}
         Learning rate for the stochastic gradient
@@ -513,6 +544,7 @@ def orpca(X, rank, fast=False,
     -----
     The ORPCA code is based on a transcription of MATLAB code obtained from
     the following research paper:
+
        Jiashi Feng, Huan Xu and Shuicheng Yuan, "Online Robust PCA via
        Stochastic Optimization", Advances in Neural Information Processing
        Systems 26, (2013), pp. 404-412.
@@ -523,19 +555,25 @@ def orpca(X, rank, fast=False,
     along with a MomentumSGD solver for improved convergence and robustness
     with respect to local minima. More information about the gradient descent
     methods and choosing appropriate parameters can be found here:
+
        Sebastian Ruder, "An overview of gradient descent optimization
        algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
 
     """
     X = X.T
-    _orpca = ORPCA(rank, fast=fast, lambda1=lambda1,
-                   lambda2=lambda2, method=method,
-                   init=init,
-                   training_samples=training_samples,
-                   subspace_learning_rate=subspace_learning_rate,
-                   subspace_momentum=subspace_momentum,
-                   learning_rate=learning_rate,
-                   momentum=momentum)
+    _orpca = ORPCA(
+        rank,
+        fast=fast,
+        lambda1=lambda1,
+        lambda2=lambda2,
+        method=method,
+        init=init,
+        training_samples=training_samples,
+        subspace_learning_rate=subspace_learning_rate,
+        subspace_momentum=subspace_momentum,
+        learning_rate=learning_rate,
+        momentum=momentum,
+    )
     _orpca._setup(X, normalize=True)
     _orpca.fit(X)
     Xhat, Ehat, U, S, V = _orpca.finish()

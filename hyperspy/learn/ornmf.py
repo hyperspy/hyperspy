@@ -54,7 +54,7 @@ def _mrdivide(B, A):
 def _project(W):
     newW = W.copy()
     np.maximum(newW, 0, out=newW)
-    sumsq = np.sqrt(np.sum(W**2, axis=0))
+    sumsq = np.sqrt(np.sum(W ** 2, axis=0))
     np.maximum(sumsq, 1, out=sumsq)
     return _mrdivide(newW, np.diag(sumsq))
 
@@ -69,15 +69,15 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
         rshape = (m, batch_size)
         hshape = (n, batch_size)
     else:
-        rshape = m,
-        hshape = n,
+        rshape = (m,)
+        hshape = (n,)
     if h is None or h.shape != hshape:
         h = np.zeros(hshape)
 
     if r is None or r.shape != rshape:
         r = np.zeros(rshape)
 
-    eta = kappa / np.linalg.norm(W, 'fro')**2
+    eta = kappa / np.linalg.norm(W, "fro") ** 2
 
     maxiter = 1e9
     iters = 0
@@ -110,16 +110,17 @@ class ORNMF:
     Methods
     -------
     fit
-        learn factors from the given data
+        Learn factors from the given data.
     project
-        project the learnt factors on the given data
+        Project the learnt factors on the given data.
     finish
-        return the learnt factors and loadings
+        Return the learnt factors and loadings.
 
     Notes
     -----
     The ORNMF code is based on a transcription of the OPGD algorithm MATLAB code
     obtained from the authors of the following research paper:
+
         Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
         factorization with outliers." Acoustics, Speech and Signal Processing
         (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.
@@ -133,8 +134,16 @@ class ORNMF:
 
     """
 
-    def __init__(self, rank, lambda1=1., kappa=1., store_r=False,
-                 method=None, subspace_learning_rate=1., subspace_momentum=0.5):
+    def __init__(
+        self,
+        rank,
+        lambda1=1.0,
+        kappa=1.0,
+        store_r=False,
+        method=None,
+        subspace_learning_rate=1.0,
+        subspace_momentum=0.5,
+    ):
         """Creates Online Robust NMF instance that can learn a representation
 
         Parameters
@@ -169,19 +178,21 @@ class ORNMF:
         self.t = 0
 
         if method is None:
-            _logger.warning("No method specified. Defaulting to "
-                            "'PGD' (proximal gradient descent)")
-            method = 'PGD'
+            _logger.warning(
+                "No method specified. Defaulting to "
+                "'PGD' (proximal gradient descent)"
+            )
+            method = "PGD"
 
-        if method not in ('PGD', 'RobustPGD', 'MomentumSGD'):
+        if method not in ("PGD", "RobustPGD", "MomentumSGD"):
             raise ValueError("'method' not recognised")
 
-        if method == 'RobustPGD':
+        if method == "RobustPGD":
             self.robust = True
 
-        if method == 'MomentumSGD':
+        if method == "MomentumSGD":
             self.subspace_tracking = True
-            if subspace_momentum < 0. or subspace_momentum > 1:
+            if subspace_momentum < 0.0 or subspace_momentum > 1:
                 raise ValueError('"subspace_momentum" must be in range [0, 1]')
 
         self.subspace_learning_rate = subspace_learning_rate
@@ -207,8 +218,9 @@ class ORNMF:
             avg = np.sqrt(X.mean() / m)
         else:
             if normalize:
-                _logger.warning("Normalization with an iterator is not"
-                                " possible, option ignored.")
+                _logger.warning(
+                    "Normalization with an iterator is not" " possible, option ignored."
+                )
             x = next(X)
             m = len(x)
             avg = np.sqrt(x.mean() / m)
@@ -216,8 +228,9 @@ class ORNMF:
 
         self.nfeatures = m
 
-        self.W = np.abs(avg * halfnorm.rvs(size=(self.nfeatures, self.rank)) /
-                        np.sqrt(self.rank))
+        self.W = np.abs(
+            avg * halfnorm.rvs(size=(self.nfeatures, self.rank)) / np.sqrt(self.rank)
+        )
 
         if self.subspace_tracking:
             self.vnew = np.zeros_like(self.W)
@@ -279,33 +292,38 @@ class ORNMF:
 
     def _solve_W(self):
         if not self.subspace_tracking:
-            eta = self.kappa / np.linalg.norm(self.A, 'fro')
+            eta = self.kappa / np.linalg.norm(self.A, "fro")
 
         if self.robust:
             # exactly as in the paper
             n = 0
             lasttwo = np.zeros(2)
-            while n <= 2 or (np.abs(
-                    (lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9):
+            while n <= 2 or (
+                np.abs((lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9
+            ):
                 self.W -= eta * (np.dot(self.W, self.A) - self.B)
                 self.W = _project(self.W)
                 n += 1
                 lasttwo[0] = lasttwo[1]
-                lasttwo[1] = 0.5 * np.trace(self.W.T.dot(self.W).dot(self.A)) - \
-                    np.trace(self.W.T.dot(self.B))
+                lasttwo[1] = 0.5 * np.trace(
+                    self.W.T.dot(self.W).dot(self.A)
+                ) - np.trace(self.W.T.dot(self.B))
         else:
             # Tom Furnival (@tjof2) approach
             if self.subspace_tracking:
                 learn = self.subspace_learning_rate * (
-                    1 + self.subspace_learning_rate * self.lambda1 * self.t)
+                    1 + self.subspace_learning_rate * self.lambda1 * self.t
+                )
                 vold = self.subspace_momentum * self.vnew
-                self.vnew = (np.dot(self.W, np.outer(self.h, self.h.T))
-                             - np.outer((self.v.T - self.r), self.h.T)) / learn
-                self.W -= (vold + self.vnew)
+                self.vnew = (
+                    np.dot(self.W, np.outer(self.h, self.h.T))
+                    - np.outer((self.v.T - self.r), self.h.T)
+                ) / learn
+                self.W -= vold + self.vnew
             else:
                 self.W -= eta * (np.dot(self.W, self.A) - self.B)
             np.maximum(self.W, 0.0, out=self.W)
-            self.W /= max(np.linalg.norm(self.W, 'fro'), 1.0)
+            self.W /= max(np.linalg.norm(self.W, "fro"), 1.0)
 
     def project(self, X, return_R=False):
         """Project the learnt components on the data.
@@ -356,22 +374,27 @@ class ORNMF:
             return self.W, 0
 
 
-def ornmf(X, rank,
-          lambda1=1,
-          kappa=1,
-          store_r=False,
-          project=False,
-          method=None,
-          subspace_learning_rate=1.,
-          subspace_momentum=0.5):
+def ornmf(
+    X,
+    rank,
+    lambda1=1,
+    kappa=1,
+    store_r=False,
+    project=False,
+    method=None,
+    subspace_learning_rate=1.0,
+    subspace_momentum=0.5,
+):
 
-    _ornmf = ORNMF(rank,
-                   lambda1=lambda1,
-                   kappa=kappa,
-                   store_r=store_r,
-                   method=method,
-                   subspace_learning_rate=subspace_learning_rate,
-                   subspace_momentum=subspace_momentum)
+    _ornmf = ORNMF(
+        rank,
+        lambda1=lambda1,
+        kappa=kappa,
+        store_r=store_r,
+        method=method,
+        subspace_learning_rate=subspace_learning_rate,
+        subspace_momentum=subspace_momentum,
+    )
     _ornmf.fit(X)
     if project:
         W = _ornmf.W

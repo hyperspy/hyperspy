@@ -30,9 +30,9 @@ import hyperspy.utils.samfire
 
 
 def print_known_signal_types():
-    """Print all known `signal_type`s
+    """Print all known `signal_type`\s
 
-    This includes `signal_type`s from all installed packages that
+    This includes `signal_type`\s from all installed packages that
     extend HyperSpy.
 
     Examples

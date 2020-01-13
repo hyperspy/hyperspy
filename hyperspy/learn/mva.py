@@ -511,28 +511,32 @@ class MVA():
         """Blind source separation (BSS) on the result on the
         decomposition.
 
-        Available algorithms: FastICA, JADE, CuBICA, and TDSEP
+        Available algorithms: FastICA, JADE, CuBICA, and TDSEP.
 
         Parameters
         ----------
         number_of_components : int
             number of principal components to pass to the BSS algorithm
-        algorithm : {FastICA, JADE, CuBICA, TDSEP}
+        algorithm : str
             BSS algorithms available.
+            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA", 
+            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to 
+            perform FastICA, otherwise use the Modular toolkit for Data 
+            Processing (MDP) is used.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
-            the signal. If diff_order is 0, the signal is not differentiated.
+            the signal. If `diff_order` is 0, the signal is not differentiated.
         diff_axes : None or list of ints or strings
             If None, when `diff_order` is greater than 1 and `signal_dimension`
             (`navigation_dimension`) when `on_loadings` is False (True) is
             greater than 1, the differences are calculated across all
             signal (navigation) axes. Otherwise the axes can be specified in
             a list.
-        factors : Signal or numpy array.
+        factors : Signal or numpy.ndarray
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance the
             navigation dimension must be 1 and the size greater than 1.
-        comp_list : boolen numpy array
+        comp_list : numpy.ndarray of bool
             choose the components to use by the boolean list. It permits
             to choose non contiguous components.
         mask : bool numpy array or Signal instance.
@@ -542,19 +546,20 @@ class MVA():
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        reverse_component_criterion : str {'factors', 'loadings'}
-            Use either the `factor` or the `loading` to determine if the 
-            component needs to be reversed.
+        reverse_component_criterion : str
+            One of {'factors', 'loadings'}. Use either the factor or the 
+            loading to determine if the component needs to be reversed.
         compute: bool
            If the decomposition results are lazy, compute the BSS components
            so that they are not lazy.
            Default is False.
-
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
 
-        FastICA documentation is here, with more arguments that can be passed as **kwargs:
-        http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.FastICA.html
+        Notes
+        -----
+        See the FastICA documentation, with more arguments that can be passed 
+        as kwargs :py:class:`sklearn.decomposition.FastICA`
 
         """
         from hyperspy.signal import BaseSignal

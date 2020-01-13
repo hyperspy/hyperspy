@@ -90,7 +90,7 @@ Install using Python installers
 
 HyperSpy is listed in the `Python Package Index
 <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
-and installed  `pip <http://pypi.python.org/pypi/pip>`_. You may need to
+and installed  `pip <http://pypi.python.org/pypi/pip>`__. You may need to
 install pip for the following commands to run.
 
 Install using `pip`:
@@ -195,7 +195,7 @@ To get the development version from our git repository you need to install `git
 
 To install HyperSpy you could proceed like in :ref:`install-released-source`.
 However, if you are installing from the development version most likely you
-will prefer to install HyperSpy using  `pip <http://www.pip-installer.org>`_
+will prefer to install HyperSpy using  `pip <http://www.pip-installer.org>`__
 development mode:
 
 
@@ -251,6 +251,7 @@ installing from source in a conda environment, these can be obtained beforehand
 by installing and removing hyperspy from that environment;
 
 .. code-block:: bash
+
     $ conda install hyperspy
     $ conda remove hyperspy
     $ pip install -e ./

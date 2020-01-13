@@ -25,11 +25,11 @@ from hyperspy._components.expression import Expression
 class DoublePowerLaw(Expression):
 
     r"""Double power law component for EELS spectra.
-    
+
     .. math::
-    
-        f(x) = A \cdot (s_r \cdot (x - x_0 - x_s)^{-r} + (x - x_0)^{-r})
-    
+
+        f(x) = A \cdot [s_r \cdot (x - x_0 - x_s)^{-r} + (x - x_0)^{-r}]
+
     ============= =============
      Variable      Parameter
     ============= =============
@@ -39,7 +39,7 @@ class DoublePowerLaw(Expression):
      :math:`x_s`   shift
      :math:`s_r`   ratio
     ============= =============
-    
+
     Parameters
     ----------
     A : float
@@ -54,7 +54,6 @@ class DoublePowerLaw(Expression):
         Height ratio of the two power law components.
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
-
 
     The `left_cutoff` parameter can be used to set a lower threshold from which
     the component will return 0.
@@ -75,7 +74,7 @@ class DoublePowerLaw(Expression):
             ratio=ratio,
             left_cutoff=left_cutoff,
             position="origin",
-            autodoc=True,
+            autodoc=False,
             module=module,
             compute_gradients=compute_gradients,
             **kwargs,
@@ -84,7 +83,7 @@ class DoublePowerLaw(Expression):
         self.origin.free = False
         self.shift.value = 20.
         self.shift.free = False
-        
+
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None

@@ -128,10 +128,10 @@ axes2_converted = {
         'scale': 64.0, 'size': 3, 'units': 'nm'},
     'axis-2': {
         'name': 'dy', 'navigate': False, 'offset': 0.0,
-        'scale': 160.61676839061997, 'size': 5, 'units': 'um'},
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'},
     'axis-3': {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
-        'scale': 160.61676839061997, 'size': 5, 'units': 'um'}}
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'}}
 
 
 def test_load1():

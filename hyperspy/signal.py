@@ -1139,6 +1139,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1147,6 +1148,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -1256,6 +1258,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+            
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1264,6 +1267,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -2145,12 +2149,13 @@ class BaseSignal(FancySlicing,
 
         The function gets the format from the specified extension (see
         :ref:`supported-formats` in the User Guide for more information):
-            * ``'hspy'`` for HyperSpy's HDF5 specification
-            * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
-            * ``'msa'`` for EMSA/MSA single spectrum saving.
-            * ``'unf'`` for SEMPER unf binary format.
-            * ``'blo'`` for Blockfile diffraction stack saving.
-            * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
+
+        * ``'hspy'`` for HyperSpy's HDF5 specification
+        * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
+        * ``'msa'`` for EMSA/MSA single spectrum saving.
+        * ``'unf'`` for SEMPER unf binary format.
+        * ``'blo'`` for Blockfile diffraction stack saving.
+        * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
@@ -2181,9 +2186,10 @@ class BaseSignal(FancySlicing,
             compatibility with HyperSpy versions older than 1.2 is required.
             If ``None``, the extension is determined from the following list in
             this order:
-                i) the filename
-                ii)  `Signal.tmp_parameters.extension`
-                iii) ``'hspy'`` (the default extension)
+
+            i) the filename
+            ii)  `Signal.tmp_parameters.extension`
+            iii) ``'hspy'`` (the default extension)
 
         """
         if filename is None:
@@ -4635,7 +4641,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         signal_type : str, optional
-            If no arguments are passed, the `signal_type` is set to undefined
+            If no arguments are passed, the ``signal_type`` is set to undefined
             and the current signal converted to a generic signal subclass.
             Otherwise, set the signal_type to the given signal
             type or to the signal type corresponding to the given signal type
@@ -4651,7 +4657,7 @@ class BaseSignal(FancySlicing,
         Examples
         --------
 
-        Let's first print all known `signal_type`s:
+        Let's first print all known signal types:
 
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s

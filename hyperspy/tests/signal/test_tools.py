@@ -203,8 +203,8 @@ class Test2D:
         s.crop(1, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_crop_image_unit_convertion_signal2D(self):
@@ -252,8 +252,8 @@ class Test2D:
         s.crop_image(0, 5.0, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_split_axis0(self):
