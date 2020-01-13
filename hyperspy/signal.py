@@ -1376,8 +1376,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_loadings(self):
-        """Return the decomposition loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition loadings.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1391,8 +1394,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_factors(self):
-        """Return the decomposition factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition factors.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1406,8 +1412,11 @@ class MVATools(object):
         return signal
 
     def get_bss_loadings(self):
-        """Return the blind source separation loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation loadings.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1422,8 +1431,11 @@ class MVATools(object):
         return signal
 
     def get_bss_factors(self):
-        """Return the blind source separation factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation factors.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------

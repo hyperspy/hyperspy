@@ -521,7 +521,7 @@ class MVA():
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
             to choose non contiguous components.
-        mask : bool numpy array or Signal instance.
+        mask : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
             (navigation shape) when `on_loadings` is False (True).
@@ -601,10 +601,7 @@ class MVA():
             if hasattr(mask, 'compute'):
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.
-                if isinstance(mask, da.Array):
-                    mask = mask.compute()
-                else:
-                    mask.compute()
+                mask.compute()
 
         # Note that we don't check the factor's signal dimension. This is on
         # purpose as an user may like to apply pretreaments that change their
