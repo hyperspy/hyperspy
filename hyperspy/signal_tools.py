@@ -971,10 +971,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
         self.model = model
-        self.background_estimator = None
-        self.set_background_estimator()
         self.polynomial_order = polynomial_order
         self.background_type = background_type
+        self.set_background_estimator()
         self.fast = fast
         self.plot_remainder = plot_remainder
         self.zero_fill = zero_fill
@@ -991,8 +990,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.rm_line = None
 
     def set_background_estimator(self):
-        if self.model and self.background_estimator in self.model:
-            self.model.remove(self.background_estimator)
+        if self.model is not None:
+            for component in self.model:
+                self.model.remove(component)
         if self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
@@ -1013,9 +1013,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         elif self.background_type == 'SkewNormal':
             self.background_estimator = components1d.SkewNormal()
             self.bg_line_range = 'full'
-        if self.background_estimator not in self.model:
-            self.model.append(self.background_estimator)
-        if self.model and self.background_estimator not in self.model:
+        if self.model is not None and len(self.model) == 0:
             self.model.append(self.background_estimator)
 
     def _polynomial_order_changed(self, old, new):

@@ -1116,7 +1116,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             so the result may be different if a NLLS calculation is finally
             performed.
         return_model : bool
-            Returns model when necessary
+            Returns model containing the background.
         %s
         %s
         %s
