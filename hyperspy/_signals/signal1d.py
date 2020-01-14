@@ -1031,10 +1031,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
-            zero_fill=False, show_progressbar=None):
-        from hyperspy.models.model1d import Model1D
-        model = Model1D(self)
-        model.append(background_estimator)
+            zero_fill=False, show_progressbar=None, model=None,
+            return_model=False):
+        if model is None:
+            from hyperspy.models.model1d import Model1D
+            model = Model1D(self)
+        if background_estimator not in model:
+            model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,
             signal_range[0],
@@ -1063,6 +1066,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 result.data = da.concatenate([z, cropped_da])
             else:
                 result.isig[:signal_range[0]] = 0
+        if return_model:
+            result = (result, model)
         return result
 
     def remove_background(
@@ -1073,7 +1078,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             fast=True,
             zero_fill=False,
             plot_remainder=True,
-            show_progressbar=None, display=True, toolkit=None):
+            show_progressbar=None, 
+            return_model=False,
+            display=True,
+            toolkit=None):
         """
         Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
@@ -1107,6 +1115,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             background removal. This preview is obtained from a Fast calculation
             so the result may be different if a NLLS calculation is finally
             performed.
+        return_model : bool
+            Returns model when necessary
         %s
         %s
         %s
@@ -1133,14 +1143,20 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
 
         self._check_signal_dimension_equals_one()
+        # Create model here, so that we can return it
+        from hyperspy.models.model1d import Model1D
+        model = Model1D(self)
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
                                    fast=fast,
                                    plot_remainder=plot_remainder,
                                    show_progressbar=show_progressbar,
-                                   zero_fill=zero_fill)
-            return br.gui(display=display, toolkit=toolkit)
+                                   zero_fill=zero_fill,
+                                   model=model)
+            br.gui(display=display, toolkit=toolkit)
+            if return_model:
+                return model
         else:
             if background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
@@ -1157,17 +1173,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
             elif background_type in ('SkewNormal', 'Skew Normal'):
                 background_estimator = components1d.SkewNormal()
             else:
-                raise ValueError(
-                    "Background type: " +
-                    background_type +
-                    " not recognized")
-            spectra = self._remove_background_cli(
+                raise ValueError(f"Background type: {background_type} not "
+                                 "recognized.")
+            result = self._remove_background_cli(
                 signal_range=signal_range,
                 background_estimator=background_estimator,
                 fast=fast,
                 zero_fill=zero_fill,
-                show_progressbar=show_progressbar)
-            return spectra
+                show_progressbar=show_progressbar,
+                model=model,
+                return_model=return_model)
+            return result
     remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector

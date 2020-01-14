@@ -966,13 +966,15 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
-                 show_progressbar=None):
+                 show_progressbar=None, model=None):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
+        self.model = model
+        self.background_estimator = None
+        self.set_background_estimator()
         self.polynomial_order = polynomial_order
         self.background_type = background_type
-        self.set_background_estimator()
         self.fast = fast
         self.plot_remainder = plot_remainder
         self.zero_fill = zero_fill
@@ -989,6 +991,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.rm_line = None
 
     def set_background_estimator(self):
+        if self.model and self.background_estimator in self.model:
+            self.model.remove(self.background_estimator)
         if self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
@@ -1009,6 +1013,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         elif self.background_type == 'SkewNormal':
             self.background_estimator = components1d.SkewNormal()
             self.bg_line_range = 'full'
+        if self.background_estimator not in self.model:
+            self.model.append(self.background_estimator)
+        if self.model and self.background_estimator not in self.model:
+            self.model.append(self.background_estimator)
 
     def _polynomial_order_changed(self, old, new):
         with ignore_warning(message="The API of the `Polynomial` component"):
@@ -1108,15 +1116,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             plot = True
         else:
             plot = False
-        background_type = ("PowerLaw" if self.background_type == "Power Law"
-                           else self.background_type)
-        new_spectra = self.signal.remove_background(
+        return_model = (self.model is not None)
+        result = self.signal._remove_background_cli(
             signal_range=(self.ss_left_value, self.ss_right_value),
-            background_type=background_type,
+            background_estimator=self.background_estimator,
             fast=self.fast,
             zero_fill=self.zero_fill,
-            polynomial_order=self.polynomial_order,
-            show_progressbar=self.show_progressbar)
+            show_progressbar=self.show_progressbar,
+            model=self.model,
+            return_model=return_model)
+        new_spectra = result[0] if return_model else result
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
         if plot:
