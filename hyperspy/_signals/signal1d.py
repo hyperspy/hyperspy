@@ -1145,7 +1145,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         # Create model here, so that we can return it
         from hyperspy.models.model1d import Model1D
-        model = Model1D(self)
+        model = Model1D(self)        
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,

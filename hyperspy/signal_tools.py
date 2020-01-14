@@ -96,6 +96,10 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.ss_right_value = np.nan
         self.span_selector_switch(True)
 
+    def is_span_selector_valid(self):
+        return (not np.isnan(self.ss_left_value) and
+                not np.isnan(self.ss_right_value) and
+                self.ss_left_value <= self.ss_right_value)
 
 class LineInSignal1D(t.HasTraits):
 
@@ -970,16 +974,17 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
+        self.bg_line = None
+        self.rm_line = None
+        self.background_estimator = None
+        self.fast = fast
+        self.plot_remainder = plot_remainder
         self.model = model
         self.polynomial_order = polynomial_order
         self.background_type = background_type
-        self.set_background_estimator()
-        self.fast = fast
-        self.plot_remainder = plot_remainder
         self.zero_fill = zero_fill
         self.show_progressbar = show_progressbar
-        self.bg_line = None
-        self.rm_line = None
+        self.set_background_estimator()
 
     def on_disabling_span_selector(self):
         if self.bg_line is not None:
@@ -1025,6 +1030,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.set_background_estimator()
         self.span_selector_changed()
 
+    def _fast_changed(self, old, new):
+        if not self.is_span_selector_valid():
+            return
+        self._fit()
+        self._update_line()
+
     def _ss_left_value_changed(self, old, new):
         if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
             self.span_selector_changed()
@@ -1056,11 +1067,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.rm_line.plot()
 
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
-        # First try to update the estimation
-        self.background_estimator.estimate_parameters(
-            self.signal, self.ss_left_value, self.ss_right_value,
-            only_current=True)
-
         if self.bg_line_range == 'from_left_range':
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
@@ -1087,24 +1093,35 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         return self.signal() - self.bg_line.line.get_ydata()
 
     def span_selector_changed(self):
-        if self.ss_left_value is np.nan or self.ss_right_value is np.nan or\
-                self.ss_right_value <= self.ss_left_value:
+        if not self.is_span_selector_valid():
             return
-        if self.background_estimator is None:
+        try:
+            self._fit()
+            self._update_line()
+        except:
+            pass
+
+    def _fit(self):
+        if not self.is_span_selector_valid():
             return
-        res = self.background_estimator.estimate_parameters(
-            self.signal, self.ss_left_value,
-            self.ss_right_value,
-            only_current=True)
+        if self.fast:
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value,
+                self.ss_right_value,
+                only_current=True)
+        else:
+            self.model.set_signal_range(self.ss_left_value,
+                                        self.ss_right_value)
+            self.model.fit()
+
+    def _update_line(self):
         if self.bg_line is None:
-            if res:
-                self.create_background_line()
+            self.create_background_line()
         else:
             self.bg_line.update()
         if self.plot_remainder:
             if self.rm_line is None:
-                if res:
-                    self.create_remainder_line()
+                self.create_remainder_line()
             else:
                 self.rm_line.update()
 
