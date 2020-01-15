@@ -999,16 +999,17 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
-    def convert_to_functional_data_axis(self, expression, units=None, name=None):
-        d = super()._get_axis_dictionary()
-        axes_manager = self.axes_manager
-        if units:
-            d["units"] = units
-        if name:
-            d["name"] = name
-        self.__class__ = FunctionalDataAxis
-        self.__init__(expression=expression, x=self.axis, **d)
-        self.axes_manager = axes_manager
+        def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
+            d = super()._get_axis_dictionary()
+            axes_manager = self.axes_manager
+            if units:
+                d["units"] = units
+            if name:
+                d["name"] = name
+            d.update(kwargs)
+            self.__class__ = FunctionalDataAxis
+            self.__init__(expression=expression, x=self.axis, **d)
+            self.axes_manager = axes_manager
 
 
 
