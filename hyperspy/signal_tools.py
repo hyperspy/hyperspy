@@ -986,6 +986,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.show_progressbar = show_progressbar
         self.set_background_estimator()
 
+        self.signal.axes_manager.events.indices_changed.connect(self._fit, [])
+
     def on_disabling_span_selector(self):
         if self.bg_line is not None:
             self.bg_line.close()
@@ -1132,6 +1134,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.rm_line.update()
 
     def apply(self):
+        self.signal.axes_manager.events.indices_changed.disconnect(self._fit)
         if self.signal._plot:
             self.signal._plot.close()
             plot = True
