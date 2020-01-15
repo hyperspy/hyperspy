@@ -880,7 +880,6 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         if self.signal.metadata.has_item('Signal.Noise_properties.variance'):
-
             variance = self.signal.metadata.Signal.Noise_properties.variance
             if isinstance(variance, BaseSignal):
                 variance = variance.data.__getitem__(

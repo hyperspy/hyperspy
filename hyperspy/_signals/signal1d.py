@@ -1049,6 +1049,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 scale_factor = axis.scale if self.metadata.Signal.binned else 1
                 bkg = background_estimator.function_nd(axis.axis) * scale_factor
                 result = self - bkg
+                # TODO: when returning model, calculate chi-squared?
             except MemoryError:
                 result = self - model.as_signal(
                     show_progressbar=show_progressbar)

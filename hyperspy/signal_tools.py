@@ -966,7 +966,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            'full',
                            'ss_range',
                            default='full')
-    hi = t.Int(0)
+    red_chisq = t.Float(np.nan)
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
@@ -1104,15 +1104,21 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def _fit(self):
         if not self.is_span_selector_valid():
             return
+        # Set signal range here to set correctly the channel_switches for
+        # the chisq calculation when using fast
+        self.model.set_signal_range(self.ss_left_value, self.ss_right_value)
         if self.fast:
             self.background_estimator.estimate_parameters(
                 self.signal, self.ss_left_value,
                 self.ss_right_value,
                 only_current=True)
+            # Calculate chisq
+            self.model._calculate_chisq()
         else:
-            self.model.set_signal_range(self.ss_left_value,
-                                        self.ss_right_value)
             self.model.fit()
+        self.red_chisq = self.model.red_chisq.data[
+            self.model.axes_manager.indices]
+
 
     def _update_line(self):
         if self.bg_line is None:
