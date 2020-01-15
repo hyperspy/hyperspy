@@ -177,10 +177,16 @@ def get_low_loss_eels_line_scan_signal():
     return s
 
 
-def get_core_loss_eels_line_scan_signal():
+def get_core_loss_eels_line_scan_signal(add_powerlaw=False):
     """Get an artificial core loss electron energy loss line scan spectrum.
 
     Similar to a Mn-L32 and Fe-L32 edge from a perovskite oxide.
+
+    Parameters
+    ----------
+    add_powerlaw : bool
+        If True, adds a powerlaw background to the spectrum.
+        Default False.
 
     Returns
     -------
@@ -223,6 +229,10 @@ def get_core_loss_eels_line_scan_signal():
         data[i] += fe_l3_g.function(x) * fe_intensity[i]
         data[i] += fe_l2_g.function(x) * fe_intensity[i]
         data[i] += np.random.random(size=len(x)) * 0.7
+
+    if add_powerlaw:
+        powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
+        data += powerlaw.function(x)
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
