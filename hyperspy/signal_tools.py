@@ -990,7 +990,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.rm_line = None
 
     def set_background_estimator(self):
-
         if self.background_type == 'Gaussian':
             self.background_estimator = components1d.Gaussian()
             self.bg_line_range = 'full'
@@ -1013,7 +1012,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line_range = 'full'
         elif self.background_type == 'Voigt':
             with ignore_warning(message="The API of the `Voigt` component"):
-                self.background_estimator = components1d.Voigt()
+                self.background_estimator = components1d.Voigt(legacy=False)
 
     def _polynomial_order_changed(self, old, new):
         with ignore_warning(message="The API of the `Polynomial` component"):
