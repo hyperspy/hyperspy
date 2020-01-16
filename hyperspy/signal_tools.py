@@ -56,7 +56,8 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        self.signal.plot()
+        if signal._plot is None or not signal._plot.is_active:
+            signal.plot()
         self.span_selector_switch(on=True)
 
     def on_disabling_span_selector(self):
@@ -96,6 +97,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.ss_right_value = np.nan
         self.span_selector_switch(True)
 
+    @property
     def is_span_selector_valid(self):
         return (not np.isnan(self.ss_left_value) and
                 not np.isnan(self.ss_right_value) and
@@ -992,6 +994,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.signal.axes_manager.events.indices_changed.connect(self._fit, [])
 
     def on_disabling_span_selector(self):
+        # Disconnect event
+        self.disconnect()
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
@@ -1036,7 +1040,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.span_selector_changed()
 
     def _fast_changed(self, old, new):
-        if not self.is_span_selector_valid():
+        if self.span_selector is None or not self.is_span_selector_valid:
             return
         self._fit()
         self._update_line()
@@ -1098,7 +1102,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         return self.signal() - self.bg_line.line.get_ydata()
 
     def span_selector_changed(self):
-        if not self.is_span_selector_valid():
+        if not self.is_span_selector_valid:
             return
         try:
             self._fit()
@@ -1107,7 +1111,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             pass
 
     def _fit(self):
-        if not self.is_span_selector_valid():
+        if not self.is_span_selector_valid:
             return
         # Set signal range here to set correctly the channel_switches for
         # the chisq calculation when using fast
@@ -1136,6 +1140,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.rm_line.update()
 
     def apply(self):
+        if not self.is_span_selector_valid:
+            return
         return_model = (self.model is not None)
         result = self.signal._remove_background_cli(
             signal_range=(self.ss_left_value, self.ss_right_value),
@@ -1149,8 +1155,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
 
-    def close(self):
-        self.signal.axes_manager.events.indices_changed.disconnect(self._fit)
+    def disconnect(self):
+        axes_manager = self.signal.axes_manager
+        if self._fit in axes_manager.events.indices_changed.connected:
+            axes_manager.events.indices_changed.disconnect(self._fit)
 
 
 SPIKES_REMOVAL_INSTRUCTIONS = (
