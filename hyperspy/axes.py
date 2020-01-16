@@ -688,7 +688,7 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
-    _linear_axis = None
+    x = t.Instance(BaseDataAxis)
     def __init__(self,
                  expression,
                  x=None,
