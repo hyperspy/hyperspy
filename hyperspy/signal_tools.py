@@ -979,6 +979,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.background_estimator = None
         self.fast = fast
         self.plot_remainder = plot_remainder
+        if model is None:
+            from hyperspy.models.model1d import Model1D
+            model = Model1D(signal)
         self.model = model
         self.polynomial_order = polynomial_order
         self.background_type = background_type
@@ -1121,7 +1124,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.red_chisq = self.model.red_chisq.data[
             self.model.axes_manager.indices]
 
-
     def _update_line(self):
         if self.bg_line is None:
             self.create_background_line()
@@ -1134,12 +1136,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.rm_line.update()
 
     def apply(self):
-        self.signal.axes_manager.events.indices_changed.disconnect(self._fit)
-        if self.signal._plot:
-            self.signal._plot.close()
-            plot = True
-        else:
-            plot = False
         return_model = (self.model is not None)
         result = self.signal._remove_background_cli(
             signal_range=(self.ss_left_value, self.ss_right_value),
@@ -1152,8 +1148,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         new_spectra = result[0] if return_model else result
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
-        if plot:
-            self.signal.plot()
+
+    def close(self):
+        self.signal.axes_manager.events.indices_changed.disconnect(self._fit)
 
 
 SPIKES_REMOVAL_INSTRUCTIONS = (

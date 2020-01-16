@@ -1043,21 +1043,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if fast and not self._lazy:
+
+        if fast:
+            # background component was already estimated
+            if return_model:
+                # TODO: when returning model, need to calculate chi-squared?
+                pass
+        else:
+            model.set_signal_range(signal_range[0], signal_range[1])
+            model.multifit(show_progressbar=show_progressbar)
+            model.reset_signal_range()   
+
+        if self._lazy:
+            result = self - model.as_signal(show_progressbar=show_progressbar)
+        else:
             try:
                 axis = self.axes_manager.signal_axes[0]
                 scale_factor = axis.scale if self.metadata.Signal.binned else 1
                 bkg = background_estimator.function_nd(axis.axis) * scale_factor
                 result = self - bkg
-                # TODO: when returning model, calculate chi-squared?
             except MemoryError:
                 result = self - model.as_signal(
                     show_progressbar=show_progressbar)
-        else:
-            model.set_signal_range(signal_range[0], signal_range[1])
-            model.multifit(show_progressbar=show_progressbar)
-            model.reset_signal_range()
-            result = self - model.as_signal(show_progressbar=show_progressbar)
 
         if zero_fill:
             if self._lazy:
