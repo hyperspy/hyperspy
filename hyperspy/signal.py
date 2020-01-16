@@ -808,6 +808,9 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.factors is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
         factors = self.learning_results.factors
@@ -876,6 +879,10 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.bss_factors is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
 
         if same_window is None:
             same_window = True
@@ -966,6 +973,9 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.loadings is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
         loadings = self.learning_results.loadings.T
@@ -1066,6 +1076,10 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_bss_results` instead.")
+        if self.learning_results.bss_loadings is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
         if same_window is None:
             same_window = True
         title = _change_API_comp_label(title, comp_label)
@@ -1335,6 +1349,8 @@ class MVATools(object):
                               save_figures_format=save_figures_format)
 
     def _get_loadings(self, loadings):
+        if loadings is None:
+            raise RuntimeError("No learning results found.")
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
@@ -1348,6 +1364,8 @@ class MVATools(object):
         return signal
 
     def _get_factors(self, factors):
+        if factors is None:
+            raise RuntimeError("No learning results found.")
         signal = self.__class__(
             factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
             axes=[{"size": factors.shape[-1], "navigate": True}] +
@@ -1358,8 +1376,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_loadings(self):
-        """Return the decomposition loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition loadings.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1373,8 +1394,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_factors(self):
-        """Return the decomposition factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition factors.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1388,8 +1412,11 @@ class MVATools(object):
         return signal
 
     def get_bss_loadings(self):
-        """Return the blind source separation loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation loadings.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1404,8 +1431,11 @@ class MVATools(object):
         return signal
 
     def get_bss_factors(self):
-        """Return the blind source separation factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation factors.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1508,6 +1538,7 @@ class MVATools(object):
         plot_bss_results
 
         """
+
         factors = self.get_decomposition_factors()
         loadings = self.get_decomposition_loadings()
         _plot_x_results(factors=factors, loadings=loadings,
