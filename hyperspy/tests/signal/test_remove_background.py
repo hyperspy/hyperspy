@@ -184,34 +184,34 @@ def compare_axes_manager_metadata(s0, s1):
     assert s0.metadata.General.title == s1.metadata.General.title
 
 
-@pytest.mark.parametrize('nav_dim', [0, 1])
-@pytest.mark.parametrize('fast', [True, False])
-@pytest.mark.parametrize('zero_fill', [True, False])
-@pytest.mark.parametrize('show_progressbar', [True, False])
-@pytest.mark.parametrize('plot_remainder', [True, False])
-@pytest.mark.parametrize('background_type',
-                         ['Power Law', 'Polynomial', 'Offset',
-                         'Gaussian', 'Lorentzian', 'SkewNormal'])
-def test_remove_background_metadata_axes_manager_copy(nav_dim,
-                                                      fast,
-                                                      zero_fill,
-                                                      show_progressbar,
-                                                      plot_remainder,
-                                                      background_type):
-    if nav_dim == 0:
-        s = signals.Signal1D(np.arange(10, 100)[::-1])
-    else:
-        s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
-    s.axes_manager[0].name = 'axis0'
-    s.axes_manager[0].units = 'units0'
-    s.axes_manager[0].scale = 0.9
-    s.axes_manager[0].offset = 1.
-    s.metadata.General.title = "atitle"
+# @pytest.mark.parametrize('nav_dim', [0, 1])
+# @pytest.mark.parametrize('fast', [True, False])
+# @pytest.mark.parametrize('zero_fill', [True, False])
+# @pytest.mark.parametrize('show_progressbar', [True, False])
+# @pytest.mark.parametrize('plot_remainder', [True, False])
+# @pytest.mark.parametrize('background_type',
+#                          ['Power Law', 'Polynomial', 'Offset',
+#                          'Gaussian', 'Lorentzian', 'SkewNormal'])
+# def test_remove_background_metadata_axes_manager_copy(nav_dim,
+#                                                       fast,
+#                                                       zero_fill,
+#                                                       show_progressbar,
+#                                                       plot_remainder,
+#                                                       background_type):
+#     if nav_dim == 0:
+#         s = signals.Signal1D(np.arange(10, 100)[::-1])
+#     else:
+#         s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
+#     s.axes_manager[0].name = 'axis0'
+#     s.axes_manager[0].units = 'units0'
+#     s.axes_manager[0].scale = 0.9
+#     s.axes_manager[0].offset = 1.
+#     s.metadata.General.title = "atitle"
 
-    s_r = s.remove_background(signal_range=(2, 50),
-                              fast=fast,
-                              zero_fill=zero_fill,
-                              show_progressbar=show_progressbar,
-                              plot_remainder=plot_remainder,
-                              background_type=background_type)
-    compare_axes_manager_metadata(s, s_r)
+#     s_r = s.remove_background(signal_range=(2, 50),
+#                               fast=fast,
+#                               zero_fill=zero_fill,
+#                               show_progressbar=show_progressbar,
+#                               plot_remainder=plot_remainder,
+#                               background_type=background_type)
+#     compare_axes_manager_metadata(s, s_r)
