@@ -124,10 +124,12 @@ class LazySignal(BaseSignal):
                 _logger.exception("Failed to close lazy Signal file")
 
     def _get_dask_chunks(self, axis=None, dtype=None):
-        """Returns dask chunks
+        """Returns dask chunks.
+
         Aims:
             - Have at least one signal (or specified axis) in a single chunk,
-            or as many as fit in memory
+              or as many as fit in memory
+
         Parameters
         ----------
         axis : {int, string, None, axis, tuple}
@@ -136,6 +138,7 @@ class LazySignal(BaseSignal):
             only that particular axis is guaranteed to be "not sliced".
         dtype : {string, np.dtype}
             The dtype of target chunks.
+
         Returns
         -------
         Tuple of tuples, dask chunks

@@ -240,15 +240,17 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        sb_position : :class:`~hyperspy.signals.BaseSignal
+        sb_position : BaseSignal
             The sideband position (y, x), referred to the non-shifted FFT.
-        show_progressbar: boolean
-            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+        show_progressbar: bool
+            Shows progressbar while iterating over different slices of the 
+            signal (passes the parameter to map method).
         %s
 
         Returns
         -------
-        Signal 1D instance with sideband size, referred to the unshifted FFT.
+        sb_size : Signal1D
+            Sideband size referred to the unshifted FFT.
 
         Examples
         --------
@@ -257,7 +259,6 @@ class HologramImage(Signal2D):
         >>> sb_position = s.estimate_sideband_position()
         >>> sb_size = s.estimate_sideband_size(sb_position)
         >>> sb_size.data
-
         array([ 68.87670143])
         """
 
@@ -288,23 +289,24 @@ class HologramImage(Signal2D):
                           parallel=None):
         """Reconstruct electron holograms. Operates on multidimensional
         hyperspy signals. There are several usage schemes:
-         1. Reconstruct 1d or Nd hologram without reference
-         2. Reconstruct 1d or Nd hologram using single reference hologram
-         3. Reconstruct Nd hologram using Nd reference hologram (applies each
-         reference to each hologram in Nd stack)
 
-         The reconstruction parameters (sb_position, sb_size, sb_smoothness)
-         have to be 1d or to have same dimensionality as the hologram.
+         * Reconstruct 1d or Nd hologram without reference
+         * Reconstruct 1d or Nd hologram using single reference hologram
+         * Reconstruct Nd hologram using Nd reference hologram (applies each
+           reference to each hologram in Nd stack)
+
+        The reconstruction parameters (sb_position, sb_size, sb_smoothness)
+        have to be 1d or to have same dimensionality as the hologram.
 
         Parameters
         ----------
-        reference : ndarray, :class:`~hyperspy.signals.Signal2D, None
+        reference : ndarray, Signal2D, None
             Vacuum reference hologram.
-        sb_size : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
+        sb_size : float, ndarray, BaseSignal, None
             Sideband radius of the aperture in corresponding unit (see
             'sb_unit'). If None, the radius of the aperture is set to 1/3 of
             the distance between sideband and center band.
-        sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
+        sb_smoothness : float, ndarray, BaseSignal, None
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, None
             Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
@@ -313,28 +315,28 @@ class HologramImage(Signal2D):
             'mrad': Size and smoothness of the aperture are given in mrad.
         sb : str, None
             Select which sideband is selected. 'upper' or 'lower'.
-        sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
+        sb_position : tuple, Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
         high_cf : bool, optional
-            If False, the highest carrier frequency allowed for the sideband location is equal to
-            half of the Nyquist frequency (Default: True).
+            If False, the highest carrier frequency allowed for the sideband 
+            location is equal to half of the Nyquist frequency (Default: True).
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input
             hologram. The output shape should not be larger than the input
             shape.
-        plotting : boolean
+        plotting : bool
             Shows details of the reconstruction (i.e. SB selection).
         %s
         %s
-        store_parameters : boolean
+        store_parameters : bool
             Store reconstruction parameters in metadata
 
         Returns
         -------
-        wave : :class:`~hyperspy.signals.WaveImage
-            Reconstructed electron wave. By default object wave is devided by
-            reference wave
+        wave : ComplexSignal2D
+            Reconstructed electron wave. By default object wave is divided by
+            reference wave.
 
         Examples
         --------
@@ -342,7 +344,6 @@ class HologramImage(Signal2D):
         >>> s = hs.datasets.example_signals.object_hologram()
         >>> sb_position = s.estimate_sideband_position()
         >>> sb_size = s.estimate_sideband_size(sb_position)
-        >>> sb_size.data
         >>> wave = s.reconstruct_phase(sb_position=sb_position, sb_size=sb_size)
 
         """
@@ -604,7 +605,7 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
+        sb_position : tuple, Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT.
             It has to be tuple or to have the same dimensionality as the hologram.
             If None, sideband is determined automatically from FFT.
@@ -616,16 +617,14 @@ class HologramImage(Signal2D):
         fringe_contrast_algorithm : str
             Select fringe contrast algorithm between:
 
-            'fourier'
-                fringe contrast is estimated as:
-                2 * <I(k_0)> / <I(0)>,
-                where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
-                This method delivers also reasonable estimation if
-                interference pattern do not cover full field of view.
-            'statistical'
-                fringe contrast is estimated by dividing standard deviation by mean
-                of the hologram intensity in real space. This algorithm relays on that the fringes are regular and
-                covering entire field of view.
+            * 'fourier': fringe contrast is estimated as 2 * <I(k_0)> / <I(0)>,
+              where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
+              This method delivers also reasonable estimation if the
+              interference pattern do not cover full field of view.
+            * 'statistical': fringe contrast is estimated by dividing the 
+              standard deviation by the mean of the hologram intensity in real
+              space. This algorithm relies on regularly spaced fringes and
+              covering the entire field of view.
 
             (Default: 'statistical')
         apodization: str or None, optional

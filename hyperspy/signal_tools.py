@@ -102,8 +102,8 @@ class LineInSignal1D(t.HasTraits):
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     position : float
         The position of the vertical line in the one dimensional signal. Moving
         the line changes the position but the reverse is not true.
@@ -943,6 +943,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Offset',
         'Polynomial',
         'Lorentzian',
+        'SkewNormal',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
@@ -1004,6 +1005,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line_range = 'full'
         elif self.background_type == 'Lorentzian':
             self.background_estimator = components1d.Lorentzian()
+            self.bg_line_range = 'full'
+        elif self.background_type == 'SkewNormal':
+            self.background_estimator = components1d.SkewNormal()
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):

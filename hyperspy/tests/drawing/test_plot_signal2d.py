@@ -469,6 +469,8 @@ def test_plot_images_tranpose():
     hs.plot.plot_images([a, b])
 
 
+# Ignore numpy warning about clipping np.nan values
+@pytest.mark.filterwarnings("ignore:Passing `np.nan` to mean no clipping in np.clip")
 def test_plot_with_non_finite_value():
     s = hs.signals.Signal2D(np.array([[np.nan, 2.0] for v in range(2)]))
     s.plot()
