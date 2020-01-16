@@ -443,23 +443,7 @@ class BaseDataAxis(t.HasTraits):
         return slice(start, stop, step)
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and set the 
-        axis accordingly.
-
-        Parameters
-        ----------
-        slice_ : {int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-
-        """
-        my_slice = self._get_array_slices(slice_)
-        self.axis = self.axis[my_slice]
-        self.update_axis()
-
-        return my_slice
+        raise NotImplementedError("This method must be implemented by subclasses")
 
     def _get_name(self):
         name = (self.name
@@ -621,6 +605,24 @@ class DataAxis(BaseDataAxis):
         super().__init__(index_in_array, name, units, navigate)
         self.axis = axis
         self.update_axis()
+
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and set the 
+        axis accordingly.
+
+        Parameters
+        ----------
+        slice_ : {int, slice}
+
+        Returns
+        -------
+        my_slice : slice
+
+        """
+        my_slice = self._get_array_slices(slice_)
+        self.axis = self.axis[my_slice]
+        self.update_axis()
+        return my_slice
 
     def update_axis(self):
         """Set the value of a axis. The axis values need to be ordered.
