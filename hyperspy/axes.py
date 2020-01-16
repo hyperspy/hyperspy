@@ -727,11 +727,6 @@ class FunctionalDataAxis(BaseDataAxis):
         self.parameters_list = list(parameters.keys())
         self.update_axis()
         self.on_trait_change(self.update_axis, self.parameters_list)
-        self.on_trait_change(self._set_size, ["size"])
-
-    def _set_size(self, **kwargs):
-        self.x.size = self.size
-        self.update_axis()
 
     def update_axis(self):
         kwargs = {}
@@ -820,6 +815,7 @@ class FunctionalDataAxis(BaseDataAxis):
         """
         my_slice = self._get_array_slices(slice_)
         self.x._slice_me(my_slice)
+        self.update_axis()
         return my_slice
 
 
