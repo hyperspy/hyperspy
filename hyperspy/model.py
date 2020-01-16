@@ -878,15 +878,28 @@ class BaseModel(list):
         else:
             return [0, self._jacobian(p, y).T]
 
-    def _calculate_chisq(self):
+    def _get_variance(self, only_current=True):
+        """Return the variance taking into account the `channel_switches`.
+        It only_current=True, the variance for the current navigation indices
+        is returned, otherwise the variance for all navigation indices is
+        returned.
+        """
         if self.signal.metadata.has_item('Signal.Noise_properties.variance'):
             variance = self.signal.metadata.Signal.Noise_properties.variance
             if isinstance(variance, BaseSignal):
-                variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple)[np.where(
-                                                      self.channel_switches)]
+                if only_current:
+                    variance = variance.data.__getitem__(
+                        self.axes_manager._getitem_tuple
+                        )[np.where(self.channel_switches)]
+                else:
+                    variance = variance.data[..., np.where(
+                        self.channel_switches)[0]]
         else:
             variance = 1.0
+        return variance
+
+    def _calculate_chisq(self):
+        variance = self._get_variance()
         d = self(onlyactive=True).ravel() - self.signal()[np.where(
             self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
@@ -1060,9 +1073,7 @@ class BaseModel(list):
                     if isinstance(variance, BaseSignal):
                         if (variance.axes_manager.navigation_shape ==
                                 self.signal.axes_manager.navigation_shape):
-                            variance = variance.data.__getitem__(
-                                self.axes_manager._getitem_tuple)[
-                                np.where(self.channel_switches)]
+                            variance = self._get_variance(only_current=True)
                         else:
                             raise AttributeError(
                                 "The `navigation_shape` of the variance "
@@ -1674,13 +1685,13 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : dict 
+        dictionary : dict
             A dictionary including at least the following fields:
 
-            * components: a list of dictionaries of components, one per 
+            * components: a list of dictionaries of components, one per
               component
             * _whitelist: a dictionary with keys used as references for saved
-              attributes, for more information, see 
+              attributes, for more information, see
               :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 

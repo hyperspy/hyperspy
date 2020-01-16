@@ -576,13 +576,13 @@ class TestModel2D:
             centre_y=-5.,
             sigma_x=1.,
             sigma_y=2.)
-        x = np.arange(-10, 10, 0.01)
-        y = np.arange(-10, 10, 0.01)
+        x = np.arange(-10, 0, 0.1)
+        y = np.arange(-10, 0, 0.1)
         X, Y = np.meshgrid(x, y)
         im = hs.signals.Signal2D(g.function(X, Y))
-        im.axes_manager[0].scale = 0.01
+        im.axes_manager[0].scale = 0.1
         im.axes_manager[0].offset = -10
-        im.axes_manager[1].scale = 0.01
+        im.axes_manager[1].scale = 0.1
         im.axes_manager[1].offset = -10
         self.im = im
 
@@ -923,6 +923,8 @@ class TestModelSignalVariance:
                                    atol=1e-5)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
                                    atol=1e-5)
+        assert self.m._get_variance(only_current=True).shape == (100, )
+        assert self.m._get_variance(only_current=False).shape == (2, 100)
 
 
 @lazifyTestClass

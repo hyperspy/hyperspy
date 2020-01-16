@@ -19,13 +19,12 @@
 import numpy as np
 import pytest
 
-from hyperspy import signals
+import hyperspy.api as hs
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
 
 
 @lazifyTestClass
-@pytest.mark.parametrize('binning', (True, False))
 class TestRemoveBackground1DGaussian:
 
     def setup_method(self, method):
@@ -33,25 +32,41 @@ class TestRemoveBackground1DGaussian:
         gaussian.A.value = 10
         gaussian.centre.value = 10
         gaussian.sigma.value = 1
-        self.signal = signals.Signal1D(
+        self.signal = hs.signals.Signal1D(
             gaussian.function(np.arange(0, 20, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
 
-    def test_background_remove_gaussian(self, binning):
-        self.signal.metadata.Signal.binned = binning
-        s1 = self.signal.remove_background(
+    @pytest.mark.parametrize('binning', (True, False))
+    @pytest.mark.parametrize('fast', [False, True])
+    @pytest.mark.parametrize('return_model', [False, True])
+    def test_background_remove(self, binning, fast, return_model):
+        signal = self.signal
+        signal.metadata.Signal.binned = binning
+        out = signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
-            show_progressbar=None)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+            fast=fast,
+            return_model=return_model)
+        if return_model:
+            s1 = out[0]
+            model = out[1]
+            assert np.allclose(model.chisq.data, 0.0)
+            assert np.allclose(model.as_signal().data, signal.data)
+        else:
+            s1 = out
+        assert np.allclose(s1.data, np.zeros_like(s1.data))
 
-    def test_background_remove_gaussian_full_fit(self, binning):
-        self.signal.metadata.Signal.binned = binning
-        s1 = self.signal.remove_background(
+    def test_background_remove_navigation(self):
+        # Check it calculate the chisq
+        s2 = hs.stack([self.signal]*2)
+        (s, model) = s2.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
-            fast=False)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+            fast=True,
+            return_model=True)
+        assert np.allclose(model.chisq.data, np.array([0.0, 0.0]))
+        assert np.allclose(model.as_signal().data, s2.data)
+        assert np.allclose(s.data, np.zeros_like(s.data))
 
 
 @lazifyTestClass
@@ -61,8 +76,7 @@ class TestRemoveBackground1DPowerLaw:
         pl = components1d.PowerLaw()
         pl.A.value = 1e10
         pl.r.value = 3
-        self.signal = signals.Signal1D(
-            pl.function(np.arange(100, 200)))
+        self.signal = hs.signals.Signal1D(pl.function(np.arange(100, 200)))
         self.signal.axes_manager[0].offset = 100
         self.signal.metadata.Signal.binned = False
 
@@ -122,7 +136,7 @@ class TestRemoveBackground1DLorentzian:
         lorentzian.A.value = 10
         lorentzian.centre.value = 10
         lorentzian.gamma.value = 1
-        self.signal = signals.Signal1D(
+        self.signal = hs.signals.Signal1D(
             lorentzian.function(np.arange(0, 20, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
         self.signal.metadata.Signal.binned = False
@@ -151,7 +165,7 @@ class TestRemoveBackground1DSkewNormal:
         lorentzian.x0.value = 1
         lorentzian.scale.value = 2
         lorentzian.shape.value = 10
-        self.signal = signals.Signal1D(
+        self.signal = hs.signals.Signal1D(
             lorentzian.function(np.arange(0, 10, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
         self.signal.metadata.Signal.binned = False
@@ -199,9 +213,9 @@ def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       plot_remainder,
                                                       background_type):
     if nav_dim == 0:
-        s = signals.Signal1D(np.arange(10, 100)[::-1])
+        s = hs.signals.Signal1D(np.arange(10, 100)[::-1])
     else:
-        s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
+        s = hs.signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
     s.axes_manager[0].name = 'axis0'
     s.axes_manager[0].units = 'units0'
     s.axes_manager[0].scale = 0.9

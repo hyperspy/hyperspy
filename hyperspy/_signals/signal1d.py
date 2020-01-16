@@ -836,7 +836,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         It displays a window where the new calibration can be set by:
 
         * setting the values of offset, units and scale directly
-        * or selecting a range by dragging the mouse on the spectrum figure 
+        * or selecting a range by dragging the mouse on the spectrum figure
           and setting the new values for the given range limits
 
         Parameters
@@ -940,7 +940,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Notes
         -----
-        This method uses the lowess algorithm from the `statsmodels` library, 
+        This method uses the lowess algorithm from the `statsmodels` library,
         which needs to be installed to use this method.
         """
         if not statsmodels_installed:
@@ -1044,15 +1044,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             signal_range[1],
             only_current=False)
 
-        if fast:
-            # background component was already estimated
-            if return_model:
-                # TODO: when returning model, need to calculate chi-squared?
-                pass
-        else:
+        if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
-            model.reset_signal_range()   
+            model.reset_signal_range()
 
         if self._lazy:
             result = self - model.as_signal(show_progressbar=show_progressbar)
@@ -1075,6 +1070,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
             else:
                 result.isig[:signal_range[0]] = 0
         if return_model:
+            if fast:
+                # Calculate the variance for each navigation position only when
+                # using fast, otherwise the chisq is already calculated when
+                # doing the multifit
+                d = result.data[..., np.where(model.channel_switches)[0]]
+                variance = model._get_variance(only_current=False)
+                d *= d / (1. * variance)  # d = difference^2 / variance.
+                model.chisq.data = d.sum(-1)
             result = (result, model)
         return result
 
@@ -1086,7 +1089,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             fast=True,
             zero_fill=False,
             plot_remainder=True,
-            show_progressbar=None, 
+            show_progressbar=None,
             return_model=False,
             display=True,
             toolkit=None):
@@ -1102,7 +1105,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components: PowerLaw, Gaussian, Offset, Polynomial, 
+            Possible components: PowerLaw, Gaussian, Offset, Polynomial,
             Lorentzian, SkewNormal.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
@@ -1153,7 +1156,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         # Create model here, so that we can return it
         from hyperspy.models.model1d import Model1D
-        model = Model1D(self)        
+        model = Model1D(self)
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
@@ -1330,8 +1333,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
                             subchannel=True, medfilt_radius=5, maxpeakn=30000,
                             peakgroup=10, parallel=None):
-        """Find positive peaks along a 1D Signal. It detects peaks by looking 
-        for downward zero-crossings in the first derivative that exceed 
+        """Find positive peaks along a 1D Signal. It detects peaks by looking
+        for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
@@ -1372,7 +1375,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        structured array of shape (npeaks) containing fields: 'position', 
+        structured array of shape (npeaks) containing fields: 'position',
         'width', and 'height' for each peak.
 
 
@@ -1432,7 +1435,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        width or [width, left, right], depending on the value of 
+        width or [width, left, right], depending on the value of
         `return_interval`.
         """
 
