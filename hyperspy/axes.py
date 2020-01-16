@@ -54,7 +54,8 @@ class ndindex_nat(np.ndindex):
 
 
 def generate_linear_axis(offset, scale, size, offset_index=0):
-    """Creates a linear axis given the offset, scale and number of channels
+    """Creates a linear axis vector given the offset, scale and number of
+    channels.
 
     Alternatively, the offset_index of the offset channel can be specified.
 
@@ -529,7 +530,7 @@ class BaseDataAxis(t.HasTraits):
             return self.axis[index]
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value, if between the limits.
+        """Return the closest index to the given value if between the limit.
 
         Parameters
         ----------
@@ -712,14 +713,10 @@ class FunctionalDataAxis(BaseDataAxis):
                  units=t.Undefined,
                  navigate=t.Undefined,
                  size=1.,
-                 scale=1.,
-                 offset=1.,
                  expression=None,
                  **parameters):
         super().__init__(index_in_array, name, units, navigate)
         self.size = size
-        self.scale = scale
-        self.offset = offset
 
         self.parameters_list = [key for key in parameters.keys()]
         self._expression = expression
@@ -747,8 +744,7 @@ class FunctionalDataAxis(BaseDataAxis):
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        x0 = self.scale * np.arange(self.size) + self.offset
-        self.axis = self.function(x=x0, **kwargs)
+        self.axis = self.function(x=np.arange(self.size), **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
         self.size = len(self.axis)
@@ -776,9 +772,7 @@ class FunctionalDataAxis(BaseDataAxis):
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d.update({'size': self.size,
-                  'scale': self.scale,
-                  'offset': self.offset})
+        d['size'] = self.size
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
@@ -789,45 +783,9 @@ class FunctionalDataAxis(BaseDataAxis):
         self.__init__(**d, axis=self.axis)
 
     def crop(self, start=None, end=None):
-        
-        """Crop the axis in place.
-
-        Parameters
-        ----------
-        start : int, float, or None
-            The beginning of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        end : int, float, or None
-            The end of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-            
-        Note
-        ----
-        When cropping an axis with descending axis values based on the axis
-        calibration, the `start`/`end` tuple also has to be in descending
-        order.
-        """
-
-        if start is None:
-            start = 0
-        if end is None:
-            end = self.size
-
-        # Use `_get_positive_index` to support reserved indexing
-        i1 = self._get_positive_index(self._get_index(start))
-        i2 = self._get_positive_index(self._get_index(end))
-
-        x0 = self.scale * np.arange(self.size) + self.offset
-
-        self.offset = x0[i1]
-        self.size = i2 - i1
-        self.update_axis()
-
-    crop.__doc__ = DataAxis.crop.__doc__
+        raise ValueError('Function still needs to be implemented')
+        # TODO
+        pass
 
 
 class LinearDataAxis(FunctionalDataAxis, UnitConversion):
@@ -842,7 +800,7 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
                  size=1.,
                  scale=1.,
                  offset=0.):
-        self.expression = "x"
+        self.expression = "scale * x + offset"
         super().__init__(index_in_array, name, units, navigate, size=size,
                          expression=self.expression, scale=scale,
                          offset=offset)
@@ -1240,14 +1198,6 @@ class AxesManager(t.HasTraits):
             navigation_extent.append(navigation_axis.low_value)
             navigation_extent.append(navigation_axis.high_value)
         return tuple(navigation_extent)
-
-    @property
-    def all_linear(self):
-        if any([axis.is_linear == False for axis in self._axes]):
-            return False
-        else:
-            return True
-            
 
     def remove(self, axes):
         """Remove one or more axes
