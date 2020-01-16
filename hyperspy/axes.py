@@ -480,9 +480,6 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        return self._get_axis_dictionary()
-
-    def _get_axis_dictionary(self):
         return {'name': self.name,
                 'units': self.units,
                 'navigate': self.navigate
@@ -585,7 +582,7 @@ class BaseDataAxis(t.HasTraits):
 
     def convert_to_linear_axis(self):
         scale = (self.high_value - self.low_value) / self.size
-        d = self._get_axis_dictionary()
+        d = self.get_axis_dictionary()
         del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
@@ -645,8 +642,8 @@ class DataAxis(BaseDataAxis):
                 raise ValueError('The non-linear axis needs to be ordered.')
         self.size = len(self.axis)
 
-    def _get_axis_dictionary(self):
-        d = super()._get_axis_dictionary()
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
         d.update({'axis': self.axis})
         return d
 
@@ -756,8 +753,8 @@ class FunctionalDataAxis(BaseDataAxis):
             attributes = self.parameters_list
         return super().update_from(axis, attributes)
 
-    def _get_axis_dictionary(self):
-        d = super()._get_axis_dictionary()
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
         d['expression'] = self._expression
         d.update({'size': self.size, })
         if self.x is not None:
@@ -767,7 +764,7 @@ class FunctionalDataAxis(BaseDataAxis):
         return d
 
     def convert_to_non_linear_axis(self):
-        d = super()._get_axis_dictionary()
+        d = super().get_axis_dictionary()
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
 
@@ -868,8 +865,8 @@ class LinearDataAxis(BaseDataAxis, UnitConversion):
         self.size = len(self.axis[my_slice])
         return my_slice
 
-    def _get_axis_dictionary(self):
-        d = super()._get_axis_dictionary()
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
         d.update({'size': self.size,
                   'scale': self.scale,
                   'offset': self.offset})
@@ -994,20 +991,20 @@ class LinearDataAxis(BaseDataAxis, UnitConversion):
         self._set_quantity(value, 'offset')
 
     def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
-        d = super()._get_axis_dictionary()
+        d = super().get_axis_dictionary()
         axes_manager = self.axes_manager
         if units:
             d["units"] = units
         if name:
             d["name"] = name
         d.update(kwargs)
-        this_kwargs = self._get_axis_dictionary()
+        this_kwargs = self.get_axis_dictionary()
         self.__class__ = FunctionalDataAxis
         self.__init__(expression=expression, x=LinearDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 
     def convert_to_non_linear_axis(self):
-        d = super()._get_axis_dictionary()
+        d = super().get_axis_dictionary()
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
 
