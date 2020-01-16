@@ -602,6 +602,7 @@ class BaseDataAxis(t.HasTraits):
     def convert_to_linear_axis(self):
         scale = (self.high_value - self.low_value) / self.size
         d = self._get_axis_dictionary()
+        del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
@@ -642,8 +643,8 @@ class DataAxis(BaseDataAxis):
                 raise ValueError('The non-linear axis needs to be ordered.')
         self.size = len(self.axis)
 
-    def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
+    def _get_axis_dictionary(self):
+        d = super()._get_axis_dictionary()
         d.update({'axis': self.axis})
         return d
 
@@ -688,6 +689,7 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
+    _linear_axis = None
     def __init__(self,
                  expression,
                  x=None,
@@ -698,13 +700,13 @@ class FunctionalDataAxis(BaseDataAxis):
                  size=t.Undefined,
                  **parameters):
         super().__init__(index_in_array, name, units, navigate)
-        self.x = x
-        if self.x is not None:
-            self.size = len(x)
-        elif size is t.Undefined:
-            raise ValueError("Please provide either `x` or `size`.")
+        if x is None:
+            if size is t.Undefined:
+                raise ValueError("Please provide either `x` or `size`.")
+            self.x = LinearDataAxis(scale=1, offset=0, size=size)
         else:
-            self.size = size
+            self.x = x
+            self.size = self.x.size
         self._expression = expression
         # Compile function
         expr = _parse_substitutions(self._expression)
@@ -721,21 +723,14 @@ class FunctionalDataAxis(BaseDataAxis):
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
-
         self.update_axis()
-        self.on_trait_change(self.update_axis, self.parameters_list + ["size"])
+        self.on_trait_change(self.update_axis, self.parameters_list)
 
     def update_axis(self):
-        if self.x is not None:
-            if self.size != len(self.x):
-                raise ValueError(
-                    "It is not possible to change the size attribute of this type of axis.")
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        x = self.x if self.x is not None else np.arange(
-            self.size, dtype="float")
-        self.axis = self._function(x=x, **kwargs)
+        self.axis = self._function(x=self.x.axis, **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
 
@@ -759,8 +754,8 @@ class FunctionalDataAxis(BaseDataAxis):
             attributes = self.parameters_list
         return super().update_from(axis, attributes)
 
-    def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
+    def _get_axis_dictionary(self):
+        d = super()._get_axis_dictionary()
         d['expression'] = self._expression
         d.update({'size': self.size, })
         if self.x is not None:
@@ -798,12 +793,8 @@ class FunctionalDataAxis(BaseDataAxis):
         """
 
         slice_ = self._get_array_slices(slice(start, end))
-
-        if self.x is not None:
-            self.x = self.x[slice_]
-        else:
-            self.x = np.arange(self.size, dtype="float")[slice_]
-        self.size = len(self.x)
+        self.x.crop(start=slice_.start, end=slice_.stop)
+        self.size = self.x.size
         self.update_axis()
     crop.__doc__ = DataAxis.crop.__doc__
 
@@ -821,16 +812,16 @@ class FunctionalDataAxis(BaseDataAxis):
 
         """
         my_slice = self._get_array_slices(slice_)
-        if self.x is not None:
-            self.x = self.x[my_slice]
-        else:
-            self.x = np.arange(self.size, dtype="float")[my_slice]
-        self.size = len(self.x)
+        self.x._slice_me(my_slice)
+        self.size = self.x.size
         self.update_axis()
         return my_slice
 
 
-class LinearDataAxis(FunctionalDataAxis, UnitConversion):
+class LinearDataAxis(BaseDataAxis, UnitConversion):
+    scale = t.CFloat(1)
+    offset = t.CFloat(0)
+    size = t.CInt(0)
     def __init__(self,
                  index_in_array=None,
                  name=t.Undefined,
@@ -839,18 +830,18 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
                  size=1.,
                  scale=1.,
                  offset=0.):
-        self.expression = "offset + scale * x"
         super().__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
-            size=size,
-            expression=self.expression,
-            scale=scale,
-            offset=offset)
+            )
+        self.scale = scale
+        self.offset = offset
+        self.size = size
         self.update_axis()
         self._is_linear = True
+        self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
@@ -876,9 +867,8 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
 
         return my_slice
 
-    def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
-        del d['expression']
+    def _get_axis_dictionary(self):
+        d = super()._get_axis_dictionary()
         d.update({'size': self.size,
                   'scale': self.scale,
                   'offset': self.offset})
@@ -925,6 +915,9 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
                 return index
             else:
                 raise ValueError("The value is out of the axis limits")
+
+    def update_axis(self):
+        self.axis = self.offset + self.scale * np.arange(self.size)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -999,17 +992,24 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
-        def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
-            d = super()._get_axis_dictionary()
-            axes_manager = self.axes_manager
-            if units:
-                d["units"] = units
-            if name:
-                d["name"] = name
-            d.update(kwargs)
-            self.__class__ = FunctionalDataAxis
-            self.__init__(expression=expression, x=self.axis, **d)
-            self.axes_manager = axes_manager
+    def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
+        d = super()._get_axis_dictionary()
+        axes_manager = self.axes_manager
+        if units:
+            d["units"] = units
+        if name:
+            d["name"] = name
+        d.update(kwargs)
+        this_kwargs = self._get_axis_dictionary()
+        self.__class__ = FunctionalDataAxis
+        self.__init__(expression=expression, x=LinearDataAxis(**this_kwargs), **d)
+        self.axes_manager = axes_manager
+
+    def convert_to_non_linear_axis(self):
+        d = super()._get_axis_dictionary()
+        self.__class__ = DataAxis
+        self.__init__(**d, axis=self.axis)
+
 
 
 
