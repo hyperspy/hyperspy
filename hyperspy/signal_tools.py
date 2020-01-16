@@ -1501,7 +1501,7 @@ class PeaksFinder2D(t.HasTraits):
 
     show_navigation_sliders = t.Bool(False)
 
-    def __init__(self, signal, method, **kwargs):
+    def __init__(self, signal, method, peaks=None, **kwargs):
         self._attribute_argument_mapping_local_max = {
             'local_max_distance': 'min_distance',
             'local_max_threshold': 'threshold_abs',
@@ -1565,6 +1565,7 @@ class PeaksFinder2D(t.HasTraits):
                              'random_navigation_position')
 
         self.signal = signal
+        self.peaks = peaks
         if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
                 not self.signal._plot.is_active):
             self.signal.plot()
@@ -1650,7 +1651,8 @@ class PeaksFinder2D(t.HasTraits):
         method = self._normalise_method_name(self.method)
         with self.signal.axes_manager.events.indices_changed.suppress():
             self.signal.peaks = self.signal.find_peaks2D(
-                method, current_index=False, **self._get_parameters(method))
+                method, interactive=False, current_index=False,
+                **self._get_parameters(method))
 
     def set_random_navigation_position(self):
         index = np.random.randint(0, self.signal.axes_manager._max_index)

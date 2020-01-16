@@ -800,10 +800,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Returns
         -------
-        peaks : structured numpy array
-                Array of shape `_navigation_shape_in_array` in which each cell
-                contains an array with dimensions (npeaks, 2) that contains
-                the x, y pixel coordinates of peaks found in each image.
+        peaks : :py:class:`~hyperspy.signal.BaseSignal` or numpy.ndarray if current_index=True
+            Array of shape `_navigation_shape_in_array` in which each cell
+            contains an array with dimensions (npeaks, 2) that contains
+            the x, y pixel coordinates of peaks found in each image.
         """
         method_dict = {
             'local_max': peak_local_max,
@@ -830,10 +830,15 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                       "implemented. See documentation for "
                                       "available implementations.")
         if interactive:
-            pf2D = PeaksFinder2D(self, method=method, **kwargs)
-            return pf2D.gui(display=display, toolkit=toolkit)
-
-        if current_index:
+            # Create a peaks signal with the same navigation shape as a 
+            # placeholder for the output
+            axes_dict = self.axes_manager._get_axes_dicts(
+                self.axes_manager.navigation_axes)
+            peaks = BaseSignal(np.empty(self.axes_manager.navigation_shape),
+                               axes=axes_dict)
+            pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
+            pf2D.gui(display=display, toolkit=toolkit)
+        elif current_index:
             peaks = method_func(self.__call__(), **kwargs)
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
