@@ -12,6 +12,7 @@ Welcome to HyperSpy's documentation!
 
     user_guide/index.rst
     Developer Guide <dev_guide/index.rst>
+    Galleries of examples <auto_examples/index.rst>
     Full HyperSpy API Documentation <api/modules.rst>
     credits.rst
     citing.rst

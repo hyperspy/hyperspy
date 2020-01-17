@@ -7,7 +7,7 @@ env:
     - MINIMAL_ENV=false
     - DEPS="numpy ipython scipy matplotlib traits natsort requests tqdm sympy dill h5py python-dateutil ipyparallel dask scikit-image pint numexpr statsmodels sparse imageio pyyaml PTable tifffile"
     - DEPS_OPTIONAL="scikit-learn mrcz numba cython"
-    - DEPS_DOC="sphinx sphinx_rtd_theme"
+    - DEPS_DOC="sphinx sphinx_rtd_theme sphinx-gallery"
     - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
     - MPLBACKEND="agg"
     - TEST_ARG_OPT="--mpl"

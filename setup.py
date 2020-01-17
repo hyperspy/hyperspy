@@ -78,7 +78,7 @@ extras_require = {
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-gallery"],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be

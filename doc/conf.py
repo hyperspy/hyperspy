@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
+    'sphinx_gallery.gen_gallery',
 ]
 
 try:
@@ -248,6 +249,13 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        }
 
 graphviz_output_format = "svg"
+
+# -- Options for sphinx-gallery --------------------------------------
+
+sphinx_gallery_conf = {
+     'examples_dirs': '../examples',   # path to your example scripts
+     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+}
 
 
 # -- Options for Sphinx API doc ----------------------------------------------
