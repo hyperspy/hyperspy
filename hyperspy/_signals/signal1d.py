@@ -352,7 +352,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See also
         --------
-        `_spikes_diagnosis`
+        _spikes_diagnosis
 
         """
         self._check_signal_dimension_equals_one()
@@ -736,7 +736,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See also
         --------
-        `estimate_shift1D`
+        estimate_shift1D
         """
         if also_align is None:
             also_align = []
@@ -791,7 +791,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See Also
         --------
-        `integrate_simpson`
+        integrate_simpson
 
         Examples
         --------
@@ -841,9 +841,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         Calibrate the spectral dimension using a gui.
         It displays a window where the new calibration can be set by:
-            * setting the offset, units and scale directly
-            * selecting a range by dragging the mouse on the spectrum figure 
-              and setting the new values for the given range limits
+
+        * setting the values of offset, units and scale directly
+        * or selecting a range by dragging the mouse on the spectrum figure 
+          and setting the new values for the given range limits
 
         Parameters
         ----------

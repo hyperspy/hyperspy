@@ -120,7 +120,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Parameters
     ----------
-
     ref : 2D numpy.ndarray
         Reference image
     image : 2D numpy.ndarray
@@ -133,11 +132,11 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         apply a median filter for noise reduction
     hanning : bool
         Apply a 2d hanning filter
-    plot : bool | matplotlib.Figure
+    plot : bool or matplotlib.Figure
         If True, plots the images after applying the filters and the phase
         correlation. If a figure instance, the images will be plotted to the
         given figure.
-    reference : 'current' | 'cascade'
+    reference : 'current' or 'cascade'
         If 'current' (default) the image at the current
         coordinates is taken as reference. If 'cascade' each image
         is aligned with the previous one.
@@ -152,7 +151,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Returns
     -------
-
     shifts: np.array
         containing the estimate shifts
     max_value : float
@@ -160,19 +158,15 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Notes
     -----
-
     The statistical analysis approach to the translation estimation
-    when using `reference`='stat' roughly follows [1]_ . If you use
+    when using reference='stat' roughly follows [*]_ . If you use
     it please cite their article.
 
     References
     ----------
-
-    .. [1] Bernhard Schaffer, Werner Grogger and Gerald
-        Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
-        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
-
+    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner. 
+       “Automated Spatial Drift Correction for EFTEM Image Series.” 
+       Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
 
@@ -366,7 +360,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Parameters
         ----------
-
         reference : {'current', 'cascade' ,'stat'}
             If 'current' (default) the image at the current
             coordinates is taken as reference. If 'cascade' each image
@@ -375,18 +368,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             performing statistical analysis on the result the
             translation is estimated.
         correlation_threshold : {None, 'auto', float}
-            This parameter is only relevant when `reference` is 'stat'.
+            This parameter is only relevant when reference='stat'.
             If float, the shift estimations with a maximum correlation
             value lower than the given value are not used to compute
             the estimated shifts. If 'auto' the threshold is calculated
             automatically as the minimum maximum correlation value
             of the automatically selected reference image.
-        chunk_size: {None, int}
-            If int and `reference`=='stat' the number of images used
+        chunk_size : {None, int}
+            If int and reference='stat' the number of images used
             as reference are limited to the given value.
         roi : tuple of ints or floats (left, right, top, bottom)
-             Define the region of interest. If int(float) the position
-             is given axis index(value). Note that ROIs can be used
+            Define the region of interest. If int(float) the position
+            is given axis index(value). Note that ROIs can be used
             in place of a tuple.
         sobel : bool
             apply a sobel filter for edge enhancement
@@ -394,7 +387,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             apply a median filter for noise reduction
         hanning : bool
             Apply a 2d hanning filter
-        plot : bool or "reuse"
+        plot : bool or 'reuse'
             If True plots the images after applying the filters and
             the phase correlation. If 'reuse', it will also plot the images,
             but it will only use one figure, and continuously update the images
@@ -409,23 +402,20 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Returns
         -------
-
-        list of applied shifts
+        shifts : list of array
+            List of estimated shifts
 
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
-        when using `reference`='stat' roughly follows [1]_ . If you use
+        when using reference='stat' roughly follows [*]_ . If you use
         it please cite their article.
 
         References
         ----------
-
-        .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
-        Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
-        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+        .. [*] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
+           “Automated Spatial Drift Correction for EFTEM Image Series.”
+           Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
         if show_progressbar is None:
@@ -590,9 +580,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
-        when using `reference`='stat' roughly follows [1]_ . If you use
+        when using reference='stat' roughly follows [*]_ . If you use
         it please cite their article.
         
         Raises
@@ -602,10 +591,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         References
         ----------
-
-        .. [1] Bernhard Schaffer, Werner Grogger and Gerald
-           Kothleitner. “Automated Spatial Drift Correction for EFTEM
-           Image Series.”
+        .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
+           “Automated Spatial Drift Correction for EFTEM Image Series.” 
            Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
@@ -707,8 +694,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, convert the signal units using the 'convert_to_units'
             method of the 'axes_manager'. If False, does nothing.
 
-        See also:
-        ---------
+        See also
+        --------
         crop
 
         """

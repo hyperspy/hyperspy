@@ -30,4 +30,3 @@ HyperSpy User Guide
     big_data.rst
     metadata_structure.rst
     bibliography.rst
-    credits.rst

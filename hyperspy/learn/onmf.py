@@ -104,22 +104,22 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
 
 
 class ONMF:
-    """This class performs Online Robust NMF
-    with missing or corrupted data.
+    """This class performs Online Robust NMF with missing or corrupted data.
 
     Methods
     -------
     fit
-        learn factors from the given data
+        Learn factors from the given data.
     project
-        project the learnt factors on the given data
+        Project the learnt factors on the given data.
     finish
-        return the learnt factors and loadings
+        Return the learnt factors and loadings.
 
     Notes
     -----
     The ONMF code is based on a transcription of the OPGD algorithm MATLAB code
     obtained from the authors of the following research paper:
+
         Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
         factorization with outliers." Acoustics, Speech and Signal Processing
         (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.

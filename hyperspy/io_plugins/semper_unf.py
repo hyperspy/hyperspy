@@ -442,7 +442,7 @@ class SemperFormat(object):
         ----------
         filename : string, optional
             The name of the unf-file to which the data should be written.
-        skip_header : boolean, optional
+        skip_header : bool, optional
             Determines if the header, title and label should be skipped (useful
             for some other programs). Default is False.
 

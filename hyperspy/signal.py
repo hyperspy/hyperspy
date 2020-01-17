@@ -809,6 +809,9 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.factors is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
         factors = self.learning_results.factors
@@ -877,6 +880,10 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.bss_factors is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
 
         if same_window is None:
             same_window = True
@@ -967,6 +974,9 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.loadings is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
         loadings = self.learning_results.loadings.T
@@ -1067,6 +1077,10 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_bss_results` instead.")
+        if self.learning_results.bss_loadings is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
         if same_window is None:
             same_window = True
         title = _change_API_comp_label(title, comp_label)
@@ -1140,6 +1154,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1148,6 +1163,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -1257,6 +1273,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+            
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1265,6 +1282,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -1336,6 +1354,8 @@ class MVATools(object):
                               save_figures_format=save_figures_format)
 
     def _get_loadings(self, loadings):
+        if loadings is None:
+            raise RuntimeError("No learning results found.")
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
@@ -1349,6 +1369,8 @@ class MVATools(object):
         return signal
 
     def _get_factors(self, factors):
+        if factors is None:
+            raise RuntimeError("No learning results found.")
         signal = self.__class__(
             factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
             axes=[{"size": factors.shape[-1], "navigate": True}] +
@@ -1359,8 +1381,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_loadings(self):
-        """Return the decomposition loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition loadings.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1374,8 +1399,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_factors(self):
-        """Return the decomposition factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition factors.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1389,8 +1417,11 @@ class MVATools(object):
         return signal
 
     def get_bss_loadings(self):
-        """Return the blind source separation loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation loadings.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1405,8 +1436,11 @@ class MVATools(object):
         return signal
 
     def get_bss_factors(self):
-        """Return the blind source separation factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation factors.
+        
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1509,6 +1543,7 @@ class MVATools(object):
         plot_bss_results
 
         """
+
         factors = self.get_decomposition_factors()
         loadings = self.get_decomposition_loadings()
         _plot_x_results(factors=factors, loadings=loadings,
@@ -2154,12 +2189,13 @@ class BaseSignal(FancySlicing,
 
         The function gets the format from the specified extension (see
         :ref:`supported-formats` in the User Guide for more information):
-            * ``'hspy'`` for HyperSpy's HDF5 specification
-            * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
-            * ``'msa'`` for EMSA/MSA single spectrum saving.
-            * ``'unf'`` for SEMPER unf binary format.
-            * ``'blo'`` for Blockfile diffraction stack saving.
-            * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
+
+        * ``'hspy'`` for HyperSpy's HDF5 specification
+        * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
+        * ``'msa'`` for EMSA/MSA single spectrum saving.
+        * ``'unf'`` for SEMPER unf binary format.
+        * ``'blo'`` for Blockfile diffraction stack saving.
+        * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
@@ -2190,9 +2226,10 @@ class BaseSignal(FancySlicing,
             compatibility with HyperSpy versions older than 1.2 is required.
             If ``None``, the extension is determined from the following list in
             this order:
-                i) the filename
-                ii)  `Signal.tmp_parameters.extension`
-                iii) ``'hspy'`` (the default extension)
+
+            i) the filename
+            ii)  `Signal.tmp_parameters.extension`
+            iii) ``'hspy'`` (the default extension)
 
         """
         if filename is None:
@@ -4692,7 +4729,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         signal_type : str, optional
-            If no arguments are passed, the `signal_type` is set to undefined
+            If no arguments are passed, the ``signal_type`` is set to undefined
             and the current signal converted to a generic signal subclass.
             Otherwise, set the signal_type to the given signal
             type or to the signal type corresponding to the given signal type
@@ -4708,7 +4745,7 @@ class BaseSignal(FancySlicing,
         Examples
         --------
 
-        Let's first print all known `signal_type`s:
+        Let's first print all known signal types:
 
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s

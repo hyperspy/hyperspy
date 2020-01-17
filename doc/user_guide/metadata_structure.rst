@@ -444,6 +444,7 @@ signal_origin
 
 record_by
     .. deprecated:: 1.2
+
     type: Str
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.

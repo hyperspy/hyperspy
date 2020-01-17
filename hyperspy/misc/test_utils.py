@@ -73,6 +73,7 @@ def ignore_warning(message="", category=None):
 def all_warnings():
     """
     Context for use in testing to ensure that all warnings are raised.
+
     Examples
     --------
     >>> import warnings
@@ -121,32 +122,40 @@ def all_warnings():
 
 @contextmanager
 def assert_warns(message=None, category=None):
-    r"""Context for use in testing to catch known warnings matching regexes
+    r"""Context for use in testing to catch known warnings matching regexes.
+
+    Allows for three types of behaviors: "and", "or", and "optional" matches.
+    This is done to accomodate different build enviroments or loop conditions
+    that may produce different warnings. The behaviors can be combined.
+    If you pass multiple patterns, you get an orderless "and", where all of the
+    warnings must be raised.
+    If you use the ``|`` operator in a pattern, you can catch one of several
+    warnings.
+    Finally, you can use ``\A\Z`` in a pattern to signify it as optional.
 
     Parameters
     ----------
-    message : (list of) strings or compiled regexes
+    message : (list of) str or compiled regexes
         Regexes for the desired warning to catch
-    category : type or list of types
+    category : (list of) type
         Warning categories for the desired warning to catch
+    
+    Raises
+    ------
+    ValueError
+        If any match was not found or an unexpected warning was raised.
+
     Examples
     --------
     >>> from skimage import data, img_as_ubyte, img_as_float
     >>> with assert_warns(['precision loss']):
     ...     d = img_as_ubyte(img_as_float(data.coins()))
+
     Notes
     -----
     Upon exiting, it checks the recorded warnings for the desired matching
     pattern(s).
-    Raises a ValueError if any match was not found or an unexpected
-    warning was raised.
-    Allows for three types of behaviors: "and", "or", and "optional" matches.
-    This is done to accomodate different build enviroments or loop conditions
-    that may produce different warnings.  The behaviors can be combined.
-    If you pass multiple patterns, you get an orderless "and", where all of the
-    warnings must be raised.
-    If you use the "|" operator in a pattern, you can catch one of several warnings.
-    Finally, you can use "|\A\Z" in a pattern to signify it as optional.
+
     """
     if isinstance(message, (str, type(re.compile('')))):
         message = [message]
@@ -192,16 +201,25 @@ def update_close_figure(function):
 def assert_deep_almost_equal(actual, expected, *args, **kwargs):
     """ Assert that two complex structures have almost equal contents.
     Compares lists, dicts and tuples recursively. Checks numeric values
-    using :py:meth:`assert_allclose` and
-    checks all other values with :py:meth:`assert_equal`.
+    using :py:func:`numpy.testing.assert_allclose` and
+    checks all other values with :py:func:`numpy.testing.assert_equal`.
     Accepts additional positional and keyword arguments and pass those
     intact to assert_allclose() (that's how you specify comparison
     precision).
+
     Parameters
     ----------
-    actual: lists, dicts or tuples
-
-    expected: lists, dicts or tuples
+    actual: list, dict or tuple
+        Actual values to compare.
+    expected: list, dict or tuple
+        Expected values.
+    *args :
+        Arguments are passed to :py:func:`numpy.testing.assert_allclose` or 
+        :py:func:`assert_deep_almost_equal`.
+    **kwargs :
+        Keyword arguments are passed to 
+        :py:func:`numpy.testing.assert_allclose` or 
+        :py:func:`assert_deep_almost_equal`.
     """
     is_root = not '__trace' in kwargs
     trace = kwargs.pop('__trace', 'ROOT')
