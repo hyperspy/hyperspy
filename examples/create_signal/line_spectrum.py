@@ -43,4 +43,6 @@ s.plot()
 #
 #
 
-plt.show()  # No necessary when running in the HyperSpy's IPython profile
+# Not necessary when the matplotlib has been set, but we need it here to 
+# generate the documentation
+plt.show()

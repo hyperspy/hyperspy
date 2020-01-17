@@ -19,8 +19,8 @@ import matplotlib.pyplot as plt
 
 s = hs.signals.Signal1D(np.random.rand(1024))
 
-# Export as msa file, very similar to a csv file but containing standardise
-# metadata
+# Export as msa file, which is a format very similar to a csv format but 
+# contains standardised metadata
 s.save('testSpectrum.msa')
 
 # Plot it
