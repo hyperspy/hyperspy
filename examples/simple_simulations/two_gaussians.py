@@ -1,4 +1,8 @@
-"""Creates a 2D hyperspectrum consisting of two Gaussians and plots it.
+"""
+Simple simulation (2 gaussians)
+===============================
+
+Creates a 2D hyperspectrum consisting of two Gaussians and plots it.
 
 This example can serve as starting point to test other functionality on the
 simulated hyperspectrum.

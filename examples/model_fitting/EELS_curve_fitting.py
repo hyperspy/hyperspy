@@ -1,6 +1,11 @@
-""" Loads hyperspy as a regular python library, loads spectra from files,
-does curve fitting, and plotting the model and original spectrum to a png
-file"""
+"""
+EELS curve fitting
+==================
+
+Performs curve fitting to an EELS spectrum, plot the result and save it as
+png file.
+
+"""
 
 import hyperspy.api as hs
 import matplotlib.pyplot as plt

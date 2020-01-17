@@ -1,4 +1,10 @@
-"""Creates a spectrum, and fits an arctan to it."""
+"""
+Simple arctan fit
+=================
+
+Fit an arctan function.
+
+"""
 
 import numpy as np
 import hyperspy.api as hs
