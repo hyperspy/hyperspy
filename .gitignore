@@ -30,6 +30,7 @@ doc/user_guide/.build/*
 setup/windows/requires/*
 setup/windows/reccomends/*
 doc/examples
+doc/auto_examples/*
 doc/gh-pages
 doc/log.txt
 *Thumbs.db

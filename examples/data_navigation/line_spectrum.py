@@ -1,11 +1,23 @@
-"""Creates a line spectrum and plots it
+"""
+Create a line spectrum
+======================
+
+Creates a line spectrum and plots it:
+
+1. Create a `Signal1D` signal.
+2. Set the properties of the 2 different axes
+3. Plot the signal using the `plot` method
+
 """
 
+# Set the matplotlib backend of your choice, for example
+# %matploltib qt
 import numpy as np
 import hyperspy.api as hs
 import matplotlib.pyplot as plt
 
-# Create a line spectrum with random data
+# Create a line spectrum with random data with navigation shape of 100
+# and signal shape of 1024
 s = hs.signals.Signal1D(np.random.random((100, 1024)))
 
 # Define the axis properties
@@ -24,5 +36,11 @@ s.metadata.General.title = 'Random line spectrum'
 
 # Plot it
 s.plot()
+
+#%%
+# 
+# ####################################################################
+#
+#
 
 plt.show()  # No necessary when running in the HyperSpy's IPython profile

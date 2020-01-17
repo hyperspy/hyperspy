@@ -1,11 +1,23 @@
-"""Creates a 4D image and plots it
+"""
+Create a 4D image
+=================
+
+Creates a 4D image and plots it:
+
+1. Create a `Signal2D` signal.
+2. Set the properties of the 3 different axes
+3. Plot the signal using the `plot` method
+
 """
 
+# Set the matplotlib backend of your choice, for example
+# %matploltib qt
 import numpy as np
 import hyperspy.api as hs
 import matplotlib.pyplot as plt
 
-# Create a 2D image stack with random data
+# Create a 2D image stack of random data with navigation shape of 16 x 16
+# and signal shape of 32 x 32
 im = hs.signals.Signal2D(np.random.random((16, 16, 32, 32)))
 
 # Define the axis properties
@@ -32,5 +44,15 @@ im.axes_manager.navigation_axes[1].offset = 100
 # Give a title
 im.metadata.General.title = 'Random 2D image stack'
 
+# Plot it
 im.plot()
-plt.show()  # No necessary when running in the HyperSpy's IPython profile
+
+#%%
+# 
+# ####################################################################
+#
+#
+
+# Not necessary when the matplotlib has been set, but we need it here to 
+# generate the documentation
+plt.show()

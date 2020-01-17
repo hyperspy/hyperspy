@@ -1,11 +1,22 @@
-"""Creates a 3D image and plots it
+"""
+Create a 3D image
+=================
+
+Creates a 3D image and plots it:
+
+1. Create a `Signal2D` signal.
+2. Set the properties of the 3 different axes
+3. Plot the signal using the `plot` method
+
 """
 
+# Set the matplotlib backend of your choice, for example
+# %matploltib qt
 import numpy as np
 import hyperspy.api as hs
 import matplotlib.pyplot as plt
 
-# Create an image stack with random data
+# Create a stack of 16 32 x 32 images with random data with shape
 im = hs.signals.Signal2D(np.random.random((16, 32, 32)))
 
 # Define the axis properties
@@ -30,4 +41,13 @@ im.metadata.General.title = 'Random image stack'
 # Plot it
 im.plot()
 
-plt.show()  # No necessary when running in the HyperSpy's IPython profile
+
+#%%
+# 
+# ####################################################################
+#
+#
+
+# Not necessary when the matplotlib has been set, but we need it here to 
+# generate the documentation
+plt.show()
