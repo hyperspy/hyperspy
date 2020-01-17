@@ -25,14 +25,13 @@ class EDSSEMModel(EDSModel):
 
     Parameters
     ----------
-    spectrum : an EDSSEMSpectrum instance
+    spectrum : EDSSEMSpectrum
 
-    auto_add_lines : boolean
+    auto_add_lines : bool
         If True, automatically add Gaussians for all X-rays generated
         in the energy range by an element, using the edsmodel.add_family_lines
         method.
-
-    auto_background : boolean
+    auto_background : bool
         If True, adds automatically a polynomial order 6 to the model,
         using the edsmodel.add_polynomial_background method.
 

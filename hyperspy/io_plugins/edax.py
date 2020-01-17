@@ -590,6 +590,7 @@ def get_ipr_dtype_list(endianess='<', version=333):
     <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`__.
 
     Table of header tags:
+
         -  version: 2 byte unsigned short; *Current version number: 334*
         -  imageType: 2 byte unsigned short; *0=empty; 1=electron; 2=xmap; 3=disk; 4=overlay*
         -  label: 8 byte char array; *Image label*
@@ -618,14 +619,15 @@ def get_ipr_dtype_list(endianess='<', version=333):
         -  wd: 2 byte unsigned short; *Working distance [mm]*
         -  mppX: 4 byte float; *Microns per pixel in X direction*
         -  mppY: 4 byte float; *Microns per pixel in Y direction*
-        -  nTextLines: 2 byte unsigned short; *No. of comment lines *
+        -  nTextLines: 2 byte unsigned short; *No. of comment lines*
         -  charText: (4 x 32) byte character array; *Comment text*
         -  reserved3: 4 byte float; *Not used*
         -  nOverlayElements: 2 byte unsigned short; *No. of overlay elements*
         -  overlayColors: 16 array of 2 byte unsigned short; *Overlay colors*
 
-        # These two are specific to V334 of the file format, and are omitted
-        # for compatibility with V333 of the IPR format
+    These two are specific to V334 of the file format, and are omitted
+    for compatibility with V333 of the IPR format:
+
         -  timeConstantNew: 4 byte float; *Amplifier time constant [usec]*
         -  reserved4: 2 array of 4 byte float; *Not used*
 

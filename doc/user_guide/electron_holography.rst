@@ -156,7 +156,7 @@ calculated and displayed as follows:
   Argand diagram of the reconstructed complex wave.
 
 Getting hologram statistics
---------------------------
+---------------------------
 There are many reasons to have an access to some parameters of holograms which describe the quality of the data.
 :meth:`~._signals.hologram_image.HologramImage.statistics` can be used to calculate carrier frequency,
 fringe spacing and estimate fringe contrast. The method outputs dictionary with the values listed above calculated also

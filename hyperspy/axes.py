@@ -56,7 +56,8 @@ class ndindex_nat(np.ndindex):
 
 
 def generate_linear_axis(offset, scale, size, offset_index=0):
-    """Creates a linear axis given the offset, scale and number of channels
+    """Creates a linear axis vector given the offset, scale and number of
+    channels.
 
     Alternatively, the offset_index of the offset channel can be specified.
 
@@ -504,7 +505,7 @@ class BaseDataAxis(t.HasTraits):
             return self.axis[index]
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value, if between the limits.
+        """Return the closest index to the given value if between the limit.
 
         Parameters
         ----------

@@ -60,15 +60,15 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
 BASE_PLOT_DOCSTRING = \
     """Plot the signal at the current coordinates.
 
-    For multidimensional datasets an optional figure,
-    the "navigator", with a cursor to navigate that data is
-    raised. In any case it is possible to navigate the data using
-    the sliders. Currently only signals with signal_dimension equal to
-    0, 1 and 2 can be plotted.
-
-    Parameters
-    ----------
-    %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
+        For multidimensional datasets an optional figure,
+        the "navigator", with a cursor to navigate that data is
+        raised. In any case it is possible to navigate the data using
+        the sliders. Currently only signals with signal_dimension equal to
+        0, 1 and 2 can be plotted.
+    
+        Parameters
+        ----------
+        %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
 
 PLOT1D_DOCSTRING = \
 """norm : str, optional
