@@ -88,7 +88,7 @@ def create_axis(**kwargs):
 
     Parameters
     ----------
-    axis : iteratable of values (list, tuple or 1D numpy array) (optional)
+    axis : iterable of values (list, tuple or 1D numpy array) (optional)
     expression : Component function in SymPy text expression format (str) (optional)
     offset : float (optional)
     scale : float (optional)
@@ -629,7 +629,7 @@ class DataAxis(BaseDataAxis):
         self.update_axis()
 
     def update_axis(self):
-        """Set the value of a axis. The axis value needs to be ordered.
+        """Set the value of a axis. The axis values need to be ordered.
 
         Parameters
         ----------
@@ -971,9 +971,9 @@ class AxesManager(t.HasTraits):
     It can only be indexed and sliced to access the DataAxis objects that it
     contains. Standard indexing and slicing follows the "natural order" as in
     Signal, i.e. [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis
-    and `s` a signal axis. In addition AxesManager support indexing using
-    complex numbers a + bj, where b can be one of 0, 1, 2 and 3 and a a valid
-    index. If b is 3 AxesManager is indexed using the order of the axes in the
+    and `s` a signal axis. In addition, AxesManager supports indexing using
+    complex numbers a + bj, where b can be one of 0, 1, 2 and 3 and a valid
+    index. If b is 3, AxesManager is indexed using the order of the axes in the
     array. If b is 1(2), indexes only the navigation(signal) axes in the
     natural order. In addition AxesManager supports subscription using
     axis name.
@@ -982,12 +982,12 @@ class AxesManager(t.HasTraits):
     ----------
 
     coordinates : tuple
-        Get and set the current coordinates if the navigation dimension
-        is not 0. If the navigation dimension is 0 it raises
+        Get and set the current coordinates, if the navigation dimension
+        is not 0. If the navigation dimension is 0, it raises
         AttributeError when attempting to set its value.
     indices : tuple
-        Get and set the current indices if the navigation dimension
-        is not 0. If the navigation dimension is 0 it raises
+        Get and set the current indices, if the navigation dimension
+        is not 0. If the navigation dimension is 0, it raises
         AttributeError when attempting to set its value.
     signal_axes, navigation_axes : list
         Contain the corresponding DataAxis objects
@@ -1240,12 +1240,12 @@ class AxesManager(t.HasTraits):
         return tuple(cslice)
 
     def create_axes(self, axes_list):
-        """Given a list of dictionaries defining the axes properties
+        """Given a list of dictionaries defining the axes properties,
         create the DataAxis instances and add them to the AxesManager.
 
         The index of the axis in the array and in the `_axes` lists
         can be defined by the index_in_array keyword if given
-        for all axes. Otherwise it is defined by their index in the
+        for all axes. Otherwise, it is defined by their index in the
         list.
 
         See also
