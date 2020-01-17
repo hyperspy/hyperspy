@@ -36,6 +36,8 @@ Welcome to HyperSpy's documentation!
 
    auto_examples/index
 
+.. _dev_guide-label:
+
 .. toctree::
    :maxdepth: 0
    :caption: Developer Guide
