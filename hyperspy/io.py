@@ -304,6 +304,7 @@ def load_single_file(filename, **kwds):
     while extension.lower() not in io_plugins[i].file_extensions and \
             i < len(io_plugins) - 1:
         i += 1
+
     if i == len(io_plugins):
         # Try to load it with the python imaging library
         try:

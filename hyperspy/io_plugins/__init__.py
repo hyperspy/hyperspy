@@ -54,18 +54,19 @@ except ImportError:
     _logger.info('The Signal2D (PIL) IO features are not available')
 
 try:
+    from hyperspy.io_plugins import nexus
+    io_plugins.append(nexus)
+except ImportError:
+    _logger.info('The nexus IO plugin is not available because '
+                 'the nexusformat Python package is not installed.')
+
+try:
     from hyperspy.io_plugins import mrcz
     io_plugins.append(mrcz)
 except ImportError:
     _logger.info('The mrcz IO plugin is not available because '
                  'the mrcz Python package is not installed.')
 
-try:
-    from hyperspy.io_plugins import nexus
-    io_plugins.append(nexus)
-except ImportError:
-    _logger.info('The nexus IO plugin is not available because '
-                 'the nexusformat Python package is not installed.')
 
 default_write_ext = set()
 for plugin in io_plugins:
