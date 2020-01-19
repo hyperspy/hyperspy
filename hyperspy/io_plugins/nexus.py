@@ -132,6 +132,7 @@ def nx_metadata_search_for_keys(a_dict,nxdict_keys):
     dct = {}
     for item in nxdict_keys:
         correct_item = item.replace('.','/')
+        print("correct_item",correct_item)
         if correct_item in a_dict:
             p = dct
             keys = tsplit(correct_item, (".","/") )
@@ -242,12 +243,13 @@ def dataset_to_signal_axes(tree,dataset):
                     detector_index=detector_index+1
     return nav_list
 
-def find_nexus_data(myDict,rootname=""):
+def find_nexus_data(myDict):
     """
     Recursively search the results of an nx tree (a nested dict) 
     to find nxdata sets and return a list of keys pointing to those NXdata sets    
     """
     datalist = []
+    rootname=""
     def find_data_in_tree(myDict,rootname):
         for key, value in myDict.items():
             if rootname != "":

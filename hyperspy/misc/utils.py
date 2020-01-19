@@ -28,6 +28,9 @@ import unicodedata
 from contextlib import contextmanager
 import importlib
 
+from itertools import chain
+from operator import methodcaller
+
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
@@ -794,7 +797,7 @@ def closest_power_of_two(n):
 
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
-          lazy=None, **kwargs):
+          lazy=None, stack_metadata=True, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -872,6 +875,19 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     for i, _s in enumerate(signal_list):
         if not _s._lazy:
             signal_list[i] = _s.as_lazy()
+    stacked_metadata={}
+    if stack_metadata:
+        for i, _s in enumerate(signal_list):
+            for key, value in chain.from_iterable(map(methodcaller('items'),
+                (_s.original_metadata.as_dictionary(),
+                 _s.metadata.as_dictionary()))):
+                if i==0:
+                    stacked_metadata[key]= [value]
+                else:
+                    stacked_metadata[key].extend(
+                        [value] if not isinstance(value, list) else value)
+
+
     if len(signal_list) > 1:
         newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
         if axis is not None:
@@ -907,15 +923,17 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             signal._lazy = True
             signal._assign_subclass()
         signal.get_dimensions_from_data()
-        signal.original_metadata.add_node('stack_elements')
-
-        for i, obj in enumerate(signal_list):
-            signal.original_metadata.stack_elements.add_node('element%i' % i)
-            node = signal.original_metadata.stack_elements['element%i' % i]
-            node.original_metadata = \
-                obj.original_metadata.as_dictionary()
-            node.metadata = \
-                obj.metadata.as_dictionary()
+        if stack_metadata:
+            signal.orignal_metadata = DictionaryTreeBrowser(stacked_metadata)
+        else:    
+            signal.original_metadata.add_node('stack_elements')
+            for i, obj in enumerate(signal_list):
+                signal.original_metadata.stack_elements.add_node('element%i' % i)
+                node = signal.original_metadata.stack_elements['element%i' % i]
+                node.original_metadata = \
+                    obj.original_metadata.as_dictionary()
+                node.metadata = \
+                    obj.metadata.as_dictionary()
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
