@@ -352,6 +352,8 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
     if is_spec:
         dim_type = 'Spec'
     # for dim_ind, (dim_size, dim) in enumerate(zip(data_shape, axes_list)):
+    # we are going by data_shape for order (slowest to fastest)
+    # so the order in axes_list does not matter
     for dim_ind in range(len(data_shape)):
         dim_size = data_shape[len(data_shape) - 1 - dim_ind]
         dim = axes_list[dim_ind]
@@ -374,7 +376,7 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
                                                  dim.scale)))
     if len(dim_list) == 0:
         return usid.Dimension('Arb', 'a. u.', 1)
-    return dim_list[::-1]
+    return dim_list
 
 # ####### REQUIRED FUNCTIONS FOR AN IO PLUGIN #################################
 
@@ -474,11 +476,9 @@ def file_writer(filename, object2save, *args, **kwds):
     sig_axes = object2save.axes_manager.signal_axes
 
     data_2d = object2save.data
+    # data_2d is assumed to have dimensions arranged from slowest to fastest
+    # varying dimensions
     if num_pos_dims > 0 and object2save.axes_manager.signal_dimension > 0:
-        # Reverse order of dimensions:
-        rev_pos_order = list(range(num_pos_dims))[::-1]
-        rev_spec_order = list(range(num_pos_dims, len(hs_shape)))[::-1]
-        data_2d = data_2d.transpose(rev_pos_order + rev_spec_order)
         # now flatten to 2D:
         data_2d = data_2d.reshape(np.prod(hs_shape[:num_pos_dims]),
                                   np.prod(hs_shape[num_pos_dims:]))
@@ -488,15 +488,11 @@ def file_writer(filename, object2save, *args, **kwds):
                                              hs_shape[num_pos_dims:], True)
     elif num_pos_dims == 0:
         # only spectroscopic:
-        # Reverse order of dimensions:
-        data_2d = data_2d.transpose(list(range(len(hs_shape)))[::-1])
         # now flatten to 2D:
         data_2d = data_2d.reshape(1, -1)
         pos_dims = _axes_list_to_dimensions(nav_axes, [], False)
         spec_dims = _axes_list_to_dimensions(sig_axes, hs_shape, True)
     else:
-        # Reverse order of dimensions:
-        data_2d = data_2d.transpose(list(range(len(hs_shape)))[::-1])
         # now flatten to 2D:
         data_2d = data_2d.reshape(-1, 1)
         pos_dims = _axes_list_to_dimensions(nav_axes, hs_shape, False)
@@ -518,4 +514,5 @@ def file_writer(filename, object2save, *args, **kwds):
             h5_grp = usid.hdf_utils.create_indexed_group(h5_grp, 'Channel')
             _ = usid.hdf_utils.write_main_dataset(h5_grp, data_2d, dset_name,
                                                   phy_quant, phy_units,
-                                                  pos_dims,  spec_dims, **kwds)
+                                                  pos_dims,  spec_dims,
+                                                  slow_to_fast=True, **kwds)
