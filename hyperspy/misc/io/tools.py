@@ -19,6 +19,7 @@
 
 import os
 import logging
+import fnmatch
 
 _logger = logging.getLogger(__name__)
 
@@ -76,61 +77,33 @@ def ensure_directory(path):
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
 
-def filenames_from_subseq(path,file_seq,sortfiles=True):
+def find_filenames_matching_substrings(path,substrings,sortfiles=True):
     """
-    Find and return filenames with file_seq in their names
-    if file_seq can be int,str or list of int,str
+    Find and return filenames which contain substrings in their names
+    A substrings can be a str or list of strings
+    Wildcard "*" or single character "?" options can be used
     
-    The new file name is created by appending `-n` (where `n` is an integer)
-    to path name
-
     Parameters
     ----------
-    filename : str
-    i : int
-       The number to be appended.
+    path : str
+    substrings : str or list of strings to search for
 
     """
-    if isinstance(file_seq,(int,str)):
-        file_seq = [file_seq]
+    if isinstance(substrings,(int,str)):
+        substrings = [substrings]
     files = []
     filelist = os.listdir(path)
-    for jj in file_seq:
-        for i in filelist:
-            if os.path.isfile(os.path.join(path,i)) and match(str(jj),i):
-                files.append(os.path.join(path,i))
+    for i in filelist:
+        for jj in substrings:
+            if os.path.isfile(os.path.join(path,i)):
+                if fnmatch.fnmatch(i,jj):
+                     files.append(os.path.join(path,i))
+
     if sortfiles:
         return sorted(files)
     else:
         return files
 
-# The main function that checks if two given strings match. 
-# The first string may contain wildcard characters 
-def match(first, second): 
-  
-    # If we reach at the end of both strings, we are done 
-    if len(first) == 0 and len(second) == 0: 
-        return True
-  
-    # Make sure that the characters after '*' are present 
-    # in second string. This function assumes that the first 
-    # string will not contain two consecutive '*' 
-    if len(first) > 1 and first[0] == '*' and  len(second) == 0: 
-        return False
-  
-    # If the first string contains '?', or current characters 
-    # of both strings match 
-    if (len(first) > 1 and first[0] == '?') or (len(first) != 0
-        and len(second) !=0 and first[0] == second[0]): 
-        return match(first[1:],second[1:]); 
-  
-    # If there is *, then there are two possibilities 
-    # a) We consider current character of second string 
-    # b) We ignore current character of second string. 
-    if len(first) !=0 and first[0] == '*': 
-        return match(first[1:],second) or match(first,second[1:]) 
-  
-    return False
 
 def overwrite(fname):
     """ If file exists 'fname', ask for overwriting and return True or False,

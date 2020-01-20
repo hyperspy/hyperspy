@@ -132,7 +132,6 @@ def nx_metadata_search_for_keys(a_dict,nxdict_keys):
     dct = {}
     for item in nxdict_keys:
         correct_item = item.replace('.','/')
-        print("correct_item",correct_item)
         if correct_item in a_dict:
             p = dct
             keys = tsplit(correct_item, (".","/") )
