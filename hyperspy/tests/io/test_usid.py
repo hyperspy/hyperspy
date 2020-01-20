@@ -178,7 +178,7 @@ def compare_signal_from_usid(file_path, ndata, new_sig, axes_to_spec=[],
                                        compound_comp_name=compound_comp_name)
 
 
-def gen_2pos_2spec(s2f_aux=True, mode=0):
+def gen_2pos_2spec(s2f_aux=True, mode=None):
     pos_dims = [usid.Dimension('X', 'nm', [-250, 750]),
                 usid.Dimension('Y', 'um', np.linspace(0, 60, num=7))]
     spec_dims = [usid.Dimension('Frequency', 'kHz', [300, 350, 400]),
@@ -188,14 +188,12 @@ def gen_2pos_2spec(s2f_aux=True, mode=0):
         spec_dims = spec_dims[::-1]
 
     ndim_shape = (7, 2, 5, 3)
-    if mode == 0:
+    if mode is None:
         # Typcial floating point dataset
         ndata = np.random.rand(ndim_shape)
-    elif mode == 1:
-        # complex valued:
+    elif mode == 'complex':
         ndata = np.random.rand(ndim_shape) + 1j * np.random.rand(ndim_shape)
-    elif mode == 2:
-        # compound valued data
+    elif mode == 'compound':
         struc_dtype = np.dtype({'names': ['amp', 'phas'],
                                 'formats': [np.float16, np.float32]})
         ndata = np.zeros(shape=ndim_shape, dtype=struc_dtype)
@@ -458,14 +456,10 @@ class TestUSID2HSbase:
 class TestUSID2HSdtype:
     
     def test_complex(self):
-        pos_dims, spec_dims, _, _ = gen_2pos_2spec()
-        ndata = np.random.rand(2, 7, 3, 5) + 1j * np.random.rand(2, 7, 3, 5)
         phy_quant = 'Current'
         phy_unit = 'nA'
-        # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose([1, 0, 3, 2])
-        data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]),
-                                  np.prod(data_2d.shape[2:]))
+        ret_vals = gen_2pos_2spec(s2f_aux=slow_to_fast, mode='complex')
+        pos_dims, spec_dims, ndata, data_2d = ret_vals
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_complex.h5'
