@@ -431,7 +431,7 @@ class TestUSID2HSbase:
         new_sig = hs.load(file_path, lazy=lazy)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
-                                 axes_to_spec=['Bias', 'Frequency'])
+                                 axes_to_spec=['Frequency', 'Bias'])
 
     def test_n_pos_m_spec(self):
         self.base_n_pos_m_spec(False)
