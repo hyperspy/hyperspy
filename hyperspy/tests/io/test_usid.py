@@ -178,33 +178,35 @@ def compare_signal_from_usid(file_path, ndata, new_sig, axes_to_spec=[],
                                        compound_comp_name=compound_comp_name)
 
 
-def gen_2pos_2spec():
+def gen_2pos_2spec(s2f_aux=True):
     pos_dims = [usid.Dimension('X', 'nm', [-250, 750]),
                 usid.Dimension('Y', 'um', np.linspace(0, 60, num=7))]
     spec_dims = [usid.Dimension('Frequency', 'kHz', [300, 350, 400]),
                  usid.Dimension('Bias', 'V', np.linspace(-4, 4, num=5))]
-    ndata = np.random.rand(2, 7, 3, 5)
-    # Rearrange to slow to fast which is what python likes
-    data_2d = ndata.transpose([1, 0, 3, 2])
-    data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]),
-                              np.prod(data_2d.shape[2:]))
+    if s2f_aux:
+        pos_dims = pos_dims[::-1]
+        spec_dims = spec_dims[::-1]
+    ndata = np.random.rand(7, 2, 5, 3)
+    data_2d = ndata.reshape(np.prod(ndata.shape[:2]),
+                              np.prod(ndata.shape[2:]))
     return pos_dims, spec_dims, ndata, data_2d
 
 
-def gen_2dim(all_pos=False):
-    ndata = np.random.rand(2, 3)
-    # Rearrange to slow to fast which is what python likes
-    data_2d = ndata.transpose([1, 0])
+def gen_2dim(all_pos=False, s2f_aux=True):
+    ndata = np.random.rand(3, 2)
     if all_pos:
         pos_dims = [usid.Dimension('X', 'nm', [-250, 750]),
                     usid.Dimension('Y', 'um', [-2, 0, 2])]
         spec_dims = [usid.Dimension('arb', 'a.u.', 1)]
-        data_2d = data_2d.reshape(-1, 1)
+        data_2d = ndata.reshape(-1, 1)
     else:
         pos_dims = [usid.Dimension('arb', 'a.u.', 1)]
         spec_dims = [usid.Dimension('Frequency', 'kHz', [0, 100]),
                      usid.Dimension('Bias', 'V', [-5, 0, 5])]
-        data_2d = data_2d.reshape(1, -1)
+        data_2d = ndata.reshape(1, -1)
+    if s2f_aux:
+        pos_dims = pos_dims[::-1]
+        spec_dims = spec_dims[::-1]
     return pos_dims, spec_dims, ndata, data_2d
 
 # ################ HyperSpy Signal to h5USID ##################################
@@ -384,12 +386,14 @@ class TestUSID2HSbase:
     def test_n_pos_0_spec(self):
         phy_quant = 'Current'
         phy_unit = 'nA'
-        pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=True)
+        slow_to_fast = True
+        pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=True,
+                                                       s2f_aux=slow_to_fast)
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_0_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
+                           pos_dims, spec_dims, slow_to_fast=slow_to_fast)
 
         new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
@@ -399,27 +403,30 @@ class TestUSID2HSbase:
     def test_0_pos_n_spec(self):
         phy_quant = 'Current'
         phy_unit = 'nA'
-        pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=False)
+        slow_to_fast = True
+        pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=False,
+                                                       s2f_aux=slow_to_fast)
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_0_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
+                           pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
         new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=[])
         
-    def base_n_pos_m_spec(self, lazy):
+    def base_n_pos_m_spec(self, lazy, slow_to_fast=True):
         phy_quant = 'Current'
         phy_unit = 'nA'
-        pos_dims, spec_dims, ndata, data_2d = gen_2pos_2spec()
+        ret_vals = gen_2pos_2spec(s2f_aux=slow_to_fast)
+        pos_dims, spec_dims, ndata, data_2d = ret_vals
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
+                           pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
         new_sig = hs.load(file_path, lazy=lazy)
         compare_signal_from_usid(file_path, ndata, new_sig,
