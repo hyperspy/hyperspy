@@ -326,15 +326,15 @@ class EMD(object):
 
         Parameters
         ----------
-        filename : string
+        filename : str
             The name of the emd-file from which to load the signals. Standard
-            format is '*.emd'.
+            file extesnion is '.emd'.
         False : bool, optional
             If False (default) loads data to memory. If True, enables loading
             only if requested.
-        dataset_name : string or iterable, optional
+        dataset_name : str or iterable, optional
             Only add dataset with specific name. Note, this has to be the full
-            group path in the file. For example `/experimental/science_data'.
+            group path in the file. For example '/experimental/science_data'.
             If the dataset is not found, an IOError with the possible
             datasets will be raised. Several names can be specified
             in the form of a list.
@@ -484,17 +484,17 @@ class EMD(object):
 
 
 def fei_check(filename):
-    """Function to check if the EMD file is an FEI file.
+    """Function to check if the EMD file is an Velox file.
 
     Parameters
     ----------
     filename : string
         The name of the emd-file from which to load the signals. Standard
-        format is '*.emd'.
+        file extension is 'emd'.
 
     Returns
     -------
-    Boolean
+    True if the file is a Velox file, otherwise False
 
     """
     with h5py.File(filename, 'r') as f:

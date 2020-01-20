@@ -31,8 +31,9 @@ from hyperspy.defaults_parser import preferences
 
 def progressbar(*args, **kwargs):
     """Uses tqdm progressbar. This function exists for wrapping purposes only.
+
     Original docstring follows:
-    ----------------------------------------
+    ---------------------------
     %s
     %s
     """

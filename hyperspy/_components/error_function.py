@@ -16,17 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 from hyperspy._components.expression import Expression
 from distutils.version import LooseVersion
 import sympy
+
 
 class Erf(Expression):
 
     r"""Error function component.
 
     .. math::
-    
+
         f(x) = \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} 
             \sigma}\right]
 
@@ -38,10 +38,9 @@ class Erf(Expression):
     :math:`\sigma`  sigma 
     :math:`x_0`     origin 
     ============== =============
-    
 
     Parameters
-    -----------
+    ----------
         A : float
             The min/max values of the distribution are -A/2 and A/2.
         sigma : float
@@ -50,7 +49,7 @@ class Erf(Expression):
             Position of the zero crossing.
     """
     
-    def __init__(self, A=1., sigma=1., origin=0., module="scipy",
+    def __init__(self, A=1., sigma=1., origin=0., module=["numpy", "scipy"],
                  **kwargs):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
             raise ImportError("The `ErrorFunction` component requires "

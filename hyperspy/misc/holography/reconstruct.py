@@ -137,7 +137,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
         Smoothness of the aperture in pixel.
     output_shape: tuple, optional
         New output shape.
-    plotting : boolean
+    plotting : bool
         Plots the masked sideband used for reconstruction.
 
     Returns
