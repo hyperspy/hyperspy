@@ -468,21 +468,23 @@ class TestUSID2HSdtype:
                            pos_dims, spec_dims)
         
         new_sig = hs.load(file_path)
+        # complex signals swap the position dimensions for some reason
+        new_sig = new_sig.swap_axes(2, 3)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.ComplexSignal,
-                                 axes_to_spec=['Bias', 'Frequency'])
+                                 axes_to_spec=['Frequency', 'Bias'])
         
-    def test_compound(self):  
+    def test_compound(self):
         pos_dims, spec_dims, _, _ = gen_2pos_2spec()
         struc_dtype = np.dtype({'names': ['amp', 'phas'],
                                 'formats': [np.float32, np.float32]})
-        
+
         ndim_shape = (2, 7, 3, 5)
-        
+
         ndata = np.zeros(shape=ndim_shape, dtype=struc_dtype)
         ndata['amp'] = amp_vals = np.random.random(size=ndim_shape)
         ndata['phas'] = phase_vals = np.random.random(size=ndim_shape)
-        
+
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
@@ -540,16 +542,19 @@ class TestUSID2HSdtype:
 class TestUSID2HSmultiDsets:
 
     def test_pick_specific(self):
-        pos_dims, spec_dims, ndata, data_2d = gen_2pos_2spec()
+        slow_to_fast = True
+        ret_vals = gen_2pos_2spec(s2f_aux=slow_to_fast)
+        pos_dims, spec_dims, ndata, data_2d = ret_vals
         phy_quant = 'Current'
         phy_unit = 'nA'
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
+                           pos_dims, spec_dims, slow_to_fast=slow_to_fast)
 
-        pos_dims, spec_dims, ndata_2, data_2d_2 = gen_2dim(all_pos=True)
+        ret_vals = gen_2dim(all_pos=True, s2f_aux=slow_to_fast)
+        pos_dims, spec_dims, ndata_2, data_2d_2 = ret_vals
         phy_quant = 'Current'
         phy_unit = 'nA'
 
@@ -559,7 +564,8 @@ class TestUSID2HSmultiDsets:
             _ = usid.hdf_utils.write_main_dataset(h5_chan_grp, data_2d_2,
                                                   'Raw_Data', phy_quant,
                                                   phy_unit, pos_dims,
-                                                  spec_dims)
+                                                  spec_dims,
+                                                  slow_to_fast=slow_to_fast)
         
         dset_path = '/Measurement_001/Channel_000/Raw_Data'
         new_sig = hs.load(file_path, dset_path=dset_path)
@@ -567,16 +573,19 @@ class TestUSID2HSmultiDsets:
                                  dset_path=dset_path)
         
     def test_read_all_by_default(self):
-        pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=False)
+        slow_to_fast = True
+        pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=False,
+                                                       s2f_aux=slow_to_fast)
         phy_quant = 'Current'
         phy_unit = 'nA'
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_0_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
+                           pos_dims, spec_dims, slow_to_fast=slow_to_fast)
 
-        pos_dims, spec_dims, ndata_2, data_2d_2 = gen_2dim(all_pos=True)
+        ret_vals = gen_2dim(all_pos=True, s2f_aux=slow_to_fast)
+        pos_dims, spec_dims, ndata_2, data_2d_2 = ret_vals
         phy_quant = 'Current'
         phy_unit = 'nA'
         
@@ -585,7 +594,8 @@ class TestUSID2HSmultiDsets:
             _ = usid.hdf_utils.write_main_dataset(h5_meas_grp, data_2d_2,
                                                   'Spat_Map', phy_quant,
                                                   phy_unit, pos_dims,
-                                                  spec_dims)
+                                                  spec_dims,
+                                                  slow_to_fast=slow_to_fast)
         
         objects = hs.load(file_path)
         assert isinstance(objects, list)
