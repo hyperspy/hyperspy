@@ -506,7 +506,8 @@ def file_writer(filename, object2save, *args, **kwds):
     if not append:
         tran = usid.NumpyTranslator()
         _ = tran.translate(filename, dset_name, data_2d, phy_quant, phy_units,
-                           pos_dims, spec_dims, parm_dict=parm_dict, **kwds)
+                           pos_dims, spec_dims, parm_dict=parm_dict,
+                           slow_to_fast=False, **kwds)
     else:
         with h5py.File(filename, mode='r+') as h5_f:
             h5_grp = usid.hdf_utils.create_indexed_group(h5_f, 'Measurement')
@@ -515,4 +516,4 @@ def file_writer(filename, object2save, *args, **kwds):
             _ = usid.hdf_utils.write_main_dataset(h5_grp, data_2d, dset_name,
                                                   phy_quant, phy_units,
                                                   pos_dims,  spec_dims,
-                                                  slow_to_fast=True, **kwds)
+                                                  slow_to_fast=False, **kwds)
