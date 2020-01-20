@@ -402,7 +402,7 @@ class TestUSID2HSbase:
         slow_to_fast = True
         pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=True,
                                                        s2f_aux=slow_to_fast)
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_0_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
@@ -419,7 +419,7 @@ class TestUSID2HSbase:
         slow_to_fast = True
         pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=False,
                                                        s2f_aux=slow_to_fast)
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_0_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
@@ -435,7 +435,7 @@ class TestUSID2HSbase:
         phy_unit = 'nA'
         ret_vals = gen_2pos_2spec(s2f_aux=slow_to_fast)
         pos_dims, spec_dims, ndata, data_2d = ret_vals
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
@@ -461,7 +461,7 @@ class TestUSID2HSdtype:
         slow_to_fast = True
         ret_vals = gen_2pos_2spec(s2f_aux=slow_to_fast, mode='complex')
         pos_dims, spec_dims, ndata, data_2d = ret_vals
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_complex.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
@@ -491,7 +491,7 @@ class TestUSID2HSdtype:
         data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]),
                                   np.prod(data_2d.shape[2:]))
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_complex.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
@@ -523,7 +523,7 @@ class TestUSID2HSdtype:
         data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]),
                                   np.prod(data_2d.shape[2:]))
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_non_lin_dim.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
@@ -547,7 +547,7 @@ class TestUSID2HSmultiDsets:
         pos_dims, spec_dims, ndata, data_2d = ret_vals
         phy_quant = 'Current'
         phy_unit = 'nA'
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
@@ -578,7 +578,7 @@ class TestUSID2HSmultiDsets:
                                                        s2f_aux=slow_to_fast)
         phy_quant = 'Current'
         phy_unit = 'nA'
-        tran = usid.NumpyTranslator()
+        tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_0_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
