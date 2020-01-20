@@ -511,23 +511,22 @@ class TestUSID2HSdtype:
                                      compound_comp_name=comp_name)
             
     def test_non_linear_dimension(self):
-        pos_dims = [usid.Dimension('X', 'nm', [-250, 750]),
-                    usid.Dimension('Y', 'um', np.linspace(0, 60, num=5))]
-        spec_dims = [usid.Dimension('Frequency', 'kHz', [300, 350, 400]),
-                     usid.Dimension('Bias', 'V',
-                                    np.sin(np.linspace(0, 2 * np.pi, num=7)))]
-        ndata = np.random.rand(2, 5, 3, 7)
+        pos_dims = [usid.Dimension('Y', 'um', np.linspace(0, 60, num=5)),
+                    usid.Dimension('X', 'nm', [-250, 750])]
+        spec_dims = [usid.Dimension('Bias', 'V',
+                                    np.sin(np.linspace(0, 2 * np.pi, num=7))),
+                     usid.Dimension('Frequency', 'kHz', [300, 350, 400])]
+        ndata = np.random.rand(5, 2, 7, 3)
         phy_quant = 'Current'
         phy_unit = 'nA'
-        # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose([1, 0, 3, 2])
-        data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]),
-                                  np.prod(data_2d.shape[2:]))
+        data_2d = ndata.reshape(np.prod(ndata.shape[:2]),
+                                np.prod(ndata.shape[2:]))
         tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_non_lin_dim.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
+                           pos_dims, spec_dims,
+                           slow_to_fast=True)
 
         with pytest.raises(ValueError):
             _ = hs.load(file_path, ignore_non_linear_dims=False)
@@ -535,7 +534,7 @@ class TestUSID2HSdtype:
         with pytest.warns(UserWarning) as _:
             new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
-                                 axes_to_spec=['Bias', 'Frequency'],
+                                 axes_to_spec=['Frequency', 'Bias'],
                                  invalid_axes=True)
 
 
