@@ -475,25 +475,14 @@ class TestUSID2HSdtype:
                                  axes_to_spec=['Frequency', 'Bias'])
         
     def test_compound(self):
-        pos_dims, spec_dims, _, _ = gen_2pos_2spec()
-        struc_dtype = np.dtype({'names': ['amp', 'phas'],
-                                'formats': [np.float32, np.float32]})
-
-        ndim_shape = (2, 7, 3, 5)
-
-        ndata = np.zeros(shape=ndim_shape, dtype=struc_dtype)
-        ndata['amp'] = amp_vals = np.random.random(size=ndim_shape)
-        ndata['phas'] = phase_vals = np.random.random(size=ndim_shape)
-
         phy_quant = 'Current'
         phy_unit = 'nA'
-        # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose([1, 0, 3, 2])
-        data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]),
-                                  np.prod(data_2d.shape[2:]))
+        slow_to_fast = True
+        ret_vals = gen_2pos_2spec(s2f_aux=slow_to_fast, mode='compound')
+        pos_dims, spec_dims, ndata, data_2d = ret_vals
         tran = usid.ArrayTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
-            file_path = tmp_dir + 'usid_n_pos_n_spec_complex.h5'
+            file_path = tmp_dir + 'usid_n_pos_n_spec_compound.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims)
         
@@ -502,12 +491,12 @@ class TestUSID2HSdtype:
         assert len(objects) == 2
 
         # 1. Validate object type
-        for new_sig, ndim_data, comp_name in zip(objects,
-                                                 [amp_vals, phase_vals],
-                                                 ['amp', 'phas']):
-            compare_signal_from_usid(file_path, ndim_data, new_sig,
+        for new_sig, comp_name in zip(objects, ['amp', 'phas']):
+            # complex signals swap the position dimensions for some reason
+            new_sig = new_sig.swap_axes(2, 3).swap_axes(0, 1)
+            compare_signal_from_usid(file_path, ndata[comp_name], new_sig,
                                      sig_type=hs.signals.BaseSignal,
-                                     axes_to_spec=['Bias', 'Frequency'],
+                                     axes_to_spec=['Frequency', 'Bias'],
                                      compound_comp_name=comp_name)
             
     def test_non_linear_dimension(self):
