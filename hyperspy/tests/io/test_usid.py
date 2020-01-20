@@ -178,7 +178,7 @@ def compare_signal_from_usid(file_path, ndata, new_sig, axes_to_spec=[],
                                        compound_comp_name=compound_comp_name)
 
 
-def gen_2pos_2spec(s2f_aux=True):
+def gen_2pos_2spec(s2f_aux=True, mode=0):
     pos_dims = [usid.Dimension('X', 'nm', [-250, 750]),
                 usid.Dimension('Y', 'um', np.linspace(0, 60, num=7))]
     spec_dims = [usid.Dimension('Frequency', 'kHz', [300, 350, 400]),
@@ -186,7 +186,22 @@ def gen_2pos_2spec(s2f_aux=True):
     if s2f_aux:
         pos_dims = pos_dims[::-1]
         spec_dims = spec_dims[::-1]
-    ndata = np.random.rand(7, 2, 5, 3)
+
+    ndim_shape = (7, 2, 5, 3)
+    if mode == 0:
+        # Typcial floating point dataset
+        ndata = np.random.rand(ndim_shape)
+    elif mode == 1:
+        # complex valued:
+        ndata = np.random.rand(ndim_shape) + 1j * np.random.rand(ndim_shape)
+    elif mode == 2:
+        # compound valued data
+        struc_dtype = np.dtype({'names': ['amp', 'phas'],
+                                'formats': [np.float16, np.float32]})
+        ndata = np.zeros(shape=ndim_shape, dtype=struc_dtype)
+        ndata['amp'] = np.random.random(size=ndim_shape)
+        ndata['phas'] = np.random.random(size=ndim_shape)
+
     data_2d = ndata.reshape(np.prod(ndata.shape[:2]),
                               np.prod(ndata.shape[2:]))
     return pos_dims, spec_dims, ndata, data_2d
