@@ -465,7 +465,7 @@ class TestUSID2HSdtype:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_complex.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims, slow_to_fast=True)
+                           pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
         new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
@@ -482,7 +482,7 @@ class TestUSID2HSdtype:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_compound.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
+                           pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
         objects = hs.load(file_path)
         assert isinstance(objects, list)
@@ -490,8 +490,6 @@ class TestUSID2HSdtype:
 
         # 1. Validate object type
         for new_sig, comp_name in zip(objects, ['amp', 'phas']):
-            # complex signals swap the position dimensions for some reason
-            new_sig = new_sig.swap_axes(2, 3).swap_axes(0, 1)
             compare_signal_from_usid(file_path, ndata[comp_name], new_sig,
                                      sig_type=hs.signals.BaseSignal,
                                      axes_to_spec=['Frequency', 'Bias'],
