@@ -2,7 +2,7 @@ import os
 import logging
 from warnings import warn
 from functools import partial
-import collections
+from collections.abc import MutableMapping
 import h5py
 import numpy as np
 import pyUSID as usid
@@ -338,7 +338,7 @@ def _flatten_dict(nested_dict, parent_key='', sep='-'):
     items = []
     for k, v in nested_dict.items():
         new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, MutableMapping):
             items.extend(_flatten_dict(v, new_key,
                                        sep=sep).items())
         else:
@@ -443,7 +443,7 @@ def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
         h5_f.close()
 
 
-def file_writer(filename, object2save, *args, **kwds):
+def file_writer(filename, object2save, **kwds):
     """
     Writes a HyperSpy Signal object to a HDF5 file formatted according to USID
 
