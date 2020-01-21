@@ -920,26 +920,21 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
-                 "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
+        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
             The optimization algorithm used to perform the fitting. Default
             is "leastsq".
 
-                "leastsq" performs least-squares optimization, and supports
-                bounds on parameters.
-
-                "mpfit" performs least-squares using the Levenberg–Marquardt
-                algorithm and supports bounds on parameters.
-
-                "odr" performs the optimization using the orthogonal distance
-                regression algorithm. It does not support bounds.
-
-                "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
-                and "TNC" are wrappers for scipy.optimize.minimize(). Only
-                "L-BFGS-B" and "TNC" support bounds.
-
-                "Differential Evolution" is a global optimization method.
+                * "leastsq" performs least-squares optimization, and supports
+                  bounds on parameters.
+                * "mpfit" performs least-squares using the Levenberg–Marquardt
+                  algorithm and supports bounds on parameters.
+                * "odr" performs the optimization using the orthogonal distance
+                  regression algorithm. It does not support bounds.
+                * "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
+                  and "TNC" are wrappers for scipy.optimize.minimize(). Only
+                  "L-BFGS-B" and "TNC" support bounds.
+                * "Differential Evolution" is a global optimization method.
 
             "leastsq", "mpfit" and "odr" can estimate the standard deviation of
             the estimated value of the parameters if the
@@ -970,7 +965,6 @@ class BaseModel(list):
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
-
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
@@ -1507,6 +1501,7 @@ class BaseModel(list):
     def print_current_values(self, only_free=False, only_active=False,
                              component_list=None, fancy=True):
         """Prints the current values of the parameters of all components.
+
         Parameters
         ----------
         only_free : bool
@@ -1674,21 +1669,22 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fullcopy : Bool (optional, True)
+        fullcopy : bool (optional, True)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
         Returns
         -------
-        dictionary : a complete dictionary of the model, which includes at
-        least the following fields:
-            components : list
-                a list of dictionaries of components, one per
-            _whitelist : dictionary
-                a dictionary with keys used as references for saved attributes,
-                for more information, see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
+        dictionary : dict 
+            A dictionary including at least the following fields:
+
+            * components: a list of dictionaries of components, one per 
+              component
+            * _whitelist: a dictionary with keys used as references for saved
+              attributes, for more information, see 
+              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys()
+
         Examples
         --------
         >>> s = signals.Signal1D(np.random.random((10,100)))

@@ -674,10 +674,10 @@ class EDSTEM_mixin:
 
         Parameters
         ----------
-        auto_background : boolean, default True
+        auto_background : bool, default True
             If True, adds automatically a polynomial order 6 to the model,
             using the edsmodel.add_polynomial_background method.
-        auto_add_lines : boolean, default True
+        auto_add_lines : bool, default True
             If True, automatically add Gaussians for all X-rays generated in
             the energy range by an element using the edsmodel.add_family_lines
             method.

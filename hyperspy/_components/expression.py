@@ -19,7 +19,6 @@
 from functools import wraps
 import numpy as np
 import sympy
-from sympy import lambdify
 import warnings
 
 from hyperspy.component import Component
@@ -76,7 +75,7 @@ class Expression(Component):
         It automatically generates the partial derivatives and the
         class docstring.
 
-        Parameters`
+        Parameters
         ----------
         expression : str
             Component function in SymPy text expression format with
@@ -93,10 +92,10 @@ class Expression(Component):
             applicable. It enables interative adjustment of the position of the
             component in the model. For 2D components, a tuple must be passed
             with the name of the two parameters e.g. `("x0", "y0")`.
-        module : {"numpy", "numexpr"}, default "numpy"
+        module : {"numpy", "numexpr", "scipy"}, default "numpy"
             Module used to evaluate the function. numexpr is often faster but
             it supports fewer functions and requires installing numexpr.
-        add_rotation: bool, default False
+        add_rotation : bool, default False
             This is only relevant for 2D components. If `True` it automatically
             adds `rotation_angle` parameter.
         rotation_center : {None, tuple}
@@ -104,7 +103,7 @@ class Expression(Component):
             is not defined, otherwise the center is the coordinates specified
             by `position`. Alternatively a tuple with the (x, y) coordinates
             of the center can be provided.
-        rename_pars: dictionary
+        rename_pars : dictionary
             The desired name of a parameter may sometimes coincide with e.g.
             the name of a scientific function, what prevents using it in the
             `expression`. `rename_parameters` is a dictionary to map the name
@@ -116,19 +115,15 @@ class Expression(Component):
             example in case of expression containing a "where" condition,
             it can be disabled by using `compute_gradients=False`.
         **kwargs
-             Keyword arguments can be used to initialise the value of the
-             parameters.
-
-        Methods
-        -------
-        recompile: useful to recompile the function and gradient with a
-            a different module.
+            Keyword arguments can be used to initialise the value of the
+            parameters.
 
         Note
         ----
-        As of version 1.4, Sympy's lambdify function—that the ``Expression`` components uses internally,
-        does not support the differentiation of some expressions, for example those
-        containing a "where" condition. In such cases, the gradients can be set manually if required.
+        As of version 1.4, Sympy's lambdify function, that the ``Expression`` 
+        components uses internally, does not support the differentiation of 
+        some expressions, for example those containing a "where" condition. 
+        In such cases, the gradients can be set manually if required.
 
         Examples
         --------
@@ -197,6 +192,11 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
     def compile_function(self, module="numpy", position=False):
+        """
+        Compile the function and calculate the gradient automatically when 
+        possible.
+        Useful to recompile the function and gradient with a different module.
+        """
         import sympy
         from sympy.utilities.lambdify import lambdify
         try:  # Expression is just a constant
@@ -214,7 +214,7 @@ class Expression(Component):
             # lambdify doesn't support constant
             # https://github.com/sympy/sympy/issues/5642
             # x = [sympy.Symbol('x')]
-            raise ValueError('Expression must contain the "x" symbol.')            
+            raise ValueError('Expression must contain the "x" symbol.')
         x = x[0]
         # Extract y
         y = [symbol for symbol in expr.free_symbols if symbol.name == "y"]

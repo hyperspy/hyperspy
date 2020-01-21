@@ -10,7 +10,7 @@ signals in the Signal1D class.
 Cropping
 --------
 
-The :py:meth:`~.signal.Signal1D.crop_signal1D` crops the
+The :py:meth:`~._signals.signal1d.Signal1D.crop_signal1D` crops the
 spectral energy range *in-place*. If no parameter is passed, a user interface
 appears in which to crop the one dimensional signal. For example:
 
@@ -80,7 +80,7 @@ Example of usage:
 Calibration
 -----------
 
-The :py:meth:`~.signal.Signal1D.calibrate` method provides a user
+The :py:meth:`~._signals.signal1d.Signal1D.calibrate` method provides a user
 interface to calibrate the spectral axis.
 
 Alignment

@@ -226,8 +226,8 @@ the following template to suit your needs:
             return x
 
 
-If you need help with the task please submit your question to the :ref:`users
-mailing list <http://groups.google.com/group/hyperspy-users>`.
+If you need help with the task please submit your question to the `gitter
+chat room <https://gitter.im/hyperspy/hyperspy>`__.
 
 
 Adding components to the model
