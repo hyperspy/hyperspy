@@ -934,6 +934,10 @@ Reading
 h5USID files can contain multiple USID datasets within the same file.
 HyperSpy supports reading in one or more USID datasets
 
+Extra loading arguments
++++++++++++++++++++++++
+- ``dset_path`` : ``str`` - Absolute path of USID Main HDF5 dataset. (default is ``None`` - all USID Main Datasets will be read)
+
 Reading the sole dataset within a h5USID file:
 
 .. code-block:: python
@@ -965,7 +969,7 @@ absolute path of the desired dataset will cause the single dataset to be loaded.
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003')
+    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data')
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 h5USID files support the storage of HDF5 dataset with
