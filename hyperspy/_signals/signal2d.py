@@ -778,10 +778,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
                  `scikit-image` which uses the difference of Gaussian
                  matrices approach.
 
-                 xc' - A cross correlation peakfinder
+                 'xc' - A cross correlation peakfinder
         interactive : bool
-            If True, the method parameter can be adjusted interactively using
-            a GUI and the results will be saved to the attribute `peaks`.
+            If True, the method parameter can be adjusted interactively.
             If False, the results will be returned.
         current_index : bool
             if True, the computation will be performed for the current index.

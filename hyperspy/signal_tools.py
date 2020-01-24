@@ -1566,13 +1566,13 @@ class PeaksFinder2D(t.HasTraits):
 
         self.signal = signal
         self.peaks = peaks
-        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
-                not self.signal._plot.is_active):
+        if self.signal._plot is None or not self.signal._plot.is_active:
             self.signal.plot()
         if self.signal.axes_manager.navigation_size > 0:
             self.show_navigation_sliders = True
             self.signal.axes_manager.events.indices_changed.connect(
                 self._update_peak_finding, [])
+            self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
         # Set initial parameters:
         # As a convenience, if the template argument is provided, we keep it 
         # even if the method is different, to be able to use it later.
@@ -1626,10 +1626,10 @@ class PeaksFinder2D(t.HasTraits):
                                               **self._get_parameters(method))
 
     def _plot_markers(self):
-        if hasattr(self.signal, '_plot') and self.signal._plot is not None:
-            self.signal._plot.signal_plot.remove_markers()
+        if self.signal._plot is not None and self.signal._plot.is_active:
+            self.signal._plot.signal_plot.remove_markers(render_figure=True)
         peaks_markers = self._peaks_to_marker()
-        self.signal.add_marker(peaks_markers)
+        self.signal.add_marker(peaks_markers, render_figure=True)
 
     def _peaks_to_marker(self, markersize=20, add_numbers=True,
                          color='red'):
@@ -1653,6 +1653,18 @@ class PeaksFinder2D(t.HasTraits):
             self.signal.peaks = self.signal.find_peaks2D(
                 method, interactive=False, current_index=False,
                 **self._get_parameters(method))
+
+    def close(self):
+        # remove markers
+        if self.signal._plot is not None and self.signal._plot.is_active:
+            self.signal._plot.signal_plot.remove_markers(render_figure=True)
+        self.disconnect()
+
+    def disconnect(self):
+        # disconnect event
+        am = self.signal.axes_manager
+        if self._update_peak_finding in am.events.indices_changed.connected:
+            am.events.indices_changed.disconnect(self._update_peak_finding)
 
     def set_random_navigation_position(self):
         index = np.random.randint(0, self.signal.axes_manager._max_index)

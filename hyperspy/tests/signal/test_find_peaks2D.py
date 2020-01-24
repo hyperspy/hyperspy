@@ -23,6 +23,7 @@ from scipy.stats import norm
 from hyperspy.signals import Signal2D, BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal_tools import PeaksFinder2D
 
 
 def _generate_dataset():
@@ -165,3 +166,12 @@ class TestFindPeaks2D:
             peaks = self.ref.find_peaks2D(method=method, parallel=parallel,
                                          interactive=False)
         nt.assert_allclose(peaks.data[0], ans[0])
+
+    def test_close_find_peaks(self):
+        sig = self.dense
+        axes_dict = sig.axes_manager._get_axes_dicts(
+            sig.axes_manager.navigation_axes)
+        peaks = BaseSignal(np.empty(sig.axes_manager.navigation_shape),
+                           axes=axes_dict)
+        pf2D = PeaksFinder2D(sig,method='local_max', peaks=peaks)
+        pf2D.close()
