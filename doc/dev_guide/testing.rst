@@ -19,8 +19,7 @@ we know exactly what caused it. Ideally, the tests should be written at the
 same time as the code itself, because they are very convenient to run in order 
 to check outputs when coding. Writing tests can seem laborious but you'll 
 probably soon find that they're very important as they force you to sanity 
-check all you do. For details on running and writing HyperSpy tests, see 
-:ref:`dev_tests`.
+check all you do.
 
 
 HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
