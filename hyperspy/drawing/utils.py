@@ -471,8 +471,6 @@ def plot_images(images,
                 **kwargs):
     """Plot multiple images as sub-images in one figure.
 
-    Extra keyword arguments are passed to `matplotlib.figure`.
-
     Parameters
     ----------
     images : list of Signal2D or BaseSignal
@@ -503,7 +501,7 @@ def plot_images(images,
         short titles are detected.
         Works best if all images to be plotted have the same beginning
         to their titles.
-        If 'titles', the title from each image's metadata.General.title
+        If 'titles', the title from each image's `metadata.General.title`
         will be used.
         If any other single str, images will be labeled in sequence using
         that str as a prefix.
@@ -553,10 +551,10 @@ def plot_images(images,
         If None, default options will be used
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values
-        Values should be supplied as used in pyplot.subplots_adjust(),
-        and can be:
-            'left', 'bottom', 'right', 'top', 'wspace' (width),
-            and 'hspace' (height)
+        Values should be supplied as used in 
+        :py:func:`matplotlib.pyplot.subplots_adjust`,
+        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and 
+        'hspace' (height)
     tight_layout : bool, optional
         If true, hyperspy will attempt to improve image placement in
         figure using matplotlib's tight_layout
@@ -582,9 +580,12 @@ def plot_images(images,
         If list of scalar, the length should match the number of images to
         show.
         A list of scalar is not compatible with a single colorbar.
-        See vmin, vmax of matplotlib.imshow() for more details.
-    *args, **kwargs, optional
-        Additional arguments passed to matplotlib.imshow()
+        See vmin, vmax of :py:func:`matplotlib.pyplot.imshow` for more details.
+    *args
+        Additional list arguments passed to
+        :py:func:`matplotlib.pyplot.imshow`.
+    **kwargs, optional
+        Keywords arguments passed to :py:func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
@@ -1143,10 +1144,10 @@ def make_cmap(colors, name='my_colormap', position=None,
         list containing the values (from [0,1]) that dictate the position
         of each color within the colormap. If None (default), the colors
         will be equally-spaced within the colorbar.
-    bit : boolean
+    bit : bool
         True if RGB colors are given in 8-bit [0 to 255] or False if given
         in arithmetic basis [0 to 1] (default)
-    register : boolean
+    register : bool
         switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string
     """
@@ -1195,8 +1196,6 @@ def plot_spectra(
         **kwargs):
     """Plot several spectra in the same figure.
 
-    Extra keyword arguments are passed to `matplotlib.figure`.
-
     Parameters
     ----------
     spectra : list of Signal1D or BaseSignal
@@ -1239,9 +1238,10 @@ def plot_spectra(
     ax : matplotlib ax (subplot) or None
         If None, a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
-    **kwargs
-        remaining keyword arguments are passed to matplotlib.figure() or
-        matplotlib.subplots(). Has no effect on 'heatmap' style.
+    **kwargs, optional
+        Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
+        :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
+        Has no effect on 'heatmap' style.
 
     Example
     -------
@@ -1475,7 +1475,7 @@ def plot_histograms(signal_list,
         If None, a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
-        np.histogram().
+        :py:func:`numpy.histogram`.
 
     Example
     -------

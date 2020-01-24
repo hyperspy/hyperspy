@@ -642,14 +642,15 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
 
 
 def swapelem(obj, i, j):
-    """Swaps element having index i with
-    element having index j in object obj IN PLACE.
+    """Swaps element having index i with element having index j in object obj 
+    IN PLACE.
 
-    E.g.
+    Example
+    -------
     >>> L = ['a', 'b', 'c']
     >>> spwapelem(L, 1, 2)
     >>> print(L)
-        ['a', 'c', 'b']
+    ['a', 'c', 'b']
 
     """
     if len(obj) > 1:
@@ -1072,14 +1073,6 @@ def multiply(iterable):
 def iterable_not_string(thing):
     return isinstance(thing, collections.Iterable) and \
         not isinstance(thing, str)
-
-
-def signal_range_from_roi(signal_range):
-    from hyperspy.roi import SpanROI
-    if isinstance(signal_range, SpanROI):
-        return (signal_range.left, signal_range.right)
-    else:
-        return signal_range
 
 
 def deprecation_warning(msg):

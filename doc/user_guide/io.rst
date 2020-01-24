@@ -86,7 +86,7 @@ and if set to `False`, the units will not be converted. The default is `False`.
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
-.. load-multiple-label:
+.. _load-multiple-label:
 
 Loading multiple files
 ----------------------
@@ -212,6 +212,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | EDAX .spc and .spd |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
+    | h5USID .h5         |    Yes |   Yes  |   Yes  |
+    +--------------------+--------+--------+--------+
 
 .. _hspy-format:
 
@@ -227,7 +229,7 @@ applications
 Part of the specification is documented in :ref:`metadata_structure`.
 
 .. versionadded:: 1.2
-    Enable saving HSpy files with the ``.hspy`` extension. Preveously only the
+    Enable saving HSpy files with the ``.hspy`` extension. Previously only the
     ``.hdf5`` extension was recognised.
 
 .. versionchanged:: 1.3
@@ -251,7 +253,7 @@ filename e.g.:
 
 
 When saving to ``hspy``, all supported objects in the signal's
-:py:attr:`~.metadata` is stored. This includes  lists, tuples and signals.
+:py:attr:`~.signal.BaseSignal.metadata` is stored. This includes  lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,
 the inner-most structures are converted to numpy arrays when saved. This
 procedure homogenizes any types of the objects inside, most notably casting
@@ -318,7 +320,7 @@ NetCDF
 ------
 
 This was the default format in HyperSpy's predecessor, EELSLab, but it has been
-superseded by :ref:`HDF5` in HyperSpy. We provide only reading capabilities
+superseded by :ref:`hspy-format` in HyperSpy. We provide only reading capabilities
 but we do not support writing to this format.
 
 Note that only NetCDF files written by EELSLab are supported.
@@ -371,9 +373,8 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-`do_async`: 
-  currently supported within Hyperspy for writing only, this will save 
-  the file in a background thread and return immediately. Defaults
+- `do_async`: currently supported within Hyperspy for writing only, this will 
+  save  the file in a background thread and return immediately. Defaults
   to `False`.
 
 .. Warning::
@@ -382,14 +383,10 @@ Extra saving arguments
     asychronous write has finished.
 
 
-`compressor`: 
-  The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`]. Defaults to `None`.
-
-`clevel`: 
-  The compression level, an `int` from 1 to 9. Defaults to 1.
-
-`n_threads`: 
-  The number of threads to use for `blosc` compression. Defaults to
+- `compressor`: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
+  Defaults to `None`.
+- `clevel`: The compression level, an `int` from 1 to 9. Defaults to 1.
+- `n_threads`: The number of threads to use for `blosc` compression. Defaults to
   the maximum number of virtual cores (including Intel Hyperthreading)
   on your system, which is recommended for best performance. If \
   `do_asyc = True` you may wish to leave one thread free for the
@@ -421,7 +418,7 @@ EMSA/MSA
 --------
 
 This `open standard format
-<http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`_
+<http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`__
 is widely used to exchange single spectrum data, but it does not support
 multidimensional data. It can be used to exchange single spectra with Gatan's
 Digital Micrograph.
@@ -460,7 +457,7 @@ Ripple
 ------
 
 This `open standard format
-<http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is
+<http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`__ is
 widely used to exchange multidimensional data. However, it only supports data of
 up to three dimensions. It can be used to exchange data with Bruker and `Lispix
 <http://www.nist.gov/lispix/>`_. Used in combination with the :ref:`import-rpl`
@@ -548,7 +545,7 @@ HyperSpy can read both dm3 and dm4 files but the reading features are not
 complete (and probably they will be unless Gatan releases the specifications of
 the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
-an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
+an issue in the `issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make
 us aware of the problem.
 
 Extra loading arguments
@@ -576,7 +573,7 @@ elements will automatically be added to the signal loaded by HyperSpy.
 
 Currently, loading an EDAX TEAM spectrum or spectrum image will load an
 ``EDSSEMSpectrum`` Signal. If support for TEM EDS data is needed, please
-open an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to
+open an issue in the `issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to
 alert the developers of the need.
 
 For further reference, file specifications for the formats are
@@ -589,14 +586,15 @@ SpcMap-spd.file.format.pdf>`_, and
 Extra loading arguments for SPD file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `spc_fname` : {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
-- `ipr_fname` : {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
-- **kwargs: remaining arguments are passed to the Numpy ``memmap`` function.
+- `spc_fname`: {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
+- `ipr_fname`: {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
+- `**kwargs`: remaining arguments are passed to the Numpy ``memmap`` function.
 
 Extra loading arguments for SPD and SPC files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is read, or just the important parts for import into HyperSpy.
+- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is 
+  read, or just the important parts for import into HyperSpy.
 
 
 .. _fei-format:
@@ -608,7 +606,7 @@ HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <https://github.com/hyperspy/hyperspy/issues>`_ to make us 
+`issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make us 
 aware of the problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
@@ -623,9 +621,9 @@ Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 - `only_valid_data` : bool, in case of series or linescan data with the 
-acquisition stopped before the end: if True, load only the acquired data. 
-If False, the empty data are filled with zeros. The default is False and this 
-default value will change to True in version 2.0.
+  acquisition stopped before the end: if True, load only the acquired data. 
+  If False, the empty data are filled with zeros. The default is False and this 
+  default value will change to True in version 2.0.
 
 .. _unf-format:
 
@@ -707,10 +705,20 @@ currently supported by HyperSpy.
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the corresponding type of data, either spectrum or image, is returned. By default (None), all data are loaded.
-- `index` : one of (None, int, "all"). Allow to select the index of the dataset in the bcf file, which can contains several datasets. Default None value result in loading the first dataset. When set to 'all', all available datasets will be loaded and returned as separate signals.
-- `downsample` : the downsample ratio of hyperspectral array (height and width only), can be integer >=1, where '1' results in no downsampling (default 1). The underlying method of downsampling is unchangeable: sum. Differently than block_reduce from skimage.measure it is memory efficient (does not creates intermediate arrays, works inplace).
-- `cutoff_at_kV` : if set (can be int or float >= 0) can be used either to crop or enlarge energy (or channels) range at max values (default None).
+- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the 
+  corresponding type of data, either spectrum or image, is returned. 
+  By default (None), all data are loaded.
+- `index` : one of (None, int, "all"). Allow to select the index of the dataset 
+  in the bcf file, which can contains several datasets. Default None value 
+  result in loading the first dataset. When set to 'all', all available datasets 
+  will be loaded and returned as separate signals.
+- `downsample` : the downsample ratio of hyperspectral array (height and width 
+  only), can be integer >=1, where '1' results in no downsampling (default 1). 
+  The underlying method of downsampling is unchangeable: sum. Differently than 
+  ``block_reduce`` from skimage.measure it is memory efficient (does not creates
+  intermediate arrays, works inplace).
+- `cutoff_at_kV` : if set (can be int or float >= 0) can be used either to crop
+  or enlarge energy (or channels) range at max values (default None).
 
 Example of loading reduced (downsampled, and with energy range cropped)
 "spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
@@ -896,6 +904,131 @@ to a quantity. Since there is a small fluctuation in the step of the time axis,
 the reader assumes that the step is constant and takes its mean, which is a
 good approximation. Further release of HyperSpy will read the time axis more
 precisely by supporting non-linear axis.
+
+
+. _usid-format:
+
+USID
+----
+
+Background
+^^^^^^^^^^
+`Universal Spectroscopy and Imaging Data <https://pycroscopy.github.io/USID/about.html>`_
+(USID) is an open, community-driven, self-describing, and standardized schema for
+representing imaging and spectroscopy data of any size, dimensionality, precision,
+instrument of origin, or modality. USID data is typically stored in
+Hierarchical Data Format Files (HDF5) and the combination of USID within HDF5 files is
+referred to as h5USID.
+
+`pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_
+provides a convenient interface to I/O operations on such h5USID files. USID (via pyUSID)
+forms the foundation for other materials microscopy scientific python package called
+`pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html>`_.
+
+If you have any questions regarding this module, please consider
+`contacting <https://pycroscopy.github.io/pyUSID/contact.html>`_  the developers of pyUSID
+
+Requirements
+^^^^^^^^^^^^
+1. Reading and writing h5USID files require the
+   `installation of pyUSID <https://pycroscopy.github.io/pyUSID/install.html>`_.
+2. Files must use the ``.h5`` file extension in order to use this io plugin.
+   Using the ``.hdf5`` extension will default to HyperSpy's own plugin
+
+Reading
+^^^^^^^
+h5USID files can contain multiple USID datasets within the same file.
+HyperSpy supports reading in one or more USID datasets
+
+Extra loading arguments
++++++++++++++++++++++++
+- ``dset_path`` : ``str`` - Absolute path of USID Main HDF5 dataset. (default is ``None`` - all USID Main Datasets will be read)
+
+Reading the sole dataset within a h5USID file:
+
+.. code-block:: python
+
+    >>> hs.load("sample.h5")
+    <Signal2D, title: HAADF, dimensions: (|128, 128)>
+
+If multiple datasets are present within the h5USID file and you try the same command again,
+**all** available datasets will be loaded.
+
+.. note::
+
+    Given that HDF5 files can accommodate very large datasets, setting ``lazy=True``
+    is strongly recommended if the contents of the HDF5 file are not known apriori.
+    This prevents issues with regard to loading datasets far larger than memory.
+
+    Also note that setting ``lazy=True`` leaves the file handle to the HDF5 file open.
+    If it is important that the files be closed after reading, set ``lazy=False``.
+
+.. code-block:: python
+
+    >>> hs.load("sample.h5")
+    [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
+    <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
+
+We can load a specific dataset using the ``dset_path`` keyword argument. setting it to the
+absolute path of the desired dataset will cause the single dataset to be loaded.
+
+.. code-block:: python
+
+    >>> # Loading a specific dataset
+    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data')
+    <Signal2D, title: HAADF, dimensions: (|128, 128)>
+
+h5USID files support the storage of HDF5 dataset with
+`compound data types <https://pycroscopy.github.io/USID/usid_model.html#compound-datasets>`_.
+As an (*oversimplified*) example, one could store a color image using a compound data type that allows
+each color channel to be accessed by name rather than an index.
+Naturally, reading in such a compound dataset into HyperSpy will result in a separate
+signal for each named component in the dataset:
+
+.. code-block:: python
+
+    >>> hs.load("file_with_a_compound_dataset.h5")
+    [<Signal2D, title: red, dimensions: (|128, 128)>,
+    Signal2D, title: blue, dimensions: (|128, 128)>,
+    Signal2D, title: green, dimensions: (|128, 128)>]
+
+h5USID files also support parameters or dimensions that have been varied non-linearly.
+This capability is important in several spectroscopy techniques where the bias is varied as a
+`bi-polar triangular waveform <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_usi_dataset.html#values-for-each-dimension>`_
+rather than linearly from the minimum value to the maximum value.
+Since HyperSpy Signals expect linear variation of parameters / axes, such non-linear information
+would be lost in the axes manager. The USID plugin will default to a warning
+when it encounters a parameter that has been varied non-linearly:
+
+.. code-block:: python
+
+    >>> hs.load("sample.h5")
+    UserWarning: Ignoring non-linearity of dimension: Bias
+    <BaseSignal, title: , dimensions: (|7, 3, 5, 2)>
+
+Obviously, the
+In order to prevent accidental misinterpretation of information downstream, the keyword argument
+``ignore_non_linear_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
+
+.. code-block:: python
+
+    >>> hs.load("sample.h5")
+    ValueError: Cannot load provided dataset. Parameter: Bias was varied non-linearly.
+    Supply keyword argument "ignore_non_linear_dims=True" to ignore this error
+
+Writing
+^^^^^^^
+Signals can be written to new h5USID files using the standard ``.save()`` function.
+Setting the ``overwrite`` keyword argument to ``True`` will append to the specified
+HDF5 file. All other keyword arguments will be passed to
+`pyUSID.hdf_utils.write_main_dataset() <https://pycroscopy.github.io/pyUSID/_autosummary/_autosummary/pyUSID.io.hdf_utils.html#pyUSID.io.hdf_utils.write_main_dataset>`_
+
+.. code-block:: python
+
+    >>> sig.save("USID.h5")
+
+Note that the model and other secondary data artifacts linked to the signal are not
+written to the file but these can be implemented at a later stage.
 
 
 Reading data generated by HyperSpy using other software packages

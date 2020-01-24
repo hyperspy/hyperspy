@@ -1582,9 +1582,8 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
   :align:   center
   :width:   500
 
-Notably,
-since ROIs are independent from the signals they sub-select, the widget can be
-plotted on a different signal altogether.
+Notably, since ROIs are independent from the signals they sub-select, the widget
+can be plotted on a different signal altogether.
 
 .. code-block:: python
 
@@ -1640,22 +1639,44 @@ order to increase responsiveness.
     ROIs can be used in place of slices when indexing and to define a
     signal range in functions taken a ``signal_range`` argument.
 
+.. _roi-slice-label:
 
-ROIs can be used in place of slices when indexing and to define a
-signal range in functions taken a ``signal_range`` argument. For example:
+Slicing using ROIs
+^^^^^^^^^^^^^^^^^^
+
+ROIs can be used in place of slices when indexing. For example:
 
 .. code-block:: python
 
     >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
-    >>> s.remove_background(signal_range=roi, background_type="Polynomial")
     >>> im = hs.datasets.example_signals.object_hologram()
     >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
     >>> imc = im.isig[roi]
 
 .. versionadded:: 1.3
     :meth:`gui` method.
+
+.. versionadded:: 1.6
+    New :meth:`__getitem__` method for all ROIs.
+
+In addition the following all ROIs have a py:meth:`__getitem__` method that enables
+using them in place of tuples.
+For example, the method :py:meth:`~._signals.signal2d.align2D` takes a ``roi``
+argument with the left, right, top, bottom coordinates of the ROI.
+Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+    >>> im = hs.signals.Signal2D(np.random.random((10,30,30))
+    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5))
+    >>> tuple(roi)
+    (2.0, 10.0, 0.0, 5.0)
+    >>> im.align2D(roi=roi)
+
 
 
 All ROIs have a :meth:`gui` method that displays an user interface if

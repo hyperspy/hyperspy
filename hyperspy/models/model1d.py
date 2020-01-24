@@ -29,7 +29,6 @@ from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.events import EventSuppressor
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
-from hyperspy.misc.utils import signal_range_from_roi
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
@@ -463,7 +462,7 @@ class Model1D(BaseModel):
 
         """
         try:
-            x1, x2 = signal_range_from_roi(x1)
+            x1, x2 = x1
         except TypeError:
             # It was not a ROI, we carry on
             pass
@@ -494,7 +493,7 @@ class Model1D(BaseModel):
 
         """
         try:
-            x1, x2 = signal_range_from_roi(x1)
+            x1, x2 = x1
         except TypeError:
             # It was not a ROI, we carry on
             pass
@@ -529,7 +528,7 @@ class Model1D(BaseModel):
 
         """
         try:
-            x1, x2 = signal_range_from_roi(x1)
+            x1, x2 = x1
         except TypeError:
             # It was not a ROI, we carry on
             pass
@@ -872,7 +871,6 @@ class Model1D(BaseModel):
             display=True,
             toolkit=None,
             **kwargs):
-        signal_range = signal_range_from_roi(signal_range)
         component = self._get_component(component)
         cf = ComponentFit(self, component, signal_range,
                           estimate_parameters, fit_independent,
@@ -897,7 +895,9 @@ class Model1D(BaseModel):
             If 'interactive' the signal range is selected using the span
              selector on the spectrum plot. The signal range can also
              be manually specified by passing a tuple of floats. If None
-             the current signal range is used.
+             the current signal range is used. Note that ROIs can be used
+             in place of a tuple.
+
         estimate_parameters : bool, default True
             If True will check if the component has an
             estimate_parameters function, and use it to estimate the
