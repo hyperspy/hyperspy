@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -62,7 +62,7 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     gamma : real
        The half-width half-maximum of the Lorentzian.
     FWHM : real
-       The FWHM=:math:`2 \sigma \sqrt(2 \log(2))` of the Gaussian.
+       The FWHM = :math:`2 \sigma \sqrt{(2 \log(2))}` of the Gaussian.
     center : real
        Location of the center of the peak.
     scale : real
@@ -87,8 +87,9 @@ class Voigt(Component):
     """This is the legacy Voigt profile component dedicated to photoemission 
     spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
     the new Voigt lineshape component set `legacy=False`. See the
-    documentation of ``hyperspy._components.voigt.Voigt`` for details on the
-    usage of the new Voigt component. 
+    documentation of :meth:`hyperspy._components.voigt.Voigt` for details on 
+    the usage of the new Voigt component and 
+    :meth:`hyperspy._components.pes_voigt.PESVoigt` for the legacy component. 
 
     .. math:: 
         f(x) = G(x) \cdot L(x) 
@@ -97,21 +98,6 @@ class Voigt(Component):
     Lorentzian function. This component uses an approximate formula by David 
     (see Notes).
 
-    Attributes
-    ----------
-
-    legacy : Bool
-    area : Parameter
-    centre: Parameter
-    FWHM : Parameter
-    gamma : Parameter
-    resolution : Parameter
-    shirley_background : Parameter
-    non_isochromaticity : Parameter
-    transmission_function : Parameter
-    spin_orbit_splitting : Bool
-    spin_orbit_branching_ratio : float
-    spin_orbit_splitting_energy : float
 
     Notes
     -----
@@ -193,7 +179,7 @@ class PESVoigt(Component):
     centre: Parameter
         Location of the maximum of the peak.
     FWHM : Parameter
-        FWHM=:math:`2 \sigma \sqrt(2 \log(2))` of the Gaussian distribution.
+        FWHM = :math:`2 \sigma \sqrt{(2 \log(2))}` of the Gaussian distribution.
     gamma : Parameter
         :math:`\gamma` of the Lorentzian distribution.
     resolution : Parameter
@@ -285,7 +271,8 @@ class PESVoigt(Component):
 
         Returns
         -------
-        bool
+         : bool
+            Exit status required for the :meth:`remove_background` function.
 
         Notes
         -----

@@ -1013,6 +1013,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         elif self.background_type == 'Voigt':
             with ignore_warning(message="The API of the `Voigt` component"):
                 self.background_estimator = components1d.Voigt(legacy=False)
+            self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):
         with ignore_warning(message="The API of the `Polynomial` component"):

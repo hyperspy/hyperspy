@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -35,7 +35,7 @@ class Voigt(Expression):
     Symmetric peak shape based on the convolution of a Lorentzian and Normal 
     (Gaussian) distribution:
     
-        .. math:: 
+    .. math:: 
         f(x) = G(x) \cdot L(x) 
 
     where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
@@ -69,7 +69,7 @@ class Voigt(Expression):
     gamma : float
         :math:`\gamma` = HWHM of the Lorentzian distribution.
     sigma: float
-        :math:`2 \sigma \sqrt(2 \log(2))` = FWHM of the Gaussian distribution.
+        :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
 
 
     For convenience the `gwidth` and `lwidth` attributes can also be used to 
@@ -136,7 +136,8 @@ class Voigt(Expression):
 
         Returns
         -------
-        bool
+         : bool
+            Exit status required for the :meth:`remove_background` function.
 
         Notes
         -----
