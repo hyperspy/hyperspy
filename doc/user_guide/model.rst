@@ -1051,17 +1051,24 @@ reaching the end of the dataset.
     :py:meth:`~.model.BaseModel.multifit` to perform the fit over the entire
     spectrum image.
 
-A common problem is that the fitting fails going from the end of one row to the
-beginning of the next (where the spectrum changes abruptly). This kind of iteration path is 
-the default in HyperSpy (but will change to ``'serpentine'`` in HyperSpy version 2.0). 
-It can be explicitly set using the :py:meth:`~.model.BaseModel.multifit` ``iterpath='flyback'`` 
-argument. A simple solution to the flyback fitting problem is to iterate through 
-the signal indices in a horizontal serpentine pattern, as seen on the image below. 
-This alternate iteration method can be enabled
+.. versionadded:: 1.6 New optional fitting iteration path `"serpentine"`
+
+Typically, curve fitting on a multidimensional dataset happens in the following 
+manner: Pixels are fit along the row from the first index in the first row, and once the 
+final pixel is reached, one proceeds from the first index in the second row. 
+Since the fitting procedure typically uses the fit of the previous pixel 
+as the starting point for the next, a common problem with this fitting iteration 
+path is that the fitting fails going from the end of one row to the beginning of 
+the next, as the spectrum can change abruptly. This kind of iteration path is 
+the default in HyperSpy (but will change to ``'serpentine'`` in HyperSpy version 
+2.0). It can be explicitly set using the :py:meth:`~.model.BaseModel.multifit` 
+``iterpath='flyback'`` argument. A simple solution to the flyback fitting problem 
+is to iterate through the signal indices in a horizontal serpentine pattern, 
+as seen on the image below. This alternate iteration method can be enabled 
 by the :py:meth:`~.model.BaseModel.multifit` ``iterpath='serpentine'`` argument. 
-The serpentine pattern supports ndimensional navigation space, so the first index
-in the second frame of a three-dimensional navigation space will be at the last position
-of the previous frame.
+The serpentine pattern supports n-dimensional navigation space, so the first 
+index in the second frame of a three-dimensional navigation space will be at the 
+last position of the previous frame.
 
 .. figure::  images/FlybackVsSerpentine.png
     :align:   center
