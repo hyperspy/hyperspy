@@ -39,7 +39,7 @@ class HeavisideStep(Expression):
     n : float
         Location parameter defining the x position of the step.
     A : float
-        Height parameter for x>n.
+        Height parameter for x>=n.
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
     """
