@@ -22,6 +22,7 @@ probably soon find that they're very important as they force you to sanity
 check all you do. For details on running and writing HyperSpy tests, see 
 :ref:`dev_tests`.
 
+
 HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
 tests reside in the :py:mod:`hyperspy.tests` module. 
 
