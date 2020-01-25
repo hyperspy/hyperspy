@@ -1377,7 +1377,7 @@ class MVATools(object):
 
     def get_decomposition_loadings(self):
         """Return the decomposition loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1395,7 +1395,7 @@ class MVATools(object):
 
     def get_decomposition_factors(self):
         """Return the decomposition factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1413,7 +1413,7 @@ class MVATools(object):
 
     def get_bss_loadings(self):
         """Return the blind source separation loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1432,7 +1432,7 @@ class MVATools(object):
 
     def get_bss_factors(self):
         """Return the blind source separation factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -3879,8 +3879,8 @@ class BaseSignal(FancySlicing,
         ragged : None or bool
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
-            the appropriate choice is made while processing. Note: ``None``
-            is not allowed for Lazy signals!
+            the appropriate choice is made while processing.If True in case of
+            lazy signals, the signal will compute at the end of the mapping.
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
 
