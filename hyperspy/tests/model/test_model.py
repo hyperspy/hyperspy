@@ -7,7 +7,7 @@ import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.test_utils import ignore_warning
-
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 RTOL = 1E-6
 
@@ -994,6 +994,17 @@ class TestMultifit:
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
+
+    def test_None_iterpath(self):
+        'To be removed with hyperspy 2.0, where serpentine is default.'
+        with pytest.warns(VisibleDeprecationWarning):
+            self.m.multifit(show_progressbar=None) # iterpath = None by default
+
+    def test_flyback_iterpath(self):
+        self.m.multifit(iterpath='flyback', show_progressbar=None)
+
+    def test_serpentine_iterpath(self):
+        self.m.multifit(iterpath='serpentine', show_progressbar=None)
 
 
 class TestStoreCurrentValues:
