@@ -1,4 +1,4 @@
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2020 The Hyperspy developers
 #
 # This file is part of  Hyperspy.
 #
