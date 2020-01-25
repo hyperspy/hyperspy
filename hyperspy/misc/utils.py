@@ -1008,9 +1008,10 @@ def map_result_construction(signal,
         for ind in range(
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
-    sig.get_dimensions_from_data()
+    if not ragged:
+        sig.get_dimensions_from_data()
     if not sig.axes_manager._axes:
-        add_scalar_axis(sig)
+        add_scalar_axis(sig, lazy=lazy)
     return res
 
 
@@ -1048,10 +1049,13 @@ def deprecation_warning(msg):
     warnings.warn(msg, VisibleDeprecationWarning)
 
 
-def add_scalar_axis(signal):
+def add_scalar_axis(signal, lazy=None):
     am = signal.axes_manager
     from hyperspy.signal import BaseSignal
-    signal.__class__ = BaseSignal
+    from hyperspy._signals.lazy import LazySignal
+    if lazy is None:
+        lazy = signal._lazy
+    signal.__class__ = LazySignal if lazy else BaseSignal
     am.remove(am._axes)
     am._append_axis(size=1,
                     scale=1,
