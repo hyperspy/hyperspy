@@ -22,7 +22,6 @@ import numpy.ma as ma
 import dask.array as da
 import scipy as sp
 import logging
-from scipy.fftpack import fftn, ifftn
 from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
@@ -33,6 +32,7 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -96,12 +96,12 @@ def fft_correlation(in1, in2, normalize=False):
     s2 = np.array(in2.shape)
     size = s1 + s2 - 1
     # Use 2**n-sized FFT
-    fsize = 2 ** np.ceil(np.log2(size))
-    fprod = fftn(in1, fsize)
-    fprod *= fftn(in2, fsize).conjugate()
+    fsize = (2 ** np.ceil(np.log2(size))).astype("int")
+    fprod = np.fft.fftn(in1, fsize)
+    fprod *= np.fft.fftn(in2, fsize).conjugate()
     if normalize is True:
         fprod = np.nan_to_num(fprod / np.absolute(fprod))
-    ret = ifftn(fprod).real.copy()
+    ret = np.fft.ifftn(fprod).real.copy()
     return ret, fprod
 
 
@@ -120,7 +120,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Parameters
     ----------
-
     ref : 2D numpy.ndarray
         Reference image
     image : 2D numpy.ndarray
@@ -133,9 +132,14 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         apply a median filter for noise reduction
     hanning : bool
         Apply a 2d hanning filter
-    plot : bool
-        If True plots the images after applying the filters and
-        the phase correlation
+    plot : bool or matplotlib.Figure
+        If True, plots the images after applying the filters and the phase
+        correlation. If a figure instance, the images will be plotted to the
+        given figure.
+    reference : 'current' or 'cascade'
+        If 'current' (default) the image at the current
+        coordinates is taken as reference. If 'cascade' each image
+        is aligned with the previous one.
     dtype : str or dtype
         Typecode or data-type in which the calculations must be
         performed.
@@ -147,17 +151,26 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Returns
     -------
-
     shifts: np.array
         containing the estimate shifts
     max_value : float
         The maximum value of the correlation
 
+    Notes
+    -----
+    The statistical analysis approach to the translation estimation
+    when using reference='stat' roughly follows [*]_ . If you use
+    it please cite their article.
+
+    References
+    ----------
+    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
+       “Automated Spatial Drift Correction for EFTEM Image Series.”
+       Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+
     """
-    if isinstance(ref, da.Array):
-        ref = np.array(ref)
-    if isinstance(image, da.Array):
-        image = np.array(image)
+
+    ref, image = da.compute(ref, image)
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
@@ -190,7 +203,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         argmax[0] - phase_correlation.shape[0]
     shift1 = argmax[1] if argmax[1] < threshold[1] else \
         argmax[1] - phase_correlation.shape[1]
-    max_val = phase_correlation.max()
+    max_val = phase_correlation.real.max()
     shifts = np.array((shift0, shift1))
 
     # The following code is more or less copied from
@@ -204,7 +217,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         sub_pixel_factor = np.array(sub_pixel_factor, dtype=np.float64)
         normalization = (image_product.size * sub_pixel_factor ** 2)
         # Matrix multiply DFT around the current shift estimate
-        sample_region_offset = dftshift - shifts*sub_pixel_factor
+        sample_region_offset = dftshift - shifts * sub_pixel_factor
         correlation = _upsampled_dft(image_product.conj(),
                                      upsampled_region_size,
                                      sub_pixel_factor,
@@ -217,21 +230,37 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             dtype=np.float64)
         maxima -= dftshift
         shifts = shifts + maxima / sub_pixel_factor
-        max_val = correlation.max()
+        max_val = correlation.real.max()
 
     # Plot on demand
-    if plot is True:
-        f, axarr = plt.subplots(1, 3)
-        axarr[0].imshow(ref)
-        axarr[1].imshow(image)
-        axarr[2].imshow(phase_correlation)
-        axarr[0].set_title('Reference')
-        axarr[1].set_title('Signal')
-        if normalize_corr:
-            axarr[2].set_title('Phase correlation')
+    if plot is True or isinstance(plot, plt.Figure):
+        if isinstance(plot, plt.Figure):
+            fig = plot
+            axarr = plot.axes
+            if len(axarr) < 3:
+                for i in range(3):
+                    fig.add_subplot(1, 3, i + 1)
+                axarr = fig.axes
         else:
-            axarr[2].set_title('Correlation')
-        plt.show()
+            fig, axarr = plt.subplots(1, 3)
+        full_plot = len(axarr[0].images) == 0
+        if full_plot:
+            axarr[0].set_title('Reference')
+            axarr[1].set_title('Image')
+            axarr[2].set_title('Phase correlation')
+            axarr[0].imshow(ref)
+            axarr[1].imshow(image)
+            d = (np.array(phase_correlation.shape) - 1) // 2
+            extent = [-d[1], d[1], -d[0], d[0]]
+            axarr[2].imshow(np.fft.fftshift(phase_correlation),
+                            extent=extent)
+            plt.show()
+        else:
+            axarr[0].images[0].set_data(ref)
+            axarr[1].images[0].set_data(image)
+            axarr[2].images[0].set_data(np.fft.fftshift(phase_correlation))
+            # TODO: Renormalize images
+            fig.canvas.draw_idle()
     # Liberate the memory. It is specially necessary if it is a
     # memory map
     del ref
@@ -259,11 +288,14 @@ class Signal2D(BaseSignal, CommonSignal2D):
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             saturated_pixels=0,
+             axes_off=False,
+             saturated_pixels=None,
              vmin=None,
              vmax=None,
+             gamma=1.0,
              no_nans=False,
              centre_colormap="auto",
+             min_aspect=0.1,
              **kwargs
              ):
         """%s
@@ -276,25 +308,31 @@ class Signal2D(BaseSignal, CommonSignal2D):
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
+            axes_off=axes_off,
             saturated_pixels=saturated_pixels,
             vmin=vmin,
             vmax=vmax,
+            gamma=gamma,
             no_nans=no_nans,
             centre_colormap=centre_colormap,
+            min_aspect=min_aspect,
             **kwargs
         )
-    plot.__doc__ %= BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal
+
         Parameters
-        __________
+        ----------
         dictionary : {None, dict}, optional
             A dictionary to be used to recreate a model. Usually generated
             using :meth:`hyperspy.model.as_dictionary`
+
         Returns
         -------
         A Model class
+
         """
         from hyperspy.models.model2d import Model2D
         return Model2D(self, dictionary=dictionary)
@@ -322,7 +360,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Parameters
         ----------
-
         reference : {'current', 'cascade' ,'stat'}
             If 'current' (default) the image at the current
             coordinates is taken as reference. If 'cascade' each image
@@ -331,56 +368,54 @@ class Signal2D(BaseSignal, CommonSignal2D):
             performing statistical analysis on the result the
             translation is estimated.
         correlation_threshold : {None, 'auto', float}
-            This parameter is only relevant when `reference` is 'stat'.
+            This parameter is only relevant when reference='stat'.
             If float, the shift estimations with a maximum correlation
             value lower than the given value are not used to compute
             the estimated shifts. If 'auto' the threshold is calculated
             automatically as the minimum maximum correlation value
             of the automatically selected reference image.
-        chunk_size: {None, int}
-            If int and `reference`=='stat' the number of images used
+        chunk_size : {None, int}
+            If int and reference='stat' the number of images used
             as reference are limited to the given value.
-        roi : tuple of ints or floats (left, right, top bottom)
-             Define the region of interest. If int(float) the position
-             is given axis index(value).
+        roi : tuple of ints or floats (left, right, top, bottom)
+            Define the region of interest. If int(float) the position
+            is given axis index(value). Note that ROIs can be used
+            in place of a tuple.
         sobel : bool
             apply a sobel filter for edge enhancement
         medfilter :  bool
             apply a median filter for noise reduction
         hanning : bool
             Apply a 2d hanning filter
-        plot : bool
+        plot : bool or 'reuse'
             If True plots the images after applying the filters and
-            the phase correlation
+            the phase correlation. If 'reuse', it will also plot the images,
+            but it will only use one figure, and continuously update the images
+            in that figure as it progresses through the stack.
         dtype : str or dtype
             Typecode or data-type in which the calculations must be
             performed.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         sub_pixel_factor : float
             Estimate shifts with a sub-pixel accuracy of 1/sub_pixel_factor
             parts of a pixel. Default is 1, i.e. no sub-pixel accuracy.
 
         Returns
         -------
-
-        list of applied shifts
+        shifts : list of array
+            List of estimated shifts
 
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
-        when using `reference`='stat' roughly follows [1]_ . If you use
+        when using reference='stat' roughly follows [*]_ . If you use
         it please cite their article.
 
         References
         ----------
-
-        .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
-        Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
-        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+        .. [*] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
+           “Automated Spatial Drift Correction for EFTEM Image Series.”
+           Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
         if show_progressbar is None:
@@ -398,6 +433,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts = []
         nrows = None
         images_number = self.axes_manager._max_index + 1
+        if plot == 'reuse':
+            # Reuse figure for plots
+            plot = plt.figure()
         if reference == 'stat':
             nrows = images_number if chunk_size is None else \
                 min(images_number, chunk_size)
@@ -462,7 +500,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                 plot=plot,
                                 dtype=dtype,
                                 sub_pixel_factor=sub_pixel_factor)
-
                             pcarray[i1, i2] = max_value, nshift
                         del im2
                         pbar.update(1)
@@ -493,6 +530,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             del ref
         return shifts
 
+    estimate_shift2D.__doc__ %= SHOW_PROGRESSBAR_ARG
+
     def align2D(self, crop=True, fill_value=np.nan, shifts=None, expand=False,
                 roi=None,
                 sobel=True,
@@ -506,7 +545,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 chunk_size=30,
                 interpolation_order=1,
                 sub_pixel_factor=1,
-                show_progressbar=None):
+                show_progressbar=None,
+                parallel=None):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
 
@@ -531,6 +571,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
+        %s
 
         Returns
         -------
@@ -539,18 +580,15 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
-        when using `reference`='stat' roughly follows [1]_ . If you use
+        when using reference='stat' roughly follows [*]_ . If you use
         it please cite their article.
 
         References
         ----------
-
-        .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
-        Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
-        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+        .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
+           “Automated Spatial Drift Correction for EFTEM Image Series.”
+           Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
         self._check_signal_dimension_equals_two()
@@ -568,7 +606,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 correlation_threshold=correlation_threshold,
                 normalize_corr=normalize_corr,
                 chunk_size=chunk_size,
-                sub_pixel_factor=sub_pixel_factor, 
+                sub_pixel_factor=sub_pixel_factor,
                 show_progressbar=show_progressbar)
             return_shifts = True
         else:
@@ -611,6 +649,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         # Translate with sub-pixel precision if necesary
         self._map_iterate(shift_image, iterating_kwargs=(('shift', -shifts),),
                           fill_value=fill_value,
+                          ragged=False,
+                          parallel=parallel,
                           interpolation_order=interpolation_order,
                           show_progressbar=show_progressbar)
         if crop and not expand:
@@ -631,17 +671,24 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if return_shifts:
             return shifts
 
+    align2D.__doc__ %= (PARALLEL_ARG)
+
     def crop_image(self, top=None, bottom=None,
-                   left=None, right=None):
+                   left=None, right=None, convert_units=False):
         """Crops an image in place.
 
-        top, bottom, left, right : int or float
-
+        Parameters
+        ----------
+        top, bottom, left, right : {int | float}
             If int the values are taken as indices. If float the values are
             converted to indices.
+        convert_units : bool
+            Default is False
+            If True, convert the signal units using the 'convert_to_units'
+            method of the 'axes_manager'. If False, does nothing.
 
-        See also:
-        ---------
+        See also
+        --------
         crop
 
         """
@@ -652,6 +699,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
                   left,
                   right)
+        if convert_units:
+            self.axes_manager.convert_units('signal')
 
     def add_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear ramp to the signal.
@@ -664,17 +713,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Slope of the ramp in y-direction.
         offset: float, optional
             Offset of the ramp at the signal fulcrum.
+
         Notes
         -----
-            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
-            the axis with the according scale taken into account. Both are available via the
-            `axes_manager` of the signal.
+            The fulcrum of the linear ramp is at the origin and the slopes are
+            given in units of the axis with the according scale taken into
+            account. Both are available via the `axes_manager` of the signal.
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
         if self._lazy:
             import dask.array as da
-            ramp = offset * da.ones(self.data.shape, dtype=self.data.dtype, 
+            ramp = offset * da.ones(self.data.shape, dtype=self.data.dtype,
                                     chunks=self.data.chunks)
         else:
             ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)

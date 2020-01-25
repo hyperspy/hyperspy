@@ -20,7 +20,6 @@
 import time
 import logging
 from multiprocessing import Manager
-from ipyparallel import Reference as ipp_Reference
 import numpy as np
 from dask.array import Array as dar
 
@@ -49,71 +48,90 @@ def _walk_compute(athing):
         return athing
 
 
+def _walk_compute(athing):
+    if isinstance(athing, dict):
+        this = {}
+        for key, val in athing.items():
+            if isinstance(key, dar):
+                raise ValueError('Dask arrays should not be used as keys')
+            value = _walk_compute(val)
+            this[key] = value
+        return this
+    elif isinstance(athing, list):
+        return [_walk_compute(val) for val in athing]
+    elif isinstance(athing, tuple):
+        return tuple(_walk_compute(val) for val in athing)
+    elif isinstance(athing, dar):
+        _logger.debug('found a dask array!')
+        return athing.compute()
+    else:
+        return athing
+
+
 class SamfirePool(ParallelPool):
     """ Creates and manages a pool of SAMFire workers. For based on
     ParallelPool - either creates processes using multiprocessing, or connects
     and sets up ipyparallel load_balanced_view.
 
     Ipyparallel is managed directly, but multiprocessing pool is managed via
-    three of Queues:
-        - Shared by all (master and workers) for distributing "load-balanced"
-        work.
-        - Shared by all (master and workers) for sending results back to the
-        master
-        - Individual queues from master to each worker. For setting up and
-        addressing individual workers in general. This one is checked with
-        higher priority in workers.
+    three of queues:
+
+    * Shared by all (master and workers) for distributing "load-balanced"
+      work.
+    * Shared by all (master and workers) for sending results back to the
+      master
+    * Individual queues from master to each worker. For setting up and
+      addressing individual workers in general. This one is checked with
+      higher priority in workers.
 
     Methods
     -------
-
     prepare_workers
-        given SAMFire object, populates the workers with the required
+        Given SAMFire object, populates the workers with the required
         information. In case of multiprocessing, starts worker listening to the
         queues.
     update_parameters
-        updates the parameters in the workers
+        Updates various worker parameters
     ping_workers
-        pings all workers. Stores the one-way trip time and the process_id
+        Pings all workers. Stores the one-way trip time and the process_id
         (pid) of each worker if available
     add_jobs
-        adds the requested number of jobs to the queue
+        Adds the requested number of jobs to the queue
     parse
-        parses the messages, returned from the workers.
+        Parses the messages, returned from the workers.
     colect_results
-        collects all currently available results and parses them
+        Collects all currently available results and parses them
     run
-        runs the full procedure until no more pixels are left to run in the
+        Runs the full procedure until no more pixels are left to run in the
         SAMFire
     stop
-        stops the pool, (for ipyparallel) clears the memory
+        Stops the pool, (for ipyparallel) clears the memory
     setup
-        sets up the ipyparallel or multiprocessing pool (collects to the
+        Sets up the ipyparallel or multiprocessing pool (collects to the
         client or creates the pool)
     sleep
-        sleeps for the specified time, by default timestep
+        Sleeps for the specified time, by default timestep
 
     Attributes
     ----------
-
-    has_pool: Bool
+    has_pool : bool
         Boolean if the pool is available and active
-    pool: {ipyparallel.load_balanced_view, multiprocessing.Pool}
+    pool : {ipyparallel.load_balanced_view, multiprocessing.Pool}
         The pool object
-    ipython_kwargs: dict
+    ipython_kwargs : dict
         The dictionary with Ipyparallel connection arguments.
-    timeout: float
+    timeout : float
         Timeout for either pool when waiting for results
-    num_workers: int
+    num_workers : int
         The number of workers actually created (may be less than requested, but
         can't be more)
-    timestep: float
+    timestep : float
         The timestep between "ticks" that the result queues are checked. Higher
         timestep means less frequent checking, which may reduce CPU load for
         difficult fits that take a long time to finish.
-    ping: dict
+    ping : dict
         If recorded, stores one-way trip time of each worker
-    pid: dict
+    pid : dict
         If available, stores the process-id of each worker
     """
 
@@ -166,6 +184,7 @@ class SamfirePool(ParallelPool):
         optional_names = {mall[c].name for c in samfire.optional_components}
 
         if self.is_ipyparallel:
+            from ipyparallel import Reference as ipp_Reference
             _logger.debug('preparing ipyparallel workers')
             direct_view = self.pool.client[:self.num_workers]
             direct_view.block = True
@@ -199,7 +218,12 @@ class SamfirePool(ParallelPool):
                                                            self.result_queue))
 
     def update_parameters(self):
-        """Updates the optional names on the workers"""
+        """Updates various worker parameters.
+
+        Currently updates:
+            - Optional components (that can be switched off by the worker)
+            - Parameter boundaries
+            - Goodness test"""
         samfire = self.samf
         optional_names = {samfire.model[c].name for c in
                           samfire.optional_components}
@@ -263,14 +287,14 @@ class SamfirePool(ParallelPool):
         needed_number: {None, int}
             The number of jobs to add. If None (default), adds `need_pixels`
         """
+        def test_func(worker, ind, value_dict):
+            return worker.run_pixel(ind, value_dict)
         if needed_number is None:
             needed_number = self.need_pixels
         for ind, value_dict in self.samf.generate_values(needed_number):
             if self.is_multiprocessing:
                 self.shared_queue.put(('run_pixel', (ind, value_dict)))
             elif self.is_ipyparallel:
-                def test_func(worker, ind, value_dict):
-                    return worker.run_pixel(ind, value_dict)
                 self.results.append((self.pool.apply_async(test_func,
                                                            self.rworker, ind,
                                                            value_dict), ind))
@@ -281,16 +305,15 @@ class SamfirePool(ParallelPool):
         Parameters
         ----------
         value: tuple of the form (keyword, the_rest)
-            keyword currently can be one of ['pong', 'Error', 'result']. For
+            Keyword currently can be one of ['pong', 'Error', 'result']. For
             each of the keywords, "the_rest" is a tuple of different elements,
             but generally the first one is always the worker_id that the result
             came from. In particular:
-                - ('pong', (worker_id, pid, pong_time, optional_message_str))
-                - ('Error', (worker_id, error_message_string))
-                - ('result', (worker_id,
-                              pixel_index,
-                              result_dict,
-                              bool_if_result_converged))
+
+            * ('pong', (worker_id, pid, pong_time, optional_message_str))
+            * ('Error', (worker_id, error_message_string))
+            * ('result', (worker_id, pixel_index, result_dict,
+              bool_if_result_converged))
         """
         if value is None:
             keyword = 'Failed'

@@ -19,6 +19,8 @@
 
 import numpy as np
 import numpy.testing as nt
+from numpy.testing import assert_allclose
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -33,46 +35,46 @@ class TestComplexProperties:
     phase_ref = np.angle(comp_ref)
     amplitude_ref = np.abs(comp_ref)
 
-    def setUp(self):
+    def setup_method(self, method):
         test = self.real_ref + 1j * self.imag_ref
         self.s = hs.signals.ComplexSignal(test)
         self.s.axes_manager.set_signal_dimension(1)
 
     def test_get_real(self):
-        nt.assert_almost_equal(self.s.real.data, self.real_ref)
+        assert_allclose(self.s.real.data, self.real_ref)
 
     def test_set_real(self):
         real = np.random.random((3, 3))
         self.s.real = real
-        nt.assert_almost_equal(self.s.real.data, real)
+        assert_allclose(self.s.real.data, real)
 
     def test_get_imag(self):
-        nt.assert_almost_equal(self.s.imag.data, self.imag_ref)
+        assert_allclose(self.s.imag.data, self.imag_ref)
 
     def test_set_imag(self):
         imag = np.random.random((3, 3))
         self.s.imag = imag
-        nt.assert_almost_equal(self.s.imag.data, imag)
+        assert_allclose(self.s.imag.data, imag)
 
     def test_get_amplitude(self):
-        nt.assert_almost_equal(self.s.amplitude.data, self.amplitude_ref)
+        assert_allclose(self.s.amplitude.data, self.amplitude_ref)
 
     def test_set_amplitude(self):
         amplitude = np.random.random((3, 3))
         self.s.amplitude = amplitude
-        nt.assert_almost_equal(self.s.amplitude, amplitude)
+        assert_allclose(self.s.amplitude, amplitude)
 
     def test_get_phase(self):
-        nt.assert_almost_equal(self.s.phase.data, self.phase_ref)
+        assert_allclose(self.s.phase.data, self.phase_ref)
 
     def test_set_phase(self):
         phase = np.random.random((3, 3))
         self.s.phase = phase
-        nt.assert_almost_equal(self.s.phase, phase)
+        assert_allclose(self.s.phase, phase)
 
     def test_angle(self):
-        nt.assert_almost_equal(self.s.angle(deg=False), self.phase_ref)
-        nt.assert_almost_equal(
+        assert_allclose(self.s.angle(deg=False), self.phase_ref)
+        assert_allclose(
             self.s.angle(
                 deg=True),
             self.phase_ref *
@@ -80,40 +82,103 @@ class TestComplexProperties:
             np.pi)
 
 
-def test_get_unwrapped_phase_1D():
+@pytest.mark.parametrize('parallel,lazy', [(True, False),
+                                           (False, False),
+                                           (False, True)])
+def test_get_unwrapped_phase_1D(parallel, lazy):
     phase = 6 * (1 - np.abs(np.indices((9,)) - 4) / 4)
-    sig = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
-    sig.axes_manager.set_signal_dimension(1)
-    for s in (sig, sig.as_lazy()):
-        phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-        nt.assert_equal(
-            phase_unwrapped.metadata.General.title,
-            'unwrapped phase(Untitled Signal)')
-        nt.assert_almost_equal(phase_unwrapped.data, phase)
+    s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    if lazy:
+        s = s.as_lazy()
+    s.axes_manager.set_signal_dimension(1)
+    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
+                                        parallel=parallel)
+    assert (
+        phase_unwrapped.metadata.General.title ==
+        'unwrapped phase(Untitled Signal)')
+    assert_allclose(phase_unwrapped.data, phase)
 
 
-def test_get_unwrapped_phase_2D():
+@pytest.mark.parametrize('parallel,lazy', [(True, False),
+                                           (False, False),
+                                           (False, True)])
+def test_get_unwrapped_phase_2D(parallel, lazy):
     phase = 5 * (1 - np.abs(np.indices((9, 9)) - 4).sum(axis=0) / 8)
-    sig = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
-    for s in (sig, sig.as_lazy()):
-        phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-        nt.assert_equal(
-            phase_unwrapped.metadata.General.title,
-            'unwrapped phase(Untitled Signal)')
-        nt.assert_almost_equal(phase_unwrapped.data, phase)
+    s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    if lazy:
+        s = s.as_lazy()
+    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
+                                        parallel=parallel)
+    assert (
+        phase_unwrapped.metadata.General.title ==
+        'unwrapped phase(Untitled Signal)')
+    assert_allclose(phase_unwrapped.data, phase)
 
 
-def test_get_unwrapped_phase_3D():
+@pytest.mark.parametrize('parallel,lazy', [(True, False),
+                                           (False, False),
+                                           (False, True)])
+def test_get_unwrapped_phase_3D(parallel, lazy):
     phase = 4 * (1 - np.abs(np.indices((9, 9, 9)) - 4).sum(axis=0) / 12)
-    sig = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
-    for s in (sig, sig.as_lazy()):
-        phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-        nt.assert_equal(
-            phase_unwrapped.metadata.General.title,
-            'unwrapped phase(Untitled Signal)')
-        nt.assert_almost_equal(phase_unwrapped.data, phase)
+    s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    if lazy:
+        s = s.as_lazy()
+    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
+                                        parallel=parallel)
+    assert (
+        phase_unwrapped.metadata.General.title ==
+        'unwrapped phase(Untitled Signal)')
+    assert_allclose(phase_unwrapped.data, phase)
+
+
+def test_argand_diagram():
+    # 0. Set up phase and amplitude and real and imaginary parts
+    amp = np.random.rand() * 10. * np.random.rand(64)
+    phase = np.random.rand(64) * 3. * np.pi
+    re = amp * np.cos(phase)
+    im = amp * np.sin(phase)
+
+    # 1. Test ComplexSignal1D
+    s1d = hs.signals.ComplexSignal((amp * np.exp(1j * phase)))
+    s1d.metadata.General.title = 'Test signal'
+    s1d.metadata.Signal.quantity = 'Test quantity (Test units)'
+    ap1d = s1d.argand_diagram(size=[7, 7])
+    ap1_ref = np.histogram2d(re, im, bins=[7, 7])
+    assert np.allclose(ap1d.data, ap1_ref[0].T)
+    assert ap1d.metadata.General.title == 'Argand diagram of Test signal'
+
+    # 2. Test ComplexSignal1D with specified range
+    s2d = hs.signals.ComplexSignal((amp * np.exp(1j * phase)).reshape((4, 16)))
+    s2d.metadata.Signal.quantity = 'Test quantity (Test units)'
+    ap2d = s2d.argand_diagram(size=[7, 7], range=[-12., 13.])
+    ap2d_a = s2d.argand_diagram(size=[7, 7], range=[[-12., 11.], [-10., 13.]])
+    ap2_ref = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 13.], [-12., 13.]])
+    ap2_ref_a = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 11.], [-10., 13.]])
+
+    x_axis = ap2d_a.axes_manager.signal_axes[0]
+    y_axis = ap2d_a.axes_manager.signal_axes[1]
+
+    assert np.allclose(ap2d.data, ap2_ref[0].T)
+    assert np.allclose(ap2d_a.data, ap2_ref_a[0].T)
+
+    assert x_axis.offset == -12.
+    assert np.allclose(x_axis.scale, np.gradient(ap2_ref_a[2]))
+
+    assert y_axis.offset == -10.
+    assert np.allclose(y_axis.scale, np.gradient(ap2_ref_a[1]))
+
+    assert x_axis.units == 'Test units'
+    assert y_axis.units == 'Test units'
+
+    # 3. Test raises:
+    with pytest.raises(ValueError):
+        s1d.argand_diagram(range=[-12., 11., -10., 13.])
+    with pytest.raises(NotImplementedError):
+        s1d = s1d.as_lazy()
+        s1d.argand_diagram()
 
 
 if __name__ == '__main__':
-    import nose
-    nose.run(defaultTest=__name__)
+
+    import pytest
+    pytest.main(__name__)

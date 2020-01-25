@@ -21,9 +21,12 @@ import logging
 
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
                                  tiff, semper_unf, blockfile, dens, emd,
-                                 protochips)
+                                 protochips, edax, bruker)
+
+
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
-              blockfile, dens, emd, protochips]
+              blockfile, dens, emd, protochips, edax, bruker]
+
 
 _logger = logging.getLogger(__name__)
 
@@ -32,17 +35,19 @@ try:
     io_plugins.append(netcdf)
 except ImportError:
     pass
-    # NetCDF is obsolate and is only provided for users who have
-    # old EELSLab files. Therefore, we silenly ignore if missing.
+    # NetCDF is obsolete and is only provided for users who have
+    # old EELSLab files. Therefore, we silently ignore if missing.
 
 try:
-    from hyperspy.io_plugins import hdf5
-    io_plugins.append(hdf5)
+    from hyperspy.io_plugins import hspy
+    io_plugins.append(hspy)
     from hyperspy.io_plugins import emd
     io_plugins.append(emd)
+    from hyperspy.io_plugins import usid_hdf5
+    io_plugins.append(usid_hdf5)
 except ImportError:
     _logger.warning('The HDF5 IO features are not available. '
-                    'It is highly reccomended to install h5py')
+                    'Installation of h5py is highly recommended')
 
 try:
     from hyperspy.io_plugins import image
@@ -51,13 +56,11 @@ except ImportError:
     _logger.info('The Signal2D (PIL) IO features are not available')
 
 try:
-    from hyperspy.io_plugins import bcf
-    io_plugins.append(bcf)
+    from hyperspy.io_plugins import mrcz
+    io_plugins.append(mrcz)
 except ImportError:
-    _logger.warning('The Bruker composite file reader can not be loaded '
-                    'because the lxml library is not installed. To enable it '
-                    'install the Python lxml package.')
-
+    _logger.info('The mrcz IO plugin is not available because '
+                 'the mrcz Python package is not installed.')
 default_write_ext = set()
 for plugin in io_plugins:
     if plugin.writes:

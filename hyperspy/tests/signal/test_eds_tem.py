@@ -17,7 +17,7 @@
 
 
 import numpy as np
-import nose.tools as nt
+import pytest
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
@@ -30,38 +30,40 @@ from hyperspy.decorators import lazifyTestClass
 @lazifyTestClass
 class Test_metadata:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create an empty spectrum
         s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 3.1
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
+    def test_sum_minimum_missing(self):
+        s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
+        s.sum()
+
     def test_sum_live_time1(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
-        nt.assert_equal(
-            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        assert (
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
-        nt.assert_dict_equal(old_metadata.as_dictionary(),
-                             s.metadata.as_dictionary(),
-                             "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time2(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum((0, 1))
-        nt.assert_equal(
-            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        assert (
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
-        nt.assert_dict_equal(old_metadata.as_dictionary(),
-                             s.metadata.as_dictionary(),
-                             "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time_out_arg(self):
         s = self.signal
@@ -69,9 +71,9 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
-        nt.assert_is_none(r)
-        nt.assert_equal(
-            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        assert r is None
+        assert (
+            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
@@ -79,32 +81,41 @@ class Test_metadata:
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
-        s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
-        nt.assert_equal(
-            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        s = s.rebin(new_shape=[dim[0] / 2, dim[1] / 2, dim[2]])
+        assert (
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2 * 2)
         # Check that metadata is unchanged
         print(old_metadata, self.signal.metadata)    # Captured on error
-        nt.assert_dict_equal(old_metadata.as_dictionary(),
-                             self.signal.metadata.as_dictionary(),
-                             "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                self.signal.metadata.as_dictionary()), "Source metadata changed"
+
+    def test_offset_after_rebin(self):
+        s = self.signal
+        s.axes_manager[0].offset = 1
+        s.axes_manager[1].offset = 2
+        s.axes_manager[2].offset = 3
+        s2 = s.rebin(scale=(2, 2, 1))
+        assert s2.axes_manager[0].offset == 1.5
+        assert s2.axes_manager[1].offset == 2.5
+        assert s2.axes_manager[2].offset == s.axes_manager[2].offset
 
     def test_add_elements(self):
         s = self.signal
         s.add_elements(['Al', 'Ni'])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
         s.add_elements(['Al', 'Ni'])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
         s.add_elements(["Fe", ])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', "Fe", 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', "Fe", 'Ni']
         s.set_elements(['Al', 'Ni'])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
 
     def test_default_param(self):
         s = self.signal
         mp = s.metadata
-        nt.assert_equal(
-            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+        assert (
+            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa ==
             preferences.EDS.eds_mn_ka)
 
     def test_TEM_to_SEM(self):
@@ -121,7 +132,7 @@ class Test_metadata:
         resultsSEM = [
             mpSEM.energy_resolution_MnKa,
             sSEM.metadata.Signal.signal_type]
-        nt.assert_equal(results, resultsSEM)
+        assert results == resultsSEM
 
     def test_get_calibration_from(self):
         s = self.signal
@@ -130,25 +141,31 @@ class Test_metadata:
         energy_axis.scale = 0.01
         energy_axis.offset = -0.10
         s.get_calibration_from(scalib)
-        nt.assert_equal(s.axes_manager.signal_axes[0].scale,
-                        energy_axis.scale)
+        assert (s.axes_manager.signal_axes[0].scale ==
+                energy_axis.scale)
+
+    def test_are_microscope_parameters_missing(self):
+        assert not self.signal._are_microscope_parameters_missing()
+
+        del self.signal.metadata.Acquisition_instrument.TEM.beam_energy
+        del self.signal.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time
+        assert self.signal._are_microscope_parameters_missing()
 
 
 @lazifyTestClass
 class Test_quantification:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSTEMSpectrum(np.ones([2, 2, 1024]))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 1e-2
         energy_axis.units = 'keV'
         energy_axis.name = "Energy"
         s.set_microscope_parameters(beam_energy=200,
-                                    live_time=3.1, tilt_stage=0.0,
-                                    azimuth_angle=None, elevation_angle=35,
-                                    energy_resolution_MnKa=130)
-        s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time = 2.5
-        s.metadata.Acquisition_instrument.TEM.beam_current = 0.05
+                                    live_time=2.5, tilt_stage=0.0,
+                                    azimuth_angle=0, elevation_angle=35,
+                                    energy_resolution_MnKa=130,
+                                    beam_current=0.05)
         elements = ['Al', 'Zn']
         xray_lines = ['Al_Ka', 'Zn_Ka']
         intensities = [300, 500]
@@ -164,7 +181,25 @@ class Test_quantification:
         s.add_lines(xray_lines)
         s.axes_manager[0].scale = 0.5
         s.axes_manager[1].scale = 0.5
+        s.axes_manager[0].units = 'nm'
+        s.axes_manager[1].units = 'nm'
         self.signal = s
+
+    def test_metadata(self):
+        TEM_md = self.signal.metadata.Acquisition_instrument.TEM
+        np.testing.assert_approx_equal(TEM_md.beam_energy, 200)
+        np.testing.assert_approx_equal(TEM_md.beam_current, 0.05)
+        np.testing.assert_approx_equal(TEM_md.Stage.tilt_alpha, 0.0)
+        np.testing.assert_approx_equal(TEM_md.Detector.EDS.live_time, 2.5)
+        np.testing.assert_approx_equal(TEM_md.Detector.EDS.elevation_angle, 35)
+        np.testing.assert_approx_equal(
+            TEM_md.Detector.EDS.energy_resolution_MnKa, 130)
+
+        self.signal.set_microscope_parameters(real_time=3.1)
+        self.signal.set_microscope_parameters(probe_area=1.2)
+        np.testing.assert_approx_equal(
+            TEM_md.probe_area, 1.2)
+        np.testing.assert_approx_equal(TEM_md.Detector.EDS.real_time, 3.1)
 
     def test_quant_lorimer(self):
         s = self.signal
@@ -178,20 +213,146 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
 
+
+    def test_quant_lorimer_ac(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units)
+        np.testing.assert_allclose(res[0].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
+        res2 = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=1.)
+        res3 = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=300.)
+        res4 = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=0.0001)
+        np.testing.assert_allclose(res2[0][0].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
+        np.testing.assert_allclose(res3[0][0].data, np.array([
+            [22.6957, 22.6957],
+            [22.6957, 22.6957]]), atol=1e-3)
+        np.testing.assert_allclose(res[0].data,
+                                   res4[0][0].data, atol=1e-5)
+
+
     def test_quant_zeta(self):
         s = self.signal
         method = 'zeta'
-        compositions_units = 'weight'
+        composition_units = 'weight'
         factors = [20, 50]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
-                               compositions_units)
+                               composition_units)
         np.testing.assert_allclose(res[1].data, np.array(
             [[2.7125736e-03, 2.7125736e-03],
              [2.7125736e-03, 2.7125736e-03]]), atol=1e-3)
         np.testing.assert_allclose(res[0][1].data, np.array(
             [[80.962287987, 80.962287987],
              [80.962287987, 80.962287987]]), atol=1e-3)
+        res2 = s.quantification(intensities, method, factors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=1.)
+        res3 = s.quantification(intensities, method, factors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=100.)
+        assert res2 == res3
+        np.testing.assert_allclose(res2[0][1].data, np.array([
+            [61.6284, 61.6284],
+            [61.6284, 61.6284]]), atol=1e-3)
+
+    def test_quant_cross_section_units(self):
+        s = self.signal.deepcopy()
+        s2 = self.signal.deepcopy()
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 0.5/1000
+
+        method = 'cross_section'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, factors)
+        res2 = s2.quantification(intensities, method, factors)
+        np.testing.assert_allclose(res[0][0].data, res2[0][0].data)
+        # Check that the quantification doesn't change the units of the signal
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0, 1], ['x', 'y']))
+    def test_get_probe_area(self, axes):
+        s = self.signal
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 0.5/1000
+        if axes == "nav_axes":
+            axes = s.axes_manager.navigation_axes
+        np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0], ['x']))
+    def test_get_probe_area_line_scan(self, axes):
+        s = self.signal.inav[0]
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        if axes == "nav_axes":
+            axes = s.axes_manager.navigation_axes
+        np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0], ['x']))
+    def test_get_probe_area_line_scan_other_nav_axes(self, axes):
+        s = self.signal
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[1].name = 'time'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 's'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 10
+        if axes == "nav_axes" or axes is None:
+            axes = s.axes_manager.navigation_axes
+            with pytest.raises(ValueError):
+                s.get_probe_area(axes)
+        else:
+            np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    def test_zeta_vs_cross_section(self):
+        s = self.signal
+        factors = [3, 5]
+        method = 'zeta'
+        intensities = s.get_lines_intensity()
+        zfactors = utils_eds.edx_cross_section_to_zeta([3, 5], ['Al', 'Zn'])
+        factors2 = utils_eds.zeta_to_edx_cross_section(zfactors, ['Al', 'Zn'])
+        np.testing.assert_allclose(factors, factors2, atol=1e-3)
+
+        res = s.quantification(
+            intensities,
+            method,
+            factors = utils_eds.edx_cross_section_to_zeta([22.402, 21.7132],
+                                                          ['Al','Zn']))
+        res2 = s.quantification(intensities,
+                                method='cross_section',
+                                factors=[22.402, 21.7132])
+        np.testing.assert_allclose(res[0][0].data, res2[0][0].data, atol=1e-3)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[36.2969, 36.2969],
+             [36.2969, 36.2969]]), atol=1e-3)
+
 
     def test_quant_cross_section(self):
         s = self.signal
@@ -206,8 +367,27 @@ class Test_quantification:
             [[21961.616621, 21961.616621],
              [21961.616621, 21961.616621]]), atol=1e-3)
         np.testing.assert_allclose(res[0][0].data, np.array(
-            [[49.4888856823, 49.4888856823],
-                [49.4888856823, 49.4888856823]]), atol=1e-3)
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
+
+
+    def test_quant_cross_section_ac(self):
+        s = self.signal
+        method = 'cross_section'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, factors,
+                                absorption_correction=True)
+        zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
+        res2 = s.quantification(intensities, method='zeta', factors=[22.402, 21.7132],
+                                absorption_correction=True)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
+
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -239,25 +419,40 @@ class Test_quantification:
         res = utils_eds.zeta_to_edx_cross_section(factors, elements)
         np.testing.assert_allclose(res, [3, 6], atol=1e-3)
 
+    def test_quant_element_order(self):
+        s = self.signal
+        s.set_elements([])
+        s.set_lines([])
+        lines = ['Zn_Ka', 'Al_Ka']
+        kfactors = [2.0009344042484134, 1]
+        intensities = s.get_lines_intensity(xray_lines=lines)
+        res = s.quantification(intensities, method='CL', factors=kfactors,
+                               composition_units='weight')
+        assert res[0].metadata.Sample.xray_lines[0] == 'Zn_Ka'
+        assert res[1].metadata.Sample.xray_lines[0] == 'Al_Ka'
+        np.testing.assert_allclose(res[1].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
+
 
 @lazifyTestClass
 class Test_vacum_mask:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSTEMSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
         s.add_poissonian_noise()
         self.signal = s
 
     def test_vacuum_mask(self):
         s = self.signal
-        nt.assert_true(s.vacuum_mask().data[0])
-        nt.assert_false(s.vacuum_mask().data[-1])
+        assert s.vacuum_mask().data[0]
+        assert not s.vacuum_mask().data[-1]
 
 
 @lazifyTestClass
 class Test_simple_model:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
         self.signal = s
@@ -293,7 +488,7 @@ def test_with_signals_examples():
 
 class Test_eds_markers:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
         self.signal = s
@@ -302,24 +497,24 @@ class Test_eds_markers:
         s = self.signal
         s.plot(xray_lines=True)
         # Should contain 6 lines
-        nt.assert_sequence_equal(
-            sorted(s._xray_markers.keys()),
+        assert (
+            sorted(s._xray_markers.keys()) ==
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
     def test_manual_add_line(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_La'])
-        nt.assert_sequence_equal(
-            list(s._xray_markers.keys()),
+        assert (
+            list(s._xray_markers.keys()) ==
             ['Zn_La'])
-        nt.assert_equal(len(s._xray_markers), 1)
+        assert len(s._xray_markers) == 1
         # Check that the line has both a vertical line marker and text marker:
-        nt.assert_equal(len(s._xray_markers['Zn_La']), 2)
+        assert len(s._xray_markers['Zn_La']) == 2
 
     def test_manual_remove_element(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])
-        nt.assert_sequence_equal(
-            sorted(s._xray_markers.keys()),
+        assert (
+            sorted(s._xray_markers.keys()) ==
             ['Zn_Ka', 'Zn_La'])

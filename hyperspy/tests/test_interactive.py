@@ -1,8 +1,9 @@
 from __future__ import print_function
 from unittest import mock
 
-import nose.tools as nt
+
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.events import Event
@@ -10,7 +11,7 @@ from hyperspy.events import Event
 
 class TestInteractive():
 
-    def setUp(self):
+    def setup_method(self, method):
         d = np.linspace(3, 10.5)
         d = np.tile(d, (3, 3, 1))
         # data shape (3, 3, 50)
@@ -23,7 +24,7 @@ class TestInteractive():
         ss = hs.interactive(s.sum, e, axis=0)
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
         s.data += 3.2
-        nt.assert_false(np.allclose(ss.data, np.sum(s.data, axis=0)))
+        assert not np.allclose(ss.data, np.sum(s.data, axis=0))
         e.trigger()
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
 
@@ -36,7 +37,7 @@ class TestInteractive():
         ss = hs.interactive(sumf, e, axis=0)
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
         s.data += 3.2
-        nt.assert_false(np.allclose(ss.data, np.sum(s.data, axis=0)))
+        assert not np.allclose(ss.data, np.sum(s.data, axis=0))
         e.trigger()
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
 
@@ -45,7 +46,7 @@ class TestInteractive():
         ss = hs.interactive(s.sum, axis=0)
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=0))
         s.data += 3.2
-        nt.assert_false(np.allclose(ss.data, np.sum(s.data, axis=0)))
+        assert not np.allclose(ss.data, np.sum(s.data, axis=0))
         s.events.data_changed.trigger(s)
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
 
@@ -56,10 +57,10 @@ class TestInteractive():
         sss = hs.interactive(ss.sum, e2, axis=0)
         np.testing.assert_allclose(sss.data, np.sum(s.data, axis=(0, 1)))
         s.data += 3.2
-        nt.assert_false(np.allclose(ss.data, np.sum(s.data, axis=(1))))
+        assert not np.allclose(ss.data, np.sum(s.data, axis=(1)))
         e1.trigger()
         np.testing.assert_allclose(ss.data, np.sum(s.data, axis=(1)))
-        nt.assert_false(np.allclose(sss.data, np.sum(s.data, axis=(0, 1))))
+        assert not np.allclose(sss.data, np.sum(s.data, axis=(0, 1)))
         e2.trigger()
         np.testing.assert_allclose(sss.data, np.sum(s.data, axis=(0, 1)))
 
@@ -73,14 +74,15 @@ class TestInteractive():
         # Modify axes and data in-place
         s.crop(1, 1)  # data shape (2, 3, 50)
         # Check that data is no longer comparable
-        nt.assert_not_equal(ss.data.shape, np.sum(s.data, axis=1).shape)
+        assert ss.data.shape != np.sum(s.data, axis=1).shape
         # Check that normal event raises an exception due to the invalid shape
-        nt.assert_raises(ValueError, e1.trigger)
+        with pytest.raises(ValueError):
+            e1.trigger()
         # Check that recompute event fixes issue
         e2.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         # Finally, check that axes are updated as they should
-        nt.assert_equal(ss.axes_manager.navigation_axes[0].offset, 1)
+        assert ss.axes_manager.navigation_axes[0].offset == 1
 
     def test_recompute_auto_recompute(self):
         s = self.s
@@ -91,10 +93,10 @@ class TestInteractive():
         m = mock.Mock()
         s.axes_manager.events.any_axis_changed.connect(m.changed)
         s.crop(1, 1)  # data shape (2, 3, 50)
-        nt.assert_true(m.changed.called)
+        assert m.changed.called
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         # Finally, check that axes are updated as they should
-        nt.assert_equal(ss.axes_manager.navigation_axes[0].offset, 1)
+        assert ss.axes_manager.navigation_axes[0].offset == 1
 
     def test_two_update_events(self):
         s = self.s

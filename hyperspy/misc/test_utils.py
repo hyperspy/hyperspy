@@ -1,13 +1,28 @@
-# -*- coding: utf-8 -*-
-"""
-"""
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from contextlib import contextmanager
 import warnings
 import re
-
 import numpy as np
-import numpy.testing as nt
+from numpy.testing import assert_allclose
+
+from hyperspy.decorators import simple_decorator
 
 
 @contextmanager
@@ -58,6 +73,7 @@ def ignore_warning(message="", category=None):
 def all_warnings():
     """
     Context for use in testing to ensure that all warnings are raised.
+
     Examples
     --------
     >>> import warnings
@@ -106,34 +122,42 @@ def all_warnings():
 
 @contextmanager
 def assert_warns(message=None, category=None):
-    """Context for use in testing to catch known warnings matching regexes
+    r"""Context for use in testing to catch known warnings matching regexes.
+
+    Allows for three types of behaviors: "and", "or", and "optional" matches.
+    This is done to accomodate different build enviroments or loop conditions
+    that may produce different warnings. The behaviors can be combined.
+    If you pass multiple patterns, you get an orderless "and", where all of the
+    warnings must be raised.
+    If you use the ``|`` operator in a pattern, you can catch one of several
+    warnings.
+    Finally, you can use ``\A\Z`` in a pattern to signify it as optional.
 
     Parameters
     ----------
-    message : (list of) strings or compiled regexes
+    message : (list of) str or compiled regexes
         Regexes for the desired warning to catch
-    category : type or list of types
+    category : (list of) type
         Warning categories for the desired warning to catch
+    
+    Raises
+    ------
+    ValueError
+        If any match was not found or an unexpected warning was raised.
+
     Examples
     --------
     >>> from skimage import data, img_as_ubyte, img_as_float
     >>> with assert_warns(['precision loss']):
     ...     d = img_as_ubyte(img_as_float(data.coins()))
+
     Notes
     -----
     Upon exiting, it checks the recorded warnings for the desired matching
     pattern(s).
-    Raises a ValueError if any match was not found or an unexpected
-    warning was raised.
-    Allows for three types of behaviors: "and", "or", and "optional" matches.
-    This is done to accomodate different build enviroments or loop conditions
-    that may produce different warnings.  The behaviors can be combined.
-    If you pass multiple patterns, you get an orderless "and", where all of the
-    warnings must be raised.
-    If you use the "|" operator in a pattern, you can catch one of several warnings.
-    Finally, you can use "|\A\Z" in a pattern to signify it as optional.
+
     """
-    if isinstance(message, (str, re._pattern_type)):
+    if isinstance(message, (str, type(re.compile('')))):
         message = [message]
     elif message is None:
         message = tuple()
@@ -141,7 +165,7 @@ def assert_warns(message=None, category=None):
         # enter context
         yield w
         # exited user context, check the recorded warnings
-        remaining = [m for m in message if '\A\Z' not in m.split('|')]
+        remaining = [m for m in message if r'\A\Z' not in m.split('|')]
         for warn in w:
             found = False
             for match in message:
@@ -162,43 +186,77 @@ def assert_warns(message=None, category=None):
             raise ValueError(msg)
 
 
+@simple_decorator
+def update_close_figure(function):
+    def wrapper():
+        signal = function()
+        p = signal._plot
+        p.close()
+
+    return wrapper
+
+
 # Adapted from:
 # https://github.com/gem/oq-engine/blob/master/openquake/server/tests/helpers.py
 def assert_deep_almost_equal(actual, expected, *args, **kwargs):
     """ Assert that two complex structures have almost equal contents.
     Compares lists, dicts and tuples recursively. Checks numeric values
-    using :py:meth:`nose.tools.assert_almost_equal` and
-    checks all other values with :py:meth:`nose.tools.assert_equal`.
+    using :py:func:`numpy.testing.assert_allclose` and
+    checks all other values with :py:func:`numpy.testing.assert_equal`.
     Accepts additional positional and keyword arguments and pass those
-    intact to assert_almost_equal() (that's how you specify comparison
+    intact to assert_allclose() (that's how you specify comparison
     precision).
+
     Parameters
     ----------
-    actual: lists, dicts or tuples
-
-    expected: lists, dicts or tuples
+    actual: list, dict or tuple
+        Actual values to compare.
+    expected: list, dict or tuple
+        Expected values.
+    *args :
+        Arguments are passed to :py:func:`numpy.testing.assert_allclose` or 
+        :py:func:`assert_deep_almost_equal`.
+    **kwargs :
+        Keyword arguments are passed to 
+        :py:func:`numpy.testing.assert_allclose` or 
+        :py:func:`assert_deep_almost_equal`.
     """
     is_root = not '__trace' in kwargs
     trace = kwargs.pop('__trace', 'ROOT')
     try:
         if isinstance(expected, (int, float, complex)):
-            nt.assert_almost_equal(expected, actual, *args, **kwargs)
+            assert_allclose(expected, actual, *args, **kwargs)
         elif isinstance(expected, (list, tuple, np.ndarray)):
-            nt.assert_equal(len(expected), len(actual))
+            assert len(expected) == len(actual)
             for index in range(len(expected)):
                 v1, v2 = expected[index], actual[index]
                 assert_deep_almost_equal(v1, v2,
                                          __trace=repr(index), *args, **kwargs)
         elif isinstance(expected, dict):
-            nt.assert_equal(set(expected), set(actual))
+            assert set(expected) == set(actual)
             for key in expected:
                 assert_deep_almost_equal(expected[key], actual[key],
                                          __trace=repr(key), *args, **kwargs)
         else:
-            nt.assert_equal(expected, actual)
+            assert expected == actual
     except AssertionError as exc:
         exc.__dict__.setdefault('traces', []).append(trace)
         if is_root:
             trace = ' -> '.join(reversed(exc.traces))
             exc = AssertionError("%s\nTRACE: %s" % (exc, trace))
         raise exc
+
+
+def sanitize_dict(dictionary):
+    new_dictionary = {}
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            new_dictionary[key] = sanitize_dict(value)
+        elif value is not None:
+            new_dictionary[key] = value
+    return new_dictionary
+
+
+def check_running_tests_in_CI():
+    if 'CI' in os.environ:
+        return os.environ.get('CI')

@@ -18,9 +18,10 @@
 
 import os
 
-from scipy.misc import imread, imsave
+from imageio import imread, imwrite
 
-from hyperspy.misc.rgb_tools import regular_array2rgbx
+
+from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
 # ----------------------
@@ -30,8 +31,6 @@ full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
                    'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
 default_extension = 0  # png
-
-
 # Writing features
 writes = [(2, 0), ]
 # ----------------------
@@ -49,7 +48,10 @@ def file_writer(filename, signal, file_format='png', **kwds):
             The fileformat defined by its extension that is any one supported by
             PIL.
     """
-    imsave(filename, signal.data)
+    data = signal.data
+    if rgb_tools.is_rgbx(data):
+        data = rgb_tools.rgbx2regular_array(data)
+    imwrite(filename, data)
 
 
 def file_reader(filename, **kwds):
@@ -60,15 +62,15 @@ def file_reader(filename, **kwds):
     filename: str
 
     """
-    dc = imread(filename)
-    if len(dc.shape) > 2:
-        # It may be a grayscale image that was saved in the RGB or RGBA
-        # format
-        if (dc[:, :, 1] == dc[:, :, 2]).all() and \
-                (dc[:, :, 1] == dc[:, :, 2]).all():
-            dc = dc[:, :, 0]
-        else:
-            dc = regular_array2rgbx(dc)
+    dc = _read_data(filename)
+    lazy = kwds.pop('lazy', False)
+    if lazy:
+        # load the image fully to check the dtype and shape, should be cheap.
+        # Then store this info for later re-loading when required
+        from dask.array import from_delayed
+        from dask import delayed
+        val = delayed(_read_data, pure=True)(filename)
+        dc = from_delayed(val, shape=dc.shape, dtype=dc.dtype)
     return [{'data': dc,
              'metadata':
              {
@@ -77,3 +79,16 @@ def file_reader(filename, **kwds):
                             'record_by': 'image', },
              }
              }]
+
+
+def _read_data(filename):
+    dc = imread(filename)
+    if len(dc.shape) > 2:
+        # It may be a grayscale image that was saved in the RGB or RGBA
+        # format
+        if (dc[:, :, 1] == dc[:, :, 2]).all() and \
+                (dc[:, :, 1] == dc[:, :, 2]).all():
+            dc = dc[:, :, 0]
+        else:
+            dc = rgb_tools.regular_array2rgbx(dc)
+    return dc

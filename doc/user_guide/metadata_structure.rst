@@ -21,6 +21,7 @@ in the following sections of this chapter.
     ├── Acquisition_instrument
     │   ├── SEM
     │   │   ├── Detector
+    │   │   │   ├── detector_type
     │   │   │   └── EDS
     │   │   │       ├── azimuth_angle (º)
     │   │   │       ├── elevation_angle (º)
@@ -29,10 +30,18 @@ in the following sections of this chapter.
     │   │   │       └── real_time (s)
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
+    │   │   ├── probe_area (nm²)
     │   │   ├── convergence_angle (mrad)
-    │       ├── magnification
+    │   │   ├── magnification
     │   │   ├── microscope
-    │   │   └── tilt_stage (º)
+    │   │   ├── Stage
+    │   │   │   ├── rotation (º)
+    │   │   │   ├── tilt_alpha (º)
+    │   │   │   ├── tilt_beta (º)
+    │   │   │   ├── x (mm)
+    │   │   │   ├── y (mm)
+    │   │   │   └── z (mm)
+    │   │   └── working_distance (mm)
     │   └── TEM
     │       ├── Detector
     │       │   ├── EDS
@@ -48,14 +57,25 @@ in the following sections of this chapter.
     │       │       ├── exposure (s)
     │       │       ├── frame_number
     │       │       └── spectrometer
+    │       ├── Biprism
+    │       │   ├── azimuth_angle (º)
+    │       │   ├── position
+    │       │   └── voltage (V)
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
+    │       ├── probe_area (nm²)
     │       ├── camera_length (mm)
     │       ├── convergence_angle (mrad)
     │       ├── magnification
     │       ├── microscope
-    │       └── tilt_stage (º)
+    │       └── Stage
+    │           ├── rotation (º)
+    │           ├── tilt_alpha (º)
+    │           ├── tilt_beta (º)
+    │           ├── x (mm)
+    │           ├── y (mm)
+    │           └── z (mm)
     ├── General
     │   ├── authors
     │   ├── date
@@ -63,13 +83,17 @@ in the following sections of this chapter.
     │   ├── original_filename
     │   ├── notes
     │   ├── time
+    │   ├── time_zone
     │   └── title
     ├── Sample
+    │   ├── credits
     │   ├── description
     │   ├── elements
     │   ├── thickness
     │   └── xray_lines
     └── Signal
+        ├── FFT
+        │   └── shifted
         ├── Noise_properties
         │   ├── Variance_linear_model
         │   │   ├── correlation_factor
@@ -96,21 +120,30 @@ original_filename
     If the signal was loaded from a file this key stores the name of the
     original file.
 
+time_zone
+    type: Str
+
+    The time zone as supported by the python-dateutil library, e.g. "UTC",
+    "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or
+    "-05:00".
+
 time
     type: Str
 
-    The acquisition or creation time in ISO 8601 time format.
+    The acquisition or creation time in ISO 8601 time format, e.g. '13:29:10'.
 
 date
     type: Str
 
-    The acquisition or creation date in ISO 8601 date format
+    The acquisition or creation date in ISO 8601 date format, e.g.
+    '2018-01-28'.
 
 
 authors
     type: Str
 
-    The authors of the data, in Latex format: Surname1, Name1 and Surname2, Name2, etc.
+    The authors of the data, in Latex format: Surname1, Name1 and Surname2,
+    Name2, etc.
 
 doi
     type: Str
@@ -160,6 +193,11 @@ beam_current
 
     The beam current in nA.
 
+probe_area
+    type: Float
+
+    The illumination area of the electron beam in nm\ :sup:`2`.
+
 dwell_time
     type: Float
 
@@ -174,11 +212,6 @@ magnification
     type: Float
 
     The magnification.
-
-tilt_stage
-    type: Float
-
-    The tilt of the stage in degree.
 
 SEM
 ---
@@ -205,15 +238,52 @@ beam_current
 
     The beam current in nA.
 
+probe_area
+    type: Float
+
+    The illumination area of the electron beam in nm\ :sup:`2`.
+
 magnification
     type: Float
 
     The magnification.
 
-tilt_stage
+working_distance
     type: Float
 
-    The tilt of the stage in degree.
+    The working distance in mm.
+
+Stage
+-----
+tilt_alpha
+    type: Float
+
+    A tilt of the stage in degree.
+
+tilt_beta
+    type: Float
+
+    Another tilt of the stage in degree.
+
+rotation
+    type: Float
+
+    The rotation of the stage in degree.
+
+x
+    type: Float
+
+    The position of the stage in mm along the x axis.
+
+y
+    type: Float
+
+    The position of the stage in mm along the y axis.
+
+z
+    type: Float
+
+    The position of the stage in mm along the z axis.
 
 Detector
 --------
@@ -221,6 +291,11 @@ Detector
 All instruments can contain a "Detector" node with information about the
 detector used to acquire the signal. EDX and EELS detectors should follow the
 following structure:
+
+detector_type
+    type: Str
+
+    The type of the detector, e.g. SE for SEM
 
 EELS
 ^^^^
@@ -258,7 +333,6 @@ spectrometer
 
     The spectrometer model, e.g. Gatan Enfinium ER (Model 977).
 
-
 EDS
 ^^^
 
@@ -275,8 +349,8 @@ azimuth_angle
 elevation_angle
     type: Float
 
-    The elevation angle of the detector in degree. The detector is perpendicular
-    to the surface with an angle of 90.
+    The elevation angle of the detector in degree. The detector is
+    perpendicular to the surface with an angle of 90.
 
 energy_resolution_MnKa
     type: Float
@@ -296,8 +370,34 @@ live_time
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
 
+Biprism
+-------
+
+This node stores parameters of biprism used in off-axis electron holography
+
+azimuth_angle (º)
+    type: Float
+
+    Rotation angle of the biprism in degree
+
+position
+    type: Str
+
+    Position of the biprism in microscope column, e.g. Selected area aperture
+    plane
+
+voltage
+    type: Float
+
+    Voltage of electrostatic biprism in volts
+
 Sample
 ======
+
+credits
+    type: Str
+
+    Acknowledgment of sample supplier, e.g. Prepared by Putin, Vladimir V.
 
 description
     type: Str
@@ -333,25 +433,39 @@ signal_type
     can be used by HyperSpy to load the file as a specific signal class and
     therefore the naming should be standarised. Currently HyperSpy provides
     special signal class for photoemission spectroscopy, electron energy
-    loss spectroscopy and energy dispersive spectroscopy. The signal_type in these cases should be respectively
-    PES, EELS and EDS_TEM (EDS_SEM).
+    loss spectroscopy and energy dispersive spectroscopy. The signal_type in
+    these cases should be respectively PES, EELS and EDS_TEM (EDS_SEM).
 
 signal_origin
     type: Str
 
     Describes the origin of the signal e.g. 'simulation' or 'experiment'.
 
+
 record_by
+    .. deprecated:: 1.2
+
     type: Str
-    .. deprecated:: 2.1 (HyperSpy v1.0)
-    
+
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
 
 quantity
     type: Str
-    
-    The name of the quantity of the "intensity axis" with the units in round brackets if required, for example Temperature (K).
+
+    The name of the quantity of the "intensity axis" with the units in round
+    brackets if required, for example Temperature (K).
+
+
+FFT
+---
+
+shifted
+    type: bool.
+
+    Specify if the FFT has the zero-frequency component shifted to the center of 
+    the signal.
+
 
 Noise_properties
 ----------------
@@ -360,14 +474,16 @@ variance
     type: float or BaseSignal instance.
 
     The variance of the data. It can be a float when the noise is Gaussian or a
-    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic, in which
-    case it must have the same dimensions as :attr:`~.signal.BaseSignal.data`.
+    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic,
+    in which case it must have the same dimensions as
+    :attr:`~.signal.BaseSignal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^
 
-In some cases the variance can be calculated from the data using a simple linear
-model: ``variance = (gain_factor * data + gain_offset) * correlation_factor``.
+In some cases the variance can be calculated from the data using a simple
+linear model: ``variance = (gain_factor * data + gain_offset) *
+correlation_factor``.
 
 gain_factor
     type: Float

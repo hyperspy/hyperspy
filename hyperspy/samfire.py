@@ -24,6 +24,7 @@ import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
+from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
 from hyperspy.external.progressbar import progressbar
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
@@ -31,7 +32,6 @@ from hyperspy.samfire_utils.strategy import (LocalStrategy,
 from hyperspy.samfire_utils.local_strategies import (ReducedChiSquaredStrategy,
                                                      PhaseCorrelationStrategy)
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
 _logger = logging.getLogger(__name__)
@@ -193,6 +193,8 @@ class Samfire:
         self.strategies.append(HistogramStrategy())
         self._active_strategy_ind = 0
         self.update_every = max(10, workers * 2)  # some sensible number....
+        from hyperspy.samfire_utils.fit_tests import red_chisq_test
+        self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
         self.metadata._gt_dump = None
         from hyperspy.samfire_utils.samfire_kernel import single_kernel
         self.single_kernel = single_kernel
@@ -212,6 +214,7 @@ class Samfire:
 
     def _setup(self, **kwargs):
         """Set up SAMFire - configure models, set up pool if necessary"""
+        from hyperspy.samfire_utils.samfire_pool import SamfirePool
         self._figure = None
         self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
@@ -243,6 +246,9 @@ class Samfire:
             self.pool.update_parameters()
         if 'min_function' in kwargs:
             kwargs['min_function'] = dill.dumps(kwargs['min_function'])
+        if 'min_function_grad' in kwargs:
+            kwargs['min_function_grad'] = dill.dumps(
+                kwargs['min_function_grad'])
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
@@ -260,7 +266,8 @@ class Samfire:
                 self.change_strategy(self._active_strategy_ind + 1)
         except KeyboardInterrupt:
             if self.pool is not None:
-                _logger.warning('Collecting already started pixels, please wait')
+                _logger.warning(
+                    'Collecting already started pixels, please wait')
                 self.pool.collect_results()
 
     def append(self, strategy):
@@ -344,8 +351,8 @@ class Samfire:
         Parameters
         ----------
         filename: {str, None}
-            the filename. If None, a default value of "backup_"+signal_title is
-            used
+            the filename. If None, a default value of "backup\_"+signal_title
+            is used.
         on_count: bool
             if True (default), only saves on the required count of steps
         """
@@ -407,7 +414,7 @@ class Samfire:
         """Changes current strategy to a new one. Certain rules apply:
         diffusion -> diffusion : resets all "ignored" pixels
         diffusion -> segmenter : saves already calculated pixels to be ignored
-            when(if) subsequently diffusion strategy is run
+        when(if) subsequently diffusion strategy is run
 
         Parameters
         ----------
@@ -479,14 +486,14 @@ class Samfire:
                         'Signal.Noise_properties.variance'):
                     var = self.model.signal.metadata.Signal.Noise_properties.variance
                     if isinstance(var, BaseSignal):
-                        if var._lazy:
-                            value_dict['variance.data'] = var.data[ind +
-                                                                   (...,)].compute()
-                        else:
-                            value_dict['variance.data'] = var.data[ind + (...,)]
-                if hasattr(self.model, 'low_loss') and self.model.low_loss is not None:
-                    value_dict['low_loss.data'] = \
-                        self.model.low_loss.data[ind + (...,)]
+                        dat = var.data[ind + (...,)]
+                        value_dict['variance.data'] = dat.compute(
+                        ) if var._lazy else dat
+                if hasattr(self.model,
+                           'low_loss') and self.model.low_loss is not None:
+                    dat = self.model.low_loss.data[ind + (...,)]
+                    value_dict['low_loss.data'] = dat.compute(
+                    ) if self.model.low_loss._lazy else dat
 
                 self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.
@@ -516,16 +523,6 @@ class Samfire:
                 item = k[:-5]
                 getattr(m, item).data[m_ind], dict_[k] = \
                     dict_[k].copy(), getattr(m, item).data[m_ind].copy()
-        # self.model.dof.data[m_ind], dict_['dof.data'] = dict_[
-        #     'dof.data'].copy(), self.model.dof.data[m_ind].copy()
-
-        # if 'chisq.data' in dict_:
-        #     self.model.chisq.data[m_ind], dict_['chisq.data'] = dict_[
-        #         'chisq.data'].copy(), self.model.chisq.data[m_ind].copy()
-        # if 'corr.data' in dict_:
-        #     self.model.corr.data[m_ind], dict_['corr.data'] = dict_[
-        #         'corr.data'].copy(), self.model.corr.data[m_ind].copy()
-
         for comp_name, comp in dict_['components'].items():
             # only active components are sent
             if self.model[comp_name].active_is_multidimensional:
@@ -538,7 +535,7 @@ class Samfire:
                     param_dict_t[d_ind].copy(), param_model.map[m_ind].copy()
 
         for component in self.model:
-            # switch off all that did not appear in the dict_tionary
+            # switch off all that did not appear in the dictionary
             if component.name not in dict_['components'].keys():
                 if component.active_is_multidimensional:
                     component._active_array[m_ind] = False
@@ -627,7 +624,7 @@ class Samfire:
             if self.strategies:
                 try:
                     self._figure = self.active_strategy.plot(self._figure)
-                except:
+                except BaseException:
                     self._figure = None
                     self._figure = self.active_strategy.plot(self._figure)
 

@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import nose.tools as nt
+
 import numpy as np
+
+from numpy.testing import assert_allclose
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -60,17 +62,16 @@ def compare_two_value_dicts(ans_r, ans):
             for p, pv in v.items():
                 test = test and p in ans[k]
                 if test:
-                    nt.assert_true(
-                        np.allclose(
-                            np.array(pv),
-                            np.array(
-                                ans[k][p])))
+                    assert np.allclose(
+                        np.array(pv),
+                        np.array(
+                            ans[k][p]))
     return test
 
 
 class TestLocalSimple:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (5, 7)
         self.s = LocalStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
@@ -82,35 +83,35 @@ class TestLocalSimple:
 
     def test_default_init(self):
         s = self.s
-        nt.assert_is_none(s.samf)
-        nt.assert_is_none(s.radii)
-        nt.assert_is_none(s.weight)
-        nt.assert_is_none(s._untruncated)
-        nt.assert_is_none(s._mask_all)
-        nt.assert_true(s._radii_changed)
+        assert s.samf is None
+        assert s.radii is None
+        assert s.weight is None
+        assert s._untruncated is None
+        assert s._mask_all is None
+        assert s._radii_changed
 
     def test_samf_weight_setters(self):
         s = self.s
         samf = self.samf
         w = someweight()
         s.weight = w
-        nt.assert_is(s._weight, w)
-        nt.assert_is_none(w.model)
+        assert s._weight is w
+        assert w.model is None
         s.samf = samf
-        nt.assert_is(w.model, samf.model)
+        assert w.model is samf.model
         w2 = someweight()
         s.weight = w2
-        nt.assert_is_none(w.model)
+        assert w.model is None
 
     def test_radii(self):
         s = self.s
         s.samf = self.samf
-        nt.assert_is_none(s.radii)
-        nt.assert_true(s._radii_changed)
+        assert s.radii is None
+        assert s._radii_changed
         s._radii_changed = False
         s.radii = 1.
-        nt.assert_equal(s.radii, (1.0, 1.0))
-        nt.assert_true(s._radii_changed)
+        assert s.radii == (1.0, 1.0)
+        assert s._radii_changed
 
     def test_clean(self):
         s = self.s
@@ -118,9 +119,9 @@ class TestLocalSimple:
         s._mask_all = 2.
         s._radii_changed = False
         s.clean()
-        nt.assert_is_none(s._untruncated)
-        nt.assert_is_none(s._mask_all)
-        nt.assert_true(s._radii_changed)
+        assert s._untruncated is None
+        assert s._mask_all is None
+        assert s._radii_changed
 
     def test_refresh_overwrite(self):
         s = self.s
@@ -143,16 +144,16 @@ class TestLocalSimple:
                          [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
 
         s.refresh(True, given_pixels=None)
-        nt.assert_true(np.allclose(ans1, s.samf.metadata.marker[:4, :4]))
+        assert np.allclose(ans1, s.samf.metadata.marker[:4, :4])
 
         given = np.ones(self.shape, dtype=bool)
         given[0, 1] = False
         s.refresh(True, given_pixels=given)
-        nt.assert_almost_equal(
+        assert_allclose(
             s.samf.metadata.marker[
                 ~given][0],
             0.011624353837970535)
-        nt.assert_true(np.all(s.samf.metadata.marker[given] == -1))
+        assert np.all(s.samf.metadata.marker[given] == -1)
 
     def test_refresh_nooverwrite(self):
         s = self.s
@@ -175,14 +176,14 @@ class TestLocalSimple:
                          [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
 
         s.refresh(False, given_pixels=None)
-        nt.assert_true(np.allclose(ans1, s.samf.metadata.marker[:4, :4]))
+        assert np.allclose(ans1, s.samf.metadata.marker[:4, :4])
 
         s.samf.metadata.marker[0, 0] = -1
         given = np.ones(self.shape, dtype=bool)
         given[0, 0] = False
         # should stay the same, as the new point [0,0] is not in "given"
         s.refresh(False, given_pixels=given)
-        nt.assert_true(np.allclose(ans1, s.samf.metadata.marker[:4, :4]))
+        assert np.allclose(ans1, s.samf.metadata.marker[:4, :4])
 
     def test_get_distance_array(self):
         s = self.s
@@ -192,8 +193,8 @@ class TestLocalSimple:
         ind = (0, 0)
         distances, slices, centre, mask = s._get_distance_array(
             self.shape, ind)
-        nt.assert_equal(centre, ind)
-        nt.assert_equal(slices, (slice(0, 4, None), slice(0, 3, None)))
+        assert centre == ind
+        assert slices == (slice(0, 4, None), slice(0, 3, None))
         tmp = np.array([[0., 1., np.nan],
                         [1., 1.41421356, np.nan],
                         [2., np.nan, np.nan],
@@ -202,9 +203,9 @@ class TestLocalSimple:
                           [True, True, False],
                           [True, False, False],
                           [False, False, False]], dtype=bool)
-        nt.assert_true(np.all(tmp_m == mask))
-        nt.assert_true(np.allclose(tmp[mask], distances[mask]))
-        nt.assert_false(s._radii_changed)
+        assert np.all(tmp_m == mask)
+        assert np.allclose(tmp[mask], distances[mask])
+        assert not s._radii_changed
         tmp_ma = np.array([[3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957],
                            [2.01506272,
                             1.18403779,
@@ -232,7 +233,7 @@ class TestLocalSimple:
                             1.18403779,
                             2.01506272],
                            [3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957]])
-        nt.assert_true(np.allclose(s._mask_all, tmp_ma))
+        assert np.allclose(s._mask_all, tmp_ma)
         tmp_un = np.array([[3.60555128, 3.16227766, 3., 3.16227766, 3.60555128],
                            [2.82842712,
                             2.23606798,
@@ -256,7 +257,7 @@ class TestLocalSimple:
                             2.23606798,
                             2.82842712],
                            [3.60555128, 3.16227766, 3., 3.16227766, 3.60555128]])
-        nt.assert_true(np.allclose(s._untruncated, tmp_un))
+        assert np.allclose(s._untruncated, tmp_un)
 
         # now check that the stored values are used
         # mask:
@@ -264,8 +265,8 @@ class TestLocalSimple:
         ind = (4, 6)
         distances, slices, centre, mask = s._get_distance_array(
             self.shape, ind)
-        nt.assert_equal(centre, (3.0, 2.0))
-        nt.assert_equal(slices, (slice(1, 5, None), slice(4, 7, None)))
+        assert centre == (3.0, 2.0)
+        assert slices == (slice(1, 5, None), slice(4, 7, None))
         tmp_m = np.array([[True, False, False],
                           [False, False, True],
                           [False, True, True],
@@ -274,9 +275,9 @@ class TestLocalSimple:
                         [np.nan, np.nan, 2.],
                         [np.nan, 1.41421356, 1.],
                         [np.nan, 1., 0.]])
-        nt.assert_true(np.all(tmp_m == mask))
-        nt.assert_true(np.allclose(tmp[mask], distances[mask]))
-        nt.assert_false(s._radii_changed)
+        assert np.all(tmp_m == mask)
+        assert np.allclose(tmp[mask], distances[mask])
+        assert not s._radii_changed
 
         # now mask radii changed and check that the correct result is
         # calculated again
@@ -284,8 +285,8 @@ class TestLocalSimple:
 
         distances, slices, centre, mask = s._get_distance_array(
             self.shape, ind)
-        nt.assert_equal(centre, (3.0, 2.0))
-        nt.assert_equal(slices, (slice(1, 5, None), slice(4, 7, None)))
+        assert centre == (3.0, 2.0)
+        assert slices == (slice(1, 5, None), slice(4, 7, None))
         tmp_m = np.array([[False, False, False],
                           [False, False, True],
                           [False, True, True],
@@ -294,9 +295,9 @@ class TestLocalSimple:
                         [np.nan, np.nan, 2.],
                         [np.nan, 1.41421356, 1.],
                         [np.nan, 1., 0.]])
-        nt.assert_true(np.all(tmp_m == mask))
-        nt.assert_true(np.allclose(tmp[mask], distances[mask]))
-        nt.assert_false(s._radii_changed)
+        assert np.all(tmp_m == mask)
+        assert np.allclose(tmp[mask], distances[mask])
+        assert not s._radii_changed
 
     def test_update_marker(self):
         s = self.s
@@ -321,7 +322,7 @@ class TestLocalSimple:
                             0.00000000e+00,
                             0.00000000e+00],
                            [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
-        nt.assert_true(np.allclose(tmp_m1, s.samf.metadata.marker[:4, :4]))
+        assert np.allclose(tmp_m1, s.samf.metadata.marker[:4, :4])
 
         ind = (1, 1)
         s.samf.running_pixels.append((1, 2))
@@ -335,12 +336,12 @@ class TestLocalSimple:
                             1.63810767e-03,
                             0.00000000e+00],
                            [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
-        nt.assert_true(np.allclose(tmp_m2, s.samf.metadata.marker[:4, :4]))
+        assert np.allclose(tmp_m2, s.samf.metadata.marker[:4, :4])
 
 
 class TestLocalWithModel:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (5, 7)
         self.s = LocalStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
@@ -371,12 +372,12 @@ class TestLocalWithModel:
         samf.model[2].A.free = False
 
         d1 = s.values((0, 0))
-        nt.assert_dict_equal(d1, {})
+        assert d1 == {}
 
         samf.metadata.marker[0, 0] = -1
-        nt.assert_dict_equal(
+        assert (
             s.values(
-                (1, 0)), {
+                (1, 0)) == {
                 'Gaussian_1': {
                     'centre': 0.0, 'sigma': 0.0}})
 
@@ -388,7 +389,7 @@ class TestLocalWithModel:
         ans = s.values((1, 0))
 
         test = compare_two_value_dicts(ans_r, ans)
-        nt.assert_true(test)
+        assert test
 
         samf.metadata.marker[0, 1] = -1
 
@@ -398,12 +399,12 @@ class TestLocalWithModel:
         ans2 = s.values((1, 0))
 
         test2 = compare_two_value_dicts(ans_r2, ans2)
-        nt.assert_true(test2)
+        assert test2
 
 
 class TestGlobalStrategy:
 
-    def setUp(self):
+    def setup_method(self, method):
         # TODO: actually finish setup+ tests
         self.shape = (5, 7)
         self.s = GlobalStrategy('test segmenter strategy')
@@ -425,9 +426,9 @@ class TestGlobalStrategy:
         samf.metadata.marker[0, 1] = -2
 
         s.refresh(False)
-        nt.assert_equal(samf.metadata.marker[0, 0], -1)
-        nt.assert_equal(samf.metadata.marker[0, 1], -2)
-        nt.assert_true(np.all(samf.metadata.marker.ravel()[2:] == 1))
+        assert samf.metadata.marker[0, 0] == -1
+        assert samf.metadata.marker[0, 1] == -2
+        assert np.all(samf.metadata.marker.ravel()[2:] == 1)
 
     def test_refresh_nooverwrite_given(self):
         samf = self.samf
@@ -442,9 +443,9 @@ class TestGlobalStrategy:
         given = np.zeros(self.shape, dtype=bool)
         given[0, 1] = True
         s.refresh(False, given_pixels=given)
-        nt.assert_equal(samf.metadata.marker[0, 0], 1)
-        nt.assert_equal(samf.metadata.marker[0, 1], -2)
-        nt.assert_true(np.all(samf.metadata.marker.ravel()[2:] == 1))
+        assert samf.metadata.marker[0, 0] == 1
+        assert samf.metadata.marker[0, 1] == -2
+        assert np.all(samf.metadata.marker.ravel()[2:] == 1)
 
     def test_refresh_overwrite_nogiven(self):
         samf = self.samf
@@ -456,9 +457,9 @@ class TestGlobalStrategy:
         samf.metadata.marker[0, 1] = -2
 
         s.refresh(True)
-        nt.assert_equal(samf.metadata.marker[0, 0], -1)
-        nt.assert_equal(samf.metadata.marker[0, 1], -1)
-        nt.assert_true(np.all(samf.metadata.marker.ravel()[2:] == 1))
+        assert samf.metadata.marker[0, 0] == -1
+        assert samf.metadata.marker[0, 1] == -1
+        assert np.all(samf.metadata.marker.ravel()[2:] == 1)
 
     def test_refresh_overwrite_given(self):
         samf = self.samf
@@ -473,9 +474,9 @@ class TestGlobalStrategy:
         given = np.zeros(self.shape, dtype=bool)
         given[0, 1] = True
         s.refresh(True, given_pixels=given)
-        nt.assert_equal(samf.metadata.marker[0, 0], 1)
-        nt.assert_equal(samf.metadata.marker[0, 1], -1)
-        nt.assert_true(np.all(samf.metadata.marker.ravel()[2:] == 1))
+        assert samf.metadata.marker[0, 0] == 1
+        assert samf.metadata.marker[0, 1] == -1
+        assert np.all(samf.metadata.marker.ravel()[2:] == 1)
 
     def test_update_marker(self):
         s = self.s
@@ -483,10 +484,10 @@ class TestGlobalStrategy:
         s.samf = samf
         ind = (1, 1)
         s._update_marker(ind)
-        nt.assert_equal(samf.metadata.marker[ind], -samf._scale)
+        assert samf.metadata.marker[ind] == -samf._scale
         mask = np.ones(self.shape, dtype=bool)
         mask[ind] = False
-        nt.assert_true(np.all(samf.metadata.marker[mask] == 0))
+        assert np.all(samf.metadata.marker[mask] == 0)
 
     def test_package_values(self):
 
@@ -511,7 +512,7 @@ class TestGlobalStrategy:
 
         ans = s._package_values()
         t = compare_two_value_dicts(ans_r1, ans)
-        nt.assert_true(t)
+        assert t
 
         s.samf.metadata.marker[0, 2] = -100
 
@@ -522,4 +523,4 @@ class TestGlobalStrategy:
 
         ans2 = s._package_values()
         t2 = compare_two_value_dicts(ans_r2, ans2)
-        nt.assert_true(t2)
+        assert t2

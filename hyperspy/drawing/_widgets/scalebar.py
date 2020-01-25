@@ -27,11 +27,11 @@ class ScaleBar(object):
                  animated=False):
         """Add a scale bar to an image.
 
-        Parameteres
-        -----------
+        Parameters
+        ----------
         ax : matplotlib axes
             The axes where to draw the scale bar.
-        units : string
+        units : str
         pixel_size : {None, float}
             If None the axes of the image are supposed to be calibrated.
             Otherwise the pixel size must be specified.
@@ -121,7 +121,7 @@ class ScaleBar(object):
                                  animated=self.animated)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()
 
     def _set_position(self, x, y):
         self.position = x, y

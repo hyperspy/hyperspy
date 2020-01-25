@@ -17,98 +17,46 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import nose.tools as nt
 import numpy as np
-from hyperspy._components import gaussian2d, symmetric_gaussian2d
-from hyperspy.io import load
-import os
+from numpy.testing import assert_allclose
 
-sqrt2pi = np.sqrt(2 * np.pi)
+from hyperspy.components2d import Gaussian2D
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
-my_path = os.path.dirname(__file__)
 
 
-class TestSymmetricGaussian2DFitting:
-
-    """Test using a 2-D Gaussian generated with
-    Gaussian2D(
-        A=1000., sigma=2.)"""
-    def setUp(self):
-        self.s = load(
-            my_path +
-            "/test_gaussian2d/test_symmetricgaussian2d.hdf5")
-
-    def test_fitting(self):
-        m = self.s.create_model()
-        g = symmetric_gaussian2d.SymmetricGaussian2D()
-        m.append(g)
-        m.fit()
-        model_data = m.as_signal().data
-        s_model = m.as_signal()
-        residual = (s_model-self.s).sum()
-        nt.assert_true(residual < 1)
+def test_function():
+    g = Gaussian2D()
+    g.A.value = 14
+    g.sigma_x.value = 1.
+    g.sigma_y.value = 2.
+    g.centre_x.value = -5.
+    g.centre_y.value = -5.
+    assert_allclose(g.function(-5, -5), 1.1140846)
+    assert_allclose(g.function(-2, -3), 0.007506643)
+    assert g._is2D
+    assert g._position_x == g.centre_x
+    assert g._position_y == g.centre_y
 
 
-class TestSymmetricGaussian2DValues:
-
-    def setUp(self):
-        g = symmetric_gaussian2d.SymmetricGaussian2D(
-            centre_x=-5.,
-            centre_y=-5.,
-            sigma=1.)
-        x = np.arange(-10, 10, 0.01)
-        y = np.arange(-10, 10, 0.01)
-        X, Y = np.meshgrid(x, y)
-        gt = g.function(X, Y)
-        self.g = g
-        self.gt = gt
-
-    def test_values(self):
-        gt = self.gt
-        g = self.g
-        nt.assert_almost_equal(g.fwhm, 2.35482004503)
-        nt.assert_almost_equal(gt.max(), 0.15915494309)
-        nt.assert_almost_equal(gt.argmax(axis=0)[0], 500)
-        nt.assert_almost_equal(gt.argmax(axis=1)[0], 500)
+def test_util_fwhm_set():
+    g1 = Gaussian2D()
+    g1.fwhm_x = 0.33
+    g1.fwhm_y = 0.33
+    g1.A.value = 1.0
+    assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
+    assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
 
 
-class TestGaussian2DFitting:
+def test_util_fwhm_get():
+    g1 = Gaussian2D(sigma_x=0.33, sigma_y=0.33)
+    g1.A.value = 1.0
+    assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
+    assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
 
-    """Test using a 2-D Gaussian generated with
-    Gaussian2D(
-        A=1000., sigma_x=1., sigma_y=2., rotation=np.pi/4)"""
-    def setUp(self):
-        self.s = load(
-            my_path +
-            "/test_gaussian2d/test_gaussian2d.hdf5")
 
-    def test_fitting(self):
-        m = self.s.create_model()
-        g = gaussian2d.Gaussian2D()
-        # Need to set some sensible initial values
-        m.append(g)
-        m.fit()
-        s_model = m.as_signal()
-        residual = (s_model-self.s).sum()
-        nt.assert_true(residual < 1)
-
-class TestGaussian2D:
-
-    def setUp(self):
-        self.g = gaussian2d.Gaussian2D(
-            centre_x=-5.,
-            centre_y=-5.,
-            sigma_x=1.,
-            sigma_y=2.,
-            )
-
-    def test_ellipticity(self):
-        g = self.g
-        nt.assert_equal(g.ellipticity, 0.5) 
-
-    def test_rotation_wrap(self):
-        g = self.g
-        g.rotation.value = 2*np.pi
-        nt.assert_equal(g.rotation.value, 0.0) 
-        g.rotation.value = 3/2*np.pi
-        nt.assert_equal(g.rotation.value, np.pi/2) 
+def test_util_fwhm_getset():
+    g1 = Gaussian2D()
+    g1.fwhm_x = 0.33
+    g1.fwhm_y = 0.33
+    assert g1.fwhm_x == 0.33
+    assert g1.fwhm_y == 0.33

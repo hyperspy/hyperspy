@@ -1,14 +1,19 @@
-import nose.tools as nt
-import numpy as np
-from hyperspy.misc.test_utils import assert_warns
 
+import numpy as np
+import pytest
+
+from hyperspy.misc.test_utils import assert_warns
+from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 
+@lazifyTestClass
 class TestlineFit:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Fe', 'Cr', 'Zn'],
                                        beam_energy=200,
                                        weight_percents=[20, 50, 30],
@@ -27,19 +32,19 @@ class TestlineFit:
         m.fit()
         np.testing.assert_allclose([i.data for i in
                                     m.get_lines_intensity()],
-                                   [[0.5], [0.2], [0.3]], atol=10 - 4)
+                                   [[0.5], [0.2], [0.3]], atol=1E-4)
 
     def _check_model_creation(self):
         s = self.s
         # Default:
         m = s.create_model()
-        nt.assert_equal(
-            [c.name for c in m],
+        assert (
+            [c.name for c in m] ==
             ['background_order_6', 'Cr_Ka', 'Cr_Kb',
              'Fe_Ka', 'Fe_Kb', 'Zn_Ka'])
         # No auto componentes:
         m = s.create_model(False, False)
-        nt.assert_equal([c.name for c in m], [])
+        assert [c.name for c in m] == []
 
     def test_model_creation(self):
         self._check_model_creation()
@@ -58,12 +63,15 @@ class TestlineFit:
         s = self.s
         # Default:
         m = s.create_model()
+        m.remove(["Cr_Ka", "background_order_6"])
         m.store()
         m1 = s.models.a.restore()
-        nt.assert_equal(
-            [c.name for c in m], [c.name for c in m1])
-        nt.assert_equal([c.name for c in m.xray_lines],
-                        [c.name for c in m1.xray_lines])
+        assert (
+            [c.name for c in m] == [c.name for c in m1])
+        assert ([c.name for c in m.xray_lines] ==
+                [c.name for c in m1.xray_lines])
+        assert "Cr_Ka" not in m1.xray_lines
+        assert "background_order_6" not in m1.background_components
 
     def test_edsmodel_store(self):
         self._check_model_store()
@@ -84,9 +92,7 @@ class TestlineFit:
         reso = s.metadata.Acquisition_instrument.TEM.Detector.EDS.\
             energy_resolution_MnKa,
         s.set_microscope_parameters(energy_resolution_MnKa=150)
-        with assert_warns(message=r"Energy resolution \(FWHM at Mn Ka\) "
-                          "changed from"):
-            m.calibrate_energy_axis(calibrate='resolution')
+        m.calibrate_energy_axis(calibrate='resolution')
         np.testing.assert_allclose(
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.
             energy_resolution_MnKa, reso, atol=1)
@@ -155,21 +161,64 @@ class TestlineFit:
     def test_enable_adjust_position(self):
         m = self.s.create_model()
         m.enable_adjust_position()
-        nt.assert_equal(len(m._position_widgets), 5)
+        assert len(m._position_widgets) == 5
         # Check that both line and label was added
-        nt.assert_equal(len(list(m._position_widgets.values())[0]), 2)
+        assert len(list(m._position_widgets.values())[0]) == 2
         lbls = [p[1].string for p in m._position_widgets.values()]
-        nt.assert_equal(sorted(lbls), [
+        assert sorted(lbls) == [
             '$\\mathrm{Cr}_{\\mathrm{Ka}}$',
             '$\\mathrm{Cr}_{\\mathrm{Kb}}$',
             '$\\mathrm{Fe}_{\\mathrm{Ka}}$',
             '$\\mathrm{Fe}_{\\mathrm{Kb}}$',
-            '$\\mathrm{Zn}_{\\mathrm{Ka}}$'])
+            '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
+
+    def test_quantification(self):
+        s = self.s
+        m = s.create_model()
+        m.fit()
+        intensities = m.get_lines_intensity()
+        quant = s.quantification(intensities, method='CL',
+                                 factors=[1.0, 1.0, 1.0],
+                                 composition_units='weight')
+        np.testing.assert_allclose(utils.stack(quant, axis=0), [50, 20, 30])
+
+    def test_quantification_2_elements(self):
+        s = self.s
+        m = s.create_model()
+        m.fit()
+        intensities = m.get_lines_intensity(['Fe_Ka', 'Cr_Ka'])
+        _ = s.quantification(intensities, method='CL', factors=[1.0, 1.0])
 
 
+def test_comparison_quantification():
+    kfactors = [1.450226, 5.075602]  # For Fe Ka and Pt La
+
+    s = EDS_TEM_Spectrum()
+    s.add_elements(['Cu'])  # to get good estimation of the background
+    m = s.create_model(True)
+    m.set_signal_range(5.5, 10.0)  # to get good fit
+    m.fit()
+    intensities_m = m.get_lines_intensity(['Fe_Ka', "Pt_La"])
+    quant_model = s.quantification(intensities_m, method='CL',
+                                   factors=kfactors)
+
+    # Background substracted EDS quantification
+    s2 = EDS_TEM_Spectrum()
+    s2.add_lines()
+    bw = s2.estimate_background_windows(line_width=[5.0, 2.0])
+    intensities = s2.get_lines_intensity(background_windows=bw)
+    atomic_percent = s2.quantification(intensities, method='CL',
+                                       factors=kfactors)
+
+    np.testing.assert_allclose([q.data for q in quant_model],
+                               [q.data for q in atomic_percent],
+                               rtol=0.5E-1)
+
+
+@lazifyTestClass
 class TestMaps:
 
-    def setUp(self):
+    def setup_method(self, method):
         beam_energy = 200
         energy_resolution_MnKa = 130
         energy_axis = {'units': 'keV', 'size': 1200, 'scale': 0.01,
@@ -211,5 +260,7 @@ class TestMaps:
                     w[i, x, y] = ws[i] * mix
         xray_lines = s._get_lines_from_elements(
             s.metadata.Sample.elements, only_lines=('Ka',))
-        np.testing.assert_allclose(
-            [i.data for i in m.get_lines_intensity(xray_lines)], w, atol=1e-7)
+        if s._lazy:
+            s.compute()
+        for fitted, expected in zip(m.get_lines_intensity(xray_lines), w):
+            np.testing.assert_allclose(fitted, expected, atol=1e-7)
