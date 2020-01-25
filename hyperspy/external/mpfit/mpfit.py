@@ -1429,7 +1429,7 @@ Outputs:
                 'errmsg': self.errmsg,
                 'nfev': self.nfev,
                 'damp': self.damp
-                #,'machar':self.machar
+                # ,'machar':self.machar
                 }.__str__()
 
     # Default procedure to be called every iteration.  It simply prints

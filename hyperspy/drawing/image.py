@@ -202,7 +202,7 @@ class ImagePlot(BlittedFigure):
 
     def optimize_contrast(self, data, ignore_user_values=False):
         if (self._vmin_user is not None and self._vmax_user is not None and
-            not ignore_user_values):
+                not ignore_user_values):
             return
         with ignore_warning(category=RuntimeWarning):
             # In case of "All-NaN slices"
@@ -318,9 +318,9 @@ class ImagePlot(BlittedFigure):
 
     def _update_data(self):
         # self._current_data caches the displayed data.
-        self._current_data =  self.data_function(
-                axes_manager=self.axes_manager,
-                **self.data_function_kwargs)
+        self._current_data = self.data_function(
+            axes_manager=self.axes_manager,
+            **self.data_function_kwargs)
 
     def update(self, data_changed=True, **kwargs):
         if data_changed:
@@ -357,7 +357,6 @@ class ImagePlot(BlittedFigure):
             else:
                 self.centre_colormap = False
         redraw_colorbar = False
-
 
         for marker in self.ax_markers:
             marker.update()
@@ -407,22 +406,22 @@ class ImagePlot(BlittedFigure):
             elif norm == 'log':
                 if np.nanmax(data) <= 0:
                     raise ValueError('All displayed data are <= 0 and can not '
-                                    'be plotted using `norm="log"`. '
-                                    'Use `norm="symlog"` to plot on a log scale.')
+                                     'be plotted using `norm="log"`. '
+                                     'Use `norm="symlog"` to plot on a log scale.')
                 if np.nanmin(data) <= 0:
                     vmin = np.nanmin(np.where(data > 0, data, np.inf))
 
                 norm = LogNorm(vmin=vmin, vmax=vmax)
             elif norm == 'symlog':
                 norm = SymLogNorm(linthresh=self.linthresh,
-                                linscale=self.linscale,
-                                vmin=vmin, vmax=vmax)
+                                  linscale=self.linscale,
+                                  vmin=vmin, vmax=vmax)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
             elif norm not in ['auto', 'linear']:
                 raise ValueError("`norm` paramater should be 'auto', 'linear', "
-                                "'log', 'symlog' or a matplotlib Normalize  "
-                                "instance or subclass.")
+                                 "'log', 'symlog' or a matplotlib Normalize  "
+                                 "instance or subclass.")
             else:
                 # set back to matplotlib default
                 norm = None
@@ -468,7 +467,7 @@ class ImagePlot(BlittedFigure):
                         'vmax': vmax,
                         'norm': norm}
 
-                    
+
                 )
             new_args.update(kwargs)
             self.ax.imshow(data,
@@ -502,7 +501,7 @@ class ImagePlot(BlittedFigure):
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
-                                        self.on_key_press)
+                                       self.on_key_press)
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             if self.disconnect not in self.events.closed.connected:

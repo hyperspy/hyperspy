@@ -86,7 +86,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     Notes
     -----
     The 'position' is now a 2D tuple: tuple(tuple(x1, x2), tuple(y1, y2))
-    
+
     Notes
     -----
     The 'size' property corresponds to line width, so it has a len() of only

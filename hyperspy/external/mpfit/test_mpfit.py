@@ -76,5 +76,6 @@ def test_rosenbrock():
     assert N.allclose(m.fnorm, 0)
     return
 
+
 if __name__ == "__main__":
     run_module_suite()

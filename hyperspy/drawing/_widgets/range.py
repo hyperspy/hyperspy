@@ -577,13 +577,13 @@ class ModifiableSpanSelector(SpanSelector):
             return
         x_increment = self._get_mouse_position(event) - self.pressv
         if self.step_ax is not None:
-            if (self.bounds_check  
+            if (self.bounds_check
                 and self._range[0] <= self.step_ax.low_value
-                and self._get_mouse_position(event) <= self.pressv):
+                    and self._get_mouse_position(event) <= self.pressv):
                 return
             if (self.bounds_check
                 and self._range[1] >= self.step_ax.high_value
-                and self._get_mouse_position(event) >= self.pressv):
+                    and self._get_mouse_position(event) >= self.pressv):
                 return
             if self.snap_position:
                 rem = x_increment % self.step_ax.scale

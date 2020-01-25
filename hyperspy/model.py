@@ -1675,13 +1675,13 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : dict 
+        dictionary : dict
             A dictionary including at least the following fields:
 
-            * components: a list of dictionaries of components, one per 
+            * components: a list of dictionaries of components, one per
               component
             * _whitelist: a dictionary with keys used as references for saved
-              attributes, for more information, see 
+              attributes, for more information, see
               :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 

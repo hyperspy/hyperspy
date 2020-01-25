@@ -551,9 +551,9 @@ def plot_images(images,
         If None, default options will be used
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values
-        Values should be supplied as used in 
+        Values should be supplied as used in
         :py:func:`matplotlib.pyplot.subplots_adjust`,
-        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and 
+        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and
         'hspace' (height)
     tight_layout : bool, optional
         If true, hyperspy will attempt to improve image placement in
@@ -1293,7 +1293,7 @@ def plot_spectra(
                              "string or a list of valid matplotlib colors.")
     else:
         color = itertools.cycle(
-                plt.rcParams['axes.prop_cycle'].by_key()["color"])
+            plt.rcParams['axes.prop_cycle'].by_key()["color"])
 
     if line_style is not None:
         if isinstance(line_style, str):

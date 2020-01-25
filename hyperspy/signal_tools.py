@@ -574,7 +574,7 @@ class ImageContrastEditor(t.HasTraits):
         # Copy the original value to be used when resetting the display
         self.gamma_original = copy.deepcopy(self.image.gamma)
         self.saturated_pixels_original = copy.deepcopy(
-                self.image.saturated_pixels)
+            self.image.saturated_pixels)
         self.vmin_original = copy.deepcopy(self.image.vmin)
         self.vmax_original = copy.deepcopy(self.image.vmax)
         self.linthresh_original = copy.deepcopy(self.image.linthresh)
@@ -606,7 +606,7 @@ class ImageContrastEditor(t.HasTraits):
                 lambda: self.image.axes_manager.events.indices_changed.disconnect(
                     self._reset), [])
 
-            # Disconnect update image to avoid image flickering and reconnect 
+            # Disconnect update image to avoid image flickering and reconnect
             # it when necessary in the close method.
             self.image.disconnect()
 
@@ -658,7 +658,7 @@ class ImageContrastEditor(t.HasTraits):
                     self.ax,
                     onselect=self.update_span_selector_traits,
                     onmove_callback=self.update_span_selector_traits,
-                    rectprops={"alpha":0.25, "color":'r'})
+                    rectprops={"alpha": 0.25, "color": 'r'})
             self.span_selector.bounds_check = True
 
         elif self.span_selector is not None:
@@ -686,7 +686,7 @@ class ImageContrastEditor(t.HasTraits):
         # Set this attribute to restrict the span selector to the xaxis
         self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
                                               offset=self.xaxis[1],
-                                              scale=self.xaxis[1]-self.xaxis[0])
+                                              scale=self.xaxis[1] - self.xaxis[0])
 
     def plot_histogram(self):
         if self._vmin == self._vmax:
@@ -702,7 +702,7 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         self.line = self.ax.plot(*self._get_line(),
-                                       color='#ff7f0e')[0]
+                                 color='#ff7f0e')[0]
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
         plt.tight_layout(pad=0)
 
@@ -715,15 +715,15 @@ class ImageContrastEditor(t.HasTraits):
         self.hist_data = self._get_histogram(self._get_data())
         if update_span:
             span_x_coord = self.ax.transData.transform(
-                    (self.span_selector.range[0], 0))
+                (self.span_selector.range[0], 0))
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid", color=color)
         self.ax.set_xlim(self._vmin, self._vmax)
         if update_span:
-            # Restore the span selector at the correct position after updating 
+            # Restore the span selector at the correct position after updating
             # the range of the histogram
             self.span_selector._set_span_x(
-                    self.ax.transData.inverted().transform(span_x_coord)[0])
+                self.ax.transData.inverted().transform(span_x_coord)[0])
         if self.hist_data.max() != 0:
             self.ax.set_ylim(0, self.hist_data.max())
         self.update_line()
@@ -734,16 +734,16 @@ class ImageContrastEditor(t.HasTraits):
         xaxis = np.linspace(cmin, cmax, self.bins)
         max_hist = self.hist_data.max()
         if self.image.norm == "linear":
-            values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
+            values = ((xaxis - cmin) / (cmax - cmin)) * max_hist
         elif self.image.norm == "symlog":
             v = self._sym_log_transform(xaxis)
-            values = (v-v[0]) / (v[-1]-v[0]) * max_hist
+            values = (v - v[0]) / (v[-1] - v[0]) * max_hist
         elif self.image.norm == "log":
             v = np.log(xaxis)
-            values = (v-v[0]) / (v[-1]-v[0]) * max_hist
+            values = (v - v[0]) / (v[-1] - v[0]) * max_hist
         else:
             # if "auto" or "power" use the self.gamma value
-            values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
+            values = ((xaxis - cmin) / (cmax - cmin)) ** self.gamma * max_hist
 
         return xaxis, values
 
@@ -772,8 +772,8 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            # No span selector, so we use the saturated_pixels value to 
-            # calculate the vim and vmax values 
+            # No span selector, so we use the saturated_pixels value to
+            # calculate the vim and vmax values
             self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
@@ -856,7 +856,7 @@ class ImageContrastEditor(t.HasTraits):
 
 
 IMAGE_CONTRAST_EDITOR_HELP = \
-"""
+    """
 <h2>Image contrast editor</h2>
 <p>This tool provides controls to adjust the contrast of the image.</p>
 
@@ -867,25 +867,25 @@ IMAGE_CONTRAST_EDITOR_HELP = \
 <p><b>Norm</b>: Normalisation used to display the image.</p>
 
 <p><b>Saturated pixels</b>: The percentage of pixels that are left out of the bounds.
-For example, the low and high bounds of a value of 1 are the 0.5% and 99.5% 
+For example, the low and high bounds of a value of 1 are the 0.5% and 99.5%
 percentiles. It must be in the [0, 100] range.</p>
 
-<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma 
+<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma
 correction). <i>(not compatible with the 'log' norm)</i>.</p>
 
-<p><b>Auto</b>: If selected, adjust automatically the contrast when changing 
+<p><b>Auto</b>: If selected, adjust automatically the contrast when changing
 nagivation axis by taking into account others parameters.</p>
 
 <h3>Advanced parameters</h3>
-                                                
-<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+
+<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
-<p><b>Linear scale</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+<p><b>Linear scale</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
 <h3>Buttons</h3>

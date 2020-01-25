@@ -539,7 +539,7 @@ class Point1DROI(BasePointROI):
     Example
     -------
 
-    >>> roi = hs.roi.Point1DROI(0.5) 
+    >>> roi = hs.roi.Point1DROI(0.5)
     >>> value, = roi
     >>> print(value)
     0.5
@@ -556,7 +556,6 @@ class Point1DROI(BasePointROI):
         _tuple = (self.value,)
         return _tuple.__getitem__(*args, **kwargs)
 
-
     def is_valid(self):
         return self.value != t.Undefined
 
@@ -566,7 +565,6 @@ class Point1DROI(BasePointROI):
     def _get_ranges(self):
         ranges = ((self.value,),)
         return ranges
-
 
     def _set_from_widget(self, widget):
         self.value = widget.position[0]
@@ -618,7 +616,6 @@ class Point2DROI(BasePointROI):
     def __getitem__(self, *args, **kwargs):
         _tuple = (self.x, self.y)
         return _tuple.__getitem__(*args, **kwargs)
-
 
     def is_valid(self):
         return t.Undefined not in (self.x, self.y)
@@ -676,8 +673,6 @@ class SpanROI(BaseInteractiveROI):
     def __getitem__(self, *args, **kwargs):
         _tuple = (self.left, self.right)
         return _tuple.__getitem__(*args, **kwargs)
-
-
 
     def is_valid(self):
         return (t.Undefined not in (self.left, self.right) and
@@ -753,7 +748,6 @@ class RectangularROI(BaseInteractiveROI):
     def __getitem__(self, *args, **kwargs):
         _tuple = (self.left, self.right, self.top, self.bottom)
         return _tuple.__getitem__(*args, **kwargs)
-
 
     def is_valid(self):
         return (t.Undefined not in (self.top, self.bottom,
@@ -904,7 +898,6 @@ class CircleROI(BaseInteractiveROI):
             _tuple = (self.cx, self.cy, self.r)
         return _tuple.__getitem__(*args, **kwargs)
 
-
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and
                 (self.r_inner is t.Undefined or
@@ -968,7 +961,6 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
-
 
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
@@ -1075,7 +1067,6 @@ class Line2DROI(BaseInteractiveROI):
     def __getitem__(self, *args, **kwargs):
         _tuple = (self.x1, self.y1, self.x2, self.y2, self.linewidth)
         return _tuple.__getitem__(*args, **kwargs)
-
 
     def is_valid(self):
         return t.Undefined not in (self.x1, self.y1, self.x2, self.y2)

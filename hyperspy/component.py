@@ -1129,7 +1129,7 @@ class Component(t.HasTraits):
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary. For more information on method 
+        """Returns component as a dictionary. For more information on method
         and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
@@ -1190,7 +1190,7 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
-            if (self._id_name == "Polynomial" and 
+            if (self._id_name == "Polynomial" and
                     LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
                 # in HyperSpy 2.0 the polynomial definition changed
                 from hyperspy._components.polynomial import convert_to_polynomial

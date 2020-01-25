@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from . import Release
+from hyperspy import docstrings
 import logging
 
 _logger = logging.getLogger(__name__)
 
-
-from hyperspy import docstrings
 
 __doc__ = """
 HyperSpy: a multi-dimensional data analysis package for Python
@@ -24,8 +24,6 @@ More details in the :mod:`~hyperspy.api` docstring.
 
 """ % docstrings.START_HSPY
 
-
-from . import Release
 
 __all__ = ["api"]
 __version__ = Release.version
