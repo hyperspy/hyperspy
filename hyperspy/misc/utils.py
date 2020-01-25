@@ -886,7 +886,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 else:
                     stacked_metadata[key].extend(
                         [value] if not isinstance(value, list) else value)
-
+    print(stacked_metadata)
 
     if len(signal_list) > 1:
         newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)

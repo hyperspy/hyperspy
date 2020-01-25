@@ -242,7 +242,7 @@ def dataset_to_signal_axes(tree,dataset):
                     detector_index=detector_index+1
     return nav_list
 
-def find_nexus_data(myDict):
+def find_nexus_data(myDict,datakeys):
     """
     Recursively search the results of an nx tree (a nested dict) 
     to find nxdata sets and return a list of keys pointing to those NXdata sets    
@@ -261,6 +261,11 @@ def find_nexus_data(myDict):
                 if isinstance(value,nx.NXgroup):
                     find_data_in_tree(value,rootkey)
     find_data_in_tree(myDict,rootname)
+    return_list=[]
+    for data in datalist:
+        for dkey in datakeys:
+            if dkey in data:
+                return_list.append(data)
     return datalist
 
 
@@ -314,11 +319,12 @@ def file_reader(filename,lazy=True,**kwargs):
 
         # now extract some metadata from the nexus file....
         signal_type = guess_signal_type(data_lazy)
-        if signal_type == "Signal1D":
-            nav_list[-1]["navigate"]=False
-        else:
-            nav_list[-1]["navigate"]=False
-            nav_list[-2]["navigate"]=False
+        if nav_list:
+            if signal_type == "Signal1D":
+                nav_list[-1]["navigate"]=False
+            else:
+                nav_list[-1]["navigate"]=False
+                nav_list[-2]["navigate"]=False
         name= os.path.split(data_name)[-1]
         new_metadata = {'General': {'original_filename': \
                                 os.path.split(filename)[1],\
@@ -414,13 +420,13 @@ def guess_signal_type(data):
     """
     n1 = data.shape[-1]
     n2 = data.shape[-2]
-    if len(data.shape)==2:
+#    if len(data.shape)==2:
+#        signal_type = "Signal2D"
+#    else:        
+    if n2>127 and n1 >127 and n1/n2 < 1.5:
         signal_type = "Signal2D"
-    else:        
-        if n2>127 and n1 >127 and n1/n2 < 1.5:
-            signal_type = "Signal2D"
-        else:
-            signal_type = "Signal1D"
+    else:
+        signal_type = "Signal1D"
     return signal_type
         
     
