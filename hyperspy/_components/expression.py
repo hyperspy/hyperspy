@@ -19,7 +19,6 @@
 from functools import wraps
 import numpy as np
 import sympy
-from sympy import lambdify
 import warnings
 
 from hyperspy.component import Component
@@ -93,7 +92,7 @@ class Expression(Component):
             applicable. It enables interative adjustment of the position of the
             component in the model. For 2D components, a tuple must be passed
             with the name of the two parameters e.g. `("x0", "y0")`.
-        module : {"numpy", "numexpr"}, default "numpy"
+        module : {"numpy", "numexpr", "scipy"}, default "numpy"
             Module used to evaluate the function. numexpr is often faster but
             it supports fewer functions and requires installing numexpr.
         add_rotation : bool, default False
@@ -215,7 +214,7 @@ class Expression(Component):
             # lambdify doesn't support constant
             # https://github.com/sympy/sympy/issues/5642
             # x = [sympy.Symbol('x')]
-            raise ValueError('Expression must contain the "x" symbol.')            
+            raise ValueError('Expression must contain the "x" symbol.')
         x = x[0]
         # Extract y
         y = [symbol for symbol in expr.free_symbols if symbol.name == "y"]
