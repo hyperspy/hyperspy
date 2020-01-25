@@ -209,6 +209,7 @@ class TestExample1:
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
 
+
 class TestExample1WrongDate:
 
     def setup_method(self, method):
@@ -224,8 +225,6 @@ class TestExample1WrongDate:
         md["General"]["original_filename"] = "example1_wrong_date.msa"
         assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                  md)
-
-
 
 
 class TestExample2:

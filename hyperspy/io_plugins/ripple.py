@@ -297,7 +297,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     which HyperSpy reads the image parameters for a raw file.
 
     ========================  =======  =================================================
-    Key                       Type     Description 
+    Key                       Type     Description
     ========================  =======  =================================================
     width                     int      pixels per row
     height                    int      number of rows
@@ -334,7 +334,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     tilt-stage                float    The tilt of the stage
     date                      str      date in ISO 8601
     time                      str      time in ISO 8601
-    title                     str      title of the signal to be stored 
+    title                     str      title of the signal to be stored
     ========================  =======  =================================================
 
 

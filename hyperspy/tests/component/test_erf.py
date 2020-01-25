@@ -29,12 +29,12 @@ pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
                                 LooseVersion("1.3"),
                                 reason="This test requires SymPy >= 1.3")
 
+
 def test_function():
     g = Erf()
     g.A.value = 1
     g.sigma.value = 2
     g.origin.value = 3
     assert g.function(3) == 0.
-    assert_allclose(g.function(15),0.5)
-    assert_allclose(g.function(1.951198),-0.2,rtol=1e-6)
-
+    assert_allclose(g.function(15), 0.5)
+    assert_allclose(g.function(1.951198), -0.2, rtol=1e-6)

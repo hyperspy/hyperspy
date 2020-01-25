@@ -15,6 +15,7 @@ def _signal():
                        )
     return _lazy_signals.LazySignal2D(ar)
 
+
 @pytest.fixture
 def signal():
     return _signal()
@@ -39,6 +40,7 @@ def test_reshuffle(signal, sl):
                                   sig.data.shape[ndim:],
                                   sig.data.chunks[:ndim])
     np.testing.assert_allclose(ans, sig.data.compute())
+
 
 nav_mask = np.zeros((6, 9), dtype=bool)
 nav_mask[0, 0] = True

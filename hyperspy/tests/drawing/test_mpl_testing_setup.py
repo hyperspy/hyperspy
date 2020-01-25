@@ -26,9 +26,11 @@ def test_mlp_agg_for_CI_testing():
     if check_running_tests_in_CI():
         assert matplotlib.get_backend() == 'agg'
 
+
 @pytest.fixture
 def mpl_cmdopt(request):
     return request.config.getoption("--mpl")
+
 
 def test_mpl_version():
     # for simplicity, only matplotlib 2.x is supported for testing

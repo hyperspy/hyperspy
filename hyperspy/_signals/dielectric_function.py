@@ -65,7 +65,7 @@ class DielectricFunction_mixin:
 
         Notes
         -----
-        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy 
+        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy
            in the Electron Microscope", Springer-Verlag, 2011.
 
         """

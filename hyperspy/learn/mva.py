@@ -504,9 +504,9 @@ class MVA():
             number of principal components to pass to the BSS algorithm
         algorithm : str
             BSS algorithms available.
-            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA", 
-            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to 
-            perform FastICA, otherwise use the Modular toolkit for Data 
+            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA",
+            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to
+            perform FastICA, otherwise use the Modular toolkit for Data
             Processing (MDP) is used.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
@@ -532,14 +532,14 @@ class MVA():
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
         reverse_component_criterion : str
-            One of {'factors', 'loadings'}. Use either the factor or the 
+            One of {'factors', 'loadings'}. Use either the factor or the
             loading to determine if the component needs to be reversed.
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
 
         Notes
         -----
-        See the FastICA documentation, with more arguments that can be passed 
+        See the FastICA documentation, with more arguments that can be passed
         as kwargs :py:class:`sklearn.decomposition.FastICA`
 
         See also
@@ -698,7 +698,7 @@ class MVA():
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = unmixing_matrix @ invsqcovmat
-        if lr.explained_variance is not None: 
+        if lr.explained_variance is not None:
             if hasattr(lr.explained_variance, "compute"):
                 lr.explained_variance = lr.explained_variance.compute()
             # The output of ICA is not sorted in any way what makes it

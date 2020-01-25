@@ -142,6 +142,7 @@ class TestRemoveBackground1DLorentzian:
             fast=False)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
+
 @lazifyTestClass
 class TestRemoveBackground1DSkewNormal:
 
@@ -190,7 +191,7 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
 @pytest.mark.parametrize('background_type',
-                          ['Power Law', 'Polynomial', 'Offset',
+                         ['Power Law', 'Polynomial', 'Offset',
                           'Gaussian', 'Lorentzian', 'SkewNormal'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,

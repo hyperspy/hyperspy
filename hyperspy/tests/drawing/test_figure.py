@@ -68,12 +68,12 @@ class TestCloseFigure():
     @pytest.mark.parametrize('nav_dim', [1, 2])
     @pytest.mark.parametrize('sig_dim', [1, 2])
     def test_close_figure(self, navigator, nav_dim, sig_dim):
-        total_dim = nav_dim*sig_dim
+        total_dim = nav_dim * sig_dim
         if sig_dim == 1:
             Signal = Signal1D
         elif sig_dim == 2:
-            Signal = Signal2D            
-        s = Signal(np.arange(pow(10, total_dim)).reshape([10]*total_dim))
+            Signal = Signal2D
+        s = Signal(np.arange(pow(10, total_dim)).reshape([10] * total_dim))
         s.plot(navigator=navigator)
         s._plot.close()
         self._assert_figure_state_after_close(s._plot.signal_plot)

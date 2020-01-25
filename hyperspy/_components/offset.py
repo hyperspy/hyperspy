@@ -28,19 +28,19 @@ class Offset(Component):
     r"""Component to add a constant value in the y-axis.
 
     .. math::
-    
+
         f(x) = k + x
 
     ============ =============
-    Variable      Parameter 
+    Variable      Parameter
     ============ =============
-    :math:`k`     offset   
+    :math:`k`     offset
     ============ =============
 
     Parameters
     -----------
-    offset : float 
-        
+    offset : float
+
     """
 
     def __init__(self, offset=0.):

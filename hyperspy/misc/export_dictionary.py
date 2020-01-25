@@ -151,13 +151,13 @@ def load_from_dictionary(target, dic):
             with all keys that were exported, with values being flag strings.
             The convention of the flags is as follows:
 
-            * 'init': object used for initialization of the target. Will be 
+            * 'init': object used for initialization of the target. Will be
               copied to the _whitelist after loading
-            * 'fn': the targeted attribute is a function, and may have been 
+            * 'fn': the targeted attribute is a function, and may have been
               pickled (preferably with dill package).
-            * 'id': the id of the original object was exported and the 
+            * 'id': the id of the original object was exported and the
               attribute will not be set. The key has to be '_id_'
-            * 'sig': The targeted attribute was a signal, and may have been 
+            * 'sig': The targeted attribute was a signal, and may have been
               converted to a dictionary if fullcopy=True
 
     """

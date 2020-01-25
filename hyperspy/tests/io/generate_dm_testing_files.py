@@ -131,6 +131,7 @@ def generate_4D_files(f, data_types, dmversion):
             'im[1,1,1,1,2,2,2,2] = 16\n'
             'im.SaveAsGatan(filename)\n' % (dmversion, key, dmversion, key))
 
+
 if __name__ == '__main__':
     with open("generate_dm3_test_files.s", "w") as f1, open("generate_dm4_test_files.s", "w") as f2:
         for f in (f1, f2):

@@ -16,38 +16,38 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
                   the navigator is a sum spectrum obtained by integrating
                   over the signal axes (the image).
                 - If `navigation_dimension` is 1 and the signal is a spectrum
-                  the navigator is an image obtained by stacking all the 
+                  the navigator is an image obtained by stacking all the
                   spectra in the dataset horizontally.
-                - If `navigation_dimension` is > 1, the navigator is a sum 
+                - If `navigation_dimension` is > 1, the navigator is a sum
                   image obtained by integrating the data over the signal axes.
                 - Additionally, if `navigation_dimension` > 2, a window
                   with one slider per axis is raised to navigate the data.
-                - For example, if the dataset consists of 3 navigation axes `X`, 
-                  `Y`, `Z` and one signal axis, `E`, the default navigator will 
-                  be an image obtained by integrating the data over `E` at the 
-                  current `Z` index and a window with sliders for the `X`, `Y`, 
-                  and `Z` axes will be raised. Notice that changing the `Z`-axis 
+                - For example, if the dataset consists of 3 navigation axes `X`,
+                  `Y`, `Z` and one signal axis, `E`, the default navigator will
+                  be an image obtained by integrating the data over `E` at the
+                  current `Z` index and a window with sliders for the `X`, `Y`,
+                  and `Z` axes will be raised. Notice that changing the `Z`-axis
                   index changes the navigator in this case.
 
             If ``'slider'``:
 
-                - If `navigation dimension` > 0 a window with one slider per 
+                - If `navigation dimension` > 0 a window with one slider per
                   axis is raised to navigate the data.
 
             If ``'spectrum'``:
 
-                - If `navigation_dimension` > 0 the navigator is always a 
+                - If `navigation_dimension` > 0 the navigator is always a
                   spectrum obtained by integrating the data over all other axes.
 
             If ``None``, no navigator will be provided.
 
-            Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass) 
-            instance can be provided. The `signal_dimension` must be 1 (for a 
-            spectrum navigator) or 2 (for a image navigator) and 
-            `navigation_shape` must be 0 (for a static navigator) or 
-            `navigation_shape` + `signal_shape` must be equal to the 
+            Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+            instance can be provided. The `signal_dimension` must be 1 (for a
+            spectrum navigator) or 2 (for a image navigator) and
+            `navigation_shape` must be 0 (for a static navigator) or
+            `navigation_shape` + `signal_shape` must be equal to the
             `navigator_shape` of the current object (for a dynamic navigator).
-            If the signal `dtype` is RGB or RGBA this parameter has no effect and 
+            If the signal `dtype` is RGB or RGBA this parameter has no effect and
             the value is always set to ``'slider'``.
         axes_manager : None or :py:class:`~hyperspy.axes.AxesManager`
             If None, the signal's `axes_manager` attribute is used.
@@ -65,13 +65,13 @@ BASE_PLOT_DOCSTRING = \
         raised. In any case it is possible to navigate the data using
         the sliders. Currently only signals with signal_dimension equal to
         0, 1 and 2 can be plotted.
-    
+
         Parameters
         ----------
         %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
 
 PLOT1D_DOCSTRING = \
-"""norm : str, optional
+    """norm : str, optional
             The function used to normalize the data prior to plotting.
             Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
             (default value is ``'auto'``).
@@ -129,6 +129,6 @@ COMPLEX_DOCSTRING = \
 
 KWARGS_DOCSTRING = \
     """**kwargs
-            Only for :py:class:`~hyperspy._signals.signal2d.Signal2D`: 
-            additional (optional) keyword arguments for 
+            Only for :py:class:`~hyperspy._signals.signal2d.Signal2D`:
+            additional (optional) keyword arguments for
             :py:func:`matplotlib.pyplot.imshow`."""

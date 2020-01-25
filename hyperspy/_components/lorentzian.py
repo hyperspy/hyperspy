@@ -49,8 +49,8 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
         _abs = np.abs
         _argmin = np.argmin
 
-    cdf = _cumsum(data,i)
-    cdfnorm = cdf/_max(cdf, i).reshape(centre_shape)
+    cdf = _cumsum(data, i)
+    cdfnorm = cdf / _max(cdf, i).reshape(centre_shape)
 
     icentre = _argmin(_abs(0.5 - cdfnorm), i)
     igamma1 = _argmin(_abs(0.75 - cdfnorm), i)
@@ -126,11 +126,11 @@ class Lorentzian(Expression):
         self.convolved = True
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the Lorentzian by calculating the median (centre) and half 
+        """Estimate the Lorentzian by calculating the median (centre) and half
         the interquartile range (gamma).
-        
-        Note that an insufficient range will affect the accuracy of this 
-        method. 
+
+        Note that an insufficient range will affect the accuracy of this
+        method.
 
         Parameters
         ----------
@@ -166,11 +166,11 @@ class Lorentzian(Expression):
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
         """
-        
+
         super(Lorentzian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
-                                                              only_current)
+                                                                only_current)
         if only_current is True:
             self.centre.value = centre
             self.gamma.value = gamma

@@ -41,7 +41,7 @@ def _generate_parameters():
         for window_type in ['hann', 'hamming', 'tukey']:
             for inplace in [False, True]:
                 parameters.append([lazy,
-                               window_type, inplace])
+                                   window_type, inplace])
     return parameters
 
 

@@ -20,30 +20,31 @@ import numpy as np
 
 from hyperspy._components.expression import Expression
 
+
 class Bleasdale(Expression):
 
     r"""Bleasdale function component.
-    
+
     Also called the Bleasdale-Nelder function. Originates from the description of the yield-density relationship in crop growth.
 
     .. math::
-    
+
         f(x) = \left(a+b\cdot x\right)^{-1/c}
 
     Parameters
     -----------
         a : Float
-        
+
         b : Float
-        
+
         c : Float
-    
+
         **kwargs
             Extra keyword arguments are passed to the ``Expression`` component.
-    
+
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
     """
-    
+
     def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
         super(Bleasdale, self).__init__(
             expression="where((a + b * x) > 0, (a + b * x) ** (-1 / c), 0)",
@@ -74,8 +75,7 @@ class Bleasdale(Expression):
         b = self.b.value
         c = self.c.value
 
-        return np.where((a + b * x) > 0, -x * (a + b * x) ** (-1 / c - 1) / c
-               , 0)
+        return np.where((a + b * x) > 0, -x * (a + b * x) ** (-1 / c - 1) / c, 0)
 
     def grad_c(self, x):
         """
@@ -84,5 +84,5 @@ class Bleasdale(Expression):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        return np.where((a + b * x) > 0, np.log(a + b * x) / (c ** 2. * 
-               (b * x + a) ** (1. / c)), 0)
+        return np.where((a + b * x) > 0, np.log(a + b * x) / (c ** 2. *
+                                                              (b * x + a) ** (1. / c)), 0)

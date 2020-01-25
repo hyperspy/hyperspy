@@ -42,11 +42,11 @@ pytestmark = pytest.mark.skipif(
     not mrcz_installed, reason="mrcz not installed")
 
 
-#==============================================================================
+# ==============================================================================
 # MRCZ Test
 #
 # Internal python-only test. Build a random image and save and re-load it.
-#==============================================================================
+# ==============================================================================
 tmpDir = tempfile.gettempdir()
 
 MAX_ASYNC_TIME = 10.0

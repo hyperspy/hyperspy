@@ -18,10 +18,10 @@ def test_slugify():
 
 
 def test_parse_quantity():
-    # From the metadata specification, the quantity is defined as 
+    # From the metadata specification, the quantity is defined as
     # "name (units)" without backets in the name of the quantity
     assert parse_quantity('a (b)') == ('a', 'b')
     assert parse_quantity('a (b/(c))') == ('a', 'b/(c)')
     assert parse_quantity('a (c) (b/(c))') == ('a (c)', 'b/(c)')
     assert parse_quantity('a [b]') == ('a [b]', '')
-    assert parse_quantity('a [b]', opening = '[', closing = ']') == ('a', 'b')
+    assert parse_quantity('a [b]', opening='[', closing=']') == ('a', 'b')

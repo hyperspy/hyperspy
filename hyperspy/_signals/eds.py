@@ -712,7 +712,7 @@ class EDS_mixin:
             beta_tilt = mp.Stage.tilt_beta
 
         TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
-                                       elevation_angle,beta_tilt)
+                                       elevation_angle, beta_tilt)
 
         return TOA
 
@@ -969,7 +969,7 @@ class EDS_mixin:
         """
         per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
-                plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
+            plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
 
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)

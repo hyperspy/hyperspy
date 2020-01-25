@@ -55,7 +55,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g1.A.value, g2.A.value * factor,0.1)
+    assert_allclose(g1.A.value, g2.A.value * factor, 0.1)
     assert abs(g2.centre.value - g1.centre.value) <= 0.2
     assert abs(g2.gamma.value - g1.gamma.value) <= 0.1
 
@@ -77,7 +77,7 @@ def test_function_nd(binned, lazy):
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
-    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data,0.16)
+    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, 0.16)
 
 
 def test_util_gamma_getset():
@@ -107,14 +107,14 @@ def test_util_fwhm_getset():
 def test_util_height_set():
     g1 = Lorentzian()
     g1.gamma.value = 4.0
-    g1.height = 2.0/np.pi
+    g1.height = 2.0 / np.pi
     assert_allclose(g1.A.value, 8)
 
 
 def test_util_height_get():
     g1 = Lorentzian()
     g1.gamma.value = 3.0
-    g1.A.value = np.pi*1.5
+    g1.A.value = np.pi * 1.5
     assert_allclose(g1.height, 0.5)
 
 

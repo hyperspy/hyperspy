@@ -38,6 +38,7 @@ def test_lazy_add_phase_ramp():
     s.add_phase_ramp(-1, -1, -4)
     nt.assert_almost_equal(s.phase.data.compute(), 0)
 
+
 if __name__ == '__main__':
 
     import pytest

@@ -208,7 +208,7 @@ class TestExpression2D:
         l = np.arange(0, 3)
         x, y = np.meshgrid(l, l)
         s = hs.signals.Signal2D(g.function(x, y))
-        s2 = hs.stack([s]*2)
+        s2 = hs.stack([s] * 2)
         m = s2.create_model()
         m.append(g)
         m.multifit()

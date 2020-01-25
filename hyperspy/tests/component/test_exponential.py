@@ -27,5 +27,5 @@ def test_function():
     g.A.value = 2
     g.tau.value = 3
     assert g.function(0) == 2
-    assert_allclose(g.function(0.3), 2*np.exp(-.1))
-    assert_allclose(g.function(-3), 2*np.e)
+    assert_allclose(g.function(0.3), 2 * np.exp(-.1))
+    assert_allclose(g.function(-3), 2 * np.e)

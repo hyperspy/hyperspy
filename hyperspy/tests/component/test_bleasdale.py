@@ -22,6 +22,7 @@ from numpy.testing import assert_allclose
 
 from hyperspy.components1d import Bleasdale
 
+
 def test_function():
     g = Bleasdale()
     g.a.value = 1
@@ -30,7 +31,7 @@ def test_function():
     assert g.function(-0.5) == 0
     assert g.function(0) == 1
     assert g.function(12) == 0.2
-    assert_allclose(g.function(-.48),5)
+    assert_allclose(g.function(-.48), 5)
     assert g.grad_a(0) == -0.5
     assert g.grad_b(0) == 0
     assert g.grad_c(0) == 0

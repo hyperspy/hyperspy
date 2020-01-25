@@ -198,7 +198,7 @@ def _convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
                'Signal': {'signal_type': sig_type},
                'General': {'original_filename': h5_path,
                            'title': name}
-                        },
+           },
            'original_metadata': {'quantity': quantity,
                                  'units': units,
                                  'dataset_path': h5_dset_path,
@@ -277,8 +277,8 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
                     group_attrs.update(temp)
 
     """
-    Normally, we might have been done but the order of the dimensions may be 
-    different in N-dim form and 
+    Normally, we might have been done but the order of the dimensions may be
+    different in N-dim form and
     attributes in ancillary dataset
     """
     num_pos_dims = len(h5_main.pos_dim_labels)
@@ -427,16 +427,14 @@ def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
             # Note that the function returns a list already.
             # Should not append
             signals += _usidataset_to_signal(h5_dset,
-                                             ignore_non_linear_dims=
-                                             ignore_non_linear_dims, **kwds)
+                                             ignore_non_linear_dims=ignore_non_linear_dims, **kwds)
         return signals
     else:
         if not isinstance(dset_path, str):
             raise TypeError('dset_path should be a string')
         h5_dset = h5_f[dset_path]
         return _usidataset_to_signal(h5_dset,
-                                     ignore_non_linear_dims=
-                                     ignore_non_linear_dims, **kwds)
+                                     ignore_non_linear_dims=ignore_non_linear_dims, **kwds)
 
     # At least close the file handle if not lazy load
     if not kwds.get('lazy', True):
@@ -470,7 +468,7 @@ def file_writer(filename, object2save, **kwds):
     parm_dict = _flatten_dict(object2save.metadata.as_dictionary())
     temp = object2save.original_metadata.as_dictionary()
     parm_dict.update(_flatten_dict(temp, parent_key='Original'))
-    
+
     num_pos_dims = object2save.axes_manager.navigation_dimension
     nav_axes = object2save.axes_manager.navigation_axes
     sig_axes = object2save.axes_manager.signal_axes
@@ -515,5 +513,5 @@ def file_writer(filename, object2save, **kwds):
             h5_grp = usid.hdf_utils.create_indexed_group(h5_grp, 'Channel')
             _ = usid.hdf_utils.write_main_dataset(h5_grp, data_2d, dset_name,
                                                   phy_quant, phy_units,
-                                                  pos_dims,  spec_dims,
+                                                  pos_dims, spec_dims,
                                                   slow_to_fast=True, **kwds)

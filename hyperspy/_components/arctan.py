@@ -28,15 +28,15 @@ class Arctan(Component):
     r"""Arctan function component.
 
     .. math::
-    
+
         f(x) = A \cdot \arctan\left[ k \left( x-x_0 \right)\right]
 
     ============ =============
-    Variable      Parameter 
+    Variable      Parameter
     ============ =============
-    :math:`A`     A 
-    :math:`k`     k 
-    :math:`x_0`   x0 
+    :math:`A`     A
+    :math:`k`     k
+    :math:`x_0`   x0
     ============ =============
 
     Parameters

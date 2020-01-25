@@ -83,6 +83,7 @@ class TestPlotExplainedVarianceRatio:
                                                    title='Loading',
                                                    axes_decor=axes_decor)
 
+
 def test_plot_without_decomposition():
     sources = np.random.random(size=(5, 100))
     mixmat = np.random.random((100, 5))

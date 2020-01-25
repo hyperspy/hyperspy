@@ -37,8 +37,6 @@ def test_function():
     assert_allclose(g.function(10), 0.15948602)
     assert g.grad_A(2) == 3
     assert_allclose(g.grad_r(4), -0.3662041)
-    assert g.grad_origin(2)  == -6
-    assert g.grad_shift(2)  == -12
-    assert g.grad_ratio(2)  == 3
-    
-    
+    assert g.grad_origin(2) == -6
+    assert g.grad_shift(2) == -12
+    assert g.grad_ratio(2) == 3

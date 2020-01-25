@@ -243,7 +243,7 @@ class HologramImage(Signal2D):
         sb_position : BaseSignal
             The sideband position (y, x), referred to the non-shifted FFT.
         show_progressbar: bool
-            Shows progressbar while iterating over different slices of the 
+            Shows progressbar while iterating over different slices of the
             signal (passes the parameter to map method).
         %s
 
@@ -319,7 +319,7 @@ class HologramImage(Signal2D):
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
         high_cf : bool, optional
-            If False, the highest carrier frequency allowed for the sideband 
+            If False, the highest carrier frequency allowed for the sideband
             location is equal to half of the Nyquist frequency (Default: True).
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input
@@ -621,7 +621,7 @@ class HologramImage(Signal2D):
               where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
               This method delivers also reasonable estimation if the
               interference pattern do not cover full field of view.
-            * 'statistical': fringe contrast is estimated by dividing the 
+            * 'statistical': fringe contrast is estimated by dividing the
               standard deviation by the mean of the hologram intensity in real
               space. This algorithm relies on regularly spaced fringes and
               covering the entire field of view.

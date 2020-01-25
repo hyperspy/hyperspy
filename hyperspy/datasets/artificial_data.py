@@ -288,7 +288,7 @@ def get_atomic_resolution_tem_signal2d():
     """
     from hyperspy.signals import Signal2D
     from hyperspy import components2d
-    
+
     sX, sY = 2, 2
     x_array, y_array = np.mgrid[0:200, 0:200]
     image = np.zeros_like(x_array, dtype=np.float32)
@@ -298,6 +298,6 @@ def get_atomic_resolution_tem_signal2d():
             gaussian2d.centre_x.value = x
             gaussian2d.centre_y.value = y
             image += gaussian2d.function(x_array, y_array)
-    
+
     s = Signal2D(image)
     return s

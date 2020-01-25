@@ -57,8 +57,8 @@ def test_plot_BackgroundRemoval():
 @pytest.mark.parametrize("saturated_pixels", (0.3, 0.5))
 def test_plot_contrast_editor(gamma, saturated_pixels):
     np.random.seed(1)
-    data = np.random.random(size=(10, 10, 100, 100))*1000
-    data += np.arange(10*10*100*100).reshape((10, 10, 100, 100))
+    data = np.random.random(size=(10, 10, 100, 100)) * 1000
+    data += np.arange(10 * 10 * 100 * 100).reshape((10, 10, 100, 100))
     s = signals.Signal2D(data)
     s.plot(gamma=gamma, saturated_pixels=saturated_pixels)
     ceditor = ImageContrastEditor(s._plot.signal_plot)
@@ -70,8 +70,8 @@ def test_plot_contrast_editor(gamma, saturated_pixels):
 @pytest.mark.parametrize("norm", ("linear", "log", "power", "symlog"))
 def test_plot_contrast_editor_norm(norm):
     np.random.seed(1)
-    data = np.random.random(size=(100, 100))*1000
-    data += np.arange(100*100).reshape((100, 100))
+    data = np.random.random(size=(100, 100)) * 1000
+    data += np.arange(100 * 100).reshape((100, 100))
     s = signals.Signal2D(data)
     s.plot(norm=norm)
     ceditor = ImageContrastEditor(s._plot.signal_plot)
@@ -81,4 +81,3 @@ def test_plot_contrast_editor_norm(norm):
         s2.plot(norm=norm)
         ceditor2 = ImageContrastEditor(s._plot.signal_plot)
     assert ceditor.norm == norm.capitalize()
-

@@ -87,11 +87,11 @@ class Gaussian(Expression):
     Parameters
     -----------
     A : float
-        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` 
-        implements the Gaussian function with a height parameter 
+        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF``
+        implements the Gaussian function with a height parameter
         corresponding to the peak height.
     sigma : float
-        Scale parameter of the Gaussian distribution. 
+        Scale parameter of the Gaussian distribution.
     centre : float
         Location of the Gaussian maximum (peak position).
     **kwargs
@@ -166,7 +166,7 @@ class Gaussian(Expression):
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
         """
-        
+
         super(Gaussian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
@@ -200,7 +200,7 @@ class Gaussian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
-        
+
     @property
     def height(self):
         return self.A.value / (self.sigma.value * sqrt2pi)

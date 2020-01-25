@@ -117,12 +117,12 @@ class SkewNormal(Expression):
 
 
     ============== =============
-    Variable        Parameter 
+    Variable        Parameter
     ============== =============
-    :math:`x_0`     x0 
-    :math:`A`       A 
-    :math:`\omega`  scale 
-    :math:`\alpha`  shape 
+    :math:`x_0`     x0
+    :math:`A`       A
+    :math:`\omega`  scale
+    :math:`\alpha`  shape
     ============== =============
 
 
@@ -253,8 +253,8 @@ class SkewNormal(Expression):
     @property
     def skewness(self):
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
-        return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 -
-                                                                2 * delta**2 / np.pi)**(3/2)
+        return (4 - np.pi) / 2 * (delta * np.sqrt(2 / np.pi))**3 / (1 -
+                                                                    2 * delta**2 / np.pi)**(3 / 2)
 
     @property
     def mode(self):

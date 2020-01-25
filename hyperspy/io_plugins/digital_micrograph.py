@@ -307,7 +307,7 @@ class DigitalMicrographReader(object):
         return data
 
     def read_string(self, length, skip=False):
-        """Read a string defined by the infoArray iarray from file f with a 
+        """Read a string defined by the infoArray iarray from file f with a
         given endianness (byte order). endian can be either 'big' or 'little'.
 
         If it's a tag name, each char is 1-Byte;

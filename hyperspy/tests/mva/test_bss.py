@@ -75,7 +75,7 @@ class TestBSS1D:
         mixing_matrix = np.random.random((100, 3))
         s = Signal1D(np.dot(mixing_matrix, ics))
         s.decomposition()
-        
+
         mask_sig = s._get_signal_signal(dtype="bool")
         mask_sig.isig[5] = True
 
@@ -85,7 +85,6 @@ class TestBSS1D:
         self.s = s
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
-
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_on_loadings(self):
@@ -179,7 +178,7 @@ class TestBSS2D:
             diff_axes=["x"], mask=self.mask_sig
         )
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                            atol=1e-6)
+                           atol=1e-6)
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_diff_axes_string_without_mask(self):
@@ -193,7 +192,7 @@ class TestBSS2D:
             diff_axes=["x"],
         )
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                            atol=1e-3)
+                           atol=1e-3)
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_diff_axes_without_mask(self):
@@ -205,7 +204,7 @@ class TestBSS2D:
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False, diff_axes=[2],)
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                            atol=1e-3)
+                           atol=1e-3)
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_on_loadings(self):
@@ -244,7 +243,7 @@ class TestBSS2D:
         # dilated the nan in the loadings should raise an error.
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=self.mask_sig,
-                                        diff_axes=["x", ])
+                                       diff_axes=["x", ])
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_0_on_loadings(self):
@@ -254,7 +253,7 @@ class TestBSS2D:
         # dilated the nan in the loadings should raise an error.
         self.s.learning_results.loadings[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=self.mask_nav,
-                                        on_loadings=True)
+                                       on_loadings=True)
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_1_on_loadings(self):

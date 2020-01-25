@@ -684,9 +684,10 @@ def test_save_ragged_array(tmpfilepath):
         np.testing.assert_allclose(s.data[i], s1.data[i])
     assert s.__class__ == s1.__class__
 
+
 def test_load_missing_extension(caplog):
     path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
     s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
-       m = s.models.restore("a") 
+        m = s.models.restore("a")

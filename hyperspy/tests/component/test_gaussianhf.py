@@ -39,6 +39,7 @@ def test_function():
     assert g.function(2) == 1.5
     assert g.function(1) == 3
 
+
 def test_integral_as_signal():
     s = Signal1D(np.zeros((2, 3, 100)))
     g1 = GaussianHF(fwhm=3.33, centre=20.)
@@ -54,6 +55,7 @@ def test_integral_as_signal():
     s_out = g2.integral_as_signal()
     ref = (h_ref * 3.33 * sqrt2pi / sigma2fwhm).reshape(s_out.data.shape)
     assert_allclose(s_out.data, ref)
+
 
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned):
@@ -73,6 +75,7 @@ def test_estimate_parameters_binned(only_current, binned):
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
     assert abs(g2.fwhm.value - g1.fwhm.value) <= 0.1
 
+
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_function_nd(binned):
     s = Signal1D(np.empty((100,)))
@@ -91,20 +94,24 @@ def test_function_nd(binned):
     # TODO: sort out while the rtol to be so high...
     assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)
 
+
 def test_util_sigma_set():
     g1 = GaussianHF()
     g1.sigma = 1.0
     assert_allclose(g1.fwhm.value, 1.0 * sigma2fwhm)
+
 
 def test_util_sigma_get():
     g1 = GaussianHF()
     g1.fwhm.value = 1.0
     assert_allclose(g1.sigma, 1.0 / sigma2fwhm)
 
+
 def test_util_sigma_getset():
     g1 = GaussianHF()
     g1.sigma = 1.0
     assert_allclose(g1.sigma, 1.0)
+
 
 def test_util_fwhm_set():
     g1 = GaussianHF(fwhm=0.33)
@@ -112,10 +119,12 @@ def test_util_fwhm_set():
     assert_allclose(g1.height.value, 1.0 * sigma2fwhm / (
                     0.33 * sqrt2pi))
 
+
 def test_util_fwhm_get():
     g1 = GaussianHF(fwhm=0.33)
     g1.height.value = 1.0
     assert_allclose(g1.A, 1.0 * sqrt2pi * 0.33 / sigma2fwhm)
+
 
 def test_util_fwhm_getset():
     g1 = GaussianHF(fwhm=0.33)

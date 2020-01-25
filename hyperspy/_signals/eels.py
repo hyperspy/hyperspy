@@ -685,7 +685,7 @@ class EELSSpectrum_mixin:
                                     extrapolate_coreloss=True):
         """Performs Fourier-ratio deconvolution.
 
-        The core-loss should have the background removed. To reduce the noise 
+        The core-loss should have the background removed. To reduce the noise
         amplication the result is convolved with a Gaussian function.
 
         Parameters

@@ -139,7 +139,7 @@ def str2num(string, **kargs):
 
 
 def parse_quantity(quantity, opening='(', closing=')'):
-    """Parse quantity of the signal outputting quantity and units separately. 
+    """Parse quantity of the signal outputting quantity and units separately.
     It looks for the last matching opening and closing separator.
 
     Parameters
@@ -171,7 +171,7 @@ def parse_quantity(quantity, opening='(', closing=')'):
     if index + 1 == len(quantity):
         return quantity, ""
     else:
-        quantity_name = quantity[:-index-1].strip()
+        quantity_name = quantity[:-index - 1].strip()
         quantity_units = quantity[-index:-1].strip()
         return quantity_name, quantity_units
 
@@ -642,7 +642,7 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
 
 
 def swapelem(obj, i, j):
-    """Swaps element having index i with element having index j in object obj 
+    """Swaps element having index i with element having index j in object obj
     IN PLACE.
 
     Example

@@ -219,7 +219,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
             s.original_metadata.emsa = emsa
             spectra.append(s)
 
-        except:
+        except BaseException:
             # parse_msa_string or dict2signal may fail if the EMSA file is not
             # a valid one.
             _logger.exception(

@@ -836,7 +836,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         It displays a window where the new calibration can be set by:
 
         * setting the values of offset, units and scale directly
-        * or selecting a range by dragging the mouse on the spectrum figure 
+        * or selecting a range by dragging the mouse on the spectrum figure
           and setting the new values for the given range limits
 
         Parameters
@@ -940,7 +940,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Notes
         -----
-        This method uses the lowess algorithm from the `statsmodels` library, 
+        This method uses the lowess algorithm from the `statsmodels` library,
         which needs to be installed to use this method.
         """
         if not statsmodels_installed:
@@ -1086,7 +1086,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components: PowerLaw, Gaussian, Offset, Polynomial, 
+            Possible components: PowerLaw, Gaussian, Offset, Polynomial,
             Lorentzian, SkewNormal.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
@@ -1306,8 +1306,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
                             subchannel=True, medfilt_radius=5, maxpeakn=30000,
                             peakgroup=10, parallel=None):
-        """Find positive peaks along a 1D Signal. It detects peaks by looking 
-        for downward zero-crossings in the first derivative that exceed 
+        """Find positive peaks along a 1D Signal. It detects peaks by looking
+        for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
@@ -1348,7 +1348,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        structured array of shape (npeaks) containing fields: 'position', 
+        structured array of shape (npeaks) containing fields: 'position',
         'width', and 'height' for each peak.
 
 
@@ -1408,7 +1408,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        width or [width, left, right], depending on the value of 
+        width or [width, left, right], depending on the value of
         `return_interval`.
         """
 
@@ -1482,6 +1482,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return width
 
     estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
 
 class LazySignal1D(LazySignal, Signal1D):
 

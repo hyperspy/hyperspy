@@ -32,11 +32,11 @@ class Gaussian2D(Expression):
 
 
     =============== =============
-    Variable         Parameter 
+    Variable         Parameter
     =============== =============
-    :math:`A`        A 
-    :math:`s_x,s_y`  sigma_x/y 
-    :math:`x_0,y_0`  centre_x/y 
+    :math:`A`        A
+    :math:`s_x,s_y`  sigma_x/y
+    :math:`x_0,y_0`  centre_x/y
     =============== =============
 
 
@@ -54,7 +54,7 @@ class Gaussian2D(Expression):
         Location of the Gaussian maximum (peak position) in `y` direction.
 
 
-    For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get 
+    For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get
     and set the full-with-half-maxima along the two axes.
     """
 

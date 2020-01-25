@@ -213,7 +213,6 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
 
-
     def test_quant_lorimer_ac(self):
         s = self.signal
         method = 'CL'
@@ -226,17 +225,17 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
         res2 = s.quantification(intensities, method, kfactors,
-                               composition_units,
-                               absorption_correction=True,
-                               thickness=1.)
+                                composition_units,
+                                absorption_correction=True,
+                                thickness=1.)
         res3 = s.quantification(intensities, method, kfactors,
-                               composition_units,
-                               absorption_correction=True,
-                               thickness=300.)
+                                composition_units,
+                                absorption_correction=True,
+                                thickness=300.)
         res4 = s.quantification(intensities, method, kfactors,
-                               composition_units,
-                               absorption_correction=True,
-                               thickness=0.0001)
+                                composition_units,
+                                absorption_correction=True,
+                                thickness=0.0001)
         np.testing.assert_allclose(res2[0][0].data, np.array([
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
@@ -245,7 +244,6 @@ class Test_quantification:
             [22.6957, 22.6957]]), atol=1e-3)
         np.testing.assert_allclose(res[0].data,
                                    res4[0][0].data, atol=1e-5)
-
 
     def test_quant_zeta(self):
         s = self.signal
@@ -262,13 +260,13 @@ class Test_quantification:
             [[80.962287987, 80.962287987],
              [80.962287987, 80.962287987]]), atol=1e-3)
         res2 = s.quantification(intensities, method, factors,
-                               composition_units,
-                               absorption_correction=True,
-                               thickness=1.)
+                                composition_units,
+                                absorption_correction=True,
+                                thickness=1.)
         res3 = s.quantification(intensities, method, factors,
-                               composition_units,
-                               absorption_correction=True,
-                               thickness=100.)
+                                composition_units,
+                                absorption_correction=True,
+                                thickness=100.)
         assert res2 == res3
         np.testing.assert_allclose(res2[0][1].data, np.array([
             [61.6284, 61.6284],
@@ -279,8 +277,8 @@ class Test_quantification:
         s2 = self.signal.deepcopy()
         s.axes_manager[0].units = 'µm'
         s.axes_manager[1].units = 'µm'
-        s.axes_manager[0].scale = 0.5/1000
-        s.axes_manager[1].scale = 0.5/1000
+        s.axes_manager[0].scale = 0.5 / 1000
+        s.axes_manager[1].scale = 0.5 / 1000
 
         method = 'cross_section'
         factors = [3, 5]
@@ -299,8 +297,8 @@ class Test_quantification:
         s.axes_manager[1].name = 'y'
         s.axes_manager[0].units = 'µm'
         s.axes_manager[1].units = 'µm'
-        s.axes_manager[0].scale = 0.5/1000
-        s.axes_manager[1].scale = 0.5/1000
+        s.axes_manager[0].scale = 0.5 / 1000
+        s.axes_manager[1].scale = 0.5 / 1000
         if axes == "nav_axes":
             axes = s.axes_manager.navigation_axes
         np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
@@ -310,7 +308,7 @@ class Test_quantification:
         s = self.signal.inav[0]
         s.axes_manager[0].name = 'x'
         s.axes_manager[0].units = 'µm'
-        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[0].scale = 0.5 / 1000
         if axes == "nav_axes":
             axes = s.axes_manager.navigation_axes
         np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
@@ -322,7 +320,7 @@ class Test_quantification:
         s.axes_manager[1].name = 'time'
         s.axes_manager[0].units = 'µm'
         s.axes_manager[1].units = 's'
-        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[0].scale = 0.5 / 1000
         s.axes_manager[1].scale = 10
         if axes == "nav_axes" or axes is None:
             axes = s.axes_manager.navigation_axes
@@ -343,8 +341,8 @@ class Test_quantification:
         res = s.quantification(
             intensities,
             method,
-            factors = utils_eds.edx_cross_section_to_zeta([22.402, 21.7132],
-                                                          ['Al','Zn']))
+            factors=utils_eds.edx_cross_section_to_zeta([22.402, 21.7132],
+                                                        ['Al', 'Zn']))
         res2 = s.quantification(intensities,
                                 method='cross_section',
                                 factors=[22.402, 21.7132])
@@ -352,7 +350,6 @@ class Test_quantification:
         np.testing.assert_allclose(res[0][0].data, np.array(
             [[36.2969, 36.2969],
              [36.2969, 36.2969]]), atol=1e-3)
-
 
     def test_quant_cross_section(self):
         s = self.signal
@@ -370,14 +367,13 @@ class Test_quantification:
             [[49.4889, 49.4889],
              [49.4889, 49.4889]]), atol=1e-3)
 
-
     def test_quant_cross_section_ac(self):
         s = self.signal
         method = 'cross_section'
         factors = [3, 5]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
-                                absorption_correction=True)
+                               absorption_correction=True)
         zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
         res2 = s.quantification(intensities, method='zeta', factors=[22.402, 21.7132],
                                 absorption_correction=True)
@@ -387,7 +383,6 @@ class Test_quantification:
         np.testing.assert_allclose(res[0][0].data, np.array(
             [[49.4889, 49.4889],
              [49.4889, 49.4889]]), atol=1e-3)
-
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],

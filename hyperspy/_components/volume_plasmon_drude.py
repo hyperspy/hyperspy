@@ -31,11 +31,11 @@ class VolumePlasmonDrude(Expression):
        f(E) = I_0 \frac{E(\Delta E_p)E_p^2}{(E^2-E_p^2)^2+(E\Delta E_p)^2}
 
     ================== ===============
-    Variable            Parameter 
+    Variable            Parameter
     ================== ===============
-    :math:`I_0`         intensity 
-    :math:`E_p`         plasmon_energy 
-    :math:`\Delta E_p`  fwhm 
+    :math:`I_0`         intensity
+    :math:`E_p`         plasmon_energy
+    :math:`\Delta E_p`  fwhm
     ================== ===============
 
     Parameters
@@ -52,7 +52,7 @@ class VolumePlasmonDrude(Expression):
     """
 
     def __init__(self, intensity=1., plasmon_energy=15., fwhm=1.5,
-                 module="numexpr", compute_gradients=False, **kwargs):                 
+                 module="numexpr", compute_gradients=False, **kwargs):
         super().__init__(
             expression="where(x > 0, intensity * (pe2 * x * fwhm) \
                         / ((x ** 2 - pe2) ** 2 + (x * fwhm) ** 2), 0); \

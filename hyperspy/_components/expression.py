@@ -80,8 +80,8 @@ class Expression(Component):
         expression : str
             Component function in SymPy text expression format with
             substitutions separated by `;`. See examples and the SymPy
-            documentation for details. In order to vary the components along the 
-            signal dimensions, the variables `x` and `y` must be included for 1D 
+            documentation for details. In order to vary the components along the
+            signal dimensions, the variables `x` and `y` must be included for 1D
             or 2D components. Also, if `module` is "numexpr" the
             functions are limited to those that numexpr support. See its
             documentation for details.
@@ -120,9 +120,9 @@ class Expression(Component):
 
         Note
         ----
-        As of version 1.4, Sympy's lambdify function, that the ``Expression`` 
-        components uses internally, does not support the differentiation of 
-        some expressions, for example those containing a "where" condition. 
+        As of version 1.4, Sympy's lambdify function, that the ``Expression``
+        components uses internally, does not support the differentiation of
+        some expressions, for example those containing a "where" condition.
         In such cases, the gradients can be set manually if required.
 
         Examples
@@ -193,7 +193,7 @@ class Expression(Component):
 
     def compile_function(self, module="numpy", position=False):
         """
-        Compile the function and calculate the gradient automatically when 
+        Compile the function and calculate the gradient automatically when
         possible.
         Useful to recompile the function and gradient with a different module.
         """
@@ -210,7 +210,7 @@ class Expression(Component):
 
         # Extract x
         x = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
-        if not x: # Expression is just a parameter, no x -> Offset
+        if not x:  # Expression is just a parameter, no x -> Offset
             # lambdify doesn't support constant
             # https://github.com/sympy/sympy/issues/5642
             # x = [sympy.Symbol('x')]

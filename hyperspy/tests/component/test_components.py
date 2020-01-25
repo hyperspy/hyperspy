@@ -150,6 +150,7 @@ class TestDoublePowerLaw:
         assert_allclose(g.r.value, 4.0)
         assert_allclose(g.ratio.value, 200.)
 
+
 class TestOffset:
 
     def setup_method(self, method):
@@ -276,7 +277,7 @@ class TestPolynomial:
         s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
         self.m_3d = s_3d.create_model()
         self.m_3d.append(hs.model.components1D.Polynomial(order=2, legacy=False))
-        data = 50*np.ones(100)
+        data = 50 * np.ones(100)
         s_offset = hs.signals.Signal1D(data)
         self.m_offset = s_offset.create_model()
 
@@ -295,7 +296,7 @@ class TestPolynomial:
         assert poly.a2.grad(np.arange(10)).shape == (10,)
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self,  only_current, binned):
+    def test_estimate_parameters(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         s.metadata.Signal.binned = binned
@@ -334,7 +335,7 @@ class TestPolynomial:
 
     def test_function_nd(self):
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s = hs.stack([s]*2)
+        s = hs.stack([s] * 2)
         p = hs.model.components1D.Polynomial(order=2, legacy=False)
         p.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
@@ -424,7 +425,7 @@ def test_expression_symbols():
     with pytest.raises(ValueError):
         hs.model.components1D.Expression(expression="10", name="offset")
     with pytest.raises(ValueError):
-        hs.model.components1D.Expression(expression="10*offset", name="Offset")    
+        hs.model.components1D.Expression(expression="10*offset", name="Offset")
 
 
 def test_expression_substitution():
@@ -497,6 +498,7 @@ class TestScalableFixedPattern:
                             category=RuntimeWarning):
             m.fit()
         assert abs(fp.yscale.value - 10) <= .1
+
 
 class TestHeavisideStep:
 

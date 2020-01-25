@@ -568,6 +568,7 @@ class TestModel1D:
         np.testing.assert_almost_equal(p.a2.value, 3)
         np.testing.assert_almost_equal(p.a3.value, 3)
 
+
 class TestModel2D:
 
     def setup_method(self, method):
@@ -773,7 +774,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
-        (9.9165596693502778, 1.6628238107916631)):
+                                    (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_binned(self):

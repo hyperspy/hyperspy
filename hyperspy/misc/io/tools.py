@@ -94,7 +94,7 @@ def overwrite(fname):
                 return True
             elif answer.lower() == 'n':
                 return False
-        except:
+        except BaseException:
             # We are running in the IPython notebook that does not
             # support raw_input
             _logger.info("Your terminal does not support raw input. "

@@ -27,10 +27,10 @@ import hyperspy.api as hs
 @pytest.mark.parametrize(("dtype"), ['uint8', 'uint32'])
 @pytest.mark.parametrize(("ext"), ['png', 'bmp', 'gif', 'jpg'])
 def test_save_load_cycle_grayscale(dtype, ext):
-    s = hs.signals.Signal2D(np.arange(128*128).reshape(128, 128).astype(dtype))
+    s = hs.signals.Signal2D(np.arange(128 * 128).reshape(128, 128).astype(dtype))
     with tempfile.TemporaryDirectory() as tmpdir:
         print('Saving-loading cycle for the extension:', ext)
-        filename = os.path.join(tmpdir, 'test_image.'+ext)
+        filename = os.path.join(tmpdir, 'test_image.' + ext)
         s.save(filename)
         hs.load(filename)
 
@@ -44,11 +44,10 @@ def test_save_load_cycle_color(color, ext):
         # JPEG does not support alpha channel.
         return
     print('color:', color, '; dim:', dim, '; dtype:', dtype)
-    s = hs.signals.Signal1D(np.arange(128*128*dim).reshape(128, 128, dim).astype(dtype))
+    s = hs.signals.Signal1D(np.arange(128 * 128 * dim).reshape(128, 128, dim).astype(dtype))
     s.change_dtype(color)
     with tempfile.TemporaryDirectory() as tmpdir:
         print('Saving-loading cycle for the extension:', ext)
-        filename = os.path.join(tmpdir, 'test_image.'+ext)
+        filename = os.path.join(tmpdir, 'test_image.' + ext)
         s.save(filename)
         hs.load(filename)
-

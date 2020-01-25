@@ -275,11 +275,11 @@ def take_off_angle(tilt_stage,
     phi = math.radians(azimuth_angle)
     theta = -math.radians(elevation_angle)
 
-    return(90-math.degrees(np.arccos(math.sin(alpha)*math.cos(beta)*
-                                     math.cos(phi)*math.cos(theta)-
-                                     math.sin(beta)*math.sin(phi)*
-                                     math.cos(theta)-math.cos(alpha)*
-                                     math.cos(beta)*math.sin(theta))))
+    return(90 - math.degrees(np.arccos(math.sin(alpha) * math.cos(beta) *
+                                       math.cos(phi) * math.cos(theta) -
+                                       math.sin(beta) * math.sin(phi) *
+                                       math.cos(theta) - math.cos(alpha) *
+                                       math.cos(beta) * math.sin(theta))))
 
 
 def xray_lines_model(elements,
@@ -521,7 +521,7 @@ def quantification_zeta_factor(intensities,
     return composition, mass_thickness
 
 
-def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_off_angle, temporary value for testing
+def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle):  # take_off_angle, temporary value for testing
     """
     Calculate absorption correction terms.
 
@@ -536,13 +536,14 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
     """
 
     toa_rad = np.radians(take_off_angle)
-    csc_toa = 1.0/np.sin(toa_rad)
-     # convert from cm^2/g to m^2/kg
+    csc_toa = 1.0 / np.sin(toa_rad)
+    # convert from cm^2/g to m^2/kg
     mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
     acf = mac.data * mass_thickness.data * csc_toa
-    acf = acf/(1.0 - np.exp(-(acf)))
+    acf = acf / (1.0 - np.exp(-(acf)))
 
     return acf
+
 
 def quantification_cross_section(intensities,
                                  cross_sections,
@@ -574,7 +575,6 @@ def quantification_cross_section(intensities,
     shape as the intensity input.
     """
 
-
     if absorption_correction is not None:
         absorption_correction = absorption_correction
     else:
@@ -591,7 +591,7 @@ def quantification_cross_section(intensities,
     return composition, number_of_atoms
 
 
-def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, probe_area): # take_off_angle, temporary value for testing
+def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, probe_area):  # take_off_angle, temporary value for testing
     """
     Calculate absorption correction terms.
 
@@ -613,8 +613,8 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, pro
 
     number_of_atoms = utils.stack(number_of_atoms).data
 
-    #calculate the total_mass per pixel, or mass thicknessself.
-    total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
+    # calculate the total_mass per pixel, or mass thicknessself.
+    total_mass = np.zeros_like(number_of_atoms[0], dtype='float')
     for i, (weight) in enumerate(atomic_weights):
         total_mass += (number_of_atoms[i] * weight / Av / probe_area / 1E-15)
 
@@ -622,12 +622,12 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, pro
     mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=utils.material.atomic_to_weight(composition))) * 0.1
 
     acf = np.zeros_like(number_of_atoms)
-    constant = 1/(Av * math.sin(toa_rad) * probe_area * 1E-16)
+    constant = 1 / (Av * math.sin(toa_rad) * probe_area * 1E-16)
 
-    #determine an absorption coeficcient per element per pixel.
+    # determine an absorption coeficcient per element per pixel.
     for i, (weight) in enumerate(atomic_weights):
         expo = (mac.data[i] * total_mass * constant)
-        acf[i] = expo/(1 - math.e**(-expo))
+        acf[i] = expo / (1 - math.e**(-expo))
 
     return acf
 

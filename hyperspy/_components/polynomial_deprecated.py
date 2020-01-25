@@ -167,4 +167,3 @@ class Polynomial(Component):
         return self._function(x, coefficients)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
-
