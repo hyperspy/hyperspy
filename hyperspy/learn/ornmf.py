@@ -310,6 +310,8 @@ class ORNMF:
                 ) - np.trace(self.W.T.dot(self.B))
         else:
             # Tom Furnival (@tjof2) approach
+            # - copied from the ORPCA implementation
+            #   of gradient descent in ./rpca.py
             if self.subspace_tracking:
                 learn = self.subspace_learning_rate * (
                     1 + self.subspace_learning_rate * self.lambda1 * self.t
