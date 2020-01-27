@@ -77,7 +77,7 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     if r is None or r.shape != rshape:
         r = np.zeros(rshape)
 
-    eta = kappa / np.linalg.norm(W, "fro") ** 2
+    eta = kappa / np.linalg.norm(W, 'fro') ** 2
 
     maxiter = 1e9
     iters = 0
@@ -104,8 +104,7 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
 
 
 class ORNMF:
-    """This class performs Online Robust NMF
-    with missing or corrupted data.
+    """This class performs Online Robust NMF with missing or corrupted data.
 
     Methods
     -------
