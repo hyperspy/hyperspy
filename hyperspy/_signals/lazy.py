@@ -732,11 +732,19 @@ class LazySignal(BaseSignal):
             obj = ORPCA(output_dimension, **kwg)
             method = partial(obj.fit, iterating=True)
 
-        elif algorithm == 'ORNMF':
+        elif algorithm in ('ONMF', 'ORNMF'):
             from hyperspy.learn.ornmf import ORNMF
             batch_size = kwargs.pop('batch_size', None)
             obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
+
+            if algorithm == 'ONMF':
+                warnings.warn(
+                    "The argument `algorithm='ONMF'` has been deprecated and may "
+                    "be removed in future. Please use `algorithn='ORNMF'` instead.",
+                    VisibleDeprecationWarning,
+                )
+
         elif algorithm != "svd":
             raise ValueError('algorithm not known')
 

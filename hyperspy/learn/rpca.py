@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import warnings
 from itertools import chain
 
 import numpy as np
