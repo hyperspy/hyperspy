@@ -54,7 +54,6 @@ from hyperspy.misc.model_tools import current_model_values
 from IPython.display import display_pretty, display
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
 
-
 _logger = logging.getLogger(__name__)
 
 _COMPONENTS = ALL_EXTENSIONS["components1D"]
@@ -920,26 +919,21 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
-                 "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
+        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
             The optimization algorithm used to perform the fitting. Default
             is "leastsq".
 
-                "leastsq" performs least-squares optimization, and supports
-                bounds on parameters.
-
-                "mpfit" performs least-squares using the Levenberg–Marquardt
-                algorithm and supports bounds on parameters.
-
-                "odr" performs the optimization using the orthogonal distance
-                regression algorithm. It does not support bounds.
-
-                "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
-                and "TNC" are wrappers for scipy.optimize.minimize(). Only
-                "L-BFGS-B" and "TNC" support bounds.
-
-                "Differential Evolution" is a global optimization method.
+                * "leastsq" performs least-squares optimization, and supports
+                  bounds on parameters.
+                * "mpfit" performs least-squares using the Levenberg–Marquardt
+                  algorithm and supports bounds on parameters.
+                * "odr" performs the optimization using the orthogonal distance
+                  regression algorithm. It does not support bounds.
+                * "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
+                  and "TNC" are wrappers for scipy.optimize.minimize(). Only
+                  "L-BFGS-B" and "TNC" support bounds.
+                * "Differential Evolution" is a global optimization method.
 
             "leastsq", "mpfit" and "odr" can estimate the standard deviation of
             the estimated value of the parameters if the
@@ -970,7 +964,6 @@ class BaseModel(list):
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
-
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
@@ -1251,7 +1244,7 @@ class BaseModel(list):
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
-                 interactive_plot=False, **kwargs):
+                 interactive_plot=False, iterpath=None, **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -1276,6 +1269,17 @@ class BaseModel(list):
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
             interactive monitoring of the fitting (if in interactive mode).
+
+        iterpath : str
+            If 'flyback', at each new row the index begins at the first column,
+            in accordance with the way np.ndindex generates indices.
+            If 'serpentine', iterate through the signal in a serpentine, 
+            "snake-game"-like manner instead of beginning each new row at 
+            the first index. Works for n-dimensional navigation space, 
+            not only 2D.
+            Default: None -> flyback. The default argument will use the 
+            'flyback' iterpath, but shows a warning that this will change to
+            'serpentine' in version 2.0.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -1311,6 +1315,14 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
+        if iterpath == None:
+            self.axes_manager._iterpath = 'flyback'
+            msg = ("The `iterpath` default will change from `'flyback'` to `'serpentine'`"
+            "in HyperSpy version 2.0. Change `iterpath` to other than None to suppress this"
+            "warning.")
+            warnings.warn(msg, VisibleDeprecationWarning)
+        else:
+            self.axes_manager._iterpath = iterpath
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):
@@ -1507,6 +1519,7 @@ class BaseModel(list):
     def print_current_values(self, only_free=False, only_active=False,
                              component_list=None, fancy=True):
         """Prints the current values of the parameters of all components.
+
         Parameters
         ----------
         only_free : bool
@@ -1674,21 +1687,22 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fullcopy : Bool (optional, True)
+        fullcopy : bool (optional, True)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
         Returns
         -------
-        dictionary : a complete dictionary of the model, which includes at
-        least the following fields:
-            components : list
-                a list of dictionaries of components, one per
-            _whitelist : dictionary
-                a dictionary with keys used as references for saved attributes,
-                for more information, see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
+        dictionary : dict 
+            A dictionary including at least the following fields:
+
+            * components: a list of dictionaries of components, one per 
+              component
+            * _whitelist: a dictionary with keys used as references for saved
+              attributes, for more information, see 
+              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys()
+
         Examples
         --------
         >>> s = signals.Signal1D(np.random.random((10,100)))

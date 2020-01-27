@@ -76,14 +76,15 @@ which in specific cases can lead to warnings when importing HyperSpy. Most of th
 there is nothing to worry about — the warnings simply inform you of several choices you have.
 There may be several causes for a warning, for example:
 
-* not all the GUIs packages are installed. If none is installed, we reccomend you to install
+- not all the GUIs packages are installed. If none is installed, we reccomend you to install
   at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
   data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
   :ref:`preferences <configuring-hyperspy-label>` as explained below.
-* the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
+- the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
   backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
-   * If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
-   * Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
+
+   - If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
+   - Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
      and if you don't want to see the (harmless) warning, make sure that you have the
      ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
      GUI in the :ref:`preferences <configuring-hyperspy-label>`.
@@ -129,12 +130,11 @@ Getting help
 When using IPython, the documentation (docstring in Python jargon) can be
 accessed by adding a question mark to the name of a function. e.g.:
 
-
 .. code-block:: python
 
-    >>> hs?
-    >>> hs.load?
-    >>> hs.signals?
+   >>> hs?
+   >>> hs.load?
+   >>> hs.signals?
 
 This syntax is a shortcut to the standard way one of displaying the help
 associated to a given functions (docstring in Python jargon) and it is one of
@@ -322,6 +322,7 @@ chop it into two chunks (signal and navigation), and then swap those chunks, at
 least when printing. As an example:
 
 .. code-block:: bash
+
     (a1, a2, a3, a4, a5, a6) # original (numpy)
     (a6, a5, a4, a3, a2, a1) # reverse
     (a6, a5) (a4, a3, a2, a1) # chop

@@ -122,6 +122,7 @@ class TestGetModel:
         assert rms < 5e-7
 
 
+@lazifyTestClass
 class TestGetExplainedVarinaceRatio:
 
     def setup_method(self, method):
