@@ -8,8 +8,8 @@
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_patch
 .. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_patch
 
-.. |Coveralls| image:: https://coveralls.io/repos/github/hyperspy/hyperspy/badge.svg?branch=RELEASE_next_minor
-.. _Coveralls: https://coveralls.io/github/hyperspy/hyperspy?branch=RELEASE_next_minor
+.. |Codecov| image:: https://codecov.io/gh/hyperspy/hyperspy/branch/RELEASE_next_patch/graph/badge.svg
+.. _Codecov: https://codecov.io/gh/hyperspy/hyperspy
 
 .. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
 .. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
