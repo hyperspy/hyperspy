@@ -17,14 +17,17 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import ast
 import xml.etree.ElementTree as ET
 import numpy as np
 import logging
+import pint
 
 from hyperspy.misc.io.tools import convert_xml_to_dict
 
 
 _logger = logging.getLogger(__name__)
+_ureg = pint.UnitRegistry()
 
 
 # Plugin characteristics
@@ -80,6 +83,14 @@ def _parse_xml(filename):
     return om, info
 
 
+def _convert_scale_units(value, units, factor=1):
+    v = np.float(value) * _ureg(units)
+    converted_v = (factor * v).to_compact()
+    converted_value = converted_v.magnitude / factor
+    converted_units = '{:~}'.format(converted_v.units)
+
+    return converted_value, converted_units
+
 def file_reader(filename, lazy=False, mmap_mode='c', **kwds):
 
     om, info = _parse_xml(filename)
@@ -97,21 +108,46 @@ def file_reader(filename, lazy=False, mmap_mode='c', **kwds):
         date, time = om.root.timestamp.isoformat.split('T')
         md['General'].update({"date":date, "time":time})
 
-    units = ['nm', '1/nm', '1/nm']
-    scales = [1, 1, 1]
-    origins = [0, -64, -64]
+    units = ['1/nm', '1/nm']
+    scales = [1, 1]
+    origins = [-64, -64]
     axes = []
     index_in_array = 0
     names = ['height', 'width']
 
     if 'series_count' in info.keys():
         names = ['series_count'] + names
-    else:
-        names = ['scan_x', 'scan_y'] + names
-        units.insert(0, 'nm')
+        units.insert(0, 'ms')
         scales.insert(0, 1)
         origins.insert(0, 0)
+    else:
+        names = ['scan_x', 'scan_y'] + names
+        units.insert(0, '')
+        units.insert(0, '')
+        scales.insert(0, 1)
+        scales.insert(0, 1)
+        origins.insert(0, 0)
+        origins.insert(0, 0)
+
     sizes = [info[name] for name in names]
+
+    if not 'series_count' in info.keys():
+        try:
+            fov = ast.literal_eval(
+                om.root.iom_measurements.opticsget_full_scan_field_of_view)
+            for i in range(2):
+                value = fov[i] / sizes[i]
+                scales[i], units[i] = _convert_scale_units(value, 'm', sizes[i])
+        except BaseException:
+            _logger.warning("The scale of the navigation axes can't be read.")
+
+    try:
+        value = float(om.root.iom_measurements.calibrated_pixelsize)
+        ps, unit = _convert_scale_units(value, '1/m', sizes[i])
+        for i in [-1, -2]:
+            scales[i] = float(om.root.iom_measurements.calibrated_pixelsize)
+    except BaseException:
+        _logger.warning("The scale of the signal axes can't be read.")
 
     for i in range(len(names)):
         if sizes[i] > 1:

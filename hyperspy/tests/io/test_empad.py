@@ -57,13 +57,13 @@ class TestEMPAD:
         assert signal_axes[1].name == 'height'
         for axis in signal_axes:
             assert axis.units == '1/nm'
-            assert axis.scale == 1.0
+            nt.assert_allclose(axis.scale, 1.826537E-10)
         navigation_axes = s.axes_manager.navigation_axes
         assert navigation_axes[0].name == 'scan_y'
         assert navigation_axes[1].name == 'scan_x'
-        # for axis in navigation_axes:
-        #     assert axis.units == 'nm'
-        #     assert axis.scale == 1.0
+        for axis in navigation_axes:
+            assert axis.units == 'µm'
+            nt.assert_allclose(axis.scale, 0.071349103)
 
         assert s.metadata.General.date == '2019-06-06'
         assert s.metadata.General.time == '13:30:00.164675'
