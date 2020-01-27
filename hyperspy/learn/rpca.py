@@ -102,16 +102,20 @@ def rpca_godec(X, rank, fast=False, lambda1=None, power=None, tol=None, maxiter=
 
     # Check options if None
     if lambda1 is None:
-        _logger.warning("Threshold 'lambda1' is set to " "default: 1 / sqrt(nsamples)")
+        _logger.warning("Threshold 'lambda1' is set to "
+                        "default: 1 / sqrt(nsamples)")
         lambda1 = 1.0 / np.sqrt(n)
     if power is None:
-        _logger.warning("Number of power iterations not specified. " "Defaulting to 0")
+        _logger.warning("Number of power iterations not specified. "
+                        "Defaulting to 0")
         power = 0
     if tol is None:
-        _logger.warning("Convergence tolerance not specifed. " "Defaulting to 1e-3")
+        _logger.warning("Convergence tolerance not specifed. "
+                        "Defaulting to 1e-3")
         tol = 1e-3
     if maxiter is None:
-        _logger.warning("Maximum iterations not specified. " "Defaulting to 1e3")
+        _logger.warning("Maximum iterations not specified. "
+                        "Defaulting to 1e3")
         maxiter = 1e3
 
     # Initialize L and E
@@ -126,7 +130,7 @@ def rpca_godec(X, rank, fast=False, lambda1=None, power=None, tol=None, maxiter=
         Y2 = np.random.randn(n, rank)
         for i in range(power + 1):
             Y2 = np.dot(L.T, np.dot(L, Y2))
-        Q, tmp = scipy.linalg.qr(Y2, mode="economic")
+        Q, tmp = scipy.linalg.qr(Y2, mode='economic')
 
         # Estimate the new low-rank and sparse matrices
         Lnew = np.dot(np.dot(L, Q), Q.T)
@@ -244,12 +248,14 @@ class ORPCA:
         # Check options if None
         if method is None:
             _logger.warning(
-                "No method specified. Defaulting to " "'CF' (closed-form solver)"
+                "No method specified. Defaulting to "
+                "'CF' (closed-form solver)"
             )
             method = "CF"
         if init is None:
             _logger.warning(
-                "No initialization specified. Defaulting to " "'qr' initialization"
+                "No initialization specified. Defaulting to "
+                "'qr' initialization"
             )
             init = "qr"
         if training_samples is None:
@@ -265,13 +271,15 @@ class ORPCA:
         if subspace_learning_rate is None:
             if method in ("SGD", "MomentumSGD"):
                 _logger.warning(
-                    "Learning rate for SGD algorithm is " "set to default: 1.0"
+                    "Learning rate for SGD algorithm is "
+                    "set to default: 1.0"
                 )
                 subspace_learning_rate = 1.0
         if subspace_momentum is None:
             if method == "MomentumSGD":
                 _logger.warning(
-                    "Momentum parameter for SGD algorithm is " "set to default: 0.5"
+                    "Momentum parameter for SGD algorithm is "
+                    "set to default: 0.5"
                 )
                 subspace_momentum = 0.5
 
@@ -365,7 +373,7 @@ class ORPCA:
                     Y2 = X[: self.training_samples, :].T
             elif self.init == "rand":
                 Y2 = np.random.randn(m, self.rank)
-            L, _ = scipy.linalg.qr(Y2, mode="economic")
+            L, _ = scipy.linalg.qr(Y2, mode='economic')
             return L[:, : self.rank]
         elif isinstance(self.init, np.ndarray):
             if init.ndim != 2:

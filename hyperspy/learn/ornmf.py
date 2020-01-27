@@ -219,7 +219,8 @@ class ORNMF:
         else:
             if normalize:
                 _logger.warning(
-                    "Normalization with an iterator is not" " possible, option ignored."
+                    "Normalization with an iterator is not "
+                    "possible, option ignored."
                 )
             x = next(X)
             m = len(x)
