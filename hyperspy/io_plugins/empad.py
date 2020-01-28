@@ -44,15 +44,16 @@ default_extension = 0
 writes = False
 
 
-def _read_raw(info, fp, mmap_mode='c'):
+def _read_raw(info, fp, lazy=False):
 
     raw_height = info['raw_height']
     width = info['width']
     height = info['height']
 
-    data = np.memmap(fp,
-                     dtype='<f4',
-                     mode=mmap_mode)
+    if lazy:
+        data = np.memmap(fp, dtype='<f4', mode='r')
+    else:
+        data = np.fromfile(fp, dtype='<f4')
 
     if 'series_count' in info.keys():   # stack of images
         size = (info['series_count'], raw_height, width)
@@ -95,7 +96,8 @@ def _convert_scale_units(value, units, factor=1):
 
     return converted_value, converted_units
 
-def file_reader(filename, lazy=False, mmap_mode='c', **kwds):
+
+def file_reader(filename, lazy=False, **kwds):
 
     om, info = _parse_xml(filename)
     dname, fname = os.path.split(filename)
@@ -165,8 +167,9 @@ def file_reader(filename, lazy=False, mmap_mode='c', **kwds):
             })
             index_in_array += 1
 
-    raw_filename = os.path.join(dname, info['raw_filename'])
-    data = _read_raw(info, raw_filename, mmap_mode=mmap_mode)
+    data = _read_raw(info,
+                     os.path.join(dname, info['raw_filename']),
+                     lazy=lazy)
 
     dictionary = {
         'data': data.squeeze(),
