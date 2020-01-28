@@ -45,6 +45,7 @@ writes = False
 
 def _read_raw(info, fp, mmap_mode='c'):
 
+    raw_height = info['raw_height']
     width = info['width']
     height = info['height']
 
@@ -53,11 +54,12 @@ def _read_raw(info, fp, mmap_mode='c'):
                      mode=mmap_mode)
 
     if 'series_count' in info.keys():   # stack of images
-        size = (info['series_count'], height, width)
-        data = data.reshape(size)
+        size = (info['series_count'], raw_height, width)
+        data = data.reshape(size)[..., :height, :]
+
     else:  # 2D x 2D
-        size = (info['scan_x'], info['scan_y'], height, width)
-        data = data.reshape(size)
+        size = (info['scan_x'], info['scan_y'], raw_height, width)
+        data = data.reshape(size)[..., :height, :]
     return data
 
 
@@ -67,7 +69,8 @@ def _parse_xml(filename):
 
     info = {'raw_filename': om.root.raw_file.filename,
             'width':128,
-            'height':130,
+            'height':128,
+            'raw_height':130,
             'record-by':'image'}   
     if om.has_item('root.count'):
         # Stack of images
