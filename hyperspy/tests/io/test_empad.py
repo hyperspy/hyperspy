@@ -1,8 +1,9 @@
 
 import os
-
+import traits.api as t
 import numpy as np
 import numpy.testing as nt
+
 import hyperspy.api as hs
 
 
@@ -39,7 +40,7 @@ class TestEMPAD:
         assert signal_axes[0].name == 'width'
         assert signal_axes[1].name == 'height'
         for axis in signal_axes:
-            assert axis.units == '1/nm'
+            assert axis.units == t.Undefined
             assert axis.scale == 1.0
         navigation_axes = s.axes_manager.navigation_axes
         assert navigation_axes[0].name == 'series_count'
@@ -57,7 +58,7 @@ class TestEMPAD:
         assert signal_axes[1].name == 'height'
         for axis in signal_axes:
             assert axis.units == '1/nm'
-            nt.assert_allclose(axis.scale, 1.826537E-10)
+            nt.assert_allclose(axis.scale, 0.1826537)
         navigation_axes = s.axes_manager.navigation_axes
         assert navigation_axes[0].name == 'scan_y'
         assert navigation_axes[1].name == 'scan_x'

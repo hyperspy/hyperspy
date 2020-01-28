@@ -22,6 +22,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import logging
 import pint
+import traits.api as t
 
 from hyperspy.misc.io.tools import convert_xml_to_dict
 
@@ -111,7 +112,7 @@ def file_reader(filename, lazy=False, mmap_mode='c', **kwds):
         date, time = om.root.timestamp.isoformat.split('T')
         md['General'].update({"date":date, "time":time})
 
-    units = ['1/nm', '1/nm']
+    units = [t.Undefined, t.Undefined]
     scales = [1, 1]
     origins = [-64, -64]
     axes = []
@@ -145,10 +146,10 @@ def file_reader(filename, lazy=False, mmap_mode='c', **kwds):
             _logger.warning("The scale of the navigation axes can't be read.")
 
     try:
-        value = float(om.root.iom_measurements.calibrated_pixelsize)
-        ps, unit = _convert_scale_units(value, '1/m', sizes[i])
+        pixel_size = float(om.root.iom_measurements.calibrated_pixelsize) * 1E9
         for i in [-1, -2]:
-            scales[i] = float(om.root.iom_measurements.calibrated_pixelsize)
+            scales[i] = pixel_size
+            units[i] = '1/nm'
     except BaseException:
         _logger.warning("The scale of the signal axes can't be read.")
 
