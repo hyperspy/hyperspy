@@ -4,6 +4,7 @@ import traits.api as t
 import numpy as np
 import numpy.testing as nt
 import pytest
+import struct
 
 import hyperspy.api as hs
 
@@ -52,6 +53,8 @@ def test_read_stack(lazy):
     assert s.metadata.General.time == '13:17:22.590279'
 
 
+@pytest.mark.skipif(8 * struct.calcsize("P") == 32,
+                    reason="Not enough memory on appveyor x86.")
 @pytest.mark.parametrize("lazy", (False, True))
 def test_read_map(lazy):
     s = hs.load(os.path.join(DATA_DIR, 'map64x64.xml'), lazy=lazy)
