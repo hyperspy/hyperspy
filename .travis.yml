@@ -6,9 +6,9 @@ env:
     - ENV=conda
     - MINIMAL_ENV=false
     - DEPS="numpy ipython scipy matplotlib traits natsort requests tqdm sympy dill h5py python-dateutil ipyparallel dask scikit-image pint numexpr statsmodels sparse imageio pyyaml PTable tifffile"
-    - DEPS_OPTIONAL="scikit-learn mrcz numba cython"
+    - DEPS_OPTIONAL="scikit-learn mrcz numba cython pyUSID"
     - DEPS_DOC="sphinx sphinx_rtd_theme"
-    - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
+    - TEST_DEPS="pytest pytest-cov codecov pytest-mpl wheel"
     - MPLBACKEND="agg"
     - TEST_ARG_OPT="--mpl"
     - FAIL_ON_EXTERNAL_DEPRECATION=false
@@ -72,7 +72,7 @@ script:
 #  - travis-artifacts upload image_comparison_failure.zip
 
 after_success:
-- coveralls
+- codecov
 - python setup.py bdist_wheel;
 
 before_deploy:
@@ -88,3 +88,4 @@ deploy:
   on:
     tags: true
     condition: $MINIMAL_ENV = false
+  
