@@ -101,11 +101,14 @@ class TestPlotClusterAnalysis:
 
         # Run decomposition and cluster analysis
         s.decomposition()
-        s.cluster_analysis(3,scaling="minmax")
+        s.cluster_analysis(3,algorithm='kmeans',
+                           scaling="minmax",random_state=1)
         s2.decomposition()
-        s2.cluster_analysis(3,scaling="minmax")
+        s2.cluster_analysis(3,algorithm='kmeans',
+                            scaling="minmax",random_state=1)
         s3.decomposition()
-        s3.cluster_analysis(3,scaling="minmax")
+        s3.cluster_analysis(3,algorithm='kmeans',
+                            scaling="minmax",random_state=1)
 
         self.s = s
         self.s2 = s2
