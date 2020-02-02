@@ -1880,7 +1880,7 @@ class MVA():
         if(algorithm=="agglomerative"):
             k_range   = list(range(2, max_clusters+1))
         if(algorithm=="kmeans"):
-#            kwargs['random_state']=1
+            kwargs['random_state']=1
             if metric =="silhouette":
                 k_range   = list(range(2, max_clusters+1))
             if metric =="gap":
@@ -1965,6 +1965,7 @@ class MVA():
                     # calculate the data metric
                     np.random.seed(1)
                     if(algorithm=="kmeans"):
+                        kwargs['random_state']=1
                         kwargs['n_init']=1
                     alg = self._cluster_analysis(k,
                                                  scaled_data,
@@ -1980,9 +1981,8 @@ class MVA():
                     for i_indx in range(n_ref):
                         # initiate with a known seed to make the overall results
                         # repeatable but still sampling different configurations
-                        np.random.seed(i_indx)
-#                       if(algorithm=="kmeans"):
- #                           kwargs['random_state']=i_indx
+                        if(algorithm=="kmeans"):
+                            kwargs['random_state']=i_indx
                         np.random.seed(i_indx)                        
                         for f_indx in range(scaled_data.shape[1]):
                             xmin = np.min(scaled_data[:,f_indx])
