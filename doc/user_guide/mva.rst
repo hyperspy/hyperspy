@@ -97,6 +97,7 @@ To obtain a scree plot for your dataset, run the
    ``xaxis_labeling``, ``signal_fmt``, ``noise_fmt``, ``threshold``,
    ``xaxis_type`` keyword arguments.
 
+
 The default options for this method will plot a bare scree plot, but the
 method's arguments allow for a great deal of customization. For
 example, by specifying a ``threshold`` value, a cutoff line will be drawn at
@@ -119,6 +120,7 @@ the number of significant PCA components is the elbow index position + 1.
 
 More details about the elbow or knee finding technique can be found in
 :ref:`[Satopää2011] <Satopää2011>`.
+
 
 These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of
@@ -146,9 +148,11 @@ notation, specify the ``xaxis_type`` parameter:
    :align:   center
    :width:   500
 
-   PCA scree plot with number-based axis labeling and an estimate of the no of significant 
+   PCA scree plot with number-based axis labeling and an estimate of the number of significant 
    positions based on the "elbow" position
-
+   
+   
+.. versionadded:: 0.7
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum,
 for example to plot several scree plots obtained using
@@ -348,6 +352,8 @@ To perform BSS on the result of a decomposition, run the
 
 .. _mva.visualization:
 
+.. include:: cluster.rst
+
 Visualizing results
 ===================
 
@@ -360,6 +366,9 @@ and blind source separation. All the methods begin with ``plot_``:
 4. :py:meth:`~.signal.MVATools.plot_bss_results`.
 5. :py:meth:`~.signal.MVATools.plot_bss_factors`.
 6. :py:meth:`~.signal.MVATools.plot_bss_loadings`.
+7. :py:meth:`~.signal.MVATools.plot_cluster_results`.
+8. :py:meth:`~.signal.MVATools.plot_cluster_centers`.
+9. :py:meth:`~.signal.MVATools.plot_cluster_labels`.
 
 1 and 4 (new in version 0.7) provide a more compact way of displaying the
 results. All the other methods display each component in its own window. For 2
@@ -384,7 +393,8 @@ provides the following methods for that purpose:
 * :py:meth:`~.signal.MVATools.get_decomposition_factors`.
 * :py:meth:`~.signal.MVATools.get_bss_loadings`.
 * :py:meth:`~.signal.MVATools.get_bss_factors`.
-
+* :py:meth:`~.signal.MVATools.get_cluster_labels`.
+* :py:meth:`~.signal.MVATools.get_cluster_centers`.
 
 Saving and loading results
 ==========================

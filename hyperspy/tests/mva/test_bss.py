@@ -9,6 +9,10 @@ from hyperspy.datasets import artificial_data
 from hyperspy.decorators import lazifyTestClass
 
 
+pytestmark = pytest.mark.skipif(not sklearn_installed,
+                                reason="sklearn not installed")
+
+
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
     """Check if two list of components are equivalent.
 
@@ -45,7 +49,6 @@ class TestReverseBSS:
         s.blind_source_separation(2)
         self.s = s
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_autoreverse_default(self):
         self.s.learning_results.bss_factors[:, 0] *= -1
         self.s._auto_reverse_bss_component('loadings')
@@ -54,12 +57,10 @@ class TestReverseBSS:
         self.s._auto_reverse_bss_component('factors')
         nt.assert_array_less(0, self.s.learning_results.bss_factors)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_autoreverse_on_loading(self):
         self.s._auto_reverse_bss_component('loadings')
         nt.assert_array_less(0, self.s.learning_results.bss_factors)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_reverse_wrong_parameter(self):
         with pytest.raises(ValueError):
             self.s.blind_source_separation(2,
@@ -87,7 +88,6 @@ class TestBSS1D:
         self.mask_sig = mask_sig
 
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_on_loadings(self):
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False)
@@ -98,7 +98,6 @@ class TestBSS1D:
         assert are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings())
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_0(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -107,7 +106,6 @@ class TestBSS1D:
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=self.mask_sig)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_1(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -116,7 +114,6 @@ class TestBSS1D:
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=self.mask_sig)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_0_on_loadings(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -126,7 +123,6 @@ class TestBSS1D:
         self.s.blind_source_separation(3, diff_order=0, mask=self.mask_nav,
                                        on_loadings=True)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_1_on_loadings(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -163,7 +159,6 @@ class TestBSS2D:
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_diff_axes_string_with_mask(self):
         self.s.learning_results.factors[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
@@ -181,7 +176,6 @@ class TestBSS2D:
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
                             atol=1e-6)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_diff_axes_string_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].diff(
             axis="x", order=1)
@@ -195,7 +189,6 @@ class TestBSS2D:
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
                             atol=1e-3)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_diff_axes_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].diff(
             axis="y", order=1)
@@ -207,7 +200,6 @@ class TestBSS2D:
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
                             atol=1e-3)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_on_loadings(self):
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False)
@@ -218,7 +210,6 @@ class TestBSS2D:
         assert are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings())
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_0(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -227,7 +218,6 @@ class TestBSS2D:
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=self.mask_sig)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_1(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -236,7 +226,6 @@ class TestBSS2D:
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=self.mask_sig)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_1_diff_axes(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -246,7 +235,6 @@ class TestBSS2D:
         self.s.blind_source_separation(3, diff_order=1, mask=self.mask_sig,
                                         diff_axes=["x", ])
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_0_on_loadings(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -256,7 +244,6 @@ class TestBSS2D:
         self.s.blind_source_separation(3, diff_order=0, mask=self.mask_nav,
                                         on_loadings=True)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_1_on_loadings(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
@@ -270,7 +257,6 @@ class TestBSS2D:
         s.blind_source_separation(3, diff_order=1, mask=self.mask_sig,
                                   on_loadings=True)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_mask_diff_order_1_on_loadings_diff_axes(self):
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the

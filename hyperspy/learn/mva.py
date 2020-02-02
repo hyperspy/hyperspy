@@ -19,7 +19,7 @@
 
 import types
 import logging
-
+import inspect
 import numpy as np
 import dask.array as da
 import matplotlib.pyplot as plt
@@ -39,8 +39,17 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
+from hyperspy.external.progressbar import progressbar 
+
 
 _logger = logging.getLogger(__name__)
+
+
+if import_sklearn.sklearn_installed:
+    cluster_algorithms = {
+        'kmeans': import_sklearn.sklearn.cluster.KMeans,
+        'agglomerative': import_sklearn.sklearn.cluster.AgglomerativeClustering
+    }
 
 
 def centering_and_whitening(X):
@@ -83,6 +92,20 @@ def _normalize_components(target, other, function=np.sum):
     coeff = function(target, axis=0)
     target /= coeff
     other *= coeff
+
+
+def _mask_for_clustering(mask):
+    # Deal with masks
+    if hasattr(mask, 'ravel'):
+        mask = mask.ravel()
+
+    # Transform the None masks in slices to get the right behaviour
+    if mask is None:
+        mask = slice(None)
+    else:
+        mask = ~mask
+
+    return mask
 
 
 class MVA():
@@ -145,7 +168,7 @@ class MVA():
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
-        return_info: bool, default False
+        return_info : bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
             stored. If True (the default is False) return any extra
@@ -163,7 +186,7 @@ class MVA():
         :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
         :py:meth:`~.signal.MVATools.plot_decomposition_results`,
         :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
-
+        
         """
         to_return = None
         # Check if it is the wrong data type
@@ -492,12 +515,9 @@ class MVA():
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
         decomposition.
-
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP.
-
         For lazy signal, the factors or loadings are computed to perfom the
         BSS.
-
         Parameters
         ----------
         number_of_components : int
@@ -536,18 +556,15 @@ class MVA():
             loading to determine if the component needs to be reversed.
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
-
         Notes
         -----
         See the FastICA documentation, with more arguments that can be passed 
         as kwargs :py:class:`sklearn.decomposition.FastICA`
-
         See also
         --------
         :py:meth:`~.signal.MVATools.plot_bss_factors`,
         :py:meth:`~.signal.MVATools.plot_bss_loadings`,
         :py:meth:`~.signal.MVATools.plot_bss_results`,
-
         """
         from hyperspy.signal import BaseSignal
 
@@ -568,7 +585,7 @@ class MVA():
             # if the factors are lazy, we compute them, which should be fine
             # since we already reduce the dimensionality of the data.
             factors.compute()
-
+            
         # Check factors
         if not isinstance(factors, BaseSignal):
             raise ValueError(
@@ -606,7 +623,7 @@ class MVA():
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.
                 mask.compute()
-
+                
         # Note that we don't check the factor's signal dimension. This is on
         # purpose as an user may like to apply pretreaments that change their
         # dimensionality.
@@ -698,8 +715,8 @@ class MVA():
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = unmixing_matrix @ invsqcovmat
-        if lr.explained_variance is not None: 
-            if hasattr(lr.explained_variance, "compute"):
+        if lr.explained_variance is not None:
+            if hasattr(lr.explained_variance, "compute"):	
                 lr.explained_variance = lr.explained_variance.compute()
             # The output of ICA is not sorted in any way what makes it
             # difficult to compare results from different unmixings. The
@@ -944,7 +961,7 @@ class MVA():
              if int, rebuilds SI from components in range 0-given int
              if list of ints, rebuilds SI from only components in given list
 
-        Returns
+        Returns 
         -------
         Signal instance
         """
@@ -973,7 +990,6 @@ class MVA():
         :py:meth:`~.learn.mva.MVA.decomposition`,
         :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`,
         :py:meth:`~.learn.mva.MVA.get_decomposition_factors`.
-
         """
         from hyperspy._signals.signal1d import Signal1D
         target = self.learning_results
@@ -1238,6 +1254,42 @@ class MVA():
         plt.draw()
         return ax
 
+    def plot_cluster_metric(self):
+        """Plot the cluster metrics calculated 
+           using evaluate_number_of_clusters method
+
+        """
+        target = self.learning_results
+
+        if target.cluster_metric_data is not None:
+            ydata = target.cluster_metric_data
+        else:
+            raise ValueError("Cluster metrics not evaluated "
+                             "please run evaluate_number_of_clusters first.")
+        if target.cluster_metric_index is not None:
+            xdata = target.cluster_metric_index
+        nclusters = target.number_of_clusters
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(xdata,ydata)
+        ax.set_xlabel('number of clusters')
+        label =  str(target.cluster_metric) +"_metric"
+        ax.set_ylabel(label)
+        if isinstance(nclusters,list):
+            for nc in nclusters:
+                ax.axvline(nc,
+                           linewidth=2,
+                           color='gray',
+                           linestyle='dashed')
+        else:
+                ax.axvline(nclusters,
+                           linewidth=2,
+                           color='gray',
+                           linestyle='dashed')
+            
+        plt.draw()
+        return ax
+
     def normalize_poissonian_noise(self, navigation_mask=None,
                                    signal_mask=None):
         """
@@ -1295,7 +1347,7 @@ class MVA():
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
-    def _estimate_elbow_position(self, curve_values):
+    def _estimate_elbow_position(self, curve_values,log=True):
         """
         Estimate the elbow position of a scree plot curve
         Used to estimate the number of significant components in
@@ -1317,21 +1369,657 @@ class MVA():
         # more or less defines a triangle
         # The elbow should be the point which is the
         # furthest distance from this line
-
-        y2 = np.log(curve_values[maxpoints])
+        if log:
+            y2 = np.log(curve_values[maxpoints])
+            y1 = np.log(curve_values[0])
+        else:
+            y2 = curve_values[maxpoints]
+            y1 = curve_values[0]
         x2 = maxpoints
-        y1 = np.log(curve_values[0])
         x1 = 0
         # loop through the curve values and calculate
         distance = np.zeros(maxpoints)
         for i in range(maxpoints):
-            y0 = np.log(curve_values[i])
+            #y0 = np.log(curve_values[i]+1)
+            if log:
+                y0 = np.log(curve_values[i])
+            else:
+                y0 = curve_values[i]                
             x0 = i
             distance[i] = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) /\
                 np.math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         # Point with the largest distance is the "elbow"
         elbow_position = np.argmax(distance)
         return elbow_position
+
+    def scale_data_for_clustering(self,
+                                  use_decomposition_results=True,
+                                  scaling="minmax",
+                                  scaling_kwargs={},
+                                  number_pca_components=None,
+                                  navigation_mask=None,
+                                  signal_mask=None):
+        """scale data for cluster analysis
+
+        Results are stored in `learning_results`.
+
+        Parameters
+        ----------
+        n_clusters : int
+            Number of clusters to find.
+        use_decomposition_results : bool or numpy array
+            If True (recommended) the signal's decomposition results are used
+            for clustering. Note - If this option is not used the raw data
+            is used. This can be memory intensive and is only recommened if
+            the Signal has a small `signal_dimension`.
+        scaling : {"standard","norm","minmax", or scikit learn scaling method} 
+            default: 'minmax' 
+            Preprocessing the data before cluster analysis requires scaling 
+            the data to be clustered to similar scales. Standard scaling
+            adjusts each feature to have uniform variation. Norm scaling 
+            adjusts treats the set of features like a vector and 
+            each measurement is scaled to length 1. 
+            You can also pass one of the scikit-learn preprocessing 
+            scale_method = import sklearn.processing.StandadScaler
+            scaling = scale_method
+            See scaling methods in scikit-learn preprocessing for further 
+            details.
+        scaling_kwargs : 
+            Additional parameters passed to the cluster scaling algorithm. 
+            See sklearn.preprocessing scaling methods for further details            
+        number_pca_components: int , default None
+            If you are clustering using the decomposition results 
+            (use_decomposition_results = True) you can define how many PCA
+            components to use.   if set to None the method uses the 
+            estimate of significant components found in the decomposition step
+            using the elbow method 
+            (learningresults.number_significant_components)
+        navigation_mask : boolean numpy array
+            The navigation locations marked as True are not used in the
+            clustering.
+        signal_mask : boolean numpy array
+            The signal locations marked as True are not used in the
+            clustering.  Note that if use_decomposition_results=True the 
+            signal_mask is ignored. The number of PCA components is used to 
+            set the number of components to use. 
+
+        Returns
+        ----------
+        scaled_data : numpy array - unfoled array of shape (number_of_samples,
+        no_of_features) scaled according to the selected algorithm
+
+        """
+
+        if import_sklearn.sklearn_installed is False:
+            raise ImportError(
+                'sklearn is not installed. Nothing done')
+        if scaling == "norm":
+            algorithm = import_sklearn.sklearn.preprocessing.Normalizer
+        elif scaling == "standard":
+            algorithm = import_sklearn.sklearn.preprocessing.StandardScaler
+        elif scaling == "minmax":
+            algorithm = import_sklearn.sklearn.preprocessing.MinMaxScaler            
+        else:
+            algorithm = scaling
+            if inspect.isclass(scaling) \
+                and not issubclass(algorithm,
+                            import_sklearn.sklearn.base.TransformerMixin):
+                    raise ValueError("The class provided to the scaling" 
+                        "parameter must be a scikit-learn" 
+                        "preprocessing class.")
+
+        if self.axes_manager.navigation_size < 2:
+            raise AttributeError("It is not possible to cluster a dataset "
+                                 "with navigation_size < 2")
+
+        self._unfolded4clustering = self.unfold()
+        # Deal with masks
+        navigation_mask = _mask_for_clustering(navigation_mask)
+        if use_decomposition_results:
+            dc = self.learning_results.loadings.copy()
+            data = dc[:,slice(0,number_pca_components,1)]
+            signal_mask =  _mask_for_clustering(None)
+        else:
+            data = self.data
+            signal_mask = _mask_for_clustering(signal_mask)
+
+        dc = data if self.axes_manager[0].index_in_array == 0 else data.T
+        if algorithm == None:
+            return dc[:, signal_mask][navigation_mask, :]
+        else:
+            scaler = algorithm(**scaling_kwargs)
+            return scaler.fit_transform(dc[:, signal_mask][navigation_mask, :])
+
+    def _get_number_pca_components_for_clustering(self):
+        if self.learning_results.number_significant_components is None:
+            raise ValueError("Number of pca components not defined, "
+                             "please run decomposition first.")
+        else:
+            number_pca_components = self.learning_results.number_significant_components
+        return number_pca_components
+
+    def _get_number_clusters_for_clustering(self):
+        if self.learning_results.number_of_clusters is None:
+            raise ValueError("Number of clusters not defined, "
+                             "please run evaluate_number_of_clusters first.")
+        else:
+            number_of_clusters = self.learning_results.number_of_clusters
+        return number_of_clusters
+
+    def _cluster_analysis(self,
+                          n_clusters,
+                          scaled_data,
+                          algorithm='kmeans',
+                          **kwargs,
+                          ):
+        """
+        Cluster analysis of a scaled data - internal 
+
+        Parameters
+        ----------
+        n_clusters : int
+            Number of clusters to find.
+        scaled_data : numpy array - (number_of_samples,number_of_features)
+        algorithm: string "kmeans" or "agglomerative"
+             See scikit-learn documentation. Default "kmeans"
+        **kwargs
+            Additional parameters passed to the clustering algorithm. 
+            This may include `n_init`, the number of times the algorithm is 
+            restarted to optimize results.   
+
+        """
+        if import_sklearn.sklearn_installed is False:
+            raise ImportError('sklearn is not installed. Nothing done.')
+        if algorithm not in cluster_algorithms:
+            raise ValueError("Cluster algorithm {algorithm} not supported or "
+                             "not correctly defined.")
+
+        alg = cluster_algorithms[algorithm](n_clusters=n_clusters, **kwargs)
+
+        alg.fit(scaled_data)
+
+        return alg
+
+    def cluster_analysis(self,
+                         n_clusters=None,
+                         scaling="minmax",
+                         scaling_kwargs={},                         
+                         use_decomposition_results=True,
+                         use_decomposition_for_centers=False,
+                         number_pca_components=None,
+                         navigation_mask=None,
+                         signal_mask=None,
+                         algorithm='kmeans',
+                         return_info=False,
+                         **kwargs):
+        """
+        Cluster analysis of a signal
+
+        Results are stored in `learning_results`.
+
+        Parameters
+        ----------
+        n_clusters : int
+            Number of clusters to find.
+        scaling : {"standard","norm","minmax", or scikit learn scaling method} 
+            default: 'standard' 
+            Preprocessing the data before cluster analysis requires scaling 
+            the data to be clustered to similar scales. Standard scaling
+            adjusts each feature to have uniform variation. Norm scaling 
+            adjusts treats the set of features like a vector and 
+            each measurement is scaled to length 1. 
+            You can also pass one of the scikit-learn preprocessing 
+            scale_method = import sklearn.processing.StandadScaler
+            scaling = scale_method
+            See scaling methods in scikit-learn preprocessing for further 
+            details.        
+        scaling_kwargs : dict
+            Additional parameters passed to the cluster scaling algorithm. 
+            See sklearn.preprocessing scaling methods for further details
+        use_decomposition_results : bool
+            If True (recommended) the signal's decomposition results are used
+            for clustering. Note - If this option is not used the raw data
+            is used. This can be memory intensive and is only recommened if
+            the Signal has a small `signal_dimension`.
+        use_decomposition_for_centers : bool
+            If True (recommended) the pca results are used for building the 
+            the cluster centers from the clustered label results. 
+            If False the original signal data is used.
+        number_pca_components : int, default None
+            If you are getting the cluster centers using the decomposition 
+            results (use_decomposition_for_centers=True) you can define how 
+            many PCA components to use. If set to None the method uses the 
+            estimate of significant components found in the decomposition step
+            using the elbow method and stored in the 
+            ``learning_results.number_significant_components`` attribute.
+        navigation_mask : boolean numpy array
+            The navigation locations marked as True are not used in the
+            decomposition.
+        signal_mask : boolean numpy array
+            The signal locations marked as True are not used in the
+            decomposition.
+        algorithm : { "kmeans" | "agglomerative" }
+            See scikit-lear documentation. Default "kmeans"
+        **kwargs: dict  optional, default - empty
+            Additional parameters passed to the clustering algorithm. 
+            For example, in case of the "kmeans" algorithm, `n_init` can be 
+            used to define the number of times the algorithm is restarted to 
+            optimize results.   
+
+        Returns:
+            Scikit-learn object used for clustering. Useful if you wish to
+            examine inertia or other kmeans results.
+        """
+
+        to_return = None
+        # backup the original data
+        self._data_before_treatments = self.data.copy()
+
+        if use_decomposition_results and number_pca_components is None:
+            number_pca_components = self._get_number_pca_components_for_clustering()
+
+        if n_clusters is None:
+            n_clusters = self._get_number_clusters_for_clustering()
+
+        if n_clusters < 2:
+            raise ValueError("The number of clusters, n_clusters "
+                             "must be specified and be >= 2.")
+
+        target = LearningResults()
+
+        try:
+            cluster_labels = None
+            cluster_centers = None
+
+            # scale the data before clustering
+            scaled_data = self.scale_data_for_clustering(
+                use_decomposition_results=use_decomposition_results,
+                scaling=scaling,
+                number_pca_components=number_pca_components,
+                navigation_mask=navigation_mask,
+                signal_mask=signal_mask)
+            alg = self._cluster_analysis(n_clusters,
+                                         scaled_data,
+                                         algorithm,
+                                         **kwargs)
+            if return_info:
+                to_return = alg
+            labels = alg.labels_
+
+            if self._unfolded4clustering is True:
+                folding = self.metadata._HyperSpy.Folding
+                target.original_shape = folding.original_shape
+
+            # now re-organize the labels to fit with hyperspy loadings/factors
+            # and use the kmeans centers to extract real data cluster centers
+            # create an array to store the centers
+            cluster_labels, cluster_centers = \
+                self._create_cluster_centers_from_labels(
+                    labels,
+                    use_decomposition_for_centers=use_decomposition_for_centers,
+                    number_pca_components=number_pca_components,
+                    navigation_mask=_mask_for_clustering(navigation_mask)
+                )
+
+        finally:
+            target.cluster_membership = labels
+            target.cluster_labels     = cluster_labels
+            target.cluster_centers    = cluster_centers
+            target.number_of_clusters = n_clusters
+            target.cluster_algorithm = algorithm
+            self.learning_results.__dict__.update(target.__dict__)
+
+            if self._unfolded4clustering is True:
+                self.fold()
+                self._unfolded4clustering = False
+
+            # undo any pre-treatments
+            self.undo_treatments()
+
+        return to_return
+
+    def _create_cluster_centers_from_labels(self, labels,
+                                           use_decomposition_for_centers=False,
+                                           number_pca_components=None,
+                                           navigation_mask=None):
+        """
+        From a set of cluster labels generate the cluster centers from the
+        raw data or PCA decomposition results
+
+        Parameters
+        ----------
+        labels : int array of length n_samples where each value is a cluster
+            label from 0 to n_clusters-1
+        use_decomposition_for_centers : bool
+            If True (recommended) the pca results are used for building the 
+            the cluster centers from the clustered label results. 
+            If False the original signal data is used.
+        number_pca_components : int, default None
+            If you are getting the cluster centers using the decomposition 
+            results (use_decomposition_for_centers=True) you can define how 
+            many PCA components to use. If set to None the method uses the 
+            estimate of significant components found in the decomposition step
+            using the elbow method and stored in the 
+            ``learning_results.number_significant_components`` attribute.
+
+        Returns
+        -------
+        cluster_labels  : array  - (n_clusters, n_samples)
+        cluster_centers : array  - (n_clusters, signal_shape)
+        """
+
+        if use_decomposition_for_centers and number_pca_components is None:
+            number_pca_components = self._get_number_pca_components_for_clustering()
+
+        if navigation_mask is None:
+            navigation_mask = _mask_for_clustering(navigation_mask)
+
+        if (not self._unfolded4clustering and
+                self.axes_manager.navigation_dimension > 1):
+            raise ValueError("Data (and labels) must be unfolded.")
+
+        # now re-organize the labels to fit with hyperspy loadings/factors
+        # and use the kmeans centers to extract real data cluster centers
+        # create an array to store the centers
+        n_clusters = int(np.amax(labels)) + 1
+
+        shape = (n_clusters, self.data.shape[0])
+        cluster_labels = np.full(shape, np.nan)
+
+        for i in range(n_clusters):
+            cluster_labels[i, navigation_mask] = np.where(labels == i, 1, 0)
+
+        # From the cluster labels we know which parts of the signal correspond
+        # to different clusters.
+        #
+        # We can produce the representative 1D or 2D signals for each cluster
+        # by averaging all points with a given label or averaging
+        # PCA components*loadings with a given label
+        if not use_decomposition_for_centers:
+            clusterdata = self.data \
+                if self.axes_manager[0].index_in_array == 0 else self.data.T
+            cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
+        else:
+            cluster_centers = np.zeros((n_clusters,
+                                        self.learning_results.factors.shape[0]))
+
+        clustersizes = np.zeros((n_clusters,), dtype=np.int)
+        for i in range(n_clusters):
+            clus_index = np.where(labels == i)
+            clustersizes[i] = labels[clus_index].shape[0]
+            # if using the pca components
+            if use_decomposition_for_centers:
+                # pca clustered...
+                a = self.learning_results.loadings[clus_index][:,
+                                                               0:number_pca_components]
+                b = self.learning_results.factors[:, 0:number_pca_components].T
+                center = np.dot(a, b).sum(axis=0)
+                cluster_centers[i, :] = cluster_centers[i, :] + center
+                cluster_centers[i, :] = cluster_centers[i, :] / clustersizes[i]
+            else:
+                cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)\
+                    / clustersizes[i]
+
+        return cluster_labels, cluster_centers
+
+    def evaluate_number_of_clusters(self,
+                                    max_clusters=12,
+                                    scaling="minmax",
+                                    scaling_kwargs={},
+                                    use_decomposition_results=True,
+                                    use_decomposition_for_centers=False,
+                                    number_pca_components=None,
+                                    navigation_mask=None,
+                                    signal_mask=None,
+                                    algorithm='kmeans',
+                                    metric="gap",
+                                    n_ref=10,
+                                    **kwargs):
+        """
+        Performs cluster analysis of a signal for cluster sizes ranging from
+        n_clusters =2 to max_clusters ( default 15)
+
+        For each cluster it evaluates the silhouette score which is a metric of
+        how well seperated the clusters are. Maximima or peaks in the scores
+        indicate good choices for cluster sizes. 
+
+
+        Parameters
+        ----------
+        max_clusters : int, default 15
+            Max number of clusters to use. The method will scan from 2 to 
+            max_clusters
+        scaling : {"standard","norm","minmax" or scikit learn scaling method} 
+            default: 'minmax' 
+            Preprocessing the data before cluster analysis requires scaling 
+            the data to be clustered to similar scales. Standard scaling
+            adjusts each feature to have uniform variation. Norm scaling 
+            adjusts treats the set of features like a vector and 
+            each measurement is scaled to length 1. 
+            You can also pass one of the scikit-learn preprocessing 
+            scale_method = import sklearn.processing.StandadScaler
+            scaling = scale_method
+            See scaling methods in scikit-learn preprocessing for further 
+            details.
+        scaling_kwargs : dict, default empty
+            Additional parameters passed to the cluster scaling algorithm. 
+            See sklearn.preprocessing scaling methods for further details
+        use_decomposition_results : bool, default : True
+            If True (recommended) the signal's decomposition results are used
+            for clustering. Note - If this option is not used the raw data
+            is used. This can be memory intensive and is only recommened if
+            the Signal has a small `signal_dimension`.
+        use_decomposition_for_centers : bool
+            If True (recommended) the pca results are used for building the 
+            the cluster centers from the clustered label results. 
+            If False the original signal data is used.
+        number_pca_components : int, default None
+            If you are getting the cluster centers using the decomposition 
+            results (use_decomposition_for_centers=True) you can define how 
+            many PCA components to use. If set to None the method uses the 
+            estimate of significant components found in the decomposition step
+            using the elbow method and stored in the 
+            ``learning_results.number_significant_components`` attribute.
+        navigation_mask : boolean numpy array, default : None
+            The navigation locations marked as True are not used in the
+            decomposition.
+        signal_mask : boolean numpy array, default : None
+            The signal locations marked as True are not used in the
+            decomposition.
+        metric : {'elbow','silhouette','gap'} default 'gap'
+            Use distance,silhouette analysis or gap statistics to estimate 
+            the optimal number of clusters.
+            Gap is believed to be, overall, the best metric but it's also 
+            the slowest. Elbow measures the distances between points in 
+            each cluster as an estimate of how well grouped they are and 
+            is the fastest metric. 
+            For elbow the optimal k is the knee or elbow point. 
+            For gap the optimal k is the first k gap(k)>= gap(k+1)-std_error
+            For silhouette the optimal k will be one of the "maxima" found with
+            this method
+        n_ref :  int, default 5
+            Number of random references to use in gap statistics method
+            Gap statistics compares the results from clustering the data to
+            clustering random data. This random clustering is
+            typically averaged n_ref times to get an statistical average
+        cluster_kwargs: dict {}  default empty
+            Additional parameters passed to the clustering algorithm.
+
+        See also
+        --------
+        :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+
+        """
+        def distances_within_cluster(data,memberships,squared=True): 
+            return [np.sum(
+                import_sklearn.sklearn.metrics.pairwise.euclidean_distances(
+                data[memberships == c, :]
+                -np.mean(data[memberships == c],axis=0),
+                squared=squared)/
+                (2.*data[memberships == c, :].shape[0])) 
+                for c in np.unique(memberships)]  
+        
+        if use_decomposition_results and number_pca_components is None:
+            number_pca_components = self._get_number_pca_components_for_clustering()
+
+        if max_clusters < 2:
+            raise ValueError("The number of clusters, max_clusters "
+                             "must be specified and be >= 2.")
+
+        to_return = None
+        best_k    = None        
+        k_range   = list(range(1, max_clusters+1))
+        #
+        # for silhouette k starts at 2
+        # for kmeans or gap k starts at 1
+        # As these methods use random numbers we need to
+        # initiate the random number generator to ensure 
+        # consistent/repeatable results
+        #
+        np.random.seed(1)
+        if(algorithm=="agglomerative"):
+            k_range   = list(range(2, max_clusters+1))
+        if(algorithm=="kmeans"):
+#            kwargs['random_state']=1
+            if metric =="silhouette":
+                k_range   = list(range(2, max_clusters+1))
+            if metric =="gap":
+                # set number of averages to 1
+                kwargs['n_init']=1
+        min_k = np.min(k_range)    
+        target = LearningResults()
+
+        try:
+            # scale the data
+            scaled_data = self.scale_data_for_clustering(
+                use_decomposition_results=use_decomposition_results,
+                scaling=scaling, scaling_kwargs=scaling_kwargs,
+                number_pca_components=number_pca_components,
+                navigation_mask=navigation_mask,
+                signal_mask=signal_mask)
+    
+            # from 2 to max_clusters
+            # cluster and calculate silhouette_score
+            if metric == "elbow":
+                pbar = progressbar(total=len(k_range))
+                inertia = np.zeros(len(k_range))
+                
+                for i,k in enumerate(k_range):
+                    alg = self._cluster_analysis(k,
+                                                 scaled_data,
+                                                 algorithm,
+                                                 **kwargs)
+
+                    D = distances_within_cluster(scaled_data,alg.labels_)
+                    W = np.sum(D)
+                    inertia[i]= np.log(W)
+                    pbar.update(1)            
+                    _logger.info("For n_clusters =", k,
+                                 "The distance metric is :",
+                                 inertia[-1])
+                    to_return = inertia
+                    best_k =self._estimate_elbow_position(to_return,log=False)\
+                        +min_k 
+            elif metric == "silhouette":
+                k_range   = list(range(2, max_clusters+1))
+                pbar = progressbar(total=len(k_range))
+                silhouette_avg = []
+                for k in k_range:
+                    alg = self._cluster_analysis(k,
+                                                 scaled_data,
+                                                 algorithm,
+                                                 **kwargs)
+                    cluster_labels = alg.labels_
+                    silhouette_avg.append( 
+                        import_sklearn.sklearn.metrics.silhouette_score(
+                        scaled_data,
+                        cluster_labels))
+                    pbar.update(1)            
+                    _logger.info("For n_clusters =", k,
+                                 "The average silhouette_score is :",
+                                 silhouette_avg[-1])
+                to_return = silhouette_avg
+                best_k = []
+                max_value = -1.0
+                # find peaks
+                for u in range(len(silhouette_avg)-1):
+                    if ((silhouette_avg[u] > silhouette_avg[u-1]) &
+                            (silhouette_avg[u] > silhouette_avg[u+1])):
+                        best_k.append(u+min_k)
+                        max_value = max(silhouette_avg[u], max_value)
+                if silhouette_avg[0] > max_value:
+                    best_k.insert(0, min_k)
+            else:
+                # cluster and calculate gap statistic
+                # various empty arrays...
+                reference_inertia = np.zeros(len(k_range))
+                reference_std  = np.zeros(len(k_range))
+                data_inertia=np.zeros(len(k_range))
+                reference=np.zeros(scaled_data.shape)
+                local_inertia = np.zeros(n_ref)
+                pbar = progressbar(total=n_ref*len(k_range))
+                # only perform 1 pass of clustering
+                # otherwise std_dev isn't correct
+
+                for o_indx,k in enumerate(k_range):
+                    # calculate the data metric
+                    np.random.seed(1)
+                    if(algorithm=="kmeans"):
+                        kwargs['n_init']=1
+                    alg = self._cluster_analysis(k,
+                                                 scaled_data,
+                                                 algorithm,
+                                                 **kwargs)
+                    
+                    D = distances_within_cluster(scaled_data,alg.labels_,
+                                                 squared=False)
+                    W = np.sum(D)
+                    data_inertia[o_indx]=np.log(W)    
+                    # now do n_ref clusters for a uniform random distribution
+                    # to determine "gap" between data and random distribution
+                    for i_indx in range(n_ref):
+                        # initiate with a known seed to make the overall results
+                        # repeatable but still sampling different configurations
+                        np.random.seed(i_indx)
+#                       if(algorithm=="kmeans"):
+ #                           kwargs['random_state']=i_indx
+                        np.random.seed(i_indx)                        
+                        for f_indx in range(scaled_data.shape[1]):
+                            xmin = np.min(scaled_data[:,f_indx])
+                            xmax = np.max(scaled_data[:,f_indx])
+                            reference[:,f_indx]=(xmax-xmin)*\
+                               np.random.random_sample(size=reference[:,0].shape)-xmin
+
+                        alg = self._cluster_analysis(k,
+                                                     reference,
+                                                     algorithm,
+                                                     **kwargs)
+                        D = distances_within_cluster(reference,alg.labels_,
+                                                 squared=False)
+                        W = np.sum(D)
+                        local_inertia[i_indx]=np.log(W) 
+                        pbar.update(1)
+                    reference_inertia[o_indx]=np.mean(local_inertia)
+                    reference_std[o_indx] = np.std(local_inertia)
+                std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std 
+                std_error = np.abs(std_error)
+                gap       = reference_inertia-data_inertia
+                to_return = gap                
+                best_k = min_k 
+                for i in range(1,len(k_range)-1):
+                    if gap[i] >= (gap[i+1]- std_error[i+1]):
+                        best_k=i+min_k
+                        break
+        finally:
+            target.cluster_metric_index      = k_range
+            target.cluster_metric_data       = to_return
+            target.cluster_metric            = metric
+            target.number_of_clusters        = best_k
+            # fold
+            if self._unfolded4clustering is True:
+                self.fold()
+                self._unfolded4clustering = False
+            self.learning_results.__dict__.update(target.__dict__)
 
 
 class LearningResults(object):
@@ -1346,6 +2034,17 @@ class LearningResults(object):
     output_dimension = None
     mean = None
     centre = None
+    # Clustering values
+    cluster_membership = None
+    cluster_labels = None
+    cluster_centers = None
+    cluster_algorithm = None
+    number_of_clusters = None
+    cluster_metric_data  = None
+    cluster_metric_index = None
+    cluster_metric = None
+    #
+    covariances = None
     # Unmixing
     bss_algorithm = None
     unmixing_matrix = None

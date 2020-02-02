@@ -20,13 +20,14 @@ import numpy as np
 import pytest
 
 from hyperspy import signals
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
 baseline_dir = 'plot_mva'
 default_tol = 2.0
 
 
-class TestPlotExplainedVarianceRatio:
+class TestPlotDecomposition:
 
     def setup_method(self, method):
         np.random.seed(1)
@@ -83,6 +84,62 @@ class TestPlotExplainedVarianceRatio:
                                                    title='Loading',
                                                    axes_decor=axes_decor)
 
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+class TestPlotClusterAnalysis:
+
+    def setup_method(self, method):
+        from sklearn.datasets import make_blobs
+        np.random.seed(1)
+        data = make_blobs(n_samples=200, n_features=10, shuffle=False)[0]
+        # nav1, sig1
+        s = signals.Signal1D(data.reshape(200, 10))
+        # nav2, sig1
+        s2 = signals.Signal1D(data.reshape(20, 10, 10))
+        # nav2, sig2
+        s3 = signals.Signal2D(data.reshape(4, 5, 10, 10))
+
+        # Run decomposition and cluster analysis
+        s.decomposition()
+        s.cluster_analysis(3,scaling="minmax")
+        s2.decomposition()
+        s2.cluster_analysis(3,scaling="minmax")
+        s3.decomposition()
+        s3.cluster_analysis(3,scaling="minmax")
+
+        self.s = s
+        self.s2 = s2
+        self.s3 = s3
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_labels_nav1_sig1(self):
+        return self.s.plot_cluster_labels()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_centers_nav1_sig1(self):
+        return self.s.plot_cluster_centers()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_labels_nav2_sig1(self):
+        return self.s2.plot_cluster_labels()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_centers_nav2_sig1(self):
+        return self.s2.plot_cluster_centers()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_labels_nav2_sig2(self):
+        return self.s3.plot_cluster_labels()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_centers_nav2_sig2(self):
+        return self.s3.plot_cluster_centers()
+
 def test_plot_without_decomposition():
     sources = np.random.random(size=(5, 100))
     mixmat = np.random.random((100, 5))
@@ -98,3 +155,4 @@ def test_plot_without_decomposition():
         s.plot_bss_factors()
     with pytest.raises(RuntimeError):
         s.plot_bss_loadings()
+
