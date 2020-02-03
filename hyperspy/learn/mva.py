@@ -1644,6 +1644,7 @@ class MVA():
                                          **kwargs)
             if return_info:
                 to_return = alg
+
             labels = alg.labels_
 
             if self._unfolded4clustering is True:
@@ -1653,16 +1654,15 @@ class MVA():
             # now re-organize the labels to fit with hyperspy loadings/factors
             # and use the kmeans centers to extract real data cluster centers
             # create an array to store the centers
-            cluster_labels, cluster_centers = \
+            sorted_membership,cluster_labels, cluster_centers = \
                 self._create_cluster_centers_from_labels(
                     labels,
                     use_decomposition_for_centers=use_decomposition_for_centers,
                     number_pca_components=number_pca_components,
                     navigation_mask=_mask_for_clustering(navigation_mask)
                 )
-
         finally:
-            target.cluster_membership = labels
+            target.cluster_membership = sorted_membership
             target.cluster_labels     = cluster_labels
             target.cluster_centers    = cluster_centers
             target.number_of_clusters = n_clusters
@@ -1723,11 +1723,6 @@ class MVA():
         # create an array to store the centers
         n_clusters = int(np.amax(labels)) + 1
 
-        shape = (n_clusters, self.data.shape[0])
-        cluster_labels = np.full(shape, np.nan)
-
-        for i in range(n_clusters):
-            cluster_labels[i, navigation_mask] = np.where(labels == i, 1, 0)
 
         # From the cluster labels we know which parts of the signal correspond
         # to different clusters.
@@ -1759,8 +1754,20 @@ class MVA():
             else:
                 cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)\
                     / clustersizes[i]
+            
+        idx = np.argsort(clustersizes)
+        lut = np.zeros_like(idx)
+        lut[idx] = np.arange(n_clusters)
+        sorted_labels = lut[labels]
+        shape = (n_clusters, self.data.shape[0])
+        cluster_labels = np.full(shape, np.nan)
+        
+        for i in range(n_clusters):
+            cluster_labels[i, navigation_mask] = \
+                np.where(sorted_labels == i, 1, 0)
+         
 
-        return cluster_labels, cluster_centers
+        return sorted_labels,cluster_labels, cluster_centers
 
     def evaluate_number_of_clusters(self,
                                     max_clusters=12,
