@@ -1740,8 +1740,20 @@ class MVA():
 
         clustersizes = np.zeros((n_clusters,), dtype=np.int)
         for i in range(n_clusters):
-            clus_index = np.where(labels == i)
-            clustersizes[i] = labels[clus_index].shape[0]
+            clustersizes[i] = labels[np.where(labels == i)].shape[0]
+        idx = np.argsort(clustersizes)
+        lut = np.zeros_like(idx)
+        lut[idx] = np.arange(n_clusters)
+        sorted_labels = lut[labels]
+        shape = (n_clusters, self.data.shape[0])
+        cluster_labels = np.full(shape, np.nan)
+        
+        for i in range(n_clusters):
+            cluster_labels[i, navigation_mask] = \
+                np.where(sorted_labels == i, 1, 0)
+
+        for i in range(n_clusters):
+            clus_index = np.where(sorted_labels == i)
             # if using the pca components
             if use_decomposition_for_centers:
                 # pca clustered...
@@ -1754,18 +1766,7 @@ class MVA():
             else:
                 cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)\
                     / clustersizes[i]
-            
-        idx = np.argsort(clustersizes)
-        lut = np.zeros_like(idx)
-        lut[idx] = np.arange(n_clusters)
-        sorted_labels = lut[labels]
-        shape = (n_clusters, self.data.shape[0])
-        cluster_labels = np.full(shape, np.nan)
-        
-        for i in range(n_clusters):
-            cluster_labels[i, navigation_mask] = \
-                np.where(sorted_labels == i, 1, 0)
-         
+
 
         return sorted_labels,cluster_labels, cluster_centers
 
