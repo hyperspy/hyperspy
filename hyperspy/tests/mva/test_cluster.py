@@ -129,17 +129,17 @@ class TestClusterEvaluate:
             X.append(centers[i] + np.random.normal(scale=std,size=(n, 5)))
         X = np.concatenate(X)
         np.random.shuffle(X)
-        self.signal = signals.Signal1D(X)        
+        self.signal = signals.Signal1D(X)
         self.signal.decomposition()
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
     @pytest.mark.parametrize("use_decomposition_results", (True, False))
     @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax"))
     @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
-    @pytest.mark.parametrize("metric", ("elbow","silhouette","gap"))    
+    @pytest.mark.parametrize("metric", ("elbow","silhouette","gap"))
     def test_scores(self, algorithm, use_decomposition_results,
                     scaling, use_decomposition_for_centers,metric):
-            
+
         self.signal.evaluate_number_of_clusters(
             8,
             scaling=scaling,
@@ -151,42 +151,42 @@ class TestClusterEvaluate:
         best_k = self.signal.learning_results.number_of_clusters
         if isinstance(best_k,list):
             best_k = best_k[0]
-        
+
         test_k_range=list(range(1,9))
-        if(algorithm=="agglomerative"):
+        if(algorithm == "agglomerative"):
             test_k_range   = list(range(2, 9))
-        elif(algorithm=="kmeans"):
-            if metric =="silhouette":
+        elif(algorithm == "kmeans"):
+            if metric == "silhouette":
                 test_k_range   = list(range(2,9))
 
         np.testing.assert_allclose(k_range,test_k_range)
         np.testing.assert_allclose(best_k, 3)
 
-                    
 
-                   
+
+
 class TestClusterCustomScaling:
 
     def setup_method(self):
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
-        n_samples=[400]*3
-        std = [1.0]*3
+        n_samples=[400] * 3
+        std = [1.0] * 3
         X = []
-        centers = np.random.uniform(-20,20,size=(3, 5))
+        centers = np.random.uniform(-20, 20, size=(3, 5))
         for i, (n, std) in enumerate(zip(n_samples, std)):
-            X.append(centers[i] + np.random.normal(scale=std,size=(n, 5)))
+            X.append(centers[i] + np.random.normal(scale=std, size=(n, 5)))
         X = np.concatenate(X)
         np.random.shuffle(X)
-        self.signal = signals.Signal1D(X)        
+        self.signal = signals.Signal1D(X)
         self.signal.decomposition()
-        
-        
+
+
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
     @pytest.mark.parametrize("use_decomposition_results", (True, False))
     @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
-    @pytest.mark.parametrize("metric", ("elbow","silhouette","gap"))    
+    @pytest.mark.parametrize("metric", ("elbow", "silhouette", "gap"))
     def test_custom(self,  use_decomposition_results,
                 algorithm,use_decomposition_for_centers,metric):
             custom_scaling = import_sklearn.sklearn.preprocessing.MinMaxScaler
@@ -198,7 +198,7 @@ class TestClusterCustomScaling:
                 algorithm=algorithm,
                 metric=metric)
             best_k = self.signal.learning_results.number_of_clusters
-            if isinstance(best_k,list):
+            if isinstance(best_k, list):
                 best_k = best_k[0]
 
             np.testing.assert_allclose(best_k, 3)

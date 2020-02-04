@@ -372,7 +372,6 @@ class MVATools(object):
             title = '%s' % comp_label
             if self.axes_manager.signal_dimension == 1:
                 plt.title(title)
-                animate_legend(f)
             else:
                 plt.suptitle(title)
         try:

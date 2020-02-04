@@ -6,7 +6,7 @@ Cluster analysis
 
 A Hyperspy signal can represent a number of large arrays of different signals such as a map of chemical composition (EDS, XRF),
 a stack of elemental maps, chemical state (EELS/XANES), or structure (diffraction pattern). 
-Identifying and extracting trends from large datasets is often difficult and both PCA and cluster analysis play an important role
+Identifying and extracting trends from large datasets is often difficult and PCA, BSS, NMF and cluster analysis play an important role
 in this process. 
 Cluster analysis aims to group the data, or rather features in the data, into N sets with similar properties and it does this 
 by comparing the "distances" (or similar metric) between different features and grouping those that are closest.   

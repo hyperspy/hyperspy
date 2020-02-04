@@ -39,7 +39,7 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
-from hyperspy.external.progressbar import progressbar 
+from hyperspy.external.progressbar import progressbar
 
 
 _logger = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ class MVA():
         :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
         :py:meth:`~.signal.MVATools.plot_decomposition_results`,
         :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
-        
+
         """
         to_return = None
         # Check if it is the wrong data type
@@ -524,9 +524,9 @@ class MVA():
             number of principal components to pass to the BSS algorithm
         algorithm : str
             BSS algorithms available.
-            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA", 
-            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to 
-            perform FastICA, otherwise use the Modular toolkit for Data 
+            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA",
+            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to
+            perform FastICA, otherwise use the Modular toolkit for Data
             Processing (MDP) is used.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
@@ -552,13 +552,13 @@ class MVA():
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
         reverse_component_criterion : str
-            One of {'factors', 'loadings'}. Use either the factor or the 
+            One of {'factors', 'loadings'}. Use either the factor or the
             loading to determine if the component needs to be reversed.
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
         Notes
         -----
-        See the FastICA documentation, with more arguments that can be passed 
+        See the FastICA documentation, with more arguments that can be passed
         as kwargs :py:class:`sklearn.decomposition.FastICA`
         See also
         --------
@@ -585,7 +585,7 @@ class MVA():
             # if the factors are lazy, we compute them, which should be fine
             # since we already reduce the dimensionality of the data.
             factors.compute()
-            
+
         # Check factors
         if not isinstance(factors, BaseSignal):
             raise ValueError(
@@ -623,7 +623,7 @@ class MVA():
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.
                 mask.compute()
-                
+
         # Note that we don't check the factor's signal dimension. This is on
         # purpose as an user may like to apply pretreaments that change their
         # dimensionality.
@@ -716,7 +716,7 @@ class MVA():
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = unmixing_matrix @ invsqcovmat
         if lr.explained_variance is not None:
-            if hasattr(lr.explained_variance, "compute"):	
+            if hasattr(lr.explained_variance, "compute"):
                 lr.explained_variance = lr.explained_variance.compute()
             # The output of ICA is not sorted in any way what makes it
             # difficult to compare results from different unmixings. The
@@ -961,7 +961,7 @@ class MVA():
              if int, rebuilds SI from components in range 0-given int
              if list of ints, rebuilds SI from only components in given list
 
-        Returns 
+        Returns
         -------
         Signal instance
         """
@@ -1255,7 +1255,7 @@ class MVA():
         return ax
 
     def plot_cluster_metric(self):
-        """Plot the cluster metrics calculated 
+        """Plot the cluster metrics calculated
            using evaluate_number_of_clusters method
 
         """
@@ -1271,22 +1271,22 @@ class MVA():
         nclusters = target.number_of_clusters
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.scatter(xdata,ydata)
+        ax.scatter(xdata, ydata)
         ax.set_xlabel('number of clusters')
         label =  str(target.cluster_metric) +"_metric"
         ax.set_ylabel(label)
-        if isinstance(nclusters,list):
+        if isinstance(nclusters, list):
             for nc in nclusters:
                 ax.axvline(nc,
-                           linewidth=2,
-                           color='gray',
-                           linestyle='dashed')
+                    linewidth=2,
+                    color='gray',
+                    linestyle='dashed')
         else:
-                ax.axvline(nclusters,
-                           linewidth=2,
-                           color='gray',
-                           linestyle='dashed')
-            
+            ax.axvline(nclusters,
+                linewidth=2,
+                color='gray',
+                linestyle='dashed')
+
         plt.draw()
         return ax
 
@@ -1347,7 +1347,7 @@ class MVA():
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
-    def _estimate_elbow_position(self, curve_values,log=True):
+    def _estimate_elbow_position(self, curve_values, log=True):
         """
         Estimate the elbow position of a scree plot curve
         Used to estimate the number of significant components in
@@ -1384,7 +1384,7 @@ class MVA():
             if log:
                 y0 = np.log(curve_values[i])
             else:
-                y0 = curve_values[i]                
+                y0 = curve_values[i]
             x0 = i
             distance[i] = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) /\
                 np.math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -1412,36 +1412,36 @@ class MVA():
             for clustering. Note - If this option is not used the raw data
             is used. This can be memory intensive and is only recommened if
             the Signal has a small `signal_dimension`.
-        scaling : {"standard","norm","minmax", or scikit learn scaling method} 
-            default: 'minmax' 
-            Preprocessing the data before cluster analysis requires scaling 
+        scaling : {"standard","norm","minmax", or scikit learn scaling method}
+            default: 'minmax'
+            Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
-            adjusts each feature to have uniform variation. Norm scaling 
-            adjusts treats the set of features like a vector and 
-            each measurement is scaled to length 1. 
-            You can also pass one of the scikit-learn preprocessing 
+            adjusts each feature to have uniform variation. Norm scaling
+            adjusts treats the set of features like a vector and
+            each measurement is scaled to length 1.
+            You can also pass one of the scikit-learn preprocessing
             scale_method = import sklearn.processing.StandadScaler
             scaling = scale_method
-            See scaling methods in scikit-learn preprocessing for further 
+            See scaling methods in scikit-learn preprocessing for further
             details.
-        scaling_kwargs : 
-            Additional parameters passed to the cluster scaling algorithm. 
-            See sklearn.preprocessing scaling methods for further details            
+        scaling_kwargs :
+            Additional parameters passed to the cluster scaling algorithm.
+            See sklearn.preprocessing scaling methods for further details
         number_pca_components: int , default None
-            If you are clustering using the decomposition results 
+            If you are clustering using the decomposition results
             (use_decomposition_results = True) you can define how many PCA
-            components to use.   if set to None the method uses the 
+            components to use.   if set to None the method uses the
             estimate of significant components found in the decomposition step
-            using the elbow method 
+            using the elbow method
             (learningresults.number_significant_components)
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             clustering.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
-            clustering.  Note that if use_decomposition_results=True the 
-            signal_mask is ignored. The number of PCA components is used to 
-            set the number of components to use. 
+            clustering.  Note that if use_decomposition_results=True the
+            signal_mask is ignored. The number of PCA components is used to
+            set the number of components to use.
 
         Returns
         ----------
@@ -1458,14 +1458,14 @@ class MVA():
         elif scaling == "standard":
             algorithm = import_sklearn.sklearn.preprocessing.StandardScaler
         elif scaling == "minmax":
-            algorithm = import_sklearn.sklearn.preprocessing.MinMaxScaler            
+            algorithm = import_sklearn.sklearn.preprocessing.MinMaxScaler
         else:
             algorithm = scaling
             if inspect.isclass(scaling) \
                 and not issubclass(algorithm,
                             import_sklearn.sklearn.base.TransformerMixin):
-                    raise ValueError("The class provided to the scaling" 
-                        "parameter must be a scikit-learn" 
+                    raise ValueError("The class provided to the scaling"
+                        "parameter must be a scikit-learn"
                         "preprocessing class.")
 
         if self.axes_manager.navigation_size < 2:
@@ -1513,7 +1513,7 @@ class MVA():
                           **kwargs,
                           ):
         """
-        Cluster analysis of a scaled data - internal 
+        Cluster analysis of a scaled data - internal
 
         Parameters
         ----------
@@ -1523,9 +1523,9 @@ class MVA():
         algorithm: string "kmeans" or "agglomerative"
              See scikit-learn documentation. Default "kmeans"
         **kwargs
-            Additional parameters passed to the clustering algorithm. 
-            This may include `n_init`, the number of times the algorithm is 
-            restarted to optimize results.   
+            Additional parameters passed to the clustering algorithm.
+            This may include `n_init`, the number of times the algorithm is
+            restarted to optimize results.
 
         """
         if import_sklearn.sklearn_installed is False:
@@ -1543,7 +1543,7 @@ class MVA():
     def cluster_analysis(self,
                          n_clusters=None,
                          scaling="minmax",
-                         scaling_kwargs={},                         
+                         scaling_kwargs={},
                          use_decomposition_results=True,
                          use_decomposition_for_centers=False,
                          number_pca_components=None,
@@ -1561,20 +1561,20 @@ class MVA():
         ----------
         n_clusters : int
             Number of clusters to find.
-        scaling : {"standard","norm","minmax", or scikit learn scaling method} 
-            default: 'standard' 
-            Preprocessing the data before cluster analysis requires scaling 
+        scaling : {"standard","norm","minmax", or scikit learn scaling method}
+            default: 'standard'
+            Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
-            adjusts each feature to have uniform variation. Norm scaling 
-            adjusts treats the set of features like a vector and 
-            each measurement is scaled to length 1. 
-            You can also pass one of the scikit-learn preprocessing 
+            adjusts each feature to have uniform variation. Norm scaling
+            adjusts treats the set of features like a vector and
+            each measurement is scaled to length 1.
+            You can also pass one of the scikit-learn preprocessing
             scale_method = import sklearn.processing.StandadScaler
             scaling = scale_method
-            See scaling methods in scikit-learn preprocessing for further 
-            details.        
+            See scaling methods in scikit-learn preprocessing for further
+            details.
         scaling_kwargs : dict
-            Additional parameters passed to the cluster scaling algorithm. 
+            Additional parameters passed to the cluster scaling algorithm.
             See sklearn.preprocessing scaling methods for further details
         use_decomposition_results : bool
             If True (recommended) the signal's decomposition results are used
@@ -1582,15 +1582,15 @@ class MVA():
             is used. This can be memory intensive and is only recommened if
             the Signal has a small `signal_dimension`.
         use_decomposition_for_centers : bool
-            If True (recommended) the pca results are used for building the 
-            the cluster centers from the clustered label results. 
+            If True (recommended) the pca results are used for building the
+            the cluster centers from the clustered label results.
             If False the original signal data is used.
         number_pca_components : int, default None
-            If you are getting the cluster centers using the decomposition 
-            results (use_decomposition_for_centers=True) you can define how 
-            many PCA components to use. If set to None the method uses the 
+            If you are getting the cluster centers using the decomposition
+            results (use_decomposition_for_centers=True) you can define how
+            many PCA components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
-            using the elbow method and stored in the 
+            using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
@@ -1600,15 +1600,21 @@ class MVA():
             decomposition.
         algorithm : { "kmeans" | "agglomerative" }
             See scikit-lear documentation. Default "kmeans"
-        **kwargs: dict  optional, default - empty
-            Additional parameters passed to the clustering algorithm. 
-            For example, in case of the "kmeans" algorithm, `n_init` can be 
-            used to define the number of times the algorithm is restarted to 
-            optimize results.   
+        return_info : bool, default False
+            The result of the cluster analysis is stored internally. However,
+            the cluster class used  contain a number of attributes.
+            If True (the default is False)
+            return the cluster object so the attributes can be accessed.
+        **kwargs : dict  optional, default - empty
+            Additional parameters passed to the clustering algorithm.
+            For example, in case of the "kmeans" algorithm, `n_init` can be
+            used to define the number of times the algorithm is restarted to
+            optimize results.
 
         Returns:
-            Scikit-learn object used for clustering. Useful if you wish to
-            examine inertia or other kmeans results.
+            If 'return_info' is True returns the Scikit-learn cluster object
+            used for clustering. Useful if you wish to
+            examine inertia or other outputs.
         """
 
         to_return = None
@@ -1663,8 +1669,8 @@ class MVA():
                 )
         finally:
             target.cluster_membership = sorted_membership
-            target.cluster_labels     = cluster_labels
-            target.cluster_centers    = cluster_centers
+            target.cluster_labels = cluster_labels
+            target.cluster_centers = cluster_centers
             target.number_of_clusters = n_clusters
             target.cluster_algorithm = algorithm
             self.learning_results.__dict__.update(target.__dict__)
@@ -1691,15 +1697,15 @@ class MVA():
         labels : int array of length n_samples where each value is a cluster
             label from 0 to n_clusters-1
         use_decomposition_for_centers : bool
-            If True (recommended) the pca results are used for building the 
-            the cluster centers from the clustered label results. 
+            If True (recommended) the pca results are used for building the
+            the cluster centers from the clustered label results.
             If False the original signal data is used.
         number_pca_components : int, default None
-            If you are getting the cluster centers using the decomposition 
-            results (use_decomposition_for_centers=True) you can define how 
-            many PCA components to use. If set to None the method uses the 
+            If you are getting the cluster centers using the decomposition
+            results (use_decomposition_for_centers=True) you can define how
+            many PCA components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
-            using the elbow method and stored in the 
+            using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
 
         Returns
@@ -1741,17 +1747,21 @@ class MVA():
         clustersizes = np.zeros((n_clusters,), dtype=np.int)
         for i in range(n_clusters):
             clustersizes[i] = labels[np.where(labels == i)].shape[0]
-        idx = np.argsort(clustersizes)
+        # this sorts the labels based on clustersize for high to low
+        # i.e. largest cluster first
+        idx = np.argsort(clustersizes)[::-1]
         lut = np.zeros_like(idx)
         lut[idx] = np.arange(n_clusters)
         sorted_labels = lut[labels]
         shape = (n_clusters, self.data.shape[0])
         cluster_labels = np.full(shape, np.nan)
-        
+        # now create the labels from these sorted labels
         for i in range(n_clusters):
             cluster_labels[i, navigation_mask] = \
                 np.where(sorted_labels == i, 1, 0)
-
+        #
+        # create the centers to match
+        #
         for i in range(n_clusters):
             clus_index = np.where(sorted_labels == i)
             # if using the pca components
@@ -1789,28 +1799,28 @@ class MVA():
 
         For each cluster it evaluates the silhouette score which is a metric of
         how well seperated the clusters are. Maximima or peaks in the scores
-        indicate good choices for cluster sizes. 
+        indicate good choices for cluster sizes.
 
 
         Parameters
         ----------
         max_clusters : int, default 15
-            Max number of clusters to use. The method will scan from 2 to 
+            Max number of clusters to use. The method will scan from 2 to
             max_clusters
-        scaling : {"standard","norm","minmax" or scikit learn scaling method} 
-            default: 'minmax' 
-            Preprocessing the data before cluster analysis requires scaling 
+        scaling : {"standard","norm","minmax" or scikit learn scaling method}
+            default: 'minmax'
+            Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
-            adjusts each feature to have uniform variation. Norm scaling 
-            adjusts treats the set of features like a vector and 
-            each measurement is scaled to length 1. 
-            You can also pass one of the scikit-learn preprocessing 
+            adjusts each feature to have uniform variation. Norm scaling
+            adjusts treats the set of features like a vector and
+            each measurement is scaled to length 1.
+            You can also pass one of the scikit-learn preprocessing
             scale_method = import sklearn.processing.StandadScaler
             scaling = scale_method
-            See scaling methods in scikit-learn preprocessing for further 
+            See scaling methods in scikit-learn preprocessing for further
             details.
         scaling_kwargs : dict, default empty
-            Additional parameters passed to the cluster scaling algorithm. 
+            Additional parameters passed to the cluster scaling algorithm.
             See sklearn.preprocessing scaling methods for further details
         use_decomposition_results : bool, default : True
             If True (recommended) the signal's decomposition results are used
@@ -1818,15 +1828,15 @@ class MVA():
             is used. This can be memory intensive and is only recommened if
             the Signal has a small `signal_dimension`.
         use_decomposition_for_centers : bool
-            If True (recommended) the pca results are used for building the 
-            the cluster centers from the clustered label results. 
+            If True (recommended) the pca results are used for building the
+            the cluster centers from the clustered label results.
             If False the original signal data is used.
         number_pca_components : int, default None
-            If you are getting the cluster centers using the decomposition 
-            results (use_decomposition_for_centers=True) you can define how 
-            many PCA components to use. If set to None the method uses the 
+            If you are getting the cluster centers using the decomposition
+            results (use_decomposition_for_centers=True) you can define how
+            many PCA components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
-            using the elbow method and stored in the 
+            using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
         navigation_mask : boolean numpy array, default : None
             The navigation locations marked as True are not used in the
@@ -1835,13 +1845,13 @@ class MVA():
             The signal locations marked as True are not used in the
             decomposition.
         metric : {'elbow','silhouette','gap'} default 'gap'
-            Use distance,silhouette analysis or gap statistics to estimate 
+            Use distance,silhouette analysis or gap statistics to estimate
             the optimal number of clusters.
-            Gap is believed to be, overall, the best metric but it's also 
-            the slowest. Elbow measures the distances between points in 
-            each cluster as an estimate of how well grouped they are and 
-            is the fastest metric. 
-            For elbow the optimal k is the knee or elbow point. 
+            Gap is believed to be, overall, the best metric but it's also
+            the slowest. Elbow measures the distances between points in
+            each cluster as an estimate of how well grouped they are and
+            is the fastest metric.
+            For elbow the optimal k is the knee or elbow point.
             For gap the optimal k is the first k gap(k)>= gap(k+1)-std_error
             For silhouette the optimal k will be one of the "maxima" found with
             this method
@@ -1850,7 +1860,7 @@ class MVA():
             Gap statistics compares the results from clustering the data to
             clustering random data. This random clustering is
             typically averaged n_ref times to get an statistical average
-        cluster_kwargs: dict {}  default empty
+        **kwargs : dict {}  default empty
             Additional parameters passed to the clustering algorithm.
 
         See also
@@ -1858,15 +1868,15 @@ class MVA():
         :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
 
         """
-        def distances_within_cluster(data,memberships,squared=True): 
+        def distances_within_cluster(data,memberships,squared=True):
             return [np.sum(
                 import_sklearn.sklearn.metrics.pairwise.euclidean_distances(
                 data[memberships == c, :]
                 -np.mean(data[memberships == c],axis=0),
                 squared=squared)/
-                (2.*data[memberships == c, :].shape[0])) 
-                for c in np.unique(memberships)]  
-        
+                (2.*data[memberships == c, :].shape[0]))
+                for c in np.unique(memberships)]
+
         if use_decomposition_results and number_pca_components is None:
             number_pca_components = self._get_number_pca_components_for_clustering()
 
@@ -1875,26 +1885,26 @@ class MVA():
                              "must be specified and be >= 2.")
 
         to_return = None
-        best_k    = None        
+        best_k    = None
         k_range   = list(range(1, max_clusters+1))
         #
         # for silhouette k starts at 2
         # for kmeans or gap k starts at 1
         # As these methods use random numbers we need to
-        # initiate the random number generator to ensure 
+        # initiate the random number generator to ensure
         # consistent/repeatable results
         #
         np.random.seed(1)
-        if(algorithm=="agglomerative"):
+        if(algorithm == "agglomerative"):
             k_range   = list(range(2, max_clusters+1))
-        if(algorithm=="kmeans"):
+        if(algorithm == "kmeans"):
             kwargs['random_state']=1
             if metric =="silhouette":
                 k_range   = list(range(2, max_clusters+1))
-            if metric =="gap":
+            if metric == "gap":
                 # set number of averages to 1
                 kwargs['n_init']=1
-        min_k = np.min(k_range)    
+        min_k = np.min(k_range)
         target = LearningResults()
 
         try:
@@ -1905,13 +1915,13 @@ class MVA():
                 number_pca_components=number_pca_components,
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
-    
+
             # from 2 to max_clusters
             # cluster and calculate silhouette_score
             if metric == "elbow":
                 pbar = progressbar(total=len(k_range))
                 inertia = np.zeros(len(k_range))
-                
+
                 for i,k in enumerate(k_range):
                     alg = self._cluster_analysis(k,
                                                  scaled_data,
@@ -1921,13 +1931,13 @@ class MVA():
                     D = distances_within_cluster(scaled_data,alg.labels_)
                     W = np.sum(D)
                     inertia[i]= np.log(W)
-                    pbar.update(1)            
+                    pbar.update(1)
                     _logger.info("For n_clusters =", k,
                                  "The distance metric is :",
                                  inertia[-1])
                     to_return = inertia
                     best_k =self._estimate_elbow_position(to_return,log=False)\
-                        +min_k 
+                        +min_k
             elif metric == "silhouette":
                 k_range   = list(range(2, max_clusters+1))
                 pbar = progressbar(total=len(k_range))
@@ -1938,11 +1948,11 @@ class MVA():
                                                  algorithm,
                                                  **kwargs)
                     cluster_labels = alg.labels_
-                    silhouette_avg.append( 
+                    silhouette_avg.append(
                         import_sklearn.sklearn.metrics.silhouette_score(
                         scaled_data,
                         cluster_labels))
-                    pbar.update(1)            
+                    pbar.update(1)
                     _logger.info("For n_clusters =", k,
                                  "The average silhouette_score is :",
                                  silhouette_avg[-1])
@@ -1979,11 +1989,11 @@ class MVA():
                                                  scaled_data,
                                                  algorithm,
                                                  **kwargs)
-                    
+
                     D = distances_within_cluster(scaled_data,alg.labels_,
                                                  squared=False)
                     W = np.sum(D)
-                    data_inertia[o_indx]=np.log(W)    
+                    data_inertia[o_indx]=np.log(W)
                     # now do n_ref clusters for a uniform random distribution
                     # to determine "gap" between data and random distribution
                     for i_indx in range(n_ref):
@@ -1991,7 +2001,7 @@ class MVA():
                         # repeatable but still sampling different configurations
                         if(algorithm=="kmeans"):
                             kwargs['random_state']=i_indx
-                        np.random.seed(i_indx)                        
+                        np.random.seed(i_indx)
                         for f_indx in range(scaled_data.shape[1]):
                             xmin = np.min(scaled_data[:,f_indx])
                             xmax = np.max(scaled_data[:,f_indx])
@@ -2005,15 +2015,15 @@ class MVA():
                         D = distances_within_cluster(reference,alg.labels_,
                                                  squared=False)
                         W = np.sum(D)
-                        local_inertia[i_indx]=np.log(W) 
+                        local_inertia[i_indx]=np.log(W)
                         pbar.update(1)
                     reference_inertia[o_indx]=np.mean(local_inertia)
                     reference_std[o_indx] = np.std(local_inertia)
-                std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std 
+                std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std
                 std_error = np.abs(std_error)
                 gap       = reference_inertia-data_inertia
-                to_return = gap                
-                best_k = min_k 
+                to_return = gap
+                best_k = min_k
                 for i in range(1,len(k_range)-1):
                     if gap[i] >= (gap[i+1]- std_error[i+1]):
                         best_k=i+min_k
