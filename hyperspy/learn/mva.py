@@ -1742,40 +1742,43 @@ class MVA():
             cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
         else:
             cluster_centers = np.zeros((n_clusters,
-                                        self.learning_results.factors.shape[0]))
+                                       self.learning_results.factors.shape[0]))
 
+        #
+        # create the centers to match
+        #
         clustersizes = np.zeros((n_clusters,), dtype=np.int)
         for i in range(n_clusters):
+            clus_index = np.where(labels == i)
             clustersizes[i] = labels[np.where(labels == i)].shape[0]
+            # if using the pca components
+            if use_decomposition_for_centers:
+                # pca clustered...
+                a = self.learning_results.loadings[clus_index][:,
+                                                       0:number_pca_components]
+                b = self.learning_results.factors[:, 0:number_pca_components].T
+                center = np.dot(a, b).sum(axis=0)
+                cluster_centers[i, :] = cluster_centers[i, :] + center
+                cluster_centers[i, :] = cluster_centers[i, :] #/ clustersizes[i]
+            else:
+                cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)#\
+
         # this sorts the labels based on clustersize for high to low
         # i.e. largest cluster first
-        idx = np.argsort(clustersizes)[::-1]
+        idx = np.argsort(cluster_centers.sum(axis=1))[::-1]
         lut = np.zeros_like(idx)
         lut[idx] = np.arange(n_clusters)
         sorted_labels = lut[labels]
         shape = (n_clusters, self.data.shape[0])
         cluster_labels = np.full(shape, np.nan)
+        sorted_cluster_centers = np.zeros_like(cluster_centers)            
         # now create the labels from these sorted labels
         for i in range(n_clusters):
             cluster_labels[i, navigation_mask] = \
                 np.where(sorted_labels == i, 1, 0)
-        #
-        # create the centers to match
-        #
-        for i in range(n_clusters):
-            clus_index = np.where(sorted_labels == i)
-            # if using the pca components
-            if use_decomposition_for_centers:
-                # pca clustered...
-                a = self.learning_results.loadings[clus_index][:,
-                                                               0:number_pca_components]
-                b = self.learning_results.factors[:, 0:number_pca_components].T
-                center = np.dot(a, b).sum(axis=0)
-                cluster_centers[i, :] = cluster_centers[i, :] + center
-                cluster_centers[i, :] = cluster_centers[i, :] / clustersizes[i]
-            else:
-                cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)\
-                    / clustersizes[i]
+            sorted_cluster_centers[i,:] = cluster_centers[lut[i],:]\
+                /clustersizes[lut[i]]                
+
 
 
         return sorted_labels,cluster_labels, cluster_centers
