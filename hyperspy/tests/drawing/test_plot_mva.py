@@ -90,14 +90,14 @@ class TestPlotClusterAnalysis:
     def setup_method(self, method):
         from sklearn.datasets import make_blobs
         np.random.seed(1)
-        data = make_blobs(n_samples=200, n_features=10, 
+        data = make_blobs(n_samples=400, n_features=10, 
                           shuffle=False,random_state=1)[0]
         # nav1, sig1
-        s = signals.Signal1D(data.reshape(200, 10))
+        s = signals.Signal1D(data.reshape(400, 10))
         # nav2, sig1
-        s2 = signals.Signal1D(data.reshape(20, 10, 10))
+        s2 = signals.Signal1D(data.reshape(40, 10, 10))
         # nav2, sig2
-        s3 = signals.Signal2D(data.reshape(4, 5, 10, 10))
+        s3 = signals.Signal2D(data.reshape(8, 5, 10, 10))
 
         # Run decomposition and cluster analysis
         s.decomposition()
