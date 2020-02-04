@@ -1781,7 +1781,7 @@ class MVA():
 
 
 
-        return sorted_labels,cluster_labels, cluster_centers
+        return sorted_labels,cluster_labels, sorted_cluster_centers
 
     def evaluate_number_of_clusters(self,
                                     max_clusters=12,
