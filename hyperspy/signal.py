@@ -1711,7 +1711,7 @@ class MVATools(object):
     def plot_cluster_centers(self,
                              cluster_ids=None,
                              calibrate=True,
-                             same_window=None,
+                             same_window=True,
                              comp_label="Cluster centers",
                              per_row=3):
         """Plot centers from a cluster analysis.
