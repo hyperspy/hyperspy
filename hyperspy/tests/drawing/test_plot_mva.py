@@ -91,6 +91,7 @@ class TestPlotClusterAnalysis:
     def setup_method(self, method):
         from sklearn.datasets import make_blobs
         np.random.seed(1)
+        np.random.RandomState(1)
         data = make_blobs(n_samples=400, n_features=10,
                           cluster_std=[1.0,2.5,0.5],
                           shuffle=False,random_state=None)[0]
