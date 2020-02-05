@@ -91,6 +91,7 @@ class TestPlotClusterAnalysis:
         from sklearn.datasets import make_blobs
         np.random.seed(1)
         data = make_blobs(n_samples=400, n_features=10, 
+                          cluster_std=[1.0,2.0,3.0],
                           shuffle=False,random_state=1)[0]
         # nav1, sig1
         s = signals.Signal1D(data.reshape(400, 10))
