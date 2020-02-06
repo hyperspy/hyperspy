@@ -89,25 +89,6 @@ class TestPlotDecomposition:
 class TestPlotClusterAnalysis:
 
     def setup_method(self, method):
-        from sklearn.datasets import make_blobs
-        #np.random.seed(1)
-        #r=np.random.RandomState(1)
-        #data = make_blobs(n_samples=400, n_features=10,
-        #                  cluster_std=[1.0,2.5,0.5],
-        #                  shuffle=False,random_state=r)[0]
- 
-#        np.random.seed(1)
-#        # Use prime numbers to avoid fluke equivalences
-#        # create 3 random clusters
-#        n_samples=[150,100,50]
-#        std = [1.0,2.0,3.0]
-#        X = []
-#        #centers = np.random.uniform(-20, 20, size=(3, 5))
-#        centers = np.array([[-15.0, -15.0], [1.0, 1.0], [15.0, 15.0]])
-#        for i, (n, std) in enumerate(zip(n_samples, std)):
-#            X.append(centers[i] + np.random.normal(scale=std, size=(n, 2)))
-#        X = np.concatenate(X)
-#        np.random.shuffle(X)
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
@@ -120,15 +101,11 @@ class TestPlotClusterAnalysis:
             X.append(centers[i] + np.random.normal(scale=std, size=(n, 3)))
 
         data = np.concatenate(X)
-        np.random.shuffle(data)
 
-
-       # nav1, sig1
+        # nav1, sig1
         s = signals.Signal1D(data.reshape(400, 3))
         # nav2, sig1
         s2 = signals.Signal1D(data.reshape(40, 10, 3))
-        # nav2, sig2
-        s3 = signals.Signal2D(data.reshape(8, 5, 10, 3))
 
         # Run decomposition and cluster analysis
         s.decomposition()
@@ -137,51 +114,71 @@ class TestPlotClusterAnalysis:
         s2.decomposition()
         s2.cluster_analysis(3, algorithm='kmeans',
                             scaling="minmax", random_state=0)
+        
+        image_array=np.zeros((5,5))
+        X=[]
+        for i in range(250):
+            image_array[:,:] = 0.
+            image_array[0,:] = 10.
+            X.append(image_array.copy())
+        for i in range(100):
+            image_array[:,:] = 0.
+            image_array[2,:] = 2.
+            X.append(image_array.copy())
+        for i in range(50):
+            image_array[:,:] = 0.
+            image_array[:,4] = 20.
+            X.append(image_array.copy())
+
+        data = np.concatenate(X)
+
+        # nav2, sig2
+        s3 = signals.Signal2D(data.reshape(20, 20, 5, 5))
         s3.decomposition()
         s3.cluster_analysis(3, algorithm='kmeans',
                             scaling="minmax", random_state=0)
-
+        
         self.s = s
         self.s2 = s2
         self.s3 = s3
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows")
+#    @pytest.mark.skipif(sys.platform == "win32", 
+#                        reason="does not run on windows")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav1_sig1(self):
         return self.s.plot_cluster_labels()
 
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows")
+#    @pytest.mark.skipif(sys.platform == "win32", 
+#                        reason="does not run on windows")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_centers_nav1_sig1(self):
         return self.s.plot_cluster_centers()
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows")
+#    @pytest.mark.skipif(sys.platform == "win32", 
+#                        reason="does not run on windows")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig1(self):
         return self.s2.plot_cluster_labels()
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows")
+#    @pytest.mark.skipif(sys.platform == "win32", 
+#                        reason="does not run on windows")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_centers_nav2_sig1(self):
         return self.s2.plot_cluster_centers()
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows")
+#    @pytest.mark.skipif(sys.platform == "win32", 
+#                        reason="does not run on windows")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig2(self):
         return self.s3.plot_cluster_labels()
 
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows")
+#    @pytest.mark.skipif(sys.platform == "win32", 
+#                        reason="does not run on windows")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_centers_nav2_sig2(self):
