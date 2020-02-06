@@ -90,11 +90,11 @@ class TestPlotClusterAnalysis:
 
     def setup_method(self, method):
         from sklearn.datasets import make_blobs
-        np.random.seed(1)
-        r=np.random.RandomState(1)
-        data = make_blobs(n_samples=400, n_features=10,
-                          cluster_std=[1.0,2.5,0.5],
-                          shuffle=False,random_state=r)[0]
+        #np.random.seed(1)
+        #r=np.random.RandomState(1)
+        #data = make_blobs(n_samples=400, n_features=10,
+        #                  cluster_std=[1.0,2.5,0.5],
+        #                  shuffle=False,random_state=r)[0]
  
 #        np.random.seed(1)
 #        # Use prime numbers to avoid fluke equivalences
@@ -133,13 +133,13 @@ class TestPlotClusterAnalysis:
         # Run decomposition and cluster analysis
         s.decomposition()
         s.cluster_analysis(3, algorithm='kmeans',
-                           scaling="minmax", random_state=r)
+                           scaling="minmax", random_state=0)
         s2.decomposition()
         s2.cluster_analysis(3, algorithm='kmeans',
-                            scaling="minmax", random_state=r)
+                            scaling="minmax", random_state=0)
         s3.decomposition()
         s3.cluster_analysis(3, algorithm='kmeans',
-                            scaling="minmax", random_state=r)
+                            scaling="minmax", random_state=0)
 
         self.s = s
         self.s2 = s2
