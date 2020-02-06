@@ -93,7 +93,7 @@ class TestPlotClusterAnalysis:
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
         n_samples=[250,100,50]
-        std = [1.0,2.0,3.0]
+        std = [1.0,2.0,0.5]
         X = []
         centers = np.array([[-15.0, -15.0,-15.0], [1.0, 1.0,1.0],
                             [15.0, 15.0, 15.0]])
