@@ -95,12 +95,40 @@ class TestPlotClusterAnalysis:
         data = make_blobs(n_samples=400, n_features=10,
                           cluster_std=[1.0,2.5,0.5],
                           shuffle=False,random_state=r)[0]
-        # nav1, sig1
-        s = signals.Signal1D(data.reshape(400, 10))
+ 
+#        np.random.seed(1)
+#        # Use prime numbers to avoid fluke equivalences
+#        # create 3 random clusters
+#        n_samples=[150,100,50]
+#        std = [1.0,2.0,3.0]
+#        X = []
+#        #centers = np.random.uniform(-20, 20, size=(3, 5))
+#        centers = np.array([[-15.0, -15.0], [1.0, 1.0], [15.0, 15.0]])
+#        for i, (n, std) in enumerate(zip(n_samples, std)):
+#            X.append(centers[i] + np.random.normal(scale=std, size=(n, 2)))
+#        X = np.concatenate(X)
+#        np.random.shuffle(X)
+        np.random.seed(1)
+        # Use prime numbers to avoid fluke equivalences
+        # create 3 random clusters
+        n_samples=[250,100,50]
+        std = [1.0,2.0,3.0]
+        X = []
+        centers = np.array([[-15.0, -15.0,-15.0], [1.0, 1.0,1.0],
+                            [15.0, 15.0, 15.0]])
+        for i, (n, std) in enumerate(zip(n_samples, std)):
+            X.append(centers[i] + np.random.normal(scale=std, size=(n, 3)))
+
+        data = np.concatenate(X)
+        np.random.shuffle(data)
+
+
+       # nav1, sig1
+        s = signals.Signal1D(data.reshape(400, 3))
         # nav2, sig1
-        s2 = signals.Signal1D(data.reshape(40, 10, 10))
+        s2 = signals.Signal1D(data.reshape(40, 10, 3))
         # nav2, sig2
-        s3 = signals.Signal2D(data.reshape(8, 5, 10, 10))
+        s3 = signals.Signal2D(data.reshape(8, 5, 10, 3))
 
         # Run decomposition and cluster analysis
         s.decomposition()
