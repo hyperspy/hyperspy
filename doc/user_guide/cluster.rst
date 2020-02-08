@@ -108,8 +108,9 @@ additional keywords can be passed directly to the scikit learn methods.
 
 
 In this case we know there are 3 signals but for real examples the difficulty
-can be how to define the number of clusters to use.  
-There are a number of metrics for determining the number of clusters. 
+can be how to define the number of clusters to use and a number of metrics
+such as the elbow, Silhouette and Gap metrics can be used to determine the optimal 
+number of clusters. 
 The elbow method measures the sum-of-squares of the distances within a cluster
 and like the PCA decomposition method an elbow or point where the gains 
 diminish with increasing number of clusters indicates the ideal number of 

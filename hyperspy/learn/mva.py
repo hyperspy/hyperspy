@@ -1759,13 +1759,13 @@ class MVA():
                 b = self.learning_results.factors[:, 0:number_pca_components].T
                 center = np.dot(a, b).sum(axis=0)
                 cluster_centers[i, :] = cluster_centers[i, :] + center
-                cluster_centers[i, :] = cluster_centers[i, :] #/ clustersizes[i]
+                cluster_centers[i, :] = cluster_centers[i, :] 
             else:
-                cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)#\
+                cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)
 
         # this sorts the labels based on clustersize for high to low
-        # i.e. largest cluster first
-        idx = np.argsort(cluster_centers.sum(axis=1))[::-1]
+        # i.e. point with laster number of points first
+        idx = np.argsort(clustersizes)[::-1]
         lut = np.zeros_like(idx)
         lut[idx] = np.arange(n_clusters)
         sorted_labels = lut[labels]
