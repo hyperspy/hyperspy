@@ -1380,7 +1380,6 @@ class MVA():
         # loop through the curve values and calculate
         distance = np.zeros(maxpoints)
         for i in range(maxpoints):
-            #y0 = np.log(curve_values[i]+1)
             if log:
                 y0 = np.log(curve_values[i])
             else:
@@ -1412,7 +1411,7 @@ class MVA():
             for clustering. Note - If this option is not used the raw data
             is used. This can be memory intensive and is only recommened if
             the Signal has a small `signal_dimension`.
-        scaling : {"standard","norm","minmax", or scikit learn scaling method}
+        scaling : {"standard","norm","minmax","None" or scikit learn scaling method}
             default: 'minmax'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
@@ -1461,12 +1460,13 @@ class MVA():
             algorithm = import_sklearn.sklearn.preprocessing.MinMaxScaler
         else:
             algorithm = scaling
-            if inspect.isclass(scaling) \
-                and not issubclass(algorithm,
-                            import_sklearn.sklearn.base.TransformerMixin):
-                    raise ValueError("The class provided to the scaling"
-                        "parameter must be a scikit-learn"
-                        "preprocessing class.")
+            if scaling is not None:
+                if inspect.isclass(scaling) \
+                    and not issubclass(algorithm,
+                                import_sklearn.sklearn.base.TransformerMixin):
+                        raise ValueError("The class provided to the scaling"
+                            "parameter must be a scikit-learn"
+                            "preprocessing class.")
 
         if self.axes_manager.navigation_size < 2:
             raise AttributeError("It is not possible to cluster a dataset "
@@ -1561,8 +1561,8 @@ class MVA():
         ----------
         n_clusters : int
             Number of clusters to find.
-        scaling : {"standard","norm","minmax", or scikit learn scaling method}
-            default: 'standard'
+        scaling : {"standard","norm","minmax","None" or scikit learn scaling method}
+            default: 'minmax'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
@@ -1897,11 +1897,9 @@ class MVA():
         # initiate the random number generator to ensure
         # consistent/repeatable results
         #
-        np.random.seed(1)
         if(algorithm == "agglomerative"):
             k_range   = list(range(2, max_clusters+1))
         if(algorithm == "kmeans"):
-            kwargs['random_state']=1
             if metric =="silhouette":
                 k_range   = list(range(2, max_clusters+1))
             if metric == "gap":
@@ -1984,9 +1982,7 @@ class MVA():
 
                 for o_indx,k in enumerate(k_range):
                     # calculate the data metric
-                    np.random.seed(1)
                     if(algorithm=="kmeans"):
-                        kwargs['random_state']=1
                         kwargs['n_init']=1
                     alg = self._cluster_analysis(k,
                                                  scaled_data,
@@ -2002,9 +1998,6 @@ class MVA():
                     for i_indx in range(n_ref):
                         # initiate with a known seed to make the overall results
                         # repeatable but still sampling different configurations
-                        if(algorithm=="kmeans"):
-                            kwargs['random_state']=i_indx
-                        np.random.seed(i_indx)
                         for f_indx in range(scaled_data.shape[1]):
                             xmin = np.min(scaled_data[:,f_indx])
                             xmax = np.max(scaled_data[:,f_indx])
