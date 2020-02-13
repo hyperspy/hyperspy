@@ -1411,7 +1411,7 @@ class MVA():
             for clustering. Note - If this option is not used the raw data
             is used. This can be memory intensive and is only recommened if
             the Signal has a small `signal_dimension`.
-        scaling : {"standard","norm","minmax","None" or scikit learn scaling method}
+        scaling : {"standard","norm","minmax",None or scikit learn scaling method}
             default: 'minmax'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
@@ -1561,7 +1561,7 @@ class MVA():
         ----------
         n_clusters : int
             Number of clusters to find.
-        scaling : {"standard","norm","minmax","None" or scikit learn scaling method}
+        scaling : {"standard","norm","minmax",None or scikit learn scaling method}
             default: 'minmax'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling

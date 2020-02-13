@@ -42,7 +42,7 @@ class TestCluster1d:
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
     @pytest.mark.parametrize("use_decomposition_results", (True, False))
-    @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax"))
+    @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
     @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_parameters(self, algorithm, use_decomposition_results,
@@ -84,7 +84,7 @@ class TestCluster2d:
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
     @pytest.mark.parametrize("use_decomposition_results", (True, False))
-    @pytest.mark.parametrize("scaling", ("standard", "norm","minmax"))
+    @pytest.mark.parametrize("scaling", ("standard", "norm","minmax",None))
     @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_parameters(self, algorithm, use_decomposition_results,
@@ -134,7 +134,7 @@ class TestClusterEvaluate:
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
     @pytest.mark.parametrize("use_decomposition_results", (True, False))
-    @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax"))
+    @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
     @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
     @pytest.mark.parametrize("metric", ("elbow","silhouette","gap"))
     def test_scores(self, algorithm, use_decomposition_results,
