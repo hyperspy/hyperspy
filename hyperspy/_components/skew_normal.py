@@ -146,8 +146,8 @@ class SkewNormal(Expression):
     (=position of maximum) are defined for convenience.
     """
 
-    def __init__(self, x0=0., A=1., scale=1., shape=0., module="scipy",
-                 **kwargs):
+    def __init__(self, x0=0., A=1., scale=1., shape=0.,
+                 module=['numpy', 'scipy'], **kwargs):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
             raise ImportError("The `SkewNormal` component requires "
                               "SymPy >= 1.3")

@@ -458,23 +458,23 @@ def orpca(X, rank, fast=False,
         Sparse error regularization parameter.
         If None, set to 1 / sqrt(nsamples)
     method : {None, 'CF', 'BCD', 'SGD', 'MomentumSGD'}
-        'CF'  - Closed-form solver
-        'BCD' - Block-coordinate descent
-        'SGD' - Stochastic gradient descent
-        'MomentumSGD' - Stochastic gradient descent with momentum
-        If None, set to 'CF'
+        * 'CF'  - Closed-form solver
+        * 'BCD' - Block-coordinate descent
+        * 'SGD' - Stochastic gradient descent
+        * 'MomentumSGD' - Stochastic gradient descent with momentum
+        * If None (default), set to 'CF'
     learning_rate : {None, float}
         Learning rate for the stochastic gradient
         descent algorithm
         If None, set to 1
     init : {None, 'qr', 'rand', np.ndarray}
-        'qr'   - QR-based initialization
-        'rand' - Random initialization
-        np.ndarray if the shape [nfeatures x rank].
-        If None, set to 'qr'
+        * 'qr'   - QR-based initialization
+        * 'rand' - Random initialization
+        * np.ndarray if the shape [nfeatures x rank].
+        * If None (default), set to 'qr'
     training_samples : {None, integer}
         Specifies the number of training samples to use in
-        the 'qr' initialization
+        the 'qr' initialization.
         If None, set to 10
     momentum : {None, float}
         Momentum parameter for 'MomentumSGD' method, should be
@@ -494,6 +494,7 @@ def orpca(X, rank, fast=False,
     -----
     The ORPCA code is based on a transcription of MATLAB code obtained from
     the following research paper:
+
        Jiashi Feng, Huan Xu and Shuicheng Yuan, "Online Robust PCA via
        Stochastic Optimization", Advances in Neural Information Processing
        Systems 26, (2013), pp. 404-412.
@@ -504,6 +505,7 @@ def orpca(X, rank, fast=False,
     along with a MomentumSGD solver for improved convergence and robustness
     with respect to local minima. More information about the gradient descent
     methods and choosing appropriate parameters can be found here:
+
        Sebastian Ruder, "An overview of gradient descent optimization
        algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
 

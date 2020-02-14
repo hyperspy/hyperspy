@@ -21,6 +21,7 @@ import types
 import logging
 
 import numpy as np
+import dask.array as da
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
@@ -158,7 +159,10 @@ class MVA():
 
         See also
         --------
-        plot_decomposition_factors, plot_decomposition_loadings, plot_lev
+        :py:meth:`~.signal.MVATools.plot_decomposition_factors`,
+        :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
+        :py:meth:`~.signal.MVATools.plot_decomposition_results`,
+        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
 
         """
         to_return = None
@@ -485,55 +489,64 @@ class MVA():
                                 mask=None,
                                 on_loadings=False,
                                 reverse_component_criterion='factors',
-                                compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
         decomposition.
 
-        Available algorithms: FastICA, JADE, CuBICA, and TDSEP
+        Available algorithms: FastICA, JADE, CuBICA, and TDSEP.
+
+        For lazy signal, the factors or loadings are computed to perfom the
+        BSS.
 
         Parameters
         ----------
         number_of_components : int
             number of principal components to pass to the BSS algorithm
-        algorithm : {FastICA, JADE, CuBICA, TDSEP}
+        algorithm : str
             BSS algorithms available.
+            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA", 
+            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to 
+            perform FastICA, otherwise use the Modular toolkit for Data 
+            Processing (MDP) is used.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
-            the signal. If diff_order is 0, the signal is not differentiated.
+            the signal. If `diff_order` is 0, the signal is not differentiated.
         diff_axes : None or list of ints or strings
             If None, when `diff_order` is greater than 1 and `signal_dimension`
             (`navigation_dimension`) when `on_loadings` is False (True) is
             greater than 1, the differences are calculated across all
             signal (navigation) axes. Otherwise the axes can be specified in
             a list.
-        factors : Signal or numpy array.
+        factors : Signal or numpy.ndarray
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance the
             navigation dimension must be 1 and the size greater than 1.
-        comp_list : boolen numpy array
+        comp_list : numpy.ndarray of bool
             choose the components to use by the boolean list. It permits
             to choose non contiguous components.
-        mask : bool numpy array or Signal instance.
+        mask : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
             (navigation shape) when `on_loadings` is False (True).
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        reverse_component_criterion : str {'factors', 'loadings'}
-            Use either the `factor` or the `loading` to determine if the 
-            component needs to be reversed.
-        compute: bool
-           If the decomposition results are lazy, compute the BSS components
-           so that they are not lazy.
-           Default is False.
-
+        reverse_component_criterion : str
+            One of {'factors', 'loadings'}. Use either the factor or the 
+            loading to determine if the component needs to be reversed.
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
 
-        FastICA documentation is here, with more arguments that can be passed as **kwargs:
-        http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.FastICA.html
+        Notes
+        -----
+        See the FastICA documentation, with more arguments that can be passed 
+        as kwargs :py:class:`sklearn.decomposition.FastICA`
+
+        See also
+        --------
+        :py:meth:`~.signal.MVATools.plot_bss_factors`,
+        :py:meth:`~.signal.MVATools.plot_bss_loadings`,
+        :py:meth:`~.signal.MVATools.plot_bss_results`,
 
         """
         from hyperspy.signal import BaseSignal
@@ -545,12 +558,16 @@ class MVA():
                 raise AttributeError(
                     'A decomposition must be performed before blind '
                     'source seperation or factors must be provided.')
-
             else:
                 if on_loadings:
                     factors = self.get_decomposition_loadings()
                 else:
                     factors = self.get_decomposition_factors()
+
+        if hasattr(factors, 'compute'):
+            # if the factors are lazy, we compute them, which should be fine
+            # since we already reduce the dimensionality of the data.
+            factors.compute()
 
         # Check factors
         if not isinstance(factors, BaseSignal):
@@ -585,6 +602,10 @@ class MVA():
                          str(mask.axes_manager.signal_shape),
                          space,
                          str(ref_shape)))
+            if hasattr(mask, 'compute'):
+                # if the mask is lazy, we compute them, which should be fine
+                # since we already reduce the dimensionality of the data.
+                mask.compute()
 
         # Note that we don't check the factor's signal dimension. This is on
         # purpose as an user may like to apply pretreaments that change their
@@ -677,7 +698,9 @@ class MVA():
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = unmixing_matrix @ invsqcovmat
-        if lr.explained_variance is not None:
+        if lr.explained_variance is not None: 
+            if hasattr(lr.explained_variance, "compute"):
+                lr.explained_variance = lr.explained_variance.compute()
             # The output of ICA is not sorted in any way what makes it
             # difficult to compare results from different unmixings. The
             # following code is an experimental attempt to sort them in a
@@ -910,7 +933,7 @@ class MVA():
                                         mva_type='decomposition')
         return rec
 
-    def get_bss_model(self, components=None):
+    def get_bss_model(self, components=None, chunks="auto"):
         """Return the spectrum generated with the selected number of
         independent components
 
@@ -925,6 +948,12 @@ class MVA():
         -------
         Signal instance
         """
+        lr = self.learning_results
+        if self._lazy:
+            if isinstance(lr.bss_factors, np.ndarray):
+                lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
+            if isinstance(lr.bss_factors, np.ndarray):
+                lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
         rec = self._calculate_recmatrix(components=components, mva_type='bss',)
         return rec
 
@@ -940,9 +969,10 @@ class MVA():
         See Also:
         ---------
 
-        `plot_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings`,
-        `get_decomposition_factors`.
+        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        :py:meth:`~.learn.mva.MVA.decomposition`,
+        :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`,
+        :py:meth:`~.learn.mva.MVA.get_decomposition_factors`.
 
         """
         from hyperspy._signals.signal1d import Signal1D

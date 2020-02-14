@@ -126,7 +126,7 @@ variable and accordingly set the backend.
 See `pytest-mpl <https://pypi.python.org/pypi/pytest-mpl>`_ for more details.
 
 Exporting pytest results as HTML
-^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 With ``pytest-html`` it is possible to export the results of running pytest 
 for easier viewing. It can be installed by conda:
 

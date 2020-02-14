@@ -27,6 +27,7 @@ import dateutil.parser
 
 import numpy as np
 import traits.api as t
+from copy import deepcopy
 
 import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
@@ -306,9 +307,8 @@ class DigitalMicrographReader(object):
         return data
 
     def read_string(self, length, skip=False):
-        """Read a string defined by the infoArray iarray from
-         file f with a given endianness (byte order).
-        endian can be either 'big' or 'little'.
+        """Read a string defined by the infoArray iarray from file f with a 
+        given endianness (byte order). endian can be either 'big' or 'little'.
 
         If it's a tag name, each char is 1-Byte;
         if it's a tag data, each char is 2-Bytes Unicode,
@@ -1051,11 +1051,17 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
                                     dtype=image.dtype)
             else:
                 data = image.get_data()
+            # in the event there are multiple signals contained within this
+            # DM file, it is important to make a "deepcopy" of the metadata
+            # and original_metadata, since they are changed in each iteration
+            # of the "for image in images" loop, and using shallow copies
+            # will result in the final signal's metadata being used for all
+            # of the contained signals
             imd.append(
                 {'data': data,
                  'axes': axes,
-                 'metadata': mp,
-                 'original_metadata': dm.tags_dict,
+                 'metadata': deepcopy(mp),
+                 'original_metadata': deepcopy(dm.tags_dict),
                  'post_process': post_process,
                  'mapping': image.get_mapping(),
                  })

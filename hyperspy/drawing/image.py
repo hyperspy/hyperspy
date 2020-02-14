@@ -492,6 +492,7 @@ class ImagePlot(BlittedFigure):
     gui_adjust_contrast.__doc__ = \
         """
         Display widgets to adjust image contrast if available.
+
         Parameters
         ----------
         %s

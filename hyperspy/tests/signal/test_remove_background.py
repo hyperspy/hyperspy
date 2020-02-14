@@ -25,6 +25,7 @@ from hyperspy.decorators import lazifyTestClass
 
 
 @lazifyTestClass
+@pytest.mark.parametrize('binning', (True, False))
 class TestRemoveBackground1DGaussian:
 
     def setup_method(self, method):
@@ -35,16 +36,17 @@ class TestRemoveBackground1DGaussian:
         self.signal = signals.Signal1D(
             gaussian.function(np.arange(0, 20, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
 
-    def test_background_remove_gaussian(self):
+    def test_background_remove_gaussian(self, binning):
+        self.signal.metadata.Signal.binned = binning
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
             show_progressbar=None)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
-    def test_background_remove_gaussian_full_fit(self):
+    def test_background_remove_gaussian_full_fit(self, binning):
+        self.signal.metadata.Signal.binned = binning
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
@@ -144,13 +146,13 @@ class TestRemoveBackground1DLorentzian:
 class TestRemoveBackground1DSkewNormal:
 
     def setup_method(self, method):
-        lorentzian = components1d.SkewNormal()
-        lorentzian.A.value = 3
-        lorentzian.x0.value = 1
-        lorentzian.scale.value = 2
-        lorentzian.shape.value = 10
+        skewnormal = components1d.SkewNormal()
+        skewnormal.A.value = 3
+        skewnormal.x0.value = 1
+        skewnormal.scale.value = 2
+        skewnormal.shape.value = 10
         self.signal = signals.Signal1D(
-            lorentzian.function(np.arange(0, 10, 0.01)))
+            skewnormal.function(np.arange(0, 10, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
         self.signal.metadata.Signal.binned = False
 
@@ -162,7 +164,7 @@ class TestRemoveBackground1DSkewNormal:
             show_progressbar=None)
         assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
 
-    def test_background_remove_lorentzian_full_fit(self):
+    def test_background_remove_skewnormal_full_fit(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='SkewNormal',
@@ -188,8 +190,8 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
 @pytest.mark.parametrize('background_type',
-                         ['Power Law', 'Polynomial', 'Offset',
-                         'Gaussian', 'Lorentzian', 'SkewNormal'])
+                          ['Power Law', 'Polynomial', 'Offset',
+                          'Gaussian', 'Lorentzian', 'SkewNormal'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,

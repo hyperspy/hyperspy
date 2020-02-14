@@ -25,6 +25,7 @@ import traits.api as t
 from traits.trait_errors import TraitError
 import pint
 import logging
+import itertools
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
@@ -627,6 +628,25 @@ class DataAxis(t.HasTraits, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
+def serpentine_iter(shape):
+    '''Similar to np.ndindex, but yields indices 
+    in serpentine pattern, like snake game
+    
+    Code by Stackoverflow user Paul Panzer,
+    from https://stackoverflow.com/questions/57366966/
+    '''
+    N = len(shape)
+    idx = N*[0]
+    drc = N*[1]
+    while True:
+        yield (*idx,)
+        for j in reversed(range(N)):
+            if idx[j] + drc[j] not in (-1, shape[j]):
+                idx[j] += drc[j]
+                break
+            drc[j] *= -1
+        else:
+            break
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
@@ -754,7 +774,10 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self._index = None  # index for the iterator
+        self._index = None  # index for the iterpath
+        # Can use serpentine or flyback scan pattern 
+        # for the axes manager indexing
+        self._iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -948,18 +971,38 @@ class AxesManager(t.HasTraits):
             iteration.
 
         """
+        if self._iterpath not in ['serpentine', 'flyback']:
+            raise ValueError('''The iterpath scan pattern is set to {}. \
+            It must be either "serpentine" or "flyback", and is set either \
+            as multifit `iterpath` argument or \
+            `axes_manager._iterpath`'''.format(self._iterpath))
         if self._index is None:
             self._index = 0
-            val = (0,) * self.navigation_dimension
+            if self._iterpath == 'serpentine':
+                self._iterpath_generator = serpentine_iter(
+                    self._navigation_shape_in_array)
+                val = next(self._iterpath_generator)
+            else: # flyback
+                val = (0,) * self.navigation_dimension
             self.indices = val
         elif self._index >= self._max_index:
             raise StopIteration
         else:
             self._index += 1
-            val = np.unravel_index(
-                self._index,
-                tuple(self._navigation_shape_in_array)
-            )[::-1]
+            if self._iterpath == 'serpentine':
+                # In case we need to start further out in the generator
+                # for some reason. This is possibly expensive, as it needs
+                # to calculate all previous values first
+                # self._iterpath_generator = itertools.islice(
+                #     serpentine_iter(self._navigation_shape_in_array), 
+                #     self._index, 
+                #     None)
+                val = next(self._iterpath_generator)[::-1]
+            else:
+                val = np.unravel_index(
+                    self._index,
+                    tuple(self._navigation_shape_in_array)
+                )[::-1]
             self.indices = val
         return val
 
