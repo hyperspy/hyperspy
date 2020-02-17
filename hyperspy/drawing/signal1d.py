@@ -120,11 +120,10 @@ class Signal1DFigure(BlittedFigure):
                 self.make_patch_spines_invisible(line.ax)
 
                 line.ax.spines["right"].set_visible(True)
-            #line.ax.spines["right"]
+
             line.ax.hspy_fig = self
             #sometimes you need to change the figure ax to the last line; otherwise, you might add a ROI to the wrong ax, then it would be responsive form the UI
             #obviously not now...
-            #self.ax=line.ax
             line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             line.ax.ticklabel_format(axis='y', style='sci',scilimits=(0,0),useOffset=True)
             line.ax.yaxis.label.set_color(line.color)
@@ -400,7 +399,6 @@ class Signal1DLine(object):
                                      fontsize=12,
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
-        #self.axbackground = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
         self.ax.figure.canvas.draw_idle()
 
 
@@ -431,10 +429,7 @@ class Signal1DLine(object):
 
     def update(self, force_replot=False, render_figure=True):
         """Update the current spectrum figure"""
-        #for debugging purpose
-        #if abs(time.time()-self.time)<0.3:
-            #return
-        #self.time=time.time()
+
 
 
         if force_replot is True:

@@ -67,26 +67,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         for line in self.signal_plot.ax_lines + \
                 self.signal_plot.right_ax_lines:
             line.auto_update = value
-        # if self.pointer is not None:
-        #     if value is True:
-        #         self.pointer.set_mpl_ax(self.navigator_plot.ax)
-        #     else:
-        #         self.pointer.disconnect()
-
-    # @property
-    # def right_pointer_on(self):
-    #     """I'm the 'x' property."""
-    #     return self._right_pointer_on
-    #
-    # @right_pointer_on.setter
-    # def right_pointer_on(self, value):
-    #     if value == self._right_pointer_on:
-    #         return
-    #     self._right_pointer_on = value
-    #     if value is True:
-    #         self.add_right_pointer()
-    #     else:
-    #         self.remove_right_pointer()
 
     def plot_signal(self, **kwargs):
         super().plot_signal()
@@ -111,34 +91,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.ylabel = self.ylabel
 
 
-
-        #self.signal_plot = sf
-        # Create a line to the left axis with the default indices
-        # sl = signal1d.Signal1DLine()
-        # is_complex = np.iscomplexobj(self.signal_data_function())
-        # sl.autoscale = True if not is_complex else False
-        # sl.data_function = self.signal_data_function
-        # kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
-        # sl.plot_indices = True
-        # if self.pointer is not None:
-        #     color = self.pointer.color
-        # else:
-        #     color = 'red'
-        # sl.set_line_properties(color=color, type='step')
-        # # Add the line to the figure:
-        # sf.add_line(sl)
-        # # If the data is complex create a line in the left axis with the
-        # # default coordinates
-        # if is_complex:
-        #     sl = signal1d.Signal1DLine()
-        #     sl.autoscale = True
-        #     sl.data_function = self.signal_data_function
-        #     sl.plot_coordinates = True
-        #     sl._plot_imag = True
-        #     sl.set_line_properties(color="blue", type='step')
-        #     # Add extra line to the figure
-        #     sf.add_line(sl)
-
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         if self.signal.data.ndim == 1:
@@ -149,28 +101,10 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             sl.data_function = self.signal_data_function
             kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
             sl.plot_indices = True
-            #if self.pointer is not None:
-             #    color = self.pointer.color
-            # else:
-            #     color = 'red'
+
             sl.set_line_properties(color='red', type='step')
              # Add the line to the figure:
             sf.add_line(sl)
-
-        # if sf.figure is not None:
-        #     if self.axes_manager.navigation_axes:
-        #         self.signal_plot.figure.canvas.mpl_connect(
-        #             'key_press_event', self.axes_manager.key_navigator)
-        #     if self.navigator_plot is not None:
-        #         self.navigator_plot.events.closed.connect(
-        #             self._on_navigator_plot_closing, [])
-        #         sf.events.closed.connect(self.close_navigator_plot, [])
-        #         self.signal_plot.figure.canvas.mpl_connect(
-        #             'key_press_event', self.key2switch_right_pointer)
-        #         self.navigator_plot.figure.canvas.mpl_connect(
-        #             'key_press_event', self.key2switch_right_pointer)
-        #         self.navigator_plot.figure.canvas.mpl_connect(
-        #             'key_press_event', self.axes_manager.key_navigator)
         if self.signal.data.ndim == 3:
             if self.number_of_rois>0:
                 self.create_rois_and_lines()
@@ -178,15 +112,14 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if self.signal.data.ndim == 3:
             if self.number_of_slices>0:
                 self.create_slices()
-        #sf.plot(**kwargs)
+
 
     def create_slices(self):
 
         spectrumleft=self.signal.axes_manager[2].offset
         spectrumright=self.axes_manager[2].size*self.axes_manager[2].scale+self.axes_manager[2].offset
         slicewidth=(spectrumright-spectrumleft)/(5*self.number_of_slices)
-        #toto=self.signal.inav[0:1,0:1].squeeze().squeeze()
-        #toto.plot()
+
         #NB: at the moment, only one slice
 
         #in the following, we are creating a "fake" MPLhse
@@ -266,53 +199,3 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             theline.plot()
             SpectrumRoi.events.data_changed.connect(self.LINES[i].update,kwargs=[])
 
-    # def key2switch_right_pointer(self, event):
-    #     if event.key == "e":
-    #         self.right_pointer_on = not self.right_pointer_on
-    #
-    # def add_right_pointer(self, **kwargs):
-    #     if self.signal_plot.right_axes_manager is None:
-    #         self.signal_plot.right_axes_manager = \
-    #             copy.deepcopy(self.axes_manager)
-    #     if self.right_pointer is None:
-    #         pointer = self.assign_pointer()
-    #         self.right_pointer = pointer(
-    #             self.signal_plot.right_axes_manager)
-    #         # The following is necessary because e.g. a line pointer does not
-    #         # have size
-    #         if hasattr(self.pointer, "size"):
-    #             self.right_pointer.size = self.pointer.size
-    #         self.right_pointer.color = 'blue'
-    #         self.right_pointer.connect_navigate()
-    #         self.right_pointer.set_mpl_ax(self.navigator_plot.ax)
-    #
-    #     if self.right_pointer is not None:
-    #         for axis in self.axes_manager.navigation_axes[
-    #                 self._pointer_nav_dim:]:
-    #             self.signal_plot.right_axes_manager._axes[
-    #                 axis.index_in_array] = axis
-    #     rl = signal1d.Signal1DLine()
-    #     rl.autoscale = True
-    #     rl.data_function = self.signal_data_function
-    #     rl.set_line_properties(color=self.right_pointer.color,
-    #                            type='step')
-    #     self.signal_plot.create_right_axis()
-    #     self.signal_plot.add_line(rl, ax='right')
-    #     rl.plot_indices = True
-    #     rl.text_position = (1., 1.05,)
-    #     rl.plot(**kwargs)
-    #     self.right_pointer_on = True
-    #     if hasattr(self.signal_plot.figure, 'tight_layout'):
-    #         try:
-    #             self.signal_plot.figure.tight_layout()
-    #         except BaseException:
-    #             # tight_layout is a bit brittle, we do this just in case it
-    #             # complains
-    #             pass
-    #
-    # def remove_right_pointer(self):
-    #     for line in self.signal_plot.right_ax_lines:
-    #         self.signal_plot.right_ax_lines.remove(line)
-    #         line.close()
-    #     self.right_pointer.close()
-    #     self.right_pointer = None
