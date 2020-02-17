@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |AppVeyor|_ |Coveralls|_ |rtd|_  |pypi_version|_  |python_version|_ |gitter|_ |saythanks|_
+|Travis|_ |AppVeyor|_ |Codecov|_ |rtd|_  |pypi_version|_  |python_version|_ |gitter|_ |saythanks|_
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_patch
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
@@ -8,8 +8,8 @@
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_patch
 .. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_patch
 
-.. |Coveralls| image:: https://coveralls.io/repos/github/hyperspy/hyperspy/badge.svg?branch=RELEASE_next_minor
-.. _Coveralls: https://coveralls.io/github/hyperspy/hyperspy?branch=RELEASE_next_minor
+.. |Codecov| image:: https://codecov.io/gh/hyperspy/hyperspy/branch/RELEASE_next_minor/graph/badge.svg
+.. _Codecov: https://codecov.io/gh/hyperspy/hyperspy
 
 .. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
 .. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
