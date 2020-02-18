@@ -103,7 +103,6 @@ class MPL_HyperExplorer(object):
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()
-            #self.pointer.set_mpl_ax(sf.ax)
             if self.axes_manager.navigation_dimension > 1:
                 self._get_navigation_sliders()
                 for axis in self.axes_manager.navigation_axes[:-2]:

@@ -21,10 +21,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import matplotlib.ticker as mtick
 import logging
 import inspect
-import time
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
@@ -385,7 +383,6 @@ class Signal1DLine(object):
                              "'log' for Signal1D.")
         else:
             plot = self.ax.plot
-
         self.line, = plot(self.axis.axis, data, **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
@@ -400,9 +397,6 @@ class Signal1DLine(object):
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
-
-
-
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
@@ -429,9 +423,6 @@ class Signal1DLine(object):
 
     def update(self, force_replot=False, render_figure=True):
         """Update the current spectrum figure"""
-
-
-
         if force_replot is True:
             self.close()
             self.plot(data_function_kwargs=self.data_function_kwargs,
@@ -439,7 +430,6 @@ class Signal1DLine(object):
 
         ydata = self._get_data()
         old_xaxis = self.line.get_xdata()
-
         if len(old_xaxis) != self.axis.size or \
                 np.any(np.not_equal(old_xaxis, self.axis.axis)):
             self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
@@ -475,10 +465,8 @@ class Signal1DLine(object):
             if not np.isfinite(y_max):
                 y_max = None  # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
-
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
-
         if render_figure:
             if self.ax.figure.canvas.supports_blit:
                 #my tests showed using update_animated was longer than using draw_idle

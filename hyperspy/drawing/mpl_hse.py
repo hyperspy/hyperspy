@@ -40,8 +40,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         super(MPL_HyperSignal1D_Explorer, self).__init__(number_of_rois=number_of_rois,number_of_slices=number_of_slices,signal=signal)
         self.xlabel = ''
         self.ylabel = ''
-        #self.right_pointer = None
-        #self._right_pointer_on = False
         self._auto_update_plot = True
         self.signal=signal
         self.number_of_rois=number_of_rois
