@@ -43,6 +43,8 @@ try:
     io_plugins.append(hspy)
     from hyperspy.io_plugins import emd
     io_plugins.append(emd)
+    from hyperspy.io_plugins import nexus
+    io_plugins.append(nexus)
     from hyperspy.io_plugins import usid_hdf5
     io_plugins.append(usid_hdf5)
 except ImportError:
@@ -54,13 +56,6 @@ try:
     io_plugins.append(image)
 except ImportError:
     _logger.info('The Signal2D (PIL) IO features are not available')
-
-try:
-    from hyperspy.io_plugins import nexus
-    io_plugins.append(nexus)
-except ImportError:
-    _logger.info('The nexus IO plugin is not available because '
-                 'the nexusformat Python package is not installed.')
 
 try:
     from hyperspy.io_plugins import mrcz
