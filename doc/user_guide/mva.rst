@@ -217,7 +217,9 @@ To perform Poissonian noise normalization:
      >>> s.decomposition(True)
 
 More details about the scaling procedure can be found in
-:ref:`[Keenan2004] <Keenan2004>`.
+:ref:`[Keenan2004] <Keenan2004>`. Note that  Poisson noise normalization
+cannot be used in combination with data centering using the 'centre' argument.
+Attempting to do so will raise an error.
 
 .. _rpca-label:
 
