@@ -158,7 +158,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
             dtype = np.dtype({'names': names[:lastshape],
                               'formats': [dtype] * lastshape})
             shape = shape[:-1]
-        op = {key: tag.value for key, tag in tiff.pages[0].tags.items()}
+        op = {tag.name: tag.value for tag in tiff.pages[0].tags}
         names = [axes_label_codes[axis] for axis in axes]
 
         _logger.debug('Tiff tags list: %s' % op)
