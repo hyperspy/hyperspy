@@ -21,7 +21,7 @@ import logging
 from datetime import datetime, timedelta
 from dateutil import parser
 import pint
-from tifffile import imsave, TiffFile, TIFF
+from tifffile import imwrite, TiffFile, TIFF
 import traits.api as t
 import numpy as np
 
@@ -100,10 +100,11 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
                                          formatting='datetime')
         kwds['datetime'] = dt
 
-    imsave(filename, data,
-           software="hyperspy",
-           photometric=photometric,
-           **kwds)
+    imwrite(filename,
+            data,
+            software="hyperspy",
+            photometric=photometric,
+            **kwds)
 
 
 def file_reader(filename, record_by='image', force_read_resolution=False,
