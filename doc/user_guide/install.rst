@@ -204,22 +204,3 @@ You can create binaries for Debian/Ubuntu from the source by running the
     For this to work, the following packages must be installed in your system
     python-stdeb, debhelper, dpkg-dev and python-argparser are required.
 
-
-.. _known-issues:
-
-Known issues
-------------
-
-Windows
-^^^^^^^
-
-* If HyperSpy fails to start in Windows try installing the Microsoft Visual
-  before reporting a bug.
-
-
-* If HyperSpy raises a MemoryError exception:
-
-  * Install the 64bit version if you're using the 32bit one and you are running
-    HyperSpy in a 64bit system.
-  * Increase the available RAM by closing other applications or physically
-    adding more RAM to your computer.
