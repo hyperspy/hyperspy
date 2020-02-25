@@ -84,7 +84,8 @@ use:
 
     $ pip install hyperspy
 
-See, the following list of selectors to select the extra functionalities:
+See, the following list of selectors to select the installation of optional
+dependencies required by specific functionalities:
 
 * ``learning`` to install required libraries for some machine learning features,
 * ``gui-jupyter`` to install required libraries to use the
