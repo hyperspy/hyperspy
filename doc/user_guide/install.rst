@@ -58,7 +58,20 @@ manager:
 
        $ conda install hyperspy -c conda-forge
 
-For more options and details read the rest of the documentation.
+This will install also install the optional GUI packages ``hyperspy_gui_ipywidgets``
+and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use:
+
+
+   .. code-block:: bash
+
+       $ conda install hyperspy-base -c conda-forge
+
+.. note::
+
+    Using ``-c conda-forge`` is only necessary when the conda-forge is not
+    already added to the conda configuration, see the 
+    `conda-forge documentation <https://conda-forge.org/docs/user/introduction.html>`_
+    for more details.
 
 
 .. _install-with-pip:
@@ -84,7 +97,7 @@ use:
 
     $ pip install hyperspy
 
-See, the following list of selectors to select the installation of optional
+See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
 
 * ``learning`` to install required libraries for some machine learning features,
