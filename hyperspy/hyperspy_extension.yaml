@@ -183,6 +183,9 @@ components1D:
   PESCoreLineShape:
     module: hyperspy._components.pes_core_line_shape
     class: PESCoreLineShape
+  PESVoigt:
+    module: hyperspy._components.pes_voigt
+    class: PESVoigt
   Polynomial:
     module: hyperspy._components.polynomial_deprecated
     class: Polynomial
@@ -208,7 +211,7 @@ components1D:
     module: hyperspy._components.eels_vignetting
     class: Vignetting
   Voigt:
-    module: hyperspy._components.voigt
+    module: hyperspy._components.pes_voigt
     class: Voigt
   VolumePlasmonDrude:
     module: hyperspy._components.volume_plasmon_drude

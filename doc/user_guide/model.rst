@@ -78,27 +78,35 @@ and various components are available in one (:py:mod:`~.components1d`)and
 two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
-The following components are currently available for one-dimensional models:
+The following general components are currently available for one-dimensional models:
 
-* :py:class:`~._components.eels_cl_edge.EELSCLEdge`
-* :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
-* :py:class:`~._components.power_law.PowerLaw`
-* :py:class:`~._components.offset.Offset`
-* :py:class:`~._components.exponential.Exponential`
-* :py:class:`~._components.expression.Expression`
-* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
-* :py:class:`~._components.gaussian.Gaussian`
-* :py:class:`~._components.gaussianhf.GaussianHF`
-* :py:class:`~._components.lorentzian.Lorentzian`
-* :py:class:`~._components.voigt.Voigt`
-* :py:class:`~._components.skew_normal.SkewNormal`
-* :py:class:`~._components.polynomial.Polynomial`
-* :py:class:`~._components.logistic.Logistic`
+* :py:class:`~._components.arctan.Arctan`
 * :py:class:`~._components.bleasdale.Bleasdale`
 * :py:class:`~._components.error_function.Erf`
-* :py:class:`~._components.pes_see.SEE`
-* :py:class:`~._components.arctan.Arctan`
+* :py:class:`~._components.exponential.Exponential`
+* :py:class:`~._components.expression.Expression`
+* :py:class:`~._components.gaussian.Gaussian`
+* :py:class:`~._components.gaussianhf.GaussianHF`
 * :py:class:`~._components.heaviside.HeavisideStep`
+* :py:class:`~._components.logistic.Logistic`
+* :py:class:`~._components.lorentzian.Lorentzian`
+* :py:class:`~._components.offset.Offset`
+* :py:class:`~._components.polynomial.Polynomial`
+* :py:class:`~._components.power_law.PowerLaw`
+* :py:class:`~._components.rc.RC`
+* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+* :py:class:`~._components.skew_normal.SkewNormal`
+* :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
+
+The following components developed with specific signal types in mind are currently available for one-dimensional models:
+
+* :py:class:`~._components.eels_double_power_law.DoublePowerLaw`
+* :py:class:`~._components.eels_cl_edge.EELSCLEdge`
+* :py:class:`~._components.pes_core_line_shape.PESCoreLineShape`
+* :py:class:`~._components.pes_voigt.PESVoigt`
+* :py:class:`~._components.pes_see.SEE`
+* :py:class:`~._components.eels_vignetting.Vignetting`
 
 The following components are currently available for two-dimensional models:
 
