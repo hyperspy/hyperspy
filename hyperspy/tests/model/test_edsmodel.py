@@ -250,7 +250,8 @@ class TestMaps:
     def test_lines_intensity(self):
         s = self.s
         m = s.create_model()
-        m.multifit()    # m.fit() is just too inaccurate
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(iterpath='serpentine')    # m.fit() is just too inaccurate
         ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
         for x in range(self.mix.shape[0]):
