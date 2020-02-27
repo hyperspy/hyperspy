@@ -200,7 +200,7 @@ class ComplexSignal_mixin:
         %s
 
         """
-        if norm is "auto":
+        if norm == "auto":
             norm = 'log' if power_spectrum else 'linear'
 
         kwargs.update({'norm': norm,
