@@ -52,6 +52,7 @@ def load(filenames=None,
          new_axis_name="stack_element",
          lazy=False,
          convert_units=False,
+         preferred_format=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure.
@@ -229,7 +230,9 @@ def load(filenames=None,
             # files are required to contain the same number of signals. We
             # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
-                obj = load_single_file(filename, lazy=lazy,
+                obj = load_single_file(filename, 
+                                        preferred_format=preferred_format,
+                                        lazy=lazy,
                                        **kwds)
                 if i == 0:
                     # First iteration, determine number of signals, if several:
@@ -277,6 +280,7 @@ def load(filenames=None,
         else:
             # No stack, so simply we load all signals in all files separately
             objects = [load_single_file(filename, lazy=lazy,
+                                        preferred_format=preferred_format,
                                         **kwds)
                        for filename in filenames]
 
@@ -285,7 +289,7 @@ def load(filenames=None,
     return objects
 
 
-def load_single_file(filename, **kwds):
+def load_single_file(filename,preferred_format=None, **kwds):
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
@@ -299,11 +303,17 @@ def load_single_file(filename, **kwds):
 
     """
     extension = os.path.splitext(filename)[1][1:]
-
     i = 0
-    while extension.lower() not in io_plugins[i].file_extensions and \
-            i < len(io_plugins) - 1:
-        i += 1
+    
+    if preferred_format:
+        for index,plugin in enumerate(io_plugins):
+           if extension.lower() in plugin.file_extensions and \
+                preferred_format.lower() in plugin.format_name.lower():
+               i=index
+    else:
+        while extension.lower() not in io_plugins[i].file_extensions and \
+                i < len(io_plugins) - 1:
+            i += 1
 
     if i == len(io_plugins):
         # Try to load it with the python imaging library
@@ -496,7 +506,7 @@ def dict2signal(signal_dict, lazy=False):
     return signal
 
 
-def save(filename, signal, overwrite=None, **kwds):
+def save(filename, signal, preferred_format=None,overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
         extension = "hspy"
@@ -504,8 +514,13 @@ def save(filename, signal, overwrite=None, **kwds):
     writer = None
     for plugin in io_plugins:
         if extension.lower() in plugin.file_extensions:
-            writer = plugin
-            break
+            if preferred_format:
+                if preferred_format in plugin.format_name:
+                    writer = plugin
+                    break
+            else:
+                writer = plugin
+                break
 
     if writer is None:
         raise ValueError(
