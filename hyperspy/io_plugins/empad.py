@@ -82,8 +82,8 @@ def _parse_xml(filename):
         info.update({'scan_x':int(om.root.pix_x),
                      'scan_y':int(om.root.pix_y)})
     else:
-        raise IOError("Unsupported Empad file: the scan parameters can not "
-                      "imported.")
+        raise IOError("Unsupported Empad file: the scan parameters cannot "
+                      "be imported.")
 
     return om, info
 
@@ -145,7 +145,7 @@ def file_reader(filename, lazy=False, **kwds):
                 value = fov[i] / sizes[i]
                 scales[i], units[i] = _convert_scale_units(value, 'm', sizes[i])
         except BaseException:
-            _logger.warning("The scale of the navigation axes can't be read.")
+            _logger.warning("The scale of the navigation axes cannot be read.")
 
     try:
         pixel_size = float(om.root.iom_measurements.calibrated_pixelsize) * 1E9
@@ -153,7 +153,7 @@ def file_reader(filename, lazy=False, **kwds):
             scales[i] = pixel_size
             units[i] = '1/nm'
     except BaseException:
-        _logger.warning("The scale of the signal axes can't be read.")
+        _logger.warning("The scale of the signal axes cannot be read.")
 
     for i in range(len(names)):
         if sizes[i] > 1:
