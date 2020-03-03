@@ -117,7 +117,7 @@ class ParallelPool:
     def has_pool(self):
         """Returns bool if the pool is ready and set-up"""
         return self.is_ipyparallel or self.is_multiprocessing and \
-            self.pool._state is 0
+            self.pool._state == 0
 
     def _setup_ipyparallel(self):
         import ipyparallel as ipp

@@ -77,7 +77,7 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
         real_first = real_first.reshape((2 * 4, -1))[slices1]
         real_second = real_second.reshape((2 * 5, -1))[:, sigslice]
     else:
-        value = np.nan if dtype is 'float' else 0
+        value = np.nan if dtype == 'float' else 0
         if nm is not None:
             real_first[nm, ...] = value
         if sm is not None:

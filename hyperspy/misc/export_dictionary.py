@@ -100,7 +100,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
         flags_str, value = value
         flags = parse_flag_string(flags_str)
         check_that_flags_make_sense(flags)
-        if key is 'self':
+        if key == 'self':
             if 'id' not in flags:
                 raise ValueError(
                     'Key "self" is only available with flag "id" given')

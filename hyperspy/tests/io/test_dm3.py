@@ -51,7 +51,7 @@ class TestImageObject():
         images = self._load_file(fname)
         image = images[0]
         # Should return None because the tags are missing
-        assert image._get_microscope_name(image.imdict.ImageTags) is None
+        assert image._get_microscope_name(image.imdict.ImageTags) == None
 
         fname = os.path.join(MY_PATH, "dm3_2D_data",
                              "test_diffraction_pattern.dm3")
@@ -67,8 +67,8 @@ class TestImageObject():
         assert self.imageobject._get_time("6:56:37 pm") == "18:56:37"
 
     def test_parse_string(self):
-        assert self.imageobject._parse_string("") is None
-        assert self.imageobject._parse_string("string") is "string"
+        assert self.imageobject._parse_string("") == None
+        assert self.imageobject._parse_string("string") == "string"
 
 
 def test_missing_tag():
