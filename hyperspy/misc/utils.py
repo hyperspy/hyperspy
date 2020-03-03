@@ -299,18 +299,7 @@ class DictionaryTreeBrowser(object):
         """
         from hyperspy.defaults_parser import preferences
 
-        def check_long_string(value, max_len):
-            if not isinstance(value, (str, np.string_)):
-                value = repr(value)
-            value = ensure_unicode(value)
-            strvalue = str(value)
-            _long = False
-            if max_len is not None and len(strvalue) > 2 * max_len:
-                right_limit = min(max_len, len(strvalue) - max_len)
-                strvalue = '%s ... %s' % (
-                    strvalue[:max_len], strvalue[-right_limit:])
-                _long = True
-            return _long, strvalue
+
 
         string = ''
         eoi = len(self)
@@ -364,37 +353,23 @@ class DictionaryTreeBrowser(object):
             j += 1
         return string
 
-    def _get_html_print_items(self, padding='', max_len=78):
-        """Prints only the attributes that are not methods
+    def _get_html_print_items(self, padding='', max_len=78, recursive_level=0):
+        """Recursive method that creates a html string for fancy display
+        of metadata.
         """
+        recursive_level += 1
         from hyperspy.defaults_parser import preferences
 
-        def check_long_string(value, max_len):
-            if not isinstance(value, (str, np.string_)):
-                value = repr(value)
-            value = ensure_unicode(value)
-            strvalue = str(value)
-            _long = False
-            if max_len is not None and len(strvalue) > 2 * max_len:
-                right_limit = min(max_len, len(strvalue) - max_len)
-                strvalue = '%s ... %s' % (
-                    strvalue[:max_len], strvalue[-right_limit:])
-                _long = True
-            return _long, strvalue
-
-        def replace_html_symbols(str_value):
-            str_value = str_value.replace("<", "&#60;")
-            str_value = str_value.replace(">", "&#62;")
-            return str_value
-
-        string = ''
+        string = '' # Final return string
         
         for key_, value in iter(sorted(self.__dict__.items())):
-            if key_.startswith("_"):
+            if key_.startswith("_"): # Skip any private attributes
                 continue
-            if not isinstance(key_, types.MethodType):
+            if not isinstance(key_, types.MethodType): # If it isn't a method, then continue
                 key = ensure_unicode(value['key'])
                 value = value['_dtb_value_']
+                
+                # dtb_expand_structures is a setting that sets whether to fully expand long strings
                 if preferences.General.dtb_expand_structures:
                     if isinstance(value, list) or isinstance(value, tuple):
                         iflong, strvalue = check_long_string(value, max_len)
@@ -406,33 +381,25 @@ class DictionaryTreeBrowser(object):
                                 {'[%d]' % i: v for i, v in enumerate(value)},
                                 double_lines=True)
                         else:
-                            string += """
-                            <ul style="margin: 0px; list-style-position: outside;">
-                            <li style='margin-left:1em; padding-left: 0.5em'>%s = %s</li></ul>""" % (
-                                key, strvalue)
-                            continue
+                            string += add_key_value(key, strvalue)
+                            continue # skips the next if-else
 
+                # If DTB, then add a details html tag
                 if isinstance(value, DictionaryTreeBrowser):
-                    if value.keys():
-                        string += """<ul style="margin: 0px; list-style-position: outside;">
-                        <details closed>
-                        <summary style="display: list-item;">
-                        <li style="display: inline;">
-                        %s
-                        </li></summary>""" % (key)
-                        string += value._get_html_print_items()
-                        string += '</details></ul>'
-                    else:
-                        string += """<ul style="margin: 0px; list-style-position: outside;">
-                        <li style='margin-left:1em; padding-left: 0.5em'>%s</li></ul>""" % (
-                        key)
+                    string += """<ul style="margin: 0px; list-style-position: outside;">
+                    <details {}>
+                    <summary style="display: list-item;">
+                    <li style="display: inline;">
+                    {}
+                    </li></summary>
+                    """.format("open" if recursive_level < 2 else "closed", replace_html_symbols(key))
+                    string += value._get_html_print_items(recursive_level=recursive_level)
+                    string += '</details></ul>'
+
+                # Otherwise just add value
                 else:
                     _, strvalue = check_long_string(value, max_len)
-                    strvalue = replace_html_symbols(strvalue)
-                    string += """<ul style="margin: 0px; list-style-position: outside;">
-                    <li style='margin-left:1em; padding-left: 0.5em'>%s = %s</li></ul>""" % (
-                        key, strvalue)
-        string += ""
+                    string += add_key_value(key, strvalue)
         return string
 
     def __repr__(self):
@@ -713,6 +680,34 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
     except BaseException:
         string = string.decode(encoding2, errors='ignore')
     return string
+
+def check_long_string(value, max_len):
+    "Checks whether string is too long for printing in html metadata"
+    if not isinstance(value, (str, np.string_)):
+        value = repr(value)
+    value = ensure_unicode(value)
+    strvalue = str(value)
+    _long = False
+    if max_len is not None and len(strvalue) > 2 * max_len:
+        right_limit = min(max_len, len(strvalue) - max_len)
+        strvalue = '%s ... %s' % (
+            strvalue[:max_len], strvalue[-right_limit:])
+        _long = True
+    return _long, strvalue
+
+def replace_html_symbols(str_value):
+    "Escapes any &, < and > tags that would become invisible when printing html"
+    str_value = str_value.replace("&", "&amp")
+    str_value = str_value.replace("<", "&lt;")
+    str_value = str_value.replace(">", "&gt;")
+    return str_value
+
+def add_key_value(key, value):
+    "Returns the metadata value as a html string"
+    return """
+    <ul style="margin: 0px; list-style-position: outside;">
+    <li style='margin-left:1em; padding-left: 0.5em'>{} = {}</li></ul>
+    """.format(replace_html_symbols(key), replace_html_symbols(value))
 
 
 def swapelem(obj, i, j):
