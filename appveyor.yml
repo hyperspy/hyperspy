@@ -5,7 +5,7 @@ environment:
 
   global:
     TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
-    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits pyyaml PTable statsmodels"
+    DEPS: "numpy scipy matplotlib-base ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits pyyaml PTable statsmodels"
     MPLBACKEND: "agg"
 
   matrix:
