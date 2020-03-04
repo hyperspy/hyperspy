@@ -9,10 +9,13 @@ environment:
     MPLBACKEND: "agg"
 
   matrix:
+     - PY_VERSION: 3.8
+       PLATFORM: x64
      - PY_VERSION: 3.7
        PLATFORM: x64
      - PY_VERSION: 3.7
        PLATFORM: x86
+       TAG_SCENARIO: true
      - PY_VERSION: 3.6
        PLATFORM: x64
      - PY_VERSION: 3.6
