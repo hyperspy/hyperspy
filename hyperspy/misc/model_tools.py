@@ -23,14 +23,14 @@ def _is_iter(val):
 
 
 def _iter_join(val):
-    "Joins values of iterable parameters for the fancy view, unless it is None, then blank"
+    "Joins values of iterable parameters for the fancy view, unless it equals None, then blank"
     return "(" + ", ".join(["{:6g}".format(v)
-                            for v in val]) + ")" if val else ""
+                            for v in val]) + ")" if val != None else ""
 
 
 def _non_iter(val):
-    "Returns formatted string for a value unless it is None, then blank"
-    return "{:6g}".format(val) if val else ""
+    "Returns formatted string for a value unless it equals None, then blank"
+    return "{:6g}".format(val) if val != None else ""
 
 
 class current_component_values():
@@ -109,6 +109,8 @@ class current_component_values():
             if not self.only_free or self.only_free and para.free:
                 if _is_iter(para.value):
                     # iterables (polynomial.value) must be handled separately
+                    # This should be removed with hyperspy 2.0 as Polynomial 
+                    # has been replaced.
                     value = _iter_join(para.value)
                     std = _iter_join(para.std)
                     bmin = _iter_join(para.bmin)
@@ -134,7 +136,7 @@ class current_model_values():
         self.model = model
         self.only_free = only_free
         self.only_active = only_active
-        self.component_list = model if component_list is None else component_list
+        self.component_list = model if component_list == None else component_list
         self.model_type = str(self.model.__class__).split("'")[
             1].split('.')[-1]
 
