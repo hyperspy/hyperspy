@@ -27,6 +27,7 @@ from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
 import logging
+from functools import partial
 
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
@@ -1180,6 +1181,7 @@ def plot_spectra(
         legend_loc='upper right',
         fig=None,
         ax=None,
+        auto_update=None,
         **kwargs):
     """Plot several spectra in the same figure.
 
@@ -1225,6 +1227,10 @@ def plot_spectra(
     ax : {none, matplotlib ax (subplot)}, optional
         If None, a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
+    auto_update : bool or None
+        If True, the plot will update when the data are changed. Only supported
+        with style='overlap'.
+        If None (default), update the plot only for style='overlap'.
     **kwargs, optional
         Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
         :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
@@ -1362,6 +1368,31 @@ def plot_spectra(
             ax = _make_heatmap_subplot(spectra)
             ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
+
+    def update_line(spectrum, line):
+        x_axis = spectrum.axes_manager[-1].axis
+        line.set_data(x_axis, spectrum.data)
+        fig = line.get_figure()
+        ax = fig.get_axes()[0]
+        # `relim` needs to be called before `autoscale_view`
+        ax.relim()
+        ax.autoscale_view()
+        fig.canvas.draw()
+
+    if auto_update is None and style == 'overlap':
+        auto_update = True
+
+    if auto_update:
+        if style != 'overlap':
+            raise ValueError("auto_update=True is only supported with"
+                             "style='overlap'")
+
+        for spectrum, line in zip(spectra, ax.get_lines()):
+            f = partial(update_line, spectrum, line)
+            spectrum.events.data_changed.connect(f, [])
+            # disconnect event when closing figure
+            disconnect = partial(spectrum.events.data_changed.disconnect, f)
+            on_figure_window_close(fig, disconnect)
 
     return ax
 
