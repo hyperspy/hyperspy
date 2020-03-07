@@ -21,7 +21,6 @@ import pytest
 import matplotlib.pyplot as plt
 import os
 from shutil import copyfile
-import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
@@ -170,6 +169,16 @@ class TestPlotSpectra():
             assert not li.get_visible()
             plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
                 f.canvas, click, artist)
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_spectra_auto_update(self):
+        s = hs.signals.Signal1D(np.arange(100))
+        ax = hs.plot.plot_spectra([s], style='overlap')
+        s.data = -s.data
+        s.events.data_changed.trigger(s)
+
+        return ax.get_figure()
 
 
 @update_close_figure
