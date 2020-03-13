@@ -1272,7 +1272,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
-            
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1381,7 +1381,7 @@ class MVATools(object):
 
     def get_decomposition_loadings(self):
         """Return the decomposition loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1399,7 +1399,7 @@ class MVATools(object):
 
     def get_decomposition_factors(self):
         """Return the decomposition factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1417,7 +1417,7 @@ class MVATools(object):
 
     def get_bss_loadings(self):
         """Return the blind source separation loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1436,7 +1436,7 @@ class MVATools(object):
 
     def get_bss_factors(self):
         """Return the blind source separation factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)

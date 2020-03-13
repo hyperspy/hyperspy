@@ -22,6 +22,7 @@ from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
+from hyperspy._signals.signal2d import fft_correlation
 
 
 class Model2D(BaseModel):
@@ -111,6 +112,13 @@ class Model2D(BaseModel):
             np.zeros_like(self.chisq.data, dtype='int'))
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
+
+        self.corr = signal2D._get_navigation_signal()
+        self.corr.change_dtype("float")
+        self.corr.data.fill(np.nan)
+        self.corr.metadata.General.title = (
+            self.signal.metadata.General.title + ' correlation')
+        self.events.fitted.connect(self._calculate_correlation, [])
         self.free_parameters_boundaries = None
         self.convolved = False
         self.components = ModelComponents(self)
@@ -123,10 +131,12 @@ class Model2D(BaseModel):
             'convolved': None,
             'free_parameters_boundaries': None,
             'chisq.data': None,
+            'corr.data': None,
             'dof.data': None}
         self._slicing_whitelist = {
             'channel_switches': 'isig',
             'chisq.data': 'inav',
+            'corr.data': 'inav',
             'dof.data': 'inav'}
 
     @property
@@ -244,3 +254,11 @@ class Model2D(BaseModel):
 
     def disable_adjust_position(self):
         raise NotImplementedError
+
+    def _calculate_correlation(self):
+        if hasattr(self, 'corr'):
+            sig = self.signal()
+            norm = fft_correlation(sig, sig, normalize=False)[0].sum()
+            self.corr.data[self.axes_manager.indices[::-1]] = \
+                    (fft_correlation(sig, self(), normalize=False)[0].sum() /
+                     norm)

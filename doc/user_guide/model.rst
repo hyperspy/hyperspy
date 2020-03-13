@@ -111,7 +111,6 @@ The following components developed with specific signal types in mind are curren
 The following components are currently available for two-dimensional models:
 
 * :py:class:`~._components.gaussian2d.Gaussian2D`
-* :py:class:`~._components.expression.Expression`
 
 However, this doesn't mean that you have to limit yourself to this meagre list
 of functions. A new function can easily be written as specified as below.

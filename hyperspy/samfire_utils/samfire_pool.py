@@ -28,6 +28,25 @@ from hyperspy.samfire_utils.samfire_worker import create_worker
 
 _logger = logging.getLogger(__name__)
 
+def _walk_compute(athing):
+    if isinstance(athing, dict):
+        this = {}
+        for key, val in athing.items():
+            if isinstance(key, dar):
+                raise ValueError('Dask arrays should not be used as keys')
+            value = _walk_compute(val)
+            this[key] = value
+        return this
+    elif isinstance(athing, list):
+        return [_walk_compute(val) for val in athing]
+    elif isinstance(athing, tuple):
+        return tuple(_walk_compute(val) for val in athing)
+    elif isinstance(athing, dar):
+        _logger.debug('found a dask array!')
+        return athing.compute()
+    else:
+        return athing
+
 
 def _walk_compute(athing):
     if isinstance(athing, dict):
@@ -155,6 +174,8 @@ class SamfirePool(ParallelPool):
             if var._lazy:
                 var.compute()
         model.store('z')
+        if model.signal._lazy:
+            model.signal.compute()
         m_dict = model.signal._to_dictionary(False)
         m_dict['models'] = model.signal.models._models.as_dictionary()
 

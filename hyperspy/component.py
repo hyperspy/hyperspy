@@ -104,6 +104,12 @@ class Parameter(t.HasTraits):
         Similar to ext_force_positive, but in this case the bounds are
         defined by bmin and bmax. It is a better idea to use
         an optimizer that supports bounding though.
+    wrapped_value : tuple (low_value, high_value)
+        Constraits the values between low_value and high_value wrapping
+        the value: (((value - low_value) % high_value) + low_value
+        Usueful in for example phases, which commonly wrap between 0
+        and 2*pi. If ext_bounded is True, the value might be clipped
+        by bmin and bmax.
 
     Methods
     -------
@@ -181,6 +187,7 @@ class Parameter(t.HasTraits):
                            'self': ('id', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
+        self.wrapped_value = None
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
@@ -334,6 +341,12 @@ class Parameter(t.HasTraits):
             else:
                 self.twin.value = value
                 return
+
+        if self.wrapped_value is not None:
+
+            value = (value - self.wrapped_value[0]) % (
+                    self.wrapped_value[1]-self.wrapped_value[0])
+            value += self.wrapped_value[0]
 
         if self.ext_bounded is False:
             self.__value = value
@@ -1129,7 +1142,7 @@ class Component(t.HasTraits):
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary. For more information on method 
+        """Returns component as a dictionary. For more information on method
         and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
@@ -1190,7 +1203,7 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
-            if (self._id_name == "Polynomial" and 
+            if (self._id_name == "Polynomial" and
                     LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
                 # in HyperSpy 2.0 the polynomial definition changed
                 from hyperspy._components.polynomial import convert_to_polynomial

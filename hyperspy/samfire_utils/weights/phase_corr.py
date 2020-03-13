@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,9 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.samfire_utils.goodness_of_fit_tests.red_chisq import \
-    red_chisq_test
-from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory import \
-    (AIC_test, AICc_test, BIC_test)
-from hyperspy.samfire_utils.goodness_of_fit_tests.signal2d import \
-    correlation
+import numpy as np
+
+
+class PhaseCorrelationWeight(object):
+
+    def __init__(self):
+        self.expected = 0.
+        self.model = None
+
+    def function(self, ind):
+        return np.abs(self.model.corr.data[ind] - self.expected)
+
+    def map(self, mask, slices=slice(None, None)):
+        thing = self.model.corr.data[slices].copy()
+        thing = thing.astype('float64')
+        thing[np.logical_not(mask)] = np.nan
+        return np.abs(thing - self.expected)

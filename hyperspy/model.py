@@ -78,6 +78,14 @@ def reconstruct_component(comp_dictionary, **init_args):
             f'{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
 
+def reconstruct_component(comp_dictionary, **init_args):
+    _id = comp_dictionary['_id_name']
+    try:
+        _class = getattr(components, _id)
+    except AttributeError:
+        _class = dill.loads(comp_dictionary['_class_dump'])
+    return _class(**init_args)
+
 
 class ModelComponents(object):
 
@@ -1693,13 +1701,13 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : dict 
+        dictionary : dict
             A dictionary including at least the following fields:
 
-            * components: a list of dictionaries of components, one per 
+            * components: a list of dictionaries of components, one per
               component
             * _whitelist: a dictionary with keys used as references for saved
-              attributes, for more information, see 
+              attributes, for more information, see
               :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 

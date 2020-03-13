@@ -26,9 +26,11 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
 from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
+from hyperspy.external.progressbar import progressbar
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
-from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
+from hyperspy.samfire_utils.local_strategies import (ReducedChiSquaredStrategy,
+                                                     PhaseCorrelationStrategy)
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 
 
@@ -179,7 +181,15 @@ class Samfire:
 
         self.metadata.marker = marker
         self.strategies = StrategyList(self)
-        self.strategies.append(ReducedChiSquaredStrategy())
+        sig_dim = model.signal.axes_manager.signal_dimension
+        if sig_dim == 1:
+            self.strategies.append(ReducedChiSquaredStrategy())
+            from hyperspy.samfire_utils.fit_tests import red_chisq_test
+            self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
+        elif sig_dim == 2:
+            self.strategies.append(PhaseCorrelationStrategy())
+            from hyperspy.samfire_utils.fit_tests import correlation
+            self.metadata.goodness_test = correlation(tolerance=0.2)
         self.strategies.append(HistogramStrategy())
         self._active_strategy_ind = 0
         self.update_every = max(10, workers * 2)  # some sensible number....
@@ -520,9 +530,9 @@ class Samfire:
             self.model[comp_name].active = True
 
             for param_model in self.model[comp_name].parameters:
-                param_dict = comp[param_model.name]
-                param_model.map[m_ind], param_dict[d_ind] = \
-                    param_dict[d_ind].copy(), param_model.map[m_ind].copy()
+                param_dict_t = comp[param_model.name]
+                param_model.map[m_ind], param_dict_t[d_ind] = \
+                    param_dict_t[d_ind].copy(), param_model.map[m_ind].copy()
 
         for component in self.model:
             # switch off all that did not appear in the dictionary
