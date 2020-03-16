@@ -109,6 +109,7 @@ class MVA():
                       polyfit=None,
                       reproject=None,
                       return_info=False,
+                      print_info=True,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -116,18 +117,18 @@ class MVA():
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool
+        normalize_poissonian_noise : bool, default False
             If True, scale the SI to normalize Poissonian noise
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
             'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA'
         output_dimension : None or int
             number of components to keep/calculate
         centre : None | 'variables' | 'trials'
-            If None no centring is applied. If 'variable' the centring will be
-            performed in the variable axis. If 'trials', the centring will be
-            performed in the 'trials' axis. It only has effect when using the
-            svd or fast_svd algorithms
-        auto_transpose : bool
+            If None (default), no centering is applied.
+            If 'variable', the centring will be performed in the variable axis.
+            If 'trials', the centring will be performed in the 'trials' axis.
+            It only has effect when using the svd or fast_svd algorithms
+        auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only has effect when using the svd of fast_svd algorithms.
         navigation_mask : boolean numpy array
@@ -142,6 +143,8 @@ class MVA():
             If function, it will apply it to the dataset to obtain the
             var_array. Alternatively, it can a an array with the coefficients
             of a polynomial.
+        polyfit : None | ???
+            TODO: currently undocumented
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
@@ -150,6 +153,10 @@ class MVA():
             some algorithms generate some extra information that is not
             stored. If True (the default is False) return any extra
             information if available
+        print_info : bool, default True
+            If True, print information about the decomposition being performed.
+            In the case of sklearn.decomposition objects, this includes the
+            values of all arguments of the chosen sklearn algorithm.
 
         Returns
         -------
@@ -166,6 +173,17 @@ class MVA():
 
         """
         to_return = None
+        to_print = [
+            "Decomposition info:",
+            "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
+            "  algorithm={}".format(algorithm),
+            "  output_dimension={}".format(output_dimension),
+            "  centre={}".format(centre),
+            "  auto_transpose={}".format(auto_transpose),
+            "  polyfit={}".format(polyfit),
+            "  reproject={}".format(reproject)
+        ]
+
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
             raise TypeError(
@@ -282,6 +300,8 @@ class MVA():
                 centre = 'trials'
                 if return_info:
                     to_return = sk
+                if print_info:
+                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'nmf':
                 if import_sklearn.sklearn_installed is False:
@@ -294,6 +314,8 @@ class MVA():
                 factors = sk.components_.T
                 if return_info:
                     to_return = sk
+                if print_info:
+                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'sparse_pca':
                 if import_sklearn.sklearn_installed is False:
@@ -306,6 +328,8 @@ class MVA():
                 factors = sk.components_.T
                 if return_info:
                     to_return = sk
+                if print_info:
+                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'mini_batch_sparse_pca':
                 if import_sklearn.sklearn_installed is False:
@@ -318,6 +342,8 @@ class MVA():
                 factors = sk.components_.T
                 if return_info:
                     to_return = sk
+                if print_info:
+                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
                 _logger.info("Performing the MLPCA training")
@@ -359,6 +385,7 @@ class MVA():
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
                 explained_variance = S ** 2 / len(factors)
+
             elif algorithm == 'RPCA_GoDec':
                 _logger.info("Performing Robust PCA with GoDec")
 
@@ -484,6 +511,9 @@ class MVA():
             self.learning_results.__dict__.update(target.__dict__)
             # undo any pre-treatments
             self.undo_treatments()
+
+        if print_info:
+            print("\n".join([str(pr) for pr in to_print]))
 
         return to_return
 
