@@ -20,10 +20,20 @@ from functools import partial
 import logging
 
 from traits.api import Undefined
-
+import matplotlib as mpl
+from ipywidgets.widgets import HBox
 from hyperspy.drawing import widgets, signal1d, image
+<<<<<<< HEAD
 from hyperspy.defaults_parser import preferences
 
+=======
+try:
+    # IPython is a dependency of ipympl
+    # display is only used during widget plotting with ipympl
+    from IPython.display import display
+except ImportError:
+    pass
+>>>>>>> added basic support for horizontal plotting with the ipympl backend
 
 _logger = logging.getLogger(__name__)
 
@@ -192,6 +202,21 @@ class MPL_HyperExplorer(object):
                 self.navigator_plot.events.closed.connect(
                     self.pointer.disconnect, [])
         self.plot_signal(**kwargs)
+
+        if "ipympl" in mpl.get_backend():
+            # Then we can use the widget backend for two figures horizontally
+            if not self.navigator_plot:
+                # this is equivalent of s.plot() in interactive mode
+                display(self.signal_plot.figure.canvas)
+            else:
+                nav = self.navigator_plot.figure
+                sig = self.signal_plot.figure
+                # auto vertical margins makes the figures align to their "middles"
+                nav.canvas.layout.margin = "auto 0px auto 0px"
+                sig.canvas.layout.margin = "auto 0px auto 0px"
+                box = HBox([nav.canvas, sig.canvas])
+                display(box)
+
 
     def assign_pointer(self):
         if self.navigator_data_function is None:

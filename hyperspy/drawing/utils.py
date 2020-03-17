@@ -150,7 +150,15 @@ def create_figure(window_title=None,
     fig : plt.figure
 
     """
+    mpl_was_interactive = False
+    if "ipympl" in mpl.get_backend():
+        # turn off matplotlib interactive to not draw figure if widget mode
+        if mpl.is_interactive():
+            mpl_was_interactive = True
+            plt.ioff()
     fig = plt.figure(**kwargs)
+    if mpl_was_interactive:
+        plt.ion() # turn interactive back on
     if window_title is not None:
         # remove non-alphanumeric characters to prevent file saving problems
         # This is a workaround for:
