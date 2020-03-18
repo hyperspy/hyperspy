@@ -43,7 +43,8 @@ class current_component_values():
     only_free : True or False, default False
         If True: Only include the free parameters in the view
     only_active : True or False, default False
-        If True: Only include active parameters in the view
+        If True: Helper for current_model_values. Only include active components in the view.
+        Always shows values if used on an individual component.
      """
 
     def __init__(self, component, only_free=False, only_active=False):
