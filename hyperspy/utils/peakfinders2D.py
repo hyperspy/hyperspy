@@ -79,7 +79,7 @@ def find_peaks_minmax(z, distance=5., threshold=10.):
     return clean_peaks(np.round(peaks).astype(int))
 
 
-def find_peaks_max(z, alpha=3., size=10):
+def find_peaks_max(z, alpha=3., distance=10):
     """Method to locate positive peaks in an image by local maximum searching.
 
     Parameters
@@ -87,9 +87,10 @@ def find_peaks_max(z, alpha=3., size=10):
     alpha : float
         Only maxima above `alpha * sigma` are found, where `sigma` is the
         standard deviation of the image.
-    size : int
-        When a peak is found, all pixels in a square region of side `size` are
-        set to zero so that no further peaks can be found in that region.
+    distance : int
+        When a peak is found, all pixels in a square region of side
+        `2 * distance` are set to zero so that no further peaks can be found
+        in that region.
 
     Returns
     -------
@@ -111,8 +112,8 @@ def find_peaks_max(z, alpha=3., size=10):
         if image_temp[j, i] >= alpha * sigma:
             k_arr.append([j, i])
             # masks peaks already identified.
-            x = np.arange(i - size, i + size)
-            y = np.arange(j - size, j + size)
+            x = np.arange(i - distance, i + distance)
+            y = np.arange(j - distance, j + distance)
             xv, yv = np.meshgrid(x, y)
             # clip to handle peaks near image edge
             image_temp[yv.clip(0, image_temp.shape[0] - 1),
@@ -427,8 +428,11 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     return centers
 
 
-def find_peaks_xc(z, template, distance=5, threshold=0.5):
-    """Find peaks in the cross correlation between the image and a template.
+def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
+    """Find peaks in the cross correlation between the image and a template by
+    using the :py:func:`hyperspy.utils.peakfinder2D.find_peaks_minmax` function
+    to find the peaks on the cross correlation obtained using the
+    :py:func:`sklearn.feature.template.match_template` function.
 
     Parameters
     ----------
@@ -440,6 +444,9 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5):
         Expected distance between peaks.
     threshold : float
         Minimum difference between maximum and minimum filtered images.
+    **kwargs : dict
+        Keyword arguments to be passed to the
+        :py:func:`sklearn.feature.template.match_template` function.
 
     Returns
     -------
@@ -447,7 +454,8 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5):
         (n_peaks, 2)
         Array of peak coordinates.
     """
-    response_image = match_template(z, template, pad_input=True)
+    pad_input = kwargs.pop('pad_input', True)   
+    response_image = match_template(z, template, pad_input=pad_input, **kwargs)
     peaks = find_peaks_minmax(response_image,
                               distance=distance,
                               threshold=threshold)

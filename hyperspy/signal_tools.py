@@ -1449,7 +1449,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.find()
 
 
-@add_gui_method(toolkey="hyperspy.Signal2D.find_peaks2D")
+@add_gui_method(toolkey="hyperspy.Signal2D.find_peaks")
 class PeaksFinder2D(t.HasTraits):
     method = t.Enum(
         'Local max',
@@ -1459,14 +1459,14 @@ class PeaksFinder2D(t.HasTraits):
         'Stat',
         'Laplacian of Gaussian',
         'Difference of Gaussian',
-        'Cross correlation',
+        'Template matching',
         default='Local Max')
     # For "Local max" method
     local_max_distance = t.Range(1, 20, value=3)
     local_max_threshold = t.Range(0, 20., value=10)
     # For "Max" method
     max_alpha = t.Range(0, 6., value=3)
-    max_size = t.Range(1, 20, value=10)
+    max_distance = t.Range(1, 20, value=10)
     # For "Minmax" method
     minmax_distance = t.Range(0, 6., value=3)
     minmax_threshold = t.Range(0, 20., value=10)
@@ -1508,7 +1508,7 @@ class PeaksFinder2D(t.HasTraits):
             }
         self._attribute_argument_mapping_max = {
             'max_alpha': 'alpha',
-            'max_size': 'size',
+            'max_distance': 'distance',
             }
         self._attribute_argument_mapping_local_minmax = {
             'minmax_distance': 'distance',
@@ -1553,7 +1553,7 @@ class PeaksFinder2D(t.HasTraits):
             'stat': self._attribute_argument_mapping_local_stat,
             'laplacian_of_gaussian': self._attribute_argument_mapping_local_log,
             'difference_of_gaussian': self._attribute_argument_mapping_local_dog,
-            'cross_correlation': self._attribute_argument_mapping_local_xc,
+            'template_matching': self._attribute_argument_mapping_local_xc,
             }
 
         if signal.axes_manager.signal_dimension != 2:
@@ -1598,7 +1598,7 @@ class PeaksFinder2D(t.HasTraits):
         self._plot_markers()
 
     def _method_changed(self, old, new):
-        if new == 'Cross correlation' and self.xc_template is None:
+        if new == 'Template matching' and self.xc_template is None:
             raise RuntimeError('The "template" argument is required.')
         self._update_peak_finding(method=new)
 
@@ -1621,9 +1621,9 @@ class PeaksFinder2D(t.HasTraits):
 
     def _find_peaks_current_index(self, method):
         method = self._normalise_method_name(method)
-        self.peaks = self.signal.find_peaks2D(method, current_index=True,
-                                              interactive=False,
-                                              **self._get_parameters(method))
+        self.peaks = self.signal.find_peaks(method, current_index=True,
+                                            interactive=False,
+                                            **self._get_parameters(method))
 
     def _plot_markers(self):
         if self.signal._plot is not None and self.signal._plot.is_active:
@@ -1650,7 +1650,7 @@ class PeaksFinder2D(t.HasTraits):
     def compute_navigation(self):
         method = self._normalise_method_name(self.method)
         with self.signal.axes_manager.events.indices_changed.suppress():
-            self.signal.peaks = self.signal.find_peaks2D(
+            self.signal.peaks = self.signal.find_peaks(
                 method, interactive=False, current_index=False,
                 **self._get_parameters(method))
 

@@ -82,7 +82,7 @@ def _generate_reference():
 
 PEAK_METHODS = ['local_max', 'max', 'minmax', 'zaefferer', 'stat',
                 'laplacian_of_gaussian', 'difference_of_gaussian',
-                'cross_correlation']
+                'template_matching']
 DATASETS = _generate_dataset()
 DATASETS_NAME = ["dense", "sparse_nav0d", "sparse_nav1d", "sparse_nav2d"]
 
@@ -110,16 +110,16 @@ class TestFindPeaks2D:
         if parallel and dataset._lazy:
             pytest.skip("Parallel=True is ignored for lazy signal.")
 
-        if method == 'cross_correlation':
+        if method == 'template_matching':
             disc = np.zeros((11, 11))
             disc[2:9, 2:9] = 0.5
             disc[4:7, 4:7] = 0.75
             disc[5, 5] = 1
-            peaks = dataset.find_peaks2D(method=method, parallel=parallel,
-                                         interactive=False, template=disc)
+            peaks = dataset.find_peaks(method=method, parallel=parallel,
+                                       interactive=False, template=disc)
         else:
-            peaks = dataset.find_peaks2D(method=method, parallel=parallel,
-                                         interactive=False)
+            peaks = dataset.find_peaks(method=method, parallel=parallel,
+                                       interactive=False)
         assert isinstance(peaks, BaseSignal)
         assert not isinstance(peaks, LazySignal)
 
@@ -135,8 +135,8 @@ class TestFindPeaks2D:
 
     @pytest.mark.parametrize('parallel', [True, False])
     def test_ordering_results(self, parallel):
-        peaks = self.sparse_nav2d_shifted.find_peaks2D(parallel=parallel,
-                                                       interactive=False)
+        peaks = self.sparse_nav2d_shifted.find_peaks(parallel=parallel,
+                                                     interactive=False)
 
         nt.assert_equal(peaks.inav[0, 0].data,
                         np.array([[33, 29],
@@ -156,15 +156,15 @@ class TestFindPeaks2D:
             pytest.importorskip("sklearn")
         ans = np.empty((1,), dtype=object)
         ans[0] = np.array([[self.xref, self.yref]])
-        if method == 'cross_correlation':
+        if method == 'template_matching':
             disc = np.zeros((5, 5))
             disc[1:4, 1:4] = 0.5
             disc[2,2] = 1
-            peaks = self.ref.find_peaks2D(method=method, parallel=parallel,
-                                         interactive=False, template=disc)
+            peaks = self.ref.find_peaks(method=method, parallel=parallel,
+                                        interactive=False, template=disc)
         else:
-            peaks = self.ref.find_peaks2D(method=method, parallel=parallel,
-                                         interactive=False)
+            peaks = self.ref.find_peaks(method=method, parallel=parallel,
+                                        interactive=False)
         nt.assert_allclose(peaks.data[0], ans[0])
 
     def test_close_find_peaks(self):
@@ -173,5 +173,5 @@ class TestFindPeaks2D:
             sig.axes_manager.navigation_axes)
         peaks = BaseSignal(np.empty(sig.axes_manager.navigation_shape),
                            axes=axes_dict)
-        pf2D = PeaksFinder2D(sig,method='local_max', peaks=peaks)
+        pf2D = PeaksFinder2D(sig, method='local_max', peaks=peaks)
         pf2D.close()

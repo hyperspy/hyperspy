@@ -3880,14 +3880,14 @@ class BaseSignal(FancySlicing,
         %s
         %s
         inplace : bool
-            if ``True`` (default), the data is replaced by the result. Otherwise
-            a new Signal with the results is returned.
+            if ``True`` (default), the data is replaced by the result.
+            Otherwise a new Signal with the results is returned.
         ragged : None or bool
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
-            the appropriate choice is made while processing.If True in case of lazy signal, 
-            the signal will be compute at the end of the mapping. Note: ``None``
-            is not allowed for Lazy signals!
+            the appropriate choice is made while processing. If True in case
+            of lazy signal, the signal will be compute at the end of the
+            mapping. Note: ``None`` is not allowed for Lazy signals!
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
 

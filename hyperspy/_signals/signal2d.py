@@ -22,7 +22,6 @@ import scipy as sp
 import numpy.ma as ma
 import dask.array as da
 import logging
-from scipy.fftpack import fftn, ifftn
 from scipy import ndimage
 from skimage.feature import peak_local_max
 from skimage.feature.register_translation import _upsampled_dft
@@ -740,9 +739,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_y * yy
         self.data += ramp
 
-    def find_peaks2D(self, method='local_max', interactive=True,
-                     current_index=False, show_progressbar=None,
-                     parallel=None,  display=True, toolkit=None, **kwargs):
+    def find_peaks(self, method='local_max', interactive=True,
+                   current_index=False, show_progressbar=None,
+                   parallel=None, display=True, toolkit=None, **kwargs):
         """Find peaks in a 2D signal.
 
         Function to locate the positive peaks in an image using various, user
@@ -755,7 +754,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
              Select peak finding algorithm to implement. Available methods
              are:
                  'local_max' - simple local maximum search using the
-                 `scikit-image` `peaks_local_max` function.
+                 :py:func:`skimage.feature.peak_local_max` function
 
                  'max' - simple local maximum search - call the peak finder
                  implemented in `scikit-image` which uses a maximum filter
@@ -778,7 +777,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                  `scikit-image` which uses the difference of Gaussian
                  matrices approach.
 
-                 'xc' - A cross correlation peakfinder
+                 'template_matching' - A cross correlation peakfinder
         interactive : bool
             If True, the method parameter can be adjusted interactively.
             If False, the results will be returned.
@@ -793,9 +792,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Notes
         -----
-        As a convenient, the 'local_max' method accepts the 'distance' and 
+        As a convenience, the 'local_max' method accepts the 'distance' and 
         'threshold' argument, which will be map to the 'min_distance' and
-        'threshold_abs' of the skimage.feature.peak_local_max function.
+        'threshold_abs' of the :py:func:`skimage.feature.peak_local_max`
+        function.
 
         Returns
         -------
@@ -812,7 +812,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             'stat': find_peaks_stat,
             'laplacian_of_gaussian':  find_peaks_log,
             'difference_of_gaussian': find_peaks_dog,
-            'cross_correlation' : find_peaks_xc,
+            'template_matching' : find_peaks_xc,
         }
         # As a convenience, we map 'distance' to 'min_distance' and
         # 'threshold' to 'threshold_abs' when using the 'local_max' method to 
@@ -846,8 +846,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         return peaks
 
-    find_peaks2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG,
-                             DISPLAY_DT, TOOLKIT_DT)
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG,
+                           DISPLAY_DT, TOOLKIT_DT)
 
 
 class LazySignal2D(LazySignal, Signal2D):
