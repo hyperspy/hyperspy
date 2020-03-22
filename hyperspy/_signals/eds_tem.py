@@ -217,9 +217,8 @@ class EDSTEM_mixin:
         """.format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
-        """Check if the EDS parameters necessary for quantification
-        are defined in metadata. Raise in interactive mode
-         an UI item to fill or change the values"""
+        """Check if the EDS parameters necessary for quantification are
+        defined in metadata."""
         must_exist = (
             'Acquisition_instrument.TEM.beam_energy',
             'Acquisition_instrument.TEM.Detector.EDS.live_time',)
