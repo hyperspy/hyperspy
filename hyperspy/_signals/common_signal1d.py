@@ -40,7 +40,8 @@ class CommonSignal1D(object):
 
         Raises
         ------
-        DataDimensionError: when data.ndim < 2
+        DataDimensionError
+            When data.ndim < 2
 
 
         """
