@@ -54,7 +54,8 @@ def contrast_stretching(data, saturated_pixels):
 
     Raises
     ------
-    ValueError if the value of `saturated_pixels` is out of the valid range.
+    ValueError
+        If the value of `saturated_pixels` is out of the valid range.
 
     """
     # Sanity check
