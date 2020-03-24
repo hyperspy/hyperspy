@@ -212,9 +212,11 @@ class DataAxis(t.HasTraits, UnitConversion):
     size = t.CInt()
     low_value = t.Float()
     high_value = t.Float()
+    midpoint_value = t.Float()
     value = t.Range('low_value', 'high_value')
     low_index = t.Int(0)
     high_index = t.Int()
+    midpoint_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
@@ -473,6 +475,8 @@ class DataAxis(t.HasTraits, UnitConversion):
         if len(self.axis) != 0:
             self.low_value, self.high_value = (
                 self.axis.min(), self.axis.max())
+            self.midpoint_value = self.low_value + (self.high_value - self.low_value) / 2
+            self.midpoint_index = self.value2index(self.midpoint_value)
 
     def _update_slice(self, value):
         if value is False:
