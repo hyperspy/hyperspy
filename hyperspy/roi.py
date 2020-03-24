@@ -340,6 +340,7 @@ class BaseInteractiveROI(BaseROI):
         raise NotImplementedError()
 
     def _get_attributes(self):
+        "Returns the roi attributes"
         raise NotImplementedError()
 
     def _set_from_widget(self, widget):
@@ -829,9 +830,9 @@ class RectangularROI(BaseInteractiveROI):
 
     def __init__(self, left=None, top=None, right=None, bottom=None):
         super(RectangularROI, self).__init__()
-        left, bottom, right, top = (
+        left, top, right, bottom  = (
             para if para is not None 
-            else t.Undefined for para in (left, bottom, right, top))
+            else t.Undefined for para in (left, top, right, bottom))
         self._bounds_check = True   # Use reponsibly!
         self.top, self.bottom, self.left, self.right = top, bottom, left, right
 
@@ -847,7 +848,7 @@ class RectangularROI(BaseInteractiveROI):
         # If roi attributes are undefined, use center of axes
         if t.Undefined in self._get_attributes():
             self.left, self.right = get_central_half_limits_of_axis(axes[0])
-            self.bottom, self.top = get_central_half_limits_of_axis(axes[1])
+            self.top, self.bottom = get_central_half_limits_of_axis(axes[1])
         self._bounds_check = old_bounds_check
 
     def _get_attributes(self):
