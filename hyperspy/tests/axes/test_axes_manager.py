@@ -134,6 +134,8 @@ class TestAxesManagerScaleOffset:
         axes.scale = scale
         assert axes.low_value == (data[0] * scale + offset)
         assert axes.high_value == (data[-1] * scale + offset)
+        assert axes.fraction_value(0) == axes.low_value
+        assert axes.fraction_value(1) == axes.high_value
 
 
 class TestAxesManagerExtent:
