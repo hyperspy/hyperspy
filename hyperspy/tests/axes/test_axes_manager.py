@@ -93,7 +93,12 @@ class TestAxesManagerScaleOffset:
         axes = s.axes_manager[0]
         assert axes.low_value == data[0]
         assert axes.high_value == data[-1]
-        assert axes.midpoint_value == data[0] + (data[-1] - data[0])/2
+
+        assert axes.fraction_value(0) == axes.low_value
+        assert axes.fraction_value(1) == axes.high_value
+        assert axes.fraction_value(1/4) == data[0] + (data[-1] - data[0])/4
+        assert axes.fraction_value(5/4) == data[0] + (data[-1] - data[0]) * 5/4
+        assert axes.fraction_value(-1) == data[0] + (data[-1] - data[0]) * -1
 
 
     def test_change_scale(self):
@@ -105,8 +110,8 @@ class TestAxesManagerScaleOffset:
             axes.scale = scale_value
             assert axes.low_value == data[0] * scale_value
             assert axes.high_value == data[-1] * scale_value
-            assert axes.midpoint_value == (data[0] + (data[-1] - data[0])/2) * scale_value
-
+            assert axes.fraction_value(0) == axes.low_value
+            assert axes.fraction_value(1) == axes.high_value
 
     def test_change_offset(self):
         data = arange(81)
@@ -117,7 +122,8 @@ class TestAxesManagerScaleOffset:
             axes.offset = offset_value
             assert axes.low_value == (data[0] + offset_value)
             assert axes.high_value == (data[-1] + offset_value)
-            assert axes.midpoint_value == data[0] + (data[-1] - data[0])/2 + offset_value
+            assert axes.fraction_value(0) == axes.low_value
+            assert axes.fraction_value(1) == axes.high_value
 
     def test_change_offset_scale(self):
         data = arange(11)
@@ -128,7 +134,6 @@ class TestAxesManagerScaleOffset:
         axes.scale = scale
         assert axes.low_value == (data[0] * scale + offset)
         assert axes.high_value == (data[-1] * scale + offset)
-        assert axes.midpoint_value == (data[0] + (data[-1] - data[0])/2 * scale) + offset
 
 
 class TestAxesManagerExtent:
