@@ -23,17 +23,8 @@ from traits.api import Undefined
 import matplotlib as mpl
 from ipywidgets.widgets import HBox
 from hyperspy.drawing import widgets, signal1d, image
-<<<<<<< HEAD
 from hyperspy.defaults_parser import preferences
-
-=======
-try:
-    # IPython is a dependency of ipympl
-    # display is only used during widget plotting with ipympl
-    from IPython.display import display
-except ImportError:
-    pass
->>>>>>> added basic support for horizontal plotting with the ipympl backend
+from IPython.display import display
 
 _logger = logging.getLogger(__name__)
 
