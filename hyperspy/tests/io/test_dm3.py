@@ -68,7 +68,7 @@ class TestImageObject():
 
     def test_parse_string(self):
         assert self.imageobject._parse_string("") is None
-        assert self.imageobject._parse_string("string") is "string"
+        assert self.imageobject._parse_string("string") == "string"
 
 
 def test_missing_tag():
