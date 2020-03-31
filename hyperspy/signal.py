@@ -260,55 +260,57 @@ class MVATools(object):
                                 cmap=plt.cm.gray, quiver_color='white',
                                 vector_scale=1,
                                 per_row=3, ax=None):
-        """Plot components from PCA or ICA, or peak characteristics
+        """Plot components from PCA or ICA, or peak characteristics.
+
         Parameters
         ----------
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given
+            If None, returns maps of all components.
+            If int, returns maps of components with ids from 0 to given
             int.
             if list of ints, returns maps of components with ids in
             given list.
         calibrate : bool
-            if True, plots are calibrated according to the data in the
-            axes
-            manager.
+            If True, plots are calibrated according to the data in the
+            axes manager.
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default True.
+            If True, plots each factor to the same window. They are not scaled.
+            Default True.
         comp_label : str
             Title of the plot
         cmap : a matplotlib colormap
-            The colormap used for factor images or
-            any peak characteristic scatter map
-            overlay.
-
-        Parameters only valid for peak characteristics (or pk char factors)
-        -------------------------------------------------------------------
-        img_data - 2D numpy array,
-            The array to overlay peak characteristics onto.  If None,
+            The colormap used for factor images or any peak characteristic
+            scatter map overlay.
+            
+        Other Parameters
+        ----------------
+        img_data : 2D numpy array,
+            The array to overlay peak characteristics onto. If None,
             defaults to the average image of your stack.
-        plot_shifts - bool, default is True
+        plot_shifts : bool, default is True
             If true, plots a quiver (arrow) plot showing the shifts for
             each
             peak present in the component being plotted.
-        plot_char - None or int
+        plot_char : None or int
             If int, the id of the characteristic to plot as the colored
             scatter plot.
             Possible components are:
-               4: peak height
-               5: peak orientation
-               6: peak eccentricity
-       quiver_color : any color recognized by matplotlib
-           Determines the color of vectors drawn for
-           plotting peak shifts.
-       vector_scale : integer or None
-           Scales the quiver plot arrows.  The vector
-           is defined as one data unit along the X axis.
-           If shifts are small, set vector_scale so
-           that when they are multiplied by vector_scale,
-           they are on the scale of the image plot.
-           If None, uses matplotlib's autoscaling.
+
+            * 4: peak height
+            * 5: peak orientation
+            * 6: peak eccentricity
+        quiver_color : any color recognized by matplotlib
+            Determines the color of vectors drawn for
+            plotting peak shifts.
+        vector_scale : integer or None
+            Scales the quiver plot arrows. The vector is defined as one data
+            unit along the X axis. If shifts are small, set vector_scale so
+            that when they are multiplied by vector_scale, they are on the 
+            scale of the image plot. If None, uses matplotlib's autoscaling.
+
+        Returns
+        -------
+        matplotlib figure or list of figure if same_window=False
 
         """
         if same_window is None:
@@ -2219,22 +2221,20 @@ class BaseSignal(FancySlicing,
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
             following items:
-            data : :py:class:`numpy.ndarray`
-               The signal data. It can be an array of any dimensions.
-            axes : dict, optional
-                Dictionary to define the axes (see the
-                documentation of the AxesManager class for more details).
-            attributes : dict, optional
-                A dictionary whose items are stored as attributes.
-            metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `metadata` attribute.
-                Some parameters might be mandatory in some cases.
-            original_metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `original_metadata` attribute. It
-                typically contains all the parameters that has been
-                imported from the original data file.
+
+            * data: the signal data. It can be an array of any dimensions.
+
+            * axes: a dictionary to define the axes (see the documentation of
+              the :py:class:`~hyperspy.axes.AxesManager` class for more details).
+            * attributes: a dictionary whose items are stored as attributes.
+
+            * metadata: a dictionary containing a set of parameters that will
+              to stores in the `metadata` attribute. Some parameters might be
+              mandatory in some cases.
+            * original_metadata: a dictionary containing a set of parameters
+              that will to stores in the `original_metadata` attribute. It
+              typically contains all the parameters that has been
+              imported from the original data file.
 
         """
         self.data = file_data_dict['data']
@@ -4947,7 +4947,7 @@ class BaseSignal(FancySlicing,
         Raises
         ------
         DataDimensionError
-            when `data.ndim` < 2
+            When `data.ndim` < 2
 
         See also
         --------

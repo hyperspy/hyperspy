@@ -44,6 +44,7 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
     Examples
     ---------
     First build synthetic noisy data
+
     >>> x, y, z = np.ogrid[0:40, 0:40, 0:40]
     >>> mask = (x -22)**2 + (y - 20)**2 + (z - 17)**2 < 8**2
     >>> mask = mask.astype(np.float)
@@ -136,12 +137,12 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     http://en.wikipedia.org/wiki/Total_variation_denoising
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
-    that was proposed by Chambolle in [1]_.
+    that was proposed by Chambolle in [*]_.
 
     References
     ----------
 
-    .. [1] A. Chambolle, An algorithm for total variation minimization and
+    .. [*] A. Chambolle, An algorithm for total variation minimization and
            applications, Journal of Mathematical Imaging and Vision,
            Springer, 2004, 20, 89-97.
 
@@ -232,12 +233,12 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     http://en.wikipedia.org/wiki/Total_variation_denoising
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
-    that was proposed by Chambolle in [1]_.
+    that was proposed by Chambolle in [*]_.
 
     References
     ----------
 
-    .. [1] A. Chambolle, An algorithm for total variation minimization and
+    .. [*] A. Chambolle, An algorithm for total variation minimization and
            applications, Journal of Mathematical Imaging and Vision,
            Springer, 2004, 20, 89-97.
 
@@ -316,8 +317,7 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Returns
     -------
     out: ndarray
-        denoised array
-
+        Denoised array
 
     Notes
     -----
@@ -331,12 +331,12 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     piecewise-constant images.
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
-    that was proposed by Chambolle in [1]_.
+    that was proposed by Chambolle in [*]_.
 
     References
     ----------
 
-    .. [1] A. Chambolle, An algorithm for total variation minimization and
+    .. [*] A. Chambolle, An algorithm for total variation minimization and
            applications, Journal of Mathematical Imaging and Vision,
            Springer, 2004, 20, 89-97.
 
