@@ -1154,6 +1154,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                         polynomial_order, legacy=False)
             elif background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
+            elif background_type == 'Exponential':
+                background_estimator = components1d.Exponential()
             elif background_type in ('SkewNormal', 'Skew Normal'):
                 background_estimator = components1d.SkewNormal()
             elif background_type == 'Voigt':

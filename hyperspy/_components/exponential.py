@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy._components.expression import Expression
+import numpy as np
 
 
 class Exponential(Expression):
@@ -57,3 +58,62 @@ class Exponential(Expression):
         )
 
         self.isbackground = False
+
+
+
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
+        """Estimate the parameters using the endpoints of the signal window
+
+        Parameters
+        ----------
+        signal : BaseSignal instance
+        x1 : float
+            Defines the left limit of the spectral range to use for the
+            estimation.
+        x2 : float
+            Defines the right limit of the spectral range to use for the
+            estimation.
+
+        only_current : bool
+            If False estimates the parameters for the full dataset.
+
+        Returns
+        -------
+        bool
+
+        """
+        super(Exponential, self)._estimate_parameters(signal)
+        axis = signal.axes_manager.signal_axes[0]
+        i1, i2 = axis.value_range_to_indices(x1, x2)
+        x1, x2 = axis.index2value(i1), axis.index2value(i2)
+
+
+        if only_current is True:
+            s = signal.get_current_signal()
+            y1, y2 = s.isig[i1].data[0], s.isig[i2].data[0]
+            A = np.exp((np.log(y1)-x1/x2*np.log(y2))/(1-x1/x2))
+            t = -x2/(np.log(y2)-np.log(A))
+            if self.binned:
+                A /= axis.scale
+            self.A.value = np.nan_to_num(A)
+            self.tau.value = np.nan_to_num(t)
+            return True
+        else:
+            if self.A.map is None:
+                self._create_arrays()
+            Y1, Y2 = signal.isig[i1].data, signal.isig[i2].data
+            A = np.exp((np.log(Y1)-x1/x2*np.log(Y2))/(1-x1/x2))
+            t = -x2/(np.log(Y2)-np.log(A))
+            if self.binned:
+                A /= axis.scale
+            A = np.nan_to_num(A/axis.scale)
+            t = np.nan_to_num(t)
+
+            self.A.map['values'][:] = A
+            self.A.map['is_set'][:] = True
+            self.tau.map['values'][:] = t
+            self.tau.map['is_set'][:] = True
+            self.fetch_stored_values()
+
+            return True
+
