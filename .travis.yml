@@ -5,7 +5,7 @@ env:
   global:
     - ENV=conda
     - MINIMAL_ENV=false
-    - DEPS="numpy ipython scipy matplotlib traits natsort requests tqdm sympy dill h5py python-dateutil ipyparallel dask scikit-image pint numexpr statsmodels sparse imageio pyyaml PTable tifffile"
+    - DEPS="numpy ipython scipy matplotlib-base traits natsort requests tqdm sympy dill h5py python-dateutil ipyparallel dask scikit-image pint numexpr statsmodels sparse imageio pyyaml PTable tifffile"
     - DEPS_OPTIONAL="scikit-learn mrcz numba cython"
     - TEST_DEPS="pytest pytest-cov codecov pytest-mpl wheel"
     - MPLBACKEND="agg"
@@ -19,6 +19,7 @@ services:
 matrix:
   include:
     # All tests run for the latest supported Python version in Linux
+  - env: export CONDA_PYTHON=3.8
   - env: export CONDA_PYTHON=3.7
   - env: export CONDA_PYTHON=3.7; MINIMAL_ENV=true
   - env: export ENV=pip
@@ -30,6 +31,7 @@ matrix:
     # Only standard test for older supported versions of Python in Linux
   - env: export CONDA_PYTHON=3.6
     # All tests, but the min requirements test run for the latest supported Python version in OSx
+    if: tag IS present
   - env: export CONDA_PYTHON=3.7
     os: osx
   - env: export CONDA_PYTHON=3.6
