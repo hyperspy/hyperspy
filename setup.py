@@ -26,6 +26,7 @@ import itertools
 import subprocess
 import os
 import warnings
+from tempfile import TemporaryDirectory
 from setuptools import setup, Extension, Command
 import sys
 
@@ -175,8 +176,9 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
-                                   'test_compilers.c')])
+    with TemporaryDirectory() as tmpdir:
+        compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
+                                   'test_compilers.c')], output_dir=tmpdir)
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
