@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -167,4 +168,3 @@ class Polynomial(Component):
         return self._function(x, coefficients)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
-
