@@ -310,7 +310,7 @@ class ORPCA:
         if method not in ("CF", "BCD", "SGD", "MomentumSGD"):
             raise ValueError("'method' not recognised")
         if not isinstance(init, np.ndarray) and init not in ("qr", "rand"):
-            raise ValueError("'method' not recognised")
+            raise ValueError("'init' not recognised")
         if init == "qr" and training_samples < rank:
             raise ValueError("'training_samples' must be >= 'output_dimension'")
         if method == "MomentumSGD" and (
@@ -383,8 +383,6 @@ class ORPCA:
             if init_m != m or init_r != self.rank:
                 raise ValueError("'init' has to be of shape [nfeatures x rank]")
             return init.copy()
-        else:
-            raise ValueError("Bad initialization options")
 
     def fit(self, X, iterating=None):
         if self.nfeatures is None:

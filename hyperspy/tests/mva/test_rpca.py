@@ -4,6 +4,7 @@ import pytest
 
 from hyperspy.learn.rpca import rpca_godec, orpca
 from hyperspy.misc.machine_learning.import_sklearn import fast_svd
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class TestRPCA:
@@ -146,12 +147,24 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
 
+        with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
+            _ = orpca(self.X, rank=self.rank, method='MomentumSGD',
+                      subspace_momentum=1.9)
+
     def test_init(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, init='rand')
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
+
+        with pytest.raises(ValueError, match=f"has to be a two-dimensional matrix"):
+            mat = np.zeros(self.m)
+            _ = orpca(self.X, rank=self.rank, init=mat)
+
+        with pytest.raises(ValueError, match=f"has to be of shape [nfeatures x rank]"):
+            mat = np.zeros(self.m, self.rank - 1)
+            _ = orpca(self.X, rank=self.rank, init=mat)
 
     def test_training(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, init='qr',
@@ -162,6 +175,10 @@ class TestORPCA:
         print(normX)
         assert normX < self.tol
 
+        with pytest.raises(ValueError, match=f"must be >="):
+            _ = orpca(self.X, rank=self.rank, init='qr',
+                      training_samples=self.rank - 1)
+
     def test_regularization(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank,
                               lambda1=self.lambda1,
@@ -170,3 +187,12 @@ class TestORPCA:
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
+
+    def test_exception_method(self):
+        with pytest.raises(ValueError, match=f"'method' not recognised"):
+            _ = orpca(self.X, rank=self.rank, method="uniform")
+
+    def test_exception_init(self):
+        with pytest.raises(ValueError, match=f"'init' not recognised"):
+            _ = orpca(self.X, rank=self.rank, init="uniform")
+
