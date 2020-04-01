@@ -299,7 +299,7 @@ class TestReturnInfo:
     @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_false(self):
-        for algorithm in ["RPCA_GoDec", "ORPCA"]:
+        for algorithm in ["RPCA_GoDec", "ORPCA", "ORNMF"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
