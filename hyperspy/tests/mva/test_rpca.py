@@ -149,7 +149,7 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
 
-        with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
+        with pytest.raises(ValueError, match="must be a float between 0 and 1"):
             _ = orpca(self.X, rank=self.rank, method='MomentumSGD',
                       subspace_momentum=1.9)
 
@@ -160,11 +160,11 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
 
-        with pytest.raises(ValueError, match=f"has to be a two-dimensional matrix"):
+        with pytest.raises(ValueError, match="has to be a two-dimensional matrix"):
             mat = np.zeros(self.m)
             _ = orpca(self.X, rank=self.rank, init=mat)
 
-        with pytest.raises(ValueError, match=f"has to be of shape"):
+        with pytest.raises(ValueError, match="has to be of shape"):
             mat = np.zeros((self.m, self.rank - 1))
             _ = orpca(self.X, rank=self.rank, init=mat)
 
@@ -177,7 +177,7 @@ class TestORPCA:
         print(normX)
         assert normX < self.tol
 
-        with pytest.raises(ValueError, match=f"must be >="):
+        with pytest.raises(ValueError, match="must be >="):
             _ = orpca(self.X, rank=self.rank, init='qr',
                       training_samples=self.rank - 1)
 
@@ -191,20 +191,20 @@ class TestORPCA:
         assert normX < self.tol
 
     def test_exception_method(self):
-        with pytest.raises(ValueError, match=f"'method' not recognised"):
+        with pytest.raises(ValueError, match="'method' not recognised"):
             _ = orpca(self.X, rank=self.rank, method="uniform")
 
     def test_exception_init(self):
-        with pytest.raises(ValueError, match=f"'init' not recognised"):
+        with pytest.raises(ValueError, match="'init' not recognised"):
             _ = orpca(self.X, rank=self.rank, init="uniform")
 
     def test_warnings(self):
         with pytest.warns(VisibleDeprecationWarning,
-                          match=f"The argument `learning_rate` has been deprecated"):
+                          match="The argument `learning_rate` has been deprecated"):
             _ = orpca(self.X, rank=self.rank, learning_rate=0.1)
 
         with pytest.warns(VisibleDeprecationWarning,
-                          match=f"The argument `momentum` has been deprecated"):
+                          match="The argument `momentum` has been deprecated"):
             _ = orpca(self.X, rank=self.rank, momentum=0.1)
 
 
