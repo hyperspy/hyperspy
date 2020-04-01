@@ -311,6 +311,15 @@ class TestReturnInfo:
                 return_info=False,
                 output_dimension=2) is None
 
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "ORPCA", "ORNMF"])
+    def test_decomposition_output_dimension_not_given(self, algorithm):
+        with pytest.raises(ValueError, match="the output_dimension must be specified"):
+            self.s.decomposition(algorithm=algorithm, return_info=False)
+
 
 class TestNonFloatTypeError:
 
