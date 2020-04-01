@@ -163,7 +163,7 @@ class TestORPCA:
             _ = orpca(self.X, rank=self.rank, init=mat)
 
         with pytest.raises(ValueError, match=f"has to be of shape [nfeatures x rank]"):
-            mat = np.zeros(self.m, self.rank - 1)
+            mat = np.zeros((self.m, self.rank - 1))
             _ = orpca(self.X, rank=self.rank, init=mat)
 
     def test_training(self):
