@@ -18,6 +18,9 @@
 
 from hyperspy._components.expression import Expression
 import numpy as np
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class Exponential(Expression):
@@ -87,12 +90,17 @@ class Exponential(Expression):
         i1, i2 = axis.value_range_to_indices(x1, x2)
         x1, x2 = axis.index2value(i1), axis.index2value(i2)
 
-
         if only_current is True:
             s = signal.get_current_signal()
             y1, y2 = s.isig[i1].data[0], s.isig[i2].data[0]
-            A = np.exp((np.log(y1)-x1/x2*np.log(y2))/(1-x1/x2))
-            t = -x2/(np.log(y2)-np.log(A))
+            with np.errstate(divide='raise'):
+                try:
+                    A = np.exp((np.log(y1)-x1/x2*np.log(y2))/(1-x1/x2))
+                    t = -x2/(np.log(y2)-np.log(A))
+                except:
+                    _logger.warning('Exponential paramaters estimation failed '
+                                'because of a "divide by zero" error.')
+                    return False
             if self.binned:
                 A /= axis.scale
             self.A.value = np.nan_to_num(A)
@@ -102,8 +110,14 @@ class Exponential(Expression):
             if self.A.map is None:
                 self._create_arrays()
             Y1, Y2 = signal.isig[i1].data, signal.isig[i2].data
-            A = np.exp((np.log(Y1)-x1/x2*np.log(Y2))/(1-x1/x2))
-            t = -x2/(np.log(Y2)-np.log(A))
+            with np.errstate(divide='raise'):
+                try:
+                    A = np.exp((np.log(Y1)-x1/x2*np.log(Y2))/(1-x1/x2))
+                    t = -x2/(np.log(Y2)-np.log(A))
+                except:
+                    _logger.warning('Exponential paramaters estimation failed '
+                                'because of a "divide by zero" error.')
+                    return False
             if self.binned:
                 A /= axis.scale
             A = np.nan_to_num(A/axis.scale)
