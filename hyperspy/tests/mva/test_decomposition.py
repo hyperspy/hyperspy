@@ -311,11 +311,6 @@ class TestReturnInfo:
                 return_info=False,
                 output_dimension=2) is None
 
-    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "ORPCA", "ORNMF"])
-    def test_decomposition_output_dimension_not_given(self, algorithm):
-        with pytest.raises(ValueError, match="the output_dimension must be specified"):
-            self.s.decomposition(algorithm=algorithm, return_info=False)
-
 
 class TestNonFloatTypeError:
 

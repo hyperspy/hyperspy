@@ -50,7 +50,7 @@ def test_corrupted_robust():
 
 
 def test_no_method():
-    with pytest.raises(ValueError, match="'method' not recognised"):
+    with pytest.raises(ValueError, match=f"'method' not recognised"):
         W, H = ornmf(X, r, method="uniform")
 
 
@@ -78,6 +78,6 @@ def test_subspace_tracking_momentum(subspace_momentum):
     print(res)
     assert res < 2.0
 
-    with pytest.raises(ValueError, match="must be a float between 0 and 1"):
+    with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
         W, H = ornmf(X, r, method='MomentumSGD', subspace_momentum=1.9)
 
