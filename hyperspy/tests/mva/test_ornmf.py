@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from hyperspy.learn.ornmf import ornmf
 
@@ -48,6 +49,11 @@ def test_corrupted_robust():
     assert res < 0.11
 
 
+def test_no_method():
+    with pytest.raises(ValueError, match=f"'method' not recognised"):
+        W, H = ornmf(X, r, method="uniform")
+
+
 def test_subspace_tracking():
     W, H = ornmf(X, r, method='MomentumSGD')
     res = compare(np.dot(W, H), X.T)
@@ -67,3 +73,7 @@ def test_subspace_tracking_momentum():
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 2.0
+
+    with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
+        W, H = ornmf(X, r, method='MomentumSGD', subspace_momentum=1.9)
+

@@ -192,7 +192,7 @@ class ORNMF:
         if method == "MomentumSGD":
             self.subspace_tracking = True
             if subspace_momentum < 0.0 or subspace_momentum > 1:
-                raise ValueError('"subspace_momentum" must be in range [0, 1]')
+                raise ValueError("'subspace_momentum' must be a float between 0 and 1")
 
         self.subspace_learning_rate = subspace_learning_rate
         self.subspace_momentum = subspace_momentum
