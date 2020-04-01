@@ -196,3 +196,13 @@ class TestORPCA:
         with pytest.raises(ValueError, match=f"'init' not recognised"):
             _ = orpca(self.X, rank=self.rank, init="uniform")
 
+    def test_warnings(self):
+        with pytest.warns(VisibleDeprecationWarning,
+                          match=f"The argument `learning_rate` has been deprecated"):
+            _ = orpca(self.X, rank=self.rank, learning_rate=0.1)
+
+        with pytest.warns(VisibleDeprecationWarning,
+                          match=f"The argument `momentum` has been deprecated"):
+            _ = orpca(self.X, rank=self.rank, momentum=0.1)
+
+

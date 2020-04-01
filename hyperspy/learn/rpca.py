@@ -377,12 +377,12 @@ class ORPCA:
             L, _ = scipy.linalg.qr(Y2, mode='economic')
             return L[:, : self.rank]
         elif isinstance(self.init, np.ndarray):
-            if init.ndim != 2:
+            if self.init.ndim != 2:
                 raise ValueError("'init' has to be a two-dimensional matrix")
-            init_m, init_r = init.shape
+            init_m, init_r = self.init.shape
             if init_m != m or init_r != self.rank:
                 raise ValueError("'init' has to be of shape [nfeatures x rank]")
-            return init.copy()
+            return self.init.copy()
 
     def fit(self, X, iterating=None):
         if self.nfeatures is None:
