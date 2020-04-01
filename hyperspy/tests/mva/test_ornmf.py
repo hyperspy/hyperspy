@@ -61,15 +61,19 @@ def test_subspace_tracking():
     assert res < 2.0
 
 
-def test_subspace_tracking_learning_rate():
-    W, H = ornmf(X, r, method='MomentumSGD', subspace_learning_rate=0.1)
+@pytest.mark.parametrize("subspace_learning_rate", [None, 1.1])
+def test_subspace_tracking_learning_rate(subspace_learning_rate):
+    W, H = ornmf(X, r, method='MomentumSGD',
+                 subspace_learning_rate=subspace_learning_rate)
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 2.0
 
 
-def test_subspace_tracking_momentum():
-    W, H = ornmf(X, r, method='MomentumSGD', subspace_momentum=0.9)
+@pytest.mark.parametrize("subspace_momentum", [None, 0.9])
+def test_subspace_tracking_momentum(subspace_momentum):
+    W, H = ornmf(X, r, method='MomentumSGD',
+                 subspace_momentum=subspace_momentum)
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 2.0

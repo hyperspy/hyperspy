@@ -129,19 +129,21 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
 
-    def test_method_SGD(self):
+    @pytest.mark.parametrize("subspace_learning_rate", [None, 1.1])
+    def test_method_SGD(self, subspace_learning_rate):
         X, E, U, S, V = orpca(self.X, rank=self.rank,
-                              method='SGD', subspace_learning_rate=self.subspace_learning_rate)
+                              method='SGD', subspace_learning_rate=subspace_learning_rate)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
 
-    def test_method_MomentumSGD(self):
+    @pytest.mark.parametrize("subspace_momentum", [None, 0.1])
+    def test_method_MomentumSGD(self, subspace_momentum):
         X, E, U, S, V = orpca(self.X, rank=self.rank,
                               method='MomentumSGD',
                               subspace_learning_rate=self.subspace_learning_rate,
-                              subspace_momentum=self.subspace_momentum)
+                              subspace_momentum=subspace_momentum)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
