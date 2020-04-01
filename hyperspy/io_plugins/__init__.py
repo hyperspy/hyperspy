@@ -39,6 +39,12 @@ except ImportError:
     # NetCDF is obsolete and is only provided for users who have
     # old EELSLab files. Therefore, we silently ignore if missing.
 
+try:
+    from hyperspy.io_plugins import usid_hdf5
+    io_plugins.append(usid_hdf5)
+except ImportError:
+    _logger.info('The USID IO plugin is not available because '
+                 'the pyUSID Python package is not installed.')
 
 try:
     from hyperspy.io_plugins import mrcz
