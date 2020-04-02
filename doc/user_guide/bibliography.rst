@@ -202,7 +202,7 @@ Bibliography
    M Lerotic, C Jacobsen, T Schafer, S Vogt 
    "Cluster analysis of soft X-ray spectromicroscopy data".
    Ultramicroscopy 100 (2004) 35–57 
-   [`link <https://doi.org/10.1016/j.ultramic.2004.01.008>`_]
+   [`<https://doi.org/10.1016/j.ultramic.2004.01.008>`_]
 
 
 Peer-review articles with results obtained using HyperSpy

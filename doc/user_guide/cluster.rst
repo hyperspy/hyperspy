@@ -37,7 +37,7 @@ this average set of features is the center of that cluster.
 Example
 -------
 
-We can use the `Link make_blobs <https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_blobs.html>`_
+We can use the `make_blobs <https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_blobs.html>`_
 supplied by `scikit-learn` to make dummy data to see how clustering might work in practice.
  
 .. code-block:: python
@@ -45,10 +45,10 @@ supplied by `scikit-learn` to make dummy data to see how clustering might work i
     >>> import hyperspy.api as hs
     >>> from sklearn.datasets import make_blobs
     >>> data = make_blobs(
-    >>>         n_samples=200,
-    >>>         n_features=10,
-    >>>         shuffle=False)[0].reshape(20, 10, 10)
-	>>> s = hs.signals.Signal1D(data)
+    >>>         n_samples=500,
+    >>>         n_features=4,
+    >>>         shuffle=False)[0].reshape(50, 10, 4)
+    >>> s = hs.signals.Signal1D(data)
 
 The resultant signal contains 3 distinct "types" of signal. 
 If we examine the signal using PCA we can see that there are 3 regions but
@@ -60,7 +60,7 @@ the 1D signal modulates slightly.
 
 .. code-block:: python
 
-    >>> data.plot()
+    >>> s.plot()
 
 
 If we then perform PCA we start to see the 3 regions a little more clearly but
@@ -68,8 +68,8 @@ the factors and loadings don't match up with the original 1D signals or image.
 
 .. code-block:: python
 
-    >>> data.decomposition()
-    >>> data.plot_decomposition_results()
+    >>> s.decomposition()
+    >>> s.plot_decomposition_results()
 
 
 We can then cluster, using the decomposition results, to find similar regions
@@ -79,22 +79,22 @@ those regions
 
 .. code-block:: python
 
-    >>> data.cluster_analysis(3)
-    >>> data.plot_cluster_results()
+    >>> s.cluster_analysis(3)
+    >>> s.plot_cluster_results()
 
 
 To see what the labels the cluster algorithm has assigned you can inspect:
 
 .. code-block:: python
 
-    >>> data.learning_results.cluster_membership
+    >>> s.learning_results.cluster_membership
 
 
 These are split into a cluster_labels array to help plotting and masking:
 
 .. code-block:: python
 
-    >>> data.learning_results.cluster_labels
+    >>> s.learning_results.cluster_labels
 
 
 The clustering methods currently supported in hyperspy are kmeans and 
@@ -104,9 +104,9 @@ methods in the following manner:
 
 .. code-block:: python
 
-    >>> data.cluster_analysis(3, algorithm='agglomerative',
+    >>> s.cluster_analysis(3, algorithm='agglomerative',
     >>>        kwargs={affinity='cosine', linkage='average'})
-    >>> data.plot_cluster_results()
+    >>> s.plot_cluster_results()
 
 
 In this case we know there are 3 signals but for real examples it is difficult
@@ -126,23 +126,23 @@ well-defined the clustering is.
 
 .. code-block:: python
 
-    >>> data.evaluate_number_of_clusters(
+    >>> s.evaluate_number_of_clusters(
     >>>     use_decomposition_results=True,metric="gap")
-    >>> data.plot_cluster_metric()
+    >>> s.plot_cluster_metric()
     
 The optimal number of clusters can be set or accessed from the learning 
 results
 
 .. code-block:: python
 
-    >>> data.learning_results.number_of_clusters
+    >>> s.learning_results.number_of_clusters
     
 If running cluster analysis and the number of clusters have not been
 specified the algorithm will attempt to use the estimated number of clusters
 
 .. code-block:: python
 
-    >>> data.cluster_analysis()
+    >>> s.cluster_analysis()
 
 
 
