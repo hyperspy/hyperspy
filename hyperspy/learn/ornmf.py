@@ -140,8 +140,8 @@ class ORNMF:
         kappa=1.0,
         store_r=False,
         method=None,
-        subspace_learning_rate=1.0,
-        subspace_momentum=0.5,
+        subspace_learning_rate=None,
+        subspace_momentum=None,
     ):
         """Creates Online Robust NMF instance that can learn a representation
 
@@ -160,9 +160,9 @@ class ORNMF:
             'RobustPGD' - Robust proximal gradient descent
             'MomentumSGD' - Stochastic gradient descent with momentum
             If None, set to PGD
-        subspace_learning_rate : float
+        subspace_learning_rate : float | None
             Learning rate for stochastic gradient descent.
-        subspace_momentum : float
+        subspace_momentum : float | None
             Momentum parameter for stochastic gradient descent. Must be in
             range 0 <= x <= 1.
 
@@ -182,6 +182,21 @@ class ORNMF:
                 "'PGD' (proximal gradient descent)"
             )
             method = "PGD"
+
+        if subspace_learning_rate is None:
+            if method in ("SGD", "MomentumSGD"):
+                _logger.warning(
+                    "Learning rate for SGD algorithm is "
+                    "set to default: 1.0"
+                )
+                subspace_learning_rate = 1.0
+        if subspace_momentum is None:
+            if method == "MomentumSGD":
+                _logger.warning(
+                    "Momentum parameter for SGD algorithm is "
+                    "set to default: 0.5"
+                )
+                subspace_momentum = 0.5
 
         if method not in ("PGD", "RobustPGD", "MomentumSGD"):
             raise ValueError("'method' not recognised")
