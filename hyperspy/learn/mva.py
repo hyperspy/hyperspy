@@ -130,7 +130,7 @@ class MVA():
             It only has effect when using the svd or fast_svd algorithms
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only has effect when using the svd of fast_svd algorithms.
+            Only used by the 'svd' and 'fast_svd' algorithms.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion.
@@ -179,7 +179,6 @@ class MVA():
             "  algorithm={}".format(algorithm),
             "  output_dimension={}".format(output_dimension),
             "  centre={}".format(centre),
-            "  auto_transpose={}".format(auto_transpose),
         ]
 
         # Check if it is the wrong data type
