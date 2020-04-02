@@ -51,9 +51,6 @@ install:
   - if [[ $MINIMAL_ENV == false ]] ; then
       DEPS="${DEPS} ${DEPS_OPTIONAL}";
     fi
-  - if [[ $ENV == pip ]] ; then
-      DEPS="${DEPS} pillow==7.0";
-    fi
   - source ./ci/travis_install_with_$ENV.sh
   - pip install .
 
