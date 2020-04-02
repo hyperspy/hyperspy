@@ -265,6 +265,42 @@ class TestNormalizeComponents():
                                       self.loadings / 2.)
 
 
+class TestPrintInfo:
+
+    def setup_method(self, method):
+        self.s = signals.Signal1D(np.random.random((20, 100)))
+
+    def test_decomposition(self, capfd):
+        # Not testing MLPCA, takes too long
+        for algorithm in ["svd", "fast_svd"]:
+            print(algorithm)
+            self.s.decomposition(algorithm=algorithm, output_dimension=2)
+            captured = capfd.readouterr()
+            assert "Decomposition info:" in captured.out
+
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_decomposition_sklearn(self, capfd):
+        for algorithm in ["sklearn_pca", "nmf",
+                          "sparse_pca", "mini_batch_sparse_pca"]:
+            print(algorithm)
+            self.s.decomposition(algorithm=algorithm, output_dimension=2)
+            captured = capfd.readouterr()
+            assert "Decomposition info:" in captured.out
+            assert "scikit-learn estimator:" in captured.out
+
+    def test_decomposition_no_print(self, capfd):
+        # Not testing MLPCA, takes too long
+        for algorithm in ["svd", "fast_svd"]:
+            print(algorithm)
+            self.s.decomposition(algorithm=algorithm, output_dimension=2,
+                                 print_info=False)
+            captured = capfd.readouterr()
+            assert "Decomposition info:" not in captured.out
+
+
 class TestReturnInfo:
 
     def setup_method(self, method):
