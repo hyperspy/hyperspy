@@ -118,11 +118,12 @@ class MVA():
         Parameters
         ----------
         normalize_poissonian_noise : bool, default False
-            If True, scale the SI to normalize Poissonian noise
+            If True, scale the signal to normalize Poissonian noise using
+            the algorithm described in [1]_.
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
             'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA'
         output_dimension : None or int
-            number of components to keep/calculate
+            Number of components to keep/calculate
         centre : None | 'variables' | 'trials'
             If None (default), no centering is applied.
             If 'variable', the centring will be performed in the variable axis.
@@ -151,8 +152,9 @@ class MVA():
         return_info: bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
-            stored. If True (the default is False) return any extra
-            information if available
+            stored. If True, return any extra information if available.
+            In the case of sklearn.decomposition objects, this includes the
+            sklearn Estimator object.
         print_info : bool, default True
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
@@ -171,6 +173,11 @@ class MVA():
         :py:meth:`~.signal.MVATools.plot_decomposition_results`,
         :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
 
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
         to_return = None
         to_print = [
@@ -1276,17 +1283,21 @@ class MVA():
     def normalize_poissonian_noise(self, navigation_mask=None,
                                    signal_mask=None):
         """
-        Scales the SI following Surf. Interface Anal. 2004; 36: 203–212
-        to "normalize" the poissonian data for decomposition analysis
+        Scales the signal using the algorithm in Surf. Interface Anal. 2004; 36: 203–212
+        to "normalize" the Poissonian data for subsequent decomposition analysis.
 
         Parameters
         ----------
-        navigation_mask : boolen numpy array
-        signal_mask  : boolen numpy array
+        navigation_mask : boolean numpy array
+        signal_mask  : boolean numpy array
+
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
-        _logger.info(
-            "Scaling the data to normalize the (presumably)"
-            " Poissonian noise")
+        _logger.info("Scaling the data to normalize Poissonian noise")
         with self.unfolded():
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the
