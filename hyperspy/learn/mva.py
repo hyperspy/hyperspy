@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -214,11 +214,19 @@ class MVA():
             # Normalize the poissonian noise
             # TODO this function can change the masks and this can cause
             # problems when reprojecting
-            if normalize_poissonian_noise is True:
+            if normalize_poissonian_noise:
+                if centre is not None:
+                    raise ValueError(
+                        ("normalize_poissonian_noise=True is only compatible "
+                         "with centre=None, not centre={}.").format(centre)
+                    )
+
                 self.normalize_poissonian_noise(
                     navigation_mask=navigation_mask,
                     signal_mask=signal_mask,)
+
             _logger.info('Performing decomposition analysis')
+
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the
             # case.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -183,25 +183,25 @@ class Parameter(t.HasTraits):
         self._slicing_whitelist = {'map': 'inav'}
 
     def _load_dictionary(self, dictionary):
-        """Load data from dictionary
+        """Load data from dictionary.
 
         Parameters
         ----------
-        dict : dictionary
-            A dictionary containing at least the following items:
-            _id_name : string
-                _id_name of the original parameter, used to create the
-                dictionary. Has to match with the self._id_name
-            _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the
-                parameter attributes.  For more information see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            * any field from _whitelist.keys() *
+        dict : dict
+            A dictionary containing at least the following fields:
+
+            * _id_name: ``_id_name`` of the original parameter, used to create
+              the dictionary. Has to match with the ``self._id_name``.
+            * _whitelist: a dictionary, which keys are used as keywords to
+              match with the parameter attributes. For more information see
+              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from ``_whitelist.keys()``.
+
         Returns
         -------
         id_value : int
-            the ID value of the original parameter, to be later used for setting
-            up the correct twins
+            the ID value of the original parameter, to be later used for
+            setting up the correct twins
 
         """
         if dictionary['_id_name'] == self._id_name:
@@ -588,11 +588,12 @@ class Parameter(t.HasTraits):
         Parameters
         ----------
         field : {'values', 'std', 'is_set'}
+            Field to return as signal.
 
         Raises
         ------
-
-        NavigationDimensionError : if the navigation dimension is 0
+        NavigationDimensionError
+            If the navigation dimension is 0
 
         """
         from hyperspy.signal import BaseSignal
@@ -645,24 +646,23 @@ class Parameter(t.HasTraits):
 
     def export(self, folder=None, name=None, format="hspy",
                save_std=False):
-        """Save the data to a file.
-
-        All the arguments are optional.
+        """Save the data to a file. All the arguments are optional.
 
         Parameters
         ----------
         folder : str or None
             The path to the folder where the file will be saved.
-             If `None` the current folder is used by default.
+            If `None` the current folder is used by default.
         name : str or None
             The name of the file. If `None` the Components name followed
-             by the Parameter `name` attributes will be used by default.
-              If a file with the same name exists the name will be
-              modified by appending a number to the file path.
+            by the Parameter `name` attributes will be used by default.
+            If a file with the same name exists the name will be
+            modified by appending a number to the file path.
         save_std : bool
             If True, also the standard deviation will be saved
         format: str
-            The extension of any file format supported by HyperSpy, default hspy
+            The extension of any file format supported by HyperSpy, default
+            ``hspy``.
 
         """
         if format is None:
@@ -680,7 +680,7 @@ class Parameter(t.HasTraits):
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
         self._whitelist.keys() For more information see
-        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
@@ -690,15 +690,14 @@ class Parameter(t.HasTraits):
 
         Returns
         -------
-        dic : dict
-            A dictionary, containing at least the following fields:
+        A dictionary, containing at least the following fields:
 
             * _id_name: _id_name of the original parameter, used to create the
               dictionary. Has to match with the self._id_name
             * _twins: a list of ids of the twins of the parameter
             * _whitelist: a dictionary, which keys are used as keywords to match
               with the parameter attributes. For more information see
-              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
         """
@@ -1058,7 +1057,7 @@ class Component(t.HasTraits):
 
         Parameters
         ----------
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to free.
@@ -1093,7 +1092,7 @@ class Component(t.HasTraits):
 
         Parameters
         ----------
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
@@ -1131,7 +1130,7 @@ class Component(t.HasTraits):
     def as_dictionary(self, fullcopy=True):
         """Returns component as a dictionary. For more information on method 
         and conventions, see
-        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
@@ -1148,7 +1147,7 @@ class Component(t.HasTraits):
               component.
             * _whitelist: a dictionary with keys used as references saved
               attributes, for more information, see
-              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
         """
         dic = {
@@ -1167,23 +1166,23 @@ class Component(t.HasTraits):
 
         Parameters
         ----------
-        dict : dictionary
-            A dictionary containing following items:
-            _id_name : string
-                _id_name of the original component, used to create the
-                dictionary. Has to match with the self._id_name
-            parameters : list
-                A list of dictionaries, one per parameter of the component (see
-                parameter.as_dictionary() documentation for more)
-            _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the
-                component attributes.  For more information see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            * any field from _whitelist.keys() *
+        dict : dict
+            A dictionary containing at least the following fields:
+
+            * _id_name: _id_name of the original parameter, used to create the
+              dictionary. Has to match with the self._id_name
+            * parameters: a list of dictionaries, one per parameter of the
+              component (see 
+              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              documentation for more details)
+            * _whitelist: a dictionary, which keys are used as keywords to
+              match with the parameter attributes. For more information see
+              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys()
 
         Returns
         -------
-        twin_dict : dictionary
+        twin_dict : dict
             Dictionary of 'id' values from input dictionary as keys with all of
             the parameters of the component, to be later used for setting up
             correct twins.

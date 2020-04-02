@@ -214,6 +214,7 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
                           *kwds):
     """
     Converts a single specified USIDataset object to one or more Signal objects
+
     Parameters
     ----------
     h5_main : pyUSID.USIDataset object
@@ -230,9 +231,9 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
 
     Returns
     -------
-    list of hyperspy.signals.BaseSignal objects. USIDatasets with compound
-    datatypes are broken down to multiple
-    Signal objects.
+    list of hyperspy.signals.BaseSignal objects
+        USIDatasets with compound datatypes are broken down to multiple Signal
+        objects.
     """
     h5_main = usid.USIDataset(h5_main)
     # TODO: Cannot handle data without N-dimensional form yet
@@ -389,13 +390,13 @@ def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
     ----------
     filename : str
         path to HDF5 file
-    dset_path : str, Optional.
+    dset_path : str, Optional
         Absolute path of USID Main HDF5 dataset.
         Default - None - all Main Datasets will be read. Given that HDF5 files
-         can accommodate very large datasets, lazy reading is strongly
-         recommended.
-        If a string like '/Measurement_000/Channel_000/My_Dataset' is provided,
-          the specific dataset will be loaded.
+        can accommodate very large datasets, lazy reading is strongly
+        recommended.
+        If a string like ``'/Measurement_000/Channel_000/My_Dataset'`` is
+        provided, the specific dataset will be loaded.
     ignore_non_linear_dims : bool, Optional
         If True, parameters that were varied non-linearly in the desired
         dataset will result in Exceptions.
