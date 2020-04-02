@@ -342,3 +342,39 @@ class TestLoadDecompositionResults:
             self.s.save(fname2)
             assert isinstance(
                 self.s.learning_results.decomposition_algorithm, str)
+
+class TestComplexSignalDecomposition:
+
+    def setup_method(self, method):
+        real = np.random.random((8,8))
+        imag = np.random.random((8,8))
+        s_complex_dtype = signals.ComplexSignal1D(real + 1j*imag - 1j*imag)
+        s_real_dtype = signals.ComplexSignal1D(real)
+        s_complex_dtype.decomposition()
+        s_real_dtype.decomposition()
+        self.s_complex_dtype = s_complex_dtype
+        self.s_real_dtype = s_real_dtype
+
+    def test_imaginary_is_zero(self):
+        np.testing.assert_allclose(self.s_complex_dtype.data.imag, 0.0)
+
+    def test_decomposition_independent_of_complex_dtype(self):
+        complex_pca = self.s_complex_dtype.get_decomposition_model(5)
+        real_pca = self.s_real_dtype.get_decomposition_model(5)
+        np.testing.assert_almost_equal((complex_pca - real_pca).data.max(), 0.0)
+
+    def test_first_r_values_of_scree_non_zero(self):
+        """For low-rank matrix by creating a = RandomComplex(m, r) and
+        b = RandomComplex(n, r), then performing PCA on the result of a.b^T
+        (i.e. an m x n matrix).
+        The first r values of scree plot / singular values should be non-zero.
+        """
+        m, n, r = 32, 32, 3
+
+        A = (np.random.random((m,r)) + 1j* np.random.random((m,r)))
+        B = (np.random.random((n,r)) + 1j* np.random.random((n,r)))
+
+        s = signals.ComplexSignal1D(np.dot(A,B.T))
+        s.decomposition()
+        np.testing.assert_almost_equal(
+            s.get_explained_variance_ratio().data[r:].sum(), 0)
