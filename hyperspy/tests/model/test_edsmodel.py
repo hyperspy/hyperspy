@@ -248,9 +248,10 @@ class TestMaps:
 
     def test_lines_intensity(self):
         s = self.s
+
         m = s.create_model()
         # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.multifit(iterpath='serpentine')    # m.fit() is just too inaccurate
+        m.multifit(iterpath='serpentine')
         ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
         for x in range(self.mix.shape[0]):
@@ -264,3 +265,13 @@ class TestMaps:
             s.compute()
         for fitted, expected in zip(m.get_lines_intensity(xray_lines), w):
             np.testing.assert_allclose(fitted, expected, atol=1e-7)
+
+        m_single_fit = s.create_model()
+        # make sure we fit the navigation indices (0, 0) and don't rely on
+        # the current index of the axes_manager.
+        m_single_fit.inav[0, 0].fit()
+
+        for fitted, expected in zip(
+                m.inav[0, 0].get_lines_intensity(xray_lines),
+                m_single_fit.inav[0, 0].get_lines_intensity(xray_lines)):
+            np.testing.assert_allclose(fitted, expected, atol=1e-7)  
