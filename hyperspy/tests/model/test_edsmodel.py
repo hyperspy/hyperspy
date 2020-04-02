@@ -1,6 +1,5 @@
 
 import numpy as np
-import pytest
 
 from hyperspy.misc.test_utils import assert_warns
 from hyperspy.misc import utils
