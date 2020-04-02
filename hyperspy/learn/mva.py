@@ -180,8 +180,6 @@ class MVA():
             "  output_dimension={}".format(output_dimension),
             "  centre={}".format(centre),
             "  auto_transpose={}".format(auto_transpose),
-            "  polyfit={}".format(polyfit),
-            "  reproject={}".format(reproject)
         ]
 
         # Check if it is the wrong data type
@@ -298,10 +296,10 @@ class MVA():
                 explained_variance = sk.explained_variance_
                 mean = sk.mean_
                 centre = 'trials'
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
-                if print_info:
-                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'nmf':
                 if import_sklearn.sklearn_installed is False:
@@ -312,10 +310,10 @@ class MVA():
                 loadings = sk.fit_transform((
                     dc[:, signal_mask][navigation_mask, :]))
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
-                if print_info:
-                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'sparse_pca':
                 if import_sklearn.sklearn_installed is False:
@@ -326,10 +324,10 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
-                if print_info:
-                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'mini_batch_sparse_pca':
                 if import_sklearn.sklearn_installed is False:
@@ -340,10 +338,10 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
-                if print_info:
-                    to_print.extend(["scikit-learn estimator:", sk])
 
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
                 _logger.info("Performing the MLPCA training")
