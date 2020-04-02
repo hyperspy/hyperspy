@@ -170,7 +170,7 @@ class MVA():
         if self.data.dtype.char not in ['e', 'f', 'd', 'g', 'F', 'D', 'G']:  # If not float
             raise TypeError(
                 'To perform a decomposition the data must be of the float '
-                'type, but the current type is \'{}\'. '
+                'or complex type, but the current type is \'{}\'. '
                 'To fix this issue, you can change the type using the '
                 'change_dtype method (e.g. s.change_dtype(\'float64\')) '
                 'and then repeat the decomposition.\n'
