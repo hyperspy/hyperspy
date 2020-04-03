@@ -124,7 +124,7 @@ one may like to operate with an image stack as if it was a set of spectra or
 viceversa. One can easily switch between these two alternative ways of
 classifying the dimensions of a three-dimensional dataset by
 :ref:`transforming between BaseSignal subclasses
-<transforming.signal>`.
+<transforming_signal-label>`.
 
 The same dataset could be seen as a three-dimensional signal:
 
@@ -158,7 +158,7 @@ can be found in :ref:`signal.transpose`.
 
 
 
-.. _transforming.signal:
+.. _transforming_signal-label:
 
 Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
