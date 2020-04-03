@@ -22,7 +22,7 @@ image ascent.jpg you can type:
 
 If the loading was successful, the variable ``s`` contains a HyperSpy signal
 or a signal of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
-- see available :ref:`signal subclasses <transforming_signal-label> for more
+- see available :ref:`signal subclasses <transforming_signal-label>` for more
 information.
 If the loaded file contains some severals dataset, The ``load`` functions will
 return a list of the corresponding signal.
@@ -79,9 +79,9 @@ Almost all file readers support accessing the data without reading it to memory
 analysing large files. To load a file without loading it to memory simply set
 ``lazy`` to ``True`` e.g.:
 
-The units of the navigation and signal axes can be converted automatically 
-during loading using the ``convert_units`` parameter. If `True`, the 
-``convert_to_units`` method of the ``axes_manager`` will be used for the conversion 
+The units of the navigation and signal axes can be converted automatically
+during loading using the ``convert_units`` parameter. If `True`, the
+``convert_to_units`` method of the ``axes_manager`` will be used for the conversion
 and if set to `False`, the units will not be converted. The default is `False`.
 
 .. code-block:: python
@@ -305,7 +305,7 @@ possible to customise the chunk shape using the ``chunks`` keyword. For example,
     >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
 
 Note that currently it is not possible to pass different customised chunk shapes to all signals and
-arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving 
+arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving
 will be applied to all arrays contained in the signal.
 
 By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
@@ -377,7 +377,7 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- `do_async`: currently supported within Hyperspy for writing only, this will 
+- `do_async`: currently supported within Hyperspy for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
@@ -597,7 +597,7 @@ Extra loading arguments for SPD file
 Extra loading arguments for SPD and SPC files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is 
+- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is
   read, or just the important parts for import into HyperSpy.
 
 
@@ -610,7 +610,7 @@ HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make us 
+`issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make us
 aware of the problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
@@ -624,9 +624,9 @@ with it, all of them will be read and returned as a list.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- `only_valid_data` : bool, in case of series or linescan data with the 
-  acquisition stopped before the end: if True, load only the acquired data. 
-  If False, the empty data are filled with zeros. The default is False and this 
+- `only_valid_data` : bool, in case of series or linescan data with the
+  acquisition stopped before the end: if True, load only the acquired data.
+  If False, the empty data are filled with zeros. The default is False and this
   default value will change to True in version 2.0.
 
 .. _unf-format:
@@ -709,16 +709,16 @@ currently supported by HyperSpy.
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the 
-  corresponding type of data, either spectrum or image, is returned. 
+- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the
+  corresponding type of data, either spectrum or image, is returned.
   By default (None), all data are loaded.
-- `index` : one of (None, int, "all"). Allow to select the index of the dataset 
-  in the bcf file, which can contains several datasets. Default None value 
-  result in loading the first dataset. When set to 'all', all available datasets 
+- `index` : one of (None, int, "all"). Allow to select the index of the dataset
+  in the bcf file, which can contains several datasets. Default None value
+  result in loading the first dataset. When set to 'all', all available datasets
   will be loaded and returned as separate signals.
-- `downsample` : the downsample ratio of hyperspectral array (height and width 
-  only), can be integer >=1, where '1' results in no downsampling (default 1). 
-  The underlying method of downsampling is unchangeable: sum. Differently than 
+- `downsample` : the downsample ratio of hyperspectral array (height and width
+  only), can be integer >=1, where '1' results in no downsampling (default 1).
+  The underlying method of downsampling is unchangeable: sum. Differently than
   ``block_reduce`` from skimage.measure it is memory efficient (does not creates
   intermediate arrays, works inplace).
 - `cutoff_at_kV` : if set (can be int or float >= 0) can be used either to crop
@@ -804,7 +804,7 @@ asdf
 EMD (Velox)
 ^^^^^^^^^^^
 
-This is a non-compliant variant of the standard EMD format developed by 
+This is a non-compliant variant of the standard EMD format developed by
 Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS
 spectrum streams (spectrum images stored in a sparse format). For spectrum
 streams, there are several loading options (described below) to control the frames
@@ -816,7 +816,7 @@ the data size in memory.
 .. note::
 
     Pruned Velox EMD files only contain the spectrum image in a proprietary
-    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in 
+    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in
     you intend to read them with HyperSpy.
 
 .. code-block:: python
@@ -828,14 +828,14 @@ the data size in memory.
 
 .. note::
 
-    Currently only lazy uncompression rather than lazy loading is implemented. 
-    This means that it is not currently possible to read EDS SI Veloz EMD files 
+    Currently only lazy uncompression rather than lazy loading is implemented.
+    This means that it is not currently possible to read EDS SI Veloz EMD files
     with size bigger than the available memory.
 
 
 .. note::
 
-    Loading a spectrum image can be slow if 
+    Loading a spectrum image can be slow if
     `numba <http://numba.pydata.org/>`_ is not installed.
 
 

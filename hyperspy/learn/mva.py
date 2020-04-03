@@ -164,7 +164,7 @@ class MVA():
 
         Returns
         -------
-        (X, E) : (numpy array, numpy array)
+        (X, E) : (numpy.ndarray, numpy.ndarray)
             If 'algorithm' == 'RPCA_GoDec', 'ORPCA', 'ORNMF' and 'return_info' is True,
             returns the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
 
@@ -567,9 +567,9 @@ class MVA():
             number of principal components to pass to the BSS algorithm
         algorithm : str
             BSS algorithms available.
-            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA", 
-            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to 
-            perform FastICA, otherwise use the Modular toolkit for Data 
+            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA",
+            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to
+            perform FastICA, otherwise use the Modular toolkit for Data
             Processing (MDP) is used.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
@@ -595,14 +595,14 @@ class MVA():
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
         reverse_component_criterion : str
-            One of {'factors', 'loadings'}. Use either the factor or the 
+            One of {'factors', 'loadings'}. Use either the factor or the
             loading to determine if the component needs to be reversed.
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
 
         Notes
         -----
-        See the FastICA documentation, with more arguments that can be passed 
+        See the FastICA documentation, with more arguments that can be passed
         as kwargs :py:class:`sklearn.decomposition.FastICA`
 
         See also
@@ -761,7 +761,7 @@ class MVA():
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = unmixing_matrix @ invsqcovmat
-        if lr.explained_variance is not None: 
+        if lr.explained_variance is not None:
             if hasattr(lr.explained_variance, "compute"):
                 lr.explained_variance = lr.explained_variance.compute()
             # The output of ICA is not sorted in any way what makes it
@@ -1029,8 +1029,8 @@ class MVA():
         s : Signal1D
             Explained variation ratio.
 
-        See Also:
-        ---------
+        See Also
+        --------
 
         :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
         :py:meth:`~.learn.mva.MVA.decomposition`,
@@ -1304,7 +1304,7 @@ class MVA():
     def normalize_poissonian_noise(self, navigation_mask=None,
                                    signal_mask=None):
         """
-        Scales the signal using the algorithm in Surf. Interface Anal. 2004; 36: 203–212
+        Scales the signal using the algorithm in Surf. Interface Anal. 2004; 36: 203–212 [*]_
         to "normalize" the Poissonian data for subsequent decomposition analysis.
 
         Parameters
@@ -1314,7 +1314,7 @@ class MVA():
 
         References
         ----------
-        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
                multivariate analysis of ToF-SIMS spectrum images",
                Surf. Interface Anal 36(3) (2004): 203-212.
         """
