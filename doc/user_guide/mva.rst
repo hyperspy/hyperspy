@@ -344,7 +344,7 @@ the computation time small. Often it is useful to run a PCA decomposition first
 and use the scree plot to determine a value for "output_dimension".
 
 Robust non-negative matrix factorization
------------------------------------
+----------------------------------------
 
 In a similar manner to the online, robust methods that complement PCA above,
 HyperSpy includes an online robust NMF method. This is based on the OPGD (Online
