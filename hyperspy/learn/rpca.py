@@ -176,6 +176,13 @@ def rpca_godec(X, rank, fast=False, lambda1=None, power=None, tol=None, maxiter=
     return Xhat, Ehat, Ghat, U, S, V
 
 
+def _soft_thresh(X, lambda1):
+    res = np.abs(X) - lambda1
+    np.maximum(res, 0.0, out=res)
+    res *= np.sign(X)
+    return res
+
+
 def _solveproj(z, X, I, lambda2):
     m, n = X.shape
     s = np.zeros(m)
@@ -190,7 +197,7 @@ def _solveproj(z, X, I, lambda2):
         xtmp = x
         x = np.dot(ddt, (z - s))
         stmp = s
-        s = np.maximum(z - np.dot(X, x) - lambda2, 0.0)
+        s = _soft_thresh(z - np.dot(X, x), lambda2)
         stopx = np.sqrt(np.dot(x - xtmp, (x - xtmp).conj()))
         stops = np.sqrt(np.dot(s - stmp, (s - stmp).conj()))
         stop = max(stopx, stops) / m
