@@ -483,10 +483,10 @@ def plot_images(images,
         image.
         If any signal shape is not suitable, a ValueError will be raised.
     cmap : matplotlib colormap, list, or ``'mpl_colors'``, *optional*
-        The colormap used for the images, by default reuse the preferences 
-        setting ``color map signal``. A list of colormaps can also be provided, 
-        and the images will cycle through them. Optionally, the value 
-        ``'mpl_colors'`` will cause the cmap to loop through the default 
+        The colormap used for the images, by default use the setting
+        ``color map signal`` from the Plot preferences. A list of colormaps can
+        also be provided, and the images will cycle through them. Optionally,
+        the value ``'mpl_colors'`` will cause the cmap to loop through the default 
         ``matplotlib`` colors (to match with the default output of the
         :py:func:`~.drawing.utils.plot_spectra` method.
         Note: if using more than one colormap, using the ``'single'``
