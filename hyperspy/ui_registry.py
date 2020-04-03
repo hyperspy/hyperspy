@@ -1,15 +1,33 @@
-'''Registry of user interface widgets.
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-Format {"tool_key" : {"toolkit" : <function(obj, display, **kwargs)>}}
+"""Registry of user interface widgets.
 
-The ``tool_key` is defined by the "model function" to which the widget provides
+Format {"tool_key" : {"toolkit" : <function(obj, display, \*\*kwargs)>}}
+
+The ``tool_key`` is defined by the "model function" to which the widget provides
 and user interface. That function gets the widget function from this registry
 and executes it passing the ``obj``, ``display`` and any extra keyword
 arguments. When ``display`` is true, ``function`` displays the widget. If
 ``False`` it returns a dictionary with whatever is needed to display the
 widgets externally (usually for testing or customisation purposes).
 
-'''
+"""
 
 import importlib
 

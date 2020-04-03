@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +21,7 @@ import types
 import logging
 
 import numpy as np
+import dask.array as da
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
@@ -35,6 +36,7 @@ import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.rpca import rpca_godec, orpca
+from hyperspy.learn.ornmf import ornmf
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
@@ -108,6 +110,7 @@ class MVA():
                       polyfit=None,
                       reproject=None,
                       return_info=False,
+                      print_info=True,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -115,20 +118,22 @@ class MVA():
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool
-            If True, scale the SI to normalize Poissonian noise
+        normalize_poissonian_noise : bool, default False
+            If True, scale the signal to normalize Poissonian noise using
+            the algorithm described in [1]_.
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA'
+            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA' |
+            'ORNMF'
         output_dimension : None or int
-            number of components to keep/calculate
+            Number of components to keep/calculate
         centre : None | 'variables' | 'trials'
-            If None no centring is applied. If 'variable' the centring will be
-            performed in the variable axis. If 'trials', the centring will be
-            performed in the 'trials' axis. It only has effect when using the
-            svd or fast_svd algorithms
-        auto_transpose : bool
+            If None (default), no centering is applied.
+            If 'variable', the centring will be performed in the variable axis.
+            If 'trials', the centring will be performed in the 'trials' axis.
+            It only has effect when using the svd or fast_svd algorithms
+        auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only has effect when using the svd of fast_svd algorithms.
+            Only used by the 'svd' and 'fast_svd' algorithms.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion.
@@ -141,32 +146,55 @@ class MVA():
             If function, it will apply it to the dataset to obtain the
             var_array. Alternatively, it can a an array with the coefficients
             of a polynomial.
+        polyfit : None | ???
+            TODO: currently undocumented
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
-            stored. If True (the default is False) return any extra
-            information if available
+            stored. If True, return any extra information if available.
+            In the case of sklearn.decomposition objects, this includes the
+            sklearn Estimator object.
+        print_info : bool, default True
+            If True, print information about the decomposition being performed.
+            In the case of sklearn.decomposition objects, this includes the
+            values of all arguments of the chosen sklearn algorithm.
 
         Returns
         -------
         (X, E) : (numpy array, numpy array)
-            If 'algorithm' == 'RPCA_GoDec' or 'ORPCA' and 'return_info' is True,
-            returns the low-rank (X) and sparse (E) matrices from robust PCA.
+            If 'algorithm' == 'RPCA_GoDec', 'ORPCA', 'ORNMF' and 'return_info' is True,
+            returns the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
 
         See also
         --------
-        plot_decomposition_factors, plot_decomposition_loadings, plot_lev
+        :py:meth:`~.signal.MVATools.plot_decomposition_factors`,
+        :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
+        :py:meth:`~.signal.MVATools.plot_decomposition_results`,
+        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
 
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
         to_return = None
+        to_print = [
+            "Decomposition info:",
+            "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
+            "  algorithm={}".format(algorithm),
+            "  output_dimension={}".format(output_dimension),
+            "  centre={}".format(centre),
+        ]
+
         # Check if it is the wrong data type
-        if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
+        if self.data.dtype.char not in ['e', 'f', 'd', 'g', 'F', 'D', 'G']:  # If not float
             raise TypeError(
                 'To perform a decomposition the data must be of the float '
-                'type, but the current type is \'{}\'. '
+                'or complex type, but the current type is \'{}\'. '
                 'To fix this issue, you can change the type using the '
                 'change_dtype method (e.g. s.change_dtype(\'float64\')) '
                 'and then repeat the decomposition.\n'
@@ -191,10 +219,10 @@ class MVA():
             if output_dimension is None:
                 raise ValueError("With the MLPCA algorithm the "
                                  "output_dimension must be specified")
-        if algorithm == 'RPCA_GoDec' or algorithm == 'ORPCA':
+        if algorithm in ['RPCA_GoDec', 'ORPCA', 'ORNMF']:
             if output_dimension is None:
-                raise ValueError("With the robust PCA algorithms ('RPCA_GoDec' "
-                                 "and 'ORPCA'), the output_dimension "
+                raise ValueError("With the robust PCA/NMF algorithms ('RPCA_GoDec', "
+                                 "'ORPCA' and 'ORNMF'), the output_dimension "
                                  "must be specified")
 
         # Apply pre-treatments
@@ -210,11 +238,19 @@ class MVA():
             # Normalize the poissonian noise
             # TODO this function can change the masks and this can cause
             # problems when reprojecting
-            if normalize_poissonian_noise is True:
+            if normalize_poissonian_noise:
+                if centre is not None:
+                    raise ValueError(
+                        ("normalize_poissonian_noise=True is only compatible "
+                         "with centre=None, not centre={}.").format(centre)
+                    )
+
                 self.normalize_poissonian_noise(
                     navigation_mask=navigation_mask,
                     signal_mask=signal_mask,)
+
             _logger.info('Performing decomposition analysis')
+
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the
             # case.
@@ -268,6 +304,8 @@ class MVA():
                 explained_variance = sk.explained_variance_
                 mean = sk.mean_
                 centre = 'trials'
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -280,6 +318,8 @@ class MVA():
                 loadings = sk.fit_transform((
                     dc[:, signal_mask][navigation_mask, :]))
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -292,6 +332,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -304,6 +346,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -347,6 +391,7 @@ class MVA():
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
                 explained_variance = S ** 2 / len(factors)
+
             elif algorithm == 'RPCA_GoDec':
                 _logger.info("Performing Robust PCA with GoDec")
 
@@ -374,6 +419,25 @@ class MVA():
 
                 if return_info:
                     to_return = (X, E)
+
+            elif algorithm == 'ORNMF':
+                _logger.info("Performing Online Robust NMF")
+
+                if return_info:
+                    X, E, W, H = ornmf(
+                        dc[:, signal_mask][navigation_mask, :],
+                        rank=output_dimension, store_r=True, **kwargs)
+                else:
+                    W, H = ornmf(
+                        dc[:, signal_mask][navigation_mask, :],
+                        rank=output_dimension,  **kwargs)
+
+                loadings = W
+                factors = H
+
+                if return_info:
+                    to_return = (X, E)
+
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
@@ -473,6 +537,9 @@ class MVA():
             # undo any pre-treatments
             self.undo_treatments()
 
+        if print_info:
+            print("\n".join([str(pr) for pr in to_print]))
+
         return to_return
 
     def blind_source_separation(self,
@@ -485,55 +552,64 @@ class MVA():
                                 mask=None,
                                 on_loadings=False,
                                 reverse_component_criterion='factors',
-                                compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
         decomposition.
 
-        Available algorithms: FastICA, JADE, CuBICA, and TDSEP
+        Available algorithms: FastICA, JADE, CuBICA, and TDSEP.
+
+        For lazy signal, the factors or loadings are computed to perfom the
+        BSS.
 
         Parameters
         ----------
         number_of_components : int
             number of principal components to pass to the BSS algorithm
-        algorithm : {FastICA, JADE, CuBICA, TDSEP}
+        algorithm : str
             BSS algorithms available.
+            Can be one of {"sklearn_fastica", "FastICA", "JADE", "CuBICA", 
+            "TDSEP"}. If "sklearn_fastica", uses the scikit-learn library to 
+            perform FastICA, otherwise use the Modular toolkit for Data 
+            Processing (MDP) is used.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
-            the signal. If diff_order is 0, the signal is not differentiated.
+            the signal. If `diff_order` is 0, the signal is not differentiated.
         diff_axes : None or list of ints or strings
             If None, when `diff_order` is greater than 1 and `signal_dimension`
             (`navigation_dimension`) when `on_loadings` is False (True) is
             greater than 1, the differences are calculated across all
             signal (navigation) axes. Otherwise the axes can be specified in
             a list.
-        factors : Signal or numpy array.
+        factors : Signal or numpy.ndarray
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance the
             navigation dimension must be 1 and the size greater than 1.
-        comp_list : boolen numpy array
+        comp_list : numpy.ndarray of bool
             choose the components to use by the boolean list. It permits
             to choose non contiguous components.
-        mask : bool numpy array or Signal instance.
+        mask : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
             (navigation shape) when `on_loadings` is False (True).
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        reverse_component_criterion : str {'factors', 'loadings'}
-            Use either the `factor` or the `loading` to determine if the 
-            component needs to be reversed.
-        compute: bool
-           If the decomposition results are lazy, compute the BSS components
-           so that they are not lazy.
-           Default is False.
-
+        reverse_component_criterion : str
+            One of {'factors', 'loadings'}. Use either the factor or the 
+            loading to determine if the component needs to be reversed.
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
 
-        FastICA documentation is here, with more arguments that can be passed as **kwargs:
-        http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.FastICA.html
+        Notes
+        -----
+        See the FastICA documentation, with more arguments that can be passed 
+        as kwargs :py:class:`sklearn.decomposition.FastICA`
+
+        See also
+        --------
+        :py:meth:`~.signal.MVATools.plot_bss_factors`,
+        :py:meth:`~.signal.MVATools.plot_bss_loadings`,
+        :py:meth:`~.signal.MVATools.plot_bss_results`,
 
         """
         from hyperspy.signal import BaseSignal
@@ -545,12 +621,16 @@ class MVA():
                 raise AttributeError(
                     'A decomposition must be performed before blind '
                     'source seperation or factors must be provided.')
-
             else:
                 if on_loadings:
                     factors = self.get_decomposition_loadings()
                 else:
                     factors = self.get_decomposition_factors()
+
+        if hasattr(factors, 'compute'):
+            # if the factors are lazy, we compute them, which should be fine
+            # since we already reduce the dimensionality of the data.
+            factors.compute()
 
         # Check factors
         if not isinstance(factors, BaseSignal):
@@ -585,6 +665,10 @@ class MVA():
                          str(mask.axes_manager.signal_shape),
                          space,
                          str(ref_shape)))
+            if hasattr(mask, 'compute'):
+                # if the mask is lazy, we compute them, which should be fine
+                # since we already reduce the dimensionality of the data.
+                mask.compute()
 
         # Note that we don't check the factor's signal dimension. This is on
         # purpose as an user may like to apply pretreaments that change their
@@ -677,7 +761,9 @@ class MVA():
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = unmixing_matrix @ invsqcovmat
-        if lr.explained_variance is not None:
+        if lr.explained_variance is not None: 
+            if hasattr(lr.explained_variance, "compute"):
+                lr.explained_variance = lr.explained_variance.compute()
             # The output of ICA is not sorted in any way what makes it
             # difficult to compare results from different unmixings. The
             # following code is an experimental attempt to sort them in a
@@ -910,7 +996,7 @@ class MVA():
                                         mva_type='decomposition')
         return rec
 
-    def get_bss_model(self, components=None):
+    def get_bss_model(self, components=None, chunks="auto"):
         """Return the spectrum generated with the selected number of
         independent components
 
@@ -925,6 +1011,12 @@ class MVA():
         -------
         Signal instance
         """
+        lr = self.learning_results
+        if self._lazy:
+            if isinstance(lr.bss_factors, np.ndarray):
+                lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
+            if isinstance(lr.bss_factors, np.ndarray):
+                lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
         rec = self._calculate_recmatrix(components=components, mva_type='bss',)
         return rec
 
@@ -940,9 +1032,10 @@ class MVA():
         See Also:
         ---------
 
-        `plot_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings`,
-        `get_decomposition_factors`.
+        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        :py:meth:`~.learn.mva.MVA.decomposition`,
+        :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`,
+        :py:meth:`~.learn.mva.MVA.get_decomposition_factors`.
 
         """
         from hyperspy._signals.signal1d import Signal1D
@@ -1211,17 +1304,21 @@ class MVA():
     def normalize_poissonian_noise(self, navigation_mask=None,
                                    signal_mask=None):
         """
-        Scales the SI following Surf. Interface Anal. 2004; 36: 203–212
-        to "normalize" the poissonian data for decomposition analysis
+        Scales the signal using the algorithm in Surf. Interface Anal. 2004; 36: 203–212
+        to "normalize" the Poissonian data for subsequent decomposition analysis.
 
         Parameters
         ----------
-        navigation_mask : boolen numpy array
-        signal_mask  : boolen numpy array
+        navigation_mask : boolean numpy array
+        signal_mask  : boolean numpy array
+
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
-        _logger.info(
-            "Scaling the data to normalize the (presumably)"
-            " Poissonian noise")
+        _logger.info("Scaling the data to normalize Poissonian noise")
         with self.unfolded():
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the

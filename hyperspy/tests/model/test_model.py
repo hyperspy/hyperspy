@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from unittest import mock
 
 import numpy as np
@@ -7,7 +25,7 @@ import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.test_utils import ignore_warning
-
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 RTOL = 1E-6
 
@@ -994,6 +1012,17 @@ class TestMultifit:
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
+
+    def test_None_iterpath(self):
+        'To be removed with hyperspy 2.0, where serpentine is default.'
+        with pytest.warns(VisibleDeprecationWarning):
+            self.m.multifit(show_progressbar=None) # iterpath = None by default
+
+    def test_flyback_iterpath(self):
+        self.m.multifit(iterpath='flyback', show_progressbar=None)
+
+    def test_serpentine_iterpath(self):
+        self.m.multifit(iterpath='serpentine', show_progressbar=None)
 
 
 class TestStoreCurrentValues:

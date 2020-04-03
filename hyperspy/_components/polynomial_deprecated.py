@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,7 +21,6 @@ import logging
 
 
 from hyperspy.component import Component
-from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import ordinal
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
@@ -109,6 +109,7 @@ class Polynomial(Component):
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
+
         Parameters
         ----------
         signal : Signal1D instance
@@ -120,6 +121,7 @@ class Polynomial(Component):
             estimation.
         only_current : bool
             If False estimates the parameters for the full dataset.
+
         Returns
         -------
         bool
@@ -166,4 +168,3 @@ class Polynomial(Component):
         return self._function(x, coefficients)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
-

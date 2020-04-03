@@ -1,15 +1,23 @@
-from hyperspy.misc.utils import signal_range_from_roi, slugify
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+from hyperspy.misc.utils import slugify, parse_quantity
 from hyperspy import roi
-
-
-def test_signal_range_from_roi():
-    sr = roi.SpanROI(20, 50)
-    left, right = signal_range_from_roi(sr)
-    assert left == 20
-    assert right == 50
-    left, right = signal_range_from_roi((20, 50))
-    assert left == 20
-    assert right == 50
 
 
 def test_slugify():
@@ -25,3 +33,13 @@ def test_slugify():
     assert slugify('a', valid_variable_name=False) == 'a'
     assert slugify('1a', valid_variable_name=False) == '1a'
     assert slugify('1', valid_variable_name=False) == '1'
+
+
+def test_parse_quantity():
+    # From the metadata specification, the quantity is defined as
+    # "name (units)" without backets in the name of the quantity
+    assert parse_quantity('a (b)') == ('a', 'b')
+    assert parse_quantity('a (b/(c))') == ('a', 'b/(c)')
+    assert parse_quantity('a (c) (b/(c))') == ('a (c)', 'b/(c)')
+    assert parse_quantity('a [b]') == ('a [b]', '')
+    assert parse_quantity('a [b]', opening = '[', closing = ']') == ('a', 'b')

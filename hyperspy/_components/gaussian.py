@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -98,8 +98,8 @@ class Gaussian(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
 
 
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
+    For convenience the `fwhm` and `height` attributes can be used to get and set
+    the full-with-half-maximum and height of the distribution, respectively.
 
 
     See also
@@ -162,11 +162,11 @@ class Gaussian(Expression):
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
         >>> s = hs.signals.Signal1D(data)
-        >>> s.axes_manager._axes[-1].offset = -10
-        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
         """
-        
+
         super(Gaussian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
@@ -200,3 +200,11 @@ class Gaussian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+
+    @property
+    def height(self):
+        return self.A.value / (self.sigma.value * sqrt2pi)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * self.sigma.value * sqrt2pi
