@@ -170,7 +170,9 @@ class TestFitSI:
     def test_fit_spectrum_image(self):
         m = self.model
         G = self.G
-        m.fit_component(G, signal_range=(2, 7), only_current=False)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.fit_component(G, signal_range=(2, 7), only_current=False,
+                        iterpath='serpentine')
         m.axes_manager.indices = (0, 0)
         A = G.A.value
         m.axes_manager.indices = (1, 1)

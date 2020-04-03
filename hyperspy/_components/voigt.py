@@ -84,7 +84,7 @@ class Voigt(Expression):
     """
 
     def __init__(self, centre=10., area=1., gamma=0.2, sigma=0.1,
-                 module="scipy", **kwargs):
+                 module=["numpy", "scipy"], **kwargs):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
             del kwargs["legacy"]
