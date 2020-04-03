@@ -71,6 +71,9 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
+        navigator_kwds : dict
+            Only for image navigator, additional keyword arguments for 
+            matplotlib.pyplot.imshow().
         """
 
 
