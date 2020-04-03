@@ -110,6 +110,7 @@ class MVA():
                       polyfit=None,
                       reproject=None,
                       return_info=False,
+                      print_info=True,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -117,21 +118,22 @@ class MVA():
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool
-            If True, scale the SI to normalize Poissonian noise
+        normalize_poissonian_noise : bool, default False
+            If True, scale the signal to normalize Poissonian noise using
+            the algorithm described in [1]_.
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
             'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA' |
             'ORNMF'
         output_dimension : None or int
-            number of components to keep/calculate
+            Number of components to keep/calculate
         centre : None | 'variables' | 'trials'
-            If None no centring is applied. If 'variable' the centring will be
-            performed in the variable axis. If 'trials', the centring will be
-            performed in the 'trials' axis. It only has effect when using the
-            svd or fast_svd algorithms
-        auto_transpose : bool
+            If None (default), no centering is applied.
+            If 'variable', the centring will be performed in the variable axis.
+            If 'trials', the centring will be performed in the 'trials' axis.
+            It only has effect when using the svd or fast_svd algorithms
+        auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only has effect when using the svd of fast_svd algorithms.
+            Only used by the 'svd' and 'fast_svd' algorithms.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion.
@@ -144,14 +146,21 @@ class MVA():
             If function, it will apply it to the dataset to obtain the
             var_array. Alternatively, it can a an array with the coefficients
             of a polynomial.
+        polyfit : None | ???
+            TODO: currently undocumented
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
-            stored. If True (the default is False) return any extra
-            information if available
+            stored. If True, return any extra information if available.
+            In the case of sklearn.decomposition objects, this includes the
+            sklearn Estimator object.
+        print_info : bool, default True
+            If True, print information about the decomposition being performed.
+            In the case of sklearn.decomposition objects, this includes the
+            values of all arguments of the chosen sklearn algorithm.
 
         Returns
         -------
@@ -166,13 +175,26 @@ class MVA():
         :py:meth:`~.signal.MVATools.plot_decomposition_results`,
         :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
 
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
         to_return = None
+        to_print = [
+            "Decomposition info:",
+            "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
+            "  algorithm={}".format(algorithm),
+            "  output_dimension={}".format(output_dimension),
+            "  centre={}".format(centre),
+        ]
+
         # Check if it is the wrong data type
-        if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
+        if self.data.dtype.char not in ['e', 'f', 'd', 'g', 'F', 'D', 'G']:  # If not float
             raise TypeError(
                 'To perform a decomposition the data must be of the float '
-                'type, but the current type is \'{}\'. '
+                'or complex type, but the current type is \'{}\'. '
                 'To fix this issue, you can change the type using the '
                 'change_dtype method (e.g. s.change_dtype(\'float64\')) '
                 'and then repeat the decomposition.\n'
@@ -282,6 +304,8 @@ class MVA():
                 explained_variance = sk.explained_variance_
                 mean = sk.mean_
                 centre = 'trials'
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -294,6 +318,8 @@ class MVA():
                 loadings = sk.fit_transform((
                     dc[:, signal_mask][navigation_mask, :]))
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -306,6 +332,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -318,6 +346,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -361,6 +391,7 @@ class MVA():
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
                 explained_variance = S ** 2 / len(factors)
+
             elif algorithm == 'RPCA_GoDec':
                 _logger.info("Performing Robust PCA with GoDec")
 
@@ -505,6 +536,9 @@ class MVA():
             self.learning_results.__dict__.update(target.__dict__)
             # undo any pre-treatments
             self.undo_treatments()
+
+        if print_info:
+            print("\n".join([str(pr) for pr in to_print]))
 
         return to_return
 
@@ -1270,17 +1304,21 @@ class MVA():
     def normalize_poissonian_noise(self, navigation_mask=None,
                                    signal_mask=None):
         """
-        Scales the SI following Surf. Interface Anal. 2004; 36: 203–212
-        to "normalize" the poissonian data for decomposition analysis
+        Scales the signal using the algorithm in Surf. Interface Anal. 2004; 36: 203–212
+        to "normalize" the Poissonian data for subsequent decomposition analysis.
 
         Parameters
         ----------
-        navigation_mask : boolen numpy array
-        signal_mask  : boolen numpy array
+        navigation_mask : boolean numpy array
+        signal_mask  : boolean numpy array
+
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
-        _logger.info(
-            "Scaling the data to normalize the (presumably)"
-            " Poissonian noise")
+        _logger.info("Scaling the data to normalize Poissonian noise")
         with self.unfolded():
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the
