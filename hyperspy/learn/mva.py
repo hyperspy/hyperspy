@@ -36,6 +36,7 @@ import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.rpca import rpca_godec, orpca
+from hyperspy.learn.ornmf import ornmf
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
@@ -121,7 +122,8 @@ class MVA():
             If True, scale the signal to normalize Poissonian noise using
             the algorithm described in [1]_.
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA'
+            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA' |
+            'ORNMF'
         output_dimension : None or int
             Number of components to keep/calculate
         centre : None | 'variables' | 'trials'
@@ -163,8 +165,8 @@ class MVA():
         Returns
         -------
         (X, E) : (numpy array, numpy array)
-            If 'algorithm' == 'RPCA_GoDec' or 'ORPCA' and 'return_info' is True,
-            returns the low-rank (X) and sparse (E) matrices from robust PCA.
+            If 'algorithm' == 'RPCA_GoDec', 'ORPCA', 'ORNMF' and 'return_info' is True,
+            returns the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
 
         See also
         --------
@@ -217,10 +219,10 @@ class MVA():
             if output_dimension is None:
                 raise ValueError("With the MLPCA algorithm the "
                                  "output_dimension must be specified")
-        if algorithm == 'RPCA_GoDec' or algorithm == 'ORPCA':
+        if algorithm in ['RPCA_GoDec', 'ORPCA', 'ORNMF']:
             if output_dimension is None:
-                raise ValueError("With the robust PCA algorithms ('RPCA_GoDec' "
-                                 "and 'ORPCA'), the output_dimension "
+                raise ValueError("With the robust PCA/NMF algorithms ('RPCA_GoDec', "
+                                 "'ORPCA' and 'ORNMF'), the output_dimension "
                                  "must be specified")
 
         # Apply pre-treatments
@@ -417,6 +419,25 @@ class MVA():
 
                 if return_info:
                     to_return = (X, E)
+
+            elif algorithm == 'ORNMF':
+                _logger.info("Performing Online Robust NMF")
+
+                if return_info:
+                    X, E, W, H = ornmf(
+                        dc[:, signal_mask][navigation_mask, :],
+                        rank=output_dimension, store_r=True, **kwargs)
+                else:
+                    W, H = ornmf(
+                        dc[:, signal_mask][navigation_mask, :],
+                        rank=output_dimension,  **kwargs)
+
+                loadings = W
+                factors = H
+
+                if return_info:
+                    to_return = (X, E)
+
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
