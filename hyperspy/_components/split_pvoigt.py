@@ -26,35 +26,36 @@ sqrt2pi = np.sqrt(2*np.pi)
 class SplitVoigt(Component):
 
     r"""Split pseudo - voigt
-       A voigt function in which the upstream and downstream variance or
-       sigma is allowed to vary to create an asymmetric profile
-       
-       In this case the voigt is a pseudo voigt- consisting of a
-       mixed gaussian and lorentzian sum
 
     .. math::
-        pV(x,centre,\sigma) = (1 - \eta) G(x,centre,\sigma)  
-                            + \eta L(x,centre,\sigma)
-        f(x) = 
-            \begin{cases}
-                pV(x,centre,\sigma{1}),    &   x \leq centre\\
-                pV(x,centre,\sigma{2}),    &   x >  centre}
-            \end{cases}
-            
-    +---------------------+-----------+
-    |     Parameter       | Attribute |
-    +---------------------+-----------+
-    +---------------------+-----------+
-    |      :math:`A`      |     A     |
-    +---------------------+-----------+
-    |    :math:`\eta`     | fraction  |
-    +---------------------+-----------+
-    |    :math:`\sigma{1}`|  sigma1   |
-    +---------------------+-----------+    
-    |    :math:`\sigma{2}`|  sigma2   |
-    +---------------------+-----------+    
-    |      :math:`centre` |  centre   |
-    +---------------------+-----------+
+
+    pV(x,centre,\sigma) = (1 - \eta) G(x,centre,\sigma)
+    + \eta L(x,centre,\sigma)
+
+    f(x) =
+    \begin{cases}
+        pV(x,centre,\sigma{1}), & x \leq centre\\
+        pV(x,centre,\sigma{2}), & x >  centre}
+    \end{cases}
+
+    ================ ===========
+    Variable          Parameter
+    ================ ===========
+    :math:`A`         A
+    :math:`\eta`      fraction
+    :math:`\sigma{1}` sigma1
+    :math:`\sigma{2}` sigma2
+    :math:`centre`    centre
+    =============== ===========
+
+    Notes
+    -----
+    A voigt function in which the upstream and downstream variance or
+    sigma is allowed to vary to create an asymmetric profile
+
+    In this case the voigt is a pseudo voigt- consisting of a
+    mixed gaussian and lorentzian sum
+
 
     """
 
@@ -65,7 +66,7 @@ class SplitVoigt(Component):
         self.sigma2.value = sigma2
         self.centre.value = centre
         self.fraction.value = fraction
-    
+
 
         # Boundaries
         self.A.bmin = 1.0e-8
@@ -81,7 +82,7 @@ class SplitVoigt(Component):
 
     def function(self,x):
         """Split pseudo voigt - a linear combination  of gaussian and lorentzian
-    
+
         Parameters
         ----------
         x : array
@@ -95,25 +96,25 @@ class SplitVoigt(Component):
         sigma2 : float
             standard deviation > center position
         fraction : float
-            weight for lorentzian peak in the linear combination, 
+            weight for lorentzian peak in the linear combination,
             and (1-fraction) is the weight for gaussian peak.
         """
         area      = self.A.value
         sigma1    = self.sigma1.value
-        sigma2    = self.sigma2.value        
+        sigma2    = self.sigma2.value
         centre    = self.centre.value
         fraction  = self.fraction.value
- 
+
         arg = (x-centre)
         lor1 = (area / (1.0 + ((1.0 * arg) / sigma1) ** 2)) \
             / (0.5*np.pi * (sigma1+sigma2))
         lor2 = (area / (1.0 + ((1.0 * arg) / sigma2) ** 2)) \
             / (0.5*np.pi * (sigma1+sigma2))
-                                                             
+
         prefactor = area / (sqrt2pi * 0.5*(sigma1+sigma2))
         gauss1 = prefactor*np.exp(-0.5 *arg*arg/(sigma1*sigma1))
         gauss2 = prefactor*np.exp(-0.5 *arg*arg/(sigma2*sigma2))
-        
+
         p1 = (1.0-fraction)*gauss1 + fraction*lor1
         p2 = (1.0-fraction)*gauss2 + fraction*lor2
         return np.where(x<=centre,p1,p2)
@@ -121,7 +122,7 @@ class SplitVoigt(Component):
 
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the split voigt function by calculating the 
+        """Estimate the split voigt function by calculating the
            momenta the gaussian.
 
         Parameters
@@ -165,8 +166,8 @@ class SplitVoigt(Component):
 
         if only_current is True:
             self.centre.value = centre
-            self.sigma1.value = sigma 
-            self.sigma2.value = sigma 
+            self.sigma1.value = sigma
+            self.sigma2.value = sigma
             self.A.value = height * sigma * sqrt2pi
             if self.binned:
                 self.A.value /= axis.scale
@@ -186,7 +187,7 @@ class SplitVoigt(Component):
             self.centre.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
-        
+
     @property
     def height(self):
         return self.A.value / (self.sigma.value * sqrt2pi)

@@ -23,35 +23,29 @@ tiny = np.finfo(np.float64).eps
 
 class Doniach(Expression):
 
-    """ 
-    Doniach Sunjic lineshape
-    An asymmetric lineshape, originially design for xps but generally useful
-    for fitting peaks with low side tails e.g. compton peaks
+    r""" Doniach Sunjic lineshape
 
     .. math::
 
-        f(x)==\frac{cos[ \frac{{\pi\alpha}}{2}+
-                   (1-\alpha)tan^{-1}(\frac{x-centre}{\sigma})]}
-                   {(\sigma^2 + (x-centre)^2)^{\frac{(1-\alpha)}{2}}}
-                   
-    +---------------------+-----------+
-    |     Parameter       | Attribute |
-    +---------------------+-----------+
-    |      :math:`A`      |     A     |
-    +---------------------+-----------+
-    |    :math:`\sigma`   |   sigma   |
-    +---------------------+-----------+
-    |    :math:`\alpha`   |  alpha    |
-    +---------------------+-----------+
-    |   :math:`centre`    |  centre   |
-    +---------------------+-----------+
+        f(x) = \frac{cos[ \frac{{\pi\alpha}}{2}+
+        (1-\alpha)tan^{-1}(\frac{x-centre}{\sigma})]}
+        {(\sigma^2 + (x-centre)^2)^{\frac{(1-\alpha)}{2}}}
 
-    References
-    ----------
-    [1] Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970)
-    [2] http://www.casaxps.com/help_manual/line_shapes.htm
-        
+    =============== ===========
+    Variable         Parameter
+    =============== ===========
+    :math: `A`       A
+    :math: `\sigma`  sigma
+    :math: `\alpha`  alpha
+    :math: `centre`  centre
+    =============== ===========
 
+    Notes
+    -----
+    An asymmetric lineshape, originially design for xps but generally useful
+    for fitting peaks with low side tails
+
+    Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970)
     """
 
     def __init__(self, centre=0., A=1., sigma=1., alpha=0.,
