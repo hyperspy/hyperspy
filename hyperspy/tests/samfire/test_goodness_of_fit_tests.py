@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -70,7 +70,8 @@ class TestInformationCriteria:
     def setup_method(self, method):
         m = Signal1D(np.arange(30).reshape((3, 10))).create_model()
         m.append(Lorentzian())
-        m.multifit(show_progressbar=False)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(show_progressbar=False, iterpath='serpentine')
         self.m = m
         # have to be imported here, as otherwise crashes nosetools
         from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory \

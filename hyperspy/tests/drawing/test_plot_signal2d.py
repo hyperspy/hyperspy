@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -500,3 +500,15 @@ def test_plot_log_negative_value(cmap):
     else:
         s.plot(norm='log')
     return plt.gcf()
+
+
+@pytest.mark.parametrize("cmap", ['gray', None, 'preference'])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_navigator_colormap(cmap):
+    if cmap == 'preference':
+        hs.preferences.Plot.cmap_navigator = 'hot'
+        cmap = None
+    s = hs.signals.Signal1D(np.arange(10*10*10).reshape(10, 10, 10))
+    s.plot(navigator_kwds={'cmap':cmap})
+    return s._plot.navigator_plot.figure
