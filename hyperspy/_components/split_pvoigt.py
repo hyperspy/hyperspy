@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -39,8 +39,8 @@ class SplitVoigt(Component):
         \[
         f(x) =
         \begin{cases}
-            pV(x,centre,\sigma{1}), & x \leq centre\\
-            pV(x,centre,\sigma{2}), & x >  centre
+            pV(x,centre,\sigma_1), & x \leq centre\\
+            pV(x,centre,\sigma_2), & x >  centre
         \end{cases}
         \]
     ================= ===========
@@ -48,8 +48,8 @@ class SplitVoigt(Component):
     ================= ===========
     :math:`A`          A
     :math:`\eta`       fraction
-    :math:`\sigma{1}`  sigma1
-    :math:`\sigma{2}`  sigma2
+    :math:`\sigma_1`   sigma1
+    :math:`\sigma_2`   sigma2
     :math:`centre`     centre
     ================= ===========
 

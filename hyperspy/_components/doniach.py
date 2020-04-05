@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -29,8 +29,8 @@ class Doniach(Expression):
         :nowrap:
             
         \[
-        f(x) = \frac{A cos[ \frac{{\pi\alpha}}{2}+
-        (1-\alpha)tan^{-1}(\frac{x-centre+dx}{\sigma})]}
+        f(x) = \frac{A \cos[ \frac{{\pi\alpha}}{2}+
+        (1-\alpha)\tan^{-1}(\frac{x-centre+dx}{\sigma})]}
         {(\sigma^2 + (x-centre+dx)^2)^{\frac{(1-\alpha)}{2}}}
         \]
 
