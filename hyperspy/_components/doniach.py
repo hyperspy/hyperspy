@@ -26,34 +26,59 @@ class Doniach(Expression):
     r""" Doniach Sunjic lineshape
 
     .. math::
+        :nowrap:
+            
+        \[
+        f(x) = \frac{A cos[ \frac{{\pi\alpha}}{2}+
+        (1-\alpha)tan^{-1}(\frac{x-centre+dx}{\sigma})]}
+        {(\sigma^2 + (x-centre+dx)^2)^{\frac{(1-\alpha)}{2}}}
+        \]
 
-        f(x) = \frac{cos[ \frac{{\pi\alpha}}{2}+
-        (1-\alpha)tan^{-1}(\frac{x-centre}{\sigma})]}
-        {(\sigma^2 + (x-centre)^2)^{\frac{(1-\alpha)}{2}}}
+
+        \[
+        dx = \frac{2.354820\sigma}{2 tan[\frac{\pi}{2-\alpha}]}
+        \]
+
 
     =============== ===========
     Variable         Parameter
     =============== ===========
-    :math: `A`       A
-    :math: `\sigma`  sigma
-    :math: `\alpha`  alpha
-    :math: `centre`  centre
+    :math:`A`        A
+    :math:`\sigma`   sigma
+    :math:`\alpha`   alpha
+    :math:`centre`   centre
     =============== ===========
 
-    Notes
-    -----
-    An asymmetric lineshape, originially design for xps but generally useful
-    for fitting peaks with low side tails
+    Parameters
+    -----------
+    A : float
+        Height
+    sigma : float
+        Variance parameter of the distribution
+    alpha : float
+        Tail or asymmetry parameter
+    centre : float
+        Location of the maximum (peak position).
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
 
-    Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970)
+    Note
+    -----
+    This is an asymmetric lineshape, originially design for xps but generally 
+    useful for fitting peaks with low side tails
+    See Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970) 
+    or http://www.casaxps.com/help_manual/line_shapes.htm for a more detailed
+    description
+        
     """
 
     def __init__(self, centre=0., A=1., sigma=1., alpha=0.,
                  module=["numpy","scipy"], **kwargs):
         super(Doniach, self).__init__(
-            expression="A/(sigma**(1.0-alpha))*cos(0.5*pi*alpha+\
-                        ((1.0 - alpha) * arctan( (x-centre)/sigma) ) )\
-                /(1.0 + ((x-centre)/sigma)**2)**(0.5 * (1.0 - alpha))",
+            expression="A*cos(0.5*pi*alpha+\
+            ((1.0 - alpha) * arctan( (x-centre+offset)/sigma) ) )\
+            /(sigma**2 + (x-centre+offset)**2)**(0.5 * (1.0 - alpha));\
+            offset = 2.354820*sigma / (2 * tan(pi / (2 - alpha)))",
             name="Doniach",
             centre=centre,
             A=A,

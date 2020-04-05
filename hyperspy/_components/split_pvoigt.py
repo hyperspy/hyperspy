@@ -28,35 +28,38 @@ class SplitVoigt(Component):
     r"""Split pseudo - voigt
 
     .. math::
+        :nowrap:
 
-    pV(x,centre,\sigma) = (1 - \eta) G(x,centre,\sigma)
-    + \eta L(x,centre,\sigma)
+        \[
+        pV(x,centre,\sigma) = (1 - \eta) G(x,centre,\sigma)
+        + \eta L(x,centre,\sigma)
+        \]
 
-    f(x) =
-    \begin{cases}
-        pV(x,centre,\sigma{1}), & x \leq centre\\
-        pV(x,centre,\sigma{2}), & x >  centre}
-    \end{cases}
 
-    ================ ===========
-    Variable          Parameter
-    ================ ===========
-    :math:`A`         A
-    :math:`\eta`      fraction
-    :math:`\sigma{1}` sigma1
-    :math:`\sigma{2}` sigma2
-    :math:`centre`    centre
-    =============== ===========
+        \[
+        f(x) =
+        \begin{cases}
+            pV(x,centre,\sigma{1}), & x \leq centre\\
+            pV(x,centre,\sigma{2}), & x >  centre
+        \end{cases}
+        \]
+    ================= ===========
+    Variable           Parameter
+    ================= ===========
+    :math:`A`          A
+    :math:`\eta`       fraction
+    :math:`\sigma{1}`  sigma1
+    :math:`\sigma{2}`  sigma2
+    :math:`centre`     centre
+    ================= ===========
 
-    Notes
+    Note
     -----
-    A voigt function in which the upstream and downstream variance or
+    This is a voigt function in which the upstream and downstream variance or
     sigma is allowed to vary to create an asymmetric profile
-
     In this case the voigt is a pseudo voigt- consisting of a
     mixed gaussian and lorentzian sum
-
-
+    
     """
 
     def __init__(self, A=1., sigma1=1.,sigma2=1.0, fraction=0.0,centre=0.):
