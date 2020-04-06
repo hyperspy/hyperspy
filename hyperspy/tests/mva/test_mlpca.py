@@ -27,7 +27,7 @@ class TestMLPCA:
     def setup_method(self, method):
         # Define shape etc.
         m = 100  # Dimensionality
-        n = 100  # Number of samples
+        n = 101  # Number of samples
         r = 3
 
         rng = np.random.RandomState(101)

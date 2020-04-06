@@ -42,7 +42,7 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
     ----------
     X : numpy array, shape (m, n)
         Matrix of observations.
-    stdX : numpy array
+    varX : numpy array
         Matrix of variances associated with X
         (zeros for missing measurements).
     output_dimension : int
@@ -90,12 +90,14 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
     U = U[:, :output_dimension]
     s_old = 0.0
 
+    # Placeholders
+    F = np.empty(X.shape)
+    M = np.zeros(X.shape)
+
     # Loop for alternating least squares
     _logger.info("Optimization iteration loop")
     for itr in range(max_iter):
         s_obj = 0.0
-        F = np.empty(X.shape)
-        M = np.zeros(X.shape)
 
         for i in range(n):
             Q = np.diag(inv_v[:, i])
@@ -118,8 +120,12 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
         # Transpose for next iteration
         s_old = s_obj
         _, _, V = svd(M)
+
         X = X.T
         inv_v = inv_v.T
+        F = F.T
+        M = M.T
+
         m, n = X.shape
         U = V[:output_dimension].T
 
