@@ -28,6 +28,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _thresh(X, lambda1, vmax):
+    """Soft-thresholding with clipping."""
     res = np.abs(X) - lambda1
     np.maximum(res, 0.0, out=res)
     res *= np.sign(X)
@@ -36,8 +37,7 @@ def _thresh(X, lambda1, vmax):
 
 
 def _mrdivide(B, A):
-    """like in Matlab! (solves xB = A)
-    """
+    """Solves xB = A as per Matlab."""
     if isinstance(B, np.ndarray):
         if len(B.shape) == 2 and B.shape[0] == B.shape[1]:
             # square array
@@ -77,7 +77,7 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     if r is None or r.shape != rshape:
         r = np.zeros(rshape)
 
-    eta = kappa / np.linalg.norm(W, 'fro') ** 2
+    eta = kappa / np.linalg.norm(W, "fro") ** 2
 
     maxiter = 1e9
     iters = 0
@@ -118,11 +118,7 @@ class ORNMF:
     Notes
     -----
     The ORNMF code is based on a transcription of the OPGD algorithm MATLAB code
-    obtained from the authors of the following research paper:
-
-        Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
-        factorization with outliers." Acoustics, Speech and Signal Processing
-        (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.
+    obtained from the authors of [1]_.
 
     It has been updated to also include L2-normalization cost function that is
     able to deal with sparse corruptions and/or outliers slightly faster
@@ -131,6 +127,12 @@ class ORNMF:
     A further modification has been made to allow for a changing subspace W,
     where X ~= WH^T + E in the ORNMF framework.
 
+    References
+    ----------
+    .. [1] Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
+           factorization with outliers." Acoustics, Speech and Signal Processing
+           (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.
+
     """
 
     def __init__(
@@ -138,12 +140,12 @@ class ORNMF:
         rank,
         lambda1=1.0,
         kappa=1.0,
-        store_r=False,
+        store_error=False,
         method=None,
         subspace_learning_rate=None,
         subspace_momentum=None,
     ):
-        """Creates Online Robust NMF instance that can learn a representation
+        """Creates Online Robust NMF instance that can learn a representation.
 
         Parameters
         ----------
@@ -152,14 +154,14 @@ class ORNMF:
         lambda1 : float
             Nuclear norm regularization parameter.
         kappa : float
-            Sparse error regularization parameter.
-        store_r : bool
+            Step-size for projection solver.
+        store_error : bool
             If True, stores the sparse error matrix, False by default.
         method : {None, 'PGD', 'RobustPGD', 'MomentumSGD'}
             'PGD' - Proximal gradient descent
             'RobustPGD' - Robust proximal gradient descent
             'MomentumSGD' - Stochastic gradient descent with momentum
-            If None, set to PGD
+            If None, set to PGD.
         subspace_learning_rate : float | None
             Learning rate for stochastic gradient descent.
         subspace_momentum : float | None
@@ -169,7 +171,7 @@ class ORNMF:
         """
         self.robust = False
         self.subspace_tracking = False
-        self.nfeatures = None
+        self.n_features = None
         self.rank = rank
         self.lambda1 = lambda1
         self.kappa = kappa
@@ -177,7 +179,7 @@ class ORNMF:
         self.t = 0
 
         if method is None:
-            _logger.warning(
+            _logger.info(
                 "No method specified. Defaulting to "
                 "'PGD' (proximal gradient descent)"
             )
@@ -185,16 +187,12 @@ class ORNMF:
 
         if subspace_learning_rate is None:
             if method in ("SGD", "MomentumSGD"):
-                _logger.warning(
-                    "Learning rate for SGD algorithm is "
-                    "set to default: 1.0"
-                )
+                _logger.info("Learning rate for SGD algorithm is set to default: 1.0")
                 subspace_learning_rate = 1.0
         if subspace_momentum is None:
             if method == "MomentumSGD":
-                _logger.warning(
-                    "Momentum parameter for SGD algorithm is "
-                    "set to default: 0.5"
+                _logger.info(
+                    "Momentum parameter for SGD algorithm is set to default: 0.5"
                 )
                 subspace_momentum = 0.5
 
@@ -212,10 +210,10 @@ class ORNMF:
         self.subspace_learning_rate = subspace_learning_rate
         self.subspace_momentum = subspace_momentum
 
-        if store_r:
-            self.R = []
+        if store_error:
+            self.E = []
         else:
-            self.R = None
+            self.E = None
 
     def _setup(self, X, normalize=False):
         self.h, self.r, self.v = None, None, None
@@ -233,25 +231,24 @@ class ORNMF:
         else:
             if normalize:
                 _logger.warning(
-                    "Normalization with an iterator is not "
-                    "possible, option ignored."
+                    "Normalization with an iterator is not possible, option ignored."
                 )
             x = next(X)
             m = len(x)
             avg = np.sqrt(x.mean() / m)
             X = chain([x], X)
 
-        self.nfeatures = m
+        self.n_features = m
 
         self.W = np.abs(
-            avg * halfnorm.rvs(size=(self.nfeatures, self.rank)) / np.sqrt(self.rank)
+            avg * halfnorm.rvs(size=(self.n_features, self.rank)) / np.sqrt(self.rank)
         )
 
         if self.subspace_tracking:
             self.vnew = np.zeros_like(self.W)
 
         self.A = np.zeros((self.rank, self.rank))
-        self.B = np.zeros((self.nfeatures, self.rank))
+        self.B = np.zeros((self.n_features, self.rank))
         return X
 
     def fit(self, X, batch_size=None):
@@ -260,19 +257,20 @@ class ORNMF:
         Parameters
         ----------
         X : {numpy.ndarray, iterator}
-            [nsamplex x nfeatures] matrix of observations
-            or an iterator that yields samples, each with nfeatures elements.
+            [n_samples x n_features] matrix of observations
+            or an iterator that yields samples, each with n_features elements.
         batch_size : {None, int}
             If not None, learn the data in batches, each of batch_size samples
             or less.
+
         """
-        if self.nfeatures is None:
+        if self.n_features is None:
             X = self._setup(X)
 
         num = None
         prod = np.outer
         if batch_size is not None:
-            if isinstance(X, np.ndarray):
+            if not isinstance(X, np.ndarray):
                 raise ValueError("can't batch iterating data")
             else:
                 prod = np.dot
@@ -292,8 +290,8 @@ class ORNMF:
             self.r = r
             self.h = h
             self.H.append(h)
-            if self.R is not None:
-                self.R.append(r)
+            if self.E is not None:
+                self.E.append(r)
 
             # Only need to update A, B when not tracking subspace
             if not self.subspace_tracking:
@@ -310,7 +308,7 @@ class ORNMF:
             eta = self.kappa / np.linalg.norm(self.A, "fro")
 
         if self.robust:
-            # exactly as in the paper
+            # exactly as in the Zhao & Tan paper
             n = 0
             lasttwo = np.zeros(2)
             while n <= 2 or (
@@ -342,21 +340,22 @@ class ORNMF:
             np.maximum(self.W, 0.0, out=self.W)
             self.W /= max(np.linalg.norm(self.W, "fro"), 1.0)
 
-    def project(self, X, return_R=False):
+    def project(self, X, return_error=False):
         """Project the learnt components on the data.
 
         Parameters
         ----------
         X : {numpy.ndarray, iterator}
-            [nsamplex x nfeatures] matrix of observations
-            or an iterator that yields samples, each with nfeatures elements.
-        return_R : bool
+            [n_samples x n_features] matrix of observations
+            or an iterator that yields n_samples, each with n_features elements.
+        return_error : bool
             If True, returns the sparse error matrix as well. Otherwise only
             the weights (loadings)
+
         """
         H = []
-        if return_R:
-            R = []
+        if return_error:
+            E = []
 
         num = None
         W = self.W
@@ -366,16 +365,16 @@ class ORNMF:
             num = X.shape[0]
             X = iter(X)
         for v in progressbar(X, leave=False, total=num):
-            # want to start with fresh results and not clip, so that chunks are
-            # smooth
+            # want to start with fresh results and not clip,
+            # so that chunks are smooth
             h, r = _solveproj(v, W, lam1, kap, vmax=np.inf)
             H.append(h.copy())
-            if return_R:
-                R.append(r.copy())
+            if return_error:
+                E.append(r.copy())
 
         H = np.stack(H, axis=-1)
-        if return_R:
-            return H, np.stack(R, axis=-1)
+        if return_error:
+            return H, np.stack(E, axis=-1)
         else:
             return H
 
@@ -388,7 +387,7 @@ class ORNMF:
                 H = np.concatenate(self.H, axis=1)
             return self.W, H
         else:
-            return self.W, 0
+            return self.W, 1
 
 
 def ornmf(
@@ -396,30 +395,82 @@ def ornmf(
     rank,
     lambda1=1,
     kappa=1,
-    store_r=False,
+    store_error=False,
     project=False,
     method=None,
     subspace_learning_rate=1.0,
     subspace_momentum=0.5,
+    batch_size=None,
 ):
+    """Perform online, robust NMF on the data X.
+
+    This is a wrapper function for the ORNMF class.
+
+    Parameters
+    ----------
+    X : numpy array
+        The [n_samples, n_features] input data.
+    rank : int
+        The rank of the representation (number of components/factors)
+    lambda1 : float
+        Nuclear norm regularization parameter.
+    kappa : float
+        Step-size for projection solver.
+    store_error : bool
+        If True, stores the sparse error matrix, False by default.
+    project : bool, default False
+        If True, project the data X onto the learnt model.
+    method : {None, 'PGD', 'RobustPGD', 'MomentumSGD'}
+        'PGD' - Proximal gradient descent
+        'RobustPGD' - Robust proximal gradient descent
+        'MomentumSGD' - Stochastic gradient descent with momentum
+        If None, set to PGD.
+    subspace_learning_rate : float | None
+        Learning rate for stochastic gradient descent.
+    subspace_momentum : float | None
+        Momentum parameter for stochastic gradient descent. Must be in
+        range 0 <= x <= 1.
+    batch_size : {None, int}
+        If not None, learn the data in batches, each of batch_size samples
+        or less.
+
+    Returns
+    -------
+    Xhat : numpy array
+        is the [n_features x n_samples] non-negative matrix
+        Only returned if store_error is True.
+    Ehat : numpy array
+        is the [n_features x n_samples] sparse error matrix
+        Only returned if store_error is True.
+    W : numpy array, shape [n_features, rank]
+        is the non-negative factors matrix
+    H : numpy array, shape [rank, n_samples]
+        is the non-negative loadings matrix
+
+    """
+    X = X.T
 
     _ornmf = ORNMF(
         rank,
         lambda1=lambda1,
         kappa=kappa,
-        store_r=store_r,
+        store_error=store_error,
         method=method,
         subspace_learning_rate=subspace_learning_rate,
         subspace_momentum=subspace_momentum,
     )
-    _ornmf.fit(X)
+    _ornmf.fit(X, batch_size=batch_size)
+
     if project:
         W = _ornmf.W
         H = _ornmf.project(X)
     else:
         W, H = _ornmf.finish()
 
-    if store_r:
-        return np.dot(W, H), _ornmf.R, W, H
+    if store_error:
+        Xhat = np.dot(W, H)
+        Ehat = np.array(_ornmf.E).T
+
+        return Xhat, Ehat, W, H
     else:
         return W, H
