@@ -612,7 +612,7 @@ class ImageContrastEditor(t.HasTraits):
                 lambda: self.image.axes_manager.events.indices_changed.disconnect(
                     self._reset), [])
 
-            # Disconnect update image to avoid image flickering and reconnect 
+            # Disconnect update image to avoid image flickering and reconnect
             # it when necessary in the close method.
             self.image.disconnect()
 
@@ -726,7 +726,7 @@ class ImageContrastEditor(t.HasTraits):
                                          step="mid", color=color)
         self.ax.set_xlim(self._vmin, self._vmax)
         if update_span:
-            # Restore the span selector at the correct position after updating 
+            # Restore the span selector at the correct position after updating
             # the range of the histogram
             self.span_selector._set_span_x(
                     self.ax.transData.inverted().transform(span_x_coord)[0])
@@ -778,8 +778,8 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            # No span selector, so we use the saturated_pixels value to 
-            # calculate the vim and vmax values 
+            # No span selector, so we use the saturated_pixels value to
+            # calculate the vim and vmax values
             self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
@@ -873,25 +873,25 @@ IMAGE_CONTRAST_EDITOR_HELP = \
 <p><b>Norm</b>: Normalisation used to display the image.</p>
 
 <p><b>Saturated pixels</b>: The percentage of pixels that are left out of the bounds.
-For example, the low and high bounds of a value of 1 are the 0.5% and 99.5% 
+For example, the low and high bounds of a value of 1 are the 0.5% and 99.5%
 percentiles. It must be in the [0, 100] range.</p>
 
-<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma 
+<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma
 correction). <i>(not compatible with the 'log' norm)</i>.</p>
 
-<p><b>Auto</b>: If selected, adjust automatically the contrast when changing 
+<p><b>Auto</b>: If selected, adjust automatically the contrast when changing
 nagivation axis by taking into account others parameters.</p>
 
 <h3>Advanced parameters</h3>
-                                                
-<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+
+<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
-<p><b>Linear scale</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+<p><b>Linear scale</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
 <h3>Buttons</h3>
@@ -950,6 +950,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Polynomial',
         'Power Law',
         'SkewNormal',
+        'SplitVoigt',
         'Voigt',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
@@ -1027,6 +1028,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line_range = 'from_left_range'
         elif self.background_type == 'SkewNormal':
             self.background_estimator = components1d.SkewNormal()
+            self.bg_line_range = 'full'
+        elif self.background_type == 'SplitVoigt':
+            self.background_estimator = components1d.SplitVoigt()
             self.bg_line_range = 'full'
         elif self.background_type == 'Voigt':
             with ignore_warning(message="The API of the `Voigt` component"):

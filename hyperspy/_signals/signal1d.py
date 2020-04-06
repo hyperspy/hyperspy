@@ -1184,6 +1184,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 background_estimator = components1d.PowerLaw()
             elif background_type in ('SkewNormal', 'Skew Normal'):
                 background_estimator = components1d.SkewNormal()
+            elif background_type in ('SplitVoigt', 'Split Voigt'):
+                background_estimator = components1d.SplitVoigt()
             elif background_type == 'Voigt':
                 with ignore_warning(message="The API of the `Voigt` component"):
                     background_estimator = components1d.Voigt(legacy=False)

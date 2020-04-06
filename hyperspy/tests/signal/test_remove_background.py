@@ -237,7 +237,7 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('plot_remainder', [True, False])
 @pytest.mark.parametrize('background_type',
                          ['Gaussian', 'Lorentzian', 'Polynomial', 'Power Law',
-                          'Offset', 'SkewNormal', 'Voigt'])
+                          'Offset', 'SkewNormal', 'SplitVoigt', 'Voigt'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,
