@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -124,10 +124,12 @@ class LazySignal(BaseSignal):
                 _logger.exception("Failed to close lazy Signal file")
 
     def _get_dask_chunks(self, axis=None, dtype=None):
-        """Returns dask chunks
+        """Returns dask chunks.
+
         Aims:
             - Have at least one signal (or specified axis) in a single chunk,
-            or as many as fit in memory
+              or as many as fit in memory
+
         Parameters
         ----------
         axis : {int, string, None, axis, tuple}
@@ -136,6 +138,7 @@ class LazySignal(BaseSignal):
             only that particular axis is guaranteed to be "not sliced".
         dtype : {string, np.dtype}
             The dtype of target chunks.
+
         Returns
         -------
         Tuple of tuples, dask chunks
@@ -650,7 +653,7 @@ class LazySignal(BaseSignal):
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : str
-            One of ('svd', 'PCA', 'ORPCA', 'ONMF'). By default 'svd',
+            One of ('svd', 'PCA', 'ORPCA', 'ORNMF'). By default 'svd',
             lazy SVD decomposition from dask.
         output_dimension : int
             the number of significant components to keep. If None, keep all
@@ -676,7 +679,7 @@ class LazySignal(BaseSignal):
         Notes
         -----
         Various algorithm parameters and their default values:
-            ONMF:
+            ORNMF:
                 lambda1=1,
                 kappa=1,
                 robust=False,
@@ -732,11 +735,19 @@ class LazySignal(BaseSignal):
             obj = ORPCA(output_dimension, **kwg)
             method = partial(obj.fit, iterating=True)
 
-        elif algorithm == 'ONMF':
-            from hyperspy.learn.onmf import ONMF
+        elif algorithm in ('ONMF', 'ORNMF'):
+            from hyperspy.learn.ornmf import ORNMF
             batch_size = kwargs.pop('batch_size', None)
-            obj = ONMF(output_dimension, **kwargs)
+            obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
+
+            if algorithm == 'ONMF':
+                warnings.warn(
+                    "The argument `algorithm='ONMF'` has been deprecated and may "
+                    "be removed in future. Please use `algorithn='ORNMF'` instead.",
+                    VisibleDeprecationWarning,
+                )
+
         elif algorithm != "svd":
             raise ValueError('algorithm not known')
 
@@ -830,7 +841,7 @@ class LazySignal(BaseSignal):
                 loadings = V
                 explained_variance = S**2 / len(factors)
 
-            elif algorithm == 'ONMF':
+            elif algorithm == 'ORNMF':
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
@@ -845,7 +856,7 @@ class LazySignal(BaseSignal):
                     obj.R = []
 
                     def post(a): return obj.finish()[4]
-                elif algorithm == 'ONMF':
+                elif algorithm == 'ORNMF':
                     method = obj.project
 
                     def post(a): return np.concatenate(a, axis=1).T

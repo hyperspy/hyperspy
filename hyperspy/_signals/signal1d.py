@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -1046,7 +1046,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
-            model.multifit(show_progressbar=show_progressbar)
+            model.multifit(show_progressbar=show_progressbar,
+                           iterpath='serpentine')
             model.reset_signal_range()
 
         if self._lazy:
@@ -1105,8 +1106,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components: PowerLaw, Gaussian, Offset, Polynomial,
-            Lorentzian, SkewNormal.
+            Possible components: Gaussian, Lorentzian, Offset, Polynomial,
+             PowerLaw, SkewNormal, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
@@ -1169,20 +1170,23 @@ class Signal1D(BaseSignal, CommonSignal1D):
             if return_model:
                 return model
         else:
-            if background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Gaussian':
+            if background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()
+            elif background_type == 'Lorentzian':
+                background_estimator = components1d.Lorentzian()
             elif background_type == 'Offset':
                 background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':
                 with ignore_warning(message="The API of the `Polynomial` component"):
                     background_estimator = components1d.Polynomial(
                         polynomial_order, legacy=False)
-            elif background_type == 'Lorentzian':
-                background_estimator = components1d.Lorentzian()
+            elif background_type in ('PowerLaw', 'Power Law'):
+                background_estimator = components1d.PowerLaw()
             elif background_type in ('SkewNormal', 'Skew Normal'):
                 background_estimator = components1d.SkewNormal()
+            elif background_type == 'Voigt':
+                with ignore_warning(message="The API of the `Voigt` component"):
+                    background_estimator = components1d.Voigt(legacy=False)
             else:
                 raise ValueError(f"Background type: {background_type} not "
                                  "recognized.")
@@ -1509,6 +1513,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return width
 
     estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
 
 class LazySignal1D(LazySignal, Signal1D):
 

@@ -4,7 +4,7 @@ source = hyperspy
 include = */hyperspy/*
 omit =
     */hyperspy/external/*
-    */hyperspy/gui_traitsui/*
+    */hyperspy/tests/*
     */setup.py
     */examples/*
     */continuous_integration/*

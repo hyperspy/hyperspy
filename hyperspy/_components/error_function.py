@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -49,7 +49,7 @@ class Erf(Expression):
             Position of the zero crossing.
     """
     
-    def __init__(self, A=1., sigma=1., origin=0., module="scipy",
+    def __init__(self, A=1., sigma=1., origin=0., module=["numpy", "scipy"],
                  **kwargs):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
             raise ImportError("The `ErrorFunction` component requires "

@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -469,6 +469,8 @@ def test_plot_images_tranpose():
     hs.plot.plot_images([a, b])
 
 
+# Ignore numpy warning about clipping np.nan values
+@pytest.mark.filterwarnings("ignore:Passing `np.nan` to mean no clipping in np.clip")
 def test_plot_with_non_finite_value():
     s = hs.signals.Signal2D(np.array([[np.nan, 2.0] for v in range(2)]))
     s.plot()
@@ -498,3 +500,15 @@ def test_plot_log_negative_value(cmap):
     else:
         s.plot(norm='log')
     return plt.gcf()
+
+
+@pytest.mark.parametrize("cmap", ['gray', None, 'preference'])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_navigator_colormap(cmap):
+    if cmap == 'preference':
+        hs.preferences.Plot.cmap_navigator = 'hot'
+        cmap = None
+    s = hs.signals.Signal1D(np.arange(10*10*10).reshape(10, 10, 10))
+    s.plot(navigator_kwds={'cmap':cmap})
+    return s._plot.navigator_plot.figure

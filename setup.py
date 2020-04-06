@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,6 +26,7 @@ import itertools
 import subprocess
 import os
 import warnings
+from tempfile import TemporaryDirectory
 from setuptools import setup, Extension, Command
 import sys
 
@@ -74,6 +75,7 @@ extras_require = {
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["numba", "cython"],
+    "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
@@ -174,8 +176,9 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
-                                   'test_compilers.c')])
+    with TemporaryDirectory() as tmpdir:
+        compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
+                                   'test_compilers.c')], output_dir=tmpdir)
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.

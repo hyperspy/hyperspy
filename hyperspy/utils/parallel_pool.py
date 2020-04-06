@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -117,7 +117,7 @@ class ParallelPool:
     def has_pool(self):
         """Returns bool if the pool is ready and set-up"""
         return self.is_ipyparallel or self.is_multiprocessing and \
-            self.pool._state is 0
+            self.pool._state == 0
 
     def _setup_ipyparallel(self):
         import ipyparallel as ipp

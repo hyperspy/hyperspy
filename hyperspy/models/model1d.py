@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -897,7 +897,6 @@ class Model1D(BaseModel):
              be manually specified by passing a tuple of floats. If None
              the current signal range is used. Note that ROIs can be used
              in place of a tuple.
-
         estimate_parameters : bool, default True
             If True will check if the component has an
             estimate_parameters function, and use it to estimate the
@@ -907,6 +906,11 @@ class Model1D(BaseModel):
             component paramemeters are fixed.
         %s
         %s
+        **kwargs : dict
+            All extra keyword arguments are passed to the
+            py:meth:`~hyperspy.model.BaseModel.fit` or 
+            py:meth:`~hyperspy.model.BaseModel.multifit`
+            method, depending if ``only_current`` is True or False.
 
         Examples
         --------

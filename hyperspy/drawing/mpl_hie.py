@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,6 +19,7 @@
 from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+from hyperspy.defaults_parser import preferences
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
@@ -74,6 +75,8 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.linthresh = linthresh
         imf.linscale = linscale
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
+        if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
+            kwargs["cmap"] = preferences.Plot.cmap_signal
         imf.plot(**kwargs)
         self.signal_plot = imf
 
