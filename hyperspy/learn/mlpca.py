@@ -36,6 +36,8 @@ _logger = logging.getLogger(__name__)
 def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
     """Performs maximum likelihood PCA with missing data.
 
+    This function is a transcription of a MATLAB code obtained from [1]_.
+
     Parameters
     ----------
     X : numpy array, shape (m, n)
@@ -46,9 +48,9 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
     output_dimension : int
         The model dimensionality.
     tol : float
-
+        Tolerance of the stopping condition.
     max_iter : int
-
+        Maximum number of iterations before exiting without convergence.
     fast : bool, default False
         Whether to use randomized SVD from sklearn to estimate
         a limited number of components given by output_dimension.
@@ -59,6 +61,14 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
         The pseudo-SVD parameters.
     s_obj : float
         Value of the objective function.
+
+    References
+    ----------
+    .. [1] Darren T. Andrews and Peter D. Wentzell, "Applications of
+           maximum likelihood principal component analysis: incomplete
+           data sets and calibration transfer", Analytica Chimica Acta 350,
+           no. 3 (September 19, 1997): 341-352.
+
     """
     if fast is True and sklearn_installed is True:
 
