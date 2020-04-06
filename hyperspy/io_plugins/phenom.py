@@ -18,9 +18,20 @@
 #
 #
 # Install this as hyperspy/io_plugins/phenom.py
-# If you get the error "cannot decompress LZW", run pip install imagecodecs
-# Edit hyperspy/io_plugins/__init__.py and add phenom to both the list of imports and io_plugins
+#
+# If you get the error "cannot decompress LZW", run
+# pip install imagecodecs
+#
+# Edit hyperspy/io_plugins/__init__.py and add phenom to both the
+# list of imports and io_plugins
+#
 # You should now be able to load Phenom EID .elid files.
+#
+# This reader supports the ELID file format used in Phenom ProSuite
+# Element Identification version 3.8.0 and later. You can convert
+# older ELID files by loading the file into a recent Element
+# Identification release and then save the ELID file into the newer
+# file format.
 
 import bz2
 import math
@@ -70,17 +81,34 @@ def family_symbol(i):
         raise Exception('Invalid atomic number')
     return families[i]
 
+def IsGZip(pathname):
+    with open(pathname, 'rb') as f:
+        (magic,) = struct.unpack('2s', f.read(2))
+    return magic == b'\x1f\x8b'
+
+def IsBZip2(pathname):
+    with open(pathname, 'rb') as f:
+        (magic, _, bytes) = struct.unpack('2s2s6s', f.read(10))
+    return magic == b'BZ' and bytes == b'\x31\x41\x59\x26\x53\x59'
+
 
 class ElidReader:
 
     def __init__(self, pathname, block_size=1024*1024):
+        if IsGZip(pathname):
+            raise Exception('pre EID 3.8 files are not supported')
+        if not IsBZip2(pathname):
+            raise Exception('not an ELID file')
+
         self._pathname = pathname
         self._file = open(pathname, 'rb')
         self._decompressor = bz2.BZ2Decompressor()
         self._block_size = block_size
         (id, version) = struct.unpack('<4si', self._read(8))
         if id != b'EID2':
-            raise Exception('Not an EID2 file')
+            raise Exception('not an ELID file')
+        if version > 1:
+            raise Exception('unsupported ELID format')
         self._version = version
         self.dictionaries = self._read_Project()
 
@@ -224,7 +252,7 @@ class ElidReader:
         n = self._read_uint32()
         return [self._read_element_family() for _ in range(n)]
 
-    def _read_eds_metadata(self):
+    def _read_eds_metadata(self, om):
         metadata = {}
         metadata['high_tension'] = self._read_float64()
         detector_elevation = self._read_float64()
@@ -238,7 +266,12 @@ class ElidReader:
         metadata['fast_peaking_time'] = self._read_float64()
         metadata['detector_resolution'] = self._read_float64()
         metadata['instrument_id'] = self._read_string()
-        if self._version > 0:
+        if self._version == 0 and 'workingDistance' in om:
+            metadata['working_distance'] = self._get_value_with_unit(om['workingDistance'])
+            metadata['slow_peaking_time'] = 11.2e-6 if float(om['acquisition']['scan']['spotSize']) < 4.5 else 2e-6
+            metadata['fast_peaking_time'] = 100e-9;
+            metadata['detector_surface_area'] = 25e-6;
+        elif self._version > 0:
             metadata['optical_working_distance'] = self._read_float64()
             metadata['working_distance'] = self._read_float64()
             metadata['detector_surface_area'] = self._read_float64()
@@ -246,10 +279,10 @@ class ElidReader:
             metadata['sample_tilt_angle'] = self._read_float64()
         return metadata
 
-    def _read_CommonAnalysis(self):
-        (metadata, image_data) = self._read_tiff()
+    def _read_CommonAnalysis(self, am):
+        (metadata, cutout) = self._read_tiff()
         sum_spectrum = self._read_spectrum()
-        eds_metadata = self._read_eds_metadata()
+        eds_metadata = self._read_eds_metadata(am)
         eds_metadata['offset'] = sum_spectrum[0]
         eds_metadata['dispersion'] = sum_spectrum[1]
         data = sum_spectrum[2]
@@ -447,23 +480,23 @@ class ElidReader:
         }
         return dict
 
-    def _read_MsaAnalysis(self, label, metadata):
-        (om, sum_spectrum) = self._read_CommonAnalysis()
-        original_metadata = copy.deepcopy(metadata)
+    def _read_MsaAnalysis(self, label, am):
+        (om, sum_spectrum) = self._read_CommonAnalysis(am)
+        original_metadata = copy.deepcopy(am)
         original_metadata.update(om)
         return self._make_spot_spectrum_dict(original_metadata, om['acquisition']['scan']['detectors']['EDS']['offset'], om['acquisition']['scan']['detectors']['EDS']['dispersion'], np.array(sum_spectrum), '{}, MSA {}'.format(label, om['acquisition']['scan']['detectors']['EDS']['order_nr']))
 
-    def _read_SpotAnalysis(self, label, metadata):
-        (om, sum_spectrum) = self._read_CommonAnalysis()
+    def _read_SpotAnalysis(self, label, am):
+        (om, sum_spectrum) = self._read_CommonAnalysis(am)
         x = self._read_float64()
         y = self._read_float64()
-        original_metadata = copy.deepcopy(metadata)
+        original_metadata = copy.deepcopy(am)
         original_metadata['acquisition']['scan']['detectors']['EDS'] = om['acquisition']['scan']['detectors']['EDS']
         original_metadata['acquisition']['scan']['detectors']['EDS']['position'] = {'x': x, 'y': y}
         return self._make_spot_spectrum_dict(original_metadata, om['acquisition']['scan']['detectors']['EDS']['offset'], om['acquisition']['scan']['detectors']['EDS']['dispersion'], np.array(sum_spectrum), '{}, Spot {}'.format(label, om['acquisition']['scan']['detectors']['EDS']['order_nr']))
 
-    def _read_LineScanAnalysis(self, label, metadata):
-        (om, sum_spectrum) = self._read_CommonAnalysis()
+    def _read_LineScanAnalysis(self, label, am):
+        (om, sum_spectrum) = self._read_CommonAnalysis(am)
         x1 = self._read_float64()
         y1 = self._read_float64()
         x2 = self._read_float64()
@@ -472,7 +505,7 @@ class ElidReader:
         bins = self._read_uint32()
         offset = self._read_float64()
         dispersion = self._read_float64()
-        eds_metadata = self._read_eds_metadata()
+        eds_metadata = self._read_eds_metadata(am)
         eds_metadata['live_time'] = om['acquisition']['scan']['detectors']['EDS']['live_time']
         eds_metadata['real_time'] = om['acquisition']['scan']['detectors']['EDS']['real_time']
         eds_metadata['begin'] = { 'x': x1, 'y': y1 }
@@ -494,12 +527,12 @@ class ElidReader:
         else:
             live_time_values = [self._read_float64()] * size
         eds_metadata['high_accuracy_quantification'] = self._read_bool()
-        original_metadata = copy.deepcopy(metadata)
+        original_metadata = copy.deepcopy(am)
         original_metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
         return self._make_line_spectrum_dict(original_metadata, om['acquisition']['scan']['detectors']['EDS']['offset'], om['acquisition']['scan']['detectors']['EDS']['dispersion'], data, '{}, Line {}'.format(label, om['acquisition']['scan']['detectors']['EDS']['order_nr']))
 
-    def _read_MapAnalysis(self, label, metadata):
-        (om, sum_spectrum) = self._read_CommonAnalysis()
+    def _read_MapAnalysis(self, label, am):
+        (om, sum_spectrum) = self._read_CommonAnalysis(am)
         left = self._read_float64()
         top = self._read_float64()
         right = self._read_float64()
@@ -510,8 +543,8 @@ class ElidReader:
         bins = self._read_uint32()
         offset = self._read_float64()
         dispersion = self._read_float64()
-        original_metadata = copy.deepcopy(metadata)
-        eds_metadata = self._read_eds_metadata()
+        original_metadata = copy.deepcopy(am)
+        eds_metadata = self._read_eds_metadata(am)
         eds_metadata['live_time'] = om['acquisition']['scan']['detectors']['EDS']['live_time']
         eds_metadata['real_time'] = om['acquisition']['scan']['detectors']['EDS']['real_time']
         original_metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
@@ -532,21 +565,21 @@ class ElidReader:
             live_time_values = [self._read_float64()] * width * height
         return self._make_map_spectrum_dict(original_metadata, om['acquisition']['scan']['detectors']['EDS']['offset'], om['acquisition']['scan']['detectors']['EDS']['dispersion'], data, '{}, Map {}'.format(label, om['acquisition']['scan']['detectors']['EDS']['order_nr']))
 
-    def _read_DifferenceAnalysis(self, label, metadata):
-        (om, sum_spectrum) = self._read_CommonAnalysis()
+    def _read_DifferenceAnalysis(self, label, am):
+        (om, sum_spectrum) = self._read_CommonAnalysis(am)
         minuend = self._read_uint32()
         subtrahend = self._read_uint32()
-        original_metadata = copy.deepcopy(metadata)
+        original_metadata = copy.deepcopy(am)
         original_metadata['acquisition']['scan']['detectors']['EDS'] = om['acquisition']['scan']['detectors']['EDS']
         return self._make_spot_spectrum_dict(original_metadata, om['acquisition']['scan']['detectors']['EDS']['offset'], om['acquisition']['scan']['detectors']['EDS']['dispersion'], np.array(sum_spectrum), '{}, Difference {} - {}'.format(label, minuend, subtrahend))
 
-    def _read_RegionAnalysis(self, label, metadata):
-        (om, sum_spectrum) = self._read_CommonAnalysis()
+    def _read_RegionAnalysis(self, label, am):
+        (om, sum_spectrum) = self._read_CommonAnalysis(am)
         left = self._read_float64()
         top = self._read_float64()
         right = self._read_float64()
         bottom = self._read_float64()
-        original_metadata = copy.deepcopy(metadata)
+        original_metadata = copy.deepcopy(am)
         original_metadata['acquisition']['scan']['detectors']['EDS'] = om['acquisition']['scan']['detectors']['EDS']
         original_metadata['acquisition']['scan']['detectors']['EDS']['rectangle'] = {
             'left': left,
@@ -574,22 +607,22 @@ class ElidReader:
         n = self._read_uint32()
         return [self._read_ConstructiveAnalysis('', {}) for _ in range(n)]
 
-    def _read_Analysis(self, label, metadata):
+    def _read_Analysis(self, label, am):
         type = self._read_uint8()
         if type == 1:
-            return self._read_MsaAnalysis(label, metadata)
+            return self._read_MsaAnalysis(label, am)
         elif type == 2:
-            return self._read_SpotAnalysis(label, metadata)
+            return self._read_SpotAnalysis(label, am)
         elif type == 3:
-            return self._read_LineScanAnalysis(label, metadata)
+            return self._read_LineScanAnalysis(label, am)
         elif type == 4:
-            return self._read_MapAnalysis(label, metadata)
+            return self._read_MapAnalysis(label, am)
         elif type == 5:
-            return self._read_DifferenceAnalysis(label, metadata)
+            return self._read_DifferenceAnalysis(label, am)
         elif type == 6:
-            return self._read_RegionAnalysis(label, metadata)
+            return self._read_RegionAnalysis(label, am)
         elif type == 7:
-            return self._read_ConstructiveAnalysis(label, metadata)
+            return self._read_ConstructiveAnalysis(label, am)
         else:
             raise Exception('Unknown Analysis type')
 
