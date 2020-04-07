@@ -45,6 +45,7 @@ def get_components1d_name_list():
     return components1d_name_list
 
 
+@pytest.mark.filterwarnings("ignore:The API of the `Voigt`")
 @pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @pytest.mark.parametrize('component_name', get_components1d_name_list())
 def test_creation_components1d(component_name):
@@ -424,7 +425,7 @@ def test_expression_symbols():
     with pytest.raises(ValueError):
         hs.model.components1D.Expression(expression="10", name="offset")
     with pytest.raises(ValueError):
-        hs.model.components1D.Expression(expression="10*offset", name="Offset")    
+        hs.model.components1D.Expression(expression="10*offset", name="Offset")
 
 
 def test_expression_substitution():
