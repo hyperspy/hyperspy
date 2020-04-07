@@ -944,6 +944,7 @@ class IntegrateArea(SpanSelectorInSignal1D):
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
+        'Doniach',
         'Gaussian',
         'Lorentzian',
         'Offset',
@@ -1009,7 +1010,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.model is not None:
             for component in self.model:
                 self.model.remove(component)
-        if self.background_type == 'Gaussian':
+        if self.background_type == 'Doniach':
+            self.background_estimator = components1d.Doniach()
+            self.bg_line_range = 'full'
+        elif self.background_type == 'Gaussian':
             self.background_estimator = components1d.Gaussian()
             self.bg_line_range = 'full'
         elif self.background_type == 'Lorentzian':

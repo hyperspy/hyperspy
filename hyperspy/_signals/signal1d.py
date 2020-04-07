@@ -1170,7 +1170,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             if return_model:
                 return model
         else:
-            if background_type == 'Gaussian':
+            if background_type == 'Doniach':
+                background_estimator = components1d.Doniach()
+            elif background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()
             elif background_type == 'Lorentzian':
                 background_estimator = components1d.Lorentzian()
