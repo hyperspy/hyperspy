@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -260,55 +260,58 @@ class MVATools(object):
                                 cmap=plt.cm.gray, quiver_color='white',
                                 vector_scale=1,
                                 per_row=3, ax=None):
-        """Plot components from PCA or ICA, or peak characteristics
+        """Plot components from PCA or ICA, or peak characteristics.
+
         Parameters
         ----------
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given
+            If None, returns maps of all components.
+            If int, returns maps of components with ids from 0 to given
             int.
             if list of ints, returns maps of components with ids in
             given list.
         calibrate : bool
-            if True, plots are calibrated according to the data in the
-            axes
-            manager.
+            If True, plots are calibrated according to the data in the
+            axes manager.
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default True.
+            If True, plots each factor to the same window. They are not scaled.
+            Default True.
         comp_label : str
             Title of the plot
         cmap : a matplotlib colormap
-            The colormap used for factor images or
-            any peak characteristic scatter map
-            overlay.
+            The colormap used for factor images or any peak characteristic
+            scatter map overlay. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
 
-        Parameters only valid for peak characteristics (or pk char factors)
-        -------------------------------------------------------------------
-        img_data - 2D numpy array,
-            The array to overlay peak characteristics onto.  If None,
+        Other Parameters
+        ----------------
+        img_data : 2D numpy array,
+            The array to overlay peak characteristics onto. If None,
             defaults to the average image of your stack.
-        plot_shifts - bool, default is True
+        plot_shifts : bool, default is True
             If true, plots a quiver (arrow) plot showing the shifts for
             each
             peak present in the component being plotted.
-        plot_char - None or int
+        plot_char : None or int
             If int, the id of the characteristic to plot as the colored
             scatter plot.
             Possible components are:
-               4: peak height
-               5: peak orientation
-               6: peak eccentricity
-       quiver_color : any color recognized by matplotlib
-           Determines the color of vectors drawn for
-           plotting peak shifts.
-       vector_scale : integer or None
-           Scales the quiver plot arrows.  The vector
-           is defined as one data unit along the X axis.
-           If shifts are small, set vector_scale so
-           that when they are multiplied by vector_scale,
-           they are on the scale of the image plot.
-           If None, uses matplotlib's autoscaling.
+
+            * 4: peak height
+            * 5: peak orientation
+            * 6: peak eccentricity
+        quiver_color : any color recognized by matplotlib
+            Determines the color of vectors drawn for
+            plotting peak shifts.
+        vector_scale : integer or None
+            Scales the quiver plot arrows. The vector is defined as one data
+            unit along the X axis. If shifts are small, set vector_scale so
+            that when they are multiplied by vector_scale, they are on the 
+            scale of the image plot. If None, uses matplotlib's autoscaling.
+
+        Returns
+        -------
+        matplotlib figure or list of figure if same_window=False
 
         """
         if same_window is None:
@@ -758,16 +761,16 @@ class MVATools(object):
                                    calibrate=True,
                                    same_window=True,
                                    comp_label=None,
+                                   title=None,
                                    cmap=plt.cm.gray,
-                                   per_row=3,
-                                   title=None):
+                                   per_row=3
+                                   ):
         """Plot factors from a decomposition. In case of 1D signal axis, each
         factors line can be toggled on and off by clicking on their
         corresponding line in the legend.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
@@ -777,23 +780,18 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             If ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-
         title : str
             Title of the plot.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the factor images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -834,9 +832,15 @@ class MVATools(object):
                                             cmap=cmap,
                                             per_row=per_row)
 
-    def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=True, comp_label=None,
-                         per_row=3, title=None):
+    def plot_bss_factors(self,
+                         comp_ids=None,
+                         calibrate=True,
+                         same_window=True,
+                         comp_label=None,
+                         title=None,
+                         cmap=plt.cm.gray,
+                         per_row=3
+                         ):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
@@ -850,21 +854,20 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-
         comp_label : str
             Will be deprecated in 2.0, please use `title` instead
-
         title : str
             Title of the plot.
-
+        cmap : :py:class:`~matplotlib.colors.Colormap`
+            The colormap used for the factor images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -902,20 +905,19 @@ class MVATools(object):
                                     comp_ids=None,
                                     calibrate=True,
                                     same_window=True,
+                                    title=None,
                                     comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
                                     per_row=3,
-                                    axes_decor='all',
-                                    title=None):
+                                    axes_decor='all'):
         """Plot loadings from a decomposition. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
@@ -925,34 +927,26 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             if ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
-
         same_window : bool
             if ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-
         title : str
             Title of the plot.
-
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the loadings images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
-
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-
         axes_decor : str or None, optional
             One of: ``'all'``, ``'ticks'``, ``'off'``, or ``None``
             Controls how the axes are displayed on each image; default is
@@ -1008,55 +1002,52 @@ class MVATools(object):
             per_row=per_row,
             axes_decor=axes_decor)
 
-    def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=True, comp_label=None,
-                          with_factors=False, cmap=plt.cm.gray,
-                          no_nans=False, per_row=3, axes_decor='all',
-                          title=None):
+    def plot_bss_loadings(self,
+                          comp_ids=None,
+                          calibrate=True,
+                          same_window=True,
+                          title=None,
+                          comp_label=None,
+                          with_factors=False,
+                          cmap=plt.cm.gray,
+                          no_nans=False,
+                          per_row=3,
+                          axes_decor='all'
+                          ):
         """Plot loadings from blind source separation results. In case of 1D
         navigation axis, each loading line can be toggled on and off by
         clicking on their corresponding line in the legend.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned. If it is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             if ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             If ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-
         comp_label : str
             Will be deprecated in 2.0, please use `title` instead
-
         title : str
             Title of the plot.
-
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the loading image, or for peak
+            characteristics,. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
-
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-
         axes_decor : str or None, optional
             One of: ``'all'``, ``'ticks'``, ``'off'``, or ``None``
             Controls how the axes are displayed on each image;
@@ -1187,9 +1178,9 @@ class MVATools(object):
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
+            The colormap used for images, such as factors, loadings, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : :py:class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1306,9 +1297,9 @@ class MVATools(object):
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
+            The colormap used for images, such as factors, loadings, or
+            for peak characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : :py:class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1872,22 +1863,20 @@ class BaseSignal(FancySlicing,
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
             following items:
-            data : :py:class:`numpy.ndarray`
-               The signal data. It can be an array of any dimensions.
-            axes : dict, optional
-                Dictionary to define the axes (see the
-                documentation of the AxesManager class for more details).
-            attributes : dict, optional
-                A dictionary whose items are stored as attributes.
-            metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `metadata` attribute.
-                Some parameters might be mandatory in some cases.
-            original_metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `original_metadata` attribute. It
-                typically contains all the parameters that has been
-                imported from the original data file.
+
+            * data: the signal data. It can be an array of any dimensions.
+
+            * axes: a dictionary to define the axes (see the documentation of
+              the :py:class:`~hyperspy.axes.AxesManager` class for more details).
+            * attributes: a dictionary whose items are stored as attributes.
+
+            * metadata: a dictionary containing a set of parameters that will
+              to stores in the `metadata` attribute. Some parameters might be
+              mandatory in some cases.
+            * original_metadata: a dictionary containing a set of parameters
+              that will to stores in the `original_metadata` attribute. It
+              typically contains all the parameters that has been
+              imported from the original data file.
 
         """
         self.data = file_data_dict['data']
@@ -4600,7 +4589,7 @@ class BaseSignal(FancySlicing,
         Raises
         ------
         DataDimensionError
-            when `data.ndim` < 2
+            When `data.ndim` < 2
 
         See also
         --------

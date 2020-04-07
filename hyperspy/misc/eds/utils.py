@@ -1,7 +1,25 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import numpy as np
 import math
 from scipy import constants
-from hyperspy import utils
+from hyperspy.misc.utils import stack
 from hyperspy.misc.elements import elements as elements_db
 from functools import reduce
 
@@ -534,11 +552,12 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
     take_off_angle: float
         X-ray take-off angle in degrees.
     """
+    from hyperspy.misc import material
 
     toa_rad = np.radians(take_off_angle)
     csc_toa = 1.0/np.sin(toa_rad)
-     # convert from cm^2/g to m^2/kg
-    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
+    # convert from cm^2/g to m^2/kg
+    mac = stack(material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
     acf = mac.data * mass_thickness.data * csc_toa
     acf = acf/(1.0 - np.exp(-(acf)))
 
@@ -602,16 +621,16 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, pro
     take_off_angle: float
         X-ray take-off angle in degrees.
     """
+    from hyperspy.misc import material
 
     toa_rad = np.radians(take_off_angle)
     Av = constants.Avogadro
     elements = [intensity.metadata.Sample.elements[0] for intensity in number_of_atoms]
-    lines = [intensity.metadata.Sample.xray_lines[0] for intensity in number_of_atoms]
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
 
-    number_of_atoms = utils.stack(number_of_atoms).data
+    number_of_atoms = stack(number_of_atoms).data
 
     #calculate the total_mass per pixel, or mass thicknessself.
     total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
@@ -619,7 +638,7 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, pro
         total_mass += (number_of_atoms[i] * weight / Av / probe_area / 1E-15)
 
      # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
-    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=utils.material.atomic_to_weight(composition))) * 0.1
+    mac = stack(material.mass_absorption_mixture(weight_percent=material.atomic_to_weight(composition))) * 0.1
 
     acf = np.zeros_like(number_of_atoms)
     constant = 1/(Av * math.sin(toa_rad) * probe_area * 1E-16)
