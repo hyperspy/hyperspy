@@ -1033,6 +1033,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             self, signal_range, background_estimator, fast=True,
             zero_fill=False, show_progressbar=None, model=None,
             return_model=False):
+        """ See :py:meth:`~hyperspy._signal1d.signal1D.remove_background`. """
         if model is None:
             from hyperspy.models.model1d import Model1D
             model = Model1D(self)
@@ -1096,7 +1097,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             toolkit=None):
         """
         Remove the background, either in place using a gui or returned as a new
-        spectrum using the command line.
+        spectrum using the command line. The fast option is not accurate for
+        most background type - except Gaussian, Offset and Power law - but it
+        is useful to estimate the initial fitting parameters before performing
+        a full fit.
 
         Parameters
         ----------
@@ -1107,7 +1111,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         background_type : str
             The type of component which should be used to fit the background.
             Possible components: Gaussian, Lorentzian, Offset, Polynomial,
-             PowerLaw, SkewNormal, Voigt.
+            PowerLaw, SkewNormal, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
@@ -1128,10 +1132,19 @@ class Signal1D(BaseSignal, CommonSignal1D):
             so the result may be different if a NLLS calculation is finally
             performed.
         return_model : bool
-            Returns model containing the background.
+            If True, the background model is returned. The chi² can be obtained
+            from this model using
+            :py:meth:`~hyperspy.models.model1d.Model1D.chisqd`.
         %s
         %s
         %s
+
+        Returns
+        -------
+        {None, signal, background_model or (signal, background_model)}
+            If signal_range is not 'interactive', the background substracted
+            signal is returned. If return_model is True, returns the background
+            model.
 
         Examples
         --------
@@ -1140,13 +1153,23 @@ class Signal1D(BaseSignal, CommonSignal1D):
         >>> s = hs.signals.Signal1D(range(1000))
         >>> s.remove_background() #doctest: +SKIP
 
-        Using command line, returns a spectrum
+        Using command line, returns a Signal1D:
 
-        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        >>> s.remove_background(signal_range=(400,450),
+                                background_type='PowerLaw')
+        <Signal1D, title: , dimensions: (|1000)>
 
-        Using a full model to fit the background
+        Using a full model to fit the background:
 
-        >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
+        >>> s.remove_background(signal_range=(400,450), fast=False)
+        <Signal1D, title: , dimensions: (|1000)>
+
+        Returns background substracted and the model:
+
+        >>> s.remove_background(signal_range=(400,450),
+                                fast=False,
+                                return_model=True)
+        (<Signal1D, title: , dimensions: (|1000)>, <Model1D>)
 
         Raises
         ------
