@@ -73,7 +73,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
             Note, a large number of markers might lead to very slow plotting.
         navigator_kwds : dict
             Only for image navigator, additional keyword arguments for
-            matplotlib.pyplot.imshow().
+            :py:func:`matplotlib.pyplot.imshow`.
         """
 
 
@@ -88,7 +88,8 @@ BASE_PLOT_DOCSTRING = \
 
         Parameters
         ----------
-        %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
+        """
+
 
 PLOT1D_DOCSTRING = \
     """norm : str, optional
@@ -104,6 +105,7 @@ PLOT1D_DOCSTRING = \
             If False, the limit of the axes are not reset automotically.
         """
 
+
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
@@ -116,16 +118,39 @@ PLOT2D_DOCSTRING = \
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
+        axes_off : {bool}
+            Default is False.
+        autoscale : bool
+            If True, the extent of the image is reset automatically to its
+            maximum when the navigation indices or the data are changed.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
             If None (default value), the value from the preferences is used.
+        norm : {"auto", "linear", "power", "log", "symlog" or a subclass of
+                :py:class:`matplotlib.colors.Normalise`}
+            Set the norm of the image to display. If "auto", a linear scale is
+            used except if when `power_spectrum=True` in case of complex data
+            type. "symlog" can be used to display negative value on a negative
+            scale - read :py:class:`matplotlib.colors.SymLogNorm` and the
+            `linthresh` and `linscale` parameter for more details.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize luminance data.
-        autoscale : bool
-            If True, the extent of the image is reset automatically to its
-            maximum when the navigation indices or the data are changed.
+        gamma : float
+            Parameter used in the power-law normalisation when the parameter
+            norm="power". Read :py:class:`matplotlib.colors.PowerNorm` for more
+            details. Default value is 1.0.
+        linthresh : float
+            When used with norm="symlog", define the range within which the
+            plot is linear (to avoid having the plot go to infinity around
+            zero). Default value is 0.01.
+        linscale : float
+            This allows the linear range (-linthresh to linthresh) to be
+            stretched relative to the logarithmic range. Its value is the
+            number of powers of base to use for each half of the linear range.
+            See :py:class:`matplotlib.colors.SymLogNorm` for more details.
+            Defaulf value is 0.1.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}
@@ -152,11 +177,12 @@ COMPLEX_DOCSTRING = \
             the signal is one-dimensional.
         fft_shift : bool, default False
             If True, shift the zero-frequency component.
-            See `numpy.fft.fftshift` for more details.
+            See :py:func:`numpy.fft.fftshift` for more details.
         """
 
 
 PLOT2D_KWARGS_DOCSTRING = \
     """**kwargs
             Only when plotting an image: additional (optional) keyword
-            arguments for :py:func:`matplotlib.pyplot.imshow`."""
+            arguments for :py:func:`matplotlib.pyplot.imshow`.
+        """

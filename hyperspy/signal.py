@@ -54,8 +54,8 @@ from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
-from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
-                                      PLOT2D_KWARGS_DOCSTRING)
+from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING,
+    BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -2019,6 +2019,7 @@ class BaseSignal(FancySlicing,
         """%s
         %s
         %s
+        %s
         """
         if self._plot is not None:
             try:
@@ -2161,8 +2162,8 @@ class BaseSignal(FancySlicing,
             if self.metadata.has_item('Markers'):
                 self._plot_permanent_markers()
 
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
-                     PLOT2D_KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):

@@ -30,8 +30,8 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
+from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING,
+    BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
 
@@ -284,16 +284,22 @@ class Signal2D(BaseSignal, CommonSignal2D):
             self.axes_manager.set_signal_dimension(2)
 
     def plot(self,
+             navigator="auto",
+             axes_manager=None,
+             plot_markers=True,
              colorbar=True,
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
              axes_off=False,
+             autoscale=False,
              saturated_pixels=None,
+             norm="auto",
              vmin=None,
              vmax=None,
              gamma=1.0,
-             autoscale=False,
+             linthresh=0.01,
+             linscale=0.1,
              no_nans=False,
              centre_colormap="auto",
              min_aspect=0.1,
@@ -302,26 +308,33 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """%s
         %s
         %s
+        %s
 
         """
-        super(Signal2D, self).plot(
+        super().plot(
+            navigator=navigator,
+            axes_manager=axes_manager,
+            plot_markers=plot_markers,
             colorbar=colorbar,
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
             axes_off=axes_off,
+            autoscale=autoscale,
             saturated_pixels=saturated_pixels,
+            norm=norm,
             vmin=vmin,
             vmax=vmax,
             gamma=gamma,
-            autoscale=autoscale,
+            linthresh=linthresh,
+            linscale=linscale,
             no_nans=no_nans,
             centre_colormap=centre_colormap,
             min_aspect=min_aspect,
             **kwargs
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
-                     PLOT2D_KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal

@@ -54,7 +54,8 @@ from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
-from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING)
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
 from hyperspy.misc.test_utils import ignore_warning
 
 
@@ -1497,13 +1498,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
              **kwargs):
         """%s
         %s
+        %s
         """
         super().plot(navigator=navigator,
                      axes_manager=axes_manager,
                      plot_markers=plot_markers,
                      autoscale=autoscale,
                      **kwargs)
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING)
 
 
 class LazySignal1D(LazySignal, Signal1D):

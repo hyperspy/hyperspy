@@ -166,7 +166,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
         rl = signal1d.Signal1DLine()
-        rl.autoscale = self.autoscale
+        rl.autoscale = self.signal_plot.autoscale
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')

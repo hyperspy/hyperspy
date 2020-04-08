@@ -227,7 +227,8 @@ class ImagePlot(BlittedFigure):
             no effect when passing the ``figsize`` keyword to manually set
             the figure size.
         **kwargs
-            All keyword arguments are passed to ``plt.figure``.
+            All keyword arguments are passed to
+            :py:func:`matplotlib.pyplot.figure`.
 
         """
         if "figsize" not in kwargs:
@@ -416,8 +417,8 @@ class ImagePlot(BlittedFigure):
                 norm = LogNorm(vmin=vmin, vmax=vmax)
             elif norm == 'symlog':
                 norm = SymLogNorm(linthresh=self.linthresh,
-                                linscale=self.linscale,
-                                vmin=vmin, vmax=vmax)
+                                  linscale=self.linscale,
+                                  vmin=vmin, vmax=vmax)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
             elif norm not in ['auto', 'linear']:

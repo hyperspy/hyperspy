@@ -839,6 +839,11 @@ class EDS_mixin:
              only_one=False,
              background_windows=None,
              integration_windows=None,
+             navigator="auto",
+             axes_manager=None,
+             plot_markers=True,
+             norm="auto",
+             autoscale='y',
              **kwargs):
         """Plot the EDS spectrum. The following markers can be added
 

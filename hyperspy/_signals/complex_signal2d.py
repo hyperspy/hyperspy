@@ -20,8 +20,8 @@
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy._signals.complex_signal import (ComplexSignal, LazyComplexSignal)
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, COMPLEX_DOCSTRING,
-    PLOT2D_KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
+    COMPLEX_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
 
 class Complex2Dmixin:
@@ -59,20 +59,30 @@ class Complex2Dmixin:
 
     def plot(self,
              power_spectrum=False,
-             norm="auto",
              fft_shift=False,
+             navigator="auto",
+             axes_manager=None,
+             plot_markers=True,
              colorbar=True,
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
+             axes_off=False,
+             autoscale=False,
              saturated_pixels=None,
+             norm="auto",
+             gamma=1.0,
+             linthresh=0.01,
+             linscale=0.1,
              vmin=None,
              vmax=None,
              no_nans=False,
              centre_colormap="auto",
+             min_aspect=0.1,
              **kwargs
              ):
         """%s
+        %s
         %s
         %s
         %s
@@ -80,20 +90,30 @@ class Complex2Dmixin:
         """
         super().plot(
             power_spectrum=power_spectrum,
-            norm=norm,
             fft_shift=fft_shift,
+            navigator=navigator,
+            axes_manager=axes_manager,
+            plot_markers=plot_markers,
             colorbar=colorbar,
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
+            axes_off=axes_off,
+            autoscale=autoscale,
             saturated_pixels=saturated_pixels,
+            norm=norm,
             vmin=vmin,
             vmax=vmax,
+            gamma=gamma,
+            linthresh=linthresh,
+            linscale=linscale,
             no_nans=no_nans,
             centre_colormap=centre_colormap,
+            min_aspect=min_aspect,
             **kwargs
         )
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
+                     BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
 
