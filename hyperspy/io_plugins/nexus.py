@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+#
 #
 #    - The characteristics of the IO plugin as the following python variables:
 #
@@ -30,6 +48,7 @@ import os
 import h5py 
 import sys
 import pprint
+from hyperspy.io_plugins.hspy import overwrite_dataset
 NX_ENCODING = sys.getfilesystemencoding()
 
 _logger = logging.getLogger(__name__)
@@ -45,30 +64,52 @@ default_extension = 0
 # Writing capabilities:
 writes = True
 
+def _byte_to_string(value):
+    """
+    
+    decode a byte string
 
-def _to_text(value):
-    """ To convert bytes to strings where needed """
+    """
+    try:
+        text = value.decode(NX_ENCODING)
+    except UnicodeDecodeError:
+        if NX_ENCODING == 'utf-8':
+            text = value.decode('latin-1')
+        else:
+            text = value.decode('utf-8')
+    return text.replace('\x00','').rstrip()
+
+def _parse_value(value):
+    """ 
+    
+    To convert bytes to strings and
+    to convert arrays of byte strings to lists of strings 
+    
+    """
     toreturn = value
     if isinstance(value, np.ndarray) and value.shape == (1,):
         toreturn = value[0]        
     if isinstance(value, bytes):
-        try:
-            text = value.decode(NX_ENCODING)
-        except UnicodeDecodeError:
-            if NX_ENCODING == 'utf-8':
-                text = value.decode('latin-1')
-            else:
-                text = value.decode('utf-8')
-        toreturn= text.replace('\x00','').rstrip()
-    if isinstance(value, (np.int,np.float,np.ndarray)):
+        toreturn= _byte_to_string(value)
+    if isinstance(value, (np.int,np.float)):
         toreturn= value
-        
+    if isinstance(value,(np.ndarray)):    
+        # test if its an array of byte strings
+        if isinstance(value[0],bytes):
+           toreturn=[]
+           for v in value:
+               toreturn.append(_byte_to_string(v))               
+        else:
+           toreturn = value
     return toreturn
 
 
 def _text_split(s, sep):
     """
+    
     Split a string based of list of seperators
+    
+    
     """
     stack = [s]
     for char in sep:
@@ -81,13 +122,23 @@ def _text_split(s, sep):
     return stack
 
 def _getlink(h5group,rootkey):
+    
     """Return the link target path and filename.
 
+    If a hdf group is a link to an external file or a soft link  
+    this method will return the target path within 
+    the external file, the external file name and if the external
+    file name is an absolute path or not
+    e.g. if /entry/data points to /raw_entry/tem/data in raw.nxs
+    returns /raw_entry/tem/data, raw.nxs, False 
+    
+    
     Returns
     -------
     str, str, bool
         Link path, filename, and boolean that is True if an absolute file
         path is given.
+    
     """
     _target, _filename, _abspath = None, None, False
     if rootkey != '/':
@@ -99,7 +150,7 @@ def _getlink(h5group,rootkey):
             elif isinstance(_link, h5py.SoftLink):
                 _target = _link.path
         if 'target' in h5group.attrs:
-            _target = _to_text(h5group.attrs['target'])
+            _target = _parse_value(h5group.attrs['target'])
             if not _target.startswith('/'):
                 _target = '/' + _target
             if _target == rootkey:
@@ -128,10 +179,12 @@ def _extract_hdf_dataset(tree,dataset,lazy=True):
 
     
 def _nexus_dataset_to_signal(tree,nexus_dataset,lazy=True):
+    """
+    """
     detector_index = 0
     dataentry = tree[nexus_dataset]
     if "signal" in dataentry.attrs.keys():
-        if RepresentsInt(dataentry.attrs["signal"]):
+        if _is_int(dataentry.attrs["signal"]):
             data_key  = "data"
         else:
             data_key  = dataentry.attrs["signal"]
@@ -149,7 +202,7 @@ def _nexus_dataset_to_signal(tree,nexus_dataset,lazy=True):
     axis_index_list=[]
     if "axes" in dataentry.attrs.keys():           
         axes_key  = dataentry.attrs["axes"]
-        axes_list = [_to_text(num) for num in axes_key]
+        axes_list = [_parse_value(num) for num in axes_key]
         named_axes=list(range(len(axes_list)))
         for i,ax in enumerate(axes_list):
             if ax != ".":
@@ -157,12 +210,12 @@ def _nexus_dataset_to_signal(tree,nexus_dataset,lazy=True):
                 ind_in_array = int(dataentry.attrs[index_name])
                 axis_index_list.append(ind_in_array)
                 if "units" in dataentry[ax].attrs:
-                    units= _to_text(dataentry[ax].attrs["units"])
+                    units= _parse_value(dataentry[ax].attrs["units"])
                 else:
                     units=""
                 named_axes.remove(ind_in_array)
-                if is_numeric_data(dataentry[ax]):
-                    if is_linear_axis(dataentry[ax]):
+                if _is_numeric_data(dataentry[ax]):
+                    if _is_linear_axis(dataentry[ax]):
                         nav_list.append({   
                             'size': data.shape[ind_in_array],
                             'index_in_array': ind_in_array,
@@ -222,8 +275,8 @@ def _nexus_dataset_to_signal(tree,nexus_dataset,lazy=True):
             nav_list[-2]["navigate"] = False
         if signal_type == "Signal1D":
             nav_list[-1]["navigate"] = False
-            
-        metadata = {'General': {'title': nexus_dataset},\
+        title = _text_split(nexus_dataset, '/')[-1]
+        metadata = {'General': {'title': title},\
                     "Signal": {'signal_type': signal_type}}
         if nav_list:      
             dictionary = {'data': data_lazy,
@@ -234,121 +287,42 @@ def _nexus_dataset_to_signal(tree,nexus_dataset,lazy=True):
                           'metadata': metadata}                    
     return dictionary
 
-def _map_datasets_to_signal(tree,dataset_map,lazy):
-    """
-    
-    dataset_map is a dictionary similar to an NXdata set
-    {
-    
-    "signal" : "/entry/result/data"
-    "axes" :  ["/entry/result/sample_x","/entry/result/sample_y","."]
-    "axes_indices" : [0,1,2]
-    "signal_type"  : "Signal1D"      
-    
-    """
-    
-    if "signal" not in dataset_map:
-        raise ValueError("signal key not found in dataset_map")
-        
-    dataentry = dataset_map["signal"] 
-    data = tree[dataentry]
-    detector_index = 0
-    nav_list = []
-    if "axes" in dataset_map.keys():           
-        axes_list  = tree[dataset_map["axes"]]
-        named_axes=list(range(len(axes_list)))
-        for i,ax in enumerate(axes_list):
-            if ax != ".":
-                axname = ax
-                ind_in_array = dataset_map["axes_indices"][i]
-                if "units" in tree[ax].attrs:
-                    units= dataentry[ax].attrs["units"]
-                else:
-                    units=""
-                named_axes.remove(ind_in_array)
-                if is_numeric_data(tree[ax]):
-                    if is_linear_axis(dataentry[ax]):
-                        nav_list.append({   
-                            'size': data.shape[ind_in_array],
-                            'index_in_array': ind_in_array,
-                            'name': axname,
-                            'scale': abs(tree[ax][1]-\
-                                         tree[ax][0]),
-                            'offset': min(tree[ax][0],\
-                                          tree[ax][-1] ),
-                            'units': units,
-                            'navigate': True,
-                            })
-                    else:
-                        nav_list.append({   
-                            'size': data.shape[ind_in_array],
-                            'index_in_array': ind_in_array,
-                            'name': axname,
-                            'scale': 1,
-                            'offset': 0,
-                            'navigate': True,
-                            })
-                         # when non-linear axes supported...
-#                        nav_list.append({   
-#                            'index_in_array': ind_in_array,
-#                            'name': axname,
-#                            'axis' : tree[ax],
-#                            'units': units,
-#                            'navigate': True,
-#                            })
-                    
-        for i,ax in enumerate(axes_list):
-            if ax == ".":
-                if(len(data.shape)==len(axes_list)):
-                    nav_list.append({   
-                            'size': data.shape[named_axes[detector_index]],
-                            'index_in_array': named_axes[detector_index],
-                            'name': "detector_%d"%detector_index,
-                            'scale': 1,
-                            'offset': 0.0,
-                            'units': '',
-                            'navigate': False,
-                           })
-                    detector_index=detector_index+1
-                            
-        if(lazy):
-            if "chunks" in data.attrs.keys():
-                 chunks = data.attrs["chunks"]
-            else:
-                chunks = guess_chunks(data)
-            data_lazy = da.from_array(data, chunks=chunks)
-        else:
-           data_lazy = data   
-        signal_type = dataset_map["signal_type"]
-            
-        metadata = {'General': {'title': dataset_map["signal"]},\
-                    "Signal": {'signal_type': signal_type}}
-        if nav_list:      
-            dictionary = {'data': data_lazy,
-                          'axes': nav_list,
-                          'metadata':metadata}
-        else:
-            dictionary = {'data': data_lazy,
-                          'metadata': metadata}                    
-    return dictionary
 
 def file_reader(filename,lazy=True, dset_search_keys=None,
                 meta_search_keys=None,
-                mapping_datasets_to_signal=None,
+                nxdata_only=True,
                 **kwds):
     
-    """
+    """Reads NXdata class or hdf datasets from a file and returns signal
     
-    Reads NXdata class or hdf datasets from a file and returns signal
-    Reads all data of size<2 as metadata
+    Note
+    ----
+    Loading all datasets can result in a large number of signals
+    Please review your datasets and use the dset_search_keys to target
+    the datasets of interest. 
 
-    This does not return or use NX Classes as the objective is conversion
-    into singals rather than interpretting Nexus Objects or
-    Nexus application definitions
+    Datasets are all arrays with size>2 (arrays, lists)
+    Metadata is all data with size < 2 (int, float, strings,lists)    
     
-    Follows Nexus documentation definition of a nxdata class
-    https://manual.nexusformat.org/classes/base_classes/NXdata.html#nxdata
-    
+    Parameters
+    ----------
+    myDict : dict or h5py.File object
+    dset_search_keys  : str list or None  
+        Only return items whose path contain the strings
+        .e.g search_list = ["instrument","Fe"] will return
+        data entries with instrument or Fe in their hdf path.
+    meta_search_keys: : str list or None
+        Only return items whose path contain the strings
+        .e.g search_list = ["instrument","Fe"] will return
+        all metadata entries with instrument or Fe in their hdf path.
+    nxdata_ony : bool  If true only NXdata will be converted into a signal
+                 if false NXdata and any hdf datasets not bound within the
+                 NXdata sets will be loaded. 
+
+    See also 
+    --------
+    get_datasets_from_file 
+                 
    
     """
     # search for NXdata sets...
@@ -379,20 +353,15 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
         dictionary["original_metadata"] = original_metadata
         dictionary["mapping"] = mapping
         signal_dict_list.append(dictionary)
-    if mapping_datasets_to_signal:
-        dictionary = _map_datasets_to_signal(fin,mapping_datasets_to_signal
-                                             ,lazy)
-        dictionary["original_metadata"] = original_metadata
-        dictionary["mapping"] = mapping
-        signal_dict_list.append(dictionary)
-    else:
+    if not nxdata_only:
         for data_path in hdf_data_paths:        
             data = _extract_hdf_dataset(fin,data_path,lazy)
-            if data:
+            if data is not None:
                 signal_type =  guess_signal_type(data)
+                title = _text_split(data_path, '/')[-1]
                 metadata = {'General': {'original_filename': \
                           os.path.split(filename)[1],\
-                'title': data_path},\
+                'title': title},\
                 "Signal": {'signal_type': signal_type}}
                 dictionary = {'data': data,
                               'metadata': metadata,
@@ -403,36 +372,44 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
         
     return signal_dict_list
         
-def is_linear_axis(data):
+def _is_linear_axis(data):
     
     """
-    Check if the axis is linear
     
+    Check if the data is linearly incrementing
     
     """
     steps = np.diff(data)
     est_steps = np.array([steps[0]]*len(steps))
     return np.allclose(est_steps,steps,rtol=1.0e-5)
 
-def is_number(a):
+def _is_number(a):
+    """
+    
+    Check if the value is a number
     # will be True also for 'NaN'
+    
+    """
     try:
         float(a)
         return True
     except ValueError:
         return False
 
-def is_numeric_data(data):
+def _is_numeric_data(data):
+    """
+ 
+    Check that data contains numeric data
     
-    for x in data:
-        if not is_number(x):
-            return False
-    return True
-
-        
+    """
+    try:
+        data.astype(float)
+        return True
+    except ValueError:
+        return False
+ 
     
-# The parameters
-def RepresentsInt(s):
+def _is_int(s):
     try: 
         int(s)
         return True
@@ -452,7 +429,7 @@ def _find_data(myDict,search_keys=None):
     are present rather than loading all the sets in the file as signals
     
     Parameters
-    ------------
+    ----------
     myDict : dict or h5py.File object
     search_keys  : str list or None  
         Only return items which contain the strings
@@ -502,7 +479,8 @@ def _find_data(myDict,search_keys=None):
 
             if isinstance(value,h5py.Group):
                 find_data_in_tree(value,rootkey)
-    # need to use custom recursive function as visititems does not visit links
+    # need to use custom recursive function as visititems in h5py
+    # does not visit links
     find_data_in_tree(myDict,rootname)
     clean_hdf_datasets=[]
     # remove duplicate keys
@@ -522,6 +500,7 @@ def _find_data(myDict,search_keys=None):
 
 def fix_exclusion_keys(key):
     """
+    
     Exclude hyperspy specific keys
     Signal and DictionaryBrowser look for specific keys
     - if they appear in a hdf file or nexus file they
@@ -537,10 +516,9 @@ def fix_exclusion_keys(key):
         return"fix_"+key
     else:
         return key
+
     
-def _find_hdf_metadata(fin,search_keys=[""],
-                      search_datasets=True,
-                      search_groups=True):
+def _find_hdf_metadata(fin,search_keys=None):
     
     """    
     Read the metadata from a nexus or hdf file       
@@ -557,6 +535,7 @@ def _find_hdf_metadata(fin,search_keys=[""],
         Only return items which contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
+        This excudes attrs
     search_datasets = True
     search 
     
@@ -566,7 +545,8 @@ def _find_hdf_metadata(fin,search_keys=[""],
     matching the search will be returned 
         
     """
-
+    if search_keys == None:
+        search_keys=[""]
     metadata_dict = {}
     rootname=""
     # recursive function
@@ -581,37 +561,34 @@ def _find_hdf_metadata(fin,search_keys=[""],
                 if value.size < 2:
                    if any(s in rootkey for s in search_keys):
                         data = value[...]
-                        output = _to_text(data.item())
-                        dkeys = _text_split(rootkey, (".","/") )
-                        #keys = _text_split(rootkey, ("/") )
-                        
+                        output = _parse_value(data.item())
+                        mod_keys = _text_split(rootkey, (".","/") )                        
                         # create the key, values in the dict
                         p = metadata_dict
-                        for dkey in dkeys:
-                            dkey=fix_exclusion_keys(dkey)
-                            p = p.setdefault(dkey,{})
+                        for d in mod_keys:
+                            d=fix_exclusion_keys(d)
+                            p = p.setdefault(d,{})
                         p["value"] = output
                         # skip signals - these are handled below.
                         if value.attrs.keys():
-                            #p = p.setdefault("attrs",{})
-                            for dkey,dvalue in value.attrs.items():
-                                dkey =fix_exclusion_keys(dkey)
-                                dvalue = _to_text(dvalue) 
-                                p[dkey] = dvalue
+                            p = p.setdefault("attrs",{})
+                            for d,v in value.attrs.items():
+                                d =fix_exclusion_keys(d)
+                                p[d] = _parse_value(v)
             elif isinstance(value,h5py.Group):
-                if any(s in rootkey for s in search_keys):
-                    dkeys = _text_split(rootkey, (".","/") )
+                if any(s in rootkey or s in value.attrs.keys()
+                    for s in search_keys):
+                    mod_keys = _text_split(rootkey, (".","/") )
                     # create the key, values in the dict
                     p = metadata_dict
-                    for dkey in dkeys:
-                        dkey=fix_exclusion_keys(dkey)
-                        p = p.setdefault(dkey,{})
+                    for d in mod_keys:
+                        d=fix_exclusion_keys(d)
+                        p = p.setdefault(d,{})
                     if value.attrs.keys():
-                        #p=p.setdefault("attrs",{})
-                        for dkey,dvalue in value.attrs.items():
-                            dkey=fix_exclusion_keys(dkey)
-                            dvalue = _to_text(dvalue)                        
-                            p[dkey] = dvalue                                      
+                        p=p.setdefault("attrs",{})
+                        for d,v in value.attrs.items():
+                            d=fix_exclusion_keys(d)
+                            p[d] = _parse_value(v)                                      
                 find_data_in_tree(value,rootkey)  
 
     find_data_in_tree(fin,rootname)
@@ -621,6 +598,62 @@ def guess_chunks(data):
     chunks= h5py._hl.filters.guess_chunk(data.shape, None, np.dtype(data.dtype).itemsize)
     return chunks
 
+
+def write_nexus_groups(dictionary, group, **kwds):
+    """
+    Recursively iterate through dictionary and 
+    create the groups and datasets
+    A hdf dataset can have a value and a list of attrs and this doesn't
+    quite fit with a python dict
+    A dict for a dataset can therefore has a "value" key and "attrs" key
+    if the "value" key is present the dataset is created set to this value 
+    and then attrs for the dataset are added later.
+
+    """
+    for key, value in dictionary.items():
+        if key == 'value' and not isinstance(value,dict):
+            continue
+        if key == 'attrs':
+            continue
+        if isinstance(value, dict):
+            if 'value' in value.keys() and not isinstance(value["value"],dict):
+                if isinstance(value["value"],(int,float,str,bytes)):
+                    group.create_dataset(key,data=value["value"])     
+                elif isinstance(value["value"],(np.ndarray, h5py.Dataset, da.Array)):
+                    group.require_dataset(key,data=value["value"],
+                                      shape=value["value"].shape,
+                                   dtype=value["value"].dtype)                
+            else:
+                write_nexus_groups(value, group.require_group(key),
+                          **kwds)
+        elif isinstance(value, (np.ndarray, h5py.Dataset, da.Array)):
+            overwrite_dataset(group, value, key, **kwds)        
+        elif isinstance(value, (int,float,str,bytes)):
+            if isinstance(group,h5py.Dataset):
+                group.attrs[key] = value
+            else:
+                group.require_dataset(key,data=value,shape=value.shape,
+                                   dtype=value.dtype)        
+
+
+
+def write_nexus_attr(dictionary, group, **kwds):
+    """
+    
+    Recursively iterate through dictionary and 
+    write "attrs" dictionaries to the nexus file
+    This step is called after the groups and datasets
+    have been created
+    
+    """
+    for key, value in dictionary.items():
+        if key == 'attrs':
+            for k, v in value.items():
+                group.attrs[k] = v        
+        else:
+            if isinstance(value, dict):
+                write_nexus_attr(dictionary[key], group[key],
+                          **kwds)
 
 def guess_signal_type(data):
     """
@@ -650,8 +683,7 @@ def guess_signal_type(data):
 
 
 def get_metadata_in_file(filename,search_keys=None,
-                        search_datasets=True,
-                        search_group_attributes=True):
+                        verbose=True):
     """
     
     Read the metadata from a nexus or hdf file       
@@ -663,18 +695,17 @@ def get_metadata_in_file(filename,search_keys=None,
     
     Parameters
     ------------
-    filename : str  -  name of the file to read
+    filename : str  path of the file to read
     search_list  : str list or None  
         Only return items which contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
-    search_datasets = True
-    search 
+    verbose: bool  Print the results to screen 
     
     Returns
     -------
     Metadata dictionary. When search_list is specified only items
-    matching the search will be returned 
+    matching the search keys will be returned 
         
     """
     if search_keys == None:
@@ -684,13 +715,12 @@ def get_metadata_in_file(filename,search_keys=None,
     # strip out the metadata (basically everything other than NXdata)
     metadata = _find_hdf_metadata(fin,search_keys=search_keys)
     fin.close()
-    pprint.pprint(metadata)
+    if verbose:
+        pprint.pprint(metadata)
     return metadata    
 
 
 def get_datasets_in_file(filename,search_keys=None,
-                          search_datasets=True,
-                          search_group_attributes=True,
                           verbose=True):
     """
     
@@ -704,12 +734,11 @@ def get_datasets_in_file(filename,search_keys=None,
     
     Parameters
     ------------
-    filename : str  -  name of the file to read
-    search_list  : str list or None  
+    filename : str   path of the file to read
+    search_keys  : str list or None  
         Only return items which contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
-    search_datasets = True
     verbose : boolean, default : True  - prints the datasets 
     
     Returns
@@ -763,13 +792,12 @@ def write_signal(signal, nxgroup, **kwds):
     else:
         smd.record_by = ""
 
-    nxdata = nxgroup.create_group(group_name)
+    nxdata = nxgroup.require_group(group_name)
     nxdata.attrs["NX_class"] = b"NXdata"    
     nxdata.attrs[u"signal"] = b"data"
     overwrite_dataset(nxdata, signal.data, u"data", chunks=None, **kwds)
-    #nxdata.create_dataset(u"data", data=signal.data)
     axis_names=[b"."]*len(signal.axes_manager.shape)
-    for i,axis in enumerate(signal.axes_manager.navigation_axes):
+    for i,axis in enumerate(signal.axes_manager._axes):
         try:
             axname  = axis.name + "_indices"
         except:
@@ -777,149 +805,43 @@ def write_signal(signal, nxgroup, **kwds):
         axindex = axis.index_in_array
         indices = axname+"_indices"
         nxdata.attrs[bytes(indices, 'utf-8')] = axindex
-        nxdata.create_dataset(axname,data=axis.axis)
+        nxdata.require_dataset(axname,data=axis.axis,shape=axis.axis.shape,
+                               dtype=axis.axis.dtype)
         axis_names[axis.index_in_array]=bytes(axname, 'utf-8')
     nxdata.attrs[u"axes"] = axis_names
     
 
-def overwrite_dataset(group, data, key, chunks=None, **kwds):
-    if chunks is None:
-        # Optimise the chunking to contain at least one signal per chunk
-        chunks = guess_chunks(data)
-
-    if data.dtype == np.dtype('O'):
-        # For saving ragged array
-        # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
-        group.require_dataset(key,
-                              chunks,
-                              dtype=h5py.special_dtype(vlen=data[0].dtype),
-                              **kwds)
-        group[key][:] = data[:]
-
-    maxshape = tuple(None for _ in data.shape)
-
-    got_data = False
-    while not got_data:
-        try:
-            these_kwds = kwds.copy()
-            these_kwds.update(dict(shape=data.shape,
-                                   dtype=data.dtype,
-                                   exact=True,
-                                   maxshape=maxshape,
-                                   chunks=chunks,
-                                   shuffle=True,))
-
-            # If chunks is True, the `chunks` attribute of `dset` below
-            # contains the chunk shape guessed by h5py
-            dset = group.require_dataset(key, **these_kwds)
-            got_data = True
-        except TypeError:
-            # if the shape or dtype/etc do not match,
-            # we delete the old one and create new in the next loop run
-            del group[key]
-    if dset == data:
-        # just a reference to already created thing
-        pass
-    else:
-        _logger.info("Chunks used for saving: %s" % str(dset.chunks))
-        if isinstance(data, da.Array):
-            da.store(data.rechunk(dset.chunks), dset)
-        elif data.flags.c_contiguous:
-            dset.write_direct(data)
-        else:
-            dset[:] = data
-
-
-def dict2hdfgroup(dictionary, group, **kwds):
-    from hyperspy.misc.utils import DictionaryTreeBrowser
-    from hyperspy.signal import BaseSignal
-
-    def parse_structure(key, group, value, _type, **kwds):
-        try:
-            tmp = np.array(value)
-        except ValueError:
-            tmp = np.array([[0]])
-        if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
-            dict2hdfgroup(dict(zip(
-                [str(i) for i in range(len(value))], value)),
-                group.create_group(_type + str(len(value)) + '_' + key),
-                **kwds)
-        elif tmp.dtype.type is np.unicode_:
-            if _type + key in group:
-                del group[_type + key]
-            group.create_dataset(_type + key,
-                                 tmp.shape,
-                                 dtype=h5py.special_dtype(vlen=str),
-                                 **kwds)
-            group[_type + key][:] = tmp[:]
-        else:
-            if _type + key in group:
-                del group[_type + key]
-            group.create_dataset(
-                _type + key,
-                data=tmp,
-                **kwds)
-
-    for key, value in dictionary.items():
-        if isinstance(value, dict):
-            dict2hdfgroup(value, group.create_group(key),
-                          **kwds)
-        elif isinstance(value, DictionaryTreeBrowser):
-            dict2hdfgroup(value.as_dictionary(),
-                          group.create_group(key),
-                          **kwds)
-        elif isinstance(value, BaseSignal):
-            kn = key if key.startswith('_sig_') else '_sig_' + key
-            write_signal(value, group.require_group(kn))
-        elif isinstance(value, (np.ndarray, h5py.Dataset, da.Array)):
-            overwrite_dataset(group, value, key, **kwds)
-        elif value is None:
-            group.attrs[key] = '_None_'
-        elif isinstance(value, bytes):
-            try:
-                # binary string if has any null characters (otherwise not
-                # supported by hdf5)
-                value.index(b'\x00')
-                group.attrs['_bs_' + key] = np.void(value)
-            except ValueError:
-                group.attrs[key] = value.decode()
-        elif isinstance(value, str):
-            group.attrs[key] = value
-        elif isinstance(value, list):
-            if len(value):
-                parse_structure(key, group, value, '_list_', **kwds)
-            else:
-                group.attrs['_list_empty_' + key] = '_None_'
-        elif isinstance(value, tuple):
-            if len(value):
-                parse_structure(key, group, value, '_tuple_', **kwds)
-            else:
-                group.attrs['_tuple_empty_' + key] = '_None_'
-        else:
-            try:
-                group.attrs[key] = value
-            except BaseException:
-                _logger.exception(
-                    "The hdf5 writer could not write the following "
-                    "information in the file: %s : %s", key, value)
-
 def file_writer(filename,
                 signal,
                 *args, **kwds):
-          
+    """
+    
+    Write the signal to a nexus file
+    This currently writes the
+    signal.original_metadata structure, preserving the structure
+    and the signal data and axes as an NXdata set in "/entry/data"
+    
+    """
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "Nexus"
         nxentry = f.create_group('entry')
         nxentry.attrs[u"NX_class"] = u"NXentry"
-        #try:
-        #    if signal.metadata:
-        #        dict2hdfgroup(signal.metadata.as_dictionary(),nxentry) 
-        #except BaseException:
-        #    raise
-        if signal.metadata:
-            if not "hyperspy_metadata" in signal.original_metadata:
-                signal.original_metadata["hyperspy_metadata"]={}
-            signal.original_metadata.hyperspy_metadata.add_dictionary(signal.metadata.as_dictionary())
+
+        # 
+        # if want to store hyperspy metadata 
+        # basically move any hyperspy metadata into the original_metadata
+        # dict
+        #if signal.metadata:
+        #    if not "hyperspy_metadata" in signal.original_metadata:
+        #        signal.original_metadata["hyperspy_metadata"]={}
+        #    signal.original_metadata.hyperspy_metadata.add_dictionary(signal.metadata.as_dictionary())
+        # now remove the hyperspy metadata... 
+        #del signal.original_metadata.hyperspy_metadata
+        
+        try:
+            write_signal(signal, nxentry, **kwds)
+        except BaseException:
+            raise
         try:
             if signal.original_metadata:
                 for key in signal.original_metadata.keys():
@@ -927,12 +849,12 @@ def file_writer(filename,
                         entry = f.create_group(key)
                     else:
                         entry = nxentry
-                    dict2hdfgroup(signal.original_metadata[key].as_dictionary(),entry)
-        except BaseException:
-            raise
+                    # write the groups and structure
+                    write_nexus_groups(signal.original_metadata[key].as_dictionary(),entry)
+                    write_nexus_attr(signal.original_metadata[key].as_dictionary(),entry)
 
-        try:
-            write_signal(signal, nxentry, **kwds)
+                    # add the attributes
+                    
         except BaseException:
             raise
         finally:

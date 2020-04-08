@@ -214,6 +214,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | h5USID .h5         |    Yes |   Yes  |   Yes  |
     +--------------------+--------+--------+--------+
+    | Nexus              |    Yes |   Yes  |   Yes  |
+    +--------------------+--------+--------+--------+
 
 .. _hspy-format:
 
@@ -1029,6 +1031,162 @@ HDF5 file. All other keyword arguments will be passed to
 
 Note that the model and other secondary data artifacts linked to the signal are not
 written to the file but these can be implemented at a later stage.
+
+Nexus and general HDF
+---------------------
+
+Background
+^^^^^^^^^^
+'NeXus <https://www.nexusformat.org>'_ is a common data format orginally 
+developed by the neutron, x-ray communities. It is still being developed as 
+an international standard by scientists and programmers representing major 
+scientific facilities in order to facilitate greater cooperation in the analysis
+and visualization of data.
+Nexus uses a variety of classes to record data, values, 
+units and other experimental metadata associated with an experiment. 
+For specific types of experiments an Application Definition may exist which
+defines an agreed common layout that facilities can adhere to.
+ 
+Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
+a .nxs extension although standards HDF5 extensions are sometimes used.
+
+Files must use the ``.nxs``,``.hdf``,``.hdf5``,``.h5`` file extension 
+in order to use this io plugin.
+Using the ``.nxs`` extension will default to the Nexus loader 
+Using any other extension with Nexus reader will require the 
+format is specfied as Nexus in the loader 
+
+As the Nexus format uses HDF5 and needs to read data and metadata structured
+in different ways the loader is written to quite flexible and can also be used 
+to load any hdf5 based file.  
+
+Inspecting
+^^^^^^^^^^
+Looking in a Nexus file for specific metadatda or to see what data
+is stored in the file is often useful - .e.g to find
+what position a specific stage was at: 
+
+    >>> from hyperspy.io_plugins.nexus import get_metadata_in_file
+    >>> results=get_metadata_in_file("sample.hdf5",search_keys=["stage1_z"])
+    {'entry': {'instrument': {'scannables': {'stage1': {'stage1_z': {'value': -9.871700000000002,
+    'attrs': {'gda_field_name': 'stage1_z',
+    'local_name': 'stage1.stage1_z',
+    'target': '/entry/instrument/scannables/stage1/stage1_z',
+    'units': 'mm'}}}}}}} 
+    
+    >>> from hyperspy.io_plugins.nexus import get_data_in_file
+    >>> results=get_metadata_in_file("sample.hdf5",search_keys=["stage1_z"])
+    NXdata found
+    /entry/xsp3_addetector
+    /entry/xsp3_addetector_total
+    HDF datasets found
+    /entry/solstice_scan/keys/uniqueKeys
+    /entry/solstice_scan/scan_shape
+    Out[3]:
+    (['/entry/xsp3_addetector', '/entry/xsp3_addetector_total'],
+     ['/entry/solstice_scan/keys/uniqueKeys', '/entry/solstice_scan/scan_shape'])    
+    
+
+Reading
+^^^^^^^
+Nexus files can contain multiple datasets within the same file.
+HyperSpy supports reading in one or more datasets however Nexus
+can contain a vary large number of datasets.
+
+Extra loading arguments
++++++++++++++++++++++++
+- ``dset_search_keys`` : ``str`` or ``list`` 
+Absolute path(s) or substring(s) to use to find
+one or more datasets. (default is ``None`` all Nexus Datasets will be read)
+- ``meta_search_keys`` : ``str`` or ``list`` of strings 
+Absolute path(s) or substring(s) to use to find
+one or more datasets. (default is ``None`` all Nexus Metadata will be read)
+ 
+Reading the sole Nexus dataset within a Nexus file:
+
+.. code-block:: python
+
+    >>> hs.load("sample.nxs")
+
+If multiple datasets are present within the Nexus file and you try the same 
+command again **all** available NXdata datasets will be loaded.
+To load NXdata and hdf datasets as well
+
+.. code-block:: python
+
+    >>> hs.load("sample.nxs",nxdata_only=False)
+
+.. note::
+
+    Given that HDF5 files can accommodate very large datasets, setting 
+    ``lazy=True`` is strongly recommended if the contents of the HDF5 file 
+    are not known apriori. This prevents issues with regard to loading datasets
+    far larger than memory.
+
+    Also note that setting ``lazy=True`` leaves the file handle to the 
+    HDF5 file open.
+    If it is important that the files be closed after reading,
+    set ``lazy=False``.
+
+.. code-block:: python
+
+    >>> hs.load("sample.h5")
+    [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
+    <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
+
+We can load a specific datasets using the ``dset_search_path`` keyword argument. 
+Setting it to the absolute path of the desired dataset will cause 
+the single dataset to be loaded.
+Setting it to a substring or list of substring, datasets who's paths contain 
+one of the substrings will be loaded.
+
+
+.. code-block:: python
+
+    >>> # Loading a specific dataset
+    >>> hs.load("sample.h5", dset_search_path='/entry/experiment/EDS/data')
+
+We can also choose to load only specific items from the metadata using
+ ``dset_path`` keyword argument. This can be a list of 
+absolute paths of the desired dataset or substrings to find in the metadata
+path.
+
+.. code-block:: python
+
+    >>> # Loading a specific dataset
+    >>> hs.load("sample.h5", dset_search_path='EDS')
+
+Nexus files also support parameters or dimensions that have been varied 
+non-linearly.
+Since HyperSpy Signals expect linear variation of parameters / axes, such 
+non-linear information would be lost in the axes manager and replaced with
+indices
+
+
+Writing
+^^^^^^^
+Signals can be written to new Nexus files using the standard ``.save()`` 
+function.
+When Hyperspy creates a signal it creates and holds Hyperspy metadata 
+and original_metadata seperately.
+When we load a Nexus file the Nexus metadata is stored in 
+original_metadata. Conversely when we save to Nexus only the 
+original_metadata is currently stored to the Nexus file along with 
+the signal data and axes. 
+
+.. code-block:: python
+
+    >>> sig.save("output.nxs")
+
+If you wish to save using the ``.hdf5``.``.h5`` or ``.hdf`` extensions
+you must specify the format as Nexus
+
+.. code-block:: python
+
+    >>> sig.save("output.h5",preferred_format="Nexus")
+
+Note that the model and other secondary data artifacts linked to the signal 
+are not written to the file but these can be implemented at a later stage.
 
 
 Reading data generated by HyperSpy using other software packages
