@@ -48,8 +48,9 @@ class TestExample1_12():
     def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
-            "hdf5_files","example1_v1.2.hdf5"),preferred_format="Nexus")
-
+            "hdf5_files","example1_v1.2.hdf5"),preferred_format="Nexus",
+             nxdata_only=False)
+   
     def test_filename(self):
         assert (
             self.s.original_metadata.Experiments.NIO_EELS_OK_SHELL.\
@@ -67,7 +68,8 @@ class TestExample1_10():
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.0.hdf5"),preferred_format="Nexus")
+            "example1_v1.0.hdf5"),preferred_format="Nexus",
+            nxdata_only=False)
 
 
 class TestExample1_11():
@@ -76,7 +78,7 @@ class TestExample1_11():
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.1.hdf5"),preferred_format="Nexus")
+            "example1_v1.1.hdf5"),preferred_format="Nexus",nxdata_only=False)
 
 
 @pytest.fixture()
@@ -153,7 +155,7 @@ def test_preffered_format_rgba16():
     s = load(os.path.join(
         my_path,
         "hdf5_files",
-        "test_rgba16.hdf5"),preferred_format="Nexus")
+        "test_rgba16.hdf5"),preferred_format="Nexus",nxdata_only=False)
     data = np.load(os.path.join(
         my_path,
         "npy_files",
