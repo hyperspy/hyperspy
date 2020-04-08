@@ -20,7 +20,8 @@
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy._signals.complex_signal import (ComplexSignal, LazyComplexSignal)
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, COMPLEX_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING)
 
 
 class Complex2Dmixin:
@@ -93,7 +94,7 @@ class Complex2Dmixin:
             **kwargs
         )
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
-                     PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+                     PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
 
 class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):

@@ -54,6 +54,7 @@ from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING)
 from hyperspy.misc.test_utils import ignore_warning
 
 
@@ -836,7 +837,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         It displays a window where the new calibration can be set by:
 
         * setting the values of offset, units and scale directly
-        * or selecting a range by dragging the mouse on the spectrum figure 
+        * or selecting a range by dragging the mouse on the spectrum figure
           and setting the new values for the given range limits
 
         Parameters
@@ -940,7 +941,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Notes
         -----
-        This method uses the lowess algorithm from the `statsmodels` library, 
+        This method uses the lowess algorithm from the `statsmodels` library,
         which needs to be installed to use this method.
         """
         if not statsmodels_installed:
@@ -1311,8 +1312,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
                             subchannel=True, medfilt_radius=5, maxpeakn=30000,
                             peakgroup=10, parallel=None):
-        """Find positive peaks along a 1D Signal. It detects peaks by looking 
-        for downward zero-crossings in the first derivative that exceed 
+        """Find positive peaks along a 1D Signal. It detects peaks by looking
+        for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
@@ -1353,7 +1354,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        structured array of shape (npeaks) containing fields: 'position', 
+        structured array of shape (npeaks) containing fields: 'position',
         'width', and 'height' for each peak.
 
 
@@ -1413,7 +1414,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        width or [width, left, right], depending on the value of 
+        width or [width, left, right], depending on the value of
         `return_interval`.
         """
 
@@ -1487,6 +1488,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return width
 
     estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
+    def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
+             **kwargs):
+        """%s
+        %s
+        """
+        super().plot(navigator=navigator, axes_manager=axes_manager,
+                     plot_markers=plot_markers, **kwargs)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING)
 
 
 class LazySignal1D(LazySignal, Signal1D):

@@ -18,7 +18,7 @@
 
 from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.docstrings.plot import PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+from hyperspy.docstrings.plot import PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING
 from hyperspy.defaults_parser import preferences
 
 
@@ -93,4 +93,4 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     self._on_navigator_plot_closing, [])
                 imf.events.closed.connect(self.close_navigator_plot, [])
 
-    plot_signal.__doc__ %= (PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+    plot_signal.__doc__ %= (PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)

@@ -25,7 +25,8 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 from hyperspy.misc.utils import parse_quantity
 
@@ -234,7 +235,7 @@ class ComplexSignal_mixin:
                              'fft_shift': fft_shift,
                              'same_axes': same_axes}
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING,
-                     KWARGS_DOCSTRING)
+                     PLOT2D_KWARGS_DOCSTRING)
 
 
 class ComplexSignal(ComplexSignal_mixin, BaseSignal):

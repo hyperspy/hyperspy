@@ -55,7 +55,7 @@ from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
-                                      KWARGS_DOCSTRING)
+                                      PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -306,7 +306,7 @@ class MVATools(object):
         vector_scale : integer or None
             Scales the quiver plot arrows. The vector is defined as one data
             unit along the X axis. If shifts are small, set vector_scale so
-            that when they are multiplied by vector_scale, they are on the 
+            that when they are multiplied by vector_scale, they are on the
             scale of the image plot. If None, uses matplotlib's autoscaling.
 
         Returns
@@ -1263,7 +1263,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
-            
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1372,7 +1372,7 @@ class MVATools(object):
 
     def get_decomposition_loadings(self):
         """Return the decomposition loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1390,7 +1390,7 @@ class MVATools(object):
 
     def get_decomposition_factors(self):
         """Return the decomposition factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1408,7 +1408,7 @@ class MVATools(object):
 
     def get_bss_loadings(self):
         """Return the blind source separation loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1427,7 +1427,7 @@ class MVATools(object):
 
     def get_bss_factors(self):
         """Return the blind source separation factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -2161,7 +2161,8 @@ class BaseSignal(FancySlicing,
             if self.metadata.has_item('Markers'):
                 self._plot_permanent_markers()
 
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
+                     PLOT2D_KWARGS_DOCSTRING)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):

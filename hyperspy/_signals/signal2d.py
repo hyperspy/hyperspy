@@ -31,7 +31,7 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
 
@@ -320,7 +320,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             min_aspect=min_aspect,
             **kwargs
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
+                     PLOT2D_KWARGS_DOCSTRING)
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal

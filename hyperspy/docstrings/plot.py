@@ -150,8 +150,7 @@ COMPLEX_DOCSTRING = \
         """
 
 
-KWARGS_DOCSTRING = \
+PLOT2D_KWARGS_DOCSTRING = \
     """**kwargs
-            Only for :py:class:`~hyperspy._signals.signal2d.Signal2D`:
-            additional (optional) keyword arguments for
-            :py:func:`matplotlib.pyplot.imshow`."""
+            Only when plotting an image: additional (optional) keyword
+            arguments for :py:func:`matplotlib.pyplot.imshow`."""
