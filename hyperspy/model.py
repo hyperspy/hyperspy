@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -122,19 +122,22 @@ class BaseModel(list):
     """Model and data fitting tools applicable to signals of both one and two
     dimensions.
 
-    Models of one-dimensional signals should use the :class:`Model1D` and
-    models of two-dimensional signals should use the :class:`Model2D`.
+    Models of one-dimensional signals should use the
+    :py:class:`~hyperspy.models.model1d` and models of two-dimensional signals
+    should use the :class:`~hyperspy.models.model2d`.
 
-    A model is constructed as a linear combination of :mod:`components` that
-    are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predefined components available in the in the :mod:`components`
+    A model is constructed as a linear combination of
+    :py:mod:`~hyperspy._components` that are added to the model using the
+    :py:meth:`~hyperspy.model.BaseModel.append` or
+    :py:meth:`~hyperspy.model.BaseModel.extend`. There are many predefined
+    components available in the in the :py:mod:`~hyperspy._components`
     module. If needed, new components can be created easily using the code of
     existing components as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
-    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
-    the maximum number of iterations the new value of the component parameters
-    are stored in the components.
+    :py:meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    the convergence criteria or the maximum number of iterations the new value
+    of the component parameters are stored in the components.
 
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
@@ -212,8 +215,8 @@ class BaseModel(list):
     See also
     --------
 
-    Model1D
-    Model2D
+    :py:class:`~hyperspy.models.model1d.Model1D`
+    :py:class:`~hyperspy.models.model2d.Model2D`
 
     """
 
@@ -273,15 +276,17 @@ class BaseModel(list):
 
         Parameters
         ----------
-        dic : dictionary
-            _whitelist : dictionary
-                a dictionary with keys used as references of save attributes,
-                for more information, see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            components : dictionary (optional)
-                Dictionary, with information about components of the model (see
-                the documentation of component.as_dictionary() method)
-            * any field from _whitelist.keys() *
+        dic : dict
+            A dictionary containing at least the following fields:
+
+            * _whitelist: a dictionary with keys used as references of save
+              attributes, for more information, see
+              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+            * components: a dictionary, with information about components of
+              the model (see 
+              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              documentation for more details)
+            * any field from _whitelist.keys()
         """
 
         if 'components' in dic:
@@ -1646,7 +1651,6 @@ class BaseModel(list):
         component_list : list of hyperspy components, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
-
         only_current : bool, default False
             If True, will only change the parameter value at the current
             position in the model.
@@ -1700,7 +1704,7 @@ class BaseModel(list):
               component
             * _whitelist: a dictionary with keys used as references for saved
               attributes, for more information, see 
-              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
         Examples

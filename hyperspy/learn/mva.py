@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -36,6 +36,7 @@ import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.rpca import rpca_godec, orpca
+from hyperspy.learn.ornmf import ornmf
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
@@ -109,6 +110,7 @@ class MVA():
                       polyfit=None,
                       reproject=None,
                       return_info=False,
+                      print_info=True,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -116,20 +118,22 @@ class MVA():
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool
-            If True, scale the SI to normalize Poissonian noise
+        normalize_poissonian_noise : bool, default False
+            If True, scale the signal to normalize Poissonian noise using
+            the algorithm described in [1]_.
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA'
+            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA' |
+            'ORNMF'
         output_dimension : None or int
-            number of components to keep/calculate
+            Number of components to keep/calculate
         centre : None | 'variables' | 'trials'
-            If None no centring is applied. If 'variable' the centring will be
-            performed in the variable axis. If 'trials', the centring will be
-            performed in the 'trials' axis. It only has effect when using the
-            svd or fast_svd algorithms
-        auto_transpose : bool
+            If None (default), no centering is applied.
+            If 'variable', the centring will be performed in the variable axis.
+            If 'trials', the centring will be performed in the 'trials' axis.
+            It only has effect when using the svd or fast_svd algorithms
+        auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only has effect when using the svd of fast_svd algorithms.
+            Only used by the 'svd' and 'fast_svd' algorithms.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion.
@@ -142,20 +146,27 @@ class MVA():
             If function, it will apply it to the dataset to obtain the
             var_array. Alternatively, it can a an array with the coefficients
             of a polynomial.
+        polyfit : None | ???
+            TODO: currently undocumented
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
-            stored. If True (the default is False) return any extra
-            information if available
+            stored. If True, return any extra information if available.
+            In the case of sklearn.decomposition objects, this includes the
+            sklearn Estimator object.
+        print_info : bool, default True
+            If True, print information about the decomposition being performed.
+            In the case of sklearn.decomposition objects, this includes the
+            values of all arguments of the chosen sklearn algorithm.
 
         Returns
         -------
         (X, E) : (numpy array, numpy array)
-            If 'algorithm' == 'RPCA_GoDec' or 'ORPCA' and 'return_info' is True,
-            returns the low-rank (X) and sparse (E) matrices from robust PCA.
+            If 'algorithm' == 'RPCA_GoDec', 'ORPCA', 'ORNMF' and 'return_info' is True,
+            returns the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
 
         See also
         --------
@@ -164,13 +175,26 @@ class MVA():
         :py:meth:`~.signal.MVATools.plot_decomposition_results`,
         :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
 
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
         to_return = None
+        to_print = [
+            "Decomposition info:",
+            "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
+            "  algorithm={}".format(algorithm),
+            "  output_dimension={}".format(output_dimension),
+            "  centre={}".format(centre),
+        ]
+
         # Check if it is the wrong data type
-        if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
+        if self.data.dtype.char not in ['e', 'f', 'd', 'g', 'F', 'D', 'G']:  # If not float
             raise TypeError(
                 'To perform a decomposition the data must be of the float '
-                'type, but the current type is \'{}\'. '
+                'or complex type, but the current type is \'{}\'. '
                 'To fix this issue, you can change the type using the '
                 'change_dtype method (e.g. s.change_dtype(\'float64\')) '
                 'and then repeat the decomposition.\n'
@@ -195,10 +219,10 @@ class MVA():
             if output_dimension is None:
                 raise ValueError("With the MLPCA algorithm the "
                                  "output_dimension must be specified")
-        if algorithm == 'RPCA_GoDec' or algorithm == 'ORPCA':
+        if algorithm in ['RPCA_GoDec', 'ORPCA', 'ORNMF']:
             if output_dimension is None:
-                raise ValueError("With the robust PCA algorithms ('RPCA_GoDec' "
-                                 "and 'ORPCA'), the output_dimension "
+                raise ValueError("With the robust PCA/NMF algorithms ('RPCA_GoDec', "
+                                 "'ORPCA' and 'ORNMF'), the output_dimension "
                                  "must be specified")
 
         # Apply pre-treatments
@@ -214,11 +238,19 @@ class MVA():
             # Normalize the poissonian noise
             # TODO this function can change the masks and this can cause
             # problems when reprojecting
-            if normalize_poissonian_noise is True:
+            if normalize_poissonian_noise:
+                if centre is not None:
+                    raise ValueError(
+                        ("normalize_poissonian_noise=True is only compatible "
+                         "with centre=None, not centre={}.").format(centre)
+                    )
+
                 self.normalize_poissonian_noise(
                     navigation_mask=navigation_mask,
                     signal_mask=signal_mask,)
+
             _logger.info('Performing decomposition analysis')
+
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the
             # case.
@@ -272,6 +304,8 @@ class MVA():
                 explained_variance = sk.explained_variance_
                 mean = sk.mean_
                 centre = 'trials'
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -284,6 +318,8 @@ class MVA():
                 loadings = sk.fit_transform((
                     dc[:, signal_mask][navigation_mask, :]))
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -296,6 +332,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -308,6 +346,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+
+                to_print.extend(["scikit-learn estimator:", sk])
                 if return_info:
                     to_return = sk
 
@@ -351,6 +391,7 @@ class MVA():
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
                 explained_variance = S ** 2 / len(factors)
+
             elif algorithm == 'RPCA_GoDec':
                 _logger.info("Performing Robust PCA with GoDec")
 
@@ -378,6 +419,25 @@ class MVA():
 
                 if return_info:
                     to_return = (X, E)
+
+            elif algorithm == 'ORNMF':
+                _logger.info("Performing Online Robust NMF")
+
+                if return_info:
+                    X, E, W, H = ornmf(
+                        dc[:, signal_mask][navigation_mask, :],
+                        rank=output_dimension, store_r=True, **kwargs)
+                else:
+                    W, H = ornmf(
+                        dc[:, signal_mask][navigation_mask, :],
+                        rank=output_dimension,  **kwargs)
+
+                loadings = W
+                factors = H
+
+                if return_info:
+                    to_return = (X, E)
+
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
@@ -476,6 +536,9 @@ class MVA():
             self.learning_results.__dict__.update(target.__dict__)
             # undo any pre-treatments
             self.undo_treatments()
+
+        if print_info:
+            print("\n".join([str(pr) for pr in to_print]))
 
         return to_return
 
@@ -1241,17 +1304,21 @@ class MVA():
     def normalize_poissonian_noise(self, navigation_mask=None,
                                    signal_mask=None):
         """
-        Scales the SI following Surf. Interface Anal. 2004; 36: 203–212
-        to "normalize" the poissonian data for decomposition analysis
+        Scales the signal using the algorithm in Surf. Interface Anal. 2004; 36: 203–212
+        to "normalize" the Poissonian data for subsequent decomposition analysis.
 
         Parameters
         ----------
-        navigation_mask : boolen numpy array
-        signal_mask  : boolen numpy array
+        navigation_mask : boolean numpy array
+        signal_mask  : boolean numpy array
+
+        References
+        ----------
+        .. [1] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
+               multivariate analysis of ToF-SIMS spectrum images",
+               Surf. Interface Anal 36(3) (2004): 203-212.
         """
-        _logger.info(
-            "Scaling the data to normalize the (presumably)"
-            " Poissonian noise")
+        _logger.info("Scaling the data to normalize Poissonian noise")
         with self.unfolded():
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the
