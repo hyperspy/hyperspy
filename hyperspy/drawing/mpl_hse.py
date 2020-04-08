@@ -73,7 +73,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self, **kwargs):
+    def plot_signal(self, autoscale='y', **kwargs):
         super().plot_signal()
         if self.signal_plot is not None:
             self.signal_plot.plot(**kwargs)
@@ -82,6 +82,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
+        sf.autoscale = autoscale
         sf.axis = self.axis
         if sf.ax is None:
             sf.create_axis()
@@ -99,7 +100,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # Create a line to the left axis with the default indices
         sl = signal1d.Signal1DLine()
         is_complex = np.iscomplexobj(self.signal_data_function())
-        sl.autoscale = True if not is_complex else False
+        sl.autoscale = autoscale if not is_complex else False
         sl.data_function = self.signal_data_function
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
@@ -114,7 +115,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # default coordinates
         if is_complex:
             sl = signal1d.Signal1DLine()
-            sl.autoscale = True
+            sl.autoscale = autoscale
             sl.data_function = self.signal_data_function
             sl.plot_coordinates = True
             sl._plot_imag = True
@@ -165,7 +166,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
         rl = signal1d.Signal1DLine()
-        rl.autoscale = True
+        rl.autoscale = self.autoscale
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')

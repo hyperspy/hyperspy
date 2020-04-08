@@ -1489,13 +1489,20 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 
-    def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
+    def plot(self,
+             navigator="auto",
+             axes_manager=None,
+             plot_markers=True,
+             autoscale='y',
              **kwargs):
         """%s
         %s
         """
-        super().plot(navigator=navigator, axes_manager=axes_manager,
-                     plot_markers=plot_markers, **kwargs)
+        super().plot(navigator=navigator,
+                     axes_manager=axes_manager,
+                     plot_markers=plot_markers,
+                     autoscale=autoscale,
+                     **kwargs)
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING)
 
 

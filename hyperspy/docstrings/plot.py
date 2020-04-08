@@ -91,12 +91,17 @@ BASE_PLOT_DOCSTRING = \
         %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
 
 PLOT1D_DOCSTRING = \
-"""norm : str, optional
+    """norm : str, optional
             The function used to normalize the data prior to plotting.
             Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
             (default value is ``'auto'``).
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
+        autoscale : {bool, 'x', 'y'}
+            If True, the 'x' and 'y' limits are reset to their maxima when the
+            the navigation indices or data are changed. If 'x' or 'y', only the
+            limit of the 'x' and 'y' (intensity) axes are reset, respectively.
+            If False, the limit of the axes are not reset automotically.
         """
 
 PLOT2D_DOCSTRING = \
@@ -130,7 +135,8 @@ PLOT2D_DOCSTRING = \
         min_aspect : float
             Set the minimum aspect ratio of the image and the figure. To
             keep the image in the aspect limit the pixels are made
-            rectangular."""
+            rectangular.
+        """
 
 
 COMPLEX_DOCSTRING = \

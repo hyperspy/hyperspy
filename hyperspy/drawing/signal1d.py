@@ -210,7 +210,7 @@ class Signal1DLine(object):
 
         # Properties
         self.line = None
-        self.autoscale = False
+        self.autoscale = 'y'
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
@@ -374,12 +374,13 @@ class Signal1DLine(object):
         old_xaxis = self.line.get_xdata()
         if len(old_xaxis) != self.axis.size or \
                 np.any(np.not_equal(old_xaxis, self.axis.axis)):
-            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
             self.line.set_data(self.axis.axis, ydata)
         else:
             self.line.set_ydata(ydata)
+        if self.autoscale == 'x' or self.autoscale is True:
+            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
 
-        if self.autoscale is True:
+        if self.autoscale == 'y' or self.autoscale is True:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())
