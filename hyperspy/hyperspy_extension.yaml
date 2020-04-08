@@ -147,6 +147,9 @@ components1D:
   Bleasdale:
     module: hyperspy._components.bleasdale
     class: Bleasdale
+  Doniach:
+    module: hyperspy._components.doniach
+    class: Doniach
   DoublePowerLaw:
     module: hyperspy._components.eels_double_power_law
     class: DoublePowerLaw
@@ -207,6 +210,9 @@ components1D:
   SkewNormal:
     module: hyperspy._components.skew_normal
     class: SkewNormal
+  SplitVoigt:
+    module: hyperspy._components.split_pvoigt
+    class: SplitVoigt
   Vignetting:
     module: hyperspy._components.eels_vignetting
     class: Vignetting
