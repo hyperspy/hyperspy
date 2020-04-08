@@ -65,7 +65,9 @@ class Exponential(Expression):
 
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the parameters using the endpoints of the signal window
+        """Estimate the parameters for the exponential component using the
+        geometric mean of up to 20 points around the endpoints of the signal
+        window 
 
         Parameters
         ----------
@@ -88,41 +90,66 @@ class Exponential(Expression):
         super(Exponential, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
-        x1, x2 = axis.index2value(i1), axis.index2value(i2)
+        if i1 + 1 == i2:
+            if i2 < axis.high_index:
+                i2 += 1
+            elif i1 > axis.low_index:
+                i1 -= 1
+        i_mid = (i1 + i2) // 2
+        x_start = axis.index2value(i1)
+        x_mid = axis.index2value(i_mid)
+        x_end = axis.index2value(i2)
 
         if only_current is True:
             s = signal.get_current_signal()
-            y1, y2 = s.isig[i1].data[0], s.isig[i2].data[0]
-            with np.errstate(divide='raise'):
-                try:
-                    A = np.exp((np.log(y1)-x1/x2*np.log(y2))/(1-x1/x2))
-                    t = -x2/(np.log(y2)-np.log(A))
-                except:
-                    _logger.warning('Exponential paramaters estimation failed '
-                                'because of a "divide by zero" error.')
-                    return False
+        else:
+            s = signal
+
+        if s._lazy:
+            import dask.array as da
+            exp = da.exp
+            log = da.log
+        else:
+            exp = np.exp
+            log = np.log
+        
+        with np.errstate(divide='raise'):
+            try:
+                a1 = s.isig[i1:i_mid].data
+                b1 = log(a1)
+                a2 = s.isig[i_mid:i2].data
+                b2 = log(a2)
+                geo_mean1 = exp(b1.sum(axis=-1)/b1.shape[-1])
+                geo_mean2 = exp(b2.sum(axis=-1)/b2.shape[-1])
+                x1 = (x_start + x_mid) / 2
+                x2 = (x_mid + x_end) / 2
+                
+                A = exp((log(geo_mean1) - (x1 / x2) * log(geo_mean2)) 
+                        / (1 - x1 / x2))
+                t = -x2 / (log(geo_mean2) - log(A))
+
+                if s._lazy:
+                    A = A.map_blocks(np.nan_to_num)
+                    t = t.map_blocks(np.nan_to_num)
+                else:
+                    A = np.nan_to_num(A)
+                    t = np.nan_to_num(t)
+
+            except (FloatingPointError):
+                _logger.warning('Exponential paramaters estimation failed with'
+                                ' a "divide by zero" error (likely log of a '
+                                'negative value).')
+                return False
+            
             if self.binned:
                 A /= axis.scale
-            self.A.value = np.nan_to_num(A)
-            self.tau.value = np.nan_to_num(t)
-            return True
-        else:
+            if only_current is True:
+                self.A.value = A
+                self.tau.value = t
+                return True
+            
             if self.A.map is None:
                 self._create_arrays()
-            Y1, Y2 = signal.isig[i1].data, signal.isig[i2].data
-            with np.errstate(divide='raise'):
-                try:
-                    A = np.exp((np.log(Y1)-x1/x2*np.log(Y2))/(1-x1/x2))
-                    t = -x2/(np.log(Y2)-np.log(A))
-                except:
-                    _logger.warning('Exponential paramaters estimation failed '
-                                'because of a "divide by zero" error.')
-                    return False
-            if self.binned:
-                A /= axis.scale
-            A = np.nan_to_num(A/axis.scale)
-            t = np.nan_to_num(t)
-
             self.A.map['values'][:] = A
             self.A.map['is_set'][:] = True
             self.tau.map['values'][:] = t
@@ -130,4 +157,3 @@ class Exponential(Expression):
             self.fetch_stored_values()
 
             return True
-
