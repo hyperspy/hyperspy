@@ -338,11 +338,12 @@ class ImagePlot(BlittedFigure):
             data = self._current_data = data
             self._is_rgb = True
         ims = self.ax.images
-        # update extent:
-        self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
-                        self.xaxis.axis[-1] + self.xaxis.scale / 2.,
-                        self.yaxis.axis[-1] + self.yaxis.scale / 2.,
-                        self.yaxis.axis[0] - self.yaxis.scale / 2.)
+        if self.autoscale:
+            # update extent:
+            self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
+                            self.xaxis.axis[-1] + self.xaxis.scale / 2.,
+                            self.yaxis.axis[-1] + self.yaxis.scale / 2.,
+                            self.yaxis.axis[0] - self.yaxis.scale / 2.)
 
         # Turn on centre_colormap if a diverging colormap is used.
         if not self._is_rgb and self.centre_colormap == "auto":
@@ -435,11 +436,12 @@ class ImagePlot(BlittedFigure):
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
-            self.ax.set_xlim(self._extent[:2])
-            self.ax.set_ylim(self._extent[2:])
-            ims[0].set_extent(self._extent)
-            self._calculate_aspect()
-            self.ax.set_aspect(self._aspect)
+            if self.autoscale:
+                self.ax.set_xlim(self._extent[:2])
+                self.ax.set_ylim(self._extent[2:])
+                ims[0].set_extent(self._extent)
+                self._calculate_aspect()
+                self.ax.set_aspect(self._aspect)
             if not self._is_rgb:
                 ims[0].set_norm(norm)
                 ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
@@ -467,8 +469,6 @@ class ImagePlot(BlittedFigure):
                         'vmin': vmin,
                         'vmax': vmax,
                         'norm': norm}
-
-                    
                 )
             new_args.update(kwargs)
             self.ax.imshow(data,

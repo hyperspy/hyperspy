@@ -33,6 +33,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     saturated_pixels=None,
                     vmin=None,
                     vmax=None,
+                    autoscale=False,
                     no_nans=False,
                     centre_colormap="auto",
                     norm="auto",
@@ -66,6 +67,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.axes_off = axes_off
         imf.vmin, imf.vmax = vmin, vmax
         imf.saturated_pixels = saturated_pixels
+        imf.autoscale = autoscale
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap

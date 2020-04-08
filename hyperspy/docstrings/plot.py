@@ -72,7 +72,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
         navigator_kwds : dict
-            Only for image navigator, additional keyword arguments for 
+            Only for image navigator, additional keyword arguments for
             matplotlib.pyplot.imshow().
         """
 
@@ -118,6 +118,9 @@ PLOT2D_DOCSTRING = \
             If None (default value), the value from the preferences is used.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize luminance data.
+        autoscale : bool
+            If True, the extent of the image is reset automatically to its
+            maximum when the navigation indices or the data are changed.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}

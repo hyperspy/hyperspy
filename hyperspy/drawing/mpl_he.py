@@ -67,6 +67,7 @@ class MPL_HyperExplorer(object):
                        saturated_pixels=None,
                        vmin=None,
                        vmax=None,
+                       autoscale=True,
                        no_nans=False,
                        centre_colormap="auto",
                        title=None,
@@ -122,6 +123,7 @@ class MPL_HyperExplorer(object):
             imf.saturated_pixels = saturated_pixels
             imf.vmin = vmin
             imf.vmax = vmax
+            imf.autoscale = autoscale
             imf.no_nans = no_nans
             imf.centre_colormap = centre_colormap
             imf.min_aspect = min_aspect

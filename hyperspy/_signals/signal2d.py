@@ -164,8 +164,8 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     References
     ----------
-    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner. 
-       “Automated Spatial Drift Correction for EFTEM Image Series.” 
+    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
+       “Automated Spatial Drift Correction for EFTEM Image Series.”
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
@@ -293,6 +293,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
              vmin=None,
              vmax=None,
              gamma=1.0,
+             autoscale=False,
              no_nans=False,
              centre_colormap="auto",
              min_aspect=0.1,
@@ -313,6 +314,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             vmin=vmin,
             vmax=vmax,
             gamma=gamma,
+            autoscale=autoscale,
             no_nans=no_nans,
             centre_colormap=centre_colormap,
             min_aspect=min_aspect,
@@ -587,7 +589,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         References
         ----------
         .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
-           “Automated Spatial Drift Correction for EFTEM Image Series.” 
+           “Automated Spatial Drift Correction for EFTEM Image Series.”
            Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
