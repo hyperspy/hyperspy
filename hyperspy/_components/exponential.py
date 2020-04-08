@@ -32,10 +32,10 @@ class Exponential(Expression):
         f(x) = A\cdot\exp\left(-\frac{x}{\tau}\right)
 
     ============= =============
-    Variable       Parameter 
+    Variable       Parameter
     ============= =============
-    :math:`A`      A     
-    :math:`\tau`   tau    
+    :math:`A`      A
+    :math:`\tau`   tau
     ============= =============
 
 
@@ -62,12 +62,9 @@ class Exponential(Expression):
 
         self.isbackground = False
 
-
-
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the parameters for the exponential component using the
-        geometric mean of up to 20 points around the endpoints of the signal
-        window 
+        """Estimate the parameters for the exponential component by splitting
+        the signal window into two regions and using their geometric means
 
         Parameters
         ----------
@@ -112,9 +109,10 @@ class Exponential(Expression):
         else:
             exp = np.exp
             log = np.log
-        
+
         with np.errstate(divide='raise'):
             try:
+                # use log and exp to compute geometric mean to avoid overflow
                 a1 = s.isig[i1:i_mid].data
                 b1 = log(a1)
                 a2 = s.isig[i_mid:i2].data
@@ -123,9 +121,9 @@ class Exponential(Expression):
                 geo_mean2 = exp(b2.sum(axis=-1)/b2.shape[-1])
                 x1 = (x_start + x_mid) / 2
                 x2 = (x_mid + x_end) / 2
-                
-                A = exp((log(geo_mean1) - (x1 / x2) * log(geo_mean2)) 
-                        / (1 - x1 / x2))
+
+                A = exp((log(geo_mean1) - (x1 / x2) * log(geo_mean2)) /
+                        (1 - x1 / x2))
                 t = -x2 / (log(geo_mean2) - log(A))
 
                 if s._lazy:
@@ -138,16 +136,16 @@ class Exponential(Expression):
             except (FloatingPointError):
                 _logger.warning('Exponential paramaters estimation failed with'
                                 ' a "divide by zero" error (likely log of a '
-                                'negative value).')
+                                'zero or negative value).')
                 return False
-            
+
             if self.binned:
                 A /= axis.scale
             if only_current is True:
                 self.A.value = A
                 self.tau.value = t
                 return True
-            
+
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = A
