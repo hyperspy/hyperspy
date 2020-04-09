@@ -95,8 +95,11 @@ def fft_correlation(in1, in2, normalize=False):
     s1 = np.array(in1.shape)
     s2 = np.array(in2.shape)
     size = s1 + s2 - 1
-    # Use 2**n-sized FFT
-    fsize = (2 ** np.ceil(np.log2(size))).astype("int")
+
+    # Calculate optimal FFT size
+    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
+    fsize = [sp.fft.next_fast_len(a, not complex_result) for a in size]
+
     fprod = np.fft.fftn(in1, fsize)
     fprod *= np.fft.fftn(in2, fsize).conjugate()
     if normalize is True:
@@ -188,7 +191,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         if hanning is True:
             im *= hanning2d(*im.shape)
         if medfilter is True:
-            im[:] = sp.signal.medfilt(im)
+            im[:] = sp.ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
     phase_correlation, image_product = fft_correlation(
