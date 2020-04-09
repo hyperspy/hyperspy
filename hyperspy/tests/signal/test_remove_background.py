@@ -204,6 +204,35 @@ class TestRemoveBackground1DVoigt:
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
 
+@lazifyTestClass
+class TestRemoveBackground1DExponential:
+
+    def setup_method(self, method):
+        exponential = components1d.Exponential()
+        exponential.A.value = 12500.
+        exponential.tau.value = 168.
+        self.signal = signals.Signal1D(
+            exponential.function(np.arange(100, 200, 0.02)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+        self.atol = 0.04 * abs(self.signal.data).max()
+
+    def test_background_remove_exponential(self):
+        # Fast is not accurate
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Exponential',
+            show_progressbar=None)
+        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=self.atol)
+
+    def test_background_remove_exponential_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Exponential',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+
 def compare_axes_manager_metadata(s0, s1):
     assert s0.data.shape == s1.data.shape
     assert s0.axes_manager.shape == s1.axes_manager.shape

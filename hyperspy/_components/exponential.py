@@ -133,7 +133,7 @@ class Exponential(Expression):
                     A = np.nan_to_num(A)
                     t = np.nan_to_num(t)
 
-            except (FloatingPointError):
+            except (RuntimeWarning, FloatingPointError):
                 _logger.warning('Exponential paramaters estimation failed with'
                                 ' a "divide by zero" error (likely log of a '
                                 'zero or negative value).')
