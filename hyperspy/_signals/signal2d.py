@@ -191,6 +191,10 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         if hanning is True:
             im *= hanning2d(*im.shape)
         if medfilter is True:
+            # This is faster than sp.signal.med_filt,
+            # which was the previous implementation.
+            # The size is fixed at 3 to be consistent
+            # with the previous implementation.
             im[:] = sp.ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
