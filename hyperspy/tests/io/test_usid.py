@@ -240,7 +240,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_0_spec_real.h5'
-        sig.save(file_path)
+        sig.save(file_path,preferred_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=True)
@@ -257,7 +257,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_0_pos_n_spec_real.h5'
-        sig.save(file_path)
+        sig.save(file_path,preferred_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=True,
                                  empty_spec=False)
@@ -278,7 +278,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_real.h5'
-        sig.save(file_path)
+        sig.save(file_path,preferred_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False)
@@ -296,7 +296,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_0_spec_real.h5'
-        sig.save(file_path)
+        sig.save(file_path,preferred_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=True)
@@ -310,7 +310,7 @@ class TestHS2USIDallKnown:
                                            'units': 'V', 'scale': 0.25,
                                            'offset': -0.25}])
 
-        sig.save(file_path, overwrite=True)
+        sig.save(file_path,preferred_format='USID',overwrite=True)
 
         new_dset_path = '/Measurement_001/Channel_000/Raw_Data'
 
@@ -326,7 +326,7 @@ class TestHS2USIDlazy:
                                                     chunks='auto'))
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_dask.h5'
-        sig.save(file_path)
+        sig.save(file_path,preferred_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False, axes_defined=False)
@@ -340,7 +340,7 @@ class TestHS2USIDedgeAxes:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_no_axes.h5'
-        sig.save(file_path)
+        sig.save(file_path,preferred_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False, axes_defined=False)
@@ -363,7 +363,7 @@ class TestHS2USIDedgeAxes:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_incorrect_axes.h5'
-        sig.save(file_path)
+        sig.save(file_path,preferred_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False, invalid_axes=True)
@@ -389,7 +389,7 @@ class TestHS2USIDedgeAxes:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_too_many_axes.h5'
         with pytest.raises(ValueError):
-            sig.save(file_path)
+            sig.save(file_path,preferred_format='USID')
 
 # ################## h5USID to HyperSpy Signal(s)  ############################
 
