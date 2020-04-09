@@ -345,7 +345,8 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
     # Check against an upper limit and that the user has
     # sub-selected the datasets to load used dset_search_keys
     #
-    original_metadata = _find_hdf_metadata(fin,meta_search_keys)
+    metadata = load_dict_from_h5py(fin)
+    original_metadata = _find_search_keys_in_dict(metadata,search_keys=meta_search_keys)
         
     for data_path in nexus_data_paths:        
         metadata={}
@@ -517,8 +518,10 @@ def fix_exclusion_keys(key):
     else:
         return key
 
-    
-def _find_hdf_metadata(fin,search_keys=None):
+
+
+
+def _find_search_keys_in_dict(tree,search_keys=None):
     
     """    
     Read the metadata from a nexus or hdf file       
@@ -550,50 +553,56 @@ def _find_hdf_metadata(fin,search_keys=None):
     metadata_dict = {}
     rootname=""
     # recursive function
-    def find_data_in_tree(myDict,rootname):
+    
+    def find_searchkeys_in_tree(myDict,rootname):
         for key, value in myDict.items():
             if rootname != "":
                 rootkey = rootname +"/"+ key
             else:
                 rootkey = key            
-
-            if isinstance(value,h5py.Dataset): 
-                if value.size < 2:
-                   if any(s in rootkey for s in search_keys):
-                        data = value[...]
-                        output = _parse_value(data.item())
-                        mod_keys = _text_split(rootkey, (".","/") )                        
-                        # create the key, values in the dict
-                        p = metadata_dict
-                        for d in mod_keys:
-                            d=fix_exclusion_keys(d)
-                            p = p.setdefault(d,{})
-                        p["value"] = output
-                        # skip signals - these are handled below.
-                        if value.attrs.keys():
-                            p = p.setdefault("attrs",{})
-                            for d,v in value.attrs.items():
-                                d =fix_exclusion_keys(d)
-                                p[d] = _parse_value(v)
-            elif isinstance(value,h5py.Group):
-                if any(s in rootkey or s in value.attrs.keys()
-                    for s in search_keys):
-                    mod_keys = _text_split(rootkey, (".","/") )
-                    # create the key, values in the dict
-                    p = metadata_dict
-                    for d in mod_keys:
-                        d=fix_exclusion_keys(d)
-                        p = p.setdefault(d,{})
-                    if value.attrs.keys():
-                        p=p.setdefault("attrs",{})
-                        for d,v in value.attrs.items():
-                            d=fix_exclusion_keys(d)
-                            p[d] = _parse_value(v)                                      
-                find_data_in_tree(value,rootkey)  
-
-    find_data_in_tree(fin,rootname)
+            if any(s in rootkey for s in search_keys):
+                mod_keys = _text_split(rootkey, (".","/") )                        
+                # create the key, values in the dict
+                p = metadata_dict
+                for d in mod_keys[:-1]:
+                    p = p.setdefault(d,{})
+                p[mod_keys[-1]] = value
+            if isinstance(value,dict):
+                find_searchkeys_in_tree(value,rootkey)
+    find_searchkeys_in_tree(tree,rootname)
     return metadata_dict
 
+
+
+def load_dict_from_h5py(group):
+    return _find_metadata_in_tree(group)
+
+# recursive function
+def _find_metadata_in_tree(group):
+    tree={}
+    for key,item in group.attrs.items():
+        new_key=fix_exclusion_keys(key)
+        if "attrs" not in tree.keys():
+            tree["attrs"]={}
+        tree["attrs"][new_key] =  _parse_value(item)
+    for key,item in group.items():
+        new_key=key
+        new_key =fix_exclusion_keys(key)
+        if type(item) is h5py._hl.dataset.Dataset:
+            if item.size < 2:
+                if new_key not in tree.keys():
+                    tree[new_key]={}
+                tree[new_key]["value"] = _parse_value(item[...].item())
+                for key,item in group.attrs.items():
+                    if "attrs" not in tree.keys():
+                        tree["attrs"]={}
+                    tree["attrs"][new_key] =  _parse_value(item)
+        elif type(item) is h5py._hl.group.Group:
+            tree[new_key]=load_dict_from_h5py(item)
+    return tree
+
+
+    
 def guess_chunks(data):
     chunks= h5py._hl.filters.guess_chunk(data.shape, None, np.dtype(data.dtype).itemsize)
     return chunks
@@ -629,11 +638,7 @@ def write_nexus_groups(dictionary, group, **kwds):
         elif isinstance(value, (np.ndarray, h5py.Dataset, da.Array)):
             overwrite_dataset(group, value, key, **kwds)        
         elif isinstance(value, (int,float,str,bytes)):
-            if isinstance(group,h5py.Dataset):
-                group.attrs[key] = value
-            else:
-                group.require_dataset(key,data=value,shape=value.shape,
-                                   dtype=value.dtype)        
+            group.attrs[key] = value
 
 
 
@@ -713,11 +718,13 @@ def get_metadata_in_file(filename,search_keys=None,
     fin = h5py.File(filename,"r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
-    metadata = _find_hdf_metadata(fin,search_keys=search_keys)
+    #metadata = _find_hdf_metadata(fin,search_keys=search_keys)
+    metadata = load_dict_from_h5py(fin)
+    stripped_metadata = _find_search_keys_in_dict(metadata,search_keys=search_keys)
     fin.close()
     if verbose:
-        pprint.pprint(metadata)
-    return metadata    
+        pprint.pprint(stripped_metadata)
+    return stripped_metadata    
 
 
 def get_datasets_in_file(filename,search_keys=None,
@@ -830,30 +837,16 @@ def file_writer(filename,
         # 
         # if want to store hyperspy metadata 
         # basically move any hyperspy metadata into the original_metadata
-        # dict
-        #if signal.metadata:
-        #    if not "hyperspy_metadata" in signal.original_metadata:
-        #        signal.original_metadata["hyperspy_metadata"]={}
-        #    signal.original_metadata.hyperspy_metadata.add_dictionary(signal.metadata.as_dictionary())
-        # now remove the hyperspy metadata... 
-        #del signal.original_metadata.hyperspy_metadata
-        
+        # dict        
         try:
             write_signal(signal, nxentry, **kwds)
         except BaseException:
             raise
         try:
             if signal.original_metadata:
-                for key in signal.original_metadata.keys():
-                    if key not in f:
-                        entry = f.create_group(key)
-                    else:
-                        entry = nxentry
-                    # write the groups and structure
-                    write_nexus_groups(signal.original_metadata[key].as_dictionary(),entry)
-                    write_nexus_attr(signal.original_metadata[key].as_dictionary(),entry)
-
-                    # add the attributes
+                # write the groups and structure
+                write_nexus_groups(signal.original_metadata.as_dictionary(),f)
+                write_nexus_attr(signal.original_metadata.as_dictionary(),f)
                     
         except BaseException:
             raise
