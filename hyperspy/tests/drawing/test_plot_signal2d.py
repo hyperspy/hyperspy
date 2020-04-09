@@ -512,3 +512,19 @@ def test_plot_navigator_colormap(cmap):
     s = hs.signals.Signal1D(np.arange(10*10*10).reshape(10, 10, 10))
     s.plot(navigator_kwds={'cmap':cmap})
     return s._plot.navigator_plot.figure
+
+
+@pytest.mark.parametrize("autoscale", [True, False])
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_autoscale(autoscale):
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s.plot(autoscale=autoscale)
+    ax = s._plot.signal_plot.ax
+    extend = [5.0, 10.0, 3., 10.0]
+    ax.images[0].set_extent(extend)
+    ax.set_xlim(5.0, 10.0)
+    ax.set_ylim(3., 10.0)
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    return s._plot.signal_plot.figure

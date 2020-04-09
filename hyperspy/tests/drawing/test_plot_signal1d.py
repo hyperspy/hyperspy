@@ -15,13 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+from shutil import copyfile
 import numpy as np
 import scipy.misc
 import pytest
 import matplotlib.pyplot as plt
-import os
-from shutil import copyfile
-import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
@@ -258,3 +257,19 @@ def test_plot_with_non_finite_value():
     s = hs.signals.Signal1D(np.array([np.inf, 2.0]))
     s.plot()
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+
+@pytest.mark.parametrize("autoscale", ["x", "y", True, False])
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_autoscale(autoscale):
+
+    s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal(
+        add_powerlaw=True, add_noise=False)
+    s.plot(autoscale=autoscale)
+    ax = s._plot.signal_plot.ax
+    ax.set_xlim(500.0, 700.0)
+    ax.set_ylim(-10.0, 20.0)
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    return s._plot.signal_plot.figure
