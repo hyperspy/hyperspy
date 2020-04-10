@@ -34,6 +34,11 @@ from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
+try:
+    from scipy.fft import next_fast_len
+except ImportError:
+    from scipy.fftpack import next_fast_len
+
 
 _logger = logging.getLogger(__name__)
 
@@ -80,7 +85,7 @@ def sobel_filter(im):
     return sob
 
 
-def fft_correlation(in1, in2, normalize=False):
+def fft_correlation(in1, in2, normalize=False, real_only=False):
     """Correlation of two N-dimensional arrays using FFT.
 
     Adapted from scipy's fftconvolve.
@@ -88,8 +93,12 @@ def fft_correlation(in1, in2, normalize=False):
     Parameters
     ----------
     in1, in2 : array
-    normalize: bool
-        If True performs phase correlation
+        Input arrays to convolve.
+    normalize: bool, default False
+        If True performs phase correlation.
+    real_only : bool, default False
+        If True, and in1 and in2 are real-valued inputs, uses
+        rfft instead of fft for approx. 2x speed-up.
 
     """
     s1 = np.array(in1.shape)
@@ -98,13 +107,22 @@ def fft_correlation(in1, in2, normalize=False):
 
     # Calculate optimal FFT size
     complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
-    fsize = [sp.fft.next_fast_len(a, not complex_result) for a in size]
+    fsize = [next_fast_len(a, not complex_result) for a in size]
 
-    fprod = np.fft.fftn(in1, fsize)
-    fprod *= np.fft.fftn(in2, fsize).conjugate()
+    # For real-valued inputs, rfftn is ~2x faster than fftn
+    if not complex_result and real_only:
+        fft_f, ifft_f = np.fft.rfftn, np.fft.irfftn
+    else:
+        fft_f, ifft_f = np.fft.fftn, np.fft.ifftn
+
+    fprod = fft_f(in1, fsize)
+    fprod *= fft_f(in2, fsize).conjugate()
+
     if normalize is True:
         fprod = np.nan_to_num(fprod / np.absolute(fprod))
-    ret = np.fft.ifftn(fprod).real.copy()
+
+    ret = ifft_f(fprod).real.copy()
+
     return ret, fprod
 
 
@@ -198,8 +216,15 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             im[:] = sp.ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
+
+    # If sub-pixel alignment not being done, use faster real-valued fft
+    if sub_pixel_factor != 1:
+        real_only = False
+    else:
+        real_only = True
+
     phase_correlation, image_product = fft_correlation(
-        ref, image, normalize=normalize_corr)
+        ref, image, normalize=normalize_corr, real_only=real_only)
 
     # Estimate the shift by getting the coordinates of the maximum
     argmax = np.unravel_index(np.argmax(phase_correlation),
