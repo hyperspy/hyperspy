@@ -1222,7 +1222,7 @@ class EELSSpectrum_mixin:
             # Use an optimal FFT size to speed up the calculation, and
             # make it double the closest upper value to workaround the
             # wrap-around problem.
-            esize = 2 * optimal_fft_size(axis.size)
+            esize = optimal_fft_size(2 * axis.size)
             q = -2 * np.fft.fft(Im, esize,
                                 axis.index_in_array).imag / esize
 

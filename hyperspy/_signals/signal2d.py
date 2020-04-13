@@ -213,10 +213,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             im[:] = sobel_filter(im)
 
     # If sub-pixel alignment not being done, use faster real-valued fft
-    if sub_pixel_factor != 1:
-        real_only = False
-    else:
-        real_only = True
+    real_only = (sub_pixel_factor == 1)
 
     phase_correlation, image_product = fft_correlation(
         ref, image, normalize=normalize_corr, real_only=real_only)
