@@ -744,9 +744,8 @@ class EELSSpectrum_mixin:
         cl_size = self.axes_manager.signal_axes[0].size
         # Conservative new size to solve the wrap-around problem
         size = ll_size + cl_size - 1
-        # Increase to the closest multiple of two to enhance the FFT
-        # performance
-        size = int(2 ** np.ceil(np.log2(size)))
+        # Calculate the optimal FFT size
+        size = optimal_fft_size(size)
 
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
@@ -1220,7 +1219,7 @@ class EELSSpectrum_mixin:
             # Kramers Kronig Transform:
             # We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
             # Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
-            # Use a size that is a power of two to speed up the fft and
+            # Use an optimal FFT size to speed up the calculation, and
             # make it double the closest upper value to workaround the
             # wrap-around problem.
             esize = 2 * optimal_fft_size(axis.size)
