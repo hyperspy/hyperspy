@@ -26,18 +26,13 @@ from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.math_tools import symmetrize, antisymmetrize
+from hyperspy.misc.math_tools import symmetrize, antisymmetrize, optimal_fft_size
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
-
-try:
-    from scipy.fft import next_fast_len
-except ImportError:
-    from scipy.fftpack import next_fast_len
 
 
 _logger = logging.getLogger(__name__)
@@ -107,7 +102,7 @@ def fft_correlation(in1, in2, normalize=False, real_only=False):
 
     # Calculate optimal FFT size
     complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
-    fsize = [next_fast_len(a, not complex_result) for a in size]
+    fsize = [optimal_fft_size(a, not complex_result) for a in size]
 
     # For real-valued inputs, rfftn is ~2x faster than fftn
     if not complex_result and real_only:
