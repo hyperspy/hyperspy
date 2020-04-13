@@ -30,8 +30,8 @@ from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline)
+from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
@@ -630,9 +630,9 @@ class EELSSpectrum_mixin:
         tapped_channels = s.hanning_taper()
         # Conservative new size to solve the wrap-around problem
         size = zlp_size + self_size - 1
-        # Increase to the closest power of two to enhance the FFT
-        # performance
-        size = closest_power_of_two(size)
+        # Calculate optimal FFT padding for performance
+        complex_result = (zlp.data.dtype.kind == 'c' or s.data.dtype.kind == 'c')
+        size = optimal_fft_size(size, not complex_result)
 
         axis = self.axes_manager.signal_axes[0]
         if self._lazy or zlp._lazy:
@@ -1223,7 +1223,7 @@ class EELSSpectrum_mixin:
             # Use a size that is a power of two to speed up the fft and
             # make it double the closest upper value to workaround the
             # wrap-around problem.
-            esize = 2 * closest_power_of_two(axis.size)
+            esize = 2 * optimal_fft_size(axis.size)
             q = -2 * np.fft.fft(Im, esize,
                                 axis.index_in_array).imag / esize
 
