@@ -3498,7 +3498,7 @@ class BaseSignal(FancySlicing,
                 axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shift=None, **kwargs):
+    def ifft(self, shift=None, return_real=True, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3515,6 +3515,9 @@ class BaseSignal(FancySlicing,
             If ``True``, the origin of the FFT will be shifted to the centre.
             If ``False``, the origin will be kept at (0, 0)
             (default is ``None``).
+        return_real : bool, default True
+            If ``True``, returns only the real part of the inverse FFT.
+            If ``False``, returns all parts.
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.ifftn`
 
@@ -3564,7 +3567,9 @@ class BaseSignal(FancySlicing,
             im_ifft.metadata.General.title)
         if im_ifft.metadata.has_item('Signal.FFT'):
             del im_ifft.metadata.Signal.FFT
-        im_ifft = im_ifft.real
+
+        if return_real:
+            im_ifft = im_ifft.real
 
         ureg = UnitRegistry()
         for axis in im_ifft.axes_manager.signal_axes:
