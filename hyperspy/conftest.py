@@ -24,7 +24,6 @@ ETSConfig.toolkit = "null"
 # 'agg' as early as we can is useless for testing.
 import matplotlib.pyplot as plt
 
-import gc
 import pytest
 import numpy as np
 import matplotlib
@@ -48,14 +47,6 @@ def add_np(doctest_namespace):
 @pytest.fixture
 def pdb_cmdopt(request):
     return request.config.getoption("--pdb")
-
-
-# run a gabarge collection at the end of each
-# test module to avoid trouble in CI
-@pytest.fixture(scope="module")
-def garbage_collection():
-    yield
-    gc.collect()
 
 
 def setup_module(mod, pdb_cmdopt):
