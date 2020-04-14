@@ -3409,7 +3409,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shift=False, apodization=False, real_only=False, **kwargs):
+    def fft(self, shift=False, apodization=False, real_fft_only=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3429,7 +3429,7 @@ class BaseSignal(FancySlicing,
             If ``True`` or ``'hann'``, applies a Hann window.
             If ``'hamming'`` or ``'tukey'``, applies Hamming or Tukey
             windows, respectively (default is ``False``).
-        real_only : bool, default False
+        real_fft_only : bool, default False
             If ``True`` and data is real-valued, uses :py:func:`numpy.fft.rfftn`
             instead of :py:func:`numpy.fft.fftn`
         **kwargs : dict
@@ -3467,7 +3467,7 @@ class BaseSignal(FancySlicing,
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
 
-        use_real_fft = real_only and (self.data.dtype.kind != 'c')
+        use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
 
         if isinstance(self.data, da.Array):
             if use_real_fft:
