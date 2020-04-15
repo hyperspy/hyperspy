@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import gc
 import numpy as np
 import pytest
 
@@ -27,6 +27,13 @@ import hyperspy.api as hs
 from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.samfire_utils.samfire_worker import create_worker
+
+
+def teardown_module(module):
+    """ Run a garbage collection cycle at the end of the test of this module
+    to avoid any memory issue when continuing running the test suite.
+    """
+    gc.collect()
 
 
 class Mock_queue(object):
@@ -49,6 +56,7 @@ def generate_test_model():
 # blurs = [0., 0.5, 1., 2.,5.]
     blurs = [1.5]
     rnd = np.random.RandomState(17)
+    n_im = 500
     radius = 5
     domain = 15
 # do circle/domain
@@ -58,7 +66,7 @@ def generate_test_model():
     lor_map = None
     for blur in blurs:
 
-        s = Signal1D(np.ones((domain, domain, 1024)))
+        s = Signal1D(np.ones((domain, domain, n_im)))
         cent = tuple([int(0.5 * i) for i in s.data.shape[:-1]])
         m0 = s.create_model()
 
@@ -145,7 +153,8 @@ class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        s = hs.signals.Signal1D(np.ones(self.shape + (1024,)) + 3.)
+        n_im = 500
+        s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
