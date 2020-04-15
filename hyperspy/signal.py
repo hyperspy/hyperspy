@@ -1377,7 +1377,7 @@ class MVATools(object):
 
     def get_decomposition_loadings(self):
         """Return the decomposition loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1395,7 +1395,7 @@ class MVATools(object):
 
     def get_decomposition_factors(self):
         """Return the decomposition factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1413,7 +1413,7 @@ class MVATools(object):
 
     def get_bss_loadings(self):
         """Return the blind source separation loadings.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -1432,7 +1432,7 @@ class MVATools(object):
 
     def get_bss_factors(self):
         """Return the blind source separation factors.
-        
+
         Returns
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
@@ -4991,7 +4991,7 @@ class BaseSignal(FancySlicing,
         ----
         This method uses :py:func:`numpy.random.poisson`
         (or :py:func:`dask.array.random.poisson` for lazy signals) to
-        generate the Gaussian noise. In order to seed it,
+        generate the Poissonian noise. In order to seed it,
         you must use :py:func:`numpy.random.seed`.
 
         """
