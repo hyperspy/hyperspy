@@ -16,20 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import gc
 import numpy as np
 import pytest
 
 from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
-
-
-def teardown_module(module):
-    """ Run a garbage collection cycle at the end of the test of this module
-    to avoid any memory issue when continuing running the test suite.
-    """
-    gc.collect()
 
 
 @lazifyTestClass

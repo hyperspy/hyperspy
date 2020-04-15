@@ -49,17 +49,17 @@ def generate_test_model():
 
     # import hyperspy.api as hs
     from hyperspy.signals import Signal1D
-    from hyperspy.components1d import (Gaussian, Lorentzian)
+    from hyperspy.components1d import Gaussian, Lorentzian
     import numpy as np
     from scipy.ndimage import gaussian_filter
     total = None
-# blurs = [0., 0.5, 1., 2.,5.]
+    # blurs = [0., 0.5, 1., 2.,5.]
     blurs = [1.5]
     rnd = np.random.RandomState(17)
     n_im = 500
     radius = 5
     domain = 15
-# do circle/domain
+    # do circle/domain
     cent = (domain // 2, domain // 2)
     y, x = np.ogrid[-cent[0]:domain - cent[0], -cent[1]:domain - cent[1]]
     mask = x * x + y * y <= radius * radius
@@ -146,6 +146,8 @@ def generate_test_model():
     m.extend([g, l1, l2])
     m.assign_current_values_to_all()
     l2.active_is_multidimensional = True
+
+    gc.collect()
     return m, gs01, gs02, gs03
 
 
@@ -153,7 +155,7 @@ class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        n_im = 500
+        n_im = 400
         s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
@@ -162,7 +164,6 @@ class TestSamfireEmpty:
         m.append(hs.model.components1D.Lorentzian())
         self.model = m
 
-    @pytest.mark.parallel
     def test_setup(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
@@ -314,42 +315,43 @@ class TestSamfireEmpty:
         assert samf.metadata.marker[ind] == -2
 
 
-class TestSamfireMain:
+def test_multiprocessed():
+    model, lor1, g, lor2 = generate_test_model()
+    gc.collect()
 
-    def setup_method(self, method):
-        self.model, self.lor1, self.g, self.lor2 = generate_test_model()
-        self.shape = (7, 15)
+    shape = (7, 15)
 
-    @pytest.mark.xfail(
-        reason="Sometimes it fails in CirCleCI for no know reason.")
-    def test_multiprocessed(self):
-        self.model.fit()
-        samf = self.model.create_samfire(ipyparallel=False)
-        samf.plot_every = np.nan
-        samf.strategies[0].radii = 1.
-        samf.strategies.remove(1)
-        samf.optional_components = [self.model[2]]
-        samf.start(bounded=True)
-        # let at most 3 pixels to fail randomly.
-        fitmask = samf.metadata.marker == -np.ones(self.shape)
-        print('number of pixels failed: {}'.format(
-              np.prod(self.shape) - np.sum(fitmask)))
-        assert np.sum(fitmask) >= np.prod(self.shape) - 5
-        for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
-            for p, p1 in zip(o_c.parameters, n_c.parameters):
-                if n_c._active_array is not None:
-                    mask = np.logical_and(n_c._active_array, fitmask)
-                else:
-                    mask = fitmask
-                print(o_c.__class__.__name__, n_c.__class__.__name__, p1._id_name, p._id_name)
-                print(p.map['values'][:4, :4])
-                print('----------------------------')
-                print(p1.map['values'][:4, :4])
-                print('ooooooooooooooooooooooooooooooooooooooooooo')
-                np.testing.assert_allclose(
-                    p1.map['values'][mask],
-                    p.map['values'][:7, :15][mask],
-                    rtol=0.3)
+    model.fit()
+    samf = model.create_samfire(ipyparallel=False)
+    samf.plot_every = np.nan
+    samf.strategies[0].radii = 1.
+    samf.strategies.remove(1)
+    samf.optional_components = [model[2]]
+    samf.start(bounded=True)
+
+    # let at most 3 pixels to fail randomly.
+    fitmask = samf.metadata.marker == -np.ones(shape)
+    print('number of pixels failed: {}'.format(
+          np.prod(shape) - np.sum(fitmask)))
+    assert np.sum(fitmask) >= np.prod(shape) - 5
+
+    for o_c, n_c in zip([g, lor1, lor2], model):
+        for p, p1 in zip(o_c.parameters, n_c.parameters):
+            if n_c._active_array is not None:
+                mask = np.logical_and(n_c._active_array, fitmask)
+            else:
+                mask = fitmask
+
+            print(o_c.__class__.__name__, n_c.__class__.__name__, p1._id_name, p._id_name)
+            print(p.map['values'][:4, :4])
+            print('----------------------------')
+            print(p1.map['values'][:4, :4])
+            print('ooooooooooooooooooooooooooooooooooooooooooo')
+
+            np.testing.assert_allclose(
+                p1.map['values'][mask],
+                p.map['values'][:7, :15][mask],
+                rtol=0.3)
 
 
 def test_create_worker_defaults():
