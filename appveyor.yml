@@ -65,7 +65,7 @@ install:
   # to avoid mising wheels and conda package, we pin tifffile to a supported
   # version from conda-forge because the versions currently in defaults are too
   # old which will make pip install a more recent version from pypi
-  - if "%PLATFORM%"=="x64" set DEPS=%DEPS% "mrcz tifffile==2019.7.26"
+  - if "%PLATFORM%"=="x64" set DEPS=%DEPS% "mrcz tifffile==2020.2.16"
   - "conda install -y %DEPS% %TEST_DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
@@ -80,8 +80,8 @@ test_script:
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
-after_test:
-  - python setup.py bdist_wheel
+# after_test:
+#   - python setup.py bdist_wheel
 
 artifacts:
   - path: dist\*.whl
