@@ -29,13 +29,6 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.samfire_utils.samfire_worker import create_worker
 
 
-def teardown_module(module):
-    """ Run a garbage collection cycle at the end of the test of this module
-    to avoid any memory issue when continuing running the test suite.
-    """
-    gc.collect()
-
-
 class Mock_queue(object):
 
     def __init__(self):
@@ -47,18 +40,17 @@ class Mock_queue(object):
 
 def generate_test_model():
 
-    # import hyperspy.api as hs
     from hyperspy.signals import Signal1D
     from hyperspy.components1d import Gaussian, Lorentzian
-    import numpy as np
     from scipy.ndimage import gaussian_filter
+
     total = None
-    # blurs = [0., 0.5, 1., 2.,5.]
     blurs = [1.5]
     rnd = np.random.RandomState(17)
     n_im = 500
     radius = 5
     domain = 15
+
     # do circle/domain
     cent = (domain // 2, domain // 2)
     y, x = np.ogrid[-cent[0]:domain - cent[0], -cent[1]:domain - cent[1]]
@@ -124,6 +116,11 @@ def generate_test_model():
     s.data = rnd.poisson(lam=s.data) + 0.1
     s.estimate_poissonian_noise_variance()
 
+    # Verify random noise is identical on each test run
+    np.testing.assert_allclose(
+        s.metadata["Signal"]["Noise_properties"]["variance"].data.mean(),
+        626.290755555555)
+
     m = s.inav[:, :7].create_model()
     g = Gaussian()
     l1 = Lorentzian()
@@ -172,22 +169,26 @@ class TestSamfireEmpty:
         samf._setup(ipyparallel=False)
         assert samf.metadata._gt_dump is not None
         assert samf.pool is not None
+        del samf
 
     def test_samfire_init_marker(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         np.testing.assert_array_almost_equal(samf.metadata.marker,
                                              np.zeros(self.shape))
+        del samf
 
     def test_samfire_init_model(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         assert samf.model is m
+        del samf
 
     def test_samfire_init_metadata(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
+        del samf
 
     def test_samfire_init_strategy_list(self):
         from hyperspy.samfire import StrategyList
@@ -203,11 +204,13 @@ class TestSamfireEmpty:
         assert isinstance(samf.strategies[0],
                           ReducedChiSquaredStrategy)
         assert isinstance(samf.strategies[1], HistogramStrategy)
+        del samf
 
     def test_samfire_init_fig(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         assert samf._figure is None
+        del samf
 
     def test_samfire_init_default(self):
         m = self.model
@@ -215,12 +218,13 @@ class TestSamfireEmpty:
         samf = m.create_samfire(setup=False)
         assert samf._workers == cpu_count() - 1
         assert np.allclose(samf.metadata.marker, np.zeros(self.shape))
+        del samf
 
     def test_optional_components(self):
         m = self.model
         m[-1].active_is_multidimensional = False
 
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=1, setup=False)
         samf.optional_components = [m[0], 1]
         samf._enable_optional_components()
         assert m[0].active_is_multidimensional
@@ -228,6 +232,7 @@ class TestSamfireEmpty:
         assert np.all([isinstance(a, int)
                        for a in samf.optional_components])
         np.testing.assert_equal(samf.optional_components, [0, 1])
+        del samf
 
     def test_swap_dict_and_model(self):
         m = self.model
@@ -251,7 +256,7 @@ class TestSamfireEmpty:
              }
 
         d = copy.deepcopy(d)
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=1, setup=False)
         samf._swap_dict_and_model((1, 0), d)
         assert m.chisq.data[1, 0] == 1200.
         assert m.dof.data[1, 0] == 1.
@@ -273,9 +278,11 @@ class TestSamfireEmpty:
                             0, 0] == p.map['is_set'][
                             1, 0])
 
+        del samf
+
     def test_next_pixels(self):
         m = self.model
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=1, setup=False)
         ans = samf._next_pixels(3)
         assert len(ans) == 0
         ind_list = [(1, 2), (0, 1), (3, 3), (4, 6)]
@@ -289,10 +296,11 @@ class TestSamfireEmpty:
             samf.metadata.marker[ind] += n
         ans = samf._next_pixels(10)
         assert ans == [(4, 6), ]
+        del samf
 
     def test_change_strategy(self):
         m = self.model
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=1, setup=False)
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 
@@ -314,15 +322,17 @@ class TestSamfireEmpty:
         assert samf.active_strategy is new_strat
         assert samf.metadata.marker[ind] == -2
 
+        del samf
 
 def test_multiprocessed():
+    """This test uses multiprocessing.pool rather than ipyparallel"""
     model, lor1, g, lor2 = generate_test_model()
     gc.collect()
 
     shape = (7, 15)
 
     model.fit()
-    samf = model.create_samfire(ipyparallel=False)
+    samf = model.create_samfire(workers=1, ipyparallel=False)
     samf.plot_every = np.nan
     samf.strategies[0].radii = 1.
     samf.strategies.remove(1)
@@ -342,16 +352,12 @@ def test_multiprocessed():
             else:
                 mask = fitmask
 
-            print(o_c.__class__.__name__, n_c.__class__.__name__, p1._id_name, p._id_name)
-            print(p.map['values'][:4, :4])
-            print('----------------------------')
-            print(p1.map['values'][:4, :4])
-            print('ooooooooooooooooooooooooooooooooooooooooooo')
-
             np.testing.assert_allclose(
                 p1.map['values'][mask],
                 p.map['values'][:7, :15][mask],
                 rtol=0.3)
+
+    del samf
 
 
 def test_create_worker_defaults():
