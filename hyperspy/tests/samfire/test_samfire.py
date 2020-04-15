@@ -161,6 +161,9 @@ class TestSamfireEmpty:
         m.append(hs.model.components1D.Lorentzian())
         self.model = m
 
+    def teardown_method(self, method):
+        gc.collect()
+
     def test_setup(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
@@ -465,6 +468,9 @@ class TestSamfireWorker:
         m_dict['models'] = m_slice.signal.models._models.as_dictionary()
         self.model_dictionary = m_dict
         self.optional_comps = [1, 2, 3, 4, 5]
+
+    def teardown_method(self, method):
+        gc.collect()
 
     def test_add_model(self):
         worker = create_worker('worker')
