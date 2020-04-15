@@ -114,6 +114,7 @@ def generate_test_model():
 
     s = Signal1D(total)
     s.data = rnd.poisson(lam=s.data) + 0.1
+    s.change_dtype(np.float32)
     s.estimate_poissonian_noise_variance()
 
     m = s.inav[:, :7].create_model()
