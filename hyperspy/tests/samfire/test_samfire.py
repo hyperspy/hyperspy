@@ -116,11 +116,6 @@ def generate_test_model():
     s.data = rnd.poisson(lam=s.data) + 0.1
     s.estimate_poissonian_noise_variance()
 
-    # Verify random noise is identical on each test run
-    np.testing.assert_allclose(
-        s.metadata["Signal"]["Noise_properties"]["variance"].data.mean(),
-        668.371011)
-
     m = s.inav[:, :7].create_model()
     g = Gaussian()
     l1 = Lorentzian()
