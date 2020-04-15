@@ -29,6 +29,9 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.samfire_utils.samfire_worker import create_worker
 
 
+N_WORKERS = 1
+
+
 class Mock_queue(object):
 
     def __init__(self):
@@ -114,7 +117,7 @@ def generate_test_model():
 
     s = Signal1D(total)
     s.data = rnd.poisson(lam=s.data) + 0.1
-    s.change_dtype(np.float32)
+    s.change_dtype(np.float16)
     s.estimate_poissonian_noise_variance()
 
     m = s.inav[:, :7].create_model()
@@ -140,7 +143,6 @@ def generate_test_model():
     m.assign_current_values_to_all()
     l2.active_is_multidimensional = True
 
-    gc.collect()
     return m, gs01, gs02, gs03
 
 
@@ -148,8 +150,9 @@ class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        n_im = 256
+        n_im = 50
         s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
+        s.change_dtype(np.float16)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -162,7 +165,7 @@ class TestSamfireEmpty:
 
     def test_setup(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert samf.metadata._gt_dump is None
         assert samf.pool is None
         samf._setup(ipyparallel=False)
@@ -173,7 +176,7 @@ class TestSamfireEmpty:
 
     def test_samfire_init_marker(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         np.testing.assert_array_almost_equal(samf.metadata.marker,
                                              np.zeros(self.shape))
         samf.stop()
@@ -181,14 +184,14 @@ class TestSamfireEmpty:
 
     def test_samfire_init_model(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert samf.model is m
         samf.stop()
         del samf
 
     def test_samfire_init_metadata(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
         samf.stop()
         del samf
@@ -196,12 +199,12 @@ class TestSamfireEmpty:
     def test_samfire_init_strategy_list(self):
         from hyperspy.samfire import StrategyList
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert isinstance(samf.strategies, StrategyList)
 
     def test_samfire_init_strategies(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
         assert isinstance(samf.strategies[0],
@@ -212,7 +215,7 @@ class TestSamfireEmpty:
 
     def test_samfire_init_fig(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert samf._figure is None
         samf.stop()
         del samf
@@ -230,7 +233,7 @@ class TestSamfireEmpty:
         m = self.model
         m[-1].active_is_multidimensional = False
 
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         samf.optional_components = [m[0], 1]
         samf._enable_optional_components()
         assert m[0].active_is_multidimensional
@@ -263,7 +266,7 @@ class TestSamfireEmpty:
              }
 
         d = copy.deepcopy(d)
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         samf._swap_dict_and_model((1, 0), d)
         assert m.chisq.data[1, 0] == 1200.
         assert m.dof.data[1, 0] == 1.
@@ -290,7 +293,7 @@ class TestSamfireEmpty:
 
     def test_next_pixels(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         ans = samf._next_pixels(3)
         assert len(ans) == 0
         ind_list = [(1, 2), (0, 1), (3, 3), (4, 6)]
@@ -309,7 +312,7 @@ class TestSamfireEmpty:
 
     def test_change_strategy(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 
@@ -337,12 +340,11 @@ class TestSamfireEmpty:
 def test_multiprocessed():
     """This test uses multiprocessing.pool rather than ipyparallel"""
     model, lor1, g, lor2 = generate_test_model()
-    gc.collect()
 
     shape = (7, 15)
 
     model.fit()
-    samf = model.create_samfire(workers=1, ipyparallel=False)
+    samf = model.create_samfire(workers=N_WORKERS, ipyparallel=False)
     samf.plot_every = np.nan
     samf.strategies[0].radii = 1.
     samf.strategies.remove(1)
@@ -369,7 +371,7 @@ def test_multiprocessed():
 
     samf.stop()
     del samf
-
+    gc.collect()
 
 def test_create_worker_defaults():
     worker = create_worker('worker')
@@ -410,6 +412,7 @@ class TestSamfireWorker:
             l1.function(ax - self.centres[2])
         s = hs.signals.Signal1D(np.array([d, d]))
         s.add_poissonian_noise()
+        s.change_dtype(np.float16)
         s.metadata.Signal.set_item("Noise_properties.variance",
                                    s.deepcopy() + 1.)
         m = s.create_model()
@@ -488,6 +491,8 @@ class TestSamfireWorker:
             assert not component.active_is_multidimensional
             assert component.active
 
+        del worker
+
     def test_main_result(self):
         worker = create_worker('worker')
         worker.create_model(self.model_dictionary, self.model_letter)
@@ -541,3 +546,5 @@ class TestSamfireWorker:
         assert (np.allclose(lor2_values, possible_values1, rtol=0.05)
                 or
                 np.allclose(lor2_values, possible_values2, rtol=0.05))
+
+        del worker
