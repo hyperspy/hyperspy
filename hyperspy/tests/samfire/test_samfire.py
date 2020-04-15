@@ -47,7 +47,7 @@ def generate_test_model():
     total = None
     blurs = [1.5]
     rnd = np.random.RandomState(17)
-    n_im = 500
+    n_im = 400
     radius = 5
     domain = 15
 
@@ -119,7 +119,7 @@ def generate_test_model():
     # Verify random noise is identical on each test run
     np.testing.assert_allclose(
         s.metadata["Signal"]["Noise_properties"]["variance"].data.mean(),
-        626.290755555555)
+        668.371011)
 
     m = s.inav[:, :7].create_model()
     g = Gaussian()
@@ -152,7 +152,7 @@ class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        n_im = 500
+        n_im = 256
         s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
@@ -172,6 +172,7 @@ class TestSamfireEmpty:
         samf._setup(ipyparallel=False)
         assert samf.metadata._gt_dump is not None
         assert samf.pool is not None
+        samf.stop()
         del samf
 
     def test_samfire_init_marker(self):
@@ -179,18 +180,21 @@ class TestSamfireEmpty:
         samf = m.create_samfire(workers=1, setup=False)
         np.testing.assert_array_almost_equal(samf.metadata.marker,
                                              np.zeros(self.shape))
+        samf.stop()
         del samf
 
     def test_samfire_init_model(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         assert samf.model is m
+        samf.stop()
         del samf
 
     def test_samfire_init_metadata(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
+        samf.stop()
         del samf
 
     def test_samfire_init_strategy_list(self):
@@ -207,12 +211,14 @@ class TestSamfireEmpty:
         assert isinstance(samf.strategies[0],
                           ReducedChiSquaredStrategy)
         assert isinstance(samf.strategies[1], HistogramStrategy)
+        samf.stop()
         del samf
 
     def test_samfire_init_fig(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         assert samf._figure is None
+        samf.stop()
         del samf
 
     def test_samfire_init_default(self):
@@ -221,6 +227,7 @@ class TestSamfireEmpty:
         samf = m.create_samfire(setup=False)
         assert samf._workers == cpu_count() - 1
         assert np.allclose(samf.metadata.marker, np.zeros(self.shape))
+        samf.stop()
         del samf
 
     def test_optional_components(self):
@@ -235,6 +242,7 @@ class TestSamfireEmpty:
         assert np.all([isinstance(a, int)
                        for a in samf.optional_components])
         np.testing.assert_equal(samf.optional_components, [0, 1])
+        samf.stop()
         del samf
 
     def test_swap_dict_and_model(self):
@@ -281,6 +289,7 @@ class TestSamfireEmpty:
                             0, 0] == p.map['is_set'][
                             1, 0])
 
+        samf.stop()
         del samf
 
     def test_next_pixels(self):
@@ -299,6 +308,7 @@ class TestSamfireEmpty:
             samf.metadata.marker[ind] += n
         ans = samf._next_pixels(10)
         assert ans == [(4, 6), ]
+        samf.stop()
         del samf
 
     def test_change_strategy(self):
@@ -324,10 +334,10 @@ class TestSamfireEmpty:
         assert samf._active_strategy_ind == 3
         assert samf.active_strategy is new_strat
         assert samf.metadata.marker[ind] == -2
-
+        samf.stop()
         del samf
 
-@pytest.mark.xfail(reason="Sometimes the number of failed pixels > 3, unknown reason")
+@pytest.mark.xfail(reason="Sometimes the number of failed pixels > 3 when using multiprocessing. Unknown reason")
 def test_multiprocessed():
     """This test uses multiprocessing.pool rather than ipyparallel"""
     model, lor1, g, lor2 = generate_test_model()
@@ -361,6 +371,7 @@ def test_multiprocessed():
                 p.map['values'][:7, :15][mask],
                 rtol=0.3)
 
+    samf.stop()
     del samf
 
 
