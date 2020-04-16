@@ -5,25 +5,23 @@ env:
   global:
     - ENV=pip
     - PIP_SELECTOR="all, tests"
-    - PYTEST_ARGS="--pyargs hyperspy --cov=hyperspy"
+    - PYTEST_ARGS="--pyargs hyperspy"
 
 matrix:
   include:
   - name: "Linux, 3.8, pip"
-    env: export PIP_SELECTOR="dev"
     python: 3.8
   - name: "Linux, 3.7, pip"
-    env: export PIP_SELECTOR="dev"
     python: 3.7
-  - name: "Linux, 3.7, pip, minimum environment"
-    env: export PIP_SELECTOR="dev"
+    env: PIP_SELECTOR="all, tests, coverage"; PYTEST_ARGS=$PYTEST_ARGS" --cov=hyperspy"
+  - name: "Linux, 3.6, pip"
+    python: 3.6
+  - name: "Linux, 3.7, pip, minimum requirement"
+    env: export PIP_SELECTOR="tests"
     python: 3.7
   - name: "Linux, 3.7, pip, doc"
     env: export PIP_SELECTOR="build-doc"
     python: 3.7
-  - name: "Linux, 3.6, pip"
-    env: export PIP_SELECTOR="dev"
-    python: 3.6
 
 before_install:
   # Clone the ci-scripts repo to get the ci setup scripts
@@ -44,7 +42,6 @@ script:
     fi
 
 after_success:
-- coveralls
 - python setup.py bdist_wheel sdist;
 
 before_deploy:
