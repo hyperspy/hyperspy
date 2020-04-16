@@ -52,9 +52,9 @@ jobs:
       pytest --mpl --pyargs hyperspy
     displayName: Run test suite
 
-   - template: azure_pipelines/generate_distribution.yml@clone_ci-scripts_repo.yml
-   - template: azure_pipelines/publish_distribution.yml@clone_ci-scripts_repo.yml
-  # - template: azure_pipelines/update_github_release.yml@clone_ci-scripts_repo.yml
+  - template: azure_pipelines/generate_distribution.yml@templates
+  - template: azure_pipelines/publish_distribution.yml@templates
+  # - template: azure_pipelines/update_github_release.yml@templates
   #   parameters:
   #     # Set the token generated with github from the developer settings/personal
   #     # access tokens menu in azure pipeline
@@ -88,8 +88,8 @@ jobs:
       pytest --mpl --pyargs hyperspy
     displayName: Run test suite
 
-   - template: ci-scripts/azure_pipelines/generate_distribution.yml
-   - template: ci-scripts/azure_pipelines/publish_distribution.yml
+  - template: azure_pipelines/generate_distribution.yml@templates
+  - template: azure_pipelines/publish_distribution.yml@templates
   # - template: ci-scripts/azure_pipelines/update_github_release.yml
   #   parameters:
   #     # Set the token generated with github from the developer settings/personal
@@ -124,8 +124,8 @@ jobs:
       pytest --mpl --pyargs hyperspy
     displayName: Run test suite
 
-   - template: ci-scripts/azure_pipelines/generate_distribution.yml
-   - template: ci-scripts/azure_pipelines/publish_distribution.yml
+  - template: azure_pipelines/generate_distribution.yml@templates
+  - template: azure_pipelines/publish_distribution.yml@templates
   # - template: ci-scripts/azure_pipelines/update_github_release.yml
   #   parameters:
   #     # Set the token generated with github from the developer settings/personal
