@@ -5,24 +5,24 @@ env:
   global:
     - ENV=pip
     - PIP_SELECTOR="all, tests"
-    - PYTEST_ARGS="--mpl --pyargs hyperspy --cov=hyperspy "
+    - PYTEST_ARGS="--pyargs hyperspy --cov=hyperspy"
 
 matrix:
   include:
   - name: "Linux, 3.8, pip"
-    env: export PIP_SELECTOR="all, tests"
+    env: export PIP_SELECTOR="dev"
     python: 3.8
   - name: "Linux, 3.7, pip"
-    env: export PIP_SELECTOR="all, tests"
+    env: export PIP_SELECTOR="dev"
     python: 3.7
   - name: "Linux, 3.7, pip, minimum environment"
-    env: export PIP_SELECTOR="tests"
+    env: export PIP_SELECTOR="dev"
     python: 3.7
   - name: "Linux, 3.7, pip, doc"
     env: export PIP_SELECTOR="build-doc"
     python: 3.7
   - name: "Linux, 3.6, pip"
-    env: export PIP_SELECTOR="all, tests"
+    env: export PIP_SELECTOR="dev"
     python: 3.6
 
 before_install:
@@ -37,7 +37,7 @@ install:
 script:
   - which python
   - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
-  - if [ $BUILD_DOC == true ]; then
+  - if [ $PIP_SELECTOR == "build-doc" ]; then
       cd doc && make html;
     else
       pytest $PYTEST_ARGS;

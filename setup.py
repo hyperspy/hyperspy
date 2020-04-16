@@ -77,11 +77,8 @@ extras_require = {
     "speed": ["numba", "cython"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6",
-              "pytest-mpl",
-              "matplotlib>=3.1",
-              "pytest-cov",
-              "codecov"],
+    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],
+    "coverage":["pytest-cov", "codecov"],
     # required to build the docs
     "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
@@ -89,7 +86,7 @@ extras_require = {
 # Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
 runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
-                          if x not in ["tests", "build-doc"]}
+                          if x not in ["tests", "coverage", "build-doc"]}
 extras_require["all"] = list(itertools.chain(*list(
     runtime_extras_require.values())))
 
