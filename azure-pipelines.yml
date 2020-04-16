@@ -1,0 +1,133 @@
+variables:
+  MPLBACKEND: agg # Necessary when running test which generate matplotlib figure
+  ENV_NAME: test_env
+
+trigger:
+  tags:
+    include:
+    # build on any tag
+    - '*'
+  branches:
+    include:
+    # build on all branches
+    - '*'
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: ericpre/ci-scripts
+      # For more details on service connection endpoint, see
+      # https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints
+      endpoint: ericpre # Azure DevOps service connection
+
+jobs:
+- job:
+  displayName: ubuntu-16.04
+  pool:
+    vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      Python38:
+        PYTHON_VERSION: '3.8'
+      Python37:
+        PYTHON_VERSION: '3.7'
+      Python36:
+        PYTHON_VERSION: '3.6'
+
+  steps:
+  - template: azure_pipelines/clone_ci-scripts_repo.yml@templates
+  - template: azure_pipelines/activate_conda_linux.yml@templates
+  - template: azure_pipelines/setup_anaconda_packages.yml@templates
+
+  - bash: |
+      source activate $ENV_NAME
+      # Install package using pip
+      pip install --no-deps .
+      conda list
+    displayName: Install package
+
+  - bash: |
+      source activate $ENV_NAME
+      pytest --mpl --pyargs hyperspy
+    displayName: Run test suite
+
+   - template: azure_pipelines/generate_distribution.yml@clone_ci-scripts_repo.yml
+   - template: azure_pipelines/publish_distribution.yml@clone_ci-scripts_repo.yml
+  # - template: azure_pipelines/update_github_release.yml@clone_ci-scripts_repo.yml
+  #   parameters:
+  #     # Set the token generated with github from the developer settings/personal
+  #     # access tokens menu in azure pipeline
+  #     github_token_name: ''
+
+- job:
+  displayName: vs2017-win2016
+  pool:
+    vmImage: 'vs2017-win2016'
+  strategy:
+    matrix:
+      Python38:
+        PYTHON_VERSION: '3.8'
+      Python36:
+        PYTHON_VERSION: '3.6'
+
+  steps:
+  - template: azure_pipelines/clone_ci-scripts_repo.yml@templates
+  - template: azure_pipelines/activate_conda_windows.yml@templates
+  - template: azure_pipelines/setup_anaconda_packages.yml@templates
+
+  - bash: |
+      source activate $ENV_NAME
+      # Install package using pip
+      pip install --no-deps .
+      conda list
+    displayName: Install package
+
+  - bash: |
+      source activate $ENV_NAME
+      pytest --mpl --pyargs hyperspy
+    displayName: Run test suite
+
+   - template: ci-scripts/azure_pipelines/generate_distribution.yml
+   - template: ci-scripts/azure_pipelines/publish_distribution.yml
+  # - template: ci-scripts/azure_pipelines/update_github_release.yml
+  #   parameters:
+  #     # Set the token generated with github from the developer settings/personal
+  #     # access tokens menu in azure pipeline
+  #     github_token_name: ''
+
+- job:
+  displayName: macOS-10.14
+  pool:
+    vmImage: 'macOS-10.14'
+  strategy:
+    matrix:
+      Python38:
+        PYTHON_VERSION: '3.8'
+      Python36:
+        PYTHON_VERSION: '3.6'
+
+  steps:
+  - template: azure_pipelines/clone_ci-scripts_repo.yml@templates
+  - template: azure_pipelines/activate_conda_macos.yml@templates
+  - template: azure_pipelines/setup_anaconda_packages.yml@templates
+
+  - bash: |
+      source activate $ENV_NAME
+      # Install package using pip
+      pip install --no-deps .
+      conda list
+    displayName: Install package
+
+  - bash: |
+      source activate $ENV_NAME
+      pytest --mpl --pyargs hyperspy
+    displayName: Run test suite
+
+   - template: ci-scripts/azure_pipelines/generate_distribution.yml
+   - template: ci-scripts/azure_pipelines/publish_distribution.yml
+  # - template: ci-scripts/azure_pipelines/update_github_release.yml
+  #   parameters:
+  #     # Set the token generated with github from the developer settings/personal
+  #     # access tokens menu in azure pipeline
+  #     github_token_name: ''
