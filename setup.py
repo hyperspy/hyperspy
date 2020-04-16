@@ -77,7 +77,11 @@ extras_require = {
     "speed": ["numba", "cython"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
+    "tests": ["pytest>=3.6",
+              "pytest-mpl",
+              "matplotlib>=3.1",
+              "pytest-cov",
+              "codecov"],
     # required to build the docs
     "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }

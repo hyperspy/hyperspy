@@ -1,0 +1,29 @@
+name: test_env
+channels:
+- defaults
+- conda-forge
+dependencies:
+# Minimal dependencies in alphabetical order
+- dask
+- dill
+- h5py
+- imageio
+- ipyparallel
+- matplotlib
+- natsort
+- numexpr
+- numpy
+- pint
+- PTable
+- python-dateutil
+- pyyaml
+- requests
+- scikit-image
+- scipy
+- sparse
+- statsmodels
+- sympy
+- tifffile >=2019.07.26
+- traits
+- tqdm
+
