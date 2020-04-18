@@ -33,10 +33,10 @@ strategy:
     Linux_Python36:
       vmImage: 'ubuntu-latest'
       PYTHON_VERSION: '3.6'
-    macOS_Python38:
+    MacOS_Python38:
       vmImage: 'macOS-latest'
       PYTHON_VERSION: '3.8'
-    macOS_Python36:
+    MacOS_Python36:
       vmImage: 'macOS-latest'
       PYTHON_VERSION: '3.6'
     Windows_Python38:
@@ -48,7 +48,6 @@ strategy:
 
 pool:
   vmImage: '$(vmImage)'
-
 
 steps:
 - template: azure_pipelines/clone_ci-scripts_repo.yml@templates

@@ -3,9 +3,9 @@ channels:
 - defaults
 - conda-forge
 dependencies:
-# Dependencies for testing
-- freetype 2.10
-- matplotlib 3.1
+# We pin freetype and matplotlib for the image comparison
+- freetype=2.9
+- matplotlib=3.1
 - pytest
 - pytest-mpl
 
