@@ -1,6 +1,7 @@
 variables:
   MPLBACKEND: agg # Necessary when running test which generate matplotlib figure
   ENV_NAME: test_env
+  RESULT_IMAGES_FOLDER: 'result_images'
 
 trigger:
   tags:
@@ -23,7 +24,7 @@ resources:
 
 jobs:
 - job:
-  displayName: ubuntu-16.04
+  displayName: Linux
   pool:
     vmImage: 'ubuntu-16.04'
   strategy:
@@ -49,8 +50,13 @@ jobs:
 
   - bash: |
       source activate $ENV_NAME
-      pytest --mpl --pyargs hyperspy
+      pytest --mpl --pyargs hyperspy --mpl-results-path RESULT_IMAGES_FOLDER
     displayName: Run test suite
+
+  - publish: $(System.DefaultWorkingDirectory)/result_images
+    artifact: $(Agent.JobName)-result_images
+    displayName: Publish Image Comparison
+    condition: failed()
 
   - template: azure_pipelines/generate_distribution.yml@templates
   - template: azure_pipelines/publish_distribution.yml@templates
@@ -61,7 +67,7 @@ jobs:
   #     github_token_name: ''
 
 - job:
-  displayName: vs2017-win2016
+  displayName: Windows
   pool:
     vmImage: 'vs2017-win2016'
   strategy:
@@ -85,7 +91,7 @@ jobs:
 
   - bash: |
       source activate $ENV_NAME
-      pytest --mpl --pyargs hyperspy
+      pytest --mpl --pyargs hyperspy --mpl-results-path RESULT_IMAGES_FOLDER
     displayName: Run test suite
 
   - template: azure_pipelines/generate_distribution.yml@templates
@@ -97,7 +103,7 @@ jobs:
   #     github_token_name: ''
 
 - job:
-  displayName: macOS-10.14
+  displayName: MacOS
   pool:
     vmImage: 'macOS-10.14'
   strategy:
@@ -121,7 +127,7 @@ jobs:
 
   - bash: |
       source activate $ENV_NAME
-      pytest --mpl --pyargs hyperspy
+      pytest --mpl --pyargs hyperspy --mpl-results-path RESULT_IMAGES_FOLDER
     displayName: Run test suite
 
   - template: azure_pipelines/generate_distribution.yml@templates
