@@ -10,6 +10,7 @@ dependencies:
 - imageio
 - ipyparallel
 - matplotlib
+- mrcz
 - natsort
 - numexpr
 - numpy
@@ -19,6 +20,7 @@ dependencies:
 - pyyaml
 - requests
 - scikit-image
+- scikit-learn
 - scipy
 - sparse
 - statsmodels
