@@ -32,6 +32,10 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
+from hyperspy.misc.eels.electron_inelastic_mean_free_path import \
+    mean_free_path as iMFP
+from hyperspy.misc.eels.electron_inelastic_mean_free_path import \
+    mean_free_path_eels_angular_correction as iMFP_ang_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
@@ -532,13 +536,16 @@ class EELSSpectrum_mixin:
 
     def estimate_thickness(self,
                            threshold=None,
-                           zlp=None, mean_free_path=None):
-        """Estimates the thickness (relative to the mean free path)
+                           zlp=None,
+                           density=None,
+                           mean_free_path=None,):
+        """Estimates the thickness (relative and absolute)
         of a sample using the log-ratio method.
 
         The current EELS spectrum must be a low-loss spectrum containing
         the zero-loss peak. The hyperspectrum must be well calibrated
-        and aligned.
+        and aligned. To obtain the thickness relative to the mean free path
+        don't set the `density` and the `mean_free_path`.
 
         Parameters
         ----------
@@ -556,6 +563,10 @@ class EELSSpectrum_mixin:
             The mean free path of the material in nanometers.
             If not provided, the thickness
             is given relative to the mean free path.
+        density : float, optional
+            The density of the material in g/cm**3. This is used to estimate the mean
+            free path when the mean free path is not known and to perform the
+            angular corrections.
 
         Returns
         -------
@@ -566,15 +577,21 @@ class EELSSpectrum_mixin:
 
         Notes
         -----
-        For details see: Egerton, R. Electron Energy-Loss
-        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        For details see:
+        - Egerton, R. Electron Energy-Loss Spectroscopy in the Electron
+          Microscope.  Springer-Verlag, 2011.
+        - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+          ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+          Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+          https://doi.org/10.1002/jemt.20597.
+
 
         """
-        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         total_intensity = self.integrate1D(axis.index_in_array).data
         if threshold is None and zlp is None:
-            raise ValueError("")
+            raise ValueError("Please provide one of the following keywords: "
+                             "`threshold`, `zlp`")
         if zlp is not None:
             I0 = zlp.integrate1D(axis.index_in_array).data
         else:
@@ -584,13 +601,37 @@ class EELSSpectrum_mixin:
             t_over_lambda = da.log(total_intensity / I0)
         else:
             t_over_lambda = np.log(total_intensity / I0)
+        if density is not None:
+            if self._are_microscope_parameters_missing():
+                raise RuntimeError(
+                    "Some microscope parameters are missing. Please use the "
+                    "`set_microscope_parameters()` method to set them. "
+                    "If you don't know them, don't set the `density` keyword."
+                )
+            else:
+                md = self.metadata.Acquisition_instrument.TEM
+                t_over_lambda *= iMFP_ang_correction(
+                    beam_energy=md.beam_energy,
+                    alpha=md.convergence_angle,
+                    beta=md.Detector.EELS.collection_angle,
+                    density=density,
+                )
+                if mean_free_path is None:
+                    mean_free_path = iMFP(
+                        beam_energy=self.metadata.Acquisition_instrument.TEM.beam_energy,
+                        density=density)
+                    _logger.info(f"The estimated iMFP is {mean_free_path} nm")
+
         s = self._get_navigation_signal(data=t_over_lambda)
-        if mean_free_path:
+        if mean_free_path is not None:
             s.data *= mean_free_path
             s.metadata.General.title = (
                 self.metadata.General.title +
                 ' thickness (nm)')
         else:
+            _logger.warning(
+                "Computing the relative thickness. To compute the absolute "
+                "thickness provide the `mean_free_path` and/or the `density`")
             s.metadata.General.title = (self.metadata.General.title +
                                         ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
@@ -1109,8 +1150,6 @@ class EELSSpectrum_mixin:
         This method is based in Egerton's Matlab code [1]_ with some
         minor differences:
 
-        * The integrals are performed using the simpsom rule instead of using
-          a summation.
         * The wrap-around problem when computing the ffts is workarounded by
           padding the signal instead of substracting the reflected tail.
 
