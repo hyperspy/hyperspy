@@ -532,7 +532,7 @@ class EELSSpectrum_mixin:
 
     def estimate_thickness(self,
                            threshold=None,
-                           zlp=None,):
+                           zlp=None, mean_free_path=None):
         """Estimates the thickness (relative to the mean free path)
         of a sample using the log-ratio method.
 
@@ -552,6 +552,10 @@ class EELSSpectrum_mixin:
         zlp : BaseSignal, optional
             If not None the zero-loss peak intensity is calculated from the ZLP
             spectrum supplied by integration.
+        mean_free_path : float, optional
+            The mean free path of the material in nanometers.
+            If not provided, the thickness
+            is given relative to the mean free path.
 
         Returns
         -------
@@ -581,8 +585,14 @@ class EELSSpectrum_mixin:
         else:
             t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal(data=t_over_lambda)
-        s.metadata.General.title = (self.metadata.General.title +
-                                    ' $\\frac{t}{\\lambda}$')
+        if mean_free_path:
+            s.data *= mean_free_path
+            s.metadata.General.title = (
+                self.metadata.General.title +
+                ' thickness (nm)')
+        else:
+            s.metadata.General.title = (self.metadata.General.title +
+                                        ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
