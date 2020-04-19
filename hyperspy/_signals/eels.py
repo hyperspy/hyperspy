@@ -531,7 +531,7 @@ class EELSSpectrum_mixin:
         return threshold
 
     def estimate_thickness(self,
-                           threshold,
+                           threshold=None,
                            zlp=None,):
         """Estimates the thickness (relative to the mean free path)
         of a sample using the log-ratio method.
@@ -542,22 +542,20 @@ class EELSSpectrum_mixin:
 
         Parameters
         ----------
-        threshold : {Signal1D, float, int}
-            Truncation energy to estimate the intensity of the
-            elastic scattering. The threshold can be provided as a signal of
+        threshold : {BaseSignal, float}, optional
+            If the zero-loss-peak is not provided, use this energy threshold
+            to roughly estimate its intensity by truncation.
+            If the threshold is constant across the dataset use a float. Otherwise,
+            provide a signal of
             the same dimension as the input spectrum navigation space
-            containing the threshold value in the energy units. Alternatively a
-            constant threshold can be specified in energy/index units by
-            passing float/int.
-        zlp : {None, EELSSpectrum}
+            containing the threshold value in the energy units.
+        zlp : BaseSignal, optional
             If not None the zero-loss peak intensity is calculated from the ZLP
-            spectrum supplied by integration using Simpson's rule. If None
-            estimates the zero-loss peak intensity using
-            `estimate_elastic_scattering_intensity` by truncation.
+            spectrum supplied by integration.
 
         Returns
         -------
-        s : Signal1D
+        s : BaseSignal
             The thickness relative to the MFP. It returns a Signal1D,
             Signal2D or a BaseSignal, depending on the current navigation
             dimensions.
@@ -568,10 +566,11 @@ class EELSSpectrum_mixin:
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
 
         """
-        # TODO: Write units tests
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         total_intensity = self.integrate1D(axis.index_in_array).data
+        if threshold is None and zlp is None:
+            raise ValueError("")
         if zlp is not None:
             I0 = zlp.integrate1D(axis.index_in_array).data
         else:
