@@ -574,15 +574,8 @@ class EELSSpectrum_mixin:
 
         Notes
         -----
-        For details see:
-        - Egerton, R. Electron Energy-Loss Spectroscopy in the Electron
-          Microscope.  Springer-Verlag, 2011.
-        - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
-          ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
-          Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-          https://doi.org/10.1002/jemt.20597.
-
-
+        For details see Egerton, R. Electron Energy-Loss Spectroscopy in the Electron
+        Microscope.  Springer-Verlag, 2011.
         """
         axis = self.axes_manager.signal_axes[0]
         total_intensity = self.integrate1D(axis.index_in_array).data

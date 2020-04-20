@@ -19,10 +19,8 @@ def iMFP(density, beam_energy):
     
     Notes:
     ------
-    From Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
-    ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
-    Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-    https://doi.org/10.1002/jemt.20597.
+    For details see Egerton, R. Electron Energy-Loss Spectroscopy in the Electron
+    Microscope.  Springer-Verlag, 2011.
     """
     theta_C = 20 # mrad
     inv_lambda = 11 * density ** 0.3 / (200 * _F(beam_energy) * beam_energy) * np.log(theta_C ** 2 / _theta_E(density, beam_energy) ** 2)
@@ -42,10 +40,8 @@ def iMFP_angular_correction(density, beam_energy, alpha, beta):
     
     Notes:
     ------
-    From Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
-    ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
-    Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-    https://doi.org/10.1002/jemt.20597.
+    For details see Egerton, R. Electron Energy-Loss Spectroscopy in the Electron
+    Microscope.  Springer-Verlag, 2011.
     """
     theta_C = 20 # mrad
     A = alpha ** 2 + beta ** 2 + 2 * _theta_E(density, beam_energy) ** 2 + np.abs(alpha ** 2 - beta ** 2) 
