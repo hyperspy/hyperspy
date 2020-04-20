@@ -81,7 +81,13 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
             return scipy.linalg.svd(X, full_matrices=False)
 
     m, n = X.shape
-    inv_v = 1.0 / varX
+
+    with np.errstate(divide="ignore"):
+        # Shouldn't really have zero variance anywhere,
+        # but handle it here.
+        inv_v = 1.0 / varX
+        inv_v[~np.isfinite(inv_v)] = 1.0
+
     _logger.info("Performing maximum likelihood principal components analysis")
 
     # Generate initial estimates
@@ -91,8 +97,9 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
     s_old = 0.0
 
     # Placeholders
-    F = np.empty(X.shape)
-    M = np.zeros(X.shape)
+    F = np.empty((m, n))
+    M = np.zeros((m, n))
+    Uq = np.zeros((output_dimension, m))
 
     # Loop for alternating least squares
     _logger.info("Optimization iteration loop")
@@ -100,12 +107,11 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
         s_obj = 0.0
 
         for i in range(n):
-            Q = np.diag(inv_v[:, i])
-            F = (U.T @ Q) @ U
-            F = np.linalg.inv(F)
-            M[:, i] = np.linalg.multi_dot([U, F, U.T, Q, X[:, i].T])
+            Uq = U.T * inv_v[:, i]
+            F = np.linalg.inv(Uq @ U)
+            M[:, i] = np.linalg.multi_dot([U, F, Uq, X[:, i].T])
             dx = X[:, i] - M[:, i]
-            s_obj += dx @ Q @ dx.T
+            s_obj += (dx * inv_v[:, i]) @ dx.T
 
         # Every second iteration, check the stop criterion
         if itr % 2 == 0:
