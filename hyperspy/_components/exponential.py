@@ -110,15 +110,15 @@ class Exponential(Expression):
             exp = np.exp
             log = np.log
 
-        with np.errstate(divide='raise'):
+        with np.errstate(divide='raise', invalid='raise'):
             try:
                 # use log and exp to compute geometric mean to avoid overflow
                 a1 = s.isig[i1:i_mid].data
                 b1 = log(a1)
                 a2 = s.isig[i_mid:i2].data
                 b2 = log(a2)
-                geo_mean1 = exp(b1.sum(axis=-1)/b1.shape[-1])
-                geo_mean2 = exp(b2.sum(axis=-1)/b2.shape[-1])
+                geo_mean1 = exp(b1.mean(axis=-1))
+                geo_mean2 = exp(b2.mean(axis=-1))
                 x1 = (x_start + x_mid) / 2
                 x2 = (x_mid + x_end) / 2
 
@@ -133,10 +133,15 @@ class Exponential(Expression):
                     A = np.nan_to_num(A)
                     t = np.nan_to_num(t)
 
-            except (RuntimeWarning, FloatingPointError):
-                _logger.warning('Exponential paramaters estimation failed with'
-                                ' a "divide by zero" error (likely log of a '
-                                'zero or negative value).')
+            except (FloatingPointError):
+                if i1 == i2:
+                    _logger.warning('Exponential parameters estimation failed '
+                                'because signal range includes only one '
+                                'point.')
+                else:
+                    _logger.warning('Exponential parameters estimation failed '
+                                'with a "divide by zero" error (likely log of '
+                                'a zero or negative value).')
                 return False
 
             if self.binned:
