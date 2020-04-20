@@ -20,7 +20,7 @@ resources:
       name: hyperspy/ci-scripts
       # For more details on service connection endpoint, see
       # https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints
-      endpoint: ericpre # Azure DevOps service connection
+      endpoint: hyperspy # Azure DevOps service connection
 
 strategy:
   matrix:
