@@ -36,9 +36,17 @@ when saving in the hspy format (HyperSpy's HDF5 specification).
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 1.6
+    Option to compute the absolute thickness, including the angular corrections
+    and mean free path estimation.
+
 The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can
 estimate the thickness from a low-loss EELS spectrum using the Log-Ratio
-method.
+method. If the beam energy, collection angle, convergence angle and sample
+density are known the absolute thickness is estimated, including the angular
+corrections, following the equations by Iakoubovskii et al. as found in
+:ref:`[Egerton2011] <Egerton2011>`. Otherwise, just the thickness relative
+to the electron inelastic mean free path without angular corrections is computed.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
