@@ -32,10 +32,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
-from hyperspy.misc.eels.electron_inelastic_mean_free_path import \
-    mean_free_path as iMFP
-from hyperspy.misc.eels.electron_inelastic_mean_free_path import \
-    mean_free_path_eels_angular_correction as iMFP_ang_correction
+from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
@@ -610,7 +607,7 @@ class EELSSpectrum_mixin:
                 )
             else:
                 md = self.metadata.Acquisition_instrument.TEM
-                t_over_lambda *= iMFP_ang_correction(
+                t_over_lambda *= iMFP_angular_correction(
                     beam_energy=md.beam_energy,
                     alpha=md.convergence_angle,
                     beta=md.Detector.EELS.collection_angle,

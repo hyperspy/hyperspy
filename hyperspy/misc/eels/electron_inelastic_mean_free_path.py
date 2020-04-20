@@ -6,7 +6,7 @@ def _F(beam_energy):
 def _theta_E(density, beam_energy):
     return 5.5 * density ** 0.3 / (_F(beam_energy) * beam_energy)
 
-def mean_free_path(density, beam_energy):
+def iMFP(density, beam_energy):
     """Estimate electron inelastic mean free path from density
 
     Parameters:
@@ -27,7 +27,7 @@ def mean_free_path(density, beam_energy):
     inv_lambda = 11 * density ** 0.3 / (200 * _F(beam_energy) * beam_energy) * np.log(theta_C ** 2 / _theta_E(density, beam_energy) ** 2)
     return 1 / inv_lambda
 
-def mean_free_path_eels_angular_correction(density, beam_energy, alpha, beta):
+def iMFP_angular_correction(density, beam_energy, alpha, beta):
     """Estimate the effect of limited collection angle on EELS mean free path
 
     Parameters:
