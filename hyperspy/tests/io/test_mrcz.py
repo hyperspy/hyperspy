@@ -178,11 +178,11 @@ class TestPythonMrcz:
         print("MRCZ test ({}, {}, {}, lazy:{}) finished in {} s".format(
             dtype, compressor, clevel, lazy, perf_counter() - t_start))
 
-    @pytest.mark.skipif(sys.version_info.minor <= 6,
-                        reason='Failed quite often on python36.')
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
         pytest.importorskip('blosc')
+        if sys.platform.startswith("win") and dtype == 'complex64':
+            pytest.skip("Fail quite often on windows: skip test.")
         t_start = perf_counter()
         self.compareSaveLoad([2, 64, 32], dtype=dtype, compressor='zstd',
                              clevel=1, do_async=True)
