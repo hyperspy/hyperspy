@@ -83,6 +83,41 @@ Useful hints on testing:
   been reported in the Windows console).
 
 
+Continuous integration (CI)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The test suite is run using continuous integration services provided by
+`Travis CI <https://travis-ci.org/github/hyperspy/hyperspy>`_ and
+`Azure Pipeline <https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build>`_.
+The CI helper scripts are pulled from the
+`ci-scripts <https://github.com/hyperspy/ci-scripts>`_ repository.
+
+The testing matrix is as follow:
+
+- **Travis CI**: test all supported python version on Linux; all dependencies are
+  pulled from `pypi <https://pypi.org>`_,
+- **Azure Pipeline**: test a range of python version on Linux, MacOS and Windows;
+  all dependencies are pulled from `anaconda cloud <https://anaconda.org/>`_
+  using the `Anaconda "defaults" <https://anaconda.org/anaconda>`_ and the
+  `"conda-forge" <https://anaconda.org/conda-forge>`_ channel (in this order of
+  priority)
+
+This testing matrix has been design to be simple and easy to maintain and also
+to ensure that packages from pypi and Anaconda cloud are not mixed in order to
+avoid red herring failure of the test suite caused by application binary
+interface (ABI) incompatibility between dependencies.
+
+The most recent version of packages will be available first on pypi and later
+on anaconda cloud. It means that if a recent release of a dependency breaks the
+test suite, it should happen first on travis - typical usual suspect would be
+matplotlib, numpy, scipy, etc. Similarly, deprecation warning should appear
+first on Travis CI.
+
+The build of the doc is done on Travis CI and it is worth checking that no new
+warnings have been introduced when writing documentation in the user guide or
+in the docstring.
+
+
 .. _plot-test-label:
 
 Plot testing
