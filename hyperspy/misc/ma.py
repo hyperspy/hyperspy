@@ -1,6 +1,8 @@
 import numpy as np
 import dask.array as da
 from numpy.ma.core import MaskedConstant
+from hyperspy.roi import CircleROI
+import traits.api as t
 
 masked = MaskedConstant()
 
@@ -84,5 +86,50 @@ def masked_where(condition, signal, copy=False):
     if signal._lazy:
         signal.data = da.ma.masked_where(condition, signal.data)
     else:
-        signal.data = np.ma.masked_where(signal.data, condition, copy=copy)
+        signal.data = np.ma.masked_where(condition, signal.data, copy=copy)
+
+def masked_roi(signal, roi, axes="signal"):
+    if axes is None and signal in roi.signal_map:
+        axes = roi.signal_map[signal][1]
+    else:
+        axes = roi._parse_axes(axes, signal.axes_manager)
+    natax = signal.axes_manager._get_axes_in_natural_order()
+
+    if isinstance(roi, CircleROI):
+        cx = roi.cx + 0.5001 * axes[0].scale
+        cy = roi.cy + 0.5001 * axes[1].scale
+        ranges = [[cx - roi.r, cx + roi.r],
+                  [cy - roi.r, cy + roi.r]]
+        x,y = np.ogrid[0:axes[0].size, 0:axes[1].size]
+        x = np.subtract(x, cx)
+        y = np.subtract(y, cx)
+        two_d_mask = (x**2 + y**2) > roi.r ** 2
+        print()
+        if roi.r_inner != t.Undefined:
+            two_d_mask[(x**2 + y**2) < roi.r_inner ** 2] = False
+        axes_indexes = (natax.index(axes[0]), natax.index(axes[1]))
+
+        for i in range(len(natax)):
+            if i not in axes_indexes:
+                two_d_mask = np.expand_dims(two_d_mask,i)
+        ones_shape = np.array(signal.axes_manager.shape)
+        for i in axes_indexes:
+            ones_shape[i]=1
+        expanded_ones = np.ones(shape=ones_shape, dtype=bool)
+        if signal._lazy:
+            expanded_ones = da.array(expanded_ones)
+            two_d_mask = da.array(two_d_mask)
+            mask = expanded_ones*two_d_mask
+        else:
+            mask = np.broadcast(expanded_ones,two_d_mask)
+        masked_where(mask, signal)
+    else:
+        ranges = roi._get_ranges()
+        slices = roi._make_slices(natax, axes,ranges)
+        signal.data[slices]=masked
+
+
+
+
+
 

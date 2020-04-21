@@ -4,6 +4,7 @@ import dask.array as da
 from hyperspy.signals import Signal2D
 from hyperspy._lazy_signals import LazySignal2D
 from hyperspy.misc import ma
+from hyperspy.roi import CircleROI,RectangularROI
 from hyperspy.api import load
 import tempfile
 import os
@@ -118,4 +119,15 @@ class TestMa():
         l = load(tmpfilepath + ".hspy")
         print(type(l.data))
         #assert isinstance(l.data, np.ma.masked_array)
+
+    def test_masked_roi(self,signal,lazy_signal):
+        c = CircleROI(2,2,2)
+        ma.masked_roi(signal,c, axes=[0,1])
+        ma.masked_roi(lazy_signal, c)
+        r = RectangularROI(1,3,3,7)
+        ma.masked_roi(signal, r, axes=[0, 1])
+        #ma.masked_roi(lazy_signal, r)
+
+
+
 
