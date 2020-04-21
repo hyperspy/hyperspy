@@ -178,8 +178,8 @@ class TestPythonMrcz:
         print("MRCZ test ({}, {}, {}, lazy:{}) finished in {} s".format(
             dtype, compressor, clevel, lazy, perf_counter() - t_start))
 
-    @pytest.mark.xfail(sys.platform.startswith("win"),
-                       reason="Fail quite often on windows: skip test.")
+    @pytest.mark.skipif(sys.platform.startswith("win"),
+                        reason="Fail quite often on windows: skip test.")
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
         pytest.importorskip('blosc')
