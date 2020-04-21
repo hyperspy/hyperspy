@@ -32,10 +32,9 @@ class TestMLPCA:
 
         rng = np.random.RandomState(101)
         U = rng.uniform(0, 1, size=(m, r))
-        V = rng.uniform(0, 1, size=(n, r))
-        X = np.dot(U, V.T) + 0.01 * rng.randn(m, n)
-        varX = X.copy() / 2
-
+        V = rng.uniform(0, 10, size=(n, r))
+        varX = np.dot(U, V.T)
+        X = rng.poisson(varX)
         self.m = m
         self.n = n
         self.rank = r
@@ -43,7 +42,7 @@ class TestMLPCA:
         self.varX = varX
 
         # Test tolerance
-        self.tol = 1e-3 * (self.m * self.n)
+        self.tol = 270
 
     @pytest.mark.parametrize("tol", [1e-9, 1e-6])
     @pytest.mark.parametrize("max_iter", [100, 500])
