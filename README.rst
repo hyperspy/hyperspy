@@ -2,7 +2,7 @@
 
 |Azure|_ |Travis|_ |Codecov|_ |rtd|_ |pypi_version|_ |python_version|_ |gitter|_
 
-.. |Azure| image::https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
+.. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
 .. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build/latest?definitionId=1?branchName=RELEASE_next_minor
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_patch
