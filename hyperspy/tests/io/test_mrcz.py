@@ -124,7 +124,7 @@ class TestPythonMrcz:
                     sleep(0.001)
             print("Time to save file: {} s".format(
                 perf_counter() - (t_stop - MAX_ASYNC_TIME)))
-            sleep(0.005)
+            sleep(0.1)
 
         reSignal = load(mrcName)
         try:
@@ -178,8 +178,6 @@ class TestPythonMrcz:
         print("MRCZ test ({}, {}, {}, lazy:{}) finished in {} s".format(
             dtype, compressor, clevel, lazy, perf_counter() - t_start))
 
-    @pytest.mark.skipif(sys.platform.startswith("win"),
-                        reason="Fail quite often on windows: skip test.")
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
         pytest.importorskip('blosc')
