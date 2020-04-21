@@ -126,7 +126,12 @@ def masked_roi(signal, roi, axes="signal"):
     else:
         ranges = roi._get_ranges()
         slices = roi._make_slices(natax, axes,ranges)
-        signal.data[slices]=masked
+        if signal._lazy: # This is a little memory hungry
+            mask = np.zeros(shape=signal.axes_manager.shape,dtype=bool)
+            mask[slices] = True
+            masked_where(mask,signal)
+        else:
+            signal.data[slices]=masked
 
 
 

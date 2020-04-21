@@ -126,7 +126,7 @@ class TestMa():
         ma.masked_roi(lazy_signal, c)
         r = RectangularROI(1,3,3,7)
         ma.masked_roi(signal, r, axes=[0, 1])
-        #ma.masked_roi(lazy_signal, r)
+        ma.masked_roi(lazy_signal, r)
 
 
 
