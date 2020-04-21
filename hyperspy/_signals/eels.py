@@ -618,16 +618,18 @@ class EELSSpectrum_mixin:
             s.metadata.General.title = (
                 self.metadata.General.title +
                 ' thickness (nm)')
+            s.metadata.Signal.quantity = "thickness (nm)"
         else:
             _logger.warning(
                 "Computing the relative thickness. To compute the absolute "
                 "thickness provide the `mean_free_path` and/or the `density`")
             s.metadata.General.title = (self.metadata.General.title +
                                         ' $\\frac{t}{\\lambda}$')
+            s.metadata.Signal.quantity = "$\\frac{t}{\\lambda}$"
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
-                '_relative_thickness')
+                '_thickness')
             s.tmp_parameters.folder = self.tmp_parameters.folder
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
