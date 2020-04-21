@@ -611,6 +611,12 @@ class EELSSpectrum_mixin:
                         beam_energy=self.metadata.Acquisition_instrument.TEM.beam_energy,
                         density=density)
                     _logger.info(f"The estimated iMFP is {mean_free_path} nm")
+        else:
+            _logger.warning(
+                "Computing the thickness without taking into account the effect of"
+                "the limited collection angle, what usually leads to underestimating"
+                "the thickness. To perform the angular corrections you must provide"
+                "the density of the material.")
 
         s = self._get_navigation_signal(data=t_over_lambda)
         if mean_free_path is not None:
