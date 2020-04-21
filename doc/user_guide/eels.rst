@@ -94,8 +94,6 @@ the npoints keyword.
 Kramers-Kronig Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.7
-
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
 The :py:meth:`~._signals.eels.EELSSpectrum_mixin.kramers_kronig_analysis`
@@ -113,8 +111,8 @@ EELS curve fitting
 
 HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
-EELS spectrum from the `The EELS Data Base
-<https://eelsdb.eu/>`_ (see :ref:`example-data-label`).
+EELS spectrum from the `EELS Data Base
+<https://eelsdb.eu/>`__ (see :ref:`example-data-label`).
 
 Load the core-loss and low-loss spectra
 
@@ -171,6 +169,7 @@ Conveniently, all the EELS core-loss components of the added elements are added
 automatically, names after its element symbol.
 
 .. code-block:: python
+
     >>> m.components.N_K
     <N_K (EELSCLEdge component)>
     >>> m.components.B_K
@@ -223,8 +222,8 @@ Visualize the result
    :align:   center
    :width:   500
 
-   Curve fitting quantification of a boron nitride EELS core-loss spectrum from
-   `The EELS Data Base <https://eelsdb.eu>`_
+   Curve fitting quantification of a boron nitride EELS core-loss spectrum
+   from the `EELS Data Base <https://eelsdb.eu>`__.
 
 
 There are several methods that are only available in
@@ -271,10 +270,8 @@ overlapping. This method is executed automatically when e.g. components are
 added or removed from the model, but sometimes is necessary to call it
 manually.
 
-.. versionadded:: 0.7.1
-
-   Sometimes it is desirable to disable the automatic adjustment of the fine
-   structure width. It is possible to suspend this feature by calling
-   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`.
-   To resume it use
-   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`
+Sometimes it is desirable to disable the automatic adjustment of the fine
+structure width. It is possible to suspend this feature by calling
+:py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`.
+To resume it use
+:py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`

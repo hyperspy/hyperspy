@@ -1,25 +1,27 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of HyperSpy.
+# This file is part of  HyperSpy.
 #
-# HyperSpy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HyperSpy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from unittest import mock
 
 import numpy as np
 from scipy.signal import savgol_filter
 import pytest
+import dask.array as da
 
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.decorators import lazifyTestClass
@@ -210,6 +212,8 @@ class TestInterpolateInBetween:
         s = self.s.inav[0]
         s.change_dtype('float')
         tmp = np.zeros_like(s.data)
+        if isinstance(tmp, da.Array):
+            tmp = np.asarray(np.zeros_like(s.data))
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
@@ -221,6 +225,8 @@ class TestInterpolateInBetween:
         s = self.s.inav[0]
         s.change_dtype('float')
         tmp = np.zeros_like(s.data)
+        if isinstance(tmp, da.Array):
+            tmp = np.asarray(np.zeros_like(s.data))
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')

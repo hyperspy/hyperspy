@@ -1,19 +1,20 @@
-# Copyright 2007-2016 The Hyperspy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
 import numpy as np
@@ -79,6 +80,10 @@ def test_fft_signal2d(lazy):
     assert_allclose(im_fft.data, np.fft.fftshift(
         np.fft.fft2(im.inav[0, 0]).data))
 
+    assert im.fft(apodization=True) == im.apply_apodization().fft()
+    for apodization in ['hann', 'hamming', 'tukey']:
+        assert im.fft(apodization=apodization) == im.apply_apodization(window=apodization).fft()
+
 
 @pytest.mark.parametrize('lazy', [True, False])
 def test_fft_signal1d(lazy):
@@ -118,6 +123,10 @@ def test_fft_signal1d(lazy):
     assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
     assert_allclose(np.fft.fftshift(
         np.fft.fft(s.inav[0, 0, 0].data)), s_fft.data)
+
+    assert s.fft(apodization=True) == s.apply_apodization().fft()
+    for apodization in ['hann', 'hamming', 'tukey']:
+        assert s.fft(apodization=apodization) == s.apply_apodization(window=apodization).fft()
 
 
 def test_nul_signal():

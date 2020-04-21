@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,9 +26,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
-import hyperspy as hs
-from distutils.version import LooseVersion
 import logging
+
+import hyperspy as hs
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -53,7 +54,8 @@ def contrast_stretching(data, saturated_pixels):
 
     Raises
     ------
-    ValueError if the value of `saturated_pixels` is out of the valid range.
+    ValueError
+        If the value of `saturated_pixels` is out of the valid range.
 
     """
     # Sanity check
@@ -62,11 +64,11 @@ def contrast_stretching(data, saturated_pixels):
     if not 0 <= saturated_pixels <= 100:
         raise ValueError(
             "saturated_pixels must be a scalar in the range[0, 100]")
-    nans = np.isnan(data)
-    if nans.any():
-        data = data[~nans]
-    vmin = np.percentile(data, saturated_pixels / 2.)
-    vmax = np.percentile(data, 100 - saturated_pixels / 2.)
+    if np.ma.is_masked(data):
+        # If there is a mask, compressed the data to remove the masked data
+        data = np.ma.masked_less_equal(data, 0).compressed()
+    vmin = np.nanpercentile(data, saturated_pixels / 2.)
+    vmax = np.nanpercentile(data, 100 - saturated_pixels / 2.)
     return vmin, vmax
 
 
@@ -356,11 +358,11 @@ def plot_signals(signal_list, sync=True, navigator="auto",
                         **kwargs)
 
 
-def _make_heatmap_subplot(spectra):
+def _make_heatmap_subplot(spectra, **plot_kwargs):
     from hyperspy._signals.signal2d import Signal2D
     im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     im.metadata.General.title = spectra.metadata.General.title
-    im.plot()
+    im.plot(**plot_kwargs)
     return im._plot.signal_plot.ax
 
 
@@ -437,8 +439,8 @@ def _set_spectrum_xlabel(spectrum, ax):
 def _transpose_if_required(signal, expected_dimension):
     # EDS profiles or maps have signal dimension = 0 and navigation dimension
     # 1 or 2. For convenience transpose the signal if possible
-    if (signal.axes_manager.signal_dimension == 0 and 
-        signal.axes_manager.navigation_dimension == expected_dimension):
+    if (signal.axes_manager.signal_dimension == 0 and
+            signal.axes_manager.navigation_dimension == expected_dimension):
         return signal.T
     else:
         return signal
@@ -454,7 +456,7 @@ def plot_images(images,
                 suptitle_fontsize=18,
                 colorbar='multi',
                 centre_colormap="auto",
-                saturated_pixels=0,
+                saturated_pixels=None,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -470,23 +472,21 @@ def plot_images(images,
                 **kwargs):
     """Plot multiple images as sub-images in one figure.
 
-    Extra keyword arguments are passed to `matplotlib.figure`.
-
     Parameters
     ----------
     images : list of Signal2D or BaseSignal
         `images` should be a list of Signals to plot. For `BaseSignal` with
-        navigation dimensions 2 and signal dimension 0, the signal will be 
+        navigation dimensions 2 and signal dimension 0, the signal will be
         tranposed to form a `Signal2D`.
         Multi-dimensional images will have each plane plotted as a separate
         image.
         If any signal shape is not suitable, a ValueError will be raised.
     cmap : matplotlib colormap, list, or ``'mpl_colors'``, *optional*
-        The colormap used for the images, by default read from ``pyplot``.
-        A list of colormaps can also be provided, and the images will
-        cycle through them. Optionally, the value ``'mpl_colors'`` will
-        cause the cmap to loop through the default ``matplotlib``
-        colors (to match with the default output of the
+        The colormap used for the images, by default use the setting
+        ``color map signal`` from the Plot preferences. A list of colormaps can
+        also be provided, and the images will cycle through them. Optionally,
+        the value ``'mpl_colors'`` will cause the cmap to loop through the default 
+        ``matplotlib`` colors (to match with the default output of the
         :py:func:`~.drawing.utils.plot_spectra` method.
         Note: if using more than one colormap, using the ``'single'``
         option for ``colorbar`` is disallowed.
@@ -502,7 +502,7 @@ def plot_images(images,
         short titles are detected.
         Works best if all images to be plotted have the same beginning
         to their titles.
-        If 'titles', the title from each image's metadata.General.title
+        If 'titles', the title from each image's `metadata.General.title`
         will be used.
         If any other single str, images will be labeled in sequence using
         that str as a prefix.
@@ -552,10 +552,10 @@ def plot_images(images,
         If None, default options will be used
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values
-        Values should be supplied as used in pyplot.subplots_adjust(),
-        and can be:
-            'left', 'bottom', 'right', 'top', 'wspace' (width),
-            and 'hspace' (height)
+        Values should be supplied as used in 
+        :py:func:`matplotlib.pyplot.subplots_adjust`,
+        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and 
+        'hspace' (height)
     tight_layout : bool, optional
         If true, hyperspy will attempt to improve image placement in
         figure using matplotlib's tight_layout
@@ -581,9 +581,12 @@ def plot_images(images,
         If list of scalar, the length should match the number of images to
         show.
         A list of scalar is not compatible with a single colorbar.
-        See vmin, vmax of matplotlib.imshow() for more details.
-    *args, **kwargs, optional
-        Additional arguments passed to matplotlib.imshow()
+        See vmin, vmax of :py:func:`matplotlib.pyplot.imshow` for more details.
+    *args
+        Additional list arguments passed to
+        :py:func:`matplotlib.pyplot.imshow`.
+    **kwargs, optional
+        Keywords arguments passed to :py:func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
@@ -650,7 +653,7 @@ def plot_images(images,
 
     # If no cmap given, get default colormap from pyplot:
     if cmap is None:
-        cmap = [plt.get_cmap().name]
+        cmap = [preferences.Plot.cmap_signal]
     elif cmap == 'mpl_colors':
         for n_color, c in enumerate(mpl.rcParams['axes.prop_cycle']):
             make_cmap(colors=['#000000', c['color']],
@@ -706,7 +709,11 @@ def plot_images(images,
         return arg
     vmin = _check_arg(vmin, None, 'vmin')
     vmax = _check_arg(vmax, None, 'vmax')
-    saturated_pixels = _check_arg(saturated_pixels, 0, 'saturated_pixels')
+    if saturated_pixels is None:
+        saturated_pixels = preferences.Plot.saturated_pixels
+    saturated_pixels = _check_arg(saturated_pixels,
+                                  preferences.Plot.saturated_pixels,
+                                  'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -836,6 +843,7 @@ def plot_images(images,
     # 'single' scalebar
     if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
+        print(saturated_pixels)
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
         else:
@@ -1137,25 +1145,13 @@ def make_cmap(colors, name='my_colormap', position=None,
         list containing the values (from [0,1]) that dictate the position
         of each color within the colormap. If None (default), the colors
         will be equally-spaced within the colorbar.
-    bit : boolean
+    bit : bool
         True if RGB colors are given in 8-bit [0 to 255] or False if given
         in arithmetic basis [0 to 1] (default)
-    register : boolean
+    register : bool
         switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string
     """
-    def _html_color_to_rgb(color_string):
-        """ convert #RRGGBB to an (R, G, B) tuple """
-        color_string = color_string.strip()
-        if color_string[0] == '#':
-            color_string = color_string[1:]
-        if len(color_string) != 6:
-            raise ValueError(
-                "input #{} is not in #RRGGBB format".format(color_string))
-        r, g, b = color_string[:2], color_string[2:4], color_string[4:]
-        r, g, b = [int(n, 16) / 255 for n in (r, g, b)]
-        return r, g, b
-
     bit_rgb = np.linspace(0, 1, 256)
 
     if position is None:
@@ -1170,8 +1166,7 @@ def make_cmap(colors, name='my_colormap', position=None,
 
     for pos, color in zip(position, colors):
         if isinstance(color, str):
-            color = _html_color_to_rgb(color)
-
+            color = mpl.colors.to_rgb(color)
         elif bit:
             color = (bit_rgb[color[0]],
                      bit_rgb[color[1]],
@@ -1202,12 +1197,10 @@ def plot_spectra(
         **kwargs):
     """Plot several spectra in the same figure.
 
-    Extra keyword arguments are passed to `matplotlib.figure`.
-
     Parameters
     ----------
     spectra : list of Signal1D or BaseSignal
-        Ordered spectra list of signal to plot. If `style` is "cascade" or 
+        Ordered spectra list of signal to plot. If `style` is "cascade" or
         "mosaic" the spectra can have different size and axes. For `BaseSignal`
         with navigation dimensions 1 and signal dimension 0, the signal will be
         tranposed to form a `Signal1D`.
@@ -1246,9 +1239,10 @@ def plot_spectra(
     ax : matplotlib ax (subplot) or None
         If None, a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
-    **kwargs
-        remaining keyword arguments are passed to matplotlib.figure() or
-        matplotlib.subplots(). Has no effect on 'heatmap' style.
+    **kwargs, optional
+        Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
+        :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
+        Has no effect on 'heatmap' style.
 
     Example
     -------
@@ -1299,11 +1293,8 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        if LooseVersion(mpl.__version__) >= "1.5.3":
-            color = itertools.cycle(
+        color = itertools.cycle(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"])
-        else:
-            color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
         if isinstance(line_style, str):
@@ -1378,7 +1369,7 @@ def plot_spectra(
     elif style == 'heatmap':
         if not isinstance(spectra, hyperspy.signal.BaseSignal):
             import hyperspy.utils
-            spectra = [_transpose_if_required(spectrum, 1) for spectrum in 
+            spectra = [_transpose_if_required(spectrum, 1) for spectrum in
                        spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
@@ -1485,7 +1476,7 @@ def plot_histograms(signal_list,
         If None, a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
-        np.histogram().
+        :py:func:`numpy.histogram`.
 
     Example
     -------

@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from unittest import mock
 
 import numpy as np
@@ -6,7 +24,8 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
-
+from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 RTOL = 1E-6
 
@@ -495,7 +514,7 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components1D.Gaussian()
         m.append(g4)
-        p = hs.model.components1D.Polynomial(3)
+        p = hs.model.components1D.Polynomial(3, legacy=False)
         m.append(p)
 
         g1.A.value = 3.
@@ -533,10 +552,19 @@ class TestModel1D:
         g4.centre.bmax = -1
         g4.sigma.value = 1
         g4.sigma.bmin = 10
+        p.a0.value = 1
+        p.a1.value = 2
+        p.a2.value = 3
+        p.a3.value = 4
+        p.a0.bmin = 2
+        p.a1.bmin = 2
+        p.a2.bmin = 2
+        p.a3.bmin = 2
+        p.a0.bmax = 3
+        p.a1.bmax = 3
+        p.a2.bmax = 3
+        p.a3.bmax = 3
 
-        p.coefficients.value = (1, 2, 3, 4)
-        p.coefficients.bmin = 2
-        p.coefficients.bmax = 3
         m.ensure_parameters_in_bounds()
         np.testing.assert_allclose(g1.A.value, 3.)
         np.testing.assert_allclose(g2.A.value, 1.)
@@ -553,8 +581,10 @@ class TestModel1D:
         np.testing.assert_allclose(g3.sigma.value, 0.)
         np.testing.assert_allclose(g4.sigma.value, 1)
 
-        np.testing.assert_allclose(p.coefficients.value, (2, 2, 3, 3))
-
+        np.testing.assert_almost_equal(p.a0.value, 2)
+        np.testing.assert_almost_equal(p.a1.value, 2)
+        np.testing.assert_almost_equal(p.a2.value, 3)
+        np.testing.assert_almost_equal(p.a3.value, 3)
 
 class TestModel2D:
 
@@ -587,6 +617,29 @@ class TestModel2D:
         np.testing.assert_allclose(gt.centre_y.value, -5.)
         np.testing.assert_allclose(gt.sigma_x.value, 1.)
         np.testing.assert_allclose(gt.sigma_y.value, 2.)
+
+
+class TestModelPrintCurrentValues:
+
+    def setup_method(self, method):
+        np.random.seed(1)
+        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = 10
+        m = s.create_model()
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Offset())
+        self.s = s
+        self.m = m
+
+    @pytest.mark.parametrize("only_free", [True, False])
+    @pytest.mark.parametrize("skip_multi", [True, False])
+    def test_print_current_values(self, only_free, skip_multi):
+        self.m.print_current_values(only_free, skip_multi)
+
+    def test_print_current_values_component_list(self):
+        self.m.print_current_values(component_list=list(self.m))
 
 
 @lazifyTestClass
@@ -731,27 +784,27 @@ class TestModelWeighted:
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Polynomial(1, legacy=False))
         self.m = m
 
     def test_fit_leastsq_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (9.9165596693502778, 1.6628238107916631)):
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
+        (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9165596548961972, 1.6628247412317521)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -761,7 +814,7 @@ class TestModelWeighted:
             fitter="Nelder-Mead",
             method="ls",
         )
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9137288425667442, 1.8446013472266145)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -769,7 +822,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596391487121, 0.16628254242532492)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -777,7 +830,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596548961943, 0.16628247412317315)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -785,7 +838,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596295068958, 0.16628257462820528)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -796,7 +849,7 @@ class TestModelWeighted:
             method="ls",
         )
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99136169230026261, 0.18483060534056939)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -861,6 +914,7 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
+@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @lazifyTestClass
 class TestModelSignalVariance:
 
@@ -882,7 +936,9 @@ class TestModelSignalVariance:
         self.m = m
 
     def test_std1_red_chisq(self):
-        self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None,
+                        iterpath='serpentine')
         np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109,
                                    atol=1e-5)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
@@ -911,14 +967,18 @@ class TestMultifit:
         m[0].A.value = 100
 
     def test_fetch_only_fixed_false(self):
-        self.m.multifit(fetch_only_fixed=False, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fetch_only_fixed=False, show_progressbar=None,
+                        iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 100.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
 
     def test_fetch_only_fixed_true(self):
-        self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fetch_only_fixed=True, show_progressbar=None,
+                        iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
@@ -929,7 +989,9 @@ class TestMultifit:
         rs = self.m[0].r.as_signal(field="values")
         np.testing.assert_allclose(rs.data, np.array([2., 100.]))
         assert not "Signal.Noise_properties.variance" in rs.metadata
-        self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fetch_only_fixed=True, show_progressbar=None,
+                        iterpath='serpentine')
         rs = self.m[0].r.as_signal(field="values")
         assert "Signal.Noise_properties.variance" in rs.metadata
         assert isinstance(rs.metadata.Signal.Noise_properties.variance,
@@ -941,7 +1003,9 @@ class TestMultifit:
         m.signal.data *= 2.
         m[0].A.value = 2.
         m[0].A.bmin = 3.
-        m.multifit(fitter='mpfit', bounded=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(fitter='mpfit', bounded=True, show_progressbar=None,
+                   iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
@@ -953,11 +1017,24 @@ class TestMultifit:
         m.signal.data *= 2.
         m[0].A.value = 2.
         m[0].A.bmin = 3.
-        m.multifit(fitter='leastsq', bounded=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(fitter='leastsq', bounded=True, show_progressbar=None,
+                   iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
+
+    def test_None_iterpath(self):
+        'To be removed with hyperspy 2.0, where serpentine is default.'
+        with pytest.warns(VisibleDeprecationWarning):
+            self.m.multifit(show_progressbar=None) # iterpath = None by default
+
+    def test_flyback_iterpath(self):
+        self.m.multifit(iterpath='flyback', show_progressbar=None)
+
+    def test_serpentine_iterpath(self):
+        self.m.multifit(iterpath='serpentine', show_progressbar=None)
 
 
 class TestStoreCurrentValues:
@@ -1202,3 +1279,24 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
+
+
+def test_as_signal_parallel():
+    import numpy as np
+    import hyperspy.api as hs
+
+    np.random.seed(1)
+    s = hs.signals.Signal1D(np.random.random((50, 10)))
+
+    m = s.create_model()
+    m.append(hs.model.components1D.PowerLaw())
+    m.set_signal_range(2, 5)
+    # HyperSpy 2.0: remove setting iterpath='serpentine'
+    m.multifit(show_progressbar=False, iterpath='serpentine')
+
+    s1 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+    s2 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+
+    np.testing.assert_allclose(s1, s2)

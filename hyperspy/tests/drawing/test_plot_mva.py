@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -82,3 +82,19 @@ class TestPlotExplainedVarianceRatio:
         return self.s2.plot_decomposition_loadings(n, per_row=per_row,
                                                    title='Loading',
                                                    axes_decor=axes_decor)
+
+def test_plot_without_decomposition():
+    sources = np.random.random(size=(5, 100))
+    mixmat = np.random.random((100, 5))
+    s = signals.Signal1D(np.dot(mixmat, sources))
+    with pytest.raises(RuntimeError):
+        s.plot_decomposition_factors()
+    with pytest.raises(RuntimeError):
+        s.plot_decomposition_loadings()
+    with pytest.raises(RuntimeError):
+        s.plot_decomposition_results()
+    s.decomposition()
+    with pytest.raises(RuntimeError):
+        s.plot_bss_factors()
+    with pytest.raises(RuntimeError):
+        s.plot_bss_loadings()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,6 +22,7 @@ import tempfile
 import numbers
 import logging
 from distutils.version import LooseVersion
+import importlib
 
 import numpy as np
 import dill
@@ -36,7 +37,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
-from hyperspy import components1d, components2d
+from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.signal import BaseSignal
 from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
@@ -53,28 +54,28 @@ from hyperspy.misc.model_tools import current_model_values
 from IPython.display import display_pretty, display
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
 
-
 _logger = logging.getLogger(__name__)
 
-# components is just a container for all (1D and 2D) components, to be able to
-# search in a single object for matching components when recreating a model.
-
-
-class DummyComponentsContainer:
-    pass
-
-
-components = DummyComponentsContainer()
-components.__dict__.update(components1d.__dict__)
-components.__dict__.update(components2d.__dict__)
+_COMPONENTS = ALL_EXTENSIONS["components1D"]
+_COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
 
 def reconstruct_component(comp_dictionary, **init_args):
     _id = comp_dictionary['_id_name']
-    try:
-        _class = getattr(components, _id)
-    except AttributeError:
+    if _id in _COMPONENTS:
+        _class = getattr(
+            importlib.import_module(
+                _COMPONENTS[_id]["module"]), _COMPONENTS[_id]["class"])
+    elif "_class_dump" in comp_dictionary:
+        # When a component is not registered using the extension mechanism,
+        # it is serialized using dill.
         _class = dill.loads(comp_dictionary['_class_dump'])
+    else:
+        raise ImportError(
+            f'Loading the {comp_dictionary["class"]} component ' +
+            'failed because the component is provided by the ' +
+            f'{comp_dictionary["package"]} Python package, but ' +
+            f'{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
 
 
@@ -102,7 +103,7 @@ class ModelComponents(object):
                 ans += "\n"
                 name_string = c.name
                 variable_name = slugify(name_string, valid_variable_name=True)
-                component_type = c._id_name
+                component_type = c.__class__.__name__
 
                 variable_name = shorten_name(variable_name, 19)
                 name_string = shorten_name(name_string, 19)
@@ -115,25 +116,28 @@ class ModelComponents(object):
         return ans
 
 
-@add_gui_method(toolkey="Model")
+@add_gui_method(toolkey="hyperspy.Model")
 class BaseModel(list):
 
     """Model and data fitting tools applicable to signals of both one and two
     dimensions.
 
-    Models of one-dimensional signals should use the :class:`Model1D` and
-    models of two-dimensional signals should use the :class:`Model2D`.
+    Models of one-dimensional signals should use the
+    :py:class:`~hyperspy.models.model1d` and models of two-dimensional signals
+    should use the :class:`~hyperspy.models.model2d`.
 
-    A model is constructed as a linear combination of :mod:`components` that
-    are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predefined components available in the in the :mod:`components`
+    A model is constructed as a linear combination of
+    :py:mod:`~hyperspy._components` that are added to the model using the
+    :py:meth:`~hyperspy.model.BaseModel.append` or
+    :py:meth:`~hyperspy.model.BaseModel.extend`. There are many predefined
+    components available in the in the :py:mod:`~hyperspy._components`
     module. If needed, new components can be created easily using the code of
     existing components as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
-    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
-    the maximum number of iterations the new value of the component parameters
-    are stored in the components.
+    :py:meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    the convergence criteria or the maximum number of iterations the new value
+    of the component parameters are stored in the components.
 
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
@@ -211,8 +215,8 @@ class BaseModel(list):
     See also
     --------
 
-    Model1D
-    Model2D
+    :py:class:`~hyperspy.models.model1d.Model1D`
+    :py:class:`~hyperspy.models.model2d.Model2D`
 
     """
 
@@ -262,7 +266,7 @@ class BaseModel(list):
                 Other keyword arguments are passed onto `BaseSignal.save()`
         """
         if self.signal is None:
-            raise ValueError("Currently cannot store models with no signal")
+            raise ValueError("Currently cannot save models with no signal")
         else:
             self.store(name)
             self.signal.save(file_name, **kwargs)
@@ -272,15 +276,17 @@ class BaseModel(list):
 
         Parameters
         ----------
-        dic : dictionary
-            _whitelist : dictionary
-                a dictionary with keys used as references of save attributes,
-                for more information, see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            components : dictionary (optional)
-                Dictionary, with information about components of the model (see
-                the documentation of component.as_dictionary() method)
-            * any field from _whitelist.keys() *
+        dic : dict
+            A dictionary containing at least the following fields:
+
+            * _whitelist: a dictionary with keys used as references of save
+              attributes, for more information, see
+              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+            * components: a dictionary, with information about components of
+              the model (see 
+              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              documentation for more details)
+            * any field from _whitelist.keys()
         """
 
         if 'components' in dic:
@@ -350,7 +356,7 @@ class BaseModel(list):
         if thing.name:
             name_string = thing.name
         else:
-            name_string = thing._id_name
+            name_string = thing.__class__.__name__
 
         if name_string in component_name_list:
             temp_name_string = name_string
@@ -479,9 +485,12 @@ class BaseModel(list):
             parallel = int(parallel)
         if parallel < 2:
             parallel = False
+        if out_of_range_to_nan is True:
+            channel_switches_backup = copy.copy(self.channel_switches)
+            self.channel_switches[:] = True
+
         if parallel is False:
             self._as_signal_iter(component_list=component_list,
-                                 out_of_range_to_nan=out_of_range_to_nan,
                                  show_progressbar=show_progressbar, data=data)
         else:
             am = self.axes_manager
@@ -492,7 +501,6 @@ class BaseModel(list):
             if not len(nav_shape) or size < 4:
                 # no or not enough navigation, just run without threads
                 return self.as_signal(component_list=component_list,
-                                      out_of_range_to_nan=out_of_range_to_nan,
                                       show_progressbar=show_progressbar,
                                       out=signal, parallel=False)
             parallel = min(parallel, size / 2)
@@ -513,16 +521,19 @@ class BaseModel(list):
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],
                         component_list=component_list,
-                        out_of_range_to_nan=out_of_range_to_nan,
                         show_progressbar=thing[2] + 1 if show_progressbar else False),
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
+
+        if out_of_range_to_nan is True:
+            self.channel_switches[:] = channel_switches_backup
+
         return signal
 
     as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
 
-    def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
-                        show_progressbar=None, data=None):
+    def _as_signal_iter(self, component_list=None, show_progressbar=None,
+                        data=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
@@ -542,9 +553,6 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
-            if out_of_range_to_nan is True:
-                channel_switches_backup = copy.copy(self.channel_switches)
-                self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
             enabled = show_progressbar and (maxval > 0)
             pbar = progressbar(total=maxval, disable=not enabled,
@@ -555,8 +563,6 @@ class BaseModel(list):
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
                 pbar.update(1)
-            if out_of_range_to_nan is True:
-                self.channel_switches[:] = channel_switches_backup
 
     @property
     def _plot_active(self):
@@ -918,26 +924,21 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
-                 "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
+        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
             The optimization algorithm used to perform the fitting. Default
             is "leastsq".
 
-                "leastsq" performs least-squares optimization, and supports
-                bounds on parameters.
-
-                "mpfit" performs least-squares using the Levenberg–Marquardt
-                algorithm and supports bounds on parameters.
-
-                "odr" performs the optimization using the orthogonal distance
-                regression algorithm. It does not support bounds.
-
-                "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
-                and "TNC" are wrappers for scipy.optimize.minimize(). Only
-                "L-BFGS-B" and "TNC" support bounds.
-
-                "Differential Evolution" is a global optimization method.
+                * "leastsq" performs least-squares optimization, and supports
+                  bounds on parameters.
+                * "mpfit" performs least-squares using the Levenberg–Marquardt
+                  algorithm and supports bounds on parameters.
+                * "odr" performs the optimization using the orthogonal distance
+                  regression algorithm. It does not support bounds.
+                * "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
+                  and "TNC" are wrappers for scipy.optimize.minimize(). Only
+                  "L-BFGS-B" and "TNC" support bounds.
+                * "Differential Evolution" is a global optimization method.
 
             "leastsq", "mpfit" and "odr" can estimate the standard deviation of
             the estimated value of the parameters if the
@@ -968,7 +969,6 @@ class BaseModel(list):
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
-
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
@@ -1249,7 +1249,7 @@ class BaseModel(list):
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
-                 interactive_plot=False, **kwargs):
+                 interactive_plot=False, iterpath=None, **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -1274,6 +1274,17 @@ class BaseModel(list):
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
             interactive monitoring of the fitting (if in interactive mode).
+
+        iterpath : str
+            If 'flyback', at each new row the index begins at the first column,
+            in accordance with the way np.ndindex generates indices.
+            If 'serpentine', iterate through the signal in a serpentine, 
+            "snake-game"-like manner instead of beginning each new row at 
+            the first index. Works for n-dimensional navigation space, 
+            not only 2D.
+            Default: None -> flyback. The default argument will use the 
+            'flyback' iterpath, but shows a warning that this will change to
+            'serpentine' in version 2.0.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -1309,6 +1320,14 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
+        if iterpath == None:
+            self.axes_manager._iterpath = 'flyback'
+            msg = ("The `iterpath` default will change from `'flyback'` to `'serpentine'`"
+            "in HyperSpy version 2.0. Change `iterpath` to other than None to suppress this"
+            "warning.")
+            warnings.warn(msg, VisibleDeprecationWarning)
+        else:
+            self.axes_manager._iterpath = iterpath
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):
@@ -1502,8 +1521,10 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=False, only_active=False, fancy=True):
+    def print_current_values(self, only_free=False, only_active=False,
+                             component_list=None, fancy=True):
         """Prints the current values of the parameters of all components.
+
         Parameters
         ----------
         only_free : bool
@@ -1511,15 +1532,19 @@ class BaseModel(list):
             only parameters which are free will be printed.
         only_active : bool
             If True, only values of active components will be printed
+        component_list : None or list of components.
+            If None, print all components.
         fancy : bool
             If True, attempts to print using html rather than text in the notebook.
         """
         if fancy:
             display(current_model_values(
-                model=self, only_free=only_free, only_active=only_active))
+                model=self, only_free=only_free, only_active=only_active,
+                component_list=component_list))
         else:
             display_pretty(current_model_values(
-                model=self, only_free=only_free, only_active=only_active))
+                model=self, only_free=only_free, only_active=only_active,
+                component_list=component_list))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
@@ -1626,7 +1651,6 @@ class BaseModel(list):
         component_list : list of hyperspy components, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
-
         only_current : bool, default False
             If True, will only change the parameter value at the current
             position in the model.
@@ -1667,21 +1691,22 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fullcopy : Bool (optional, True)
+        fullcopy : bool (optional, True)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
         Returns
         -------
-        dictionary : a complete dictionary of the model, which includes at
-        least the following fields:
-            components : list
-                a list of dictionaries of components, one per
-            _whitelist : dictionary
-                a dictionary with keys used as references for saved attributes,
-                for more information, see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
+        dictionary : dict 
+            A dictionary including at least the following fields:
+
+            * components: a list of dictionaries of components, one per 
+              component
+            * _whitelist: a dictionary with keys used as references for saved
+              attributes, for more information, see 
+              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys()
+
         Examples
         --------
         >>> s = signals.Signal1D(np.random.random((10,100)))
@@ -1769,7 +1794,7 @@ class BaseModel(list):
                 if component.name:
                     if component.name == value:
                         component_list.append(component)
-                elif component._id_name == value:
+                elif component.__class__.__name__ == value:
                     component_list.append(component)
             if component_list:
                 if len(component_list) == 1:

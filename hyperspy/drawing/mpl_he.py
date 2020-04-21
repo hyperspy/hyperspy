@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +22,7 @@ import logging
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -62,12 +64,13 @@ class MPL_HyperExplorer(object):
                        scalebar=True,
                        scalebar_color="white",
                        axes_ticks=None,
-                       saturated_pixels=0,
+                       saturated_pixels=None,
                        vmin=None,
                        vmax=None,
                        no_nans=False,
                        centre_colormap="auto",
                        title=None,
+                       min_aspect=0.1,
                        **kwds):
         if self.axes_manager.navigation_dimension == 0:
             return
@@ -121,6 +124,7 @@ class MPL_HyperExplorer(object):
             imf.vmax = vmax
             imf.no_nans = no_nans
             imf.centre_colormap = centre_colormap
+            imf.min_aspect = min_aspect
             # Navigator labels
             if self.axes_manager.navigation_dimension == 1:
                 imf.yaxis = self.axes_manager.navigation_axes[0]
@@ -137,6 +141,8 @@ class MPL_HyperExplorer(object):
                                     imf.update), [])
 
             imf.title = title
+            if "cmap" not in kwds.keys() or kwds['cmap'] is None:
+                kwds["cmap"] = preferences.Plot.cmap_navigator
             imf.plot(**kwds)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf

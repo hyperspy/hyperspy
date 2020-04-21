@@ -71,13 +71,15 @@ Scree plots
 PCA will sort the components in the dataset in order of decreasing
 variance. It is often useful to estimate the dimensionality of the data by
 plotting the explained variance against the component index. This plot is
-sometimes called a scree plot and it should drop quickly,
-eventually becoming a slowly descending line.
+sometimes called a scree plot. For most datasets, the values in a scree plot
+will decay rapidly, eventually becoming a slowly descending line.
 
 The point at which the scree plot becomes linear (often referred to as
 the `elbow`) is generally judged to be a good estimation of the dimensionality
 of the data (or equivalently, the number of components that should be retained
-- see below).
+- see below). Components to the left of the elbow are considered part of the "signal",
+while components to the right are considered to be "noise", and thus do not explain
+any significant features of the data.
 
 To obtain a scree plot for your dataset, run the
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
@@ -97,21 +99,25 @@ To obtain a scree plot for your dataset, run the
    ``xaxis_labeling``, ``signal_fmt``, ``noise_fmt``, ``threshold``,
    ``xaxis_type`` keyword arguments.
 
-The default options for this method will plot a bare scree plot, but the
-method's arguments allow for a great deal of customization. For
-example, by specifying a ``threshold`` value, a cutoff line will be drawn at
+The default options for this method will plot a simple scree plot as above, but the
+method can be customized via its arguments.
+
+By specifying a ``threshold`` value, a cutoff line will be drawn at
 the total variance specified, and the components above this value will be
 styled distinctly from the remaining components to show which are considered
-signal, as opposed to noise. Alternatively, by providing an integer value
-for ``threshold``, the line will be drawn at the specified component (see
-below).  The number of significant components can be estimated and a vertical
-line drawn to represent this by specifying ``vline`` as ``True``. In this case,
-the elbow or knee is found in the variance plot by estimating the distance 
-from each point in the variance plot to a line joining the first and last 
-points of the plot and selecting the point where this distance is largest. 
-In the case of multiple occurrences of a maximum value the index corresponding 
-to the first occurrence is returned. As the index of the first component is zero, 
-the number of significant PCA components is the elbow index position + 1.
+signal, as opposed to noise.
+
+Alternatively, by providing an integer value for ``threshold``, the line will
+be drawn at the specified component (see below). The number of significant
+components can be estimated and a vertical line drawn to represent this by
+specifying ``vline`` as ``True``.
+
+In this case, the elbow or knee is found in the variance plot by estimating the distance
+from each point in the variance plot to a line joining the first and last
+points of the plot, and then selecting the point where this distance is largest.
+If multiple maxima are found, the index corresponding to the first occurrence is returned.
+As the index of the first component is zero, the number of significant PCA
+components is the elbow index position + 1.
 
 .. figure::  images/screeplot_elbow_method.png
    :align:   center
@@ -125,7 +131,7 @@ develop a figure of your liking. See the documentation of
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
 
 Note that in the above figure, the first component has index 0. This is because
-Python uses zero based indexing i.e. the initial element of a sequence is found
+Python uses zero-based indexing i.e. the initial element of a sequence is found
 at index 0. To switch to a "number-based" (rather than "index-based")
 notation, specify the ``xaxis_type`` parameter:
 
@@ -142,22 +148,18 @@ notation, specify the ``xaxis_type`` parameter:
    PCA scree plot with number-based axis labeling and a threshold value
    specified
 
-   
 .. figure::  images/screeplot3.png
    :align:   center
    :width:   500
 
-   PCA scree plot with number-based axis labeling and an estimate of the no of significant 
+   PCA scree plot with number-based axis labeling and an estimate of the no of significant
    positions based on the "elbow" position
-   
-   
-.. versionadded:: 0.7
 
-Sometimes it can be useful to get the explained variance ratio as a spectrum,
-for example to plot several scree plots obtained using
-different data pre-treatmentd in the same figure using
-:py:func:`~.drawing.utils.plot_spectra`. This can be achieved using
-:py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
+Sometimes it can be useful to get the explained variance ratio as a spectrum.
+For example, to plot several scree plots obtained with
+different data pre-treatments in the same figure, you can combine
+:py:func:`~.drawing.utils.plot_spectra` with
+:py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`.
 
 
 Denoising
@@ -170,8 +172,7 @@ is also known as *dimensionality reduction*.
 
 To perform this operation with HyperSpy, run the
 :py:meth:`~.learn.mva.MVA.get_decomposition_model` method, usually after
-estimating the dimension of your data using a scree plot. For
-example:
+estimating the dimension of your data using a scree plot. For example:
 
 .. code-block:: python
 
@@ -220,7 +221,9 @@ To perform Poissonian noise normalization:
      >>> s.decomposition(True)
 
 More details about the scaling procedure can be found in
-:ref:`[Keenan2004] <Keenan2004>`.
+:ref:`[Keenan2004] <Keenan2004>`. Note that  Poisson noise normalization
+cannot be used in combination with data centering using the 'centre' argument.
+Attempting to do so will raise an error.
 
 .. _rpca-label:
 
@@ -241,7 +244,18 @@ following code. You must set the ``output_dimension`` when using RPCA.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='RPCA_GoDec',
-   ...                 output_dimension=3)
+                       output_dimension=3)
+
+RPCA solvers work by using regularization, in a similar manner to lasso or ridge
+regression, to enforce the low-rank constraint on the data. The regularization
+parameter, "lambda1", defaults to ``1/sqrt(n_samples)``, but it is recommended that you
+explore the behaviour of different values.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='RPCA_GoDec',
+                       output_dimension=3,
+                       lambda1=0.1)
 
 HyperSpy also implements an *online* algorithm for RPCA developed by Feng et
 al. :ref:`[Feng2013] <Feng2013>`. This minimizes memory usage, making it
@@ -251,18 +265,19 @@ algorithm.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3)
+                       output_dimension=3)
 
 The online RPCA implementation sets several default parameters that are
-usually suitable for most datasets. However, to improve the convergence you can
+usually suitable for most datasets, including the regularization parameter
+highlighted above. However, to improve the convergence you can
 "train" the algorithm with the first few samples of your dataset. For example,
 the following code will train ORPCA using the first 32 samples of the data.
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 training_samples=32)
+                       output_dimension=3,
+                       training_samples=32)
 
 Finally, online RPCA includes three alternative methods to the default
 closed-form solver, which can again improve both the convergence and speed
@@ -274,8 +289,8 @@ additional parameters:
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 method='BCD')
+                       output_dimension=3,
+                       method='BCD')
 
 The second is based on stochastic gradient descent (SGD), and takes an
 additional parameter to set the learning rate. The learning rate dictates
@@ -286,21 +301,27 @@ finding the correct minima. Usually a value between 1 and 2 works well:
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 method='SGD',
-   ...                 learning_rate=1.1)
+                       output_dimension=3,
+                       method='SGD',
+                       subspace_learning_rate=1.1)
 
-The third method is MomentumSGD, which typically improves the convergence
-properties of stochastic gradient descent. This takes the further parameter
-"momentum", which should be a fraction between 0 and 1.
+The third method is Momentum Stochastic Gradient Descent (MomentumSGD),
+which typically improves the convergence properties of stochastic gradient
+descent. This takes the further parameter "momentum", which should be a
+fraction between 0 and 1.
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-   ...                 output_dimension=3,
-   ...                 method='MomentumSGD',
-   ...                 learning_rate=1.1,
-   ...                 momentum=0.5)
+                       output_dimension=3,
+                       method='MomentumSGD',
+                       subspace_learning_rate=1.1,
+                       subspace_momentum=0.5)
+
+Using the SGD or MomentumSGD methods enables the subspace, subspace,
+i.e. the underlying low-rank component, to be tracked as it changes
+with each sample update. The BCD or closed-form solvers assume a fixed,
+static subspace.
 
 Non-negative matrix factorization
 ---------------------------------
@@ -321,6 +342,45 @@ NMF takes the optional argument "output_dimension", which determines the number
 of components to keep. Setting this to a small number is recommended to keep
 the computation time small. Often it is useful to run a PCA decomposition first
 and use the scree plot to determine a value for "output_dimension".
+
+Robust non-negative matrix factorization
+-----------------------------------
+
+In a similar manner to the online, robust methods that complement PCA above,
+HyperSpy includes an online robust NMF method. This is based on the OPGD (Online
+Proximal Gradient Descent) algorithm of :ref:`[Zhao2016] <Zhao2016>`.
+
+Note that this requires "output_dimension" to be specified. As before, you can
+control the regularization applied via the parameter "lambda1", which by default
+is set to ``1/sqrt(n_samples)``.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORNMF',
+                       output_dimension=3,
+                       lambda1=0.1)
+
+As with ORPCA described above, the MomentumSGD method  is useful for scenarios
+where the subspace, i.e. the underlying low-rank component, is changing over time.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORNMF',
+                       output_dimension=3,
+                       method='MomentumSGD',
+                       subspace_learning_rate=1.1,
+                       subspace_momentum=0.5)
+
+
+The default and MomentumSGD solvers both assume an l2-norm minimization problem,
+which can still be sensitive to very heavily corrupted data. A more robust alternative
+is available, although it is typically much slower.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORNMF',
+                       output_dimension=3,
+                       method='RobustPGD')
 
 Blind Source Separation
 =======================
@@ -377,7 +437,6 @@ clicking on their corresponding line in the legend.
 
 Obtaining the results as BaseSignal instances
 =============================================
-.. versionadded:: 0.7
 
 The decomposition and BSS results are internally stored as numpy arrays in the
 :py:class:`~.signal.BaseSignal` class. Frequently it is useful to obtain the

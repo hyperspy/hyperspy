@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -36,11 +36,11 @@ class EELSModel(Model1D):
     Parameters
     ----------
     spectrum : a Signal1D (or any Signal1D subclass) instance
-    auto_background : boolean
+    auto_background : bool
         If True, and if spectrum is an EELS instance adds automatically
         a powerlaw to the model and estimate the parameters by the
         two-area method.
-    auto_add_edges : boolean
+    auto_add_edges : bool
         If True, and if spectrum is an EELS instance, it will
         automatically add the ionization edges as defined in the
         Signal1D instance. Adding a new element to the spectrum using

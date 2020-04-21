@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,6 +18,16 @@
 
 from __future__ import print_function
 
+import hyperspy.Release as Release
+from distutils.errors import CompileError, DistutilsPlatformError
+import distutils.ccompiler
+import distutils.sysconfig
+import itertools
+import subprocess
+import os
+import warnings
+from tempfile import TemporaryDirectory
+from setuptools import setup, Extension, Command
 import sys
 
 v = sys.version_info
@@ -28,23 +38,12 @@ if v[0] != 3:
     print(error, file=sys.stderr)
     sys.exit(1)
 
-from setuptools import setup, Extension, Command
-
-import warnings
-
-import os
-import subprocess
-import itertools
 
 # stuff to check presence of compiler:
-import distutils.sysconfig
-import distutils.ccompiler
-from distutils.errors import CompileError, DistutilsPlatformError
 
 
 setup_path = os.path.dirname(__file__)
 
-import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
                'matplotlib>=2.2.3',
@@ -52,19 +51,22 @@ install_req = ['scipy>=0.15',
                'traits>=4.5.0',
                'natsort',
                'requests',
-               'tqdm>=0.4.9',
+               'tqdm>=4.9.0',
                'sympy',
                'dill',
-               'h5py',
+               'h5py>=2.3',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.18',
+               'dask[array]>=0.18, !=2.0',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
                'numexpr',
                'sparse',
                'imageio',
+               'pyyaml',
+               'PTable',
+               'tifffile>=2018.10.18',
                ]
 
 extras_require = {
@@ -73,20 +75,23 @@ extras_require = {
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["numba", "cython"],
+    "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.0.0"], # for testing
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"], # required to build the docs
+    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
+    # required to build the docs
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
 
-# Don't include "tests" and "docs" requirements since "all" is designed to be 
+# Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
-runtime_extras_require = {x:extras_require[x] for x in extras_require.keys() 
-        if x not in ["tests", "build-doc"]}
+runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
+                          if x not in ["tests", "build-doc"]}
 extras_require["all"] = list(itertools.chain(*list(
-        runtime_extras_require.values())))
+    runtime_extras_require.values())))
 
 extras_require["dev"] = list(itertools.chain(*list(extras_require.values())))
+
 
 def update_version(version):
     release_path = "hyperspy/Release.py"
@@ -171,8 +176,9 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
-                                   'test_compilers.c')])
+    with TemporaryDirectory() as tmpdir:
+        compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
+                                   'test_compilers.c')], output_dir=tmpdir)
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
@@ -346,6 +352,7 @@ with update_version_when_dev() as version:
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+                'hyperspy_extension.yaml',
             ],
         },
         author=Release.authors['all'][0],
@@ -363,6 +370,9 @@ with update_version_when_dev() as version:
         },
         classifiers=[
             "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

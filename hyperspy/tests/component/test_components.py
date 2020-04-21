@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -45,6 +45,7 @@ def get_components1d_name_list():
     return components1d_name_list
 
 
+@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @pytest.mark.parametrize('component_name', get_components1d_name_list())
 def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
@@ -55,7 +56,7 @@ def test_creation_components1d(component_name):
     if component_name == 'ScalableFixedPattern':
         kwargs['signal1D'] = s
     elif component_name == 'Expression':
-        kwargs.update({'expression':"a*x+b", "name":"linear"})
+        kwargs.update({'expression': "a*x+b", "name": "linear"})
 
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))
@@ -103,6 +104,22 @@ class TestPowerLaw:
         s2 = hs.signals.EDSTEMSpectrum(s.data)
         g.estimate_parameters(s2, None, None)
 
+    def test_function_grad_cutoff(self):
+        pl = self.m[0]
+        pl.left_cutoff.value = 105.0
+        axis = self.s.axes_manager[0].axis
+        for attr in ['function', 'grad_A', 'grad_r', 'grad_origin']:
+            values = getattr(pl, attr)((axis))
+            assert_allclose(values[:501], np.zeros((501)))
+            assert getattr(pl, attr)((axis))[500] == 0
+            getattr(pl, attr)((axis))[502] > 0
+
+    def test_exception_gradient_calculation(self):
+        # if this doesn't warn, it means that sympy can compute the gradients
+        # and the power law component can be updated.
+        with pytest.warns(UserWarning):
+            hs.model.components1D.PowerLaw(compute_gradients=True)
+
 
 class TestDoublePowerLaw:
 
@@ -133,7 +150,6 @@ class TestDoublePowerLaw:
         assert_allclose(g.r.value, 4.0)
         assert_allclose(g.ratio.value, 200.)
 
-
 class TestOffset:
 
     def setup_method(self, method):
@@ -155,14 +171,15 @@ class TestOffset:
 
     def test_function_nd(self):
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s = hs.stack([s]*2)
+        s = hs.stack([s] * 2)
         o = hs.model.components1D.Offset()
         o.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
         assert_allclose(o.function_nd(axis.axis), s.data)
 
 
-class TestPolynomial:
+@pytest.mark.filterwarnings("ignore:The API of the `Polynomial` component")
+class TestDeprecatedPolynomial:
 
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
@@ -210,6 +227,7 @@ class TestPolynomial:
         np.testing.assert_allclose(p.coefficients.map['values'],
                                    np.tile([0.5, 2, 3], (10, 1)))
 
+    @pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
@@ -220,14 +238,107 @@ class TestPolynomial:
         np.testing.assert_allclose(p.coefficients.map['values'],
                                    np.tile([0.5, 2, 3], (2, 5, 1)))
 
-    # For https://github.com/hyperspy/hyperspy/pull/1989
-    # def test_function_nd(self):
-    #     s = self.m.as_signal(show_progressbar=None, parallel=False)
-    #     s = hs.stack([s]*2)
-    #     p = hs.model.components1D.Polynomial(order=2)
-    #     p.estimate_parameters(s, None, None, only_current=False)
-    #     axis = s.axes_manager.signal_axes[0]
-    #     assert_allclose(p.function_nd(axis.axis), s.data)
+    @pytest.mark.filterwarnings("ignore:The API of the")
+    def test_conversion_dictionary_to_polynomial2(self):
+        from hyperspy._components.polynomial import convert_to_polynomial
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = -5
+        s.axes_manager[0].scale = 0.01
+        poly = hs.model.components1D.Polynomial(order=2, legacy=True)
+        poly.coefficients.value = [1, 2, 3]
+        poly.coefficients.value = [1, 2, 3]
+        poly.coefficients._bounds = ((None, None), (10, 0.0), (None, None))
+        poly_dict = poly.as_dictionary(True)
+        poly2_dict = convert_to_polynomial(poly_dict)
+
+        poly2 = hs.model.components1D.Polynomial(order=2, legacy=False)
+        _ = poly2._load_dictionary(poly2_dict)
+        assert poly2.a2.value == 1
+        assert poly2.a2._bounds == (None, None)
+        assert poly2.a1.value == 2
+        assert poly2.a1._bounds == (10, 0.0)
+        assert poly2.a0.value == 3
+
+
+class TestPolynomial:
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = -5
+        s.axes_manager[0].scale = 0.01
+        m = s.create_model()
+        m.append(hs.model.components1D.Polynomial(order=2, legacy=False))
+        coeff_values = (0.5, 2, 3)
+        self.m = m
+        s_2d = hs.signals.Signal1D(np.arange(1000).reshape(10, 100))
+        self.m_2d = s_2d.create_model()
+        self.m_2d.append(hs.model.components1D.Polynomial(order=2, legacy=False))
+        s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
+        self.m_3d = s_3d.create_model()
+        self.m_3d.append(hs.model.components1D.Polynomial(order=2, legacy=False))
+        data = 50*np.ones(100)
+        s_offset = hs.signals.Signal1D(data)
+        self.m_offset = s_offset.create_model()
+
+        # if same component is pased, axes_managers get mixed up, tests
+        # sometimes randomly fail
+        for _m in [self.m, self.m_2d, self.m_3d]:
+            _m[0].a2.value = coeff_values[0]
+            _m[0].a1.value = coeff_values[1]
+            _m[0].a0.value = coeff_values[2]
+
+    def test_gradient(self):
+        poly = self.m[0]
+        assert poly.a2.grad(1) == 1
+        assert poly.a1.grad(1) == 1
+        assert poly.a0.grad(1) == 1
+        assert poly.a2.grad(np.arange(10)).shape == (10,)
+
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+    def test_estimate_parameters(self,  only_current, binned):
+        self.m.signal.metadata.Signal.binned = binned
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s.metadata.Signal.binned = binned
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        p.estimate_parameters(s, None, None, only_current=only_current)
+        assert_allclose(p.a2.value, 0.5)
+        assert_allclose(p.a1.value, 2)
+        assert_allclose(p.a0.value, 3)
+
+    def test_zero_order(self):
+        m = self.m_offset
+        with pytest.raises(ValueError):
+            m.append(hs.model.components1D.Polynomial(order=0, legacy=False))
+
+    def test_2d_signal(self):
+        # This code should run smoothly, any exceptions should trigger failure
+        s = self.m_2d.as_signal(show_progressbar=None, parallel=False)
+        model = Model1D(s)
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        model.append(p)
+        p.estimate_parameters(s, 0, 100, only_current=False)
+        np.testing.assert_allclose(p.a2.map['values'], 0.5)
+        np.testing.assert_allclose(p.a1.map['values'], 2)
+        np.testing.assert_allclose(p.a0.map['values'], 3)
+
+    def test_3d_signal(self):
+        # This code should run smoothly, any exceptions should trigger failure
+        s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
+        model = Model1D(s)
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        model.append(p)
+        p.estimate_parameters(s, 0, 100, only_current=False)
+        np.testing.assert_allclose(p.a2.map['values'], 0.5)
+        np.testing.assert_allclose(p.a1.map['values'], 2)
+        np.testing.assert_allclose(p.a0.map['values'], 3)
+
+    def test_function_nd(self):
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = hs.stack([s]*2)
+        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        p.estimate_parameters(s, None, None, only_current=False)
+        axis = s.axes_manager.signal_axes[0]
+        assert_allclose(p.function_nd(axis.axis), s.data)
 
 
 class TestGaussian:
@@ -258,7 +369,7 @@ class TestGaussian:
     def test_function_nd(self, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s2 = hs.stack([s]*2)
+        s2 = hs.stack([s] * 2)
         g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s2, None, None, only_current=False)
         assert g.binned == binned
@@ -305,6 +416,15 @@ class TestExpression:
 
     def test_function_nd(self):
         assert self.g.function_nd(0) == 1
+
+
+def test_expression_symbols():
+    with pytest.raises(ValueError):
+        hs.model.components1D.Expression(expression="10.0", name="offset")
+    with pytest.raises(ValueError):
+        hs.model.components1D.Expression(expression="10", name="offset")
+    with pytest.raises(ValueError):
+        hs.model.components1D.Expression(expression="10*offset", name="Offset")    
 
 
 def test_expression_substitution():
@@ -377,7 +497,6 @@ class TestScalableFixedPattern:
                             category=RuntimeWarning):
             m.fit()
         assert abs(fp.yscale.value - 10) <= .1
-
 
 class TestHeavisideStep:
 

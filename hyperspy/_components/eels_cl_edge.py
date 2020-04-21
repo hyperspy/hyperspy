@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -33,7 +33,7 @@ from hyperspy.ui_registry import add_gui_method
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="EELSCLEdge_Component")
+@add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
 class EELSCLEdge(Component):
 
     """EELS core loss ionisation edge from hydrogenic or tabulated

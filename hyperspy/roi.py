@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -108,7 +108,8 @@ class BaseROI(t.HasTraits):
         Utility to get the value ranges that the ROI would select.
 
         If the ROI is point base or is rectangluar in nature, these can be used
-        slice a signal. Extracted from `_make_slices` to ease implementation
+        to slice a signal. Extracted from 
+        :py:meth:`~hyperspy.roi.BaseROI._make_slices` to ease implementation
         in inherited ROIs.
         """
         raise NotImplementedError()
@@ -152,8 +153,8 @@ class BaseROI(t.HasTraits):
     def __call__(self, signal, out=None, axes=None):
         """Slice the signal according to the ROI, and return it.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         signal : Signal
             The signal to slice with the ROI.
         out : Signal, default = None
@@ -163,13 +164,14 @@ class BaseROI(t.HasTraits):
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
             The items in the collection can be either of the following:
-                * a tuple of:
-                    - DataAxis. These will not be checked with
-                      signal.axes_manager.
-                    - anything that will index signal.axes_manager
-                * For any other value, it will check whether the navigation
-                  space can fit the right number of axis, and use that if it
-                  fits. If not, it will try the signal space.
+
+            * a tuple of:
+
+              - DataAxis. These will not be checked with signal.axes_manager.
+              - anything that will index signal.axes_manager
+            * For any other value, it will check whether the navigation
+              space can fit the right number of axis, and use that if it
+              fits. If not, it will try the signal space.
         """
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
@@ -196,28 +198,31 @@ class BaseROI(t.HasTraits):
         return roi
 
     def _parse_axes(self, axes, axes_manager):
-        """Utility function to parse the 'axes' argument to a list of
-        DataAxis.
+        """Utility function to parse the 'axes' argument to a list of 
+        :py:class:`~hyperspy.axes.DataAxis`.
 
-        Arguments
-        ---------
-        axes : specification of axes to use, default = None
+        Parameters
+        ----------
+        axes : specification of axes to use, default is None
             The axes argument specifies which axes the ROI will be applied on.
-            The DataAxis in the collection can be either of the following:
-                * a tuple of:
-                    - DataAxis. These will not be checked with
-                      signal.axes_manager.
-                    - anything that will index signal.axes_manager
-                * For any other value, it will check whether the navigation
-                  space can fit the right number of axis, and use that if it
-                  fits. If not, it will try the signal space.
-        axes_manager : AxesManager
+            The axes in the collection can be either of the following:
+
+            * a tuple of:
+
+              * :py:class:`~hyperspy.axes.DataAxis`. These will not be checked
+                with signal.axes_manager.
+              * anything that will index the signal 
+                :py:class:`~hyperspy.axes.AxesManager`
+            * For any other value, it will check whether the navigation
+              space can fit the right number of axis, and use that if it
+              fits. If not, it will try the signal space.
+        axes_manager : :py:class:`~hyperspy.axes.AxesManager`
             The AxesManager to use for parsing axes, if axes is not already a
             tuple of DataAxis.
 
         Returns
         -------
-        [<DataAxis>]
+        :py:class:`~hyperspy.axes.DataAxis`
         """
         nd = self.ndim
         if isinstance(axes, (tuple, list)):
@@ -246,13 +251,17 @@ def _get_mpl_ax(plot, axes):
     The space of the first DataAxis in axes will be used to determine which
     plot's matplotlib Axes to return.
 
-    Arguments:
+    Parameters
     ----------
-        plot : MPL_HyperExplorer
-            The explorer that contains the navigation and signal plots
-        axes : collection of DataAxis
-            The axes to infer from.
+    plot : MPL_HyperExplorer
+        The explorer that contains the navigation and signal plots
+    axes : collection of DataAxis
+        The axes to infer from.
     """
+    if not plot.is_active:
+        raise RuntimeError("The signal needs to be plotted before using this "
+                           "function.")
+
     if axes[0].navigate:
         ax = plot.navigator_plot.ax
     else:
@@ -335,8 +344,8 @@ class BaseInteractiveROI(BaseROI):
         """Creates an interactively sliced Signal (sliced by this ROI) via
         hyperspy.interactive.
 
-        Arguments:
-        ----------
+        Arguments
+        ---------
         signal : Signal
             The source signal to slice
         navigation_signal : Signal, None or "same" (default)
@@ -353,7 +362,7 @@ class BaseInteractiveROI(BaseROI):
             'widget' argument.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
-            interactivel on any roi attribute change.
+            interactively on any roi attribute change.
 
         """
         if hasattr(signal, '_plot_kwargs'):
@@ -408,8 +417,8 @@ class BaseInteractiveROI(BaseROI):
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
 
-        Arguments:
-        ----------
+        Arguments
+        ---------
         signal : Signal
             The signal to witch the widget is added. This is used to determine
             with plot to add the widget to, and it supplies the axes_manager
@@ -417,13 +426,16 @@ class BaseInteractiveROI(BaseROI):
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
             The DataAxis in the collection can be either of the following:
-                * a tuple of:
-                    - DataAxis. These will not be checked with
-                      signal.axes_manager.
-                    - anything that will index signal.axes_manager
-                * For any other value, it will check whether the navigation
-                  space can fit the right number of axis, and use that if it
-                  fits. If not, it will try the signal space.
+
+            * a tuple of:
+
+                - DataAxis. These will not be checked with signal.axes_manager.
+                - anything that will index signal.axes_manager
+
+            * For any other value, it will check whether the navigation
+              space can fit the right number of axis, and use that if it
+              fits. If not, it will try the signal space.
+
         widget : Widget or None (default)
             If specified, this is the widget that will be added. If None, the
             default widget will be used, as given by _get_widget_type().
@@ -501,7 +513,7 @@ class BasePointROI(BaseInteractiveROI):
 
 
 def guess_vertical_or_horizontal(axes, signal):
-    # Figure out whether to use horizontal or veritcal line:
+    # Figure out whether to use horizontal or vertical line:
     if axes[0].navigate:
         plotdim = len(signal._plot.navigator_data_function().shape)
         axdim = signal.axes_manager.navigation_dimension
@@ -524,11 +536,23 @@ def guess_vertical_or_horizontal(axes, signal):
             "Could not find valid widget type for the given `axes` value")
 
 
-@add_gui_method(toolkey="Point1DROI")
+@add_gui_method(toolkey="hyperspy.Point1DROI")
 class Point1DROI(BasePointROI):
 
     """Selects a single point in a 1D space. The coordinate of the point in the
     1D space is stored in the 'value' trait.
+
+    `Point1DROI` can be used in place of a tuple containing the value of `value`.
+
+
+    Example
+    -------
+
+    >>> roi = hs.roi.Point1DROI(0.5) 
+    >>> value, = roi
+    >>> print(value)
+    0.5
+
     """
     value = t.CFloat(t.Undefined)
     _ndim = 1
@@ -536,6 +560,11 @@ class Point1DROI(BasePointROI):
     def __init__(self, value):
         super(Point1DROI, self).__init__()
         self.value = value
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.value,)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return self.value != t.Undefined
@@ -546,6 +575,7 @@ class Point1DROI(BasePointROI):
     def _get_ranges(self):
         ranges = ((self.value,),)
         return ranges
+
 
     def _set_from_widget(self, widget):
         self.value = widget.position[0]
@@ -568,11 +598,24 @@ class Point1DROI(BasePointROI):
             self.value)
 
 
-@add_gui_method(toolkey="Point2DROI")
+@add_gui_method(toolkey="hyperspy.Point2DROI")
 class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
     the 2D space are stored in the traits 'x' and 'y'.
+
+    `Point2DROI` can be used in place of a tuple containing the coordinates
+    of the point `(x, y)`.
+
+
+    Example
+    -------
+
+    >>> roi = hs.roi.Point2DROI(3, 5)
+    >>> x, y = roi
+    >>> print(x, y)
+    3 5
+
     """
     x, y = (t.CFloat(t.Undefined),) * 2
     _ndim = 2
@@ -580,6 +623,11 @@ class Point2DROI(BasePointROI):
     def __init__(self, x, y):
         super(Point2DROI, self).__init__()
         self.x, self.y = x, y
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.x, self.y)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return t.Undefined not in (self.x, self.y)
@@ -609,11 +657,22 @@ class Point2DROI(BasePointROI):
             self.x, self.y)
 
 
-@add_gui_method(toolkey="SpanROI")
+@add_gui_method(toolkey="hyperspy.SpanROI")
 class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
     the 1D space are stored in the traits 'left' and 'right'.
+
+    `SpanROI` can be used in place of a tuple containing the left and right values.
+
+    Example
+    -------
+
+    >>> roi = hs.roi.SpanROI(-3, 5)
+    >>> left, right = roi
+    >>> print(left, right)
+    3 5
+
     """
     left, right = (t.CFloat(t.Undefined),) * 2
     _ndim = 1
@@ -622,6 +681,12 @@ class SpanROI(BaseInteractiveROI):
         super(SpanROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
         self.left, self.right = left, right
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.left, self.right)
+        return _tuple.__getitem__(*args, **kwargs)
+
+
 
     def is_valid(self):
         return (t.Undefined not in (self.left, self.right) and
@@ -668,13 +733,23 @@ class SpanROI(BaseInteractiveROI):
             self.right)
 
 
-@add_gui_method(toolkey="RectangularROI")
+@add_gui_method(toolkey="hyperspy.RectangularROI")
 class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
     the 2D space are stored in the traits 'left', 'right', 'top' and 'bottom'.
     Convenience properties 'x', 'y', 'width' and 'height' are also available,
     but cannot be used for initialization.
+
+    `RectangularROI` can be used in place of a tuple containing `(left, right, top, bottom)`.
+
+    Example
+    -------
+
+    >>> roi = hs.roi.RectangularROI(left=0, right=10, top=20, bottom=20.5)
+    >>> left, right, top, bottom = roi
+    >>> print(left, right, top, bottom)
+    0 10 20 20.5
     """
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -683,6 +758,11 @@ class RectangularROI(BaseInteractiveROI):
         super(RectangularROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
         self.top, self.bottom, self.left, self.right = top, bottom, left, right
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.left, self.right, self.top, self.bottom)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return (t.Undefined not in (self.top, self.bottom,
@@ -806,8 +886,15 @@ class RectangularROI(BaseInteractiveROI):
             self.bottom)
 
 
-@add_gui_method(toolkey="CircleROI")
+@add_gui_method(toolkey="hyperspy.CircleROI")
 class CircleROI(BaseInteractiveROI):
+    """Selects a circular or annular region in a 2D space. The coordinates of
+    the center of the circle are stored in the 'cx' and 'cy' attributes. The
+    radious in the `r` attribute. If an internal radious is defined using the
+    `r_inner` attribute, then an annular region is selected instead.
+    `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
+    cy, r, r_inner)` when `r_inner` is not `None`.
+    """
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -818,6 +905,14 @@ class CircleROI(BaseInteractiveROI):
         self.cx, self.cy, self.r = cx, cy, r
         if r_inner:
             self.r_inner = r_inner
+
+    def __getitem__(self, *args, **kwargs):
+        if self.r_inner and self.r_inner is not t.Undefined:
+            _tuple = (self.cx, self.cy, self.r, self.r_inner)
+        else:
+            _tuple = (self.cx, self.cy, self.r)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and
@@ -882,6 +977,7 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
+
 
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
@@ -969,8 +1065,13 @@ class CircleROI(BaseInteractiveROI):
                 self.r_inner)
 
 
-@add_gui_method(toolkey="Line2DROI")
+@add_gui_method(toolkey="hyperspy.Line2DROI")
 class Line2DROI(BaseInteractiveROI):
+    """Selects a line of a given width in 2D space. The coordinates of the end points of the line are stored in the `x1`, `y1`, `x2`, `y2` attributes.
+    The length is available in the `length` attribute and the method `angle` computes the angle of the line with the axes.
+
+    `Line2DROI` can be used in place of a tuple containing the coordinates of the two end-points of the line and the linewdith `(x1, y1, x2, y2, linewidth)`.
+    """
 
     x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
     _ndim = 2
@@ -979,6 +1080,11 @@ class Line2DROI(BaseInteractiveROI):
         super(Line2DROI, self).__init__()
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = (self.x1, self.y1, self.x2, self.y2, self.linewidth)
+        return _tuple.__getitem__(*args, **kwargs)
+
 
     def is_valid(self):
         return t.Undefined not in (self.x1, self.y1, self.x2, self.y2)
@@ -1104,7 +1210,8 @@ class Line2DROI(BaseInteractiveROI):
         elif units == 'radians':
             conversation = 1.
         else:
-            raise ValueError("Units are not recognized. Use  either 'degrees' or 'radians'.")
+            raise ValueError(
+                "Units are not recognized. Use  either 'degrees' or 'radians'.")
 
         if axis == 'horizontal':
             return np.arctan2(y, x) * conversation

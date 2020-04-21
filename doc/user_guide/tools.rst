@@ -24,20 +24,8 @@ common functionality to deal with one-dimensional (e.g. spectral) data and
 spectroscopy data analysis.
 
 The :ref:`table below <signal_subclasses_table-label>` summarises all the
-currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
-
-.. versionchanged:: 1.0
-
-    The :py:class:`~._signals.signal1d.Signal1D`,
-    :py:class:`~._signals.signal2d.Signal2D` and :py:class:`~.signal.BaseSignal`
-    classes deprecated the old `Spectrum` `Image` and `Signal` classes.
-
-.. versionadded:: 1.0
-
-    New :py:class:`~._signals.complex_signal.ComplexSignal`,
-    :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
-    :py:class:`~._signals.complex_signal2d.Complex2D`
-    :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
+specialised :py:class:`~.signal.BaseSignal` subclasses currently distributed
+with HyperSpy.
 
 
 
@@ -226,6 +214,39 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     |    :py:class:`~._signals.complex_signal2d.Complex2D`                    |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
+
+.. versionadded:: 1.5
+    External packages can register extra :py:class:`~.signal.BaseSignal`
+    subclasses.
+
+Note that, if you have :ref:`packages that extend HyperSpy
+<hyperspy_extensions-label>` installed in your system, there may
+be more specialised signals available to you. To print all available specialised
+:py:class:`~.signal.BaseSignal` subclasses installed in your system call the
+:py:func:`hyperspy.utils.print_known_signal_types`
+function as in the following example:
+
+.. code-block:: python
+
+    >>> hs.print_known_signal_types()
+    +--------------------+---------------------+--------------------+----------+
+    |    signal_type     |       aliases       |     class name     | package  |
+    +--------------------+---------------------+--------------------+----------+
+    | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
+    |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
+    |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
+    |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
+    |      hologram      |                     |   HologramImage    | hyperspy |
+    |      MySignal      |                     |      MySignal      | hspy_ext |
+    +--------------------+---------------------+--------------------+----------+
+
+.. warning::
+    From version 2.0 HyperSpy will no longer ship
+    :py:class:`~.signal.BaseSignal` subclasses that are specific to a
+    particular type of data (i.e. with non-empty ``signal_type``). All those
+    signals currently distributed with HyperSpy will be moved to new
+    packages.
+    
 The following example shows how to transform between different subclasses.
 
    .. code-block:: python
@@ -257,8 +278,6 @@ The following example shows how to transform between different subclasses.
 
 Binned and unbinned signals
 ---------------------------
-
-.. versionadded:: 0.7
 
 Signals that are a histogram of a probability density function (pdf) should
 have the ``signal.metadata.Signal.binned`` attribute set to
@@ -320,8 +339,6 @@ subclasses.
 Mathematical operations
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionchanged:: 1.0
-
 A number of mathematical operations are available
 in :py:class:`~.signal.BaseSignal`. Most of them are just wrapped numpy
 functions.
@@ -368,21 +385,14 @@ Example:
 
 The following methods operate only on one axis at a time:
 
-.. versionadded:: 1.2
-   :py:meth:`~.signal.BaseSignal.valuemin`, :py:meth:`~.signal.BaseSignal.indexmin`
-
 * :py:meth:`~.signal.BaseSignal.diff`
 * :py:meth:`~.signal.BaseSignal.derivative`
 * :py:meth:`~.signal.BaseSignal.integrate_simpson`
 * :py:meth:`~.signal.BaseSignal.integrate1D`
-* :py:meth:`~.signal.BaseSignal.valuemax`
+* :py:meth:`~.signal.BaseSignal.indexmin`
 * :py:meth:`~.signal.BaseSignal.indexmax`
 * :py:meth:`~.signal.BaseSignal.valuemin`
-* :py:meth:`~.signal.BaseSignal.indexmin`
-
-.. versionadded:: 1.0
-   numpy ufunc operate on HyperSpy signals
-
+* :py:meth:`~.signal.BaseSignal.valuemax`
 
 .. _ufunc-label:
 
@@ -429,8 +439,6 @@ array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
 
 Indexing
 ^^^^^^^^
-.. versionadded:: 0.6
-.. versionchanged:: 0.8.1
 
 Indexing a :py:class:`~.signal.BaseSignal`  provides a powerful, convenient and
 Pythonic way to access and modify its data. In HyperSpy indexing is achieved
@@ -495,7 +503,7 @@ First consider indexing a single spectrum, which has only one signal dimension
     >>> s.isig[5::2].data
     array([5, 7, 9])
 
-Unlike numpy, HyperSpy supports indexing using decimal numbers or string 
+Unlike numpy, HyperSpy supports indexing using decimal numbers or string
 (containing a decimal number and an units), in which case
 HyperSpy indexes using the axis scales instead of the indices.
 
@@ -665,9 +673,6 @@ dimensions respectively:
 
 Signal operations
 ^^^^^^^^^^^^^^^^^
-.. versionadded:: 0.6
-
-.. versionadded:: 0.8.3
 
 :py:class:`~.signal.BaseSignal` supports all the Python binary arithmetic
 operations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
@@ -809,8 +814,6 @@ to make a horizontal "collage" of the image stack:
 
 Iterating external functions with the map method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.7
 
 Performing an operation on the data at each coordinate, as in the previous example,
 using an external function can be more easily accomplished using the
@@ -1072,31 +1075,36 @@ to reverse the :py:func:`~.utils.stack` function:
 FFT and iFFT
 ^^^^^^^^^^^^
 
-.. versionadded:: 1.4 
-   :py:meth:`~.signal.BaseSignal.fft` and :py:meth:`~.signal.BaseSignal.ifft` method and ``fft_shift`` and ``power_spectrum``
-   ``plot`` keyword arguments.
-
-The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
+The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and
+the :py:meth:`~.signal.BaseSignal.ifft` methods. In order to remove streaks in FFT
+(usually used only for presenting FFT patterns rather than for quantitative
+analyses) use ``apodization`` attribute as follows:
 
 .. code-block:: python
 
-    >>> im = hs.datasets.example_signals.object_hologram()
-    >>> im.fft().plot()
+    >>> import numpy as np
+    >>> im = hs.datasets.example_signals.reference_hologram()
+    >>> fft_power = np.log(im.fft(shift=True).amplitude)
+    >>> fft_power_apodized = np.log(im.fft(shift=True, apodization=True).amplitude)
+    >>> hs.plot.plot_images([fft_power, fft_power_apodized], tight_layout=True)
 
-.. figure::  images/hologram_fft.png
+.. figure::  images/ref_hologram_fft.png
   :align:   center
-  :width:   400
+  :width:   800
 
-Note that for visual inspection of FFT, it is common to plot the power spectrum (absolute value of the complex signal) on a logarithmic scale rather than the FFT itself as it is done in the example above.
-By default, in case of FFT, HyperSpy plots the power spectrum and shifts the zero frequency component to the center of the signal. This can be changed 
-by setting ``power_spectrum=False`` and ``fft_shift=False`` parameters of the plot method.
+``apodization`` attribute can also take following values which correspond to types of apodization windows:
+``hann`` (or ``apodization=True``), ``hamming``, ``tukey``.
 
-By default, both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use ``fft_shift=True`` option to
-calculate FFT and the inverse with origin shifted in the centre. ROIs doesn't work when the FFT is plotted with ``fft_shift=True``.
+Note that for visual inspection of FFT it is common to plot logarithm of amplitude
+rather than FFT itself as it is done in the example above.
+
+By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use ``shift=True`` option to
+calculate FFT and the inverse with origin shifted in the centre.
 
 .. code-block:: python
 
     >>> im_ifft = im.fft(fft_shift=True).ifft(fft_shift=True)
+
 
 .. _signal.change_dtype:
 
@@ -1125,9 +1133,6 @@ type in place, e.g.:
         Data representation: spectrum
         Data type: float64
 
-
-.. versionadded:: 0.7
-   Support for RGB signals.
 
 In addition to all standard numpy dtypes, HyperSpy supports four extra dtypes
 for RGB images **for visualization purposes only**: ``rgb8``, ``rgba8``,
@@ -1269,9 +1274,56 @@ methods e.g.:
    <Signal2D, title: , dimensions: (6|4, 5)>
 
 
+Applying apodization window
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Apodization window (also known as apodization function) can be applied to a signal
+using :py:meth:`~.signal.BaseSignal.apply_apodization` method. By default standard
+Hann window is used:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.ones(1000))
+    >>> sa = s.apply_apodization()
+    >>> sa.metadata.General.title = 'Hann window'
+    >>> sa.plot()
+
+
+.. figure::  images/hann_window.png
+  :align:   center
+  :width:   400
+
+Higher order Hann window can be used in order to keep larger fraction of intensity of original signal.
+This can be done providing an integer number for the order of the window through
+keyword argument ``hann_order``. (The last one works only together with default value of ``window`` argument
+or with ``window='hann'``.)
+
+.. code-block:: python
+
+    >>> im = hs.datasets.example_signals.reference_hologram().isig[:200, :200]
+    >>> ima = im.apply_apodization(window='hann', hann_order=3)
+    >>> hs.plot.plot_images([im, ima], vmax=3000, tight_layout=True)
+
+
+.. figure::  images/hann_3d_order_ref_holo.png
+  :align:   center
+  :width:   800
+
+In addition to Hann window also Hamming or Tukey windows can be applied using ``window`` attribute
+selecting ``'hamming'`` or ``'tukey'`` respectively.
+
+The shape of Tukey window can be adjusted using parameter alpha
+provided through ``tukey_alpha`` keyword argument (only used when ``window='tukey'``).
+The parameter represents the fraction of the window inside the cosine tapered region,
+i.e. smaller is alpha larger is the middle flat region where the original signal
+is preserved. If alpha is one, the Tukey window is equivalent to a Hann window.
+(Default value is 0.5)
+
+Apodization can be applied in place by setting keyword argument ``inplace`` to ``True``.
+In this case method will not return anything.
+
 Basic statistical analysis
 --------------------------
-.. versionadded:: 0.7
 
 :py:meth:`~.signal.BaseSignal.get_histogram` computes the histogram and
 conveniently returns it as signal instance. It provides methods to
@@ -1393,8 +1445,6 @@ model, for example:
 Speeding up operations
 ----------------------
 
-.. versionadded:: 1.0
-
 Reusing a Signal for output
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1433,8 +1483,6 @@ operation.
 
 Interactive operations
 ----------------------
-
-.. versionadded:: 1.0
 
 
 The function :py:func:`~.interactive.interactive` ease the task of defining
@@ -1479,8 +1527,6 @@ The interactive operations can be chained.
 
 Region Of Interest (ROI)
 ------------------------
-
-.. versionadded:: 1.0
 
 A number of different ROIs are available:
 
@@ -1536,9 +1582,8 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
   :align:   center
   :width:   500
 
-Notably,
-since ROIs are independent from the signals they sub-select, the widget can be
-plotted on a different signal altogether.
+Notably, since ROIs are independent from the signals they sub-select, the widget
+can be plotted on a different signal altogether.
 
 .. code-block:: python
 
@@ -1594,22 +1639,44 @@ order to increase responsiveness.
     ROIs can be used in place of slices when indexing and to define a
     signal range in functions taken a ``signal_range`` argument.
 
+.. _roi-slice-label:
 
-ROIs can be used in place of slices when indexing and to define a
-signal range in functions taken a ``signal_range`` argument. For example:
+Slicing using ROIs
+^^^^^^^^^^^^^^^^^^
+
+ROIs can be used in place of slices when indexing. For example:
 
 .. code-block:: python
 
     >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
-    >>> s.remove_background(signal_range=roi, background_type="Polynomial")
     >>> im = hs.datasets.example_signals.object_hologram()
     >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
     >>> imc = im.isig[roi]
 
 .. versionadded:: 1.3
     :meth:`gui` method.
+
+.. versionadded:: 1.6
+    New :meth:`__getitem__` method for all ROIs.
+
+In addition the following all ROIs have a py:meth:`__getitem__` method that enables
+using them in place of tuples.
+For example, the method :py:meth:`~._signals.signal2d.align2D` takes a ``roi``
+argument with the left, right, top, bottom coordinates of the ROI.
+Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+    >>> im = hs.signals.Signal2D(np.random.random((10,30,30))
+    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5))
+    >>> tuple(roi)
+    (2.0, 10.0, 0.0, 5.0)
+    >>> im.align2D(roi=roi)
+
 
 
 All ROIs have a :meth:`gui` method that displays an user interface if
@@ -1722,6 +1789,25 @@ complex phase of a signal can be unwrapped and returned as a new signal. The
 underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
 algorithm described in :ref:`[Herraez] <Herraez>`.
 
+
+.. _complex.argand:
+
+Calculate and display Argand diagram
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes it is convenient to visualize a complex signal as a plot of its
+imaginary part versus real one. In this case so called Argand diagrams can
+be calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
+method, which returns the plot as a
+:py:class:`~._signals.complex_signal.Signal2D`. Optional arguments ``size``
+and ``display_range`` can be used to change the size (and therefore
+resolution) of the plot and to change the range for the display of the
+plot respectively. The last one is especially useful in order to zoom
+into specific regions of the plot or to limit the plot in case of noisy
+data points.
+
+An example of calculation of Aragand diagram is :ref:`shown for electron
+holography data <holo.argand-example>`.
 
 Add a linear phase ramp
 ^^^^^^^^^^^^^^^^^^^^^^^

@@ -120,10 +120,17 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
+    ``plt.close('all')`` is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
     Matplotlib is the library that HyperSpy uses to produce the plots. You can
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
+
+
+.. NOTE::
+
+    Plotting ``float16`` images is currently not supported by matplotlib; however, it is 
+    possible to convert the type of the data by using the 
+    :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
 ===========================
@@ -175,8 +182,6 @@ The following keyboard shortcuts are availalbe when the 2D signal figure is in f
 
 Customising image plot
 ======================
-
-.. versionadded:: 0.8
 
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
@@ -238,8 +243,6 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
 .. _plot.divergent_colormaps-label:
 
 
-.. versionadded:: 0.8.1
-
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
 the center of the colormap (usually white). This can be useful e.g. when
@@ -285,6 +288,8 @@ The same example with the feature disabled:
 
    Divergent color map with ``Centre colormap`` disabled.
 
+
+.. _plot.customize_navigator:
 
 Customizing the "navigator"
 ===========================
@@ -397,6 +402,8 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
+.. _visualization_3D_EDS-label:
+
 Using Mayavi to visualize 3D data
 =================================
 
@@ -444,6 +451,8 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
     The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Ultramicroscopy, 148, p. 158-167 (2015).
+
+
 .. _plot_spectra:
 
 Plotting multiple signals
@@ -458,8 +467,6 @@ other signals): :py:func:`~.drawing.utils.plot_images`,
 
 Plotting several images
 -----------------------
-
-.. versionadded:: 0.8
 
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
@@ -712,8 +719,7 @@ Plotting several spectra
 
 :py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the
 same figure. It supports different styles, the default
-being "overlap". The default style is configurable in :ref:`preferences
-<configuring-hyperspy-label>`.
+being "overlap".
 
 .. versionadded:: 1.5
    Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
@@ -972,7 +978,7 @@ same time:
 The navigator can be specified by using the navigator argument, where the
 different options are "auto", None, "spectrum", "slider" or Signal.
 For more details about the different navigators,
-see :ref:`navigator_options`.
+see :ref:`the navigator options<plot.customize_navigator>`.
 To specify the navigator:
 
 .. code-block:: python
@@ -1030,8 +1036,6 @@ each plot:
 
 Markers
 =======
-
-.. versionadded:: 0.8
 
 HyperSpy provides an easy access to the main marker of matplotlib. The markers
 can be used in a static way

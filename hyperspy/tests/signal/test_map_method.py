@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from unittest import mock
 
 import numpy as np
@@ -312,3 +330,14 @@ def test_singleton():
         assert _s.axes_manager[0].name == 'Scalar'
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
+
+
+def test_map_ufunc(caplog):
+    data = np.arange(100, 200).reshape(10, 10)
+    s = hs.signals.Signal1D(data)
+    # check that it works and it raises a warning
+    caplog.clear()
+    # s.map(np.log)
+    assert np.log(s) == s.map(np.log)
+    np.testing.assert_allclose(s.data, np.log(data))
+    assert "can direcly operate on hyperspy signals" in caplog.records[0].message

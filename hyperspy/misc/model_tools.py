@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,12 +19,13 @@
 
 def _is_iter(val):
     "Checks if value is a list or tuple"
-    return type(val) == tuple or type(val) == list
+    return isinstance(val, tuple) or isinstance(val, list)
 
 
 def _iter_join(val):
     "Joins values of iterable parameters for the fancy view, unless it is None, then blank"
-    return "(" + ", ".join(["{:6g}".format(v) for v in val]) + ")" if val else ""
+    return "(" + ", ".join(["{:6g}".format(v)
+                            for v in val]) + ")" if val else ""
 
 
 def _non_iter(val):
@@ -59,10 +60,10 @@ class current_component_values():
             **size)
 
         if self.only_active:
-            text = "{0}: {1}".format(self._id_name, self.name)
+            text = "{0}: {1}".format(self.__class__.__name__, self.name)
         else:
             text = "{0}: {1}\nActive: {2}".format(
-                self._id_name, self.name, self.active)
+                self.__class__.__name__, self.name, self.active)
         text += "\n"
         text += signature.format("Parameter Name",
                                  "Free", "Value", "Std", "Min", "Max")
@@ -79,7 +80,8 @@ class current_component_values():
                     std = para.std if _is_iter(para.std) else blank
                     bmin = para.bmin if _is_iter(para.bmin) else blank
                     bmax = para.bmax if _is_iter(para.bmax) else blank
-                    for i, (v, s, bn, bx) in enumerate(zip(para.value, std, bmin, bmax)):
+                    for i, (v, s, bn, bx) in enumerate(
+                            zip(para.value, std, bmin, bmax)):
                         if i == 0:
                             text += signature.format(para.name[:size['name']], str(para.free)[:size['free']], str(
                                 v)[:size['value']], str(s)[:size['std']], str(bn)[:size['bmin']], str(bx)[:size['bmax']])
@@ -95,10 +97,10 @@ class current_component_values():
 
     def _repr_html_(self):
         if self.only_active:
-            text = "<p><b>{0}: {1}</b></p>".format(self._id_name, self.name)
+            text = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
         else:
             text = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
-                self._id_name, self.name, self.active)
+                self.__class__.__name__, self.name, self.active)
 
         para_head = """<table style="width:100%"><tr><th>Parameter Name</th><th>Free</th>
             <th>Value</th><th>Std</th><th>Min</th><th>Max</th></tr>"""
@@ -128,17 +130,18 @@ class current_model_values():
     """Convenience class that makes use of __repr__ methods for nice printing in
      the notebook"""
 
-    def __init__(self, model, only_free, only_active):
+    def __init__(self, model, only_free, only_active, component_list=None):
         self.model = model
         self.only_free = only_free
         self.only_active = only_active
+        self.component_list = model if component_list is None else component_list
         self.model_type = str(self.model.__class__).split("'")[
             1].split('.')[-1]
 
     def __repr__(self):
         text = "{}: {}\n".format(
             self.model_type, self.model.signal.metadata.General.title)
-        for comp in self.model:
+        for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
                     text += current_component_values(
@@ -149,7 +152,7 @@ class current_model_values():
 
         html = "<h4>{}: {}</h4>".format(self.model_type,
                                         self.model.signal.metadata.General.title)
-        for comp in self.model:
+        for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
                     html += current_component_values(

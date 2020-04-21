@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -38,7 +38,6 @@ from hyperspy.signal_tools import SpikesRemoval
 from hyperspy.models.model1d import Model1D
 
 
-from hyperspy.misc.utils import signal_range_from_roi
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
     Signal1DCalibration,
@@ -55,6 +54,8 @@ from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.misc.test_utils import ignore_warning
+
 
 _logger = logging.getLogger(__name__)
 
@@ -349,7 +350,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See also
         --------
-        `_spikes_diagnosis`
+        _spikes_diagnosis
 
         """
         self._check_signal_dimension_equals_one()
@@ -728,7 +729,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See also
         --------
-        `estimate_shift1D`
+        estimate_shift1D
         """
         if also_align is None:
             also_align = []
@@ -774,7 +775,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If l and r are floats the `signal_range` will be in axis units (for
             example eV). If l and r are integers the `signal_range` will be in
             index units. When `signal_range` is "interactive" (default) the
-            range is selected using a GUI.
+            range is selected using a GUI. Note that ROIs can be used
+            in place of a tuple.
 
         Returns
         --------
@@ -782,7 +784,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See Also
         --------
-        `integrate_simpson`
+        integrate_simpson
 
         Examples
         --------
@@ -811,7 +813,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
             "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
             "instead.")
         deprecation_warning(msg)
-        signal_range = signal_range_from_roi(signal_range)
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
@@ -824,7 +825,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         return integrated_signal1D
 
     def _integrate_in_range_commandline(self, signal_range):
-        signal_range = signal_range_from_roi(signal_range)
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
@@ -834,9 +834,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         Calibrate the spectral dimension using a gui.
         It displays a window where the new calibration can be set by:
-            * setting the offset, units and scale directly
-            * selecting a range by dragging the mouse on the spectrum figure 
-              and setting the new values for the given range limits
+
+        * setting the values of offset, units and scale directly
+        * or selecting a range by dragging the mouse on the spectrum figure 
+          and setting the new values for the given range limits
 
         Parameters
         ----------
@@ -1031,7 +1032,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
             zero_fill=False, show_progressbar=None):
-        signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
         model.append(background_estimator)
@@ -1042,14 +1042,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
             only_current=False)
         if fast and not self._lazy:
             try:
-                axis = self.axes_manager.signal_axes[0].axis
-                result = self - background_estimator.function_nd(axis)
+                axis = self.axes_manager.signal_axes[0]
+                scale_factor = axis.scale if self.metadata.Signal.binned else 1
+                bkg = background_estimator.function_nd(axis.axis) * scale_factor
+                result = self - bkg
             except MemoryError:
                 result = self - model.as_signal(
                     show_progressbar=show_progressbar)
         else:
             model.set_signal_range(signal_range[0], signal_range[1])
-            model.multifit(show_progressbar=show_progressbar)
+            # HyperSpy 2.0: remove setting iterpath='serpentine'
+            model.multifit(show_progressbar=show_progressbar,
+                           iterpath='serpentine')
             model.reset_signal_range()
             result = self - model.as_signal(show_progressbar=show_progressbar)
 
@@ -1084,7 +1088,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components: PowerLaw, Gaussian, Offset, Polynomial
+            Possible components:  Gaussian, Lorentzian, Offset, Polynomial,
+             PowerLaw, SkewNormal, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
@@ -1139,15 +1144,23 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    zero_fill=zero_fill)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            if background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Gaussian':
+            if background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()
+            elif background_type == 'Lorentzian':
+                background_estimator = components1d.Lorentzian()
             elif background_type == 'Offset':
                 background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':
-                background_estimator = components1d.Polynomial(
-                    polynomial_order)
+                with ignore_warning(message="The API of the `Polynomial` component"):
+                    background_estimator = components1d.Polynomial(
+                        polynomial_order, legacy=False)
+            elif background_type in ('PowerLaw', 'Power Law'):
+                background_estimator = components1d.PowerLaw()
+            elif background_type in ('SkewNormal', 'Skew Normal'):
+                background_estimator = components1d.SkewNormal()
+            elif background_type == 'Voigt':
+                with ignore_warning(message="The API of the `Voigt` component"):
+                    background_estimator = components1d.Voigt(legacy=False)
             else:
                 raise ValueError(
                     "Background type: " +
@@ -1186,7 +1199,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         self._check_signal_dimension_equals_one()
         try:
-            left_value, right_value = signal_range_from_roi(left_value)
+            left_value, right_value = left_value
         except TypeError:
             # It was not a ROI, we carry on
             pass
@@ -1474,6 +1487,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return width
 
     estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
 
 class LazySignal1D(LazySignal, Signal1D):
 

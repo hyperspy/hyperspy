@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,21 +22,21 @@ from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 
 
-@add_gui_method(toolkey="ScalableFixedPattern_Component")
+@add_gui_method(toolkey="hyperspy.ScalableFixedPattern_Component")
 class ScalableFixedPattern(Component):
 
     r"""Fixed pattern component with interpolation support.
 
     .. math::
-    
+
         f(x) = a \cdot s \left(b \cdot x - x_0\right) + c
 
     ============ =============
-     Variable     Parameter 
+     Variable     Parameter
     ============ =============
-     :math:`a`    yscale 
-     :math:`b`    xscale 
-     :math:`x_0`  shift 
+     :math:`a`    yscale
+     :math:`b`    xscale
+     :math:`x_0`  shift
     ============ =============
 
 
