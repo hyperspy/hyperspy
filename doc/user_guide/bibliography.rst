@@ -196,7 +196,13 @@ Bibliography
    pp. 166-171, Minneapolis, Minnesota, USA, June 2011
    [`<https://doi.org/10.1109/ICDCSW.2011.20>`_].
 
+.. _Iakoubovskii2008:
 
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`
+    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+      https://doi.org/10.1002/jemt.20597.
 
 
 Peer-review articles with results obtained using HyperSpy
