@@ -5,7 +5,7 @@
 .. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
 .. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build/latest?definitionId=1?branchName=RELEASE_next_minor
 
-.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_patch
+.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_minor
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
 .. |Codecov| image:: https://codecov.io/gh/hyperspy/hyperspy/branch/RELEASE_next_minor/graph/badge.svg
