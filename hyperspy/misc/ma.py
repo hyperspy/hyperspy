@@ -48,7 +48,7 @@ def masked_greater(signal, value, copy=False):
         Data greater than this value will be masked
     """
     if signal._lazy:
-        signal.data = da.ma.masked_greater(signal.data, value, copy=copy)
+        signal.data = da.ma.masked_greater(signal.data, value)
     else:
         signal.data = np.ma.masked_greater(signal.data, value=value, copy=copy)
 
@@ -199,7 +199,7 @@ def masked_roi(signal, roi, axes="signal"):
     signal : BaseSignal
         The signal to be converted to a masked signal
     roi : hs.roi
-        Some ROI defined using hyperspy. 
+        Some ROI defined using hyperspy.
     axes: "signal", "navigation" or list
         The axes over which to apply the mask
     """
@@ -248,9 +248,4 @@ def masked_roi(signal, roi, axes="signal"):
             if not isinstance(signal.data, np.ma.masked_array):
                 asarray(signal)
             signal.data[slices]=masked
-
-
-
-
-
 

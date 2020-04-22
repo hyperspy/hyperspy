@@ -114,11 +114,16 @@ class TestMa():
 
     def test_save(self, signal, lazy_signal, tmpfilepath):
         ma.asarray(signal)
+        signal.isig[0:2, :] = ma.masked
         assert isinstance(signal.data, np.ma.masked_array)
         signal.save(tmpfilepath)
         l = load(tmpfilepath + ".hspy")
-        print(type(l.data))
-        #assert isinstance(l.data, np.ma.masked_array)
+        assert isinstance(l.data, np.ma.masked_array)
+        ma.asarray(lazy_signal)
+        ma.masked_greater(lazy_signal,5)
+        lazy_signal.save(tmpfilepath, overwrite=True)
+        l = load(tmpfilepath + ".hspy")
+        assert isinstance(l.data, np.ma.masked_array)
 
     def test_masked_circle_roi(self,signal,lazy_signal):
         c = CircleROI(2,2,2)

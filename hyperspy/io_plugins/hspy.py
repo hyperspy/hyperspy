@@ -215,11 +215,20 @@ def hdfgroup2signaldict(group, lazy=False):
         exp["package_version"] = ""
 
     data = group['data']
+    print(group.keys())
+    if "mask" in group:
+        mask = group['mask']
     if lazy:
         data = da.from_array(data, chunks=data.chunks)
+        if "mask" in group:
+            mask = da.from_array(mask, chunks=mask.chunks)
+            data = da.ma.masked_array(data, mask=mask)
         exp['attributes']['_lazy'] = True
     else:
         data = np.asanyarray(data)
+        if "mask" in group:
+            mask = np.asanyarray(mask)
+            data = np.ma.masked_array(data, mask=mask)
     exp['data'] = data
     axes = []
     for i in range(len(exp['data'].shape)):
@@ -535,6 +544,7 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
     return tuple(int(x) for x in chunks)
 
 
+
 def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
     if chunks is None:
         if signal_axes is None:
@@ -704,6 +714,14 @@ def write_signal(signal, group, **kwds):
     overwrite_dataset(group, signal.data, 'data',
                       signal_axes=signal.axes_manager.signal_indices_in_array,
                       **kwds)
+    if isinstance(signal.data, np.ma.MaskedArray):
+        overwrite_dataset(group, signal.data.mask, 'mask',
+                          signal_axes=signal.axes_manager.signal_indices_in_array,
+                          **kwds)
+    if "chunktype=numpy.MaskedArray" in repr(signal.data):
+        overwrite_dataset(group, da.ma.getmaskarray(signal.data), 'mask',
+                          signal_axes=signal.axes_manager.signal_indices_in_array,
+                          **kwds)
     if default_version < LooseVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
