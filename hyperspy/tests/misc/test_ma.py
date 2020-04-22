@@ -120,12 +120,16 @@ class TestMa():
         print(type(l.data))
         #assert isinstance(l.data, np.ma.masked_array)
 
-    def test_masked_roi(self,signal,lazy_signal):
+    def test_masked_circle_roi(self,signal,lazy_signal):
         c = CircleROI(2,2,2)
-        ma.masked_roi(signal,c, axes=[0,1])
+        ma.masked_roi(signal,c, axes=[1,2])
+        assert np.ma.is_masked(signal.isig[2,2].data)
         ma.masked_roi(lazy_signal, c)
-        r = RectangularROI(1,3,3,7)
-        ma.masked_roi(signal, r, axes=[0, 1])
+
+    def test_masked_rectangle_roi(self,signal,lazy_signal):
+        r = RectangularROI(0,2,4,4)
+        ma.masked_roi(signal, r, axes=[1, 2])
+        assert np.ma.is_masked(signal.isig[2,3].data)
         ma.masked_roi(lazy_signal, r)
 
 

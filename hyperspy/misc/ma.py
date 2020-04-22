@@ -7,6 +7,12 @@ import traits.api as t
 masked = MaskedConstant()
 
 def asarray(signal, dtype=None):
+    """Convert the input to a masked array of the given data-type.
+    Parameters
+    -------------
+        signal : BaseSignal
+    The signal to be converted to a masked signal
+    """
     if signal._lazy:
         # changing datatype not allowed
         signal.data = da.ma.asanyarray(signal.data)
@@ -14,6 +20,18 @@ def asarray(signal, dtype=None):
         signal.data = np.ma.asanyarray(signal.data, dtype=dtype)
 
 def masked_equal(signal, value, copy=False):
+    """Masks all values equal to some value
+
+    This function is a shortcut to masked_where,
+     with condition = (x == value). For floating point arrays,
+    consider using masked_values(x, value).
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    value :
+        The value to be masked
+    """
     if signal._lazy:
         signal.data = da.ma.masked_equal(signal.data, value)
     else:
@@ -21,6 +39,14 @@ def masked_equal(signal, value, copy=False):
 
 
 def masked_greater(signal, value, copy=False):
+    """Masks all values greater than some value
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    value :
+        Data greater than this value will be masked
+    """
     if signal._lazy:
         signal.data = da.ma.masked_greater(signal.data, value, copy=copy)
     else:
@@ -28,12 +54,30 @@ def masked_greater(signal, value, copy=False):
 
 
 def masked_greater_equal(signal, value, copy=False):
+    """Masks all values greater or equal to some value
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    value :
+        Data greater of equal to this value will be masked
+    """
     if signal._lazy:
         signal.data = da.ma.masked_greater_equal(signal.data, value)
     else:
         signal.data = np.ma.masked_greater_equal(signal.data, value=value, copy=copy)
 
 def masked_inside(signal, v1, v2, copy=False):
+    """Masks all values inside v1 and v2
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    v1, v2 :
+        Values inside v1, and v2 will be masked
+    """
     if signal._lazy:
         signal.data = da.ma.masked_inside(signal.data, v1, v2)
     else:
@@ -41,6 +85,13 @@ def masked_inside(signal, v1, v2, copy=False):
 
 
 def masked_invalid(signal, copy=False):
+    """Masks all values set to inf or nan
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    """
     if signal._lazy:
         signal.data = da.ma.masked_invalid(signal.data)
     else:
@@ -48,6 +99,15 @@ def masked_invalid(signal, copy=False):
 
 
 def masked_less(signal, value, copy=False):
+    """Masks all values less than some value
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    value :
+        Data less than value is masked
+    """
     if signal._lazy:
         signal.data = da.ma.masked_less(signal.data, value=value)
     else:
@@ -55,6 +115,15 @@ def masked_less(signal, value, copy=False):
 
 
 def masked_less_equal(signal, value, copy=False):
+    """Masks all values less than or equal to some value
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    value :
+        Data less than or equal to this value is masked
+    """
     if signal._lazy:
         signal.data = da.ma.masked_less_equal(signal.data, value=value)
     else:
@@ -62,6 +131,15 @@ def masked_less_equal(signal, value, copy=False):
 
 
 def masked_not_equal(signal, value, copy=False):
+    """Masks all values not equal to some value
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    value :
+        Data not equal to this value is masked
+    """
     if signal._lazy:
         signal.data = da.ma.masked_not_equal(signal.data, value=value)
     else:
@@ -69,6 +147,15 @@ def masked_not_equal(signal, value, copy=False):
 
 
 def masked_outside(signal, v1, v2, copy=False):
+    """Masks all values outside of v1, and v2
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    v1, v2 :
+        Data outside of v1, and v2 are masked.
+    """
     if signal._lazy:
         signal.data = da.ma.masked_outside(signal.data, v1, v2)
     else:
@@ -76,6 +163,14 @@ def masked_outside(signal, v1, v2, copy=False):
 
 
 def masked_values(signal, value, copy=False):
+    """Masks all values outside of v1, and v2
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    value :
+        Masking value
+    """
     if signal._lazy:
         signal.data = da.ma.masked_values(signal.data, value)
     else:
@@ -83,12 +178,31 @@ def masked_values(signal, value, copy=False):
 
 
 def masked_where(condition, signal, copy=False):
+    """Masks where some condition is met
+    Parameters
+    -------------
+    condition: Boolean Array
+        The where the mask should be masked
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    """
     if signal._lazy:
         signal.data = da.ma.masked_where(condition, signal.data)
     else:
         signal.data = np.ma.masked_where(condition, signal.data, copy=copy)
 
 def masked_roi(signal, roi, axes="signal"):
+    """Masks according to some roi
+
+    Parameters
+    -------------
+    signal : BaseSignal
+        The signal to be converted to a masked signal
+    roi : hs.roi
+        Some ROI defined using hyperspy. 
+    axes: "signal", "navigation" or list
+        The axes over which to apply the mask
+    """
     if axes is None and signal in roi.signal_map:
         axes = roi.signal_map[signal][1]
     else:
@@ -131,6 +245,8 @@ def masked_roi(signal, roi, axes="signal"):
             mask[slices] = True
             masked_where(mask,signal)
         else:
+            if not isinstance(signal.data, np.ma.masked_array):
+                asarray(signal)
             signal.data[slices]=masked
 
 
