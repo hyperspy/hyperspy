@@ -94,22 +94,22 @@ The CI helper scripts are pulled from the
 
 The testing matrix is as follow:
 
-- **Travis CI**: test all supported python version on Linux; all dependencies are
-  pulled from `pypi <https://pypi.org>`_,
+- **Travis CI**: test all supported python versions on Linux; all dependencies
+  are pulled from `pypi <https://pypi.org>`_,
 - **Azure Pipeline**: test a range of python version on Linux, MacOS and Windows;
   all dependencies are pulled from `anaconda cloud <https://anaconda.org/>`_
   using the `Anaconda "defaults" <https://anaconda.org/anaconda>`_ and the
   `"conda-forge" <https://anaconda.org/conda-forge>`_ channel (in this order of
   priority)
 
-This testing matrix has been design to be simple and easy to maintain and also
+This testing matrix has been designed to be simple and easy to maintain and also
 to ensure that packages from pypi and Anaconda cloud are not mixed in order to
-avoid red herring failure of the test suite caused by application binary
+avoid red herring failures of the test suite caused by application binary
 interface (ABI) incompatibility between dependencies.
 
-The most recent version of packages will be available first on pypi and later
+The most recent versions of packages will be available first on pypi and later
 on anaconda cloud. It means that if a recent release of a dependency breaks the
-test suite, it should happen first on travis - typical usual suspect would be
+test suite, it should happen first on travis - usual suspect would be
 matplotlib, numpy, scipy, etc. Similarly, deprecation warning should appear
 first on Travis CI.
 
