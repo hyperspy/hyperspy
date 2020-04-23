@@ -20,7 +20,7 @@ matrix:
     env: export PIP_SELECTOR="tests"
     python: 3.7
   - name: "Linux, 3.7, pip, doc"
-    env: export PIP_SELECTOR="build-doc"
+    env: export PIP_SELECTOR="all, build-doc"
     python: 3.7
 
 before_install:
@@ -35,7 +35,7 @@ install:
 script:
   - which python
   - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
-  - if [ $PIP_SELECTOR == "build-doc" ]; then
+  - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
       pytest $PYTEST_ARGS;
