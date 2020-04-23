@@ -29,7 +29,8 @@ try:
         import sklearn
         import sklearn.decomposition
         from sklearn.utils.extmath import randomized_svd
-        
+        from sklearn.exceptions import ConvergenceWarning
+
         sklearn_installed = True
 
 except ImportError:

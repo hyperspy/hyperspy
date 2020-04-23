@@ -35,10 +35,17 @@ _logger = logging.getLogger(__name__)
 def mlpca(
     X, varX, output_dimension, svd_solver="auto", tol=1e-10, max_iter=50000, **kwargs
 ):
-    """Performs maximum likelihood PCA with missing data.
+    """Performs maximum likelihood PCA with missing data and/or heteroskedastic noise.
 
-    This function is a transcription of a MATLAB code obtained
-    from [Andrews1997]_.
+    Standard PCA based on a singular value decomposition (SVD) approach assumes
+    that the data is corrupted with Gaussian, or homoskedastic noise. For many
+    applications, this assumption does not hold. For example, count data from
+    EDS-TEM experiments is corrupted by Poisson noise, where the noise variance
+    depends on the underlying pixel value. Rather than scaling or transforming
+    the data to approximately "normalize" the noise, MLPCA instead uses estimates
+    of the data variance to perform the decomposition.
+
+    This function is a transcription of a MATLAB code obtained from [Andrews1997]_.
 
     Parameters
     ----------
@@ -58,12 +65,12 @@ def mlpca(
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
         If full :
-            use an exact LAPACK SVD solver to estimate the full number
-            of components
+            run exact full SVD calling the standard LAPACK solver via
+            :py:meth:`scipy.linalg.svd` and select the components by postprocessing
         If arpack :
-            use a truncated ARPACK SVD solver to estimate a limited
-            number of components, given by output_dimension. Requires
-            0 < output_dimension < min(data.shape).
+            use SVD truncated to output_dimension calling ARPACK solver via
+            :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
+            `0 < output_dimension < min(data.shape)`
         If randomized :
             use a truncated, randomized SVD from sklearn to estimate
             a limited number of components, given by output_dimension.
@@ -82,16 +89,16 @@ def mlpca(
     References
     ----------
     .. [Andrews1997] Darren T. Andrews and Peter D. Wentzell, "Applications
-           of maximum likelihood principal component analysis: incomplete
-           data sets and calibration transfer", Analytica Chimica Acta 350,
-           no. 3 (September 19, 1997): 341-352.
+        of maximum likelihood principal component analysis: incomplete
+        data sets and calibration transfer", Analytica Chimica Acta 350,
+        no. 3 (September 19, 1997): 341-352.
 
     """
     m, n = X.shape
 
     with np.errstate(divide="ignore"):
         # Shouldn't really have zero variance anywhere,
-        # but handle it here.
+        # except for missing data but handle it here.
         inv_v = 1.0 / varX
         inv_v[~np.isfinite(inv_v)] = 1.0
 

@@ -91,7 +91,6 @@ class MVA:
     """Multivariate analysis capabilities for the Signal1D class."""
 
     def __init__(self):
-        """Add LearningResults() to the attributes."""
         if not hasattr(self, "learning_results"):
             self.learning_results = LearningResults()
 
@@ -131,10 +130,11 @@ class MVA:
             Number of components to keep/calculate.
             Default is None, i.e. `min(data.shape)`.
         centre : {None, 'features', 'samples'}, default None
-            If None, the data is not centered.
-            If 'features', the data is centered along the features axis.
-            If 'samples', the data is centered along the samples axis.
-        Only used by the 'svd' algorithm.
+            * If None, the data is not centered.
+            * If 'features', the data is centered along the features axis.
+              Only used by the 'svd' algorithm.
+            * If 'samples', the data is centered along the samples axis.
+              Only used by the 'svd' algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the 'svd' algorithm.
@@ -148,15 +148,12 @@ class MVA:
             Array of variance for the maximum likelihood PCA algorithm.
             Only used by the 'mlpca' algorithm.
         var_func : None or function or numpy array, default None
-            If None :
-                Ignored
-            If function :
-                Applies the function to the data to obtain var_array.
-                Only used by the 'mlpca' algorithm.
-            If numpy array :
-                Creates var_array by applying a polynomial function
-                defined by the array of coefficients to the data.
-                Only used by the 'mlpca' algorithm.
+            * If None, ignored
+            * If function, applies the function to the data to obtain var_array.
+              Only used by the 'mlpca' algorithm.
+            * If numpy array, creates var_array by applying a polynomial function
+              defined by the array of coefficients to the data. Only used by
+              the 'mlpca' algorithm.
         reproject : {None, 'signal', 'navigation', 'both'}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
@@ -180,45 +177,42 @@ class MVA:
                 optionally truncated afterwards.
             If full :
                 run exact full SVD calling the standard LAPACK solver via
-                `scipy.linalg.svd` and select the components by postprocessing
+                :py:meth:`scipy.linalg.svd` and select the components by postprocessing
             If arpack :
                 use SVD truncated to output_dimension calling ARPACK solver via
-                `scipy.sparse.linalg.svds`. It requires strictly
+                :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
                 `0 < output_dimension < min(data.shape)`
             If randomized :
                 use a truncated, randomized SVD from sklearn to estimate
                 a limited number of components, given by output_dimension.
         copy : bool, default True
-            If True, stores a copy of the data before any pre-treatments
-            such as normalization in `s._data_before_treatments`. The original
-            data can then be restored by calling `s.undo_treatments()`.
-            If False, no copy is made. This can be beneficial for memory
-            usage, but care must be taken since data will be overwritten.
+            * If True, stores a copy of the data before any pre-treatments
+              such as normalization in ``s._data_before_treatments``. The original
+              data can then be restored by calling ``s.undo_treatments()``.
+            * If False, no copy is made. This can be beneficial for memory
+              usage, but care must be taken since data will be overwritten.
 
         Returns
         -------
         return_info : tuple(numpy array, numpy array) or sklearn.Estimator or None
-            Additional data returned by the decomposition algorithm.
+            * If True and 'algorithm' in ['rpca', 'orpca', 'ornmf'], returns
+              the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
+            * If True and 'algorithm' is an sklearn Estimator, returns the
+              Estimator object.
+            * Otherwise, returns None
 
-            If True and 'algorithm' in ['rpca', 'orpca', 'ornmf'] :
-                Returns the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
-            If True and 'algorithm' is an sklearn Estimator :
-                Returns the Estimator object.
-            Else :
-                None
+        References
+        ----------
+        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+            Interface Anal 36(3) (2004): 203-212.
 
-        See also
+        See Also
         --------
         :py:meth:`~.signal.MVATools.plot_decomposition_factors`,
         :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
         :py:meth:`~.signal.MVATools.plot_decomposition_results`,
         :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
-
-        References
-        ----------
-        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise in the
-               multivariate analysis of ToF-SIMS spectrum images",
-               Surf. Interface Anal 36(3) (2004): 203-212.
 
         """
         # Check data is suitable for decomposition
@@ -456,7 +450,7 @@ class MVA:
                 explained_variance = S ** 2 / len(factors)
 
             elif algorithm == "rpca":
-                X, E, G, U, S, V = rpca_godec(data_, rank=output_dimension, **kwargs)
+                X, E, U, S, V = rpca_godec(data_, rank=output_dimension, **kwargs)
 
                 loadings = U * S
                 factors = V
@@ -466,28 +460,34 @@ class MVA:
                     to_return = (X, E)
 
             elif algorithm == "orpca":
-                X, E, U, S, V = orpca(data_, rank=output_dimension, **kwargs)
-
-                loadings = U * S
-                factors = V
-                explained_variance = S ** 2 / len(factors)
-
                 if return_info:
+                    X, E, U, S, V = orpca(
+                        data_, rank=output_dimension, store_error=True, **kwargs
+                    )
+
+                    loadings = U * S
+                    factors = V
+                    explained_variance = S ** 2 / len(factors)
+
                     to_return = (X, E)
+
+                else:
+                    L, R = orpca(data_, rank=output_dimension, **kwargs)
+
+                    loadings = L
+                    factors = R.T
 
             elif algorithm == "ornmf":
                 if return_info:
                     X, E, W, H = ornmf(
                         data_, rank=output_dimension, store_error=True, **kwargs,
                     )
+                    to_return = (X, E)
                 else:
                     W, H = ornmf(data_, rank=output_dimension, **kwargs)
 
                 loadings = W
                 factors = H.T
-
-                if return_info:
-                    to_return = (X, E)
 
             elif is_sklearn_like:
                 if hasattr(estim, "fit_transform"):
@@ -525,7 +525,7 @@ class MVA:
             if explained_variance is not None and explained_variance_ratio is None:
                 explained_variance_ratio = explained_variance / explained_variance.sum()
                 number_significant_components = (
-                    self._estimate_elbow_position(explained_variance_ratio) + 1
+                    self.estimate_elbow_position(explained_variance_ratio) + 1
                 )
 
             # Store the results in learning_results
@@ -678,7 +678,7 @@ class MVA:
             (navigation shape) when `on_loadings` is False (True).
         on_loadings : bool, default False
             If True, perform the BSS on the loadings of a previous
-            decomposition. If False, perform the BSS on the factors.
+            decomposition, otherwise, perform the BSS on the factors.
         reverse_component_criterion : {'factors', 'loadings'}
             Use either the factors or the loadings to determine if the
             component needs to be reversed. Default is 'factors'.
@@ -695,25 +695,22 @@ class MVA:
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
-        **kwargs : extra key word arguments
+        **kwargs : extra keyword arguments
             Any keyword arguments are passed to the BSS algorithm.
 
         Returns
         -------
         return_info : sklearn.Estimator or None
-            Additional data returned by the BSS algorithm.
-
-            If True and 'algorithm' in ['sklearn_fastica'] :
-                Returns the sklearn Estimator object.
-            Else :
-                None
+            * If True and 'algorithm' = 'sklearn_fastica', returns the
+              sklearn Estimator object.
+            * Otherwise, returns None
 
         Notes
         -----
         See the FastICA documentation, with more arguments that can be passed
         as kwargs :py:class:`sklearn.decomposition.FastICA`
 
-        See also
+        See Also
         --------
         :py:meth:`~.signal.MVATools.plot_bss_factors`,
         :py:meth:`~.signal.MVATools.plot_bss_loadings`,
@@ -751,11 +748,9 @@ class MVA:
         # Check factor dimensions
         if factors.axes_manager.navigation_dimension != 1:
             raise ValueError(
-                "`factors` must have navigation dimension"
-                "equal one, but the navigation dimension "
-                "of the given factors is {}".format(
-                    factors.axes_manager.navigation_dimension
-                )
+                "`factors` must have navigation dimension == 1, "
+                "but the navigation dimension of the given factors "
+                "is {}".format(factors.axes_manager.navigation_dimension)
             )
         elif factors.axes_manager.navigation_size < 2:
             raise ValueError(
@@ -818,7 +813,7 @@ class MVA:
                 number_of_components = lr.output_dimension
                 comp_list = range(number_of_components)
             else:
-                raise ValueError("No `number_of_components` or `comp_list` provided.")
+                raise ValueError("No `number_of_components` or `comp_list` provided")
 
         factors = stack([factors.inav[i] for i in comp_list])
 
@@ -877,17 +872,18 @@ class MVA:
             if not import_sklearn.sklearn_installed:
                 raise ImportError("algorithm='sklearn_fastica' requires scikit-learn")
 
-            if "tol" not in kwargs:
+            if not kwargs.get("tol", False):
                 kwargs["tol"] = 1e-10
 
-            if kwargs.get("whiten", False):
+            lr.bss_node = decomposition_algorithms[algorithm](**kwargs)
+
+            if lr.bss_node.whiten:
                 _logger.warning(
                     "HyperSpy performs its own data whitening, "
-                    "so it is ignored for sklearn_fastica."
+                    "so it is ignored for sklearn_fastica.",
                 )
-                kwargs.update({"whiten": False})
+                lr.bss_node.whiten = False
 
-            lr.bss_node = decomposition_algorithms[algorithm](**kwargs)
             lr.bss_node.fit(factors)
 
             try:
@@ -898,7 +894,7 @@ class MVA:
 
             to_print.extend(["scikit-learn estimator:", lr.bss_node])
             if return_info:
-                to_return = sk
+                to_return = lr.bss_node
 
         elif algorithm in ["FastICA", "JADE", "CuBICA", "TDSEP"]:
             if not mdp_installed:
@@ -910,6 +906,10 @@ class MVA:
             lr.bss_node = temp_function(**kwargs)
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
+
+            to_print.extend(["mdp estimator:", lr.bss_node])
+            if return_info:
+                to_return = lr.bss_node
 
         else:
             raise ValueError("'algorithm' not recognised")
@@ -949,10 +949,11 @@ class MVA:
         Parameters
         ----------
         target : {"factors", "loadings"}
-        function : numpy universal function, optional, default np.sum
-            Each target component is divided by the output of function(target).
-            `function` must return a scalar when operating on numpy arrays and
-            must have an `axis`.
+            Normalize components based on the scale of either the factors or loadings.
+        function : numpy universal function, default np.sum
+            Each target component is divided by the output of ``function(target)``.
+            The function must return a scalar when operating on numpy arrays and
+            must have an `axis` argument.
 
         """
         if target == "factors":
@@ -963,10 +964,10 @@ class MVA:
             other = self.learning_results.factors
         else:
             raise ValueError('target must be "factors" or "loadings"')
+
         if target is None:
-            raise Exception(
-                "This method can only be used after decomposition operation."
-            )
+            raise ValueError("This method can only be called after s.decomposition()")
+
         _normalize_components(target=target, other=other, function=function)
 
     def normalize_bss_components(self, target="factors", function=np.sum):
@@ -975,10 +976,11 @@ class MVA:
         Parameters
         ----------
         target : {"factors", "loadings"}
-        function : numpy universal function, optional, default np.sum
-            Each target component is divided by the output of function(target).
-            `function` must return a scalar when operating on numpy arrays and
-            must have an `axis`.
+            Normalize components based on the scale of either the factors or loadings.
+        function : numpy universal function, default np.sum
+            Each target component is divided by the output of ``function(target)``.
+            The function must return a scalar when operating on numpy arrays and
+            must have an `axis` argument.
 
         """
         if target == "factors":
@@ -989,11 +991,12 @@ class MVA:
             other = self.learning_results.bss_factors
         else:
             raise ValueError('target must be "factors" or "loadings"')
+
         if target is None:
-            raise Exception(
-                "This method can only be used after "
-                "a blind source separation operation."
+            raise ValueError(
+                "This method can only be called after s.blind_source_separation()"
             )
+
         _normalize_components(target=target, other=other, function=function)
 
     def reverse_decomposition_component(self, component_number):
@@ -1005,7 +1008,7 @@ class MVA:
             component index/es
 
         Examples
-        -------
+        --------
         >>> s = hs.load('some_file')
         >>> s.decomposition(True) # perform PCA
         >>> s.reverse_decomposition_component(1) # reverse IC 1
@@ -1017,15 +1020,13 @@ class MVA:
                 "Component(s) {} not reversed, feature not implemented "
                 "for lazy computations".format(component_number)
             )
-            return
+        else:
+            target = self.learning_results
 
-        target = self.learning_results
-
-        for i in [
-            component_number,
-        ]:
-            target.factors[:, i] *= -1
-            target.loadings[:, i] *= -1
+            for i in [component_number]:
+                _logger.info("Component {} reversed".format(i))
+                target.factors[:, i] *= -1
+                target.loadings[:, i] *= -1
 
     def reverse_bss_component(self, component_number):
         """Reverse the independent component.
@@ -1036,7 +1037,7 @@ class MVA:
             component index/es
 
         Examples
-        -------
+        --------
         >>> s = hs.load('some_file')
         >>> s.decomposition(True) # perform PCA
         >>> s.blind_source_separation(3)  # perform ICA on 3 PCs
@@ -1049,17 +1050,14 @@ class MVA:
                 "Component(s) {} not reversed, feature not implemented "
                 "for lazy computations".format(component_number)
             )
-            return
+        else:
+            target = self.learning_results
 
-        target = self.learning_results
-
-        for i in [
-            component_number,
-        ]:
-            _logger.info("Component {} reversed".format(i))
-            target.bss_factors[:, i] *= -1
-            target.bss_loadings[:, i] *= -1
-            target.unmixing_matrix[i, :] *= -1
+            for i in [component_number]:
+                _logger.info("Component {} reversed".format(i))
+                target.bss_factors[:, i] *= -1
+                target.bss_loadings[:, i] *= -1
+                target.unmixing_matrix[i, :] *= -1
 
     def _unmix_components(self, compute=False):
         lr = self.learning_results
@@ -1096,23 +1094,22 @@ class MVA:
                     "{}".format(i, reverse_component_criterion)
                 )
 
-    def _calculate_recmatrix(
-        self, components=None, mva_type=None,
-    ):
-        """Rebuilds SIs from selected components.
+    def _calculate_recmatrix(self, components=None, mva_type="decomposition"):
+        """Rebuilds data from selected components.
 
         Parameters
-        ------------
+        ----------
         components : None, int, or list of ints
-             if None, rebuilds SI from all components
-             if int, rebuilds SI from components in range 0-given int
-             if list of ints, rebuilds SI from only components in given list
-        mva_type : string, currently either 'decomposition' or 'bss'
-             (not case sensitive)
+            * If None, rebuilds signal instance from all components
+            * If int, rebuilds signal instance from components in range 0-given int
+            * If list of ints, rebuilds signal instance from only components in given list
+        mva_type : str {'decomposition', 'bss'}
+            Decomposition type (not case sensitive)
 
         Returns
         -------
         Signal instance
+            Data built from the given components.
 
         """
 
@@ -1124,6 +1121,7 @@ class MVA:
         elif mva_type.lower() == "bss":
             factors = target.bss_factors
             loadings = target.bss_loadings.T
+
         if components is None:
             a = factors @ loadings
             signal_name = "model from {} with {} components".format(
@@ -1161,36 +1159,38 @@ class MVA:
         return sc
 
     def get_decomposition_model(self, components=None):
-        """Generate spectrum with the selected number of principal components.
+        """Generate model with the selected number of principal components.
 
         Parameters
-        ------------
-        components : None, int, or list of ints
-             If None, rebuilds SI from all components
-             If int, rebuilds SI from components in range 0-given int
-             If list of ints, rebuilds SI from only components in given list
+        ----------
+        components : {None, int, list of ints}, default None
+            * If None, rebuilds signal instance from all components
+            * If int, rebuilds signal instance from components in range 0-given int
+            * If list of ints, rebuilds signal instance from only components in given list
 
         Returns
         -------
         Signal instance
+            A model built from the given components.
 
         """
         rec = self._calculate_recmatrix(components=components, mva_type="decomposition")
         return rec
 
     def get_bss_model(self, components=None, chunks="auto"):
-        """Generate spectrum with the selected number of independent components.
+        """Generate model with the selected number of independent components.
 
         Parameters
-        ------------
-        components : None, int, or list of ints
-             If None, rebuilds SI from all components
-             If int, rebuilds SI from components in range 0-given int
-             If list of ints, rebuilds SI from only components in given list
+        ----------
+        components : {None, int, list of ints}, default None
+            * If None, rebuilds signal instance from all components
+            * If int, rebuilds signal instance from components in range 0-given int
+            * If list of ints, rebuilds signal instance from only components in given list
 
         Returns
         -------
         Signal instance
+            A model built from the given components.
 
         """
         lr = self.learning_results
@@ -1210,10 +1210,10 @@ class MVA:
         s : Signal1D
             Explained variance ratio.
 
-        See Also:
-        ---------
-        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        See Also
+        --------
         :py:meth:`~.learn.mva.MVA.decomposition`,
+        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
         :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`,
         :py:meth:`~.learn.mva.MVA.get_decomposition_factors`.
 
@@ -1256,7 +1256,7 @@ class MVA:
         ----------
         n : int or None
             Number of components to plot. If None, all components will be plot
-        log : bool
+        log : bool, default True
             If True, the y axis uses a log scale.
         threshold : float or int
             Threshold used to determine how many components should be
@@ -1277,7 +1277,7 @@ class MVA:
             If True, (and ``threshold`` is an int), the line will be drawn
             through the last component defined as signal.
             If False, the line will not be drawn in any circumstance.
-        vline: {True, False} : Default : False
+        vline: bool, default False
             Whether or not to draw a vertical line illustrating an estimate of
             the number of significant components. If True, the line will be
             drawn at the the knee or elbow position of the curve indicating the
@@ -1305,7 +1305,7 @@ class MVA:
         ax : matplotlib ax (subplot) or None
             If None, a default ax will be created, otherwise will plot into ax
         **kwargs
-            remaining keyword arguments are passed to matplotlib.figure()
+            remaining keyword arguments are passed to ``matplotlib.figure()``
 
         Returns
         -------
@@ -1313,7 +1313,7 @@ class MVA:
             Axes object containing the scree plot
 
         Example
-        --------
+        -------
         To generate a scree plot with customized symbols for signal vs.
         noise components and a modified cutoff threshold value:
 
@@ -1488,6 +1488,10 @@ class MVA:
         ax : matplotlib.axes
             Axes object containing the cumulative explained variance plot.
 
+        See Also
+        --------
+        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+
         """
         target = self.learning_results
         if n > target.explained_variance.shape[0]:
@@ -1505,13 +1509,15 @@ class MVA:
     def normalize_poissonian_noise(self, navigation_mask=None, signal_mask=None):
         """Normalize the signal under the assumption of Poisson noise.
 
-        Scales the signal using the algorithm in Surf. Interface Anal. 2004; 36: 203-212
-        to "normalize" the Poisson data for subsequent decomposition analysis [Keenan2004]_.
+        Scales the signal using to "normalize" the Poisson data for
+        subsequent decomposition analysis [Keenan2004]_.
 
         Parameters
         ----------
-        navigation_mask : boolean numpy array
-        signal_mask  : boolean numpy array
+        navigation_mask : {None, boolean numpy array}, default None
+            Optional mask applied in the navigation axis.
+        signal_mask : {None, boolean numpy array}, default None
+            Optional mask applied in the signal axis.
 
         """
         _logger.info("Scaling the data to normalize Poissonian noise")
@@ -1556,7 +1562,10 @@ class MVA:
                 )
 
     def undo_treatments(self):
-        """Undo normalize_poissonian_noise and other pre-treatments."""
+        """Undo Poisson noise normalization and other pre-treatments.
+
+        Only valid if calling ``s.decomposition(..., copy=True)``.
+        """
         if hasattr(self, "_data_before_treatments"):
             _logger.info("Undoing data pre-treatments")
             self.data[:] = self._data_before_treatments
@@ -1567,7 +1576,7 @@ class MVA:
                 "set `copy=True` when calling s.decomposition()."
             )
 
-    def _estimate_elbow_position(self, curve_values):
+    def estimate_elbow_position(self, explained_variance_ratio=None, max_points=20):
         """Estimate the elbow position of a scree plot curve.
 
         Used to estimate the number of significant components in
@@ -1576,42 +1585,64 @@ class MVA:
         Find a line between first and last point on the scree plot.
         With a classic elbow scree plot, this line more or less
         defines a triangle. The elbow should be the point which
-        is the furthest distance from this line.
-
-        For more details, see [Satopää2011]_.
+        is the furthest distance from this line. For more details,
+        see [Satopää2011]_.
 
         Parameters
         ----------
-        curve_values : numpy array
+        explained_variance_ratio : {None, numpy array}
             Explained variance ratio values that form the scree plot.
+            If None, uses the ``explained_variance_ratio`` array stored
+            in ``s.learning_results``, so a decomposition must have
+            been performed first.
+        max_points : int
+            Maximum number of points to consider in the calculation.
 
         Returns
         -------
         elbow position : int
-            Index of the elbow position in the input array.
+            Index of the elbow position in the input array. Due to
+            zero-based indexing, the number of significant components
+            is `elbow_position + 1`.
 
         References
         ----------
-        .. [Satopää2011] V. Satopää, J. Albrecht, D. Irwin, and B. Raghavan. "
-               Finding a “Kneedle” in a Haystack: Detecting Knee Points in
-               System Behavior,. 31st International Conference on Distributed
-               Computing Systems Workshops, pp. 166-171, June 2011.
+        .. [Satopää2011] V. Satopää, J. Albrecht, D. Irwin, and B. Raghavan.
+            "Finding a “Kneedle” in a Haystack: Detecting Knee Points in
+            System Behavior,. 31st International Conference on Distributed
+            Computing Systems Workshops, pp. 166-171, June 2011.
+
+        See Also
+        --------
+        :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
+        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
 
         """
-        maxpoints = min(20, len(curve_values) - 1)
+        if explained_variance_ratio is None:
+            if self.learning_results.explained_variance_ratio is None:
+                raise ValueError(
+                    "A decomposition must be performed before calling "
+                    "estimate_elbow_position(), or pass a numpy array directly."
+                )
+
+            curve_values = self.learning_results.explained_variance_ratio
+        else:
+            curve_values = explained_variance_ratio
+
+        max_points = min(max_points, len(curve_values) - 1)
 
         # Clipping the curve_values from below with a v.small
         # number avoids warnings below when taking np.log(0)
         curve_values_adj = np.clip(curve_values, 1e-30, None)
 
         x1 = 0
-        x2 = maxpoints
+        x2 = max_points
 
         y1 = np.log(curve_values_adj[0])
-        y2 = np.log(curve_values_adj[maxpoints])
+        y2 = np.log(curve_values_adj[max_points])
 
-        xs = np.arange(maxpoints)
-        ys = np.log(curve_values_adj[:maxpoints])
+        xs = np.arange(max_points)
+        ys = np.log(curve_values_adj[:max_points])
 
         numer = np.abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
         denom = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
@@ -1625,34 +1656,31 @@ class MVA:
 
 
 class LearningResults(object):
-    """TODO: description.
+    """Stores the parameters and results from a decomposition."""
 
-    Will go here.
-
-    """
-
-    # Decomposition
-    factors = None
-    loadings = None
-    explained_variance = None
-    explained_variance_ratio = None
-    number_significant_components = None
-    decomposition_algorithm = None
-    poissonian_noise_normalized = None
-    output_dimension = None
-    mean = None
-    centre = None
-    # Unmixing
-    bss_algorithm = None
-    unmixing_matrix = None
-    bss_factors = None
-    bss_loadings = None
-    # Shape
-    unfolded = None
-    original_shape = None
-    # Masks
-    navigation_mask = None
-    signal_mask = None
+    def __init__(self):
+        # Decomposition
+        self.factors = None
+        self.loadings = None
+        self.explained_variance = None
+        self.explained_variance_ratio = None
+        self.number_significant_components = None
+        self.decomposition_algorithm = None
+        self.poissonian_noise_normalized = None
+        self.output_dimension = None
+        self.mean = None
+        self.centre = None
+        # Unmixing
+        self.bss_algorithm = None
+        self.unmixing_matrix = None
+        self.bss_factors = None
+        self.bss_loadings = None
+        # Shape
+        self.unfolded = None
+        self.original_shape = None
+        # Masks
+        self.navigation_mask = None
+        self.signal_mask = None
 
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis.
@@ -1660,6 +1688,7 @@ class LearningResults(object):
         Parameters
         ----------
         filename : string
+            Path to save the results to.
         overwrite : {True, False, None}, default None
             If True, overwrite the file if it exists.
             If None (default), prompt user if file exists.
@@ -1679,6 +1708,7 @@ class LearningResults(object):
         # Save, if all went well!
         if overwrite:
             np.savez(filename, **kwargs)
+            _logger.info("Saved results to {}".format(filename))
 
     def load(self, filename):
         """Load the results of a previous decomposition and demixing analysis.
@@ -1686,9 +1716,11 @@ class LearningResults(object):
         Parameters
         ----------
         filename : string
+            Path to load the results from.
 
         """
         decomposition = np.load(filename, allow_pickle=True)
+
         for key, value in decomposition.items():
             if value.dtype == np.dtype("object"):
                 value = None
@@ -1696,8 +1728,10 @@ class LearningResults(object):
             if isinstance(value, np.ndarray) and value.ndim == 0:
                 value = value.item()
             setattr(self, key, value)
-        _logger.info("\n%s loaded correctly" % filename)
-        # For compatibility with old version ##################
+
+        _logger.info("Loaded results from {}".format(filename))
+
+        # For compatibility with old version
         if hasattr(self, "algorithm"):
             self.decomposition_algorithm = self.algorithm
             del self.algorithm
@@ -1732,16 +1766,27 @@ class LearningResults(object):
         if hasattr(self, "ica_factors"):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-        _logger.info(self._summary())
+
+        # Log summary
+        self.summary()
+
+    def __repr__(self):
+        """Summarize the decomposition and demixing parameters."""
+        return self.summary()
 
     def summary(self):
-        """Print the decomposition and demixing parameters."""
-        print(self._summary())
+        """Summarize the decomposition and demixing parameters.
 
-    def _summary(self):
+        Returns
+        -------
+        str
+            String summarizing the learning parameters.
+
+        """
+
         summary_str = (
             "Decomposition parameters\n"
-            "------------------------\n\n"
+            "------------------------\n"
             "normalize_poissonian_noise={}\n"
             "algorithm={}\n"
             "output_dimension={}\n"
@@ -1760,6 +1805,8 @@ class LearningResults(object):
                 "algorithm={}\n"
                 "n_components={}"
             ).format(self.bss_algorithm, len(self.unmixing_matrix))
+
+        _logger.info(summary_str)
 
         return summary_str
 

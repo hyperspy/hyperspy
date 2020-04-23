@@ -59,91 +59,78 @@ def _project(W):
     return _mrdivide(newW, np.diag(sumsq))
 
 
-def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
+def _solveproj(v, W, lambda1, kappa=1, h=None, e=None, vmax=None):
     m, n = W.shape
     v = v.T
     if vmax is None:
         vmax = v.max()
+
     if len(v.shape) == 2:
         batch_size = v.shape[1]
-        rshape = (m, batch_size)
+        eshape = (m, batch_size)
         hshape = (n, batch_size)
     else:
-        rshape = (m,)
+        eshape = (m,)
         hshape = (n,)
     if h is None or h.shape != hshape:
         h = np.zeros(hshape)
-
-    if r is None or r.shape != rshape:
-        r = np.zeros(rshape)
+    if e is None or e.shape != eshape:
+        e = np.zeros(eshape)
 
     eta = kappa / np.linalg.norm(W, "fro") ** 2
 
-    maxiter = 1e9
+    maxiter = 1e6
     iters = 0
 
     while True:
         iters += 1
         # Solve for h
         htmp = h
-        h = h - eta * np.dot(W.T, np.dot(W, h) + r - v)
+        h = h - eta * W.T @ (W @ h + e - v)
         np.maximum(h, 0.0, out=h)
 
-        # Solve for r
-        rtmp = r
-        r = _thresh(v - np.dot(W, h), lambda1, vmax)
+        # Solve for e
+        etmp = e
+        e = _thresh(v - W @ h, lambda1, vmax)
 
         # Stop conditions
         stoph = np.linalg.norm(h - htmp, 2)
-        stopr = np.linalg.norm(r - rtmp, 2)
-        stop = max(stoph, stopr) / m
+        stope = np.linalg.norm(e - etmp, 2)
+        stop = max(stoph, stope) / m
         if stop < 1e-5 or iters > maxiter:
             break
 
-    return h, r
+    return h, e
 
 
 class ORNMF:
-    """This class performs Online Robust NMF with missing or corrupted data.
+    """Performs Online Robust NMF with missing or corrupted data.
 
-    Methods
-    -------
-    fit
-        Learn factors from the given data.
-    project
-        Project the learnt factors on the given data.
-    finish
-        Return the learnt factors and loadings.
-
-    Notes
-    -----
-    The ORNMF code is based on a transcription of the OPGD algorithm MATLAB code
-    obtained from the authors of [1]_.
-
-    It has been updated to also include L2-normalization cost function that is
-    able to deal with sparse corruptions and/or outliers slightly faster
-    (please see ORPCA implementation for details).
-
-    A further modification has been made to allow for a changing subspace W,
-    where X ~= WH^T + E in the ORNMF framework.
+    The ORNMF code is based on a transcription of the online proximal gradient
+    descent (PGD) algorithm MATLAB code obtained from the authors of [Zhao2016]_.
+    It has been updated to also include L2-normalization cost function that
+    is able to deal with sparse corruptions and/or outliers slightly faster
+    (please see ORPCA implementation for details). A further modification
+    has been made to allow for a changing subspace W, where X ~= WH^T + E
+    in the ORNMF framework.
 
     References
     ----------
-    .. [1] Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
-           factorization with outliers." Acoustics, Speech and Signal Processing
-           (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.
+    .. [Zhao2016] Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
+        factorization with outliers." Acoustics, Speech and Signal Processing
+        (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.
 
     """
 
     def __init__(
         self,
         rank,
+        store_error=False,
         lambda1=1.0,
         kappa=1.0,
-        store_error=False,
-        method=None,
-        subspace_learning_rate=None,
-        subspace_momentum=None,
+        method="PGD",
+        subspace_learning_rate=1.0,
+        subspace_momentum=0.5,
     ):
         """Creates Online Robust NMF instance that can learn a representation.
 
@@ -151,51 +138,42 @@ class ORNMF:
         ----------
         rank : int
             The rank of the representation (number of components/factors)
+        store_error : bool, default False
+            If True, stores the sparse error matrix.
         lambda1 : float
             Nuclear norm regularization parameter.
         kappa : float
             Step-size for projection solver.
-        store_error : bool
-            If True, stores the sparse error matrix, False by default.
-        method : {None, 'PGD', 'RobustPGD', 'MomentumSGD'}
-            'PGD' - Proximal gradient descent
-            'RobustPGD' - Robust proximal gradient descent
-            'MomentumSGD' - Stochastic gradient descent with momentum
-            If None, set to PGD.
-        subspace_learning_rate : float | None
-            Learning rate for stochastic gradient descent.
-        subspace_momentum : float | None
-            Momentum parameter for stochastic gradient descent. Must be in
-            range 0 <= x <= 1.
+        method : {'PGD', 'RobustPGD', 'MomentumSGD'}, default 'PGD'
+            * 'PGD' - Proximal gradient descent
+            * 'RobustPGD' - Robust proximal gradient descent
+            * 'MomentumSGD' - Stochastic gradient descent with momentum
+        subspace_learning_rate : float
+            Learning rate for the 'MomentumSGD' method. Should be a
+            float > 0.0
+        subspace_momentum : float
+            Momentum parameter for 'MomentumSGD' method, should be
+            a float between 0 and 1.
 
         """
-        self.robust = False
-        self.subspace_tracking = False
         self.n_features = None
-        self.rank = rank
-        self.lambda1 = lambda1
-        self.kappa = kappa
-        self.H = []
+        self.iterating = False
         self.t = 0
 
-        if method is None:
-            _logger.info(
-                "No method specified. Defaulting to "
-                "'PGD' (proximal gradient descent)"
-            )
-            method = "PGD"
+        if store_error:
+            self.E = []
+        else:
+            self.E = None
 
-        if subspace_learning_rate is None:
-            if method in ("SGD", "MomentumSGD"):
-                _logger.info("Learning rate for SGD algorithm is set to default: 1.0")
-                subspace_learning_rate = 1.0
-        if subspace_momentum is None:
-            if method == "MomentumSGD":
-                _logger.info(
-                    "Momentum parameter for SGD algorithm is set to default: 0.5"
-                )
-                subspace_momentum = 0.5
+        self.rank = rank
+        self.robust = False
+        self.subspace_tracking = False
+        self.lambda1 = lambda1
+        self.kappa = kappa
+        self.subspace_learning_rate = subspace_learning_rate
+        self.subspace_momentum = subspace_momentum
 
+        # Check options are valid
         if method not in ("PGD", "RobustPGD", "MomentumSGD"):
             raise ValueError("'method' not recognised")
 
@@ -207,48 +185,33 @@ class ORNMF:
             if subspace_momentum < 0.0 or subspace_momentum > 1:
                 raise ValueError("'subspace_momentum' must be a float between 0 and 1")
 
-        self.subspace_learning_rate = subspace_learning_rate
-        self.subspace_momentum = subspace_momentum
-
-        if store_error:
-            self.E = []
-        else:
-            self.E = None
-
-    def _setup(self, X, normalize=False):
-        self.h, self.r, self.v = None, None, None
+    def _setup(self, X):
+        self.h, self.e, self.v = None, None, None
         if isinstance(X, np.ndarray):
             n, m = X.shape
-            if normalize:
-                self.X_min = X.min()
-                self.X_max = X.max()
-                self.normalize = normalize
-                # actually scale the data to be between 0 and 1,
-                # not just close to it..
-                X = _normalize(X, ar_min=self.X_min, ar_max=self.X_max)
-
             avg = np.sqrt(X.mean() / m)
+            iterating = False
         else:
-            if normalize:
-                _logger.warning(
-                    "Normalization with an iterator is not possible, option ignored."
-                )
             x = next(X)
             m = len(x)
             avg = np.sqrt(x.mean() / m)
             X = chain([x], X)
+            iterating = True
 
         self.n_features = m
+        self.iterating = iterating
 
         self.W = np.abs(
             avg * halfnorm.rvs(size=(self.n_features, self.rank)) / np.sqrt(self.rank)
         )
+        self.H = []
 
         if self.subspace_tracking:
             self.vnew = np.zeros_like(self.W)
+        else:
+            self.A = np.zeros((self.rank, self.rank))
+            self.B = np.zeros((self.n_features, self.rank))
 
-        self.A = np.zeros((self.rank, self.rank))
-        self.B = np.zeros((self.n_features, self.rank))
         return X
 
     def fit(self, X, batch_size=None):
@@ -282,29 +245,27 @@ class ORNMF:
             num = X.shape[0]
             X = iter(X)
 
-        r, h = self.r, self.h
+        h, e = self.h, self.e
 
         for v in progressbar(X, leave=False, total=num, disable=num == 1):
-            h, r = _solveproj(v, self.W, self.lambda1, self.kappa, r=r, h=h)
+            h, e = _solveproj(v, self.W, self.lambda1, self.kappa, h=h, e=e)
             self.v = v
-            self.r = r
+            self.e = e
             self.h = h
             self.H.append(h)
             if self.E is not None:
-                self.E.append(r)
+                self.E.append(e)
 
-            # Only need to update A, B when not tracking subspace
-            if not self.subspace_tracking:
-                self.A += prod(h, h.T)
-                self.B += prod((v.T - r), h.T)
-
-            self._solve_W()
+            self._solve_W(prod(h, h.T), prod((v.T - e), h.T))
             self.t += 1
-        self.r = r
-        self.h = h
 
-    def _solve_W(self):
+        self.h = h
+        self.e = e
+
+    def _solve_W(self, A, B):
         if not self.subspace_tracking:
+            self.A += A
+            self.B += B
             eta = self.kappa / np.linalg.norm(self.A, "fro")
 
         if self.robust:
@@ -314,7 +275,7 @@ class ORNMF:
             while n <= 2 or (
                 np.abs((lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9
             ):
-                self.W -= eta * (np.dot(self.W, self.A) - self.B)
+                self.W -= eta * (self.W @ self.A - self.B)
                 self.W = _project(self.W)
                 n += 1
                 lasttwo[0] = lasttwo[1]
@@ -330,13 +291,11 @@ class ORNMF:
                     1 + self.subspace_learning_rate * self.lambda1 * self.t
                 )
                 vold = self.subspace_momentum * self.vnew
-                self.vnew = (
-                    np.dot(self.W, np.outer(self.h, self.h.T))
-                    - np.outer((self.v.T - self.r), self.h.T)
-                ) / learn
+                self.vnew = (self.W @ A - B) / learn
                 self.W -= vold + self.vnew
             else:
-                self.W -= eta * (np.dot(self.W, self.A) - self.B)
+                self.W -= eta * (self.W @ self.A - self.B)
+
             np.maximum(self.W, 0.0, out=self.W)
             self.W /= max(np.linalg.norm(self.W, "fro"), 1.0)
 
@@ -358,19 +317,14 @@ class ORNMF:
             E = []
 
         num = None
-        W = self.W
-        lam1 = self.lambda1
-        kap = self.kappa
         if isinstance(X, np.ndarray):
             num = X.shape[0]
             X = iter(X)
         for v in progressbar(X, leave=False, total=num):
-            # want to start with fresh results and not clip,
-            # so that chunks are smooth
-            h, r = _solveproj(v, W, lam1, kap, vmax=np.inf)
+            h, e = _solveproj(v, self.W, self.lambda1, self.kappa, vmax=np.inf)
             H.append(h.copy())
             if return_error:
-                E.append(r.copy())
+                E.append(e.copy())
 
         H = np.stack(H, axis=-1)
         if return_error:
@@ -393,14 +347,14 @@ class ORNMF:
 def ornmf(
     X,
     rank,
-    lambda1=1,
-    kappa=1,
     store_error=False,
     project=False,
-    method=None,
+    batch_size=None,
+    lambda1=1.0,
+    kappa=1.0,
+    method="PGD",
     subspace_learning_rate=1.0,
     subspace_momentum=0.5,
-    batch_size=None,
 ):
     """Perform online, robust NMF on the data X.
 
@@ -412,27 +366,27 @@ def ornmf(
         The [n_samples, n_features] input data.
     rank : int
         The rank of the representation (number of components/factors)
+    store_error : bool, default False
+        If True, stores the sparse error matrix.
+    project : bool, default False
+        If True, project the data X onto the learnt model.
+    batch_size : {None, int}, default None
+        If not None, learn the data in batches, each of batch_size samples
+        or less.
     lambda1 : float
         Nuclear norm regularization parameter.
     kappa : float
         Step-size for projection solver.
-    store_error : bool
-        If True, stores the sparse error matrix, False by default.
-    project : bool, default False
-        If True, project the data X onto the learnt model.
-    method : {None, 'PGD', 'RobustPGD', 'MomentumSGD'}
-        'PGD' - Proximal gradient descent
-        'RobustPGD' - Robust proximal gradient descent
-        'MomentumSGD' - Stochastic gradient descent with momentum
-        If None, set to PGD.
-    subspace_learning_rate : float | None
-        Learning rate for stochastic gradient descent.
-    subspace_momentum : float | None
-        Momentum parameter for stochastic gradient descent. Must be in
-        range 0 <= x <= 1.
-    batch_size : {None, int}
-        If not None, learn the data in batches, each of batch_size samples
-        or less.
+    method : {'PGD', 'RobustPGD', 'MomentumSGD'}, default 'PGD'
+        * 'PGD' - Proximal gradient descent
+        * 'RobustPGD' - Robust proximal gradient descent
+        * 'MomentumSGD' - Stochastic gradient descent with momentum
+    subspace_learning_rate : float
+        Learning rate for the 'MomentumSGD' method. Should be a
+        float > 0.0
+    subspace_momentum : float
+        Momentum parameter for 'MomentumSGD' method, should be
+        a float between 0 and 1.
 
     Returns
     -------
@@ -452,9 +406,9 @@ def ornmf(
 
     _ornmf = ORNMF(
         rank,
+        store_error=store_error,
         lambda1=lambda1,
         kappa=kappa,
-        store_error=store_error,
         method=method,
         subspace_learning_rate=subspace_learning_rate,
         subspace_momentum=subspace_momentum,
@@ -468,7 +422,7 @@ def ornmf(
         W, H = _ornmf.finish()
 
     if store_error:
-        Xhat = np.dot(W, H)
+        Xhat = W @ H
         Ehat = np.array(_ornmf.E).T
 
         return Xhat, Ehat, W, H

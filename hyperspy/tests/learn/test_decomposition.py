@@ -28,31 +28,6 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
-def test_decomposition_mlpca_warnings_errors():
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
-
-    with pytest.warns(
-        VisibleDeprecationWarning, match="`polyfit` argument has been deprecated"
-    ):
-        s.decomposition(output_dimension=2, algorithm="mlpca", polyfit=[1, 2, 3])
-
-    with pytest.raises(
-        ValueError, match="`var_func` and `var_array` cannot both be defined"
-    ):
-        s.decomposition(
-            output_dimension=2,
-            algorithm="mlpca",
-            var_func=[1, 2, 3],
-            var_array=s.data.copy(),
-        )
-
-    with pytest.raises(ValueError, match="`var_array` must have the same shape"):
-        s.decomposition(
-            output_dimension=2, algorithm="mlpca", var_array=s.data.copy()[:-3, :-3],
-        )
-
-
 def test_error_axes():
     rng = np.random.RandomState(123)
     s = signals.BaseSignal(rng.random((20, 100)))
@@ -71,7 +46,8 @@ class TestNdAxes:
 
         Where s12 data is transposed in respect to s2
         """
-        dc1 = np.random.random((2, 3, 4, 3, 2))
+        rng = np.random.RandomState(123)
+        dc1 = rng.random((2, 3, 4, 3, 2))
         dc2 = np.rollaxis(np.rollaxis(dc1, -1), -1)
         s1 = signals.BaseSignal(dc1.copy())
         s2 = signals.BaseSignal(dc2)
@@ -142,19 +118,19 @@ class TestNdAxes:
 @lazifyTestClass
 class TestGetModel:
     def setup_method(self, method):
-        np.random.seed(100)
-        sources = signals.Signal1D(np.random.standard_t(0.5, size=(3, 100)))
-        np.random.seed(100)
-        maps = signals.Signal2D(np.random.standard_t(0.5, size=(3, 4, 5)))
+        rng = np.random.RandomState(100)
+        sources = signals.Signal1D(rng.standard_t(0.5, size=(3, 100)))
+        maps = signals.Signal2D(rng.standard_t(0.5, size=(3, 4, 5)))
         self.s = (
             sources.inav[0] * maps.inav[0].T
             + sources.inav[1] * maps.inav[1].T
             + sources.inav[2] * maps.inav[2].T
         )
 
-    def test_get_decomposition_model(self):
+    @pytest.mark.parametrize("centre", [None, "features"])
+    def test_get_decomposition_model(self, centre):
         s = self.s
-        s.decomposition(algorithm="svd")
+        s.decomposition(algorithm="svd", centre=centre)
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         assert rms < 5e-7
@@ -207,15 +183,27 @@ class TestEstimateElbowPosition:
         )
         self.s = s
 
-    def test_elbow_position(self):
+    def test_elbow_position_array(self):
         variance = self.s.learning_results.explained_variance_ratio
-        elbow = self.s._estimate_elbow_position(variance)
+        elbow = self.s.estimate_elbow_position(variance)
         assert elbow == 4
+
+    def test_elbow_position_none(self):
+        variance = self.s.learning_results.explained_variance_ratio
+        elbow = self.s.estimate_elbow_position(None)
+        assert elbow == 4
+
+    def test_elbow_position_error(self):
+        self.s.learning_results.explained_variance_ratio = None
+        with pytest.raises(
+            ValueError, match="decomposition must be performed before calling"
+        ):
+            elbow = self.s.estimate_elbow_position(None)
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_store_number_significant_components(self):
-        np.random.seed(1)
-        s = signals.Signal1D(np.random.random((20, 100)))
+        rng = np.random.RandomState(123)
+        s = signals.Signal1D(rng.random((20, 100)))
         s.decomposition()
         assert s.learning_results.number_significant_components == 2
         # Check that number_significant_components is reset properly
@@ -327,7 +315,8 @@ class TestNormalizeComponents:
 
 class TestDecompositionAlgorithm:
     def setup_method(self, method):
-        self.s = signals.Signal1D(np.random.random((20, 100)))
+        rng = np.random.RandomState(123)
+        self.s = signals.Signal1D(rng.random((20, 100)))
 
     @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
     def test_decomposition(self, algorithm):
@@ -358,14 +347,6 @@ class TestDecompositionAlgorithm:
         ):
             self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    def test_mlpca_poisson_warning(self):
-        with pytest.warns(
-            UserWarning, match="does not make sense to normalize Poisson noise",
-        ):
-            self.s.decomposition(
-                normalize_poissonian_noise=True, algorithm="mlpca", output_dimension=2
-            )
-
     def test_algorithm_error(self):
         with pytest.raises(ValueError, match="'algorithm' not recognised"):
             self.s.decomposition(algorithm="uniform")
@@ -373,7 +354,8 @@ class TestDecompositionAlgorithm:
 
 class TestPrintInfo:
     def setup_method(self, method):
-        self.s = signals.Signal1D(np.random.random((20, 100)))
+        rng = np.random.RandomState(123)
+        self.s = signals.Signal1D(rng.random((20, 100)))
 
     @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
     def test_decomposition(self, algorithm, capfd):
@@ -397,7 +379,8 @@ class TestPrintInfo:
 
 class TestReturnInfo:
     def setup_method(self, method):
-        self.s = signals.Signal1D(np.random.random((20, 100)))
+        rng = np.random.RandomState(123)
+        self.s = signals.Signal1D(rng.random((20, 100)))
 
     @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
     def test_decomposition_not_supported(self, algorithm):
@@ -459,8 +442,9 @@ class TestReturnInfo:
 
 class TestNonFloatTypeError:
     def setup_method(self, method):
-        self.s_int = signals.Signal1D((np.random.random((20, 100)) * 20).astype("int"))
-        self.s_float = signals.Signal1D(np.random.random((20, 100)))
+        rng = np.random.RandomState(123)
+        self.s_int = signals.Signal1D((rng.random((20, 100)) * 20).astype("int"))
+        self.s_float = signals.Signal1D(rng.random((20, 100)))
 
     def test_decomposition_error(self):
         self.s_float.decomposition()
@@ -488,8 +472,9 @@ class TestLoadDecompositionResults:
 
 class TestComplexSignalDecomposition:
     def setup_method(self, method):
-        real = np.random.random((8, 8))
-        imag = np.random.random((8, 8))
+        rng = np.random.RandomState(123)
+        real = rng.random((8, 8))
+        imag = rng.random((8, 8))
         s_complex_dtype = signals.ComplexSignal1D(real + 1j * imag - 1j * imag)
         s_real_dtype = signals.ComplexSignal1D(real)
         s_complex_dtype.decomposition()
@@ -512,11 +497,12 @@ class TestComplexSignalDecomposition:
         The first r values of scree plot / singular values should be non-zero.
         """
         m, n, r = 32, 32, 3
+        rng = np.random.RandomState(123)
 
-        A = np.random.random((m, r)) + 1j * np.random.random((m, r))
-        B = np.random.random((n, r)) + 1j * np.random.random((n, r))
+        A = rng.random((m, r)) + 1j * rng.random((m, r))
+        B = rng.random((n, r)) + 1j * rng.random((n, r))
 
-        s = signals.ComplexSignal1D(np.dot(A, B.T))
+        s = signals.ComplexSignal1D(A @ B.T)
         s.decomposition()
         np.testing.assert_almost_equal(
             s.get_explained_variance_ratio().data[r:].sum(), 0
@@ -527,7 +513,6 @@ class TestComplexSignalDecomposition:
 def test_decomposition_reproject(reproject):
     rng = np.random.RandomState(123)
     s = signals.Signal1D(rng.random((20, 100)))
-
     s.decomposition(reproject=reproject)
 
 
@@ -574,3 +559,87 @@ def test_decomposition_gridsearchcv():
     assert hasattr(out, "best_estimator_")
     assert hasattr(out, "cv_results_")
     np.testing.assert_allclose(out.best_score_, -63.5394493654988)
+
+
+def test_decomposition_mlpca_var_func():
+    rng = np.random.RandomState(123)
+    s = signals.Signal1D(rng.random((20, 100)))
+    s.decomposition(output_dimension=2, algorithm="mlpca", var_func=lambda x: x)
+
+
+def test_decomposition_mlpca_warnings_errors():
+    rng = np.random.RandomState(123)
+    s = signals.Signal1D(rng.random((20, 100)))
+
+    with pytest.warns(
+        VisibleDeprecationWarning, match="`polyfit` argument has been deprecated"
+    ):
+        s.decomposition(output_dimension=2, algorithm="mlpca", polyfit=[1, 2, 3])
+
+    with pytest.raises(
+        ValueError, match="`var_func` and `var_array` cannot both be defined"
+    ):
+        s.decomposition(
+            output_dimension=2,
+            algorithm="mlpca",
+            var_func=[1, 2, 3],
+            var_array=s.data.copy(),
+        )
+
+    with pytest.raises(ValueError, match="`var_array` must have the same shape"):
+        s.decomposition(
+            output_dimension=2, algorithm="mlpca", var_array=s.data.copy()[:-3, :-3],
+        )
+
+    with pytest.raises(
+        ValueError, match="`var_func` must be either a function or an array"
+    ):
+        s.decomposition(output_dimension=2, algorithm="mlpca", var_func="func")
+
+    with pytest.warns(
+        UserWarning, match="does not make sense to normalize Poisson noise",
+    ):
+        s.decomposition(
+            normalize_poissonian_noise=True, algorithm="mlpca", output_dimension=2
+        )
+
+
+def test_negative_values_error():
+    rng = np.random.RandomState(123)
+    x = rng.random((20, 100))
+    x[0, 0] = -1.0
+    s = signals.Signal1D(x)
+    with pytest.raises(ValueError, match="Negative values found in data!"):
+        s.decomposition(normalize_poissonian_noise=True)
+
+
+def test_undo_treatments_error():
+    rng = np.random.RandomState(123)
+    s = signals.Signal1D(rng.random((20, 100)))
+    s.decomposition(output_dimension=2, copy=False)
+
+    with pytest.raises(AttributeError, match="Unable to undo data pre-treatments!"):
+        s.undo_treatments()
+
+
+def test_normalize_components_errors():
+    rng = np.random.RandomState(123)
+    s = signals.Signal1D(rng.random((20, 100)))
+
+    with pytest.raises(ValueError, match="can only be called after s.decomposition"):
+        s.normalize_decomposition_components(target="loadings")
+
+    s.decomposition()
+
+    with pytest.raises(ValueError, match="target must be"):
+        s.normalize_decomposition_components(target="uniform")
+
+
+def test_centering_error():
+    rng = np.random.RandomState(123)
+    s = signals.Signal1D(rng.random((20, 100)))
+
+    with pytest.raises(
+        ValueError, match="normalize_poissonian_noise=True is only compatible"
+    ):
+        s.decomposition(normalize_poissonian_noise=True, centre="samples")

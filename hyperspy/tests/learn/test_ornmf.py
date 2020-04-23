@@ -10,111 +10,118 @@ def compare_norms(a, b, tol=5e-3):
 
     m, n = a.shape
     tol *= m * n
-    n1, n2 = list(map(np.linalg.norm, [a, b]))
+    n1 = np.linalg.norm(a)
+    n2 = np.linalg.norm(b)
 
     assert np.linalg.norm((a / n1) - (b / n2)) < tol
 
 
-m = 128
-n = 256
-r = 3
+class TestRNMF:
+    def setup_method(self, method):
+        # Define shape etc.
+        m = 128  # Dimensionality
+        n = 256  # Number of samples
+        r = 3
+        s = 0.01
 
-rng = np.random.RandomState(101)
-U = rng.uniform(0, 1, (m, r))
-V = rng.uniform(0, 1, (n, r))
-X = np.dot(U, V.T)
-np.divide(X, max(1.0, np.linalg.norm(X)), out=X)
+        rng = np.random.RandomState(101)
+        U = rng.uniform(0, 1, (m, r))
+        V = rng.uniform(0, 1, (n, r))
+        X = U @ V.T
+        np.divide(X, max(1.0, np.linalg.norm(X)), out=X)
 
-sparse = 0.05  # Fraction of corrupted pixels
-E = 100 * rng.binomial(1, sparse, X.shape)
-Y = X + E
+        E = 100 * rng.binomial(1, s, X.shape)
+        Y = X + E
 
+        self.m = m
+        self.n = n
+        self.rank = r
+        self.U = U
+        self.V = V
+        self.X = X
+        self.Y = Y
+        self.E = E
 
-@pytest.mark.parametrize("project", [True, False])
-def test_default(project):
-    W, H = ornmf(X, r, project=project)
-    compare_norms(np.dot(W, H), X)
+    @pytest.mark.parametrize("project", [True, False])
+    def test_default(self, project):
+        W, H = ornmf(self.X, self.rank, project=project)
+        compare_norms(W @ H, self.X)
 
-    assert W.shape == U.shape
-    assert H.shape == V.T.shape
+        assert W.shape == self.U.shape
+        assert H.shape == self.V.T.shape
 
+    def test_batch_size(self):
+        W, H = ornmf(self.X, self.rank, batch_size=2)
+        compare_norms(W @ H, self.X)
 
-def test_batch_size():
-    W, H = ornmf(X, r, batch_size=2)
-    compare_norms(np.dot(W, H), X)
+        assert W.shape == self.U.shape
+        assert H.shape == self.V.T.shape
 
-    assert W.shape == U.shape
-    assert H.shape == V.T.shape
+    def test_store_error(self):
+        Xhat, Ehat, W, H = ornmf(self.X, self.rank, store_error=True)
+        compare_norms(Xhat, self.X)
 
+        assert Xhat.shape == self.X.shape
+        assert Ehat.shape == self.E.shape
 
-def test_store_error():
-    Xhat, Ehat, W, H = ornmf(X, r, store_error=True)
-    compare_norms(Xhat, X)
+    def test_corrupted_default(self):
+        W, H = ornmf(self.Y, self.rank)
+        compare_norms(W @ H, self.X)
 
-    assert Xhat.shape == X.shape
-    assert Ehat.shape == E.shape
+    def test_robust(self):
+        W, H = ornmf(self.X, self.rank, method="RobustPGD")
+        compare_norms(W @ H, self.X)
 
+    def test_corrupted_robust(self):
+        W, H = ornmf(self.Y, self.rank, method="RobustPGD")
+        compare_norms(W @ H, self.X)
 
-def test_corrupted_default():
-    W, H = ornmf(Y, r)
-    compare_norms(np.dot(W, H), X)
+    def test_no_method(self):
+        with pytest.raises(ValueError, match=f"'method' not recognised"):
+            _ = ornmf(self.X, self.rank, method="uniform")
 
+    def test_subspace_tracking(self):
+        W, H = ornmf(self.X, self.rank, method="MomentumSGD")
+        compare_norms(W @ H, self.X)
 
-def test_robust():
-    W, H = ornmf(X, r, method="RobustPGD")
-    compare_norms(np.dot(W, H), X)
+    @pytest.mark.parametrize("subspace_learning_rate", [1.0, 1.1])
+    def test_subspace_tracking_learning_rate(self, subspace_learning_rate):
+        W, H = ornmf(
+            self.X,
+            self.rank,
+            method="MomentumSGD",
+            subspace_learning_rate=subspace_learning_rate,
+        )
+        compare_norms(W @ H, self.X)
 
+    @pytest.mark.parametrize("subspace_momentum", [0.5, 0.9])
+    def test_subspace_tracking_momentum(self, subspace_momentum):
+        W, H = ornmf(
+            self.X, self.rank, method="MomentumSGD", subspace_momentum=subspace_momentum
+        )
+        compare_norms(W @ H, self.X)
 
-def test_corrupted_robust():
-    W, H = ornmf(Y, r, method="RobustPGD")
-    compare_norms(np.dot(W, H), X)
+        with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
+            _ = ornmf(self.X, self.rank, method="MomentumSGD", subspace_momentum=1.9)
 
+    @pytest.mark.parametrize("poisson", [True, False])
+    def test_signal(self, poisson):
+        # Note that s1.decomposition() operates on the transpose
+        # i.e. (n_samples, n_features).
+        x = self.Y.T.copy().reshape(16, 16, 128)
 
-def test_no_method():
-    with pytest.raises(ValueError, match=f"'method' not recognised"):
-        W, H = ornmf(X, r, method="uniform")
+        if poisson:
+            x -= x.min()
+            x[x <= 0] = 1e-16
 
+        s1 = Signal1D(x)
 
-def test_subspace_tracking():
-    W, H = ornmf(X, r, method="MomentumSGD")
-    compare_norms(np.dot(W, H), X)
+        X_out, E_out = s1.decomposition(
+            normalize_poissonian_noise=poisson,
+            algorithm="ornmf",
+            output_dimension=self.rank,
+            return_info=True,
+        )
 
-
-@pytest.mark.parametrize("subspace_learning_rate", [None, 1.1])
-def test_subspace_tracking_learning_rate(subspace_learning_rate):
-    W, H = ornmf(
-        X, r, method="MomentumSGD", subspace_learning_rate=subspace_learning_rate
-    )
-    compare_norms(np.dot(W, H), X)
-
-
-@pytest.mark.parametrize("subspace_momentum", [None, 0.9])
-def test_subspace_tracking_momentum(subspace_momentum):
-    W, H = ornmf(X, r, method="MomentumSGD", subspace_momentum=subspace_momentum)
-    compare_norms(np.dot(W, H), X)
-
-    with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
-        W, H = ornmf(X, r, method="MomentumSGD", subspace_momentum=1.9)
-
-
-@pytest.mark.parametrize("poisson", [True, False])
-def test_signal(poisson):
-    # Note that s1.decomposition() operates on the transpose
-    # i.e. (n_samples, n_features).
-    x = Y.T.copy().reshape(16, 16, 128)
-
-    if poisson:
-        x -= x.min()
-        x[x <= 0] = 1e-16
-
-    s1 = Signal1D(x)
-
-    X_out, E_out = s1.decomposition(
-        normalize_poissonian_noise=poisson,
-        algorithm="ornmf",
-        output_dimension=r,
-        return_info=True,
-    )
-
-    # Check the low-rank component MSE
-    compare_norms(X_out, X.T)
+        # Check the low-rank component MSE
+        compare_norms(X_out, self.X.T)

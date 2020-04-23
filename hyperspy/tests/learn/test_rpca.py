@@ -17,12 +17,23 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import scipy.linalg
 import pytest
+import scipy.linalg
 
-from hyperspy.signals import Signal1D
-from hyperspy.learn.rpca import rpca_godec, orpca
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.learn.rpca import orpca, rpca_godec
+from hyperspy.signals import Signal1D
+
+
+def compare_norms(a, b, tol=5e-3):
+    assert a.shape == b.shape
+
+    m, n = a.shape
+    tol *= m * n
+    n1 = np.linalg.norm(a)
+    n2 = np.linalg.norm(b)
+
+    assert np.linalg.norm((a / n1) - (b / n2)) < tol
 
 
 class TestRPCA:
@@ -37,7 +48,7 @@ class TestRPCA:
         rng = np.random.RandomState(101)
         U = scipy.linalg.orth(rng.randn(m, r))
         V = rng.randn(n, r)
-        A = np.dot(U, V.T)
+        A = U @ V.T
         E = 10 * rng.binomial(1, s, (m, n))
         G = 0.005 * rng.randn(m, n)
         X = A + E + G
@@ -45,38 +56,25 @@ class TestRPCA:
         self.m = m
         self.n = n
         self.rank = r
-        self.lambda1 = 0.01
         self.A = A
         self.X = X
 
-        # Test tolerance
-        self.tol = 5e-3 * (self.m * self.n)
-
     def test_default(self):
-        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank)
+        X, E, U, S, V = rpca_godec(self.X, rank=self.rank)
+        compare_norms(X, self.A)
 
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
-
-    @pytest.mark.parametrize("power", [None, 1, 2])
-    @pytest.mark.parametrize("maxiter", [None, 1e2, 1e3])
-    @pytest.mark.parametrize("tol", [None, 1e-1, 1e-4])
+    @pytest.mark.parametrize("power", [0, 1, 2])
+    @pytest.mark.parametrize("maxiter", [1e2, 1e3])
+    @pytest.mark.parametrize("tol", [1e-1, 1e-4])
     def test_tol_iter(self, power, maxiter, tol):
-        X, E, G, U, S, V = rpca_godec(
+        X, E, U, S, V = rpca_godec(
             self.X, rank=self.rank, power=power, maxiter=maxiter, tol=tol
         )
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
+        compare_norms(X, self.A)
 
     def test_regularization(self):
-        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, lambda1=self.lambda1)
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
+        X, E, U, S, V = rpca_godec(self.X, rank=self.rank, lambda1=0.01)
+        compare_norms(X, self.A)
 
     @pytest.mark.parametrize("poisson", [True, False])
     def test_signal(self, poisson):
@@ -96,10 +94,7 @@ class TestRPCA:
             output_dimension=self.rank,
             return_info=True,
         )
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A.T)
-        assert normX < self.tol
+        compare_norms(X, self.A.T)
 
 
 class TestORPCA:
@@ -114,84 +109,72 @@ class TestORPCA:
         rng = np.random.RandomState(101)
         U = scipy.linalg.orth(rng.randn(m, r))
         V = rng.randn(n, r)
-        A = np.dot(U, V.T)
+        A = U @ V.T
         E = 10 * rng.binomial(1, s, (m, n))
         X = A + E
 
         self.m = m
         self.n = n
         self.rank = r
-        self.lambda1 = 1.0 / np.sqrt(n)
-        self.lambda2 = 1.0 / np.sqrt(n)
         self.A = A
         self.X = X
-        self.subspace_learning_rate = 1.1
-        self.training_samples = 32
-        self.subspace_momentum = 0.1
-
-        # Test tolerance
-        self.tol = 5e-3 * (self.m * self.n)
+        self.U = U
 
     def test_default(self):
-        X, E, U, S, V = orpca(self.X, rank=self.rank)
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
+        X, E, U, S, V = orpca(self.X, rank=self.rank, store_error=True)
+        compare_norms(X, self.A)
 
     def test_project(self):
         L, R = orpca(self.X, rank=self.rank, project=True)
 
-        # Check shape is double (i.e. equivalent to
-        # running over the data twice)
+        assert L.shape == (self.m, self.rank)
+        assert R.shape == (self.rank, self.n)
+
+    def test_batch_size(self):
+        L, R = orpca(self.X, rank=self.rank, batch_size=2)
+
         assert L.shape == (self.m, self.rank)
         assert R.shape == (self.rank, self.n)
 
     def test_method_BCD(self):
-        X, E, U, S, V = orpca(self.X, rank=self.rank, method="BCD")
+        X, E, U, S, V = orpca(self.X, rank=self.rank, store_error=True, method="BCD")
+        compare_norms(X, self.A)
 
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
-
-    @pytest.mark.parametrize("subspace_learning_rate", [None, 1.1])
+    @pytest.mark.parametrize("subspace_learning_rate", [1.0, 1.1])
     def test_method_SGD(self, subspace_learning_rate):
         X, E, U, S, V = orpca(
             self.X,
             rank=self.rank,
+            store_error=True,
             method="SGD",
             subspace_learning_rate=subspace_learning_rate,
         )
+        compare_norms(X, self.A)
 
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
-
-    @pytest.mark.parametrize("subspace_momentum", [None, 0.1])
+    @pytest.mark.parametrize("subspace_momentum", [0.5, 0.1])
     def test_method_MomentumSGD(self, subspace_momentum):
         X, E, U, S, V = orpca(
             self.X,
             rank=self.rank,
+            store_error=True,
             method="MomentumSGD",
-            subspace_learning_rate=self.subspace_learning_rate,
+            subspace_learning_rate=1.1,
             subspace_momentum=subspace_momentum,
         )
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
+        compare_norms(X, self.A)
 
         with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
             _ = orpca(
                 self.X, rank=self.rank, method="MomentumSGD", subspace_momentum=1.9
             )
 
-    def test_init(self):
-        X, E, U, S, V = orpca(self.X, rank=self.rank, init="rand")
+    def test_init_rand(self):
+        X, E, U, S, V = orpca(self.X, rank=self.rank, store_error=True, init="rand")
+        compare_norms(X, self.A)
 
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
+    def test_init_mat(self):
+        X, E, U, S, V = orpca(self.X, rank=self.rank, store_error=True, init=self.U)
+        compare_norms(X, self.A)
 
         with pytest.raises(ValueError, match=f"has to be a two-dimensional matrix"):
             mat = np.zeros(self.m)
@@ -201,27 +184,26 @@ class TestORPCA:
             mat = np.zeros((self.m, self.rank - 1))
             _ = orpca(self.X, rank=self.rank, init=mat)
 
-    def test_training(self):
+    @pytest.mark.parametrize("rank", [3, 11])
+    @pytest.mark.parametrize("training_samples", [16, 32])
+    def test_training(self, rank, training_samples):
         X, E, U, S, V = orpca(
-            self.X, rank=self.rank, init="qr", training_samples=self.training_samples
+            self.X,
+            rank=rank,
+            store_error=True,
+            init="qr",
+            training_samples=training_samples,
         )
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        print(normX)
-        assert normX < self.tol
+        compare_norms(X, self.A)
 
         with pytest.raises(ValueError, match=f"must be >="):
             _ = orpca(self.X, rank=self.rank, init="qr", training_samples=self.rank - 1)
 
     def test_regularization(self):
         X, E, U, S, V = orpca(
-            self.X, rank=self.rank, lambda1=self.lambda1, lambda2=self.lambda2
+            self.X, rank=self.rank, store_error=True, lambda1=0.01, lambda2=0.02,
         )
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A)
-        assert normX < self.tol
+        compare_norms(X, self.A)
 
     def test_exception_method(self):
         with pytest.raises(ValueError, match=f"'method' not recognised"):
@@ -262,7 +244,4 @@ class TestORPCA:
             output_dimension=self.rank,
             return_info=True,
         )
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A.T)
-        assert normX < self.tol
+        compare_norms(X, self.A.T)

@@ -88,12 +88,12 @@ def svd_solve(
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
         If full :
-            use an exact LAPACK SVD solver to estimate the full number
-            of components
+            run exact full SVD calling the standard LAPACK solver via
+            :py:meth:`scipy.linalg.svd` and select the components by postprocessing
         If arpack :
-            use a truncated ARPACK SVD solver to estimate a limited
-            number of components, given by output_dimension. Requires
-            0 < output_dimension < min(data.shape).
+            use SVD truncated to output_dimension calling ARPACK solver via
+            :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
+            `0 < output_dimension < min(data.shape)`
         If randomized :
             use a truncated, randomized SVD from sklearn to estimate
             a limited number of components, given by output_dimension.
@@ -186,12 +186,12 @@ def svd_pca(
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
         If full :
-            use an exact LAPACK SVD solver to estimate the full number
-            of components
+            run exact full SVD calling the standard LAPACK solver via
+            :py:meth:`scipy.linalg.svd` and select the components by postprocessing
         If arpack :
-            use a truncated ARPACK SVD solver to estimate a limited
-            number of components, given by output_dimension. Requires
-            0 < output_dimension < min(data.shape).
+            use SVD truncated to output_dimension calling ARPACK solver via
+            :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
+            `0 < output_dimension < min(data.shape)`
         If randomized :
             use a truncated, randomized SVD from sklearn to estimate
             a limited number of components, given by output_dimension.
