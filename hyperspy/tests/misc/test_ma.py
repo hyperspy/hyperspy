@@ -3,7 +3,7 @@ import numpy as np
 import dask.array as da
 from hyperspy.signals import Signal2D
 from hyperspy._lazy_signals import LazySignal2D
-from hyperspy.misc import ma
+from hyperspy import ma
 from hyperspy.roi import CircleROI,RectangularROI
 from hyperspy.api import load
 import tempfile
@@ -64,23 +64,23 @@ class TestMa():
         assert isinstance(lazy_signal.data, da.core.Array)
 
     def test_masked_less(self,signal, lazy_signal):
-        ma.masked_less(signal,1)
+        ma.masked_less(signal, 1)
         assert isinstance(signal.data, np.ma.masked_array)
-        ma.masked_less(lazy_signal,1)
+        ma.masked_less(lazy_signal, 1)
         # should test that chuck is numpy masked array
         assert isinstance(lazy_signal.data, da.core.Array)
 
     def test_masked_less_equal(self,signal, lazy_signal):
-        ma.masked_less_equal(signal,1)
+        ma.masked_less_equal(signal, 1)
         assert isinstance(signal.data, np.ma.masked_array)
-        ma.masked_less_equal(lazy_signal,1)
+        ma.masked_less_equal(lazy_signal, 1)
         # should test that chuck is numpy masked array
         assert isinstance(lazy_signal.data, da.core.Array)
 
     def test_masked_not_equal(self,signal, lazy_signal):
         ma.masked_not_equal(signal, 1)
         assert isinstance(signal.data, np.ma.masked_array)
-        ma.masked_not_equal(lazy_signal,1)
+        ma.masked_not_equal(lazy_signal, 1)
         # should test that chuck is numpy masked array
         assert isinstance(lazy_signal.data,  da.core.Array)
 
@@ -99,9 +99,9 @@ class TestMa():
         assert isinstance(lazy_signal.data, da.core.Array)
 
     def test_masked_where(self,signal, lazy_signal):
-        ma.masked_where(signal.data==1, signal)
+        ma.masked_where(signal.data == 1, signal)
         assert isinstance(signal.data, np.ma.masked_array)
-        ma.masked_where(lazy_signal.data==1, lazy_signal)
+        ma.masked_where(lazy_signal.data == 1, lazy_signal)
         # should test that chuck is numpy masked array
         assert isinstance(lazy_signal.data, da.core.Array)
 
@@ -120,14 +120,14 @@ class TestMa():
         l = load(tmpfilepath + ".hspy")
         assert isinstance(l.data, np.ma.masked_array)
         ma.asarray(lazy_signal)
-        ma.masked_greater(lazy_signal,5)
+        ma.masked_greater(lazy_signal, 5)
         lazy_signal.save(tmpfilepath, overwrite=True)
         l = load(tmpfilepath + ".hspy")
         assert isinstance(l.data, np.ma.masked_array)
 
     def test_masked_circle_roi(self,signal,lazy_signal):
         c = CircleROI(2,2,2)
-        ma.masked_roi(signal,c, axes=[1,2])
+        ma.masked_roi(signal, c, axes=[1, 2])
         assert np.ma.is_masked(signal.isig[2,2].data)
         ma.masked_roi(lazy_signal, c)
 
