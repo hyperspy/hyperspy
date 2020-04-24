@@ -38,7 +38,7 @@ script:
   - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
-      echo "py.test arguments: $PYTEST_ARGS";
+      echo "py.test arguments $PYTEST_ARGS";
       pytest $PYTEST_ARGS;
     fi
 
