@@ -9,10 +9,10 @@ Interactive operations
 ----------------------
 
 
-The function :py:func:`~.interactive.interactive` ease the task of defining
+The function :py:func:`~.interactive.interactive` simplifies the definition of
 operations that are automatically updated when an event is triggered. By
-default it recomputes the operation when data or the axes of the original
-signal changes.
+default the operation is recomputed when the data or the axes of the original
+signal is changed.
 
 .. code-block:: python
 
@@ -25,7 +25,7 @@ signal changes.
     >>> ssum.data
     array([ 4.5])
 
-The interactive operations can be chained.
+Interactive operations can be performed in a chain.
 
 .. code-block:: python
 
@@ -52,7 +52,9 @@ The interactive operations can be chained.
 Region Of Interest (ROI)
 ------------------------
 
-A number of different ROIs are available:
+ROIs can be defined to select part of any compatible signal and may be applied
+either to the navigation or to the signal axes. A number of different ROIs are
+available:
 
 * :py:class:`~.roi.Point1DROI`
 * :py:class:`~.roi.Point2DROI`
@@ -61,7 +63,7 @@ A number of different ROIs are available:
 * :py:class:`~.roi.CircleROI`
 * :py:class:`~.roi.Line2DROI`
 
-Once created, a ROI can be used to return a part of any compatible signal:
+Once created, an ROI can be applied to the signal:
 
 .. code-block:: python
 
@@ -76,7 +78,7 @@ Once created, a ROI can be used to return a part of any compatible signal:
     <Signal2D, title: , dimensions: (|4, 3)>
 
 ROIs can also be used :ref:`interactively <interactive-label>` with widgets.
-The following examples shows how to interactively apply ROIs to an image. Note
+The following example shows how to interactively apply ROIs to an image. Note
 that *it is necessary* to plot the signal onto which the widgets will be
 added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
 
@@ -199,15 +201,16 @@ parameters:
     >>> roi.angle(axis='y')
     -100.97166759025453
 
-By default output of the method is in degrees, though radians can be selected as follows:
+The default output of the method is in degrees, though radians can be selected
+as follows:
 
 .. code-block:: python
 
     >>> roi.angle(axis='vertical', units='radians')
     -1.7622880506791903
 
-Conveniently, :meth:`~.roi.Line2DROI.angle` can be used to rotate image to align
-selected features with respect to vertical or horizontal axis:
+Conveniently, :meth:`~.roi.Line2DROI.angle` can be used to rotate an image to
+align selected features with respect to vertical or horizontal axis:
 
 .. code-block:: python
 

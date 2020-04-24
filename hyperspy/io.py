@@ -60,7 +60,7 @@ def load(filenames=None,
     Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
     tif, and a number of image formats.
 
-    Depending ont the number of dataset in the file to load, this function will
+    Depending on the number of datasets to load in the file, this function will
     return a HyperSpy signal instance or list of HyperSpy signal instances.
 
     Any extra keyword is passed to the corresponding reader. For

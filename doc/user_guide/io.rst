@@ -20,12 +20,12 @@ image ascent.jpg you can type:
 
     >>> s = hs.load("ascent.jpg")
 
-If the loading was successful, the variable ``s`` contains a HyperSpy signal
+If loading was successful, the variable ``s`` contains a HyperSpy signal
 or a signal of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
 - see available :ref:`signal subclasses <transforming_signal-label>` for more
 information.
-If the loaded file contains some severals dataset, The ``load`` functions will
-return a list of the corresponding signal.
+If the loaded file contains several datasets, the :py:func:`~.io.load`
+functions will return a list of the corresponding signal.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array
@@ -818,8 +818,8 @@ the data size in memory.
 .. note::
 
     Pruned Velox EMD files only contain the spectrum image in a proprietary
-    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in
-    you intend to read them with HyperSpy.
+    format that HyperSpy cannot read. Therefore, don't prune Velox EMD files
+    if you intend to read them with HyperSpy.
 
 .. code-block:: python
 
