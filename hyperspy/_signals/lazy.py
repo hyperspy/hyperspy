@@ -699,15 +699,17 @@ class LazySignal(BaseSignal):
                 copy=True,
                 white=False
 
-
         """
         if bounds:
-            msg = (
+            warnings.warn(
                 "The `bounds` keyword is deprecated and will be removed "
-                "in v2.0. Since version > 1.3 this has no effect.")
-            warnings.warn(msg, VisibleDeprecationWarning)
+                "in v2.0. Since version > 1.3 this has no effect.",
+                VisibleDeprecationWarning
+            )
+
         explained_variance = None
         explained_variance_ratio = None
+
         _al_data = self._data_aligned_with_axes
         nav_chunks = _al_data.chunks[:self.axes_manager.navigation_dimension]
         sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension:]
@@ -715,12 +717,24 @@ class LazySignal(BaseSignal):
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
         nblocks = multiply([len(c) for c in nav_chunks])
+
         if algorithm != "svd" and output_dimension is None:
-            raise ValueError("With the %s the output_dimension "
-                             "must be specified" % algorithm)
+            raise ValueError("With algorithm='{}', the output_dimension "
+                             "must be specified".format(algorithm))
+
+        if algorithm == 'ONMF':
+            warnings.warn(
+                "The argument `algorithm='ONMF'` has been deprecated and may "
+                "be removed in future. Please use `algorithn='ORNMF'` instead.",
+                VisibleDeprecationWarning,
+            )
+            algorithm = 'ORNMF'
+
         if output_dimension and blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
+
         blocksize *= num_chunks
+
         # LEARN
         if algorithm == 'PCA':
             from sklearn.decomposition import IncrementalPCA
@@ -730,23 +744,15 @@ class LazySignal(BaseSignal):
 
         elif algorithm == 'ORPCA':
             from hyperspy.learn.rpca import ORPCA
-            kwg = {'fast': True}
-            kwg.update(kwargs)
-            obj = ORPCA(output_dimension, **kwg)
-            method = partial(obj.fit, iterating=True)
+            batch_size = kwargs.pop('batch_size', None)
+            obj = ORPCA(output_dimension, **kwargs)
+            method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm in ('ONMF', 'ORNMF'):
+        elif algorithm == 'ORNMF':
             from hyperspy.learn.ornmf import ORNMF
             batch_size = kwargs.pop('batch_size', None)
             obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
-
-            if algorithm == 'ONMF':
-                warnings.warn(
-                    "The argument `algorithm='ONMF'` has been deprecated and may "
-                    "be removed in future. Please use `algorithn='ORNMF'` instead.",
-                    VisibleDeprecationWarning,
-                )
 
         elif algorithm != "svd":
             raise ValueError('algorithm not known')
@@ -798,7 +804,18 @@ class LazySignal(BaseSignal):
                         raise NotImplemented(
                             "Masking is not yet implemented for lazy SVD."
                         )
+
                     U, S, V = svd(self.data)
+
+                    if output_dimension is None:
+                        min_shape = min(min(U.shape), min(V.shape))
+                    else:
+                        min_shape = output_dimension
+
+                    U = U[:, :min_shape]
+                    S = S[: min_shape]
+                    V = V[: min_shape]
+
                     factors = V.T
                     explained_variance = S ** 2 / self.data.shape[0]
                     loadings = U * S
@@ -836,10 +853,8 @@ class LazySignal(BaseSignal):
                 factors = obj.components_.T
 
             elif algorithm == 'ORPCA':
-                _, _, U, S, V = obj.finish()
-                factors = U * S
-                loadings = V
-                explained_variance = S**2 / len(factors)
+                factors, loadings = obj.finish()
+                loadings = loadings.T
 
             elif algorithm == 'ORNMF':
                 factors, loadings = obj.finish()
@@ -853,9 +868,8 @@ class LazySignal(BaseSignal):
                     def post(a): return np.concatenate(a, axis=0)
                 elif algorithm == 'ORPCA':
                     method = obj.project
-                    obj.R = []
 
-                    def post(a): return obj.finish()[4]
+                    def post(a): return np.concatenate(a, axis=1).T
                 elif algorithm == 'ORNMF':
                     method = obj.project
 

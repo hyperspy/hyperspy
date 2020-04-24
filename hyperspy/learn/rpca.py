@@ -46,6 +46,8 @@ def rpca_godec(X, rank, lambda1=None, power=0, tol=1e-3, maxiter=1000, **kwargs)
     Matlab code from [Zhou2011]_. See code here:
     https://sites.google.com/site/godecomposition/matrix/artifact-1
 
+    Read more in the :ref:`User Guide <mva.rpca>`.
+
     Parameters
     ----------
     X : numpy array, shape (n_features, n_samples)
@@ -206,6 +208,8 @@ class ORPCA:
     along with a MomentumSGD solver for improved convergence and robustness
     with respect to local minima. More information about the gradient descent
     methods and choosing appropriate parameters can be found in [Ruder2016]_.
+
+    Read more in the :ref:`User Guide <mva.rpca>`.
 
     References
     ----------

@@ -114,6 +114,8 @@ class ORNMF:
     has been made to allow for a changing subspace W, where X ~= WH^T + E
     in the ORNMF framework.
 
+    Read more in the :ref:`User Guide <mva.rnmf>`.
+
     References
     ----------
     .. [Zhao2016] Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix

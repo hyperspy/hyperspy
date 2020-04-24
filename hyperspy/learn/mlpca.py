@@ -47,6 +47,8 @@ def mlpca(
 
     This function is a transcription of a MATLAB code obtained from [Andrews1997]_.
 
+    Read more in the :ref:`User Guide <mva.mlpca>`.
+
     Parameters
     ----------
     X : numpy array, shape (m, n)
@@ -57,23 +59,23 @@ def mlpca(
     output_dimension : int
         The model dimensionality.
     svd_solver : {'auto', 'full', 'arpack', 'randomized'}
-        If auto :
+        If auto:
             The solver is selected by a default policy based on `data.shape` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
             dimension of the data, then the more efficient 'randomized'
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
-        If full :
-            run exact full SVD calling the standard LAPACK solver via
-            :py:meth:`scipy.linalg.svd` and select the components by postprocessing
-        If arpack :
-            use SVD truncated to output_dimension calling ARPACK solver via
-            :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
+        If full:
+            run exact SVD, calling the standard LAPACK solver via
+            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+        If arpack:
+            use truncated SVD, calling ARPACK solver via
+            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
             `0 < output_dimension < min(data.shape)`
-        If randomized :
-            use a truncated, randomized SVD from sklearn to estimate
-            a limited number of components, given by output_dimension.
+        If randomized:
+            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            to estimate a limited number of components
     tol : float
         Tolerance of the stopping condition.
     max_iter : int

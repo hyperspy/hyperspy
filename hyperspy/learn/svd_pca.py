@@ -80,23 +80,23 @@ def svd_solve(
     output_dimension : None or int
         Number of components to keep/calculate
     svd_solver : {'auto', 'full', 'arpack', 'randomized'}
-        If auto :
+        If auto:
             The solver is selected by a default policy based on `data.shape` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
             dimension of the data, then the more efficient 'randomized'
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
-        If full :
-            run exact full SVD calling the standard LAPACK solver via
-            :py:meth:`scipy.linalg.svd` and select the components by postprocessing
-        If arpack :
-            use SVD truncated to output_dimension calling ARPACK solver via
-            :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
+        If full:
+            run exact SVD, calling the standard LAPACK solver via
+            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+        If arpack:
+            use truncated SVD, calling ARPACK solver via
+            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
             `0 < output_dimension < min(data.shape)`
-        If randomized :
-            use a truncated, randomized SVD from sklearn to estimate
-            a limited number of components, given by output_dimension.
+        If randomized:
+            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            to estimate a limited number of components
     u_based_decision : bool, default True
         If True, use the columns of u as the basis for sign flipping.
         Otherwise, use the rows of v. The choice of which variable to base the
@@ -171,6 +171,8 @@ def svd_pca(
 ):
     """Perform PCA using singular value decomposition (SVD).
 
+    Read more in the :ref:`User Guide <mva.pca>`.
+
     Parameters
     ----------
     data : numpy array
@@ -178,23 +180,23 @@ def svd_pca(
     output_dimension : None or int
         Number of components to keep/calculate
     svd_solver : {'auto', 'full', 'arpack', 'randomized'}
-        If auto :
+        If auto:
             The solver is selected by a default policy based on `data.shape` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
             dimension of the data, then the more efficient 'randomized'
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
-        If full :
-            run exact full SVD calling the standard LAPACK solver via
-            :py:meth:`scipy.linalg.svd` and select the components by postprocessing
-        If arpack :
-            use SVD truncated to output_dimension calling ARPACK solver via
-            :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
+        If full:
+            run exact SVD, calling the standard LAPACK solver via
+            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+        If arpack:
+            use truncated SVD, calling ARPACK solver via
+            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
             `0 < output_dimension < min(data.shape)`
-        If randomized :
-            use a truncated, randomized SVD from sklearn to estimate
-            a limited number of components, given by output_dimension.
+        If randomized:
+            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            to estimate a limited number of components
     centre : {None, 'features', 'samples'}, default None
         If None, the data is not centered.
         If 'features', the data is centered along the features axis.

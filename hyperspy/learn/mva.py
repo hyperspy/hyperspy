@@ -116,6 +116,8 @@ class MVA:
 
         The results are stored in `self.learning_results`.
 
+        Read more in the :ref:`User Guide <mva.decomposition>`.
+
         Parameters
         ----------
         normalize_poissonian_noise : bool, default False
@@ -168,23 +170,23 @@ class MVA:
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
         svd_solver : {'auto', 'full', 'arpack', 'randomized'}, default 'auto'
-            If auto :
-                The solver is selected by a default policy based on `X.shape` and
-                `n_components`: if the input data is larger than 500x500 and the
+            If auto:
+                The solver is selected by a default policy based on `data.shape` and
+                `output_dimension`: if the input data is larger than 500x500 and the
                 number of components to extract is lower than 80% of the smallest
                 dimension of the data, then the more efficient 'randomized'
                 method is enabled. Otherwise the exact full SVD is computed and
                 optionally truncated afterwards.
-            If full :
-                run exact full SVD calling the standard LAPACK solver via
-                :py:meth:`scipy.linalg.svd` and select the components by postprocessing
-            If arpack :
-                use SVD truncated to output_dimension calling ARPACK solver via
-                :py:meth:`scipy.sparse.linalg.svds`. It requires strictly
+            If full:
+                run exact SVD, calling the standard LAPACK solver via
+                :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            If arpack:
+                use truncated SVD, calling ARPACK solver via
+                :py:func:`scipy.sparse.linalg.svds`. It requires strictly
                 `0 < output_dimension < min(data.shape)`
-            If randomized :
-                use a truncated, randomized SVD from sklearn to estimate
-                a limited number of components, given by output_dimension.
+            If randomized:
+                use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+                to estimate a limited number of components
         copy : bool, default True
             * If True, stores a copy of the data before any pre-treatments
               such as normalization in ``s._data_before_treatments``. The original
@@ -643,10 +645,12 @@ class MVA:
     ):
         """Blind source separation (BSS) on the result on the decomposition.
 
-        Available algorithms: FastICA, orthomax, JADE, CuBICA, and TDSEP.
+        Available algorithms:  orthomax, FastICA, JADE, CuBICA, and TDSEP.
 
         For lazy signal, the factors or loadings are computed to perfom the
         BSS.
+
+        Read more in the :ref:`User Guide <mva.blind_source_separation>`.
 
         Parameters
         ----------
@@ -889,7 +893,8 @@ class MVA:
             try:
                 unmixing_matrix = lr.bss_node.unmixing_matrix_
             except AttributeError:
-                # unmixing_matrix was renamed to components
+                # unmixing_matrix was renamed to components in
+                # https://github.com/scikit-learn/scikit-learn/pull/858
                 unmixing_matrix = lr.bss_node.components_
 
             to_print.extend(["scikit-learn estimator:", lr.bss_node])
@@ -1205,6 +1210,8 @@ class MVA:
     def get_explained_variance_ratio(self):
         """Return explained variance ratio of the PCA components as a Signal1D.
 
+        Read more in the :ref:`User Guide <mva.scree_plot>`.
+
         Returns
         -------
         s : Signal1D
@@ -1251,6 +1258,8 @@ class MVA:
         """Plot the decomposition explained variance ratio vs index number.
 
         This is commonly known as a scree plot.
+
+        Read more in the :ref:`User Guide <mva.scree_plot>`.
 
         Parameters
         ----------

@@ -248,7 +248,7 @@ Or even better:
 Machine learning (decomposition)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:ref:`decomposition` algorithms often performs large matrix manipulations,
+:ref:`mva.decomposition` algorithms often performs large matrix manipulations,
 requiring significantly more memory than the data size. To perform
 decomposition operation lazily HyperSpy provides several "online" algorithms and
 `dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
@@ -258,13 +258,14 @@ standard HyperSpy signals,
 :py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
 online algorithms:
 
-* **PCA** (``algorithm='PCA'``): performs `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
+* **PCA** (``algorithm='PCA'``): performs `IncrementalPCA
+  <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html>`_
   from ``scikit-learn``. Please refer to its documentation for a description
   of the several keyword arguments taken by its :meth:``fit`` method.
-* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. Please
+* **ORPCA** (``algorithm='orpca'``): performs Online Robust PCA. Please
   refer to the docstring of :py:meth:`~.learn.rpca.ORPCA` for details on
   usage and keyword arguments.
-* **NMF** (``algorithm='ORNMF'``): performs Online Robust NMF, as per the
+* **NMF** (``algorithm='ornmf'``): performs Online Robust NMF, as per the
   "OPGD (Online Proximal Gradient Descent)" algorithm in :ref:`[Zhao2016] <Zhao2016>`.
   Please refer to the docstring of :py:meth:`~.learn.ornmf.ORNMF` for details on
   usage and keyword arguments.
@@ -306,7 +307,7 @@ on the correct blocks.
 
 The "magic" is performed by (for the sake of simplicity) storing the data not
 as ``numpy.ndarray``, but ``dask.array.Array`` (see the
-`dask documentation <https://dask.readthedocs.io/en/latest/>`_). ``dask`` 
+`dask documentation <https://dask.readthedocs.io/en/latest/>`_). ``dask``
 offers a couple of advantages:
 
 * **Arbitrary-sized data processing is possible**. By only loading a couple of
@@ -318,8 +319,8 @@ offers a couple of advantages:
   not required for the final result, it will not be loaded at all, saving time
   and resources.
 * **Able to extend to a distributed computing environment (clusters)**.
-  :py:``dask.distributed`` (see 
-  `the dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers 
-  a straightforward way to expand the effective memory for computations to that 
-  of a cluster, which allows performing the operations significantly faster 
+  :py:``dask.distributed`` (see
+  `the dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers
+  a straightforward way to expand the effective memory for computations to that
+  of a cluster, which allows performing the operations significantly faster
   than on a single machine.
