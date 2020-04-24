@@ -25,7 +25,7 @@ matrix:
 
 before_install:
   # Clone the ci-scripts repo to get the ci setup scripts
-  - git clone --depth 1 git://github.com/ericpre/ci-scripts.git
+  - git clone --depth 1 git://github.com/hyperspy/ci-scripts.git
   - source ci-scripts/travis/setup_travis.sh
 
 install:
