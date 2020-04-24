@@ -17,10 +17,10 @@ matrix:
   - name: "Linux, 3.6, pip"
     python: 3.6
   - name: "Linux, 3.7, pip, minimum requirement"
-    env: export PIP_SELECTOR="tests"
+    env: PIP_SELECTOR="tests"
     python: 3.7
   - name: "Linux, 3.7, pip, doc"
-    env: export PIP_SELECTOR="all, build-doc"
+    env: PIP_SELECTOR="all, build-doc"
     python: 3.7
 
 before_install:
