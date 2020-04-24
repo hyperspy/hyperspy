@@ -38,9 +38,9 @@ script:
   - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
-      echo $PYTEST_ARGS
-      pytest $PYTEST_ARGS
+      echo $PYTEST_ARGS;
+      pytest $PYTEST_ARGS;
     fi
 
 after_success:
-  - codecov
+  - codecov;
