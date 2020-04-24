@@ -78,7 +78,8 @@ extras_require = {
     "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],  # for testing
+    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],
+    "coverage":["pytest-cov", "codecov"],
     # required to build the docs
     "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
@@ -86,7 +87,7 @@ extras_require = {
 # Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
 runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
-                          if x not in ["tests", "build-doc"]}
+                          if x not in ["tests", "coverage", "build-doc"]}
 extras_require["all"] = list(itertools.chain(*list(
     runtime_extras_require.values())))
 
@@ -372,6 +373,7 @@ with update_version_when_dev() as version:
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

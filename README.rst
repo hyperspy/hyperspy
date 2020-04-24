@@ -1,12 +1,12 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |AppVeyor|_ |Codecov|_ |rtd|_  |pypi_version|_  |python_version|_ |gitter|_ |saythanks|_
+|Azure|_ |Travis|_ |Codecov|_ |rtd|_ |pypi_version|_ |python_version|_ |gitter|_
 
-.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_patch
+.. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
+.. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build/latest?definitionId=1?branchName=RELEASE_next_minor
+
+.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_minor
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
-
-.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_patch
-.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_patch
 
 .. |Codecov| image:: https://codecov.io/gh/hyperspy/hyperspy/branch/RELEASE_next_minor/graph/badge.svg
 .. _Codecov: https://codecov.io/gh/hyperspy/hyperspy
@@ -22,9 +22,6 @@
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
-.. |saythanks| image:: https://img.shields.io/badge/say%20-thanks!-orange.svg
-.. _saythanks: https://saythanks.io/to/hyperspy
 
 
 HyperSpy is an open source Python library which provides tools to facilitate
