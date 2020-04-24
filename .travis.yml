@@ -39,7 +39,6 @@ script:
       cd doc && make html;
     else
       pytest $PYTEST_ARGS;
-
     fi
 after_success:
 - if [[ $PIP_SELECTOR == *"coverage"* ]]; then
