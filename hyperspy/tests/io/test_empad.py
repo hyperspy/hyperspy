@@ -10,8 +10,8 @@ import hyperspy.api as hs
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'empad_data')
-FILENAME_STACK_RAW = os.path.join(DATA_DIR, 'series_x1000.raw')
-FILENAME_MAP_RAW = os.path.join(DATA_DIR, 'scan_x64_y64.raw')
+FILENAME_STACK_RAW = os.path.join(DATA_DIR, 'series_x10.raw')
+FILENAME_MAP_RAW = os.path.join(DATA_DIR, 'scan_x4_y4.raw')
 
 
 def _create_raw_data(filename, shape):
@@ -21,8 +21,8 @@ def _create_raw_data(filename, shape):
 
 
 def setup_module():
-    _create_raw_data(FILENAME_STACK_RAW, (16640000,))
-    _create_raw_data(FILENAME_MAP_RAW, (64*64*130*128))
+    _create_raw_data(FILENAME_STACK_RAW, (166400,))
+    _create_raw_data(FILENAME_MAP_RAW, (4*4*130*128))
 
 
 def teardown_module():
@@ -36,7 +36,7 @@ def teardown_module():
 def test_read_stack(lazy):
     s = hs.load(os.path.join(DATA_DIR, 'stack_images.xml'), lazy=lazy)
     assert s.data.dtype == 'float32'
-    ref_data = np.arange(16640000).reshape((1000, 130, 128))[..., :128, :]
+    ref_data = np.arange(166400).reshape((10, 130, 128))[..., :128, :]
     nt.assert_allclose(s.data, ref_data.astype('float32'))
     signal_axes = s.axes_manager.signal_axes
     assert signal_axes[0].name == 'width'
@@ -57,9 +57,9 @@ def test_read_stack(lazy):
                     reason="Not enough memory on appveyor x86.")
 @pytest.mark.parametrize("lazy", (False, True))
 def test_read_map(lazy):
-    s = hs.load(os.path.join(DATA_DIR, 'map64x64.xml'), lazy=lazy)
+    s = hs.load(os.path.join(DATA_DIR, 'map4x4.xml'), lazy=lazy)
     assert s.data.dtype == 'float32'
-    ref_data = np.arange(68157440).reshape((64, 64, 130, 128))[..., :128, :]
+    ref_data = np.arange(266240).reshape((4, 4, 130, 128))[..., :128, :]
     nt.assert_allclose(s.data, ref_data.astype('float32'))
     signal_axes = s.axes_manager.signal_axes
     assert signal_axes[0].name == 'width'
@@ -72,7 +72,7 @@ def test_read_map(lazy):
     assert navigation_axes[1].name == 'scan_x'
     for axis in navigation_axes:
         assert axis.units == 'µm'
-        nt.assert_allclose(axis.scale, 0.071349103)
+        nt.assert_allclose(axis.scale, 1.1415856)
 
     assert s.metadata.General.date == '2019-06-06'
     assert s.metadata.General.time == '13:30:00.164675'
