@@ -13,7 +13,9 @@ matrix:
     python: 3.8
   - name: "Linux, 3.7, pip"
     python: 3.7
-    env: PIP_SELECTOR="all, tests, coverage"; PYTEST_ARGS=$PYTEST_ARGS" --cov=hyperspy"
+    env:
+      - export PIP_SELECTOR="all, tests, coverage"
+      - export PYTEST_ARGS=$PYTEST_ARGS" --cov=hyperspy"
   - name: "Linux, 3.6, pip"
     python: 3.6
   - name: "Linux, 3.7, pip, minimum requirement"
@@ -38,7 +40,7 @@ script:
   - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
-      echo $PYTEST_ARGS;
+      echo "py.test arguments: $PYTEST_ARGS";
       pytest $PYTEST_ARGS;
     fi
 
