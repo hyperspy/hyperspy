@@ -82,6 +82,7 @@ The following general components are currently available for one-dimensional mod
 
 * :py:class:`~._components.arctan.Arctan`
 * :py:class:`~._components.bleasdale.Bleasdale`
+* :py:class:`~._components.doniach.Doniach`
 * :py:class:`~._components.error_function.Erf`
 * :py:class:`~._components.exponential.Exponential`
 * :py:class:`~._components.expression.Expression`
@@ -97,6 +98,7 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~._components.skew_normal.SkewNormal`
 * :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.split_pvoigt.SplitVoigt`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
 The following components developed with specific signal types in mind are currently available for one-dimensional models:

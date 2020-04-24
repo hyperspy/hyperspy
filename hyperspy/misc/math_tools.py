@@ -130,3 +130,41 @@ def hann_window_nth_order(m, order):
     return m / (order * 2 * np.pi) * sum([(-1) ** i / i *
                                           np.sin(i * sin_arg) * (np.cos(i * cos_arg) - 1)
                                           for i in range(1, order + 1)])
+
+
+def optimal_fft_size(target, real=False):
+    """Wrapper around scipy function next_fast_len() for calculating optimal FFT padding.
+
+    scipy.fft was only added in 1.4.0, so we fall back to scipy.fftpack
+    if it is not available. The main difference is that next_fast_len()
+    does not take a second argument in the older implementation.
+
+    Parameters
+    ----------
+    target : int
+        Length to start searching from. Must be a positive integer.
+    real : bool, optional
+        True if the FFT involves real input or output, only available
+        for scipy > 1.4.0
+
+    Returns
+    -------
+    int
+        Optimal FFT size.
+
+    """
+
+    try:
+        from scipy.fft import next_fast_len
+
+        support_real = True
+
+    except ImportError:
+        from scipy.fftpack import next_fast_len
+
+        support_real = False
+
+    if support_real:
+        return next_fast_len(target, real)
+    else:
+        return next_fast_len(target)

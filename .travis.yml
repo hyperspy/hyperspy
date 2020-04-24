@@ -1,91 +1,48 @@
-language: generic
+# For details: https://github.com/ericpre/ci-scripts
+language: python
 
 env:
-  # We set the default value in global and changed it in the matrix when necessary
   global:
-    - ENV=conda
-    - MINIMAL_ENV=false
-    - DEPS="numpy ipython scipy matplotlib traits natsort requests tqdm sympy dill h5py python-dateutil ipyparallel dask scikit-image pint numexpr statsmodels sparse imageio pyyaml PTable tifffile"
-    - DEPS_OPTIONAL="scikit-learn mrcz numba cython pyUSID"
-    - DEPS_DOC="sphinx sphinx_rtd_theme"
-    - TEST_DEPS="pytest pytest-cov codecov pytest-mpl wheel"
-    - MPLBACKEND="agg"
-    - TEST_ARG_OPT="--mpl"
-    - FAIL_ON_EXTERNAL_DEPRECATION=false
-
-
-services:
-  - xvfb
+    - ENV=pip
+    - PIP_SELECTOR="all, tests, coverage"
+    - PYTEST_ARGS="--pyargs hyperspy"
 
 matrix:
   include:
-    # All tests run for the latest supported Python version in Linux
-  - env: export CONDA_PYTHON=3.7
-  - env: export CONDA_PYTHON=3.7; MINIMAL_ENV=true
-  - env: export ENV=pip; BUILD_DOC=true
-    language: python
+  - name: "Linux, 3.8, pip"
+    python: 3.8
+  - name: "Linux, 3.7, pip"
     python: 3.7
-  - env: export ENV=pip; MINIMAL_ENV=true
-    language: python
+    env: PYTEST_ARGS="--pyargs hyperspy --cov=hyperspy"
+  - name: "Linux, 3.6, pip"
+    python: 3.6
+  - name: "Linux, 3.7, pip, minimum requirement"
+    env: PIP_SELECTOR="tests"
     python: 3.7
-    # Only standard test for older supported versions of Python in Linux
-  - env: export CONDA_PYTHON=3.6
-    # All tests, but the min requirements test run for the latest supported Python version in OSx
-  - env: export CONDA_PYTHON=3.7
-    os: osx
-  - env: export CONDA_PYTHON=3.6
-    os: osx
-    if: tag IS present
-  allow_failures:
-    # Only test for the latest supported version as chances are that it'll
-    # contain the most up-to-date external libraries.
-  - env: export PYTHON=3.7; MINIMAL_ENV=false; FAIL_ON_EXTERNAL_DEPRECATION=true
+  - name: "Linux, 3.7, pip, doc"
+    env: PIP_SELECTOR="all, build-doc"
+    python: 3.7
 
 before_install:
-  - if [ $ENV == conda ]; then
-      source ./ci/travis_setup_conda_$TRAVIS_OS_NAME.sh;
-    fi
+  # Clone the ci-scripts repo to get the ci setup scripts
+  - git clone --depth 1 git://github.com/hyperspy/ci-scripts.git
+  - source ci-scripts/travis/setup_travis.sh
 
 install:
-  - if [[ $MINIMAL_ENV == false ]] ; then DEPS="${DEPS} ${DEPS_OPTIONAL}"; fi
-  - if [[ $BUILD_DOC == true ]] ; then DEPS="${DEPS} ${DEPS_DOC}"; fi
-  - source ./ci/travis_install_with_$ENV.sh
-  - pip install .
+  # Install the package
+  - pip install --upgrade -e .["${PIP_SELECTOR}"]
 
 script:
   - which python
   - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
-  - if [ $ENV == pip ]; then TEST_ARG_OPT=""; fi
-  - pytest --pyargs hyperspy --cov=hyperspy $TEST_ARG_OPT;
-  - ls
-  # build doc here to check warnings easily
-  - if [ $BUILD_DOC == true ]; then (cd doc && make html) ; fi
-
-#after_failure: # run only on failure in case there is a need to check matplotlib image comparison
-# This needs a service to upload the artifacts (and corresponding configuration)
-# See:
-# https://blog.travis-ci.com/2012-12-18-travis-artifacts/
-# https://docs.travis-ci.com/user/uploading-artifacts/
-# https://github.com/matplotlib/matplotlib/blob/master/.travis.yml
-#  - gem install travis-artifacts
-#  - zip -r image_comparison_failure.zip /tmp/ -i *.png
-#  - travis-artifacts upload image_comparison_failure.zip
+  - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
+      cd doc && make html;
+    else
+      echo "py.test arguments $PYTEST_ARGS";
+      pytest $PYTEST_ARGS;
+    fi
 
 after_success:
-- codecov
-- python setup.py bdist_wheel;
-
-before_deploy:
-- export DISTRIB=$(ls ./dist/*);
-
-deploy:
-  provider: releases
-  api_key:
-    #francisco-dlp:
-    secure: dTt5L3HsIrfTOvnU8QFqwMu+Ghpuzp+vr0y7skRbqdFBCmPfjbAe2l24haMidVC1x0ZikHGgv9krEd/aKEBLi6QM+E2KsxiXUJWlhTFMH5o8qsMTBSAS2ChfQ32Jlktg8oK0FMs+UO6EFbMz1cr7m1Fgc0Ikds1ZCzev6Uke2Zk=
-  file: "${DISTRIB}"
-  skip_cleanup: true
-  on:
-    tags: true
-    condition: $MINIMAL_ENV = false
-  
+  - if [[ $PYTEST_ARGS == *"--cov=hyperspy"* ]]; then
+      codecov;
+    fi
