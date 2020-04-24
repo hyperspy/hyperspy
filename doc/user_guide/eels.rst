@@ -199,6 +199,14 @@ image
 
     >>> m.multifit(kind='smart')
 
+.. NOTE::
+
+    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.         
+    The fitting procedure acts in iterative manner along the energy-loss-axis.
+    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit. 
+    Then it only activates the the first two, fits, and repeats this until all edges are fitted simultanously.
+
+    Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
 
 Print the result of the fit
 

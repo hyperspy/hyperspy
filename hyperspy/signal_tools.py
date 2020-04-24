@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -943,6 +943,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Offset',
         'Polynomial',
         'Power Law',
+        'Exponential',
         'SkewNormal',
         'Voigt',
         default='Power Law')
@@ -1006,6 +1007,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line_range = 'full'
         elif self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
+            self.bg_line_range = 'from_left_range'
+        elif self.background_type == 'Exponential':
+            self.background_estimator = components1d.Exponential()
             self.bg_line_range = 'from_left_range'
         elif self.background_type == 'SkewNormal':
             self.background_estimator = components1d.SkewNormal()

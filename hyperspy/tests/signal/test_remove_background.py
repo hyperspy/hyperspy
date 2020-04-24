@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,12 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import gc
 import numpy as np
 import pytest
 
 from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
+
+
+def teardown_module(module):
+    """ Run a garbage collection cycle at the end of the test of this module
+    to avoid any memory issue when continuing running the test suite.
+    """
+    gc.collect()
 
 
 @lazifyTestClass
@@ -200,6 +208,35 @@ class TestRemoveBackground1DVoigt:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Voigt',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+
+@lazifyTestClass
+class TestRemoveBackground1DExponential:
+
+    def setup_method(self, method):
+        exponential = components1d.Exponential()
+        exponential.A.value = 12500.
+        exponential.tau.value = 168.
+        self.signal = signals.Signal1D(
+            exponential.function(np.arange(100, 200, 0.02)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+        self.atol = 0.04 * abs(self.signal.data).max()
+
+    def test_background_remove_exponential(self):
+        # Fast is not accurate
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Exponential',
+            show_progressbar=None)
+        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=self.atol)
+
+    def test_background_remove_exponential_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Exponential',
             fast=False)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 

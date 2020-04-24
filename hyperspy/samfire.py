@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -629,3 +629,7 @@ class Samfire:
         ans += self.model.signal.metadata.General.title
         ans += u"'>"
         return ans
+
+    def stop(self):
+        if hasattr(self, "pool") and self.pool is not None:
+            self.pool.stop()

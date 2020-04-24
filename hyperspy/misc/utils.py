@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -793,7 +793,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    return isinstance(obj, collections.Iterable)
+    return isinstance(obj, collections.abc.Iterable)
 
 
 def ordinal(value):
@@ -1140,7 +1140,7 @@ def multiply(iterable):
 
 
 def iterable_not_string(thing):
-    return isinstance(thing, collections.Iterable) and \
+    return isinstance(thing, collections.abc.Iterable) and \
         not isinstance(thing, str)
 
 
