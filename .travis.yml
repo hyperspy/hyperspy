@@ -4,7 +4,7 @@ language: python
 env:
   global:
     - ENV=pip
-    - PIP_SELECTOR="all, tests, coverage"
+    - PIP_SELECTOR="all, tests"
     - PYTEST_ARGS="--pyargs hyperspy"
 
 matrix:
@@ -13,7 +13,7 @@ matrix:
     python: 3.8
   - name: "Linux, 3.7, pip"
     python: 3.7
-    env: PYTEST_ARGS="--pyargs hyperspy --cov=hyperspy"
+    env: PYTEST_ARGS=--pyargs hyperspy --cov=hyperspy" PIP_SELECTOR="all, tests, coverage"
   - name: "Linux, 3.6, pip"
     python: 3.6
   - name: "Linux, 3.7, pip, minimum requirement"
