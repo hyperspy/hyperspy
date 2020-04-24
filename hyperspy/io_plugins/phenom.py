@@ -519,13 +519,13 @@ class ElidReader:
             for bin in range(bins):
                 data[i, bin] = self._read_varuint32()
         if has_variable_real_time:
-            real_time_values = [self._read_float64() for _ in range(size)]
+            eds_metadata['real_time_values'] = [self._read_float64() for _ in range(size)]
         else:
-            real_time_values = [self._read_float64()] * size
+            eds_metadata['real_time_values'] = [self._read_float64()] * size
         if has_variable_live_time:
-            live_time_values = [self._read_float64() for _ in range(size)]
+            eds_metadata['live_time_values'] = [self._read_float64() for _ in range(size)]
         else:
-            live_time_values = [self._read_float64()] * size
+            eds_metadata['live_time_values'] = [self._read_float64()] * size
         eds_metadata['high_accuracy_quantification'] = self._read_bool()
         original_metadata = copy.deepcopy(am)
         original_metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
@@ -556,13 +556,21 @@ class ElidReader:
                 for bin in range(bins):
                     data[y, x, bin] = self._read_varuint32()
         if has_variable_real_time:
-            real_time_values = [self._read_float64() for _ in range(width * height)]
+            real_time_values = np.empty([height, width], dtype=np.float64)
+            for y in range(height):
+                for x in range(width):
+                    real_time_values[y, x] = self._read_float64()
+            eds_metadata['real_time_values'] = real_time_values
         else:
-            real_time_values = [self._read_float64()] * width * height
+            eds_metadata['real_time_values'] = np.full([height, width], self._read_float64())
         if has_variable_live_time:
-            live_time_values = [self._read_float64() for _ in range(width * height)]
+            live_time_values = np.empty([height, width], dtype=np.float64)
+            for y in range(height):
+                for x in range(width):
+                    live_time_values[y, x] = self._read_float64()
+            eds_metadata['live_time_values'] = live_time_values
         else:
-            live_time_values = [self._read_float64()] * width * height
+            eds_metadata['live_time_values'] = np.full([height, width], self._read_float64())
         return self._make_map_spectrum_dict(original_metadata, om['acquisition']['scan']['detectors']['EDS']['offset'], om['acquisition']['scan']['detectors']['EDS']['dispersion'], data, '{}, Map {}'.format(label, om['acquisition']['scan']['detectors']['EDS']['order_nr']))
 
     def _read_DifferenceAnalysis(self, label, am):
