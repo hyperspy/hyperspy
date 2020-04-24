@@ -36,7 +36,7 @@ script:
   - which python
   - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
   - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
-      cd doc && make html;
+      cd doc && sphinx-build -nWT -b dummy source build;
     else
       echo "py.test arguments $PYTEST_ARGS";
       pytest $PYTEST_ARGS;
