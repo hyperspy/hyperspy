@@ -4,7 +4,7 @@ language: python
 env:
   global:
     - ENV=pip
-    - PIP_SELECTOR="all, tests"
+    - PIP_SELECTOR="all, tests, coverage"
     - PYTEST_ARGS="--pyargs hyperspy"
 
 matrix:
@@ -13,19 +13,19 @@ matrix:
     python: 3.8
   - name: "Linux, 3.7, pip"
     python: 3.7
-    env: PIP_SELECTOR="all, tests, coverage"; PYTEST_ARGS=$PYTEST_ARGS" --cov=hyperspy"
+    env: PYTEST_ARGS="--pyargs hyperspy --cov=hyperspy"
   - name: "Linux, 3.6, pip"
     python: 3.6
   - name: "Linux, 3.7, pip, minimum requirement"
-    env: export PIP_SELECTOR="tests"
+    env: PIP_SELECTOR="tests"
     python: 3.7
   - name: "Linux, 3.7, pip, doc"
-    env: export PIP_SELECTOR="build-doc"
+    env: PIP_SELECTOR="all, build-doc"
     python: 3.7
 
 before_install:
   # Clone the ci-scripts repo to get the ci setup scripts
-  - git clone --depth 1 git://github.com/ericpre/ci-scripts.git
+  - git clone --depth 1 git://github.com/hyperspy/ci-scripts.git
   - source ci-scripts/travis/setup_travis.sh
 
 install:
@@ -35,8 +35,14 @@ install:
 script:
   - which python
   - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
-  - if [ $PIP_SELECTOR == "build-doc" ]; then
+  - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
+      echo "py.test arguments $PYTEST_ARGS";
       pytest $PYTEST_ARGS;
+    fi
+
+after_success:
+  - if [[ $PYTEST_ARGS == *"--cov=hyperspy"* ]]; then
+      codecov;
     fi

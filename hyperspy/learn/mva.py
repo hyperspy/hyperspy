@@ -209,7 +209,7 @@ class MVA():
         # set the output target (peak results or not?)
         target = LearningResults()
 
-        if algorithm == 'mlpca':
+        if algorithm in ['mlpca', 'fast_mlpca']:
             if normalize_poissonian_noise is True:
                 _logger.warning(
                     "It makes no sense to do normalize_poissonian_noise with "
@@ -384,9 +384,10 @@ class MVA():
                     fast = False
                 else:
                     fast = True
-                U, S, V, Sobj, ErrFlag = mlpca(
+                U, S, V, Sobj = mlpca(
                     dc[:, signal_mask][navigation_mask, :],
-                    var_array, output_dimension, fast=fast)
+                    var_array, output_dimension=output_dimension,
+                    fast=fast, **kwargs)
                 loadings = U * S
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
