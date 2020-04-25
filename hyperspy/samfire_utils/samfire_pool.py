@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -410,6 +410,7 @@ class SamfirePool(ParallelPool):
             for queue in self.workers.values():
                 queue.put('stop_listening')
             self.pool.close()
-            # self.pool.terminate()
+            self.pool.terminate()
+            self.pool.join()
         elif self.is_ipyparallel:
             self.pool.client.clear()

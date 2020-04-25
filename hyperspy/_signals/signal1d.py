@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -1051,7 +1051,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
                     show_progressbar=show_progressbar)
         else:
             model.set_signal_range(signal_range[0], signal_range[1])
-            model.multifit(show_progressbar=show_progressbar)
+            # HyperSpy 2.0: remove setting iterpath='serpentine'
+            model.multifit(show_progressbar=show_progressbar,
+                           iterpath='serpentine')
             model.reset_signal_range()
             result = self - model.as_signal(show_progressbar=show_progressbar)
 
@@ -1087,7 +1089,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         background_type : str
             The type of component which should be used to fit the background.
             Possible components:  Gaussian, Lorentzian, Offset, Polynomial,
-             PowerLaw, SkewNormal, Voigt.
+             PowerLaw, Exponential, SkewNormal, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
@@ -1154,6 +1156,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                         polynomial_order, legacy=False)
             elif background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
+            elif background_type == 'Exponential':
+                background_estimator = components1d.Exponential()
             elif background_type in ('SkewNormal', 'Skew Normal'):
                 background_estimator = components1d.SkewNormal()
             elif background_type == 'Voigt':

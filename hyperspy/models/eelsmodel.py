@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -354,7 +354,14 @@ class EELSModel(Model1D):
                              '\'%s\' provided.' % kind)
 
     def smart_fit(self, start_energy=None, **kwargs):
-        """ Fits everything in a cascade style.
+        """ Fits EELS edges in a cascade style.
+        The fitting procedure acts in iterative manner along the energy-loss-axis.
+        First it fits only the background up to the first edge.
+        It continues by deactivating all edges except the first one, then performs the fit. 
+        Then it only activates the the first two, fits, and repeats this until all 
+        edges are fitted simultanously.
+
+        Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
 
         Parameters
         ----------
@@ -505,6 +512,7 @@ class EELSModel(Model1D):
         last_index = len(self._active_edges) - 1    # Last edge index
         i = 1
         twins = []
+        # find twins
         while edgenumber + i <= last_index and (
                 active_edges[edgenumber + i].intensity.twin is not None or
                 active_edges[edgenumber + i].active is False):

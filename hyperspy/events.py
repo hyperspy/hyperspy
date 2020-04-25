@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import inspect
 import collections
 from contextlib import contextmanager
@@ -475,7 +493,7 @@ class EventSuppressor(object):
             self._cms.append(cm)
 
     def _is_tuple_target(self, candidate):
-        v = (isinstance(candidate, collections.Iterable) and
+        v = (isinstance(candidate, collections.abc.Iterable) and
              len(candidate) == 2 and
              isinstance(candidate[0], (Event, Events)) and
              callable(candidate[1]))
@@ -499,13 +517,13 @@ class EventSuppressor(object):
          - Any iterable collection of the above target types
         """
         # Remove useless layers of iterables:
-        while (isinstance(to_suppress, collections.Iterable) and
+        while (isinstance(to_suppress, collections.abc.Iterable) and
                 len(to_suppress) == 1):
             to_suppress = to_suppress[0]
         # If single target passed, add directly:
         if self._is_target(to_suppress):
             self._add_single(to_suppress)
-        elif isinstance(to_suppress, collections.Iterable):
+        elif isinstance(to_suppress, collections.abc.Iterable):
             if len(to_suppress) == 0:
                 raise ValueError("No viable suppression targets added!")
             for t in to_suppress:
