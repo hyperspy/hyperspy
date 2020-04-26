@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -48,7 +48,7 @@ class TestExample1_12():
     def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
-            "hdf5_files","example1_v1.2.hdf5"),preferred_format="Nexus",
+            "hdf5_files","example1_v1.2.hdf5"),file_format="Nexus",
              nxdata_only=False)
    
     def test_filename(self):
@@ -68,7 +68,7 @@ class TestExample1_10():
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.0.hdf5"),preferred_format="Nexus",
+            "example1_v1.0.hdf5"),file_format="Nexus",
             nxdata_only=False)
 
 
@@ -78,7 +78,7 @@ class TestExample1_11():
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.1.hdf5"),preferred_format="Nexus",nxdata_only=False)
+            "example1_v1.1.hdf5"),file_format="Nexus",nxdata_only=False)
 
 
 @pytest.fixture()
@@ -101,26 +101,9 @@ class TestSavingMetadataContainers:
         s.save(tmpfilepath)
         l = load(tmpfilepath)
         assert isinstance(l.original_metadata.attrs.test1, float)
-        assert isinstance(l.original_metadata.attrs.test1, float)
         assert isinstance(l.original_metadata.attrs.test2, float)
+        assert isinstance(l.original_metadata.attrs.test3, float)
         assert l.original_metadata.attrs.test2 == 54.0
-
-#
-#    def test_general_metadata(self, tmpfilepath):
-#        s = self.s
-#        notes = "Dummy notes"
-#        authors = "Author 1, Author 2"
-#        doi = "doi"
-#        s.original_metadata.General.notes = notes
-#        s.metadata.General.authors = authors
-#        s.metadata.General.doi = doi
-#        #print(s.metadata)
-#        s.save(tmpfilepath)
-#        l = load(tmpfilepath)
-#        assert l.original_metadata.hyperspy_metadata.General.notes == notes
-#        assert l.original_metadata.hyperspy_metadata.General.authors == authors
-#        assert l.original_metadata.hyperspy_metadata.General.doi == doi
-
 #
 # read 3 varieties of nexus file
 #
@@ -154,7 +137,7 @@ def test_preffered_format_rgba16():
     s = load(os.path.join(
         my_path,
         "hdf5_files",
-        "test_rgba16.hdf5"),preferred_format="Nexus",nxdata_only=False)
+        "test_rgba16.hdf5"),file_format="Nexus",nxdata_only=False)
     data = np.load(os.path.join(
         my_path,
         "npy_files",

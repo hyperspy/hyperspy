@@ -52,7 +52,7 @@ def load(filenames=None,
          new_axis_name="stack_element",
          lazy=False,
          convert_units=False,
-         preferred_format=None,
+         file_format=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure.
@@ -166,6 +166,10 @@ def load(filenames=None,
         acquisition stopped before the end: if True, load only the acquired
         data. If False, fill empty data with zeros. Default is False and this
         default value will change to True in version 2.0.
+    file_format : None or string (default, None)
+        Specify which io_plugin to use in cases where there are multiple
+        readers possible for a given extension. E.g. hdf5 can be opened with
+        hspy, Nexus or USID io_plugin but the internal format will vary 
 
 
     Returns
@@ -231,7 +235,7 @@ def load(filenames=None,
             # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename, 
-                                        preferred_format=preferred_format,
+                                        file_format=file_format,
                                         lazy=lazy,
                                        **kwds)
                 if i == 0:
@@ -280,7 +284,7 @@ def load(filenames=None,
         else:
             # No stack, so simply we load all signals in all files separately
             objects = [load_single_file(filename, lazy=lazy,
-                                        preferred_format=preferred_format,
+                                        file_format=file_format,
                                         **kwds)
                        for filename in filenames]
 
@@ -289,7 +293,7 @@ def load(filenames=None,
     return objects
 
 
-def load_single_file(filename,preferred_format=None, **kwds):
+def load_single_file(filename,file_format=None, **kwds):
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
@@ -300,15 +304,20 @@ def load_single_file(filename,preferred_format=None, **kwds):
 
     filename : string
         File name (including the extension)
+    file_format : string (default, None)
+        Specify which io_plugin to use in cases where there are multiple
+        readers possible for a given extension. E.g. hdf5 can be opened with
+        hspy, Nexus or USID io_plugin but the internal format will vary 
+        
 
     """
     extension = os.path.splitext(filename)[1][1:]
     i = 0
     
-    if preferred_format:
+    if file_format:
         for index,plugin in enumerate(io_plugins):
            if extension.lower() in plugin.file_extensions and \
-                preferred_format.lower() in plugin.format_name.lower():
+                file_format.lower() in plugin.format_name.lower():
                i=index
     else:
         while extension.lower() not in io_plugins[i].file_extensions and \
@@ -506,7 +515,34 @@ def dict2signal(signal_dict, lazy=False):
     return signal
 
 
-def save(filename, signal, preferred_format=None,overwrite=None, **kwds):
+def save(filename, signal, file_format=None,overwrite=None, **kwds):
+    """
+    Save hyperspy signal to a file.
+
+    A list of plugins supporting file saving can be found here: 
+    http://hyperspy.org/hyperspy-doc/current/user_guide/io.html#supported-formats
+
+    Any extra keyword is passed to the corresponding save method in the
+    io_plugin. 
+    For available options see their individual documentation.
+
+    Parameters
+    ----------
+    filename :  None or str
+        The filename to save the signal to. 
+    signal :  Hyperspy signal
+        The signal to be saved to file     
+    file_format : None or string (default, None)
+        Specify which io_plugin to use in cases where there are multiple
+        readers possible for a given extension. E.g. hdf5 can be opened with
+        hspy, Nexus or USID io_plugin but the internal format will vary 
+    overwrite : None or Bool (default, None)
+        If None and a file exists the user will be prompted to on whether to 
+        overwrite. If False and a file exists the file will not be written.
+        If True and a file exists the file will be overwritten without 
+        prompting
+    
+    """
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
         extension = "hspy"
@@ -514,8 +550,8 @@ def save(filename, signal, preferred_format=None,overwrite=None, **kwds):
     writer = None
     for plugin in io_plugins:
         if extension.lower() in plugin.file_extensions:
-            if preferred_format:
-                if preferred_format in plugin.format_name:
+            if file_format:
+                if file_format in plugin.format_name:
                     writer = plugin
                     break
             else:
