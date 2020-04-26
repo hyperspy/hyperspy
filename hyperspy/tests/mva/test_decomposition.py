@@ -270,13 +270,11 @@ class TestPrintInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(np.random.random((20, 100)))
 
-    def test_decomposition(self, capfd):
-        # Not testing MLPCA, takes too long
-        for algorithm in ["svd", "fast_svd"]:
-            print(algorithm)
-            self.s.decomposition(algorithm=algorithm, output_dimension=2)
-            captured = capfd.readouterr()
-            assert "Decomposition info:" in captured.out
+    @pytest.mark.parametrize("algorithm", ["svd", "fast_svd", "mlpca", "fast_mlpca"])
+    def test_decomposition(self, algorithm, capfd):
+        self.s.decomposition(algorithm=algorithm, output_dimension=2)
+        captured = capfd.readouterr()
+        assert "Decomposition info:" in captured.out
 
     # Warning filter can be removed after scikit-learn >= 0.22
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
@@ -292,13 +290,10 @@ class TestPrintInfo:
             assert "scikit-learn estimator:" in captured.out
 
     def test_decomposition_no_print(self, capfd):
-        # Not testing MLPCA, takes too long
-        for algorithm in ["svd", "fast_svd"]:
-            print(algorithm)
-            self.s.decomposition(algorithm=algorithm, output_dimension=2,
-                                 print_info=False)
-            captured = capfd.readouterr()
-            assert "Decomposition info:" not in captured.out
+        self.s.decomposition(algorithm="svd", output_dimension=2,
+                             print_info=False)
+        captured = capfd.readouterr()
+        assert "Decomposition info:" not in captured.out
 
 
 class TestReturnInfo:
@@ -306,12 +301,10 @@ class TestReturnInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(np.random.random((20, 100)))
 
-    def test_decomposition_not_supported(self):
-        # Not testing MLPCA, takes too long
-        for algorithm in ["svd", "fast_svd"]:
-            print(algorithm)
-            assert self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=2) is None
+    @pytest.mark.parametrize("algorithm", ["svd", "fast_svd", "mlpca", "fast_mlpca"])
+    def test_decomposition_not_supported(self, algorithm):
+        assert self.s.decomposition(algorithm=algorithm, return_info=True,
+                                    output_dimension=2) is None
 
     # Warning filter can be removed after scikit-learn >= 0.22
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
@@ -341,7 +334,7 @@ class TestReturnInfo:
                 return_info=False,
                 output_dimension=2) is None
         for algorithm in ["sklearn_pca", "nmf",
-                          "sparse_pca", "mini_batch_sparse_pca", ]:
+                          "sparse_pca", "mini_batch_sparse_pca"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,

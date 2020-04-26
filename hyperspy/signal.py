@@ -3411,7 +3411,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shift=False, apodization=False, **kwargs):
+    def fft(self, shift=False, apodization=False, real_fft_only=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3431,6 +3431,9 @@ class BaseSignal(FancySlicing,
             If ``True`` or ``'hann'``, applies a Hann window.
             If ``'hamming'`` or ``'tukey'``, applies Hamming or Tukey
             windows, respectively (default is ``False``).
+        real_fft_only : bool, default False
+            If ``True`` and data is real-valued, uses :py:func:`numpy.fft.rfftn`
+            instead of :py:func:`numpy.fft.fftn`
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.fftn`
 
@@ -3465,20 +3468,33 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+
+        use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
+
         if isinstance(self.data, da.Array):
+            if use_real_fft:
+                fft_f = da.fft.rfftn
+            else:
+                fft_f = da.fft.fftn
+
             if shift:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    da.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
+                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
-                    da.fft.fftn(self.data, axes=axes, **kwargs))
+                    fft_f(self.data, axes=axes, **kwargs))
         else:
+            if use_real_fft:
+                fft_f = np.fft.rfftn
+            else:
+                fft_f = np.fft.fftn
+
             if shift:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    np.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
+                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
-                    np.fft.fftn(self.data, axes=axes, **kwargs))
+                    fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
@@ -3500,7 +3516,7 @@ class BaseSignal(FancySlicing,
                 axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shift=None, **kwargs):
+    def ifft(self, shift=None, return_real=True, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3517,6 +3533,9 @@ class BaseSignal(FancySlicing,
             If ``True``, the origin of the FFT will be shifted to the centre.
             If ``False``, the origin will be kept at (0, 0)
             (default is ``None``).
+        return_real : bool, default True
+            If ``True``, returns only the real part of the inverse FFT.
+            If ``False``, returns all parts.
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.ifftn`
 
@@ -3566,7 +3585,9 @@ class BaseSignal(FancySlicing,
             im_ifft.metadata.General.title)
         if im_ifft.metadata.has_item('Signal.FFT'):
             del im_ifft.metadata.Signal.FFT
-        im_ifft = im_ifft.real
+
+        if return_real:
+            im_ifft = im_ifft.real
 
         ureg = UnitRegistry()
         for axis in im_ifft.axes_manager.signal_axes:
@@ -4988,7 +5009,7 @@ class BaseSignal(FancySlicing,
         ----
         This method uses :py:func:`numpy.random.poisson`
         (or :py:func:`dask.array.random.poisson` for lazy signals) to
-        generate the Gaussian noise. In order to seed it,
+        generate the Poissonian noise. In order to seed it,
         you must use :py:func:`numpy.random.seed`.
 
         """

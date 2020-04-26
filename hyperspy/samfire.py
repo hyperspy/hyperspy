@@ -629,3 +629,7 @@ class Samfire:
         ans += self.model.signal.metadata.General.title
         ans += u"'>"
         return ans
+
+    def stop(self):
+        if hasattr(self, "pool") and self.pool is not None:
+            self.pool.stop()

@@ -26,7 +26,7 @@ from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.math_tools import symmetrize, antisymmetrize
+from hyperspy.misc.math_tools import symmetrize, antisymmetrize, optimal_fft_size
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
@@ -80,7 +80,7 @@ def sobel_filter(im):
     return sob
 
 
-def fft_correlation(in1, in2, normalize=False):
+def fft_correlation(in1, in2, normalize=False, real_only=False):
     """Correlation of two N-dimensional arrays using FFT.
 
     Adapted from scipy's fftconvolve.
@@ -88,20 +88,36 @@ def fft_correlation(in1, in2, normalize=False):
     Parameters
     ----------
     in1, in2 : array
-    normalize: bool
-        If True performs phase correlation
+        Input arrays to convolve.
+    normalize: bool, default False
+        If True performs phase correlation.
+    real_only : bool, default False
+        If True, and in1 and in2 are real-valued inputs, uses
+        rfft instead of fft for approx. 2x speed-up.
 
     """
     s1 = np.array(in1.shape)
     s2 = np.array(in2.shape)
     size = s1 + s2 - 1
-    # Use 2**n-sized FFT
-    fsize = (2 ** np.ceil(np.log2(size))).astype("int")
-    fprod = np.fft.fftn(in1, fsize)
-    fprod *= np.fft.fftn(in2, fsize).conjugate()
+
+    # Calculate optimal FFT size
+    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
+    fsize = [optimal_fft_size(a, not complex_result) for a in size]
+
+    # For real-valued inputs, rfftn is ~2x faster than fftn
+    if not complex_result and real_only:
+        fft_f, ifft_f = np.fft.rfftn, np.fft.irfftn
+    else:
+        fft_f, ifft_f = np.fft.fftn, np.fft.ifftn
+
+    fprod = fft_f(in1, fsize)
+    fprod *= fft_f(in2, fsize).conjugate()
+
     if normalize is True:
         fprod = np.nan_to_num(fprod / np.absolute(fprod))
-    ret = np.fft.ifftn(fprod).real.copy()
+
+    ret = ifft_f(fprod).real.copy()
+
     return ret, fprod
 
 
@@ -188,11 +204,19 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         if hanning is True:
             im *= hanning2d(*im.shape)
         if medfilter is True:
-            im[:] = sp.signal.medfilt(im)
+            # This is faster than sp.signal.med_filt,
+            # which was the previous implementation.
+            # The size is fixed at 3 to be consistent
+            # with the previous implementation.
+            im[:] = sp.ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
+
+    # If sub-pixel alignment not being done, use faster real-valued fft
+    real_only = (sub_pixel_factor == 1)
+
     phase_correlation, image_product = fft_correlation(
-        ref, image, normalize=normalize_corr)
+        ref, image, normalize=normalize_corr, real_only=real_only)
 
     # Estimate the shift by getting the coordinates of the maximum
     argmax = np.unravel_index(np.argmax(phase_correlation),
