@@ -259,14 +259,17 @@ def test_plot_with_non_finite_value():
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
 
 
-@pytest.mark.parametrize("autoscale", ["x", "y", True, False])
+@pytest.mark.parametrize("intensity_autoscale", [True, False])
+@pytest.mark.parametrize("axes_autoscale", [True, False])
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_autoscale(autoscale):
-
+def test_plot_autoscale(intensity_autoscale, axes_autoscale):
     s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal(
         add_powerlaw=True, add_noise=False)
-    s.plot(autoscale=autoscale)
+    s.plot(intensity_autoscale=intensity_autoscale,
+           axes_autoscale=axes_autoscale)
+    print("axes_autoscale:", axes_autoscale)
+    print("intensity_autoscale:", intensity_autoscale)
     ax = s._plot.signal_plot.ax
     ax.set_xlim(500.0, 700.0)
     ax.set_ylim(-10.0, 20.0)

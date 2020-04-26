@@ -59,20 +59,18 @@ class MPL_HyperExplorer(object):
             for axis in self.axes_manager.signal_axes:
                 axis.offset = -axis.high_value / 2.
 
-    def plot_navigator(self,
-                       colorbar=True,
-                       scalebar=True,
-                       scalebar_color="white",
-                       axes_ticks=None,
-                       saturated_pixels=None,
-                       vmin=None,
-                       vmax=None,
-                       autoscale=True,
-                       no_nans=False,
-                       centre_colormap="auto",
-                       title=None,
-                       min_aspect=0.1,
-                       **kwds):
+    def plot_navigator(self, title=None, **kwargs):
+        """
+        Parameters
+        ----------
+        title : str, optional
+            Title of the navigator. The default is None.
+        **kwargs : dict
+            The kwargs are passed to plot method of
+            :py:meth:`hyperspy.drawing.image.ImagePlot` or
+            :py:meth:`hyperspy.drawing.signal1d.Signal1DLine`.
+
+        """
         if self.axes_manager.navigation_dimension == 0:
             return
         if self.navigator_data_function is None:
@@ -95,12 +93,20 @@ class MPL_HyperExplorer(object):
             sf.axis = axis
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
+
             # Create a line to the left axis with the default
             # indices
             sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
+
+            # Set all kwargs value to the image figure before passing the rest
+            # of the kwargs to plot method of the image figure
+            for key, value in list(kwargs.items()):
+                if hasattr(sl, key):
+                    setattr(sl, key, kwargs.pop(key))
             sl.set_line_properties(color='blue',
                                    type='step')
+
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()
@@ -114,19 +120,16 @@ class MPL_HyperExplorer(object):
                                 sf.update), [])
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
-            imf = image.ImagePlot()
+            # Create the figure
+            imf = image.ImagePlot(title=title)
             imf.data_function = self.navigator_data_function
-            imf.colorbar = colorbar
-            imf.scalebar = scalebar
-            imf.scalebar_color = scalebar_color
-            imf.axes_ticks = axes_ticks
-            imf.saturated_pixels = saturated_pixels
-            imf.vmin = vmin
-            imf.vmax = vmax
-            imf.autoscale = autoscale
-            imf.no_nans = no_nans
-            imf.centre_colormap = centre_colormap
-            imf.min_aspect = min_aspect
+
+            # Set all kwargs value to the image figure before passing the rest
+            # of the kwargs to plot method of the image figure
+            for key, value in list(kwargs.items()):
+                if hasattr(imf, key):
+                    setattr(imf, key, kwargs.pop(key))
+
             # Navigator labels
             if self.axes_manager.navigation_dimension == 1:
                 imf.yaxis = self.axes_manager.navigation_axes[0]
@@ -142,10 +145,9 @@ class MPL_HyperExplorer(object):
                             partial(axis.events.index_changed.disconnect,
                                     imf.update), [])
 
-            imf.title = title
-            if "cmap" not in kwds.keys() or kwds['cmap'] is None:
-                kwds["cmap"] = preferences.Plot.cmap_navigator
-            imf.plot(**kwds)
+            if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
+                kwargs["cmap"] = preferences.Plot.cmap_navigator
+            imf.plot(**kwargs)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 

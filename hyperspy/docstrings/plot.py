@@ -98,31 +98,25 @@ PLOT1D_DOCSTRING = \
             (default value is ``'auto'``).
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
-        autoscale : {bool, 'x', 'y'}
-            If True, the 'x' and 'y' limits are reset to their maxima when the
-            the navigation indices or data are changed. If 'x' or 'y', only the
-            limit of the 'x' and 'y' (intensity) axes are reset, respectively.
-            If False, the limit of the axes are not reset automotically.
+        intensity_autoscale : bool
+            If True, the intensity ('y') limits are reset to their extrema when
+            the navigation indices or data are changed. Default is True.
+        axes_autoscale : bool
+            If True, the axis ('x') limits are reset to their maxima when the
+            the navigation indices or data are changed. If False, the limit of
+            the axes are not reset automotically. Use ``intensity_autoscale``
+            to reset automatically the intensity ('y') limits. Default is
+            False.
         """
 
 
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
-        scalebar : bool, optional
-            If True and the units and scale of the x and y axes are the same a
-            scale bar is plotted.
-        scalebar_color : str, optional
-            A valid MPL color string; will be used as the scalebar color.
-        axes_ticks : {None, bool}, optional
-            If True, plot the axes ticks. If None axes_ticks are only
-            plotted when the scale bar is not plotted. If False the axes ticks
-            are never plotted.
-        axes_off : {bool}
-            Default is False.
-        autoscale : bool
-            If True, the extent of the image is reset automatically to its
-            maximum when the navigation indices or the data are changed.
+        intensity_autoscale : bool
+            If True, the intensity limits of the image are reset to the
+            estimated value defined by vmin, vmax, when the navigation indices
+            or data are changed. Default is True.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
@@ -151,6 +145,22 @@ PLOT2D_DOCSTRING = \
             number of powers of base to use for each half of the linear range.
             See :py:class:`matplotlib.colors.SymLogNorm` for more details.
             Defaulf value is 0.1.
+        scalebar : bool, optional
+            If True and the units and scale of the x and y axes are the same a
+            scale bar is plotted.
+        scalebar_color : str, optional
+            A valid MPL color string; will be used as the scalebar color.
+        axes_ticks : {None, bool}, optional
+            If True, plot the axes ticks. If None axes_ticks are only
+            plotted when the scale bar is not plotted. If False the axes ticks
+            are never plotted.
+        axes_off : {bool}
+            Default is False.
+        axes_autoscale : bool
+            If True, the limits of the extent of the image are reset
+            automatically to their extrema when the navigation indices or the
+            data are changed. Use ``intensity_autoscale`` to reset
+            automatically the intensity limits of the image. Default is False.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}

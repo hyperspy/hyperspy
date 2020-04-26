@@ -204,13 +204,14 @@ class Signal1DLine(object):
         self.data_function_kwargs = {}
         self.axis = None
         self.axes_manager = None
-        self.auto_update = True
         self._plot_imag = False
         self.norm = 'linear'
 
         # Properties
+        self.auto_update = True
+        self.intensity_autoscale = True
+        self.axes_autoscale = False
         self.line = None
-        self.autoscale = 'y'
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
@@ -306,9 +307,16 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1, data_function_kwargs={}, norm='linear'):
+    def plot(self,
+             data=1,
+             data_function_kwargs={},
+             intensity_autoscale=True,
+             norm='linear',
+             axes_autoscale=True):
         self.data_function_kwargs = data_function_kwargs
         self.norm = norm
+        self.intensity_autoscale = intensity_autoscale
+        self.axes_autoscale = axes_autoscale
         data = self._get_data()
         if self.line is not None:
             self.line.remove()
@@ -377,10 +385,10 @@ class Signal1DLine(object):
             self.line.set_data(self.axis.axis, ydata)
         else:
             self.line.set_ydata(ydata)
-        if self.autoscale == 'x' or self.autoscale is True:
+        if self.axes_autoscale is True:
             self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
 
-        if self.autoscale == 'y' or self.autoscale is True:
+        if self.intensity_autoscale is True:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())

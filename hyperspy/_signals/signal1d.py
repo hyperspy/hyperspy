@@ -1492,18 +1492,24 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     def plot(self,
              navigator="auto",
-             axes_manager=None,
              plot_markers=True,
-             autoscale='y',
+             intensity_autoscale=True,
+             norm="auto",
+             axes_autoscale=False,
+             axes_manager=None,
+             navigator_kwds={},
              **kwargs):
         """%s
         %s
         %s
         """
         super().plot(navigator=navigator,
-                     axes_manager=axes_manager,
                      plot_markers=plot_markers,
-                     autoscale=autoscale,
+                     intensity_autoscale=intensity_autoscale,
+                     norm=norm,
+                     axes_autoscale=axes_autoscale,
+                     axes_manager=axes_manager,
+                     navigator_kwds=navigator_kwds,
                      **kwargs)
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT1D_DOCSTRING)

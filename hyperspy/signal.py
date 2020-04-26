@@ -3914,7 +3914,7 @@ class BaseSignal(FancySlicing,
         """
         # Sepate ndkwargs
         ndkwargs = ()
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 

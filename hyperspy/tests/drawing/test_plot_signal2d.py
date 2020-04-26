@@ -514,17 +514,32 @@ def test_plot_navigator_colormap(cmap):
     return s._plot.navigator_plot.figure
 
 
-@pytest.mark.parametrize("autoscale", [True, False])
+intensity_autoscale = False
+axes_autoscale = False
+
+@pytest.mark.parametrize("intensity_autoscale", [True, False])
+@pytest.mark.parametrize("axes_autoscale", [True, False])
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_autoscale(autoscale):
+def test_plot_autoscale(intensity_autoscale, axes_autoscale):
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    s.plot(autoscale=autoscale)
-    ax = s._plot.signal_plot.ax
+    s.plot(intensity_autoscale=intensity_autoscale,
+           axes_autoscale=axes_autoscale,
+           axes_ticks=True)
+    print("axes_autoscale:", axes_autoscale)
+    print("intensity_autoscale:", intensity_autoscale)
+    imf = s._plot.signal_plot
+    ax = imf.ax
     extend = [5.0, 10.0, 3., 10.0]
     ax.images[0].set_extent(extend)
     ax.set_xlim(5.0, 10.0)
     ax.set_ylim(3., 10.0)
+    ax.images[0].norm.vmin = imf.vmin = 10
+    ax.images[0].norm.vmax = imf.vmax = 50
+
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    # Because we are hacking the vmin, vmax with matplotlib, we need to update
+    # colorbar too
+    imf._colorbar.draw_all()
 
     return s._plot.signal_plot.figure

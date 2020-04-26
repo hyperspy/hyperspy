@@ -60,18 +60,39 @@ class ImagePlot(BlittedFigure):
 
     """ % PLOT2D_DOCSTRING
 
-    def __init__(self):
+    def __init__(self, title=""):
         super(ImagePlot, self).__init__()
         self.data_function = None
-        # Args to pass to `__call__`
         self.data_function_kwargs = {}
-        self.pixel_units = None
+
+        # Attribute matching the arguments of
+        # `hyperspy._signal.signal2d.signal2D.plot`
+        self.intensity_autoscale = True
+        self.saturated_pixels = None
+        self.norm = "auto"
+        self.vmin = None
+        self.vmax = None
+        self.gamma = 1.0
+        self.linthresh = 0.01
+        self.linscale = 0.1
+        self.scalebar = True
+        self.scalebar_color = "white"
+        self.axes_ticks = None
+        self.axes_off = False
+        self.axes_autoscale = True
+        self.axes_manager = None
+        self.no_nans = False
         self.colorbar = True
+        self.centre_colormap = "auto"
+        self.min_aspect = 0.1
+
+        # Other attributes
+        self.pixel_units = None
         self._colorbar = None
         self.quantity_label = ''
         self.figure = None
         self.ax = None
-        self.title = ''
+        self.title = title
         self._vmin_user = None
         self._vmax_user = None
         self._vmin_auto = None
@@ -81,26 +102,15 @@ class ImagePlot(BlittedFigure):
         self.plot_indices = True
         self._text = None
         self._text_position = (0, 1.05,)
-        self.axes_manager = None
-        self.axes_off = False
         self._aspect = 1
         self._extent = None
         self.xaxis = None
         self.yaxis = None
-        self.min_aspect = 0.1
-        self.saturated_pixels = None
         self.ax_markers = list()
-        self.scalebar_color = "white"
         self._user_scalebar = None
         self._auto_scalebar = False
         self._user_axes_ticks = None
         self._auto_axes_ticks = True
-        self.no_nans = False
-        self.centre_colormap = "auto"
-        self.norm = "auto"
-        self.gamma = 1.0
-        self.linthresh = 0.01
-        self.linscale = 0.1
         self._is_rgb = False
 
     @property
@@ -323,7 +333,26 @@ class ImagePlot(BlittedFigure):
                 axes_manager=self.axes_manager,
                 **self.data_function_kwargs)
 
-    def update(self, data_changed=True, **kwargs):
+    def update(self, data_changed=True, optimize_contrast=False, **kwargs):
+        """
+        Parameters
+        ----------
+        data_changed : bool, optional
+            Fetch and update the data to display. It can be used to avoid
+            unnecessarily reading of the data from disk with working with lazy
+            signal. The default is True.
+        optimize_contrast : bool, optional
+            Force automatic resetting of the intensity limits. The default is
+            False.
+        **kwargs : TYPE
+            The kwargs are passed to :py:func:`matplotlib.pyplot.imshow`.
+
+        Raises
+        ------
+        ValueError
+            When the selected ``norm`` is not valid or the data are not
+            compatible with the selected ``norm``.
+        """
         if data_changed:
             # When working with lazy signals the following may reread the data
             # from disk unnecessarily, for example when updating the image just
@@ -332,14 +361,13 @@ class ImagePlot(BlittedFigure):
             _logger.debug("Updating image slowly because `data_changed=True`")
             self._update_data()
         data = self._current_data
-        optimize_contrast = kwargs.pop("optimize_contrast", False)
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
             data = self._current_data = data
             self._is_rgb = True
         ims = self.ax.images
-        if self.autoscale:
+        if self.axes_autoscale:
             # update extent:
             self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
                             self.xaxis.axis[-1] + self.xaxis.scale / 2.,
@@ -382,9 +410,9 @@ class ImagePlot(BlittedFigure):
             self.ax.format_coord = format_coord
 
             old_vmin, old_vmax = self.vmin, self.vmax
-            self.optimize_contrast(data, optimize_contrast)
             # Use _vmin_auto and _vmax_auto if optimize_contrast is True
-            if optimize_contrast:
+            if optimize_contrast or self.intensity_autoscale:
+                self.optimize_contrast(data, optimize_contrast)
                 vmin, vmax = self._vmin_auto, self._vmax_auto
             else:
                 vmin, vmax = self.vmin, self.vmax
@@ -437,7 +465,7 @@ class ImagePlot(BlittedFigure):
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
-            if self.autoscale:
+            if self.axes_autoscale:
                 self.ax.set_xlim(self._extent[:2])
                 self.ax.set_ylim(self._extent[2:])
                 ims[0].set_extent(self._extent)
@@ -447,7 +475,6 @@ class ImagePlot(BlittedFigure):
                 ims[0].set_norm(norm)
                 ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar:
-                # ims[0].autoscale()
                 self._colorbar.draw_all()
                 self._colorbar.solids.set_animated(
                     self.figure.canvas.supports_blit

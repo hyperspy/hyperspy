@@ -73,7 +73,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self, autoscale='y', **kwargs):
+    def plot_signal(self, **kwargs):
         super().plot_signal()
         if self.signal_plot is not None:
             self.signal_plot.plot(**kwargs)
@@ -82,7 +82,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
-        sf.autoscale = autoscale
         sf.axis = self.axis
         if sf.ax is None:
             sf.create_axis()
@@ -100,7 +99,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # Create a line to the left axis with the default indices
         sl = signal1d.Signal1DLine()
         is_complex = np.iscomplexobj(self.signal_data_function())
-        sl.autoscale = autoscale if not is_complex else False
         sl.data_function = self.signal_data_function
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
@@ -115,7 +113,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # default coordinates
         if is_complex:
             sl = signal1d.Signal1DLine()
-            sl.autoscale = autoscale
             sl.data_function = self.signal_data_function
             sl.plot_coordinates = True
             sl._plot_imag = True
@@ -166,7 +163,9 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
         rl = signal1d.Signal1DLine()
-        rl.autoscale = self.signal_plot.autoscale
+        # TODO: improve this to make sure, we copy all relevant attribute
+        rl.intensity_autoscale = self.signal_plot.ax_lines[0].intensity_autoscale
+        rl.axes_autoscale = self.signal_plot.ax_lines[0].axes_autoscale
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')
