@@ -209,7 +209,7 @@ class MVA():
         # set the output target (peak results or not?)
         target = LearningResults()
 
-        if algorithm == 'mlpca':
+        if algorithm in ['mlpca', 'fast_mlpca']:
             if normalize_poissonian_noise is True:
                 _logger.warning(
                     "It makes no sense to do normalize_poissonian_noise with "
@@ -384,9 +384,10 @@ class MVA():
                     fast = False
                 else:
                     fast = True
-                U, S, V, Sobj, ErrFlag = mlpca(
+                U, S, V, Sobj = mlpca(
                     dc[:, signal_mask][navigation_mask, :],
-                    var_array, output_dimension, fast=fast)
+                    var_array, output_dimension=output_dimension,
+                    fast=fast, **kwargs)
                 loadings = U * S
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
@@ -1363,41 +1364,51 @@ class MVA():
         del self._data_before_treatments
 
     def _estimate_elbow_position(self, curve_values):
-        """
-        Estimate the elbow position of a scree plot curve
+        """Estimate the elbow position of a scree plot curve.
+
         Used to estimate the number of significant components in
-        a PCA variance ratio plot or other "elbow" type curves
+        a PCA variance ratio plot or other "elbow" type curves.
+
+        Find a line between first and last point on the scree plot.
+        With a classic elbow scree plot, this line more or less
+        defines a triangle. The elbow should be the point which
+        is the furthest distance from this line.
 
         Parameters
         ----------
-        curve_values : :class:`numpy.ndarray`
+        curve_values : numpy array
+            Explained variance ratio values that form the scree plot.
 
         Returns
         -------
         elbow position : int
             Index of the elbow position in the input array,
             as suggested in :ref:`[Satopää2011] <Satopää2011>`
+
         """
         maxpoints = min(20, len(curve_values) - 1)
-        # Find a line between first and last point
-        # With a classic elbow scree plot the line from first to last
-        # more or less defines a triangle
-        # The elbow should be the point which is the
-        # furthest distance from this line
 
-        y2 = np.log(curve_values[maxpoints])
-        x2 = maxpoints
-        y1 = np.log(curve_values[0])
+        # Clipping the curve_values from below with a v.small
+        # number avoids warnings below when taking np.log(0)
+        curve_values_adj = np.clip(curve_values, 1e-30, None)
+
         x1 = 0
-        # loop through the curve values and calculate
-        distance = np.zeros(maxpoints)
-        for i in range(maxpoints):
-            y0 = np.log(curve_values[i])
-            x0 = i
-            distance[i] = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) /\
-                np.math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        x2 = maxpoints
+
+        y1 = np.log(curve_values_adj[0])
+        y2 = np.log(curve_values_adj[maxpoints])
+
+        xs = np.arange(maxpoints)
+        ys = np.log(curve_values_adj[:maxpoints])
+
+        numer = np.abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
+        denom = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        distance = np.nan_to_num(numer / denom)
+
         # Point with the largest distance is the "elbow"
+        # (remember that np.argmax returns the FIRST instance)
         elbow_position = np.argmax(distance)
+
         return elbow_position
 
 
