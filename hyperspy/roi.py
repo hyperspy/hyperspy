@@ -49,6 +49,7 @@ from functools import partial
 
 import traits.api as t
 import numpy as np
+import dask.array as da
 
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -149,6 +150,41 @@ class BaseROI(t.HasTraits):
             else:
                 slices.append(slice(None))
         return tuple(slices)
+
+    def mask(self, signal, axes=None, outside=True):
+        """Masks inside or outside of a roi inline with some axes
+
+        Parameters
+        ----------
+        signal : Signal
+            The signal to mask with the ROI
+        out : Signal, default = None
+            If the 'out' argument is supplied, the sliced output will be put
+            into this instead of returning a Signal. See Signal.__getitem__()
+            for more details on 'out'.
+        axes : specification of axes to use, default = None
+            The axes argument specifies which axes the ROI will be applied on.
+            The items in the collection can be either of the following:
+
+            * a tuple of:
+
+              - DataAxis. These will not be checked with signal.axes_manager.
+              - anything that will index signal.axes_manager
+            * For any other value, it will check whether the navigation
+              space can fit the right number of axis, and use that if it
+              fits. If not, it will try the signal space.
+        """
+        ranges = self._get_ranges()
+        slices = self._make_slices(natax, axes,ranges)
+        if signal._lazy: # This is a little memory hungry
+            mask =
+            mask[slices] = True
+            signal.data = da.ma.masked_where(mask,signal.data)
+        else:
+            if not isinstance(signal.data, np.ma.masked_array):
+                asarray(signal)
+            signal.data[slices]=np.ma.masked
+        return roi
 
     def __call__(self, signal, out=None, axes=None):
         """Slice the signal according to the ROI, and return it.

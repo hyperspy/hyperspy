@@ -32,6 +32,7 @@ from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
 
+from  numpy.lib.mixins import NDArrayOperatorsMixin
 from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
@@ -1610,12 +1611,14 @@ class BaseSetMetadataItems(t.HasTraits):
 
 class BaseSignal(FancySlicing,
                  MVA,
-                 MVATools,):
-
+                 MVATools,
+                 ):
+    __array_priority___ = 2000
     _dtype = "real"
     _signal_dimension = -1
     _signal_type = ""
     _lazy = False
+
     _alias_signal_types = []
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
@@ -1921,8 +1924,11 @@ class BaseSignal(FancySlicing,
         else:
             return self.data
 
-    def __array_wrap__(self, array, context=None):
 
+    def __array_wrap__(self, array, context=None):
+        print("here_wrap")
+        #print(type(array))
+        print(array.__array_wrap__(array, context))
         signal = self._deepcopy_with_new_data(array)
         if context is not None:
             # ufunc, argument of the ufunc, domain of the ufunc

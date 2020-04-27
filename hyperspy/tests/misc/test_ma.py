@@ -88,6 +88,7 @@ class TestMa():
         ma.masked_outside(signal, 1, 2)
         assert isinstance(signal.data, np.ma.masked_array)
         ma.masked_outside(lazy_signal, 1, 2)
+        print(lazy_signal.data)
         # should test that chuck is numpy masked array
         assert isinstance(lazy_signal.data, da.core.Array)
 
@@ -127,15 +128,24 @@ class TestMa():
 
     def test_masked_circle_roi(self,signal,lazy_signal):
         c = CircleROI(2,2,2)
-        ma.masked_roi(signal, c, axes=[1, 2])
+        ma.masked_roi(signal, c, axes=[0, 1])
         assert np.ma.is_masked(signal.isig[2,2].data)
         ma.masked_roi(lazy_signal, c)
+        print(lazy_signal.data)
 
     def test_masked_rectangle_roi(self,signal,lazy_signal):
         r = RectangularROI(0,2,4,4)
-        ma.masked_roi(signal, r, axes=[1, 2])
+        r.mask(signal,outside=True)
         assert np.ma.is_masked(signal.isig[2,3].data)
         ma.masked_roi(lazy_signal, r)
+
+    def test_numpy_operations(self, signal,lazy_signal):
+        print(np.add(signal,signal))
+        np.ma.masked_less(signal, 2, copy=False)
+        #print(signal.data)
+        #lazy_signal = da.ma.masked_less(lazy_signal,2)
+        #print(lazy_signal)
+
 
 
 

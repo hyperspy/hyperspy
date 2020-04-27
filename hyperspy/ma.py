@@ -227,15 +227,10 @@ def masked_roi(signal, roi, axes="signal"):
             if i not in axes_indexes:
                 two_d_mask = np.expand_dims(two_d_mask,i)
         ones_shape = np.array(signal.axes_manager.shape)
-        for i in axes_indexes:
-            ones_shape[i]=1
-        expanded_ones = np.ones(shape=ones_shape, dtype=bool)
         if signal._lazy:
-            expanded_ones = da.array(expanded_ones)
-            two_d_mask = da.array(two_d_mask)
-            mask = expanded_ones*two_d_mask
+            mask = da.broadcast_to(two_d_mask, ones_shape)  # sparse representation
         else:
-            mask = np.broadcast(expanded_ones,two_d_mask)
+            mask = np.broadcast_to(two_d_mask, ones_shape)  # sparse representation
         masked_where(mask, signal)
     else:
         ranges = roi._get_ranges()
