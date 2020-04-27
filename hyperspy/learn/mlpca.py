@@ -58,12 +58,12 @@ def mlpca(
         (zeros for missing measurements).
     output_dimension : int
         The model dimensionality.
-    svd_solver : {'auto', 'full', 'arpack', 'randomized'}
+    svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
         If auto:
             The solver is selected by a default policy based on `data.shape` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
-            dimension of the data, then the more efficient 'randomized'
+            dimension of the data, then the more efficient "randomized"
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
         If full:

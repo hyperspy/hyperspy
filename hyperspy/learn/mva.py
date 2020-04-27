@@ -112,9 +112,9 @@ class MVA:
         copy=True,
         **kwargs
     ):
-        """Decomposition with a choice of algorithms.
+        """Apply a decomposition to a dataset with a choice of algorithms.
 
-        The results are stored in `self.learning_results`.
+        The results are stored in ``self.learning_results``.
 
         Read more in the :ref:`User Guide <mva.decomposition>`.
 
@@ -123,23 +123,22 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [Keenan2004]_.
-        algorithm : {'svd', 'mlpca', 'sklearn_pca', 'nmf', 'sparse_pca', 'mini_batch_sparse_pca', 'rpca', 'orpca', 'ornmf', custom object}, default 'svd'
-            The decomposition algorithm to use. The default is 'svd'. If
-            algorithm is an object, it must implement a `fit_transform()`
-            method or `fit()` and `transform()` methods, in the same manner
-            as a scikit-learn estimator.
+        algorithm : {"svd", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "svd"
+            The decomposition algorithm to use. If algorithm is an object,
+            it must implement a ``fit_transform()`` method or ``fit()`` and
+            ``transform()`` methods, in the same manner as a scikit-learn estimator.
         output_dimension : None or int
             Number of components to keep/calculate.
-            Default is None, i.e. `min(data.shape)`.
-        centre : {None, 'features', 'samples'}, default None
-            * If None, the data is not centered.
-            * If 'features', the data is centered along the features axis.
-              Only used by the 'svd' algorithm.
-            * If 'samples', the data is centered along the samples axis.
-              Only used by the 'svd' algorithm.
+            Default is None, i.e. ``min(data.shape)``.
+        centre : {None, "navigation", "signal"}, default None
+            * If None, the data is not centered prior to decomposition.
+            * If "navigation", the data is centered along the navigation axis.
+              Only used by the "svd" algorithm.
+            * If "signal", the data is centered along the signal axis.
+              Only used by the "svd" algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only used by the 'svd' algorithm.
+            Only used by the "svd" algorithm.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion.
@@ -148,15 +147,15 @@ class MVA:
             decomposition.
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm.
-            Only used by the 'mlpca' algorithm.
+            Only used by the "mlpca" algorithm.
         var_func : None or function or numpy array, default None
             * If None, ignored
-            * If function, applies the function to the data to obtain var_array.
-              Only used by the 'mlpca' algorithm.
-            * If numpy array, creates var_array by applying a polynomial function
+            * If function, applies the function to the data to obtain ``var_array``.
+              Only used by the "mlpca" algorithm.
+            * If numpy array, creates ``var_array`` by applying a polynomial function
               defined by the array of coefficients to the data. Only used by
-              the 'mlpca' algorithm.
-        reproject : {None, 'signal', 'navigation', 'both'}, default None
+              the "mlpca" algorithm.
+        reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
@@ -169,12 +168,12 @@ class MVA:
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
-        svd_solver : {'auto', 'full', 'arpack', 'randomized'}, default 'auto'
+        svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
             If auto:
                 The solver is selected by a default policy based on `data.shape` and
                 `output_dimension`: if the input data is larger than 500x500 and the
                 number of components to extract is lower than 80% of the smallest
-                dimension of the data, then the more efficient 'randomized'
+                dimension of the data, then the more efficient "randomized"
                 method is enabled. Otherwise the exact full SVD is computed and
                 optionally truncated afterwards.
             If full:
@@ -193,6 +192,8 @@ class MVA:
               data can then be restored by calling ``s.undo_treatments()``.
             * If False, no copy is made. This can be beneficial for memory
               usage, but care must be taken since data will be overwritten.
+        **kwargs : extra keyword arguments
+            Any keyword arguments are passed to the decomposition algorithm.
 
         Returns
         -------
@@ -211,10 +212,11 @@ class MVA:
 
         See Also
         --------
-        :py:meth:`~.signal.MVATools.plot_decomposition_factors`,
-        :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
-        :py:meth:`~.signal.MVATools.plot_decomposition_results`,
-        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        * :py:meth:`~.signal.MVATools.plot_decomposition_factors`
+        * :py:meth:`~.signal.MVATools.plot_decomposition_loadings`
+        * :py:meth:`~.signal.MVATools.plot_decomposition_results`
+        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
+        * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
 
         """
         # Check data is suitable for decomposition
@@ -494,26 +496,40 @@ class MVA:
             elif is_sklearn_like:
                 if hasattr(estim, "fit_transform"):
                     loadings = estim.fit_transform(data_)
-                elif hasattr(algorithm, "fit") and hasattr(algorithm, "transform"):
-                    algorithm.fit(data_)
-                    loadings = algorithm.transform(data_)
+                elif hasattr(estim, "fit") and hasattr(estim, "transform"):
+                    estim.fit(data_)
+                    loadings = estim.transform(data_)
 
+                # Handle sklearn.pipeline.Pipeline objects
+                # by taking the last step
                 if hasattr(estim, "steps"):
-                    last_step = estim[-1]
+                    estim_ = estim[-1]
+                # Handle GridSearchCV and related objects
+                # by taking the best estimator
                 elif hasattr(estim, "best_estimator_"):
-                    last_step = estim.best_estimator_
+                    estim_ = estim.best_estimator_
+                # Handle the "usual case"
                 else:
-                    last_step = estim
+                    estim_ = estim
 
-                factors = last_step.components_.T
+                # We need to the components_ to set factors
+                if not hasattr(estim_, "components_"):
+                    raise AttributeError(
+                        "Fitted estimator {} has no attribute 'components_'".format(
+                            estim_
+                        )
+                    )
 
-                if hasattr(last_step, "explained_variance_"):
-                    explained_variance = last_step.explained_variance_
+                factors = estim_.components_.T
 
-                if hasattr(last_step, "mean_"):
-                    mean = last_step.mean_
+                if hasattr(estim_, "explained_variance_"):
+                    explained_variance = estim_.explained_variance_
+
+                if hasattr(estim_, "mean_"):
+                    mean = estim_.mean_
                     centre = "samples"
 
+                # Return the full estimator object
                 to_print.extend(["scikit-learn estimator:", estim])
                 if return_info:
                     to_return = estim
@@ -643,52 +659,53 @@ class MVA:
         print_info=True,
         **kwargs
     ):
-        """Blind source separation (BSS) on the result on the decomposition.
+        """Apply blind source separation (BSS) to the result of a decomposition.
 
-        Available algorithms:  orthomax, FastICA, JADE, CuBICA, and TDSEP.
-
-        For lazy signal, the factors or loadings are computed to perfom the
-        BSS.
+        The results are stored in ``self.learning_results``.
 
         Read more in the :ref:`User Guide <mva.blind_source_separation>`.
 
         Parameters
         ----------
-        number_of_components : int
-            number of principal components to pass to the BSS algorithm
-        algorithm : {"sklearn_fastica", "orthomax", "FastICA", "JADE", "CuBICA", "TDSEP"}
-            BSS algorithms available. If "sklearn_fastica", uses the scikit-learn
-            library to perform FastICA, otherwise use the Modular toolkit for Data
-            Processing (MDP) is used. Default is "sklearn_fastica".
-        diff_order : int
+        number_of_components : int or None
+            Number of principal components to pass to the BSS algorithm.
+            If None, you must specify the ``comp_list`` argument.
+        algorithm : {"sklearn_fastica", "orthomax", "FastICA", "JADE", "CuBICA", "TDSEP", custom object}, default "sklearn_fastica"
+            The BSS algorithm to use. If algorithm is an object,
+            it must implement a ``fit_transform()`` method or ``fit()`` and
+            ``transform()`` methods, in the same manner as a scikit-learn estimator.
+        diff_order : int, default 1
             Sometimes it is convenient to perform the BSS on the derivative of
-            the signal. If `diff_order` is 0, the signal is not differentiated.
+            the signal. If ``diff_order`` is 0, the signal is not differentiated.
         diff_axes : None or list of ints or strings
-            If None, when `diff_order` is greater than 1 and `signal_dimension`
-            (`navigation_dimension`) when `on_loadings` is False (True) is
-            greater than 1, the differences are calculated across all
-            signal (navigation) axes. Otherwise the axes can be specified in
-            a list.
-        factors : Signal or numpy array
+            * If None and `on_loadings` is False, when `diff_order` is greater than 1
+              and `signal_dimension` is greater than 1, the differences are calculated
+              across all signal axes
+            * If None and `on_loadings` is True, when `diff_order` is greater than 1
+              and `navigation_dimension` is greater than 1, the differences are calculated
+              across all navigation axes
+            * Otherwise the axes can be specified in a list.
+        factors : :py:class:`~hyperspy.signal.BaseSignal` or numpy array
             Factors to decompose. If None, the BSS is performed on the
-            factors of a previous decomposition. If a Signal instance the
+            factors of a previous decomposition. If a Signal instance, the
             navigation dimension must be 1 and the size greater than 1.
-        comp_list : boolean numpy array
-            choose the components to use by the boolean list. It permits
-            to choose non contiguous components.
-        mask : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        comp_list : None or list or numpy array
+            Choose the components to apply BSS to. Unlike ``number_of_components``,
+            this argument permits non-contiguous components.
+        mask : :py:class:`~hyperspy.signal.BaseSignal` or subclass
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
             (navigation shape) when `on_loadings` is False (True).
         on_loadings : bool, default False
             If True, perform the BSS on the loadings of a previous
             decomposition, otherwise, perform the BSS on the factors.
-        reverse_component_criterion : {'factors', 'loadings'}
+        reverse_component_criterion : {"factors", "loadings"}, default "factors"
             Use either the factors or the loadings to determine if the
-            component needs to be reversed. Default is 'factors'.
-        whiten_method : {"pca", "zca"}
+            component needs to be reversed.
+        whiten_method : {"pca", "zca", None}, default "pca"
             How to whiten the data prior to blind source separation.
-            The default is PCA whitening.
+            If None, no whitening is applied. See :py:func:`~.learn.whitening.whiten_data`
+            for more details.
         return_info: bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
@@ -705,20 +722,15 @@ class MVA:
         Returns
         -------
         return_info : sklearn.Estimator or None
-            * If True and 'algorithm' = 'sklearn_fastica', returns the
-              sklearn Estimator object.
+            * If True and 'algorithm' is an sklearn Estimator, returns the
+              Estimator object.
             * Otherwise, returns None
-
-        Notes
-        -----
-        See the FastICA documentation, with more arguments that can be passed
-        as kwargs :py:class:`sklearn.decomposition.FastICA`
 
         See Also
         --------
-        :py:meth:`~.signal.MVATools.plot_bss_factors`,
-        :py:meth:`~.signal.MVATools.plot_bss_loadings`,
-        :py:meth:`~.signal.MVATools.plot_bss_results`,
+        * :py:meth:`~.signal.MVATools.plot_bss_factors`
+        * :py:meth:`~.signal.MVATools.plot_bss_loadings`
+        * :py:meth:`~.signal.MVATools.plot_bss_results`
 
         """
         from hyperspy.signal import BaseSignal
@@ -821,6 +833,44 @@ class MVA:
 
         factors = stack([factors.inav[i] for i in comp_list])
 
+        # Check sklearn-like algorithms
+        is_sklearn_like = False
+        algorithms_sklearn = ["sklearn_fastica"]
+        if algorithm in algorithms_sklearn:
+            if not import_sklearn.sklearn_installed:
+                raise ImportError(
+                    "algorithm='{}' requires scikit-learn".format(algorithm)
+                )
+
+            # Set smaller convergence tolerance than sklearn default
+            if not kwargs.get("tol", False):
+                kwargs["tol"] = 1e-10
+
+            # Initialize the sklearn estimator
+            is_sklearn_like = True
+            estim = decomposition_algorithms[algorithm](**kwargs)
+
+            # Check whiten argument
+            if estim.whiten and whiten_method is not None:
+                _logger.warning(
+                    "HyperSpy already performs its own data whitening "
+                    "(whiten_method='{}'), so it is ignored for algorithm='{}'".format(
+                        whiten_method, algorithm
+                    ),
+                )
+                estim.whiten = False
+
+        elif hasattr(algorithm, "fit_transform") or (
+            hasattr(algorithm, "fit") and hasattr(algorithm, "transform")
+        ):
+            # Check properties of algorithm against typical sklearn objects
+            # If algorithm is an object that implements the methods fit(),
+            # transform() and fit_transform(), then we can use it like an
+            # sklearn estimator. This also allows us to, for example, use
+            # Pipeline and GridSearchCV objects.
+            is_sklearn_like = True
+            estim = algorithm
+
         # Initialize return_info and print_info
         to_return = None
         to_print = [
@@ -864,42 +914,16 @@ class MVA:
         else:
             factors = factors.data.T
 
-        # Center and scale the data
-        factors, invsqcovmat = whiten_data(factors, centre=True, method=whiten_method)
+        # Center and whiten the data via PCA or ZCA methods
+        if whiten_method is not None:
+            factors, invsqcovmat = whiten_data(
+                factors, centre=True, method=whiten_method
+            )
 
         # Perform BSS
         if algorithm == "orthomax":
             _, unmixing_matrix = orthomax(factors, **kwargs)
             lr.bss_node = None
-
-        elif algorithm == "sklearn_fastica":
-            if not import_sklearn.sklearn_installed:
-                raise ImportError("algorithm='sklearn_fastica' requires scikit-learn")
-
-            if not kwargs.get("tol", False):
-                kwargs["tol"] = 1e-10
-
-            lr.bss_node = decomposition_algorithms[algorithm](**kwargs)
-
-            if lr.bss_node.whiten:
-                _logger.warning(
-                    "HyperSpy performs its own data whitening, "
-                    "so it is ignored for sklearn_fastica.",
-                )
-                lr.bss_node.whiten = False
-
-            lr.bss_node.fit(factors)
-
-            try:
-                unmixing_matrix = lr.bss_node.unmixing_matrix_
-            except AttributeError:
-                # unmixing_matrix was renamed to components in
-                # https://github.com/scikit-learn/scikit-learn/pull/858
-                unmixing_matrix = lr.bss_node.components_
-
-            to_print.extend(["scikit-learn estimator:", lr.bss_node])
-            if return_info:
-                to_return = lr.bss_node
 
         elif algorithm in ["FastICA", "JADE", "CuBICA", "TDSEP"]:
             if not mdp_installed:
@@ -916,11 +940,52 @@ class MVA:
             if return_info:
                 to_return = lr.bss_node
 
+        elif is_sklearn_like:
+            if hasattr(estim, "fit_transform"):
+                _ = estim.fit_transform(factors)
+            elif hasattr(estim, "fit") and hasattr(estim, "transform"):
+                estim.fit(factors)
+
+            # Handle sklearn.pipeline.Pipeline objects
+            # by taking the last step
+            if hasattr(estim, "steps"):
+                estim_ = estim[-1]
+            # Handle GridSearchCV and related objects
+            # by taking the best estimator
+            elif hasattr(estim, "best_estimator_"):
+                estim_ = estim.best_estimator_
+            # Handle the "usual case"
+            else:
+                estim_ = estim
+
+            # We need to the components_ to set factors
+            if hasattr(estim_, "components_"):
+                unmixing_matrix = estim_.components_
+            elif hasattr(estim_, "unmixing_matrix_"):
+                # unmixing_matrix_ was renamed to components_ for FastICA
+                # https://github.com/scikit-learn/scikit-learn/pull/858,
+                # so this legacy only
+                unmixing_matrix = estim_.unmixing_matrix_
+            else:
+                raise AttributeError(
+                    "Fitted estimator {} has no attribute 'components_'".format(estim_)
+                )
+
+            to_print.extend(["scikit-learn estimator:", estim])
+            if return_info:
+                to_return = estim
+
+            # Store the BSS node
+            lr.bss_node = estim
+
         else:
             raise ValueError("'algorithm' not recognised")
 
         # Apply the whitening matrix to get the full unmixing matrix
-        w = unmixing_matrix @ invsqcovmat
+        if whiten_method is not None:
+            w = unmixing_matrix @ invsqcovmat
+        else:
+            w = unmixing_matrix
 
         if lr.explained_variance is not None:
             if hasattr(lr.explained_variance, "compute"):
@@ -1219,10 +1284,10 @@ class MVA:
 
         See Also
         --------
-        :py:meth:`~.learn.mva.MVA.decomposition`,
-        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
-        :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`,
-        :py:meth:`~.learn.mva.MVA.get_decomposition_factors`.
+        * :py:meth:`~.learn.mva.MVA.decomposition`
+        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
+        * :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`
+        * :py:meth:`~.learn.mva.MVA.get_decomposition_factors`
 
         """
         from hyperspy._signals.signal1d import Signal1D
@@ -1339,10 +1404,10 @@ class MVA:
 
         See Also
         --------
-        :py:meth:`~.learn.mva.MVA.decomposition`,
-        :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
-        :py:meth:`~.signal.MVATools.get_decomposition_loadings`,
-        :py:meth:`~.signal.MVATools.get_decomposition_factors`
+        * :py:meth:`~.learn.mva.MVA.decomposition`
+        * :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
+        * :py:meth:`~.signal.MVATools.get_decomposition_loadings`
+        * :py:meth:`~.signal.MVATools.get_decomposition_factors`
 
         """
         s = self.get_explained_variance_ratio()
@@ -1623,8 +1688,8 @@ class MVA:
 
         See Also
         --------
-        :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
-        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        * :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
+        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
 
         """
         if explained_variance_ratio is None:
@@ -1667,29 +1732,28 @@ class MVA:
 class LearningResults(object):
     """Stores the parameters and results from a decomposition."""
 
-    def __init__(self):
-        # Decomposition
-        self.factors = None
-        self.loadings = None
-        self.explained_variance = None
-        self.explained_variance_ratio = None
-        self.number_significant_components = None
-        self.decomposition_algorithm = None
-        self.poissonian_noise_normalized = None
-        self.output_dimension = None
-        self.mean = None
-        self.centre = None
-        # Unmixing
-        self.bss_algorithm = None
-        self.unmixing_matrix = None
-        self.bss_factors = None
-        self.bss_loadings = None
-        # Shape
-        self.unfolded = None
-        self.original_shape = None
-        # Masks
-        self.navigation_mask = None
-        self.signal_mask = None
+    # Decomposition
+    factors = None
+    loadings = None
+    explained_variance = None
+    explained_variance_ratio = None
+    number_significant_components = None
+    decomposition_algorithm = None
+    poissonian_noise_normalized = None
+    output_dimension = None
+    mean = None
+    centre = None
+    # Unmixing
+    bss_algorithm = None
+    unmixing_matrix = None
+    bss_factors = None
+    bss_loadings = None
+    # Shape
+    unfolded = None
+    original_shape = None
+    # Masks
+    navigation_mask = None
+    signal_mask = None
 
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis.

@@ -51,13 +51,13 @@ is data denoising. This is achieved by using a limited set of components
 to make a model of the original, omitting the less significant components that
 ideally contain only noise. This is also known as *dimensionality reduction*.
 
-To perform this operation with HyperSpy, run the
+To reconstruct your denoised or reduced model, run the
 :py:meth:`~.learn.mva.MVA.get_decomposition_model` method. For example:
 
 .. code-block:: python
 
    >>> # Use all components to reconstruct the model
-   >>> sc = s.get_decomposition_model(components)
+   >>> sc = s.get_decomposition_model()
 
    >>> # Use first 3 components to reconstruct the model
    >>> sc = s.get_decomposition_model(3)
@@ -77,6 +77,17 @@ object, which in the example above we have called ``sc``:
 You can perform operations on this new object ``sc`` later.
 It is a copy of the original ``s`` object, except that the data has
 been replaced by the model constructed using the chosen components.
+
+If you provide the ``output_dimension`` argument, which takes an integer value,
+the decomposition algorithm attempts to find the best approximation for the
+dataset :math:`X` with only a limited set of factors :math:`A` and loadings :math:`B`,
+such that :math:`X \approx A B^T`.
+
+.. code-block:: python
+
+   >>> s.decomposition(output_dimension=3)
+
+Some of the algorithms described below require ``output_dimension`` to be provided.
 
 Available algorithms
 --------------------
@@ -141,11 +152,25 @@ method with the default arguments.
    >>> s.decomposition()
 
 Several algorithms exist for performing PCA, and the default algorithm in
-HyperSpy is ``svd``, which uses an approach called "singular value decomposition".
-For more information,  please read the method documentation for
-:py:func:`~.learn.svd_pca.svd_pca`.
+HyperSpy is ``"svd"``, which uses an approach called "singular value decomposition"
+to decompose the data in the form :math:`X = U \Sigma V^T`. The factors are given
+by :math:`U \Sigma`, and the loadings are given by :math:`V^T`. For more information,
+please read the method documentation for :py:func:`~.learn.svd_pca.svd_pca`.
 
-SVD is :math:`X = U \Sigma V^T`
+One important point to highlight is that in the classical definition of PCA, the
+algorithm is applied to data that has been "centered" by subtracting the mean.
+The ``"svd"`` algorithm in HyperSpy **does not** apply this centering step by default.
+As a result, you may observe differences between the output of the ``"svd"`` algorithm
+and, for example, :py:class:`sklearn.decomposition.PCA`, which does apply centering.
+You can turn on centering with the default algorithm with the ``"centre"`` argument:
+
+.. code-block:: python
+
+   # Subtract the mean along the navigation axis
+   >>> s.decomposition(centre="navigation")
+
+   # Subtract the mean along the signal axis
+   >>> s.decomposition(centre="signal")
 
 .. _poissonian-noise-label:
 
@@ -153,10 +178,11 @@ Poissonian noise
 ----------------
 
 Most of the standard decomposition algorithms assume that the noise of the data
-follows a Gaussian distribution. In cases where your data is instead
-corrupted by Poisson noise, HyperSpy can "normalize" the data by performing
-a scaling operation, which can greatly enhance the result. More details about
-the normalization procedure can be found in :ref:`[Keenan2004] <Keenan2004>`.
+follows a Gaussian distribution (also known as "homoskedastic noise").
+In cases where your data is instead corrupted by Poisson noise, HyperSpy
+can "normalize" the data by performing a scaling operation, which can greatly
+enhance the result. More details about the normalization procedure can be
+found in :ref:`[Keenan2004] <Keenan2004>`.
 
 To apply Poissonian noise normalization to your data:
 
@@ -177,11 +203,19 @@ To apply Poissonian noise normalization to your data:
 Maximum likelihood principal component analysis (MLPCA)
 -------------------------------------------------------
 
-An alternative :py:func:`~.learn.mlpca.mlpca`.
+Instead of applying Poisson noise normalization to your data, you can instead
+use an approach known as Maximum Likelihood PCA (MLPCA), which provides a more
+robust statistical treatment of non-Gaussian "heteroskedastic noise".
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm="mlpca")
+
+For more information, please read the method documentation for :py:func:`~.learn.mlpca.mlpca`.
+
+.. note::
+
+   You must set the ``output_dimension`` when using MLPCA.
 
 .. _mva.rpca:
 
@@ -383,7 +417,10 @@ example application to EELS analysis, see :ref:`[Pena2010] <Pena2010>`.
    :py:meth:`~.learn.mva.MVA.blind_source_separation`, otherwise it
    will raise an error.
 
-   You must also provide an integer ``number_of_components`` argument.
+   You must provide an integer ``number_of_components`` argument,
+   or a list of components as the ``comp_list`` argument. This performs
+   BSS on the chosen number/list of components from the previous
+   decomposition.
 
 To perform blind source separation on the result of a previous decomposition,
 run the :py:meth:`~.learn.mva.MVA.blind_source_separation` method, for example:
@@ -397,6 +434,9 @@ run the :py:meth:`~.learn.mva.MVA.blind_source_separation` method, for example:
    >>> s.decomposition(output_dimension=3)
 
    >>> s.blind_source_separation(number_of_components=3)
+
+   # Perform only on the first and third components
+   >>> s.blind_source_separation(comp_list=[0, 2])
 
 Available algorithms
 --------------------
@@ -430,16 +470,19 @@ links to the appropriate documentation for more information on each one.
 .. note::
 
    Except :py:func:`~.learn.orthomax.orthomax`, all of the implemented BSS algorithms listed above
-   rely on external packages being installed. ``sklearn_fastica``, requires
+   rely on external packages being available on your system. ``sklearn_fastica``, requires
    `scikit-learn <https://scikit-learn.org/>`_ while ``FastICA, JADE, CuBICA, TDSEP``
-   require `Modular toolkit for Data Processing (MDP) <http://mdp-toolkit.sourceforge.net/>`_.
+   require the `Modular toolkit for Data Processing (MDP) <http://mdp-toolkit.sourceforge.net/>`_.
 
 .. _mva.ica:
 
 Independent component analysis (ICA)
 ------------------------------------
 
-Blah
+One of the most common approaches for blind source separation is
+`Independent Component Analysis (ICA) <https://en.wikipedia.org/wiki/Independent_component_analysis>`_.
+This separates a signal into subcomponents by assuming that the subcomponents are (a) non-Gaussian,
+and (b) that they are statistically independent from each other.
 
 .. _mva.custom_bss:
 
@@ -570,28 +613,28 @@ different data pre-treatments in the same figure, you can combine
 Decomposition plots
 -------------------
 
-Methods 1 and 4 (new in version 0.7) provide a more compact way of displaying the
-results. All the other methods display each component in its own window. For 2
-and 3 it is recommended that you provide the number of factors or loadings
+HyperSpy provides a number of methods for visualizing the factors and loadings
+found by a decomposition analysis. To plot everything in a compact form,
+use :py:meth:`~.signal.MVATools.plot_decomposition_results`.
+
+You can also plot the factors and loadings separately using the following
+methods. It is recommended that you provide the number of factors or loadings
 you wish to visualise, since the default is to plot all of them.
 
-1. :py:meth:`~.signal.MVATools.plot_decomposition_results`
-2. :py:meth:`~.signal.MVATools.plot_decomposition_factors`
-3. :py:meth:`~.signal.MVATools.plot_decomposition_loadings`
+* :py:meth:`~.signal.MVATools.plot_decomposition_factors`
+* :py:meth:`~.signal.MVATools.plot_decomposition_loadings`
 
 .. _mva.plot_bss:
 
 Blind source separation plots
 -----------------------------
 
-For BSS, the default is the number you included when running the
-:py:meth:`~.learn.mva.MVA.blind_source_separation` method. In case of
-one-dimensional factors or loadings, the latter can be toggled by
-clicking on their corresponding line in the legend.
+Visualizing blind source separation results is much the same as decomposition.
+You can use :py:meth:`~.signal.MVATools.plot_bss_results` for a compact display,
+or instead:
 
-1. :py:meth:`~.signal.MVATools.plot_bss_results`
-2. :py:meth:`~.signal.MVATools.plot_bss_factors`
-3. :py:meth:`~.signal.MVATools.plot_bss_loadings`
+* :py:meth:`~.signal.MVATools.plot_bss_factors`
+* :py:meth:`~.signal.MVATools.plot_bss_loadings`
 
 .. _mva.save:
 

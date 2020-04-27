@@ -47,7 +47,7 @@ class TestSVDPCA:
 
     @pytest.mark.parametrize("output_dimension", [None, 3])
     @pytest.mark.parametrize("auto_transpose", [True, False])
-    @pytest.mark.parametrize("centre", [None, "features", "samples"])
+    @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
     @pytest.mark.parametrize("u_based_decision", [True, False])
     def test_full(self, output_dimension, auto_transpose, centre, u_based_decision):
         factors, loadings, explained_variance, mean = svd_pca(
@@ -77,7 +77,7 @@ class TestSVDPCA:
 
     @pytest.mark.parametrize("output_dimension", [None, 3])
     @pytest.mark.parametrize("auto_transpose", [True, False])
-    @pytest.mark.parametrize("centre", [None, "features", "samples"])
+    @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
     @pytest.mark.parametrize("u_based_decision", [True, False])
     def test_arpack(self, output_dimension, auto_transpose, centre, u_based_decision):
         factors, loadings, explained_variance, mean = svd_pca(
@@ -101,7 +101,7 @@ class TestSVDPCA:
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize("output_dimension", [None, 3])
     @pytest.mark.parametrize("auto_transpose", [True, False])
-    @pytest.mark.parametrize("centre", [None, "features", "samples"])
+    @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
     def test_randomized(self, output_dimension, auto_transpose, centre):
         factors, loadings, explained_variance, mean = svd_pca(
             self.X,
@@ -157,5 +157,5 @@ class TestSVDPCA:
             )
 
     def test_centre_error(self):
-        with pytest.raises(ValueError, match="centre must be one of"):
+        with pytest.raises(ValueError, match="'centre' must be one of"):
             _ = svd_pca(self.X, centre="random")

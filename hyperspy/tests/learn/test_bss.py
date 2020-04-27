@@ -58,6 +58,46 @@ def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
     return matches == len(c1_list)
 
 
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+def test_bss_FastICA_object():
+    """Tests that a simple sklearn pipeline is an acceptable algorithm."""
+    rng = np.random.RandomState(123)
+    S = rng.laplace(size=(3, 1000))
+    A = rng.random((3, 3))
+    s = Signal1D(A @ S)
+    s.decomposition()
+
+    from sklearn.decomposition import FastICA
+
+    out = s.blind_source_separation(
+        3, algorithm=FastICA(algorithm="deflation"), return_info=True
+    )
+
+    assert hasattr(out, "components_")
+
+
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+def test_bss_pipeline():
+    """Tests that a simple sklearn pipeline is an acceptable algorithm."""
+    rng = np.random.RandomState(123)
+    S = rng.laplace(size=(3, 1000))
+    A = rng.random((3, 3))
+    s = Signal1D(A @ S)
+    s.decomposition()
+
+    from sklearn.decomposition import FastICA
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    est = Pipeline(
+        [("scaler", StandardScaler()), ("ica", FastICA(algorithm="deflation"))]
+    )
+    out = s.blind_source_separation(3, algorithm=est, return_info=True)
+
+    assert hasattr(out, "steps")
+    assert hasattr(out.named_steps["ica"], "components_")
+
+
 @pytest.mark.parametrize("whiten_method", ["pca", "zca"])
 def test_orthomax(whiten_method):
     s = artificial_data.get_core_loss_eels_line_scan_signal()
@@ -110,6 +150,7 @@ def test_components_list():
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition(output_dimension=3)
     s.blind_source_separation(comp_list=[0, 2])
+    assert s.learning_results.unmixing_matrix.shape == (2, 2)
 
 
 def test_num_components_error():
@@ -161,6 +202,20 @@ def test_sklearn_convergence_warning():
             on_loadings=True,
             tol=1e-15,
         )
+
+
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@pytest.mark.parametrize("whiten_method", [None, "pca", "zca"])
+def test_fastica_whiten_method(whiten_method):
+    rng = np.random.RandomState(123)
+    S = rng.laplace(size=(3, 1000))
+    A = rng.random((3, 3))
+    s = Signal1D(A @ S)
+    s.decomposition()
+    s.blind_source_separation(
+        3, algorithm="sklearn_fastica", whiten_method=whiten_method
+    )
+    assert s.learning_results.unmixing_matrix.shape == A.shape
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")

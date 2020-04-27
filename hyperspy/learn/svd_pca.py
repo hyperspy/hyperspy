@@ -17,11 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import warnings
 
 import numpy as np
 from scipy.linalg import svd
 from scipy.sparse.linalg import svds
 
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import (
     randomized_svd,
     sklearn_installed,
@@ -79,12 +81,12 @@ def svd_solve(
         Input data array
     output_dimension : None or int
         Number of components to keep/calculate
-    svd_solver : {'auto', 'full', 'arpack', 'randomized'}
+    svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
         If auto:
             The solver is selected by a default policy based on `data.shape` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
-            dimension of the data, then the more efficient 'randomized'
+            dimension of the data, then the more efficient "randomized"
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
         If full:
@@ -179,12 +181,12 @@ def svd_pca(
         MxN array of input data (M features, N samples)
     output_dimension : None or int
         Number of components to keep/calculate
-    svd_solver : {'auto', 'full', 'arpack', 'randomized'}
+    svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
         If auto:
             The solver is selected by a default policy based on `data.shape` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
-            dimension of the data, then the more efficient 'randomized'
+            dimension of the data, then the more efficient "randomized"
             method is enabled. Otherwise the exact full SVD is computed and
             optionally truncated afterwards.
         If full:
@@ -197,10 +199,10 @@ def svd_pca(
         If randomized:
             use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
             to estimate a limited number of components
-    centre : {None, 'features', 'samples'}, default None
-        If None, the data is not centered.
-        If 'features', the data is centered along the features axis.
-        If 'samples', the data is centered along the samples axis.
+    centre : {None, "navigation", "signal"}, default None
+        * If None, the data is not centered prior to decomposition.
+        * If "navigation", the data is centered along the navigation axis.
+        * If "signal", the data is centered along the signal axis.
     auto_transpose : bool, default True
         If True, automatically transposes the data to boost performance.
 
@@ -213,14 +215,37 @@ def svd_pca(
 
     """
     N, M = data.shape
-    mean = None
-    if centre is not None:
-        if centre == "features":
+
+    if centre is None:
+        mean = None
+
+    else:
+        # To avoid confusion between terminology in different
+        # machine learning fields, we map the argument here.
+        # See #1159 for some discussion.
+        if centre in ["variables", "trials"]:
+            centre_map = {
+                "trials": "navigation",
+                "variables": "signal",
+            }
+
+            warnings.warn(
+                "centre='{}' has been deprecated and will be "
+                "removed in HyperSpy 2.0. Please use `{}` instead.".format(
+                    centre, centre_map.get(centre, None)
+                ),
+                VisibleDeprecationWarning,
+            )
+
+            centre = centre_map.get(centre, None)
+
+        if centre == "signal":
             mean = data.mean(axis=1)[:, np.newaxis]
-        elif centre == "samples":
+        elif centre == "navigation":
             mean = data.mean(axis=0)[np.newaxis, :]
         else:
-            raise ValueError("centre must be one of: None, features, samples")
+            raise ValueError("'centre' must be one of [None, 'navigation', 'signal']")
+
         data -= mean
 
     if auto_transpose is True:

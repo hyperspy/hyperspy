@@ -81,7 +81,7 @@ class TestLazyDecomposition:
     def test_pca(self, normalize_poissonian_noise):
         self.s.decomposition(
             output_dimension=3,
-            algorithm="PCA",
+            algorithm="pca",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
         factors = self.s.learning_results.factors
@@ -109,7 +109,7 @@ class TestLazyDecomposition:
     def test_orpca(self, normalize_poissonian_noise):
         self.s.decomposition(
             output_dimension=3,
-            algorithm="ORPCA",
+            algorithm="orpca",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
         factors = self.s.learning_results.factors
@@ -134,7 +134,7 @@ class TestLazyDecomposition:
     def test_ornmf(self, normalize_poissonian_noise):
         self.s.decomposition(
             output_dimension=3,
-            algorithm="ORNMF",
+            algorithm="ornmf",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
         factors = self.s.learning_results.factors
@@ -156,8 +156,12 @@ class TestLazyDecomposition:
         assert explained_variance is None
 
     def test_output_dimension_error(self):
-        with pytest.raises(ValueError, match="the output_dimension must be specified"):
-            self.s.decomposition(algorithm="ORPCA")
+        with pytest.raises(ValueError, match="`output_dimension` must be specified"):
+            self.s.decomposition(algorithm="orpca")
+
+    def test_algorithm_error(self):
+        with pytest.raises(ValueError, match="'algorithm' not recognised"):
+            self.s.decomposition(algorithm="random")
 
     def test_bounds_warning(self):
         with pytest.warns(
@@ -165,8 +169,36 @@ class TestLazyDecomposition:
         ):
             self.s.decomposition(bounds=True)
 
-    def test_onmf_warning(self):
+    @pytest.mark.parametrize("algorithm", ["PCA", "ORPCA", "ORNMF", "ONMF"])
+    def test_deprecated_algorithms_warning(self, algorithm):
         with pytest.warns(
-            VisibleDeprecationWarning, match="`algorithm='ONMF'` has been deprecated"
+            VisibleDeprecationWarning,
+            match="`algorithm='{}'` has been deprecated".format(algorithm),
         ):
-            self.s.decomposition(output_dimension=3, algorithm="ONMF")
+            self.s.decomposition(output_dimension=3, algorithm=algorithm)
+
+
+class TestPrintInfo:
+    def setup_method(self, method):
+        rng = np.random.RandomState(123)
+        self.s = Signal1D(rng.random((20, 100))).as_lazy()
+
+    @pytest.mark.parametrize("algorithm", ["svd", "orpca", "ornmf"])
+    def test_decomposition(self, algorithm, capfd):
+        self.s.decomposition(algorithm=algorithm, output_dimension=3)
+        captured = capfd.readouterr()
+        assert "Decomposition info:" in captured.out
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @pytest.mark.parametrize("algorithm", ["pca"])
+    def test_decomposition_sklearn(self, capfd, algorithm):
+        self.s.decomposition(algorithm=algorithm, output_dimension=3)
+        captured = capfd.readouterr()
+        assert "Decomposition info:" in captured.out
+        assert "scikit-learn estimator:" in captured.out
+
+    @pytest.mark.parametrize("algorithm", ["svd"])
+    def test_no_print(self, algorithm, capfd):
+        self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
+        captured = capfd.readouterr()
+        assert "Decomposition info:" not in captured.out

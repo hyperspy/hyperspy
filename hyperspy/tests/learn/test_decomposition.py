@@ -127,7 +127,7 @@ class TestGetModel:
             + sources.inav[2] * maps.inav[2].T
         )
 
-    @pytest.mark.parametrize("centre", [None, "features"])
+    @pytest.mark.parametrize("centre", [None, "signal"])
     def test_get_decomposition_model(self, centre):
         s = self.s
         s.decomposition(algorithm="svd", centre=centre)
@@ -189,7 +189,7 @@ class TestEstimateElbowPosition:
         assert elbow == 4
 
     def test_elbow_position_none(self):
-        variance = self.s.learning_results.explained_variance_ratio
+        _ = self.s.learning_results.explained_variance_ratio
         elbow = self.s.estimate_elbow_position(None)
         assert elbow == 4
 
@@ -198,7 +198,7 @@ class TestEstimateElbowPosition:
         with pytest.raises(
             ValueError, match="decomposition must be performed before calling"
         ):
-            elbow = self.s.estimate_elbow_position(None)
+            _ = self.s.estimate_elbow_position(None)
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_store_number_significant_components(self):
@@ -375,6 +375,12 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
         assert "scikit-learn estimator:" in captured.out
+
+    @pytest.mark.parametrize("algorithm", ["svd"])
+    def test_no_print(self, algorithm, capfd):
+        self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
+        captured = capfd.readouterr()
+        assert "Decomposition info:" not in captured.out
 
 
 class TestReturnInfo:
@@ -642,4 +648,14 @@ def test_centering_error():
     with pytest.raises(
         ValueError, match="normalize_poissonian_noise=True is only compatible"
     ):
-        s.decomposition(normalize_poissonian_noise=True, centre="samples")
+        s.decomposition(normalize_poissonian_noise=True, centre="navigation")
+
+    with pytest.raises(ValueError, match="'centre' must be one of"):
+        s.decomposition(centre="random")
+
+    for centre in ["variables", "trials"]:
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match="centre='{}' has been deprecated".format(centre),
+        ):
+            s.decomposition(centre=centre)
