@@ -16,6 +16,10 @@ matplotlib.rcParams['figure.max_open_warning'] = 25
 matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.saturated_pixels = 0.0
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "parallel: a test that is itself parallel and should be run serially."
+    )
 
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
