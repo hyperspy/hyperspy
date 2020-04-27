@@ -23,10 +23,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets import artificial_data
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.machine_learning.import_sklearn import (
-    ConvergenceWarning,
-    sklearn_installed,
-)
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.signals import BaseSignal
 
 
@@ -188,6 +185,9 @@ def test_normalize_components_errors():
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 def test_sklearn_convergence_warning():
+    # Import here to avoid error if sklearn missing
+    from sklearn.exceptions import ConvergenceWarning
+
     rng = np.random.RandomState(123)
     ics = rng.laplace(size=(3, 1000))
     mixing_matrix = rng.random((100, 3))
