@@ -32,7 +32,7 @@ from hyperspy.misc.machine_learning.import_sklearn import (
 _logger = logging.getLogger(__name__)
 
 
-def svd_flip(u, v, u_based_decision=True):
+def svd_flip_signs(u, v, u_based_decision=True):
     """Sign correction to ensure deterministic output from SVD.
 
     Adjusts the columns of u and the rows of v such that the loadings in the
@@ -160,12 +160,14 @@ def svd_solve(
         S = S[::-1]
         # flip eigenvectors' sign to enforce deterministic output
         if svd_flip:
-            U, V = svd_flip(U[:, ::-1], V[::-1], u_based_decision=u_based_decision)
+            U, V = svd_flip_signs(
+                U[:, ::-1], V[::-1], u_based_decision=u_based_decision
+            )
     elif svd_solver == "full":
         U, S, V = svd(data, full_matrices=False)
         # flip eigenvectors' sign to enforce deterministic output
         if svd_flip:
-            U, V = svd_flip(U, V, u_based_decision=u_based_decision)
+            U, V = svd_flip_signs(U, V, u_based_decision=u_based_decision)
 
         U = U[:, :output_dimension]
         S = S[:output_dimension]
