@@ -169,6 +169,7 @@ def svd_pca(
     svd_solver="auto",
     centre=None,
     auto_transpose=True,
+    svd_flip=False,
     **kwargs
 ):
     """Perform PCA using singular value decomposition (SVD).
@@ -205,6 +206,10 @@ def svd_pca(
         * If "signal", the data is centered along the signal axis.
     auto_transpose : bool, default True
         If True, automatically transposes the data to boost performance.
+    svd_flip : bool, default False
+        If True, adjusts the signs of the loadings and factors such that
+        the loadings that are largest in absolute value are always positive.
+        See :py:func:`~.learn.svd_pca.svd_flip` for more details.
 
     Returns
     -------
