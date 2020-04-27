@@ -71,7 +71,12 @@ def svd_flip(u, v, u_based_decision=True):
 
 
 def svd_solve(
-    data, output_dimension=None, svd_solver="auto", u_based_decision=True, **kwargs
+    data,
+    output_dimension=None,
+    svd_solver="auto",
+    svd_flip=False,
+    u_based_decision=True,
+    **kwargs
 ):
     """Apply singular value decomposition to input data.
 
@@ -99,8 +104,12 @@ def svd_solve(
         If randomized:
             use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
             to estimate a limited number of components
+    svd_flip : bool, default False
+        If True, adjusts the signs of the loadings and factors such that
+        the loadings that are largest in absolute value are always positive.
+        See :py:func:`~.learn.svd_pca.svd_flip` for more details.
     u_based_decision : bool, default True
-        If True, use the columns of u as the basis for sign flipping.
+        If True, and svd_flip is True, use the columns of u as the basis for sign-flipping.
         Otherwise, use the rows of v. The choice of which variable to base the
         decision on is generally algorithm dependent.
 
@@ -150,11 +159,13 @@ def svd_solve(
         # so reverse its outputs
         S = S[::-1]
         # flip eigenvectors' sign to enforce deterministic output
-        U, V = svd_flip(U[:, ::-1], V[::-1], u_based_decision=u_based_decision)
+        if svd_flip:
+            U, V = svd_flip(U[:, ::-1], V[::-1], u_based_decision=u_based_decision)
     elif svd_solver == "full":
         U, S, V = svd(data, full_matrices=False)
         # flip eigenvectors' sign to enforce deterministic output
-        U, V = svd_flip(U, V, u_based_decision=u_based_decision)
+        if svd_flip:
+            U, V = svd_flip(U, V, u_based_decision=u_based_decision)
 
         U = U[:, :output_dimension]
         S = S[:output_dimension]
@@ -261,7 +272,11 @@ def svd_pca(
             auto_transpose = False
 
     U, S, V = svd_solve(
-        data, output_dimension=output_dimension, svd_solver=svd_solver, **kwargs
+        data,
+        output_dimension=output_dimension,
+        svd_solver=svd_solver,
+        svd_flip=svd_flip,
+        **kwargs
     )
 
     explained_variance = S ** 2 / N
