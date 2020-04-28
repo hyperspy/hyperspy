@@ -89,7 +89,7 @@ def _get_metadata(filename, md_file_name, attolight_acquisition_system):
             if 'Signal Amplification:' in line:
                 amplification = int(line[line.find(':x') + 2:-1])
             if 'Readout Rate (horizontal pixel shift):' in line:
-                readout_rate_khz = int(line[line.find(':') + 1:-4])
+                readout_rate = int(line[line.find(':') + 1:-4])
 
             if 'Exposure Time:' in line:
                 exposure_time_ccd_s = float(line[line.find(':') + 1:-3])
@@ -118,7 +118,7 @@ def _get_metadata(filename, md_file_name, attolight_acquisition_system):
     channels = total_channels // binning
 
     # Return metadata
-    return binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate_khz, \
+    return binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate, \
            exposure_time_ccd_s, dwell_time_scan_s, beam_acc_voltage_kv, gun_lens_amps, obj_lens_amps, aperture_um, \
            chamber_pressure_torr, real_magnification
 
@@ -131,7 +131,7 @@ def _store_metadata(dict_tree, hypcard_folder, md_file_name,
     """
 
     # Get metadata
-    binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate_khz, \
+    binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate, \
     exposure_time_ccd_s, dwell_time_scan_s, beam_acc_voltage_kv, gun_lens_amps, obj_lens_amps, aperture_um, \
     chamber_pressure_torr, real_magnification = _get_metadata(
         hypcard_folder, md_file_name, attolight_acquisition_system)
@@ -153,7 +153,7 @@ def _store_metadata(dict_tree, hypcard_folder, md_file_name,
     dict_tree.set_item("Acquisition_instrument.acquisition_system",
                                 attolight_acquisition_system)
     dict_tree.set_item("Acquisition_instrument.CCD.amplification", amplification)
-    dict_tree.set_item("Acquisition_instrument.CCD.readout_rate_khz", readout_rate_khz)
+    dict_tree.set_item("Acquisition_instrument.CCD.readout_rate", readout_rate)
     dict_tree.set_item("Acquisition_instrument.CCD.exposure_time_s", exposure_time_ccd_s)
     dict_tree.set_item("Acquisition_instrument.SEM.dwell_time_scan_s", dwell_time_scan_s)
     dict_tree.set_item("Acquisition_instrument.SEM.beam_acc_voltage_kv", beam_acc_voltage_kv)
@@ -223,10 +223,10 @@ def _create_navigation_axis(data, metadata):
     calax = cal_factor_x_axis / (FOV * nx)
 
     size = data.shape[1]
-    name = 'x'
+    name = ''
     scale = calax * 1000
     # changes micrometer to nm, value for the size of 1 pixel
-    units = 'nm'
+    units = '$nm$'
 
     axis_dict = {'units': units,
                  'navigate': True,
@@ -316,7 +316,7 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     metadata_file_name \
         = attolight_systems[attolight_acquisition_system]['metadata_file_name']
 
-    binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate_khz, \
+    binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate, \
     exposure_time_ccd_s, dwell_time_scan_s, beam_acc_voltage_kv, gun_lens_amps, obj_lens_amps, aperture_um, \
     chamber_pressure_torr, real_magnification = \
         _get_metadata(hypcard_folder, metadata_file_name, attolight_acquisition_system)
