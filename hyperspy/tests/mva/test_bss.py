@@ -273,7 +273,6 @@ class TestBSS1D:
             self.s.get_bss_factors(), s2.get_bss_loadings()
         )
 
-    @pytest.mark.filterwarnings("ignore::sklearn.exceptions.ConvergenceWarning")
     @pytest.mark.parametrize("on_loadings", [True, False])
     @pytest.mark.parametrize("diff_order", [0, 1])
     def test_mask_diff_order(self, on_loadings, diff_order):
