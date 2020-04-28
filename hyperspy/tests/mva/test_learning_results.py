@@ -24,7 +24,7 @@ from hyperspy.signals import Signal1D
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
-def test_learning_results_decom()
+def test_learning_results_decom():
     rng = np.random.RandomState(123)
 
     s1 = Signal1D(rng.random((20, 100)))
