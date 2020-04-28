@@ -110,7 +110,7 @@ class MVA:
         print_info=True,
         svd_solver="auto",
         copy=True,
-        **kwargs
+        **kwargs,
     ):
         """Apply a decomposition to a dataset with a choice of algorithms.
 
@@ -222,14 +222,12 @@ class MVA:
         # Check data is suitable for decomposition
         if self.data.dtype.char not in np.typecodes["AllFloat"]:
             raise TypeError(
-                (
-                    "To perform a decomposition the data must be of the "
-                    "float or complex type, but the current type is '{}'. "
-                    "To fix this issue, you can change the type using the "
-                    "change_dtype method (e.g. s.change_dtype('float64')) "
-                    "and then repeat the decomposition.\n"
-                    "No decomposition was performed."
-                ).format(self.data.dtype)
+                "To perform a decomposition the data must be of the "
+                f"float or complex type, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64')) "
+                "and then repeat the decomposition.\n"
+                "No decomposition was performed."
             )
 
         if self.axes_manager.navigation_size < 2:
@@ -249,20 +247,16 @@ class MVA:
         if new_algo:
             if "fast" in algorithm:
                 warnings.warn(
-                    "The algorithm name `{}` has been deprecated and will be "
-                    "removed in HyperSpy 2.0. Please use `{}` along with the "
-                    "argument `svd_solver='randomized'` instead.".format(
-                        algorithm, new_algo
-                    ),
+                    f"The algorithm name `{algorithm}` has been deprecated and will be "
+                    f"removed in HyperSpy 2.0. Please use `{new_algo}` along with the "
+                    "argument `svd_solver='randomized'` instead.",
                     VisibleDeprecationWarning,
                 )
                 svd_solver = "randomized"
             else:
                 warnings.warn(
-                    "The algorithm name `{}` has been deprecated and will be "
-                    "removed in HyperSpy 2.0. Please use `{}` instead.".format(
-                        algorithm, new_algo
-                    ),
+                    f"The algorithm name `{algorithm}` has been deprecated and will be "
+                    f"removed in HyperSpy 2.0. Please use `{new_algo}` instead.",
                     VisibleDeprecationWarning,
                 )
 
@@ -277,9 +271,7 @@ class MVA:
             "ornmf",
         ]
         if algorithm in algorithms_require_dimension and output_dimension is None:
-            raise ValueError(
-                "`output_dimension` must be specified for '{}'".format(algorithm)
-            )
+            raise ValueError(f"`output_dimension` must be specified for '{algorithm}'")
 
         # Check sklearn-like algorithms
         is_sklearn_like = False
@@ -291,9 +283,7 @@ class MVA:
         ]
         if algorithm in algorithms_sklearn:
             if not import_sklearn.sklearn_installed:
-                raise ImportError(
-                    "algorithm='{}' requires scikit-learn".format(algorithm)
-                )
+                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
 
             # Initialize the sklearn estimator
             is_sklearn_like = True
@@ -336,10 +326,10 @@ class MVA:
         to_return = None
         to_print = [
             "Decomposition info:",
-            "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
-            "  algorithm={}".format(algorithm),
-            "  output_dimension={}".format(output_dimension),
-            "  centre={}".format(centre),
+            f"  normalize_poissonian_noise={normalize_poissonian_noise}",
+            f"  algorithm={algorithm}",
+            f"  output_dimension={output_dimension}",
+            f"  centre={centre}",
         ]
 
         # Backup the original data (on by default to
@@ -369,7 +359,7 @@ class MVA:
                 if centre is not None:
                     raise ValueError(
                         "normalize_poissonian_noise=True is only compatible "
-                        "with centre=None, not centre={}.".format(centre)
+                        f"with `centre=None`, not `centre={centre}`."
                     )
 
                 self.normalize_poissonian_noise(
@@ -515,9 +505,7 @@ class MVA:
                 # We need to the components_ to set factors
                 if not hasattr(estim_, "components_"):
                     raise AttributeError(
-                        "Fitted estimator {} has no attribute 'components_'".format(
-                            estim_
-                        )
+                        f"Fitted estimator {str(estim_)} has no attribute 'components_'"
                     )
 
                 factors = estim_.components_.T
@@ -591,7 +579,7 @@ class MVA:
                 else:
                     warnings.warn(
                         "Reprojecting the signal is not yet "
-                        "supported for algorithm='{}'".format(algorithm),
+                        f"supported for algorithm='{algorithm}'",
                         UserWarning,
                     )
                     if reproject == "both":
@@ -657,7 +645,7 @@ class MVA:
         whiten_method="pca",
         return_info=False,
         print_info=True,
-        **kwargs
+        **kwargs,
     ):
         """Apply blind source separation (BSS) to the result of a decomposition.
 
@@ -758,7 +746,7 @@ class MVA:
         if not isinstance(factors, BaseSignal):
             raise TypeError(
                 "`factors` must be a BaseSignal instance, but an object "
-                "of type {} was provided".format(type(factors))
+                f"of type {type(factors)} was provided"
             )
 
         # Check factor dimensions
@@ -766,15 +754,14 @@ class MVA:
             raise ValueError(
                 "`factors` must have navigation dimension == 1, "
                 "but the navigation dimension of the given factors "
-                "is {}".format(factors.axes_manager.navigation_dimension)
+                f"is {factors.axes_manager.navigation_dimension}"
             )
         elif factors.axes_manager.navigation_size < 2:
             raise ValueError(
                 "`factors` must have navigation size"
                 "greater than one, but the navigation "
-                "size of the given factors is {}".format(
-                    factors.axes_manager.navigation_size
-                )
+                "size of the given factors "
+                f"is {factors.axes_manager.navigation_size}"
             )
 
         # Check mask dimensions
@@ -786,15 +773,9 @@ class MVA:
             if isinstance(mask, BaseSignal):
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
-                        (
-                            "`mask` shape is not equal to {} shape. "
-                            "Mask shape: {}\t{} shape: {}"
-                        ).format(
-                            space,
-                            str(mask.axes_manager.signal_shape),
-                            space,
-                            str(ref_shape),
-                        )
+                        f"`mask` shape is not equal to {space} shape. "
+                        f"Mask shape: {mask.axes_manager.signal_shape}\t"
+                        f"{space} shape: {ref_shape}"
                     )
             if hasattr(mask, "compute"):
                 # if the mask is lazy, we compute them, which should be fine
@@ -838,9 +819,7 @@ class MVA:
         algorithms_sklearn = ["sklearn_fastica"]
         if algorithm in algorithms_sklearn:
             if not import_sklearn.sklearn_installed:
-                raise ImportError(
-                    "algorithm='{}' requires scikit-learn".format(algorithm)
-                )
+                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
 
             # Set smaller convergence tolerance than sklearn default
             if not kwargs.get("tol", False):
@@ -854,9 +833,8 @@ class MVA:
             if estim.whiten and whiten_method is not None:
                 _logger.warning(
                     "HyperSpy already performs its own data whitening "
-                    "(whiten_method='{}'), so it is ignored for algorithm='{}'".format(
-                        whiten_method, algorithm
-                    ),
+                    f"(whiten_method='{whiten_method}'), so it is ignored "
+                    f"for algorithm='{algorithm}'"
                 )
                 estim.whiten = False
 
@@ -875,11 +853,11 @@ class MVA:
         to_return = None
         to_print = [
             "Blind source separation info:",
-            "  number_of_components={}".format(number_of_components),
-            "  algorithm={}".format(algorithm),
-            "  diff_order={}".format(diff_order),
-            "  reverse_component_criterion={}".format(reverse_component_criterion),
-            "  whiten_method={}".format(whiten_method),
+            f"  number_of_components={number_of_components}",
+            f"  algorithm={algorithm}",
+            f"  diff_order={diff_order}",
+            f"  reverse_component_criterion={reverse_component_criterion}",
+            f"  whiten_method={whiten_method}",
         ]
 
         # Apply differences pre-processing if requested.
@@ -916,9 +894,7 @@ class MVA:
 
         # Center and whiten the data via PCA or ZCA methods
         if whiten_method is not None:
-            _logger.info(
-                "Whitening the data prior to BSS with method '{}'".format(whiten_method)
-            )
+            _logger.info(f"Whitening the data with method '{whiten_method}'")
 
             factors, invsqcovmat = whiten_data(
                 factors, centre=True, method=whiten_method
@@ -931,9 +907,7 @@ class MVA:
 
         elif algorithm in ["FastICA", "JADE", "CuBICA", "TDSEP"]:
             if not mdp_installed:
-                raise ImportError(
-                    "algorithm='{}' requires MDP toolbox".format(algorithm)
-                )
+                raise ImportError(f"algorithm='{algorithm}' requires MDP toolbox")
 
             temp_function = getattr(mdp.nodes, algorithm + "Node")
             lr.bss_node = temp_function(**kwargs)
@@ -972,7 +946,7 @@ class MVA:
                 unmixing_matrix = estim_.unmixing_matrix_
             else:
                 raise AttributeError(
-                    "Fitted estimator {} has no attribute 'components_'".format(estim_)
+                    f"Fitted estimator {str(estim_)} has no attribute 'components_'"
                 )
 
             to_print.extend(["scikit-learn estimator:", estim])
@@ -1091,14 +1065,14 @@ class MVA:
         """
         if hasattr(self.learning_results.factors, "compute"):
             _logger.warning(
-                "Component(s) {} not reversed, feature not implemented "
-                "for lazy computations".format(component_number)
+                f"Component(s) {component_number} not reversed, "
+                "feature not implemented for lazy computations"
             )
         else:
             target = self.learning_results
 
             for i in [component_number]:
-                _logger.info("Component {} reversed".format(i))
+                _logger.info(f"Component {i} reversed")
                 target.factors[:, i] *= -1
                 target.loadings[:, i] *= -1
 
@@ -1121,14 +1095,14 @@ class MVA:
         """
         if hasattr(self.learning_results.bss_factors, "compute"):
             _logger.warning(
-                "Component(s) {} not reversed, feature not implemented "
-                "for lazy computations".format(component_number)
+                f"Component(s) {component_number} not reversed, "
+                "feature not implemented for lazy computations"
             )
         else:
             target = self.learning_results
 
             for i in [component_number]:
-                _logger.info("Component {} reversed".format(i))
+                _logger.info(f"Component {i} reversed")
                 target.bss_factors[:, i] *= -1
                 target.bss_loadings[:, i] *= -1
                 target.unmixing_matrix[i, :] *= -1
@@ -1178,8 +1152,8 @@ class MVA:
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
                 _logger.info(
-                    "Independent component {} reversed based on the "
-                    "{}".format(i, reverse_component_criterion)
+                    f"Independent component {i} reversed based "
+                    f"on the {reverse_component_criterion}"
                 )
 
     def _calculate_recmatrix(self, components=None, mva_type="decomposition"):
@@ -1212,9 +1186,7 @@ class MVA:
 
         if components is None:
             a = factors @ loadings
-            signal_name = "model from {} with {} components".format(
-                mva_type, factors.shape[1],
-            )
+            signal_name = f"model from {mva_type} with {factors.shape[1]} components"
         elif hasattr(components, "__iter__"):
             tfactors = np.zeros((factors.shape[0], len(components)))
             tloadings = np.zeros((len(components), loadings.shape[1]))
@@ -1222,14 +1194,10 @@ class MVA:
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
             a = tfactors @ tloadings
-            signal_name = "model from {} with components {}".format(
-                mva_type, components
-            )
+            signal_name = f"model from {mva_type} with components {components}"
         else:
             a = factors[:, :components] @ loadings[:components, :]
-            signal_name = "model from {} with {} components".format(
-                mva_type, components
-            )
+            signal_name = f"model from {mva_type} with {components} components"
 
         self._unfolded4decomposition = self.unfold()
         try:
@@ -1336,7 +1304,7 @@ class MVA:
         noise_fmt=None,
         fig=None,
         ax=None,
-        **kwargs
+        **kwargs,
     ):
         """Plot the decomposition explained variance ratio vs index number.
 
@@ -1506,7 +1474,7 @@ class MVA:
 
         axes_titles = {
             "y": "Proportion of variance",
-            "x": "Principal component {}".format(xaxis_type),
+            "x": f"Principal component {xaxis_type}",
         }
 
         if n < s.axes_manager[-1].size:
@@ -1799,7 +1767,7 @@ class LearningResults(object):
         # Save, if all went well!
         if overwrite:
             np.savez(filename, **kwargs)
-            _logger.info("Saved results to {}".format(filename))
+            _logger.info(f"Saved results to {filename}")
 
     def load(self, filename):
         """Load the results of a previous decomposition and demixing analysis.
@@ -1820,7 +1788,7 @@ class LearningResults(object):
                 value = value.item()
             setattr(self, key, value)
 
-        _logger.info("Loaded results from {}".format(filename))
+        _logger.info(f"Loaded results from {filename}")
 
         # For compatibility with old version
         if hasattr(self, "algorithm"):
@@ -1878,24 +1846,19 @@ class LearningResults(object):
         summary_str = (
             "Decomposition parameters\n"
             "------------------------\n"
-            "normalize_poissonian_noise={}\n"
-            "algorithm={}\n"
-            "output_dimension={}\n"
-            "centre={}"
-        ).format(
-            self.poissonian_noise_normalized,
-            self.decomposition_algorithm,
-            self.output_dimension,
-            self.centre,
+            f"normalize_poissonian_noise={self.poissonian_noise_normalized}\n"
+            f"algorithm={self.decomposition_algorithm}\n"
+            f"output_dimension={self.output_dimension}\n"
+            f"centre={self.centre}"
         )
 
         if self.bss_algorithm is not None:
             summary_str += (
                 "\n\nDemixing parameters\n"
                 "-------------------\n"
-                "algorithm={}\n"
-                "n_components={}"
-            ).format(self.bss_algorithm, len(self.unmixing_matrix))
+                f"algorithm={self.bss_algorithm}\n"
+                f"n_components={len(self.unmixing_matrix)}"
+            )
 
         _logger.info(summary_str)
 
@@ -1915,7 +1878,7 @@ class LearningResults(object):
            also compute the results.
 
         """
-        _logger.info("Trimming results to {} dimensions".format(n))
+        _logger.info(f"Trimming results to {n} dimensions")
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]

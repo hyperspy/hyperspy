@@ -76,7 +76,7 @@ def svd_solve(
     svd_solver="auto",
     svd_flip=True,
     u_based_decision=True,
-    **kwargs
+    **kwargs,
 ):
     """Apply singular value decomposition to input data.
 
@@ -183,7 +183,7 @@ def svd_pca(
     centre=None,
     auto_transpose=True,
     svd_flip=True,
-    **kwargs
+    **kwargs,
 ):
     """Perform PCA using singular value decomposition (SVD).
 
@@ -246,16 +246,15 @@ def svd_pca(
                 "trials": "navigation",
                 "variables": "signal",
             }
+            centre_new = centre_map.get(centre, None)
 
             warnings.warn(
-                "centre='{}' has been deprecated and will be "
-                "removed in HyperSpy 2.0. Please use `{}` instead.".format(
-                    centre, centre_map.get(centre, None)
-                ),
+                f"centre='{centre}' has been deprecated and will be "
+                f"removed in HyperSpy 2.0. Please use '{centre_new}' instead.",
                 VisibleDeprecationWarning,
             )
 
-            centre = centre_map.get(centre, None)
+            centre = centre_new
 
         if centre == "signal":
             mean = data.mean(axis=1)[:, np.newaxis]
@@ -278,7 +277,7 @@ def svd_pca(
         output_dimension=output_dimension,
         svd_solver=svd_solver,
         svd_flip=svd_flip,
-        **kwargs
+        **kwargs,
     )
 
     explained_variance = S ** 2 / N

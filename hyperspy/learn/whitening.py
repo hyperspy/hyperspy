@@ -82,7 +82,7 @@ def whiten_data(X, centre=True, method="pca", epsilon=1e-10):
         W = U @ (U.T / S)
 
     else:
-        raise ValueError("method must be one of ['pca', 'zca'], got {}".format(method))
+        raise ValueError(f"method must be one of ['pca', 'zca'], got {method}")
 
     # Whiten the data
     Y = Y @ W.T

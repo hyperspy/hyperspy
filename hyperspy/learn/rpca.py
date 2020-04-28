@@ -119,7 +119,7 @@ def rpca_godec(X, rank, lambda1=None, power=0, tol=1e-3, maxiter=1000, **kwargs)
         # Check convergence
         eps = np.linalg.norm(A)
         if eps < tol:
-            _logger.info("Converged to {} in {} iterations".format(eps, itr))
+            _logger.info(f"Converged to {eps} in {itr} iterations")
             break
 
     # Transpose back
@@ -479,7 +479,7 @@ def orpca(
     training_samples=10,
     subspace_learning_rate=1.0,
     subspace_momentum=0.5,
-    **kwargs
+    **kwargs,
 ):
     """Perform online, robust PCA on the data X.
 
