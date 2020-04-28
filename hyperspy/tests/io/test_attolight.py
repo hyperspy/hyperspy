@@ -42,7 +42,7 @@ def test__save_background_metadata():
     cl_sem = hs.load(test_file)
     path = os.path.join(dirpath, 'attolight_data', 'FolderCreatedBy_Attolight', 'Background-bkg-700-300ms.txt')
     bkg = np.loadtxt(path)[1]
-    assert (cl_sem.background[1] == bkg).all()
+    assert (cl_sem.metadata.Signal.background[1] == bkg).all()
 
 
 def test__create_navigation_axis():

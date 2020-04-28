@@ -332,6 +332,9 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     # Swap x-y axes to get the right xy orientation
     data = np.swapaxes(array, 1, 2)
 
+    # Save background in metadata
+    _save_background_metadata(meta, hypcard_folder,)
+
     # Create axes
     signal_axis = _create_signal_axis_in_wavelength(data, meta)
     navigation_axis = _create_navigation_axis(data, meta)
