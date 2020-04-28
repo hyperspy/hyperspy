@@ -21,29 +21,32 @@ import numpy as np
 import pytest
 
 from hyperspy.signals import Signal1D
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
-class TestLearningResults:
-    def setup_method(self, method):
-        rng = np.random.RandomState(123)
+def test_learning_results_decom()
+    rng = np.random.RandomState(123)
 
-        self.s1 = Signal1D(rng.random((20, 100)))
-        self.s1.decomposition(output_dimension=2)
+    s1 = Signal1D(rng.random((20, 100)))
+    s1.decomposition(output_dimension=2)
 
-        self.s2 = Signal1D(rng.random((20, 100)))
-        self.s2.decomposition(output_dimension=2)
-        self.s2.blind_source_separation(number_of_components=2)
+    out = str(s1.learning_results)
+    assert "Decomposition parameters" in out
+    assert "algorithm=svd" in out
+    assert "output_dimension=2" in out
+    assert "Demixing parameters" not in out
 
-    def test_repr(self):
-        out = str(self.s1.learning_results)
-        assert "Decomposition parameters" in out
-        assert "algorithm=svd" in out
-        assert "output_dimension=2" in out
-        assert "Demixing parameters" not in out
 
-    def test_repr_bss(self):
-        out = str(self.s2.learning_results)
-        assert "Decomposition parameters" in out
-        assert "Demixing parameters" in out
-        assert "algorithm=sklearn_fastica" in out
-        assert "n_components=2" in out
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+def test_learning_results_bss():
+    rng = np.random.RandomState(123)
+
+    s1 = Signal1D(rng.random((20, 100)))
+    s1.decomposition(output_dimension=2)
+    s1.blind_source_separation(number_of_components=2)
+
+    out = str(s1.learning_results)
+    assert "Decomposition parameters" in out
+    assert "Demixing parameters" in out
+    assert "algorithm=sklearn_fastica" in out
+    assert "n_components=2" in out
