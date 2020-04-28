@@ -136,6 +136,7 @@ def test_factors_error():
         s.blind_source_separation(2, factors=factors)
 
 
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 @pytest.mark.parametrize("num_components", [None, 2])
 def test_num_components(num_components):
     s = artificial_data.get_core_loss_eels_line_scan_signal()
@@ -143,6 +144,7 @@ def test_num_components(num_components):
     s.blind_source_separation(number_of_components=num_components)
 
 
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 def test_components_list():
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition(output_dimension=3)
@@ -150,6 +152,7 @@ def test_components_list():
     assert s.learning_results.unmixing_matrix.shape == (2, 2)
 
 
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 def test_num_components_error():
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition()
@@ -169,6 +172,7 @@ def test_algorithm_error():
         s.blind_source_separation(2, algorithm="uniform")
 
 
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 def test_normalize_components_errors():
     rng = np.random.RandomState(123)
     s = Signal1D(rng.random((20, 100)))
