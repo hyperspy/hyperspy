@@ -41,7 +41,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
     Returns
     -------
     B : numpy array
-        TODO
+        Rotated loadings matrix
     W : numpy array
         The unmixing matrix
 

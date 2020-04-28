@@ -916,6 +916,10 @@ class MVA:
 
         # Center and whiten the data via PCA or ZCA methods
         if whiten_method is not None:
+            _logger.info(
+                "Whitening the data prior to BSS with method '{}'".format(whiten_method)
+            )
+
             factors, invsqcovmat = whiten_data(
                 factors, centre=True, method=whiten_method
             )
@@ -1133,12 +1137,26 @@ class MVA:
         lr = self.learning_results
         w = lr.unmixing_matrix
         n = len(w)
+
+        try:
+            w_inv = np.linalg.inv(w)
+        except np.linalg.LinAlgError as e:
+            if "Singular matrix" in str(e):
+                warnings.warn(
+                    "Cannot invert unmixing matrix as it is singular. "
+                    "Will attempt to use np.linalg.pinv instead.",
+                    UserWarning,
+                )
+                w_inv = np.linalg.pinv(w)
+            else:
+                raise
+
         if lr.on_loadings:
             lr.bss_loadings = lr.loadings[:, :n] @ w.T
-            lr.bss_factors = lr.factors[:, :n] @ np.linalg.inv(w)
+            lr.bss_factors = lr.factors[:, :n] @ w_inv
         else:
             lr.bss_factors = lr.factors[:, :n] @ w.T
-            lr.bss_loadings = lr.loadings[:, :n] @ np.linalg.inv(w)
+            lr.bss_loadings = lr.loadings[:, :n] @ w_inv
         if compute:
             lr.bss_factors = lr.bss_factors.compute()
             lr.bss_loadings = lr.bss_loadings.compute()
