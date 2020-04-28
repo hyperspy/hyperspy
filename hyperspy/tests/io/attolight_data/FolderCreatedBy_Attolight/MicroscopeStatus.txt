@@ -1,0 +1,92 @@
+_WAFER
+Lot Number:LOT_0000
+ID:WAFER_0000
+Type:ROUNDWITHFLAT
+Center Position X:0.000000 mm
+Center Position Y:0.000000 mm
+Orientation:0.000000 deg
+Diameter:0 mm
+Flat Length:0.000000 mm
+Edge Exclusion:0.000000 mm
+_SITE IMAGE
+Field of view:0.005 um
+Number of pixels (x axis):2 px
+Number of pixels (y axis):2 px
+Dwell Time:300000.011921 us
+stage_model:10010
+stage_position_x:-4.600102
+stage_position_y:-0.743008
+stage_position_z:-1.368159
+stage_rotation_x:-0.0000
+stage_rotation_y:-0.0000
+stage_rotation_z:-0.0000
+_SEM
+Beam Energy:5998.00 V
+Gun Lens:1.200000 A
+Objective Lens:0.325544 A
+Aperture:100 um
+Blanker:Off um
+Deflector 1 X:0.00 V
+Deflector 1 Y:0.00 V
+Deflector 2 X:-0.21 V
+Deflector 2 Y:-0.15 V
+Astigmatism 1 X:-0.01 V
+Astigmatism 1 Y:0.00 V
+Astigmatism 2 X:17.97 V
+Astigmatism 2 Y:-6.64 V
+Isolation Valve:Opened
+Emission Status:ON
+Scintillator Voltage:6010.00 V
+Beam Current:0.00 uA
+Emission Current:0.00 uA
+Cathode Heating Current:1.44 A
+Cathode Heating Voltage:0.80 V
+Suppressor Bias:1004.00 V
+Extractor Voltage:4749.00 V
+Gun Chamber Pressure:3.8028e-10 Torr
+Aperture Chamber Pressure:1.0426e-07 Torr
+Attomic zoom:40
+Attomic ReadedMagnification:22000.000000
+Real Magnification:26391.201172
+_CHANNELS
+Channel1:SE
+Channel2:CCD
+_CCD
+Camera Model:A.920
+Horizontal Binning:1
+Temperature:-69 °C
+Signal Amplification:x1
+Baseline Clamp:Off
+Readout Rate (horizontal pixel shift):1Mhz
+Speed (vertical pixel shift):3.300000
+Voltage Amplitude (vertical pixel shift):normal
+ReadMode:FVB
+Exposure Time:000.300000 s
+Capture Depth:1024
+Pixel Width: 0.02600 mm
+_SPECTROMETER
+Turret:IHR 320
+Turret id:0
+Grating:150/500
+Grating - Groove Density:150 gr/mm
+Grating - Blaze Angle:0
+Central wavelength:700.01 nm
+Entrance slit width:7000 um
+Exit slit width:0 um
+Exit spectral resolution:0 nm
+Exit mirror position:lateral
+Filter:None
+_SCAN
+Mode:HYP
+HYP Dwelltime:0.29296 ms
+Resolution_X:2 pixels
+Resolution_Y:2 pixels
+Reference_Size_X:512
+Reference_Size_Y:512
+Voltage Calibration Range_X:9.200000 V
+Voltage Calibration Range_Y:9.200000 V
+Start_X:0
+Size_X:1024
+Start_Y:0
+Size_Y:1024
+Rotate:0.000000 deg
