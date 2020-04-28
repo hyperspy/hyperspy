@@ -169,6 +169,7 @@ class TestLazyDecomposition:
         ):
             self.s.decomposition(bounds=True)
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize("algorithm", ["PCA", "ORPCA", "ORNMF", "ONMF"])
     def test_deprecated_algorithms_warning(self, algorithm):
         with pytest.warns(

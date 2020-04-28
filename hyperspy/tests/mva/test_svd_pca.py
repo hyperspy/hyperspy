@@ -120,6 +120,7 @@ class TestSVDPCA:
         explained_variance_norm = explained_variance / np.sum(explained_variance)
         np.testing.assert_allclose(explained_variance_norm[: self.rank].sum(), 1.0)
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_solver_auto(self):
         # Uses "full"
         U = self.rng.randn(100, 5)

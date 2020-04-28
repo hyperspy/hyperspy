@@ -331,6 +331,7 @@ class TestDecompositionAlgorithm:
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm=algorithm, return_info=False)
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize("algorithm", ["fast_svd", "fast_mlpca"])
     def test_fast_deprecation_warning(self, algorithm):
         with pytest.warns(
