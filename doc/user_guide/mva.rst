@@ -636,7 +636,7 @@ or instead:
 * :py:meth:`~.signal.MVATools.plot_bss_factors`
 * :py:meth:`~.signal.MVATools.plot_bss_loadings`
 
-.. _mva.save:
+.. _mva.get_results:
 
 Obtaining the results as BaseSignal instances
 =============================================

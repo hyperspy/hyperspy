@@ -658,7 +658,7 @@ class LazySignal(BaseSignal):
         ----------
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
-            the approach described in [Keenan2004]_.
+            the approach described in [KeenanKotula2004]_.
         algorithm : {'svd', 'pca', 'orpca', 'ornmf'}, default 'svd'
             The decomposition algorithm to use.
         output_dimension : int or None, default None
@@ -688,7 +688,7 @@ class LazySignal(BaseSignal):
 
         References
         ----------
-        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+        .. [KeenanKotula2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 
