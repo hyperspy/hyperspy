@@ -174,17 +174,36 @@ class BaseROI(t.HasTraits):
               space can fit the right number of axis, and use that if it
               fits. If not, it will try the signal space.
         """
-        ranges = self._get_ranges()
-        slices = self._make_slices(natax, axes,ranges)
-        if signal._lazy: # This is a little memory hungry
-            mask =
-            mask[slices] = True
-            signal.data = da.ma.masked_where(mask,signal.data)
+        if axes is None and signal in self.signal_map:
+            axes = self.signal_map[signal][1]
+        else:
+            axes = self._parse_axes(axes, signal.axes_manager)
+        natax = signal.axes_manager._get_axes_in_natural_order()
+        slices = self._make_slices(natax, axes)
+        shape = np.array(signal.axes_manager.shape)
+        if signal._lazy or outside:
+            sparse_shape = [1 if (s.start is None and s.stop is None) else sh for s, sh in zip(slices, shape)]
+        if signal._lazy:
+            if outside:
+                mask = np.ones(sparse_shape, dtype=bool)
+                mask[slices] = False
+            else:
+                mask = np.zeros(sparse_shape, dtype=bool)
+                mask[slices] = True
+            mask = da.broadcast_to(mask, shape=shape)
+
+            signal.data = da.ma.masked_where(mask, signal.data)
         else:
             if not isinstance(signal.data, np.ma.masked_array):
-                asarray(signal)
-            signal.data[slices]=np.ma.masked
-        return roi
+                signal.data = np.ma.asarray(signal.data)
+            if outside:
+                mask = np.ones(sparse_shape, dtype=bool)
+                mask[slices]=False
+                mask = np.broadcast_to(mask, shape=shape)
+                signal.data = np.ma.masked_where(mask, signal.data)
+            else:
+                signal.data[slices] = np.ma.masked
+        return
 
     def __call__(self, signal, out=None, axes=None):
         """Slice the signal according to the ROI, and return it.
@@ -991,6 +1010,60 @@ class CircleROI(BaseInteractiveROI):
     def _get_widget_type(self, axes, signal):
         return widgets.CircleWidget
 
+    def mask(self, signal, axes=None, outside=True):
+        """Masks inside or outside of a roi inline with some axes
+
+        Parameters
+        ----------
+        signal : Signal
+            The signal to mask with the ROI
+        out : Signal, default = None
+            If the 'out' argument is supplied, the sliced output will be put
+            into this instead of returning a Signal. See Signal.__getitem__()
+            for more details on 'out'.
+        axes : specification of axes to use, default = None
+            The axes argument specifies which axes the ROI will be applied on.
+            The items in the collection can be either of the following:
+
+            * a tuple of:
+
+              - DataAxis. These will not be checked with signal.axes_manager.
+              - anything that will index signal.axes_manager
+            * For any other value, it will check whether the navigation
+              space can fit the right number of axis, and use that if it
+              fits. If not, it will try the signal space.
+        """
+        if axes is None and signal in self.signal_map:
+            axes = self.signal_map[signal][1]
+        else:
+            axes = self._parse_axes(axes, signal.axes_manager)
+        natax = signal.axes_manager._get_axes_in_natural_order()
+        cx = self.cx + 0.5001 * axes[0].scale
+        cy = self.cy + 0.5001 * axes[1].scale
+        x, y = np.ogrid[0:axes[0].size, 0:axes[1].size]
+        x = np.subtract(x, cx)
+        y = np.subtract(y, cy)
+        if outside:
+            two_d_mask = (x ** 2 + y ** 2) > self.r ** 2
+            if self.r_inner != t.Undefined:
+                two_d_mask [(x ** 2 + y ** 2) < self.r_inner ** 2] = True
+        else:
+            if self.r_inner!= t.Undefined:
+                two_d_mask = (x ** 2 + y ** 2) > self.r_inner ** 2
+                two_d_mask[(x ** 2 + y ** 2) < self.r ** 2] = False
+            else:
+                two_d_mask = (x ** 2 + y ** 2) > self.r ** 2
+        axes_indexes = (natax.index(axes[0]), natax.index(axes[1]))
+        for i in range(len(natax)):
+            if i not in axes_indexes:
+                two_d_mask = np.expand_dims(two_d_mask, i)
+        ones_shape = np.array(signal.axes_manager.shape)
+        if signal._lazy:
+            mask = da.broadcast_to(two_d_mask, ones_shape)
+            signal.data = da.ma.masked_where(mask, signal.data)
+        else:
+            mask = np.broadcast_to(two_d_mask, ones_shape)
+            signal.data = np.ma.masked_where(mask, signal.data)
     def __call__(self, signal, out=None, axes=None):
         """Slice the signal according to the ROI, and return it.
 

@@ -126,18 +126,22 @@ class TestMa():
         l = load(tmpfilepath + ".hspy")
         assert isinstance(l.data, np.ma.masked_array)
 
-    def test_masked_circle_roi(self,signal,lazy_signal):
-        c = CircleROI(2,2,2)
-        ma.masked_roi(signal, c, axes=[0, 1])
-        assert np.ma.is_masked(signal.isig[2,2].data)
-        ma.masked_roi(lazy_signal, c)
-        print(lazy_signal.data)
+    @pytest.mark.parametrize("outside", [True, False])
+    @pytest.mark.parametrize("axes", ["signal", [0,1],[0,2]])
+    @pytest.mark.parametrize("inner_r",[None, 1])
+    def test_masked_circle_roi(self,signal,lazy_signal,outside,axes,inner_r):
+        c = CircleROI(2,2,2, inner_r)
+        c.mask(signal, axes=axes, outside=outside)
+        assert np.ma.is_masked(signal.data)
+        c.mask(lazy_signal, axes=axes, outside=outside)
+        # Can't check lazy signal for is_masked...
 
-    def test_masked_rectangle_roi(self,signal,lazy_signal):
+    @pytest.mark.parametrize("outside", [True,False])
+    def test_masked_rectangle_roi(self,signal,lazy_signal, outside):
         r = RectangularROI(0,2,4,4)
-        r.mask(signal,outside=True)
-        assert np.ma.is_masked(signal.isig[2,3].data)
-        ma.masked_roi(lazy_signal, r)
+        r.mask(signal, outside=outside)
+        assert np.ma.is_masked(signal.data)
+        r.mask(lazy_signal,outside=outside)
 
     def test_numpy_operations(self, signal,lazy_signal):
         print(np.add(signal,signal))

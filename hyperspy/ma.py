@@ -234,8 +234,12 @@ def masked_roi(signal, roi, axes="signal"):
         masked_where(mask, signal)
     else:
         ranges = roi._get_ranges()
+        print(ranges)
         slices = roi._make_slices(natax, axes,ranges)
         if signal._lazy: # This is a little memory hungry
+            ones_shape = np.array(signal.axes_manager.shape)
+            mask = da.broadcast_to(two_d_mask, ones_shape)  # sparse representation
+            da.broadcast_to()
             mask = np.zeros(shape=signal.axes_manager.shape,dtype=bool)
             mask[slices] = True
             masked_where(mask,signal)
