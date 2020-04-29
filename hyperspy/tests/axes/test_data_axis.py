@@ -160,16 +160,24 @@ class TestDataAxis:
         assert ax._parse_string_for_slice('rel0') == 0
         assert ax._parse_string_for_slice('rel1') == 9
 
+    def test_get_index_from_relative_string(self):
+        ax = self.axis
+        assert ax._get_index_from_relative_string('rel0.5') == 4
+        with pytest.raises(AssertionError):
+            ax._get_index_from_relative_string('r0.5') == 4
+        with pytest.raises(ValueError):
+            ax._get_index_from_relative_string('relative0.5') == 4
+        with pytest.raises(AssertionError):
+            ax._get_index_from_relative_string('abcd') == 4
+
     def test_get_index_from_relative_value(self):
         ax = self.axis
-        assert ax._get_index_from_relative_value('rel0.5') == 4
-        with pytest.raises(AssertionError):
-            ax._get_index_from_relative_value('r0.5') == 4
-        with pytest.raises(ValueError):
-            ax._get_index_from_relative_value('relative0.5') == 4
-        with pytest.raises(AssertionError):
-            ax._get_index_from_relative_value('abcd') == 4
-        
+        assert ax.get_index_from_relative_value(0.5) == 4
+
+    def test_get_value_from_relative_value(self):
+        ax = self.axis
+        assert ax.get_value_from_relative_value(0.5) == 10.45
+
     def test_get_index_from_value_with_units(self):
         ax = self.axis
         assert ax._get_index_from_value_with_units('10.5nm') == 5

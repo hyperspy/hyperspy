@@ -113,19 +113,30 @@ class UnitConversion:
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
 
     def _get_index_from_value_with_units(self, value):
+        "Get axes index by passing a calibrated value with a unit, like '20nm'"
         value = _ureg.parse_expression(value)
         if not hasattr(value, 'units'):
             raise ValueError('"{}" should contains an units.'.format(value))
         return self.value2index(value.to(self.units).magnitude)
 
-    def _get_index_from_relative_value(self, relative_value):
+    def _get_index_from_relative_string(self, relative_string):
+        "Get axes index by relative indexing using string like 'rel0.5'"
         try:
-            assert relative_value[:3] == 'rel'
-            relative_value = float(relative_value[3:])
+            assert relative_string[:3] == 'rel'
+            relative_value = float(relative_string[3:])
         except ValueError:
-           print(f"Expected relative units of kind 'rel0.2' but '{relative_value}' could not be interpreted this way.")
+           print(f"Expected relative units of kind 'rel0.2' but '{relative_string}' could not be interpreted this way.")
            raise
+        return self.get_index_from_relative_value(relative_value)
+
+    def get_value_from_relative_value(self, relative_value):
+        "Get the value of a position in the axis by relative or fractional value"
         value = self.low_value + relative_value * (self.high_value - self.low_value)
+        return value
+
+    def get_index_from_relative_value(self, relative_value):
+        "Get the index of a position in the axis by relative or fractional value"
+        value = self.get_value_from_relative_value(relative_value)
         return self.value2index(value)
 
     def _convert_units(self, converted_units, inplace=True):
@@ -359,7 +370,7 @@ class DataAxis(t.HasTraits, UnitConversion):
         if isinstance(value, str):
             # these are always returned as integers
             if value[:3] == 'rel': # Slicing using relative syntax
-                value = self._get_index_from_relative_value(value)
+                value = self._get_index_from_relative_string(value)
             else: # Slicing using unit syntax
                 value = self._get_index_from_value_with_units(value)
         return value
