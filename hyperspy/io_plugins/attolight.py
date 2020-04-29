@@ -308,7 +308,7 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     # Create metadata dictionary
     meta = DictionaryTreeBrowser({
         'General': {'title': name},
-        "Signal": {'signal_type': 'CL_SEM_Spectrum',
+        "Signal": {'signal_type': 'CL_SEM',
                    'background': None},
     })
 

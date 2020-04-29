@@ -31,7 +31,8 @@ ref_shape = (2, 2, 1024)
 
 def test_file_reader():
     cl_sem = hs.load(test_file)
-    #assert cl_sem._signal_type == 'CL_SEM_Spectrum', "The lumispy CLSEMSpectrum class was not loaded."
+    assert cl_sem._signal_type == 'CL_SEM', "The lumispy CLSEMSpectrum class was not registered."
+    # assert isinstance(cl_sem, CLSEMSpectrum) # I don't know how to import the external class from lumispy.
     assert cl_sem.axes_manager.signal_size == ref_shape[-1]
     assert cl_sem.axes_manager.navigation_shape == ref_shape[:-1]
     assert cl_sem.axes_manager.signal_dimension == 1
