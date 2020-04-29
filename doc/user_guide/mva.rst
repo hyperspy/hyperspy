@@ -474,6 +474,27 @@ links to the appropriate documentation for more information on each one.
    `scikit-learn <https://scikit-learn.org/>`_ while ``FastICA, JADE, CuBICA, TDSEP``
    require the `Modular toolkit for Data Processing (MDP) <http://mdp-toolkit.sourceforge.net/>`_.
 
+.. _mva.orthomax
+
+Orthomax
+--------
+
+Orthomax rotations are a statistical technique used to clarify and highlight the relationship among factors,
+by adjusting the coordinates of PCA results. The most common approach is known as
+`"varimax" <https://en.wikipedia.org/wiki/Varimax_rotation`_, which intended to maximize the variance shared
+among the components while preserving orthogonality. The results of an orthomax rotation following PCA are
+often "simpler" to interpret than just PCA, since each componenthas a more discrete contribution to the data.
+
+.. code-block:: python
+
+   >>> import numpy as np
+   >>> from hyperspy.signals import Signal1D
+
+   >>> s = Signal1D(np.random.randn(10, 10, 200))
+   >>> s.decomposition(output_dimension=3)
+
+   >>> s.blind_source_separation(number_of_components=3, algorithm="orthomax")
+
 .. _mva.ica:
 
 Independent component analysis (ICA)

@@ -22,7 +22,12 @@ from scipy.linalg import svd
 
 
 def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
-    """Orthogonal rotation of FA or PCA loadings.
+    """Calculate orthogonal rotations for a matrix of factors or loadings from PCA.
+
+    When gamma=1.0, this is known as varimax rotation, which finds a
+    rotation matrix W that maximizes the variance of the squared
+    components of A @ W. The rotation matrix preserves orthogonality of
+    the components.
 
     Taken from metpy.
 
@@ -41,7 +46,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
     Returns
     -------
     B : numpy array
-        Rotated loadings matrix
+        Rotated data matrix
     W : numpy array
         The unmixing matrix
 
@@ -77,6 +82,9 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                     break
 
     else:
+        # TODO: this doesn't seem to work...perhaps
+        # someone with more knowledge can either fix
+        # or remove this?
         # Use a sequence of bivariate rotations
         for _ in range(max_iter):
             maxTheta = 0.0
