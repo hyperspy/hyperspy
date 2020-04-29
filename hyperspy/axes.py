@@ -123,10 +123,8 @@ class UnitConversion:
             assert relative_value[:3] == 'rel'
             relative_value = float(relative_value[3:])
         except ValueError:
-            print(
-                f"Expected relative units of kind 'rel0.2' but '{relative_value}' could not be interpreted this way."
-            )
-            raise
+           print(f"Expected relative units of kind 'rel0.2' but '{relative_value}' could not be interpreted this way.")
+           raise
         value = self.low_value + relative_value * (self.high_value - self.low_value)
         return self.value2index(value)
 
