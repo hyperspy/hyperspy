@@ -29,7 +29,7 @@ from hyperspy.axes import DataAxis
 class TestDataAxis:
 
     def setup_method(self, method):
-        self.axis = DataAxis(size=10, scale=0.1, offset=10)
+        self.axis = DataAxis(size=10, scale=0.1, offset=10, units='nm')
 
     def test_value_range_to_indices_in_range(self):
         assert (
@@ -143,3 +143,34 @@ class TestDataAxis:
         assert not m.trigger_me.called
         ax.index += 1
         assert m.trigger_me.called
+
+    def test_parse_string_for_slice(self):
+        ax = self.axis
+        # slicing by index
+        assert ax._parse_string_for_slice(5) == 5
+        assert type(ax._parse_string_for_slice(5)) is int
+        # slicing by calibrated value
+        assert ax._parse_string_for_slice(10.5) == 10.5
+        assert type(ax._parse_string_for_slice(10.5)) is float
+        # slicing by unit
+        assert ax._parse_string_for_slice('10.5nm') == 5
+        assert ax._parse_string_for_slice('10500pm') == 5
+        # slicing by ratio
+        assert ax._parse_string_for_slice('rel0.5') == 4
+        assert ax._parse_string_for_slice('rel0') == 0
+        assert ax._parse_string_for_slice('rel1') == 9
+
+    def test_get_index_from_relative_value(self):
+        ax = self.axis
+        assert ax._get_index_from_relative_value('rel0.5') == 4
+        with pytest.raises(AssertionError):
+            ax._get_index_from_relative_value('r0.5') == 4
+        with pytest.raises(ValueError):
+            ax._get_index_from_relative_value('relative0.5') == 4
+        with pytest.raises(AssertionError):
+            ax._get_index_from_relative_value('abcd') == 4
+        
+    def test_get_index_from_value_with_units(self):
+        ax = self.axis
+        assert ax._get_index_from_value_with_units('10.5nm') == 5
+        assert ax._get_index_from_value_with_units('10500pm') == 5

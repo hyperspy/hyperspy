@@ -118,6 +118,18 @@ class UnitConversion:
             raise ValueError('"{}" should contains an units.'.format(value))
         return self.value2index(value.to(self.units).magnitude)
 
+    def _get_index_from_relative_value(self, relative_value):
+        try:
+            assert relative_value[:3] == 'rel'
+            relative_value = float(relative_value[3:])
+        except ValueError:
+            print(
+                f"Expected relative units of kind 'rel0.2' but '{relative_value}' could not be interpreted this way."
+            )
+            raise
+        value = self.low_value + relative_value * (self.high_value - self.low_value)
+        return self.value2index(value)
+
     def _convert_units(self, converted_units, inplace=True):
         if self._ignore_conversion(converted_units) or \
                 self._ignore_conversion(self.units):
@@ -342,8 +354,16 @@ class DataAxis(t.HasTraits, UnitConversion):
             return value
 
     def _parse_string_for_slice(self, value):
+        '''
+        Parses one of the start/stop/step parts of the slice
+        syntax. Returns integer if index, float if calibrated axis value.
+        '''
         if isinstance(value, str):
-            value = self._get_index_from_value_with_units(value)
+            # these are always returned as integers
+            if value[:3] == 'rel': # Slicing using relative syntax
+                value = self._get_index_from_relative_value(value)
+            else: # Slicing using unit syntax
+                value = self._get_index_from_value_with_units(value)
         return value
 
     def _get_array_slices(self, slice_):
