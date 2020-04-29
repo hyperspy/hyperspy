@@ -177,6 +177,7 @@ class TestDataAxis:
     def test_get_value_from_relative_value(self):
         ax = self.axis
         assert ax.get_value_from_relative_value(0.5) == 10.45
+        assert ax.get_value_from_relative_value(0.5, nearest_axis_value=True) == 10.4
 
     def test_get_index_from_value_with_units(self):
         ax = self.axis

@@ -129,9 +129,16 @@ class UnitConversion:
            raise
         return self.get_index_from_relative_value(relative_value)
 
-    def get_value_from_relative_value(self, relative_value):
-        "Get the value of a position in the axis by relative or fractional value"
+    def get_value_from_relative_value(self, relative_value, nearest_axis_value=False):
+        '''
+        Gets the value of a position along the axis by relative or fractional value. The value is 
+        not necessarily in the .axis array.
+
+        If nearest_axis_value is True, the value returned is the nearest value that is on .axis
+        '''
         value = self.low_value + relative_value * (self.high_value - self.low_value)
+        if nearest_axis_value:
+            value = self.index2value(self.value2index(value))
         return value
 
     def get_index_from_relative_value(self, relative_value):
