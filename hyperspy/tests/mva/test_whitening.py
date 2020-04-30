@@ -22,7 +22,7 @@ import pytest
 from hyperspy.learn.whitening import whiten_data
 
 
-@pytest.mark.parametrize("method", ["PCA", "ZCA"])
+@pytest.mark.parametrize("method", ["pca", "zca"])
 @pytest.mark.parametrize("centre", [True, False])
 def test_whiten(method, centre):
     rng = np.random.RandomState(123)
