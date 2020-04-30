@@ -136,15 +136,16 @@ links to the appropriate documentation for more information on each one.
    | custom object            | An object implementing  ``fit()`` and  ``transform()`` methods |
    +--------------------------+----------------------------------------------------------------+
 
-.. _mva.pca:
+.. _mva.svd:
 
-Principal component analysis (PCA)
+Singular value decomposition (SVD)
 ----------------------------------
 
-One of the most popular decomposition methods is `principal component analysis
-<https://en.wikipedia.org/wiki/Principal_component_analysis>`_ (PCA).
-To perform PCA on your dataset, run the :py:meth:`~.learn.mva.MVA.decomposition`
-method with the default arguments.
+The default algorithm in HyperSpy is ``"svd"``, which uses an approach called
+"singular value decomposition" to decompose the data in the form
+:math:`X = U \Sigma V^T`. The factors are given by :math:`U \Sigma`, and the
+loadings are given by :math:`V^T`. For more information, please read the method
+documentation for :py:func:`~.learn.svd_pca.svd_pca`.
 
 .. code-block:: python
 
@@ -154,26 +155,52 @@ method with the default arguments.
    >>> s = Signal1D(np.random.randn(10, 10, 200))
    >>> s.decomposition()
 
-Several algorithms exist for performing PCA, and the default algorithm in
-HyperSpy is ``"svd"``, which uses an approach called "singular value decomposition"
-to decompose the data in the form :math:`X = U \Sigma V^T`. The factors are given
-by :math:`U \Sigma`, and the loadings are given by :math:`V^T`. For more information,
-please read the method documentation for :py:func:`~.learn.svd_pca.svd_pca`.
+.. note::
+   In some fields, including electron microscopy, this approach of applying an SVD
+   directly to the data :math:`X` is often called PCA :ref:`(see below) <mva.pca>`.
 
-One important point to highlight is that in the classical definition of PCA, the
-algorithm is applied to data that has been "centered" by subtracting the mean.
-The ``"svd"`` algorithm in HyperSpy **does not** apply this centering step by default.
-As a result, you may observe differences between the output of the ``"svd"`` algorithm
-and, for example, :py:class:`sklearn.decomposition.PCA`, which does apply centering.
-You can turn on centering with the default algorithm with the ``"centre"`` argument:
+   However, in the classical definition of PCA, the SVD should be applied to data that has
+   first been "centered" by subtracting the mean, i.e. :math:`\mathrm{SVD}(X - \bar X)`.
+
+   The ``"svd"`` algorithm in HyperSpy **does not** apply this
+   centering step by default. As a result, you may observe differences between
+   the output of the ``"svd"`` algorithm and, for example,
+   :py:class:`sklearn.decomposition.PCA`, which **does** apply centering.
+
+.. _mva.pca:
+
+Principal component analysis (PCA)
+----------------------------------
+
+One of the most popular decomposition methods is `principal component analysis
+<https://en.wikipedia.org/wiki/Principal_component_analysis>`_ (PCA).
+To perform PCA on your dataset, run the :py:meth:`~.learn.mva.MVA.decomposition`
+method with any of following arguments.
+
+If you have `scikit-learn <https://scikit-learn.org/>`_ installed:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm="sklearn_pca")
+
+You can also turn on centering with the default ``"svd"`` algorithm via
+the ``"centre"`` argument:
 
 .. code-block:: python
 
    # Subtract the mean along the navigation axis
-   >>> s.decomposition(centre="navigation")
+   >>> s.decomposition(algorithm="svd", centre="navigation")
 
    # Subtract the mean along the signal axis
-   >>> s.decomposition(centre="signal")
+   >>> s.decomposition(algorithm="svd", centre="signal")
+
+You can also use :py:class:`sklearn.decomposition.PCA` directly:
+
+.. code-block:: python
+
+   >>> from sklearn.decomposition import PCA
+
+   >>> s.decomposition(algorithm=PCA())
 
 .. _poissonian-noise-label:
 
