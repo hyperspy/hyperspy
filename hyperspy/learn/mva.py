@@ -1600,7 +1600,7 @@ class MVA:
                 signal_mask = ~signal_mask
 
             # Check non-negative
-            if dc[:, signal_mask][navigation_mask, :].min() <= 0.0:
+            if dc[:, signal_mask][navigation_mask, :].min() < 0.0:
                 raise ValueError(
                     "Negative values found in data!\n"
                     "Are you sure that the data follow a Poisson distribution?"

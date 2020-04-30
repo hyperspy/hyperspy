@@ -20,6 +20,9 @@ analysis (ICA), are available through the methods described in this section.
    and the other with the dimension of the navigation space known as **loadings**
    (:math:`B`), such that :math:`X = A B^T`.
 
+   For some of the algorithms listed below, the decomposition results in
+   an `approximation` of the dataset, i.e. :math:`X \approx A B^T`.
+
 .. _mva.decomposition:
 
 Decomposition
@@ -48,8 +51,8 @@ method, for example:
 
 One of the most popular uses of :py:meth:`~.learn.mva.MVA.decomposition`
 is data denoising. This is achieved by using a limited set of components
-to make a model of the original, omitting the less significant components that
-ideally contain only noise. This is also known as *dimensionality reduction*.
+to make a model of the original dataset, omitting the less significant components that
+ideally contain only noise.
 
 To reconstruct your denoised or reduced model, run the
 :py:meth:`~.learn.mva.MVA.get_decomposition_model` method. For example:
@@ -411,7 +414,7 @@ example application to EELS analysis, see :ref:`[Pena2010] <Pena2010>`.
 
 .. warning::
 
-   Currently, the BSS algorithms operate on the result of a previous
+   The BSS algorithms operate on the result of a previous
    decomposition analysis. It is therefore necessary to perform a
    :ref:`decomposition <mva.decomposition>` first before calling
    :py:meth:`~.learn.mva.MVA.blind_source_separation`, otherwise it
@@ -723,10 +726,3 @@ saving figures instead of data and more.
    Data exported in this way cannot be easily loaded into HyperSpy's
    machine learning structure.
 
-.. _mva.preferences:
-
-Preferences
-===========
-
-The behaviour of some machine learning operations can be customised in the
-Machine Learning section of :ref:`preferences <configuring-hyperspy-label>`.
