@@ -174,6 +174,9 @@ class EELSSpectrum_mixin:
             energy difference to the given energy.
         """        
         
+        if width < 0:
+            raise ValueError("Provided width needs to be >= 0.")
+        
         Emin, Emax = energy - width/2, energy + width/2            
 
         # find all subshells that have its energy within range
