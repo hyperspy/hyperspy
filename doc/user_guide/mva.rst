@@ -551,6 +551,9 @@ begin with ``plot_``.
 Scree plots
 -----------
 
+.. note::
+   Scree plots are only available for the ``"svd"`` and ``"pca"`` algorithms.
+
 PCA will sort the components in the dataset in order of decreasing
 variance. It is often useful to estimate the dimensionality of the data by
 plotting the explained variance against the component index. This plot is
