@@ -215,7 +215,6 @@ def hdfgroup2signaldict(group, lazy=False):
         exp["package_version"] = ""
 
     data = group['data']
-    print(group.keys())
     if "mask" in group:
         mask = group['mask']
     if lazy:

@@ -1064,6 +1064,7 @@ class CircleROI(BaseInteractiveROI):
         else:
             mask = np.broadcast_to(two_d_mask, ones_shape)
             signal.data = np.ma.masked_where(mask, signal.data)
+
     def __call__(self, signal, out=None, axes=None):
         """Slice the signal according to the ROI, and return it.
 
@@ -1086,8 +1087,6 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
-
-
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:

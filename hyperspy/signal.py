@@ -1924,11 +1924,7 @@ class BaseSignal(FancySlicing,
         else:
             return self.data
 
-
     def __array_wrap__(self, array, context=None):
-        print("here_wrap")
-        #print(type(array))
-        print(array.__array_wrap__(array, context))
         signal = self._deepcopy_with_new_data(array)
         if context is not None:
             # ufunc, argument of the ufunc, domain of the ufunc
@@ -4664,6 +4660,12 @@ class BaseSignal(FancySlicing,
         self.__init__(**self._to_dictionary(add_models=True))
         if self._lazy:
             self._make_lazy()
+
+    def as_masked(self):
+        if self._lazy:
+            self.data = da.ma.asanyarray(self.data)
+        else:
+            self.data = np.ma.asarray(self.data)
 
     def set_signal_type(self, signal_type=None):
         """Set the signal type and convert the current signal accordingly.
