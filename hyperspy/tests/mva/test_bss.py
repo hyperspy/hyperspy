@@ -95,7 +95,7 @@ def test_bss_pipeline():
     assert hasattr(out.named_steps["ica"], "components_")
 
 
-@pytest.mark.parametrize("whiten_method", ["pca", "zca"])
+@pytest.mark.parametrize("whiten_method", ["PCA", "ZCA"])
 def test_orthomax(whiten_method):
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition()
@@ -209,7 +209,7 @@ def test_sklearn_convergence_warning():
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-@pytest.mark.parametrize("whiten_method", [None, "pca", "zca"])
+@pytest.mark.parametrize("whiten_method", [None, "PCA", "ZCA"])
 def test_fastica_whiten_method(whiten_method):
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 1000))
