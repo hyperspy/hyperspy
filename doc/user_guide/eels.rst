@@ -33,6 +33,21 @@ information is stored in the :py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). This information is saved to file
 when saving in the hspy format (HyperSpy's HDF5 specification).
 
+A method :py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy`
+can be helpful to identify possible elements in the sample.
+:py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy` returns a
+list of edges arranged in the order closest to the specified energy within a
+window.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.get_edges_near_energy(532)
+    ['O_K']
+    >>> s.get_edges_near_energy(849, width=6)
+    ['La_M4', 'Fe_L1']
+
+
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -201,9 +216,9 @@ image
 
 .. NOTE::
 
-    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.         
+    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.
     The fitting procedure acts in iterative manner along the energy-loss-axis.
-    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit. 
+    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit.
     Then it only activates the the first two, fits, and repeats this until all edges are fitted simultanously.
 
     Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
