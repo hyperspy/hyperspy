@@ -44,8 +44,7 @@ class TestMa():
         signal.as_masked()
         assert isinstance(signal.data, np.ma.MaskedArray)
         lazy_signal.as_masked()
-        print(lazy_signal.data)
-
+        # no function for determining if Dask array is masked without computing
 
     @pytest.mark.parametrize("outside", [True, False])
     @pytest.mark.parametrize("axes", ["signal", [0,1],[0,2]])
@@ -53,6 +52,7 @@ class TestMa():
     def test_masked_circle_roi(self,signal,lazy_signal,outside,axes,inner_r):
         c = CircleROI(2,2,2, inner_r)
         c.mask(signal, axes=axes, outside=outside)
+        assert np.ma.is_masked(signal.data)
         assert np.ma.is_masked(signal.data)
         c.mask(lazy_signal, axes=axes, outside=outside)
         # Can't check lazy signal for is_masked...

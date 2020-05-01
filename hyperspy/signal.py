@@ -4664,6 +4664,7 @@ class BaseSignal(FancySlicing,
     def as_masked(self):
         if self._lazy:
             self.data = da.ma.asanyarray(self.data)
+            print(self.data)
         else:
             self.data = np.ma.asarray(self.data)
 
