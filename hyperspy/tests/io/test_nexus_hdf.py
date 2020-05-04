@@ -18,17 +18,13 @@
 
 import os.path
 from os import remove
-import sys
 import gc
 import tempfile
 import numpy as np
-import dask
 import pytest
-from distutils.version import LooseVersion
 from hyperspy.io import load
 import hyperspy.api as hs
 from hyperspy.signal import BaseSignal
-from hyperspy._signals.signal1d import Signal1D
 
 
 dirpath = os.path.dirname(__file__)
@@ -49,7 +45,7 @@ class TestExample1_12():
         self.s = load(os.path.join(
             my_path,
             "hdf5_files","example1_v1.2.hdf5"),file_format="Nexus",
-             nxdata_only=False)
+             load_nxdata_only=False)
    
     def test_filename(self):
         assert (
@@ -100,10 +96,10 @@ class TestSavingMetadataContainers:
         s.original_metadata.set_item('test3',64.0)        
         s.save(tmpfilepath)
         l = load(tmpfilepath)
-        assert isinstance(l.original_metadata.attrs.test1, float)
-        assert isinstance(l.original_metadata.attrs.test2, float)
-        assert isinstance(l.original_metadata.attrs.test3, float)
-        assert l.original_metadata.attrs.test2 == 54.0
+        assert isinstance(l.original_metadata.test1.value, float)
+        assert isinstance(l.original_metadata.test2.value, float)
+        assert isinstance(l.original_metadata.test3.value, float)
+        assert l.original_metadata.test2.value == 54.0
 #
 # read 3 varieties of nexus file
 #
@@ -137,7 +133,7 @@ def test_preffered_format_rgba16():
     s = load(os.path.join(
         my_path,
         "hdf5_files",
-        "test_rgba16.hdf5"),file_format="Nexus",nxdata_only=False)
+        "test_rgba16.hdf5"),file_format="Nexus",load_nxdata_only=False)
     data = np.load(os.path.join(
         my_path,
         "npy_files",

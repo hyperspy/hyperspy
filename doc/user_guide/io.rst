@@ -947,12 +947,16 @@ HyperSpy supports reading in one or more USID datasets
 Extra loading arguments
 +++++++++++++++++++++++
 - ``dset_path`` : ``str`` - Absolute path of USID Main HDF5 dataset. (default is ``None`` - all USID Main Datasets will be read)
+- ``file_format`` : ``str`` - Hyperspy, USID and Nexus use hdf5 and so can allow hdf5 file extensions. If
+reading files with h5, hdf or hdf5 extensions specify ``file_format='USID`` to
+load the data with this loader. 
+
 
 Reading the sole dataset within a h5USID file:
 
 .. code-block:: python
 
-    >>> hs.load("sample.h5")
+    >>> hs.load("sample.h5",file_format='USID')
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 If multiple datasets are present within the h5USID file and you try the same command again,
@@ -979,7 +983,7 @@ absolute path of the desired dataset will cause the single dataset to be loaded.
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data')
+    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data',file_format='USID')
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 h5USID files support the storage of HDF5 dataset with
@@ -1016,7 +1020,7 @@ In order to prevent accidental misinterpretation of information downstream, the 
 
 .. code-block:: python
 
-    >>> hs.load("sample.h5")
+    >>> hs.load("sample.h5",file_format='USID')
     ValueError: Cannot load provided dataset. Parameter: Bias was varied non-linearly.
     Supply keyword argument "ignore_non_linear_dims=True" to ignore this error
 
@@ -1029,7 +1033,7 @@ HDF5 file. All other keyword arguments will be passed to
 
 .. code-block:: python
 
-    >>> sig.save("USID.h5")
+    >>> sig.save("USID.h5",file_format='USID')
 
 Note that the model and other secondary data artifacts linked to the signal are not
 written to the file but these can be implemented at a later stage.
@@ -1039,7 +1043,7 @@ Nexus and general HDF
 
 Background
 ^^^^^^^^^^
-'NeXus <https://www.nexusformat.org>'_ is a common data format orginally 
+`NeXus <https://www.nexusformat.org>`_ is a common data format orginally 
 developed by the neutron, x-ray communities. It is still being developed as 
 an international standard by scientists and programmers representing major 
 scientific facilities in order to facilitate greater cooperation in the analysis
@@ -1048,11 +1052,9 @@ Nexus uses a variety of classes to record data, values,
 units and other experimental metadata associated with an experiment. 
 For specific types of experiments an Application Definition may exist which
 defines an agreed common layout that facilities can adhere to.
- 
 Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
-
-Files must use the ``.nxs``,``.hdf``,``.hdf5``,``.h5`` file extension 
+Files must use the ``.nxs`` , ``.hdf`` , ``.hdf5`` , ``.h5`` file extension 
 in order to use this io plugin.
 Using the ``.nxs`` extension will default to the Nexus loader 
 Using any other extension with Nexus reader will require the 
@@ -1061,6 +1063,82 @@ format is specfied as Nexus in the loader
 As the Nexus format uses HDF5 and needs to read data and metadata structured
 in different ways the loader is written to quite flexible and can also be used 
 to load any hdf5 based file.  
+
+
+Import differences with respect to hspy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Hyperspy metadata structure stores arrays as datasets without attributes
+and stores floats,ints and strings as attributes.
+
+Nexus requires datasets have attributes so the structure
+of the metadata needs to be able to indicate the values and attributes of a 
+dataset. For example to store an indication of the units for an axis.
+
+Datasets and their attributes are defined through use of a   
+a defined metadata structure.
+The value of a dataset is set using a "value" keyword. 
+The attributes of a dataset are defined using a "attrs" dictionary. The 
+attributes of a group are defined using an "attrs" dictionary.
+The attributes can be set to define quantities such as units or 
+to implement Nexus attributes to conform to a Nexus format.
+
+Example of a Nexus monochromator format defined in metadata
+::
+    
+    ├── monochromator
+    │   ├── energy    
+    │   │   ├── value : 12.0
+    │   │   ├── attrs
+    │   │   │   ├── units : keV
+    │   │   │   ├── NXclass : NXmonochromator
+    
+Example of axis data stored with units
+::
+    
+    ├── axis_x
+    │   ├── value : array([1.0,2.0,3.0,4.0,5.0])
+    │   ├── attrs
+    │   │   ├── units : mm
+
+Examples of Group structure
+::
+
+    ├── instrument
+    │   ├── attrs    
+    │   │   ├── model : "JEOL"
+    │   ├── sample
+    │   │   ├── attrs
+    │   │   │   ├── name : "Standard"
+        
+
+When read in it is then consistent with the stored hdf format.
+
+.. code-block:: python
+
+    >>> orginal_metadata.monochromator.energy.value = 12.5
+    >>> orginal_metadata.monochromator.energy.attrs.units = "keV"
+
+so "value" and "attrs" keywords are requirements to access information but
+also to add additional structure to the metadata such as datasets.
+If a hyperspy signal is stored to nexus format and then loaded back
+the hyperspy metadata would need to be updated to reflect this structure.
+``metadata.Acquisition_instrument.SEM.beam_current`` would need to change to 
+``metadata.Acquisition_instrument.SEM.beam_current.value`` for example. 
+As this will likely break some specific hyperspy functions
+It's recommended that a "mapping" dictionary is passed to the load or
+file_reader to translate stored original_metadata to 
+hyperspy signal metadata.
+For example to map a hdf5 entry to hyperspy metadata.
+
+.. code-block:: python
+
+   >>> nexus_mapping = {"entry.instrument.beamline.DCM.dcm_energy":("Acquisition_instrument.TEM.beam_energy",None)}
+   >>> a = hs.load("test.nxs",mapping=nexus_mapping)
+      
+Hyperspy metadata is stored with "original_metadata" in the file
+Hyperspy metadata is not automatically restored when a signal is loaded
+from a Nexus file. A mapping dictionary is the preferred method to map
+file metadata to hyperspy metdata.   
 
 Inspecting
 ^^^^^^^^^^
@@ -1103,16 +1181,9 @@ some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dset_search_keys`` : ``str`` or ``list`` 
-Absolute path(s) or substring(s) used to find
-one or more datasets. (default is ``None`` all Nexus Datasets will be read)
-- ``meta_search_keys`` : ``str`` or ``list`` of strings 
-Absolute path(s) or substring(s) to use to find
-one or more datasets. (default is ``None`` all Nexus Metadata will be read)
-- ``file_format`` : ``str``  
-Hyperspy,USID and Nexus use hdf5 and so can allow hdf5 file extensions. If
-reading files with h5, hdf or hdf5 extensions specify file_format='Nexus' to
-load the data with this loader. 
+- ``dset_search_keys`` : ``str`` or ``list`` - Absolute path(s) or substring(s) used to find one or more datasets. (default is ``None`` all Nexus Datasets will be read)
+- ``meta_search_keys`` : ``str`` or ``list`` of strings - Absolute path(s) or substring(s) to use to find one or more datasets. (default is ``None`` all Nexus Metadata will be read)
+- ``file_format`` : ``str`` - Hyperspy, USID and Nexus use hdf5 and so can allow hdf5 file extensions. If reading files with h5, hdf or hdf5 extensions specify file_format='Nexus' to load the data with this loader. 
   
  
  
@@ -1151,14 +1222,14 @@ one of the substrings will be loaded.
     >>> hs.load("sample.h5", dset_search_keys='/entry/experiment/EDS/data')
 
 We can also choose to load only specific items from the metadata using
- ``dset_path`` keyword argument. This can be a list of 
-absolute paths of the desired dataset or substrings to find in the metadata
-path.
+``dset_path`` keyword argument. 
+This can be a list of absolute paths of the desired dataset or substrings to 
+find in the metadata path.
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.h5", dset_search_keys=["Fe","Ca"])
+    >>> hs.load("sample.nxs", dset_search_keys=["Fe","Ca"])
 
 Nexus files also support parameters or dimensions that have been varied 
 non-linearly.
@@ -1173,11 +1244,8 @@ Signals can be written to new Nexus files using the standard ``.save()``
 function.
 
 Extra saving arguments
-+++++++++++++++++++++++
-- ``file_format`` : ``str``  
-Hyperspy,USID and Nexus use hdf5 and so can save to hdf5. If
-storing a files with h5, hdf or hdf5 extensions specify file_format='Nexus' to
-save with this format. 
++++++++++++++++++++++++++++++++++++
+- ``file_format`` : ``str`` - Hyperspy,USID and Nexus use hdf5 and so can save to hdf5. If storing a files with h5, hdf or hdf5 extensions specify file_format='Nexus' to save with this format. 
 
 .. code-block:: python
 
@@ -1190,30 +1258,51 @@ save with this format.
 Saving to Nexus format 
 ----------------------
 
-The saved nexus file is divived into three entries
+Using the save method will store the nexus file with the following structure:
 
- |- nexus_data
- |- hyperspy_metadata
- |- original_metadata
+.. code-block:: python
+    >>> sig.save("test.nxs")
+
+
+::
+
+    ├── Experiments
+    │   ├── signal_name
+    │   │   ├── signal (NXdata format)
+    │   │   ├── original_metadata
+    │   │   │   ├── hyperspy_metadata
+    │   │   ├── learning_results
  
-nexus_data - The signal data and axes are saved here as an NXdata 
-set 
 
-original_metadata - signal.original_metadata is stored here.
-If loaded from a correctly formatted Nexus file
-then when saved the data and original_metadata will be in a Nexus
-format. If loaded from another format this will contain the metadata
-but will be standard hdfgroups and datasets rather than Nexus entries.
+To save multiple signals the file_writer method can be called directly.
 
-hyperspy_metadata - the signal metadata and learning_results
-This will be in the form of standard hdf groups and datasets following the 
-same structure as the signal metadata. 
+.. code-block:: python
+
+    >>> from hyperspy.io_plugins.nexus file_writer
+    >>> file_writer("test.nxs",[signal1,signal2])
+    
+The output will be arranged by signal name which is 
+derived from the title stored in the metadata
+
+::
+    
+    ├── Experiments
+    │   ├── first_signal_name
+    │   │   ├── first_signal
+    │   │   ├── first_signal_learning_results
+    │   │   ├── first_signal_original_metadata
+    │   │   │   ├── first_signal_hyperspy_metadata
+    │   ├── second_signal_name
+    │   │   ├── second_signal 
+    │   │   ├── second_signal_learning_results
+    │   │   ├── second_signal_original_metadata
+    │   │   │   ├── second_signal_hyperspy_metadata
+
 
 .. note::
-Signals saved as nxs by this plugin can be loaded normally and the metadata,
-original_metadata, signal data, axes and learning_results will be restored.
 
-
+    Signals saved as nxs by this plugin can be loaded normally and the
+    original_metadata, signal data, axes and learning_results will be restored.
 
 Reading data generated by HyperSpy using other software packages
 ================================================================

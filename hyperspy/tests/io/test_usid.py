@@ -240,7 +240,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_0_spec_real.h5'
-        sig.save(file_path,preferred_format='USID')
+        sig.save(file_path,file_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=True)
@@ -257,7 +257,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_0_pos_n_spec_real.h5'
-        sig.save(file_path,preferred_format='USID')
+        sig.save(file_path,file_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=True,
                                  empty_spec=False)
@@ -278,7 +278,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_real.h5'
-        sig.save(file_path,preferred_format='USID')
+        sig.save(file_path,file_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False)
@@ -296,7 +296,7 @@ class TestHS2USIDallKnown:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_0_spec_real.h5'
-        sig.save(file_path,preferred_format='USID')
+        sig.save(file_path,file_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=True)
@@ -310,7 +310,7 @@ class TestHS2USIDallKnown:
                                            'units': 'V', 'scale': 0.25,
                                            'offset': -0.25}])
 
-        sig.save(file_path,preferred_format='USID',overwrite=True)
+        sig.save(file_path,file_format='USID',overwrite=True)
 
         new_dset_path = '/Measurement_001/Channel_000/Raw_Data'
 
@@ -326,7 +326,7 @@ class TestHS2USIDlazy:
                                                     chunks='auto'))
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_dask.h5'
-        sig.save(file_path,preferred_format='USID')
+        sig.save(file_path,file_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False, axes_defined=False)
@@ -340,7 +340,7 @@ class TestHS2USIDedgeAxes:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_no_axes.h5'
-        sig.save(file_path,preferred_format='USID')
+        sig.save(file_path,file_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False, axes_defined=False)
@@ -363,7 +363,7 @@ class TestHS2USIDedgeAxes:
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_incorrect_axes.h5'
-        sig.save(file_path,preferred_format='USID')
+        sig.save(file_path,file_format='USID')
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False, invalid_axes=True)
@@ -389,7 +389,7 @@ class TestHS2USIDedgeAxes:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_too_many_axes.h5'
         with pytest.raises(ValueError):
-            sig.save(file_path,preferred_format='USID')
+            sig.save(file_path,file_format='USID')
 
 # ################## h5USID to HyperSpy Signal(s)  ############################
 
@@ -408,7 +408,7 @@ class TestUSID2HSbase:
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
 
-        new_sig = hs.load(file_path,preferred_format='USID')
+        new_sig = hs.load(file_path,file_format='USID')
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=[])
@@ -425,7 +425,7 @@ class TestUSID2HSbase:
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
-        new_sig = hs.load(file_path,preferred_format='USID')
+        new_sig = hs.load(file_path,file_format='USID')
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=[])
@@ -441,7 +441,7 @@ class TestUSID2HSbase:
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
-        new_sig = hs.load(file_path, preferred_format='USID',lazy=lazy)
+        new_sig = hs.load(file_path, file_format='USID',lazy=lazy)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=['Frequency', 'Bias'])
@@ -467,7 +467,7 @@ class TestUSID2HSdtype:
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
-        new_sig = hs.load(file_path,preferred_format='USID')
+        new_sig = hs.load(file_path,file_format='USID')
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.ComplexSignal,
                                  axes_to_spec=['Frequency', 'Bias'])
@@ -484,7 +484,7 @@ class TestUSID2HSdtype:
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
         
-        objects = hs.load(file_path,preferred_format='USID')
+        objects = hs.load(file_path,file_format='USID')
         assert isinstance(objects, list)
         assert len(objects) == 2
 
@@ -514,10 +514,10 @@ class TestUSID2HSdtype:
                            slow_to_fast=True)
 
         with pytest.raises(ValueError):
-            _ = hs.load(file_path,preferred_format='USID',ignore_non_linear_dims=False)
+            _ = hs.load(file_path,file_format='USID',ignore_non_linear_dims=False)
 
         with pytest.warns(UserWarning) as _:
-            new_sig = hs.load(file_path,preferred_format='USID')
+            new_sig = hs.load(file_path,file_format='USID')
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  axes_to_spec=['Frequency', 'Bias'],
                                  invalid_axes=True)
@@ -552,7 +552,7 @@ class TestUSID2HSmultiDsets:
                                                   slow_to_fast=slow_to_fast)
         
         dset_path = '/Measurement_001/Channel_000/Raw_Data'
-        new_sig = hs.load(file_path,preferred_format='USID', dset_path=dset_path)
+        new_sig = hs.load(file_path,file_format='USID', dset_path=dset_path)
         compare_signal_from_usid(file_path, ndata_2, new_sig,
                                  dset_path=dset_path)
         
@@ -581,7 +581,7 @@ class TestUSID2HSmultiDsets:
                                                   spec_dims,
                                                   slow_to_fast=slow_to_fast)
         
-        objects = hs.load(file_path,preferred_format='USID')
+        objects = hs.load(file_path,file_format='USID')
         assert isinstance(objects, list)
         assert len(objects) == 2
 
