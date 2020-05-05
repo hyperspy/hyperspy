@@ -154,7 +154,7 @@ class EELSSpectrum_mixin:
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
 
-    def get_edges_near_energy(self, energy, width=1):
+    def get_edges_near_energy(self, energy, width=10):
         """Find edges near a given energy that are within the given energy 
         window.
         
@@ -165,7 +165,7 @@ class EELSSpectrum_mixin:
         width : float
             Width of window, in eV, around energy in which to find nearby 
             energies, i.e. a value of 1 eV (the default) means to 
-            search +/- 0.5 eV.
+            search +/- 0.5 eV. The default is 10.
         
         Returns
         -------
