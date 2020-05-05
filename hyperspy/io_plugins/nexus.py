@@ -386,7 +386,7 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
 def file_reader(filename,lazy=True, dset_search_keys=None,
                 meta_search_keys=None,
                 load_nxdata_only=True,
-                small_metadata_only=False,
+                small_metadata_only=True,
                 **kwds):   
     """ Reads NXdata class or hdf datasets from a file and returns signal
     
@@ -411,12 +411,14 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
         Only return items from the original metadata whose path contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         all metadata entries with instrument or Fe in their hdf path.
-    load_nxdata_only : bool  If true only NXdata will be converted into a signal
-                 if false NXdata and any hdf datasets not bound within the
-                 NXdata sets will be loaded as signals
-    small_metadata_only : bool, default:True  If true arrays of size<2
-                 will be loaded into the metadata structure. If false larger 
-                 arrays will be also loaded into the metadata
+    load_nxdata_only : bool  
+        If true only NXdata will be converted into a signal
+        if false NXdata and any hdf datasets not bound within the
+        NXdata sets will be loaded as signals
+    small_metadata_only : bool, default:True  
+        If true arrays of size<2
+        will be loaded into the metadata structure. If false larger 
+        arrays will be also loaded into the metadata
     
 
     Returns
@@ -571,7 +573,7 @@ def _is_int(s):
 
         
 def _find_data(group,search_keys=None):   
-    """ Read from a nexus or hdf file and return a list 
+    """Read from a nexus or hdf file and return a list 
     of the dataset entries
     The method iterates through group attributes and returns NXdata or 
     hdf datasets of size >=2 if they're not already NXdata blocks
@@ -608,7 +610,6 @@ def _find_data(group,search_keys=None):
             if isinstance(value,h5py.Dataset):  
                 if value.size >= 2:
                     target,b,c, = _getlink(value,rootkey)
-                    
                     #if target is not None:
                     if search_keys:
                         if any(s in rootkey for s in search_keys):
@@ -647,14 +648,18 @@ def _find_data(group,search_keys=None):
     for k in unlinked_hdf_datasets:
         if k not in linked_hdf_datasets:
             hdf_datasets.append(k)
-                    
+    # if loading from a saved file - ignore datasets stored in orignal metadata
+    hdf_datasets = [s for s in hdf_datasets if "original_metadata" not in s ]
+
     nx_datasets = list(dict.fromkeys(nx_datasets))
+    nx_datasets = [s for s in nx_datasets if "original_metadata" not in s ]
+    
     return nx_datasets,hdf_datasets
 
 
 def _load_metadata(group,lazy=True,
                           small_metadata_only=False):
-    """ Search through a hdf group and return the group
+    """Search through a hdf group and return the group
     structure, datasets and attributes
 
     Paramaters
@@ -712,7 +717,7 @@ def _load_metadata(group,lazy=True,
 
 
 def _fix_exclusion_keys(key):    
-    """ Exclude hyperspy specific keys
+    """Exclude hyperspy specific keys
     Signal and DictionaryBrowser break if a
     a key is a dict method - e.g. {"keys":2.0} 
     
@@ -739,7 +744,7 @@ def _fix_exclusion_keys(key):
 
 
 def _find_search_keys_in_dict(tree,search_keys=None):    
-    """ Search through a dict and return a dictionary
+    """Search through a dict and return a dictionary
     whose full path contains one of the search keys
 
     This is a convenience method to inspect a file for a value
@@ -784,9 +789,52 @@ def _find_search_keys_in_dict(tree,search_keys=None):
     find_searchkeys_in_tree(tree,rootname)
     return metadata_dict
 
+
+def _find_smalldata_in_dict(tree):    
+    """Search through a dict and return a dictionary
+    which only contains small metadata (item size < 2)
+    Size of data in attrs groups is ignored
+    This is a convenience method to filter data at time of 
+    loading and saving
+    
+    Parameters
+    ----------
+    tree : dict  
+        input dictionary
+    
+    Returns
+    -------
+    dict
+        When search_list is specified only full paths
+        containing one or more search_keys will be returned 
+        
+    """
+        
+    # recursive function    
+    def find_smallmeta_in_tree(metadata_dict,sizefilter=True):
+        tree={}
+        for key, value in metadata_dict.items():
+            if isinstance(value,(int,float,str,bytes)):
+                tree[key]=value
+            elif isinstance(value,(np.ndarray,da.Array)):
+                if sizefilter:
+                    if value.size < 2:
+                        tree[key]=value
+                else:
+                    tree[key]=value                    
+            elif isinstance(value,dict):
+                if key == "attrs":
+                    find_smallmeta_in_tree(value,sizefilter=False)
+                else:
+                    find_smallmeta_in_tree(value,sizefilter=True)                    
+        return tree
+    metadata_dict=find_smallmeta_in_tree(tree)
+    return metadata_dict
+
+
     
 def _guess_chunks(data):    
-    """ Guess an appropriate chunk layout for a dataset, given its shape and
+    """Guess an appropriate chunk layout for a dataset, given its shape and
     the size of each element in bytes.  Will allocate chunks only as large
     as MAX_SIZE.  Chunks are generally close to some power-of-2 fraction of
     each axis, slightly favoring bigger values for the last index.    
@@ -806,7 +854,7 @@ def _guess_chunks(data):
 
 
 def _write_nexus_groups(dictionary, group, **kwds):
-    """ Recursively iterate through dictionary and 
+    """Recursively iterate through dictionary and 
     create the groups and datasets
     
     Parameters
@@ -841,7 +889,7 @@ def _write_nexus_groups(dictionary, group, **kwds):
 
 
 def _write_nexus_attr(dictionary, group):
-    """ Recursively iterate through dictionary and 
+    """Recursively iterate through dictionary and 
     write "attrs" dictionaries
     This step is called after the groups and datasets
     have been created
@@ -1031,6 +1079,7 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
 
 def file_writer(filename,
                 signals,
+                small_metadata_only=True,
                 *args, **kwds):
     """ Write the signal and metadata as a nexus file
     This will save the signal in NXdata format in the file.
@@ -1042,7 +1091,10 @@ def file_writer(filename,
     filename : str    
         Path of the file to write
     signals : signal or list of signals
-    
+    small_metadata_only : bool , default : False
+         Only save datasets of size < 2 to metadata. This is to avoid saving
+         lazy dask arrays which may be in the metadata structure 
+         
     """
     if not isinstance(signals,list):
         signals = [signals]
@@ -1082,6 +1134,8 @@ def file_writer(filename,
                         ometa = sig.original_metadata.as_dictionary()
                     else:
                         ometa = sig.original_metadata
+                    if small_metadata_only:
+                        ometa=_find_smalldata_in_dict(ometa)
                     if sig.metadata:
                         if isinstance(sig.metadata,DictionaryTreeBrowser):
                             meta = sig.metadata.as_dictionary()

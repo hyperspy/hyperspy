@@ -1246,6 +1246,7 @@ function.
 Extra saving arguments
 +++++++++++++++++++++++++++++++++++
 - ``file_format`` : ``str`` - Hyperspy,USID and Nexus use hdf5 and so can save to hdf5. If storing a files with h5, hdf or hdf5 extensions specify file_format='Nexus' to save with this format. 
+- ``small_metadata_only`` : ``bool`` - Default is True, Option to ignore large datasets contained in the original_metadata when storing to file
 
 .. code-block:: python
 
