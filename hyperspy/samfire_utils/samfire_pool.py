@@ -410,6 +410,7 @@ class SamfirePool(ParallelPool):
             for queue in self.workers.values():
                 queue.put('stop_listening')
             self.pool.close()
-            # self.pool.terminate()
+            self.pool.terminate()
+            self.pool.join()
         elif self.is_ipyparallel:
             self.pool.client.clear()

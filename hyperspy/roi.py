@@ -258,6 +258,10 @@ def _get_mpl_ax(plot, axes):
     axes : collection of DataAxis
         The axes to infer from.
     """
+    if not plot.is_active:
+        raise RuntimeError("The signal needs to be plotted before using this "
+                           "function.")
+
     if axes[0].navigate:
         ax = plot.navigator_plot.ax
     else:

@@ -17,8 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Import sklearn, fast_svd and randomized_svd from scikits-learn
-
+Import sklearn.* and randomized_svd from scikit-learn
 """
 
 import warnings
@@ -27,13 +26,15 @@ import warnings
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from sklearn.utils.extmath import randomized_svd as fast_svd
+        import sklearn
         import sklearn.decomposition
         import sklearn.cluster
         import sklearn.preprocessing        
         import sklearn.metrics
-        from sklearn.decomposition import FastICA
+        from sklearn.utils.extmath import randomized_svd
+
         sklearn_installed = True
+
 except ImportError:
-    fast_svd = None
+    randomized_svd = None
     sklearn_installed = False

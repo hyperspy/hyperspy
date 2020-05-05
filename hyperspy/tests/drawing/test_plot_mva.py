@@ -63,6 +63,12 @@ class TestPlotDecomposition:
                                                   xaxis_labeling=xaxis_labeling)
         return ax.get_figure()
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cumulative_explained_variance_ratio(self):
+        ax = self.s.plot_cumulative_explained_variance_ratio()
+        return ax.get_figure()
+
     @pytest.mark.parametrize("n", [3, [3, 4]])
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)

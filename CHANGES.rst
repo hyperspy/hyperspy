@@ -39,7 +39,7 @@ NEW
   ``apodization`` keyword for :py:meth:`hyperspy.signal.BaseSignal.fft`. See
   :ref:`signal.fft` for details.
 * Estimation of number of significant components by the elbow method.
-  See :ref:`scree-plot`.
+  See :ref:`mva.scree_plot`.
 
 Enhancements
 ------------
@@ -343,7 +343,7 @@ Enhancements
   :ref:`User Guide for details <expression_component-label>`.
 * Better support for EMD files.
 * The scree plot got a beauty treatment and some extra features. See
-  :ref:`scree-plot`.
+  :ref:`mva.scree_plot`.
 * :py:meth:`~.signal.BaseSignal.map` can now take functions that return
   differently-shaped arrays or arbitrary objects, see :ref:`map-label`.
 * Add support for stacking multi-signal files. See :ref:`load-multiple-label`.
@@ -440,7 +440,7 @@ NEW
 ---
 
 * :ref:`roi-label`.
-* :ref:`Robust PCA <rpca-label>` (RPCA) and online RPCA algorithms.
+* :ref:`Robust PCA <mva.rpca>` (RPCA) and online RPCA algorithms.
 * Numpy ufuncs can now :ref:`operate on HyperSpy's signals <ufunc-label>`.
 * ComplexSignal and specialised subclasses to :ref:`operate on complex data <complex_data-label>`.
 * Events :ref:`logging <logger-label>`.
@@ -805,7 +805,7 @@ Machine learning
 ^^^^^^^^^^^^^^^^
 
 * The PCA scree plot can now be easily obtained as a Signal. See
-  :ref:`scree-plot`.
+  :ref:`mva.scree_plot`.
 * The decomposition and blind source separation components can now be obtained
   as :py:class:`~.signal.Signal` instances. See :ref:`mva.get_results`.
 * New methods to plot the decomposition and blind source separation results
