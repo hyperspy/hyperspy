@@ -37,13 +37,16 @@ A method :py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy`
 can be helpful to identify possible elements in the sample.
 :py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy` returns a
 list of edges arranged in the order closest to the specified energy within a
-window.
+window, both measured in eV. The size of the window can be controlled by the
+argument `width` (default as 10)--- If the specified energy is 849 eV and the
+width is 6 eV, it returns a list of edges with onset energy between 846 eV to
+852 eV and they are arranged in the order closest to 849 eV.
 
 .. code-block:: python
 
     >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
     >>> s.get_edges_near_energy(532)
-    ['O_K']
+    ['O_K', 'Pd_M3', 'Sb_M5', 'Sb_M4']
     >>> s.get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
