@@ -695,23 +695,26 @@ def plot_images(images,
     centre_colormaps = itertools.cycle(centre_colormaps)
     cmap = itertools.cycle(cmap)
 
-    def _check_arg(arg, default_value, arg_name):
-        if isinstance(arg, list):
+    def check_list_length(arg, default_value, arg_name):
+        if isinstance(arg, (list, tuple)):
             if len(arg) != n:
-                _logger.warning('The provided {} values are ignored because the '
-                                'length of the list does not match the number of '
-                                'images'.format(arg_name))
+                _logger.warning(f'The provided {arg_name} values are ignored '
+                                'because the length of the list does not '
+                                'match the number of images')
                 arg = [default_value] * n
-        else:
+        elif colorbar != 'single':
+            print('here')
             arg = [arg] * n
         return arg
-    vmin = _check_arg(vmin, None, 'vmin')
-    vmax = _check_arg(vmax, None, 'vmax')
+
     if saturated_pixels is None:
         saturated_pixels = preferences.Plot.saturated_pixels
-    saturated_pixels = _check_arg(saturated_pixels,
-                                  preferences.Plot.saturated_pixels,
-                                  'saturated_pixels')
+
+    vmin = check_list_length(vmin, None, 'vmin')
+    vmax = check_list_length(vmax, None, 'vmax')
+    saturated_pixels = check_list_length(saturated_pixels,
+                                         preferences.Plot.saturated_pixels,
+                                         'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -841,7 +844,6 @@ def plot_images(images,
     # 'single' scalebar
     if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
-        print(saturated_pixels)
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
         else:
@@ -894,9 +896,10 @@ def plot_images(images,
             if rgb_tools.is_rgbx(data):
                 data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
                 l_vmin, l_vmax = None, None
-            else:
+            elif colorbar != 'single':
+                # Find l_vmin and l_vmax for contrast only when colorbar is not
+                # 'single', otherwise, we use g_min, gmax
                 data = im.data
-                # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(
                     data, saturated_pixels[idx])
                 l_vmin = vmin[idx] if vmin[idx] is not None else l_vmin
