@@ -1184,7 +1184,9 @@ Extra loading arguments
 - ``dset_search_keys`` : ``str`` or ``list`` - Absolute path(s) or substring(s) used to find one or more datasets. (default is ``None`` all Nexus Datasets will be read)
 - ``meta_search_keys`` : ``str`` or ``list`` of strings - Absolute path(s) or substring(s) to use to find one or more datasets. (default is ``None`` all Nexus Metadata will be read)
 - ``file_format`` : ``str`` - Hyperspy, USID and Nexus use hdf5 and so can allow hdf5 file extensions. If reading files with h5, hdf or hdf5 extensions specify file_format='Nexus' to load the data with this loader. 
-  
+- ``nxdata_only`` : ``bool`` - Only convert NXdata formatted data to signals
+- ``small_metadata_only`` : ``bool`` - Only load items of size<2 into the metadata to avoid linking to large datasets
+   
  
  
 Reading the sole Nexus dataset within a Nexus file:

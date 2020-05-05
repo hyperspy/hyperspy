@@ -385,7 +385,7 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
 
 def file_reader(filename,lazy=True, dset_search_keys=None,
                 meta_search_keys=None,
-                load_nxdata_only=True,
+                nxdata_only=True,
                 small_metadata_only=True,
                 **kwds):   
     """ Reads NXdata class or hdf datasets from a file and returns signal
@@ -411,7 +411,7 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
         Only return items from the original metadata whose path contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         all metadata entries with instrument or Fe in their hdf path.
-    load_nxdata_only : bool  
+    nxdata_only : bool  
         If true only NXdata will be converted into a signal
         if false NXdata and any hdf datasets not bound within the
         NXdata sets will be loaded as signals
@@ -476,7 +476,7 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
                 
         signal_dict_list.append(dictionary)
         
-    if not load_nxdata_only:
+    if not nxdata_only:
         for data_path in hdf_data_paths:        
             data = _extract_hdf_dataset(fin,data_path,lazy)
             if data is not None:
