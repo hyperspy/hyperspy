@@ -32,7 +32,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
-from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP, iMFP_angular_correction
+from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
@@ -607,7 +607,7 @@ class EELSSpectrum_mixin:
                     density=density,
                 )
                 if mean_free_path is None:
-                    mean_free_path = iMFP(
+                    mean_free_path = iMFP_Iakoubovskii(
                         beam_energy=self.metadata.Acquisition_instrument.TEM.beam_energy,
                         density=density)
                     _logger.info(f"The estimated iMFP is {mean_free_path} nm")
