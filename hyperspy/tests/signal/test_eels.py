@@ -286,3 +286,29 @@ class TestRebin:
         assert s2.axes_manager[0].offset == 1.5
         assert s2.axes_manager[1].offset == 2.5
         assert s2.axes_manager[2].offset == s.axes_manager[2].offset
+
+class TestGetNearEdgeEnergy:
+
+    def setup_method(self, method):
+        # Create a dummy spectrum
+        s = signals.EELSSpectrum(np.ones(1024))
+        self.signal = s
+
+    def test_single_edge(self):
+        s = self.signal
+        edges = s.get_edges_near_energy(532, width=0)
+        assert len(edges) == 1
+        assert edges == ['O_K']
+
+    def test_multiple_edges(self):
+        s = self.signal
+        edges = s.get_edges_near_energy(640, width=100)
+        assert len(edges) == 12
+        assert edges == ['Mn_L3','I_M4','Cd_M2','Mn_L2','V_L1','I_M5','Cd_M3',
+                         'In_M3','Xe_M5','Ag_M2','F_K','Xe_M4']
+        
+    def test_negative_energy_width(self):
+        s = self.signal
+        with pytest.raises(Exception):
+            s.get_edges_near_energy(849, width=-5)
+        
