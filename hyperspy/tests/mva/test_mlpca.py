@@ -19,66 +19,64 @@
 import numpy as np
 import pytest
 
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.learn.mlpca import mlpca
+from hyperspy.signals import Signal1D
 
 
-class TestMLPCA:
-    def setup_method(self, method):
-        # Define shape etc.
-        m = 100  # Dimensionality
-        n = 101  # Number of samples
-        r = 3
+@pytest.mark.parametrize("tol", [1e-9, 1e-6])
+@pytest.mark.parametrize("max_iter", [100, 500])
+def test_mlpca(tol, max_iter):
+    # Define shape etc.
+    m = 100  # Dimensionality
+    n = 101  # Number of samples
+    r = 3
 
-        rng = np.random.RandomState(101)
-        U = rng.uniform(0, 1, size=(m, r))
-        V = rng.uniform(0, 10, size=(n, r))
-        varX = U @ V.T
-        X = rng.poisson(varX)
-        self.m = m
-        self.n = n
-        self.rank = r
-        self.X = X
-        self.varX = varX
+    rng = np.random.RandomState(101)
+    U = rng.uniform(0, 1, size=(m, r))
+    V = rng.uniform(0, 10, size=(n, r))
+    varX = U @ V.T
+    X = rng.poisson(varX)
+    rank = r
 
-        # Test tolerance
-        self.tol = 270
+    # Test tolerance
+    tol = 300
 
-    @pytest.mark.parametrize("tol", [1e-9, 1e-6])
-    @pytest.mark.parametrize("max_iter", [100, 500])
-    def test_mlpca(self, tol, max_iter):
-        U, S, V, Sobj = mlpca(
-            self.X, self.varX, output_dimension=self.rank, tol=tol, max_iter=max_iter
-        )
-        X = U @ np.diag(S) @ V.T
+    U, S, V, Sobj = mlpca(X, varX, output_dimension=rank, tol=tol, max_iter=max_iter)
+    X = U @ np.diag(S) @ V.T
 
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.X)
-        assert normX < self.tol
+    # Check the low-rank component MSE
+    normX = np.linalg.norm(X - X)
+    assert normX < tol
 
-        # Check singular values
-        S_norm = S / np.sum(S)
-        np.testing.assert_allclose(S_norm[:self.rank].sum(), 1.0)
+    # Check singular values
+    S_norm = S / np.sum(S)
+    np.testing.assert_allclose(S_norm[:rank].sum(), 1.0)
 
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-    @pytest.mark.parametrize("tol", [1e-9, 1e-6])
-    @pytest.mark.parametrize("max_iter", [100, 500])
-    def test_mlpca_fast(self, tol, max_iter):
-        U, S, V, Sobj = mlpca(
-            self.X,
-            self.varX,
-            output_dimension=self.rank,
-            tol=tol,
-            max_iter=max_iter,
-            fast=True,
-        )
-        X = U @ np.diag(S) @ V.T
+def test_signal():
+    # Define shape etc.
+    m = 100  # Dimensionality
+    n = 101  # Number of samples
+    r = 3
 
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.X)
-        assert normX < self.tol
+    rng = np.random.RandomState(101)
+    U = rng.uniform(0, 1, size=(m, r))
+    V = rng.uniform(0, 10, size=(n, r))
+    varX = U @ V.T
+    X = rng.poisson(varX).astype(float)
 
-        # Check singular values
-        S_norm = S / np.sum(S)
-        np.testing.assert_allclose(S_norm[:self.rank].sum(), 1.0)
+    # Test tolerance
+    tol = 300
+
+    x = X.copy().reshape(10, 10, 101)
+    s = Signal1D(x)
+    s.decomposition(algorithm="mlpca", output_dimension=r)
+
+    # Check singular values
+    v = s.get_explained_variance_ratio().data
+    np.testing.assert_allclose(v[:r].sum(), 1.0)
+
+    # Check the low-rank component MSE
+    Y = s.get_decomposition_model(r).data
+    normX = np.linalg.norm(Y.reshape(m, n) - X)
+    assert normX < tol
