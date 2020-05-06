@@ -37,7 +37,7 @@ def iMFP_Iakoubovskii(density, electron_energy):
     
     Notes:
     ------
-    For details see:
+    For details see Equation 9 in:
     - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
       ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
       Microscopy Research and Technique 71, no. 8 (2008): 626–31.
@@ -66,12 +66,13 @@ def iMFP_TPP2M(electron_energy, density, M, N_v, E_g):
 
     Notes
     -----
-    See Shinotsuka, H., S. Tanuma, C. J. Powell, and D. R. Penn. ‘Calculations
-    of Electron Inelastic Mean Free Paths. X. Data for 41 Elemental Solids over
-    the 50 EV to 200 KeV Range with the Relativistic Full Penn Algorithm:
-    Calculations of Electron Inelastic Mean Free Paths. X’. Surface and
-    Interface Analysis 47, no. 9 (September 2015): 871–88.
-    https://doi.org/10.1002/sia.5789.
+    For details see:
+    - Shinotsuka, H., S. Tanuma, C. J. Powell, and D. R. Penn. ‘Calculations
+      of Electron Inelastic Mean Free Paths. X. Data for 41 Elemental Solids over
+      the 50 EV to 200 KeV Range with the Relativistic Full Penn Algorithm:
+      Calculations of Electron Inelastic Mean Free Paths. X’. Surface and
+      Interface Analysis 47, no. 9 (September 2015): 871–88.
+      https://doi.org/10.1002/sia.5789.
     """
     E = electron_energy * 1e3
     rho = density
@@ -99,11 +100,7 @@ def iMFP_angular_correction(density, beam_energy, alpha, beta):
 
     Notes:
     ------
-    This implementation incorporates R. Egerton's theta_E relativistic
-    correction as detailed in his book cited below.
-    For details see:
-    - Egerton, R. Electron Energy-Loss Spectroscopy in the Electron Microscope.
-      Springer-Verlag, 2011.
+    For details see Equation 9 in:
     - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
       ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
       Microscopy Research and Technique 71, no. 8 (2008): 626–31.
