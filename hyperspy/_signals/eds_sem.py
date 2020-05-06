@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -29,7 +29,7 @@ from hyperspy.signal import BaseSetMetadataItems
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="microscope_parameters_EDS_SEM")
+@add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_SEM")
 class EDSSEMParametersUI(BaseSetMetadataItems):
 
     beam_energy = t.Float(t.Undefined,

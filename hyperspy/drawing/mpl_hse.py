@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -90,7 +90,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' ({})'.format(
                 self.axes_manager.signal_axes[0].units)
-        self.ylabel = self.quantity_label if self.quantity_label is not '' \
+        self.ylabel = self.quantity_label if self.quantity_label != '' \
             else 'Intensity'
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,88 +16,58 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import numpy as np
-
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 
-class Logistic(Component):
+class Logistic(Expression):
 
-    """Logistic function component
+    r"""Logistic function (sigmoid or s-shaped curve) component.
 
-    f(x) = a/(1+b*exp(-c*(x-origin)))
+    .. math::
+    
+        f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c 
+            \left((x - x_0\right)\right]}
 
-    Attributes
-    ----------
+    ============== =============
+    Variable        Parameter 
+    ============== =============
+    :math:`A`       a 
+    :math:`b`       b 
+    :math:`c`       c 
+    :math:`x_0`     origin 
+    ============== =============
+
+
+    Parameters
+    -----------
     a : Float
+        The curve's maximum y-value,  
+        :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
     b : Float
+        Additional parameter: 
+        b>1 shifts origin to larger values;
+        0<b<1 shifts origin to smaller values;
+        b<0 introduces an asymptote
     c : Float
+        Logistic growth rate or steepness of the curve
     origin : Float
-
+        Position of the sigmoid's midpoint
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
     """
 
-    def __init__(self):
-        # Define the parameters
-        Component.__init__(self, ('a', 'b', 'c', 'origin'))
-        # Define the name of the component
-        self.a.grad = self.grad_a
-        self.b.grad = self.grad_b
-        self.c.grad = self.grad_c
-        self.origin.grad = self.grad_origin
-        self._position = self.origin
+    def __init__(self, a=1., b=1., c=1., origin=0., module="numexpr", **kwargs):
+        super(Logistic, self).__init__(
+            expression="a / (1 + b * exp(-c * (x - origin)))",
+            name="Logistic",
+            a=a,
+            b=b,
+            c=c,
+            origin=origin,
+            position="origin",
+            module=module,
+            autodoc=False,
+            **kwargs)
 
-    def function(self, x):
-        """
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
-        origin = self.origin.value
-        return a / (1 + b * np.exp(-c * (x - origin)))
-
-    def grad_a(self, x):
-        """
-        Returns d(function)/d(parameter_1)
-        """
-        b = self.b.value
-        c = self.c.value
-        origin = self.origin.value
-
-        return 1 / (1 + b * np.exp(-c * (x - origin)))
-
-    def grad_b(self, x):
-        """
-        Returns d(function)/d(parameter_1)
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
-        origin = self.origin.value
-
-        return -(a * np.exp(-c * (x - origin))) / \
-            (b * np.exp(-c * (x - origin)) + 1) ** 2
-
-    def grad_c(self, x):
-        """
-        Returns d(function)/d(parameter_1)
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
-        origin = self.origin.value
-
-        return -(a * b * (origin - x) * np.exp(-c * (x - origin))) / \
-            (b * np.exp(-c * (x - origin)) + 1) ** 2
-
-    def grad_origin(self, x):
-        """
-        Returns d(function)/d(parameter_1)
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
-        origin = self.origin.value
-
-        return -(a * b * c * np.exp(-c * (x - origin))) / \
-            (b * np.exp(-c * (x - origin)) + 1) ** 2
+        # Boundaries
+        self.isbackground = False

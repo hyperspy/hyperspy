@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,16 +30,17 @@ from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline, signal_range_from_roi)
+from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
 
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="microscope_parameters_EELS")
+@add_gui_method(toolkey="hyperspy.microscope_parameters_EELS")
 class EELSTEMParametersUI(BaseSetMetadataItems):
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence semi-angle (mrad)')
@@ -153,6 +154,50 @@ class EELSSpectrum_mixin:
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
 
+    def get_edges_near_energy(self, energy, width=10):
+        """Find edges near a given energy that are within the given energy 
+        window.
+        
+        Parameters
+        ----------
+        energy : float
+            Energy to search, in eV
+        width : float
+            Width of window, in eV, around energy in which to find nearby 
+            energies, i.e. a value of 1 eV (the default) means to 
+            search +/- 0.5 eV. The default is 10.
+        
+        Returns
+        -------
+        edges : list
+            All edges that are within the given energy window, sorted by 
+            energy difference to the given energy.
+        """        
+        
+        if width < 0:
+            raise ValueError("Provided width needs to be >= 0.")
+        
+        Emin, Emax = energy - width/2, energy + width/2            
+
+        # find all subshells that have its energy within range
+        valid_edges = []
+        for element, element_info in elements_db.items():
+            try:
+                for shell, shell_info in element_info[
+                    'Atomic_properties']['Binding_energies'].items():
+                    if shell[-1] != 'a' and \
+                        Emin <= shell_info['onset_energy (eV)'] <= Emax:
+                        subshell = '{}_{}'.format(element, shell)
+                        Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
+                        valid_edges.append((subshell, Ediff))           
+            except KeyError:
+                continue 
+            
+        # Sort by energy difference and return only the edges
+        edges = [edge for edge, _ in sorted(valid_edges, key=lambda x: x[1])]
+        
+        return edges
+
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
 
@@ -240,10 +285,9 @@ class EELSSpectrum_mixin:
             in integers, the range will be in index values. If given floats,
             the range will be in spectrum values. Useful if there are features
             in the spectrum which are more intense than the ZLP.
-            Default is searching in the whole signal.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+            Default is searching in the whole signal. Note that ROIs can be used
+            in place of a tuple.
+        %s
         %s
 
         Examples
@@ -253,10 +297,12 @@ class EELSSpectrum_mixin:
         >>> s_ll.align_zero_loss_peak()
 
         Aligning both the lowloss signal and another signal
+
         >>> s = hs.signals.EELSSpectrum(np.range(1000))
         >>> s_ll.align_zero_loss_peak(also_align=[s])
 
         Aligning within a narrow range of the lowloss signal
+
         >>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
 
 
@@ -270,13 +316,13 @@ class EELSSpectrum_mixin:
         more information read its docstring.
 
         """
-        signal_range = signal_range_from_roi(signal_range)
 
         def substract_from_offset(value, signals):
             if isinstance(value, da.Array):
                 value = value.compute()
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
+                signal.events.data_changed.trigger(signal)
 
         def estimate_zero_loss_peak_centre(s, mask, signal_range):
             if signal_range:
@@ -338,7 +384,7 @@ class EELSSpectrum_mixin:
                 self, mask=mask, signal_range=signal_range)
             substract_from_offset(np.nanmean(zlpc.data),
                                   also_align + [self])
-    align_zero_loss_peak.__doc__ %= CROP_PARAMETER_DOC
+    align_zero_loss_peak.__doc__ %= (SHOW_PROGRESSBAR_ARG, CROP_PARAMETER_DOC)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
@@ -354,10 +400,7 @@ class EELSSpectrum_mixin:
             threshold value in the energy units. Alternatively a constant
             threshold can be specified in energy/index units by passing
             float/int.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-
+        %s
 
         Returns
         -------
@@ -415,6 +458,7 @@ class EELSSpectrum_mixin:
             I0.tmp_parameters.extension = \
                 self.tmp_parameters.extension
         return I0
+    estimate_elastic_scattering_intensity.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def estimate_elastic_scattering_threshold(self,
                                               window=10.,
@@ -630,9 +674,9 @@ class EELSSpectrum_mixin:
         tapped_channels = s.hanning_taper()
         # Conservative new size to solve the wrap-around problem
         size = zlp_size + self_size - 1
-        # Increase to the closest power of two to enhance the FFT
-        # performance
-        size = closest_power_of_two(size)
+        # Calculate optimal FFT padding for performance
+        complex_result = (zlp.data.dtype.kind == 'c' or s.data.dtype.kind == 'c')
+        size = optimal_fft_size(size, not complex_result)
 
         axis = self.axes_manager.signal_axes[0]
         if self._lazy or zlp._lazy:
@@ -685,15 +729,13 @@ class EELSSpectrum_mixin:
                                     extrapolate_coreloss=True):
         """Performs Fourier-ratio deconvolution.
 
-        The core-loss should have the background removed. To reduce
-         the noise amplication the result is convolved with a
-        Gaussian function.
+        The core-loss should have the background removed. To reduce the noise 
+        amplication the result is convolved with a Gaussian function.
 
         Parameters
         ----------
         ll: EELSSpectrum
             The corresponding low-loss (ll) EELSSpectrum.
-
         fwhm : float or None
             Full-width half-maximum of the Gaussian function by which
             the result of the deconvolution is convolved. It can be
@@ -703,7 +745,7 @@ class EELSSpectrum_mixin:
         threshold : {None, float}
             Truncation energy to estimate the intensity of the
             elastic scattering. If None the threshold is taken as the
-             first minimum after the ZLP centre.
+            first minimum after the ZLP centre.
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
 
@@ -746,9 +788,8 @@ class EELSSpectrum_mixin:
         cl_size = self.axes_manager.signal_axes[0].size
         # Conservative new size to solve the wrap-around problem
         size = ll_size + cl_size - 1
-        # Increase to the closest multiple of two to enhance the FFT
-        # performance
-        size = int(2 ** np.ceil(np.log2(size)))
+        # Calculate the optimal FFT size
+        size = optimal_fft_size(size)
 
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
@@ -803,14 +844,10 @@ class EELSSpectrum_mixin:
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {None,bool,int}
-            if True, the deconvolution will be performed in a threaded (parallel)
-            manner.
+        %s
+        %s
 
-        Notes:
+        Notes
         -----
         For details on the algorithm see Gloter, A., A. Douiri,
         M. Tence, and C. Colliex. “Improving Energy Resolution of
@@ -848,6 +885,9 @@ class EELSSpectrum_mixin:
             ds.tmp_parameters.filename += (
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
+
+    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG,
+                                              PARALLEL_ARG)
 
     def _are_microscope_parameters_missing(self, ignore_parameters=[]):
         """
@@ -1021,7 +1061,7 @@ class EELSSpectrum_mixin:
         dielectric function from a single scattering distribution (SSD) using
         the Kramers-Kronig relations.
 
-        It uses the FFT method as in [Egerton2011]_.  The SSD is an
+        It uses the FFT method as in [1]_.  The SSD is an
         EELSSpectrum instance containing SSD low-loss EELS with no zero-loss
         peak. The internal loop is devised to approximately subtract the
         surface plasmon contribution supposing an unoxidized planar surface and
@@ -1101,7 +1141,7 @@ class EELSSpectrum_mixin:
 
         Notes
         -----
-        This method is based in Egerton's Matlab code [Egerton2011]_ with some
+        This method is based in Egerton's Matlab code [1]_ with some
         minor differences:
 
         * The integrals are performed using the simpsom rule instead of using
@@ -1109,8 +1149,8 @@ class EELSSpectrum_mixin:
         * The wrap-around problem when computing the ffts is workarounded by
           padding the signal instead of substracting the reflected tail.
 
-        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
-           Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
+        .. [1] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
+           Microscope", Springer-Verlag, 2011.
 
         """
         output = {}
@@ -1223,10 +1263,10 @@ class EELSSpectrum_mixin:
             # Kramers Kronig Transform:
             # We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
             # Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
-            # Use a size that is a power of two to speed up the fft and
+            # Use an optimal FFT size to speed up the calculation, and
             # make it double the closest upper value to workaround the
             # wrap-around problem.
-            esize = 2 * closest_power_of_two(axis.size)
+            esize = optimal_fft_size(2 * axis.size)
             q = -2 * np.fft.fft(Im, esize,
                                 axis.index_in_array).imag / esize
 
@@ -1307,11 +1347,11 @@ class EELSSpectrum_mixin:
             a low-loss EELS spectrum, and it will be used to simulate the
             effect of multiple scattering by convolving it with the EELS
             spectrum.
-        auto_background : boolean, default True
+        auto_background : bool, default True
             If True, and if spectrum is an EELS instance adds automatically
             a powerlaw to the model and estimate the parameters by the
             two-area method.
-        auto_add_edges : boolean, default True
+        auto_add_edges : bool, default True
             If True, and if spectrum is an EELS instance, it will
             automatically add the ionization edges as defined in the
             Signal1D instance. Adding a new element to the spectrum using

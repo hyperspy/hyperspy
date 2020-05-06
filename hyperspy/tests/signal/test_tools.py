@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from unittest import mock
 import sys
 
@@ -89,6 +107,13 @@ class Test2D:
         d = self.data
         s.crop(0, 2, 2.)
         nt.assert_array_almost_equal(s.data, d[2:4, :])
+
+    def test_crop_start_end_equal(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.crop(0, 2, 2)
+        with pytest.raises(ValueError):
+            s.crop(0, 2., 2.)
 
     def test_crop_float_no_unit_convertion_signal1D(self):
         # Should convert the unit to eV
@@ -196,8 +221,8 @@ class Test2D:
         s.crop(1, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_crop_image_unit_convertion_signal2D(self):
@@ -245,8 +270,8 @@ class Test2D:
         s.crop_image(0, 5.0, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_split_axis0(self):

@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 
 from hyperspy import signals, model
+from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
 
 
@@ -33,11 +34,11 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = model.components1d.Gaussian()
+        gauss = Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = model.components1d.Gaussian()
+        gauss2 = Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -239,7 +240,7 @@ class TestFourierRatioDeconvolution:
     @pytest.mark.parametrize(('extrapolate_lowloss'), [True, False])
     def test_running(self, extrapolate_lowloss):
         s = signals.EELSSpectrum(np.arange(200))
-        gaussian = model.components1d.Gaussian()
+        gaussian = Gaussian()
         gaussian.A.value = 50
         gaussian.sigma.value = 10
         gaussian.centre.value = 20
@@ -285,3 +286,29 @@ class TestRebin:
         assert s2.axes_manager[0].offset == 1.5
         assert s2.axes_manager[1].offset == 2.5
         assert s2.axes_manager[2].offset == s.axes_manager[2].offset
+
+class TestGetNearEdgeEnergy:
+
+    def setup_method(self, method):
+        # Create a dummy spectrum
+        s = signals.EELSSpectrum(np.ones(1024))
+        self.signal = s
+
+    def test_single_edge(self):
+        s = self.signal
+        edges = s.get_edges_near_energy(532, width=0)
+        assert len(edges) == 1
+        assert edges == ['O_K']
+
+    def test_multiple_edges(self):
+        s = self.signal
+        edges = s.get_edges_near_energy(640, width=100)
+        assert len(edges) == 12
+        assert edges == ['Mn_L3','I_M4','Cd_M2','Mn_L2','V_L1','I_M5','Cd_M3',
+                         'In_M3','Xe_M5','Ag_M2','F_K','Xe_M4']
+        
+    def test_negative_energy_width(self):
+        s = self.signal
+        with pytest.raises(Exception):
+            s.get_edges_near_energy(849, width=-5)
+        

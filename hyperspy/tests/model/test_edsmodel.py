@@ -1,10 +1,29 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from hyperspy.misc.test_utils import assert_warns
 
+from hyperspy.misc.test_utils import assert_warns
+from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 
 @lazifyTestClass
@@ -29,7 +48,7 @@ class TestlineFit:
         m.fit()
         np.testing.assert_allclose([i.data for i in
                                     m.get_lines_intensity()],
-                                   [[0.5], [0.2], [0.3]], atol=10 - 4)
+                                   [[0.5], [0.2], [0.3]], atol=1E-4)
 
     def _check_model_creation(self):
         s = self.s
@@ -169,6 +188,48 @@ class TestlineFit:
             '$\\mathrm{Fe}_{\\mathrm{Kb}}$',
             '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
+    def test_quantification(self):
+        s = self.s
+        m = s.create_model()
+        m.fit()
+        intensities = m.get_lines_intensity()
+        quant = s.quantification(intensities, method='CL',
+                                 factors=[1.0, 1.0, 1.0],
+                                 composition_units='weight')
+        np.testing.assert_allclose(utils.stack(quant, axis=0), [50, 20, 30])
+
+    def test_quantification_2_elements(self):
+        s = self.s
+        m = s.create_model()
+        m.fit()
+        intensities = m.get_lines_intensity(['Fe_Ka', 'Cr_Ka'])
+        _ = s.quantification(intensities, method='CL', factors=[1.0, 1.0])
+
+
+def test_comparison_quantification():
+    kfactors = [1.450226, 5.075602]  # For Fe Ka and Pt La
+
+    s = EDS_TEM_Spectrum()
+    s.add_elements(['Cu'])  # to get good estimation of the background
+    m = s.create_model(True)
+    m.set_signal_range(5.5, 10.0)  # to get good fit
+    m.fit()
+    intensities_m = m.get_lines_intensity(['Fe_Ka', "Pt_La"])
+    quant_model = s.quantification(intensities_m, method='CL',
+                                   factors=kfactors)
+
+    # Background substracted EDS quantification
+    s2 = EDS_TEM_Spectrum()
+    s2.add_lines()
+    bw = s2.estimate_background_windows(line_width=[5.0, 2.0])
+    intensities = s2.get_lines_intensity(background_windows=bw)
+    atomic_percent = s2.quantification(intensities, method='CL',
+                                       factors=kfactors)
+
+    np.testing.assert_allclose([q.data for q in quant_model],
+                               [q.data for q in atomic_percent],
+                               rtol=0.5E-1)
+
 
 @lazifyTestClass
 class TestMaps:
@@ -204,8 +265,10 @@ class TestMaps:
 
     def test_lines_intensity(self):
         s = self.s
+
         m = s.create_model()
-        m.multifit()    # m.fit() is just too inaccurate
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(iterpath='serpentine')
         ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
         for x in range(self.mix.shape[0]):
@@ -215,5 +278,17 @@ class TestMaps:
                     w[i, x, y] = ws[i] * mix
         xray_lines = s._get_lines_from_elements(
             s.metadata.Sample.elements, only_lines=('Ka',))
-        np.testing.assert_allclose(
-            [i.data for i in m.get_lines_intensity(xray_lines)], w, atol=1e-7)
+        if s._lazy:
+            s.compute()
+        for fitted, expected in zip(m.get_lines_intensity(xray_lines), w):
+            np.testing.assert_allclose(fitted, expected, atol=1e-7)
+
+        m_single_fit = s.create_model()
+        # make sure we fit the navigation indices (0, 0) and don't rely on
+        # the current index of the axes_manager.
+        m_single_fit.inav[0, 0].fit()
+
+        for fitted, expected in zip(
+                m.inav[0, 0].get_lines_intensity(xray_lines),
+                m_single_fit.inav[0, 0].get_lines_intensity(xray_lines)):
+            np.testing.assert_allclose(fitted, expected, atol=1e-7)  

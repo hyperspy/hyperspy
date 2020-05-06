@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,16 +23,23 @@ from hyperspy.component import Component
 
 class HeavisideStep(Component):
 
-    """The Heaviside step function
+    r"""The Heaviside step function.
 
     .. math::
 
         f(x) =
         \\begin{cases}
-          0     $ \\quad \\text{if } x < n \\\\
-          A/2     $ \\quad \\text{if } x = n \\\\
-          A     $ \\quad \\text{if } x > n \\\\
+        0 & x<n\\\\
+        \\frac{A}{2} & x=n\\\\
+        A & x>n
         \\end{cases}
+
+    Parameters
+    -----------
+    n : float
+
+    A : float
+
 
     """
 

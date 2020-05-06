@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -50,11 +50,13 @@ class Point(MarkerBase):
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
+
     >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
     >>> m = hs.plot.markers.point(10, 30, color='blue', size=50)
     >>> im.add_marker(m, permanent=True)
 
     Markers on local maxima
+
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent()).as_signal2D([2,0])

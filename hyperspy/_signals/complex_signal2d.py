@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -64,7 +64,7 @@ class Complex2Dmixin:
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             saturated_pixels=0,
+             saturated_pixels=None,
              vmin=None,
              vmax=None,
              no_nans=False,
@@ -92,8 +92,8 @@ class Complex2Dmixin:
             centre_colormap=centre_colormap,
             **kwargs
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
-                     COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
+                     PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
 
 class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
