@@ -2401,10 +2401,11 @@ class MVA:
         x1 = 0
         x2 = max_points
 
-        y1 = np.log(curve_values_adj[0])
         if log:
+            y1 = np.log(curve_values_adj[0])
             y2 = np.log(curve_values_adj[max_points])
         else:
+            y1 = curve_values_adj[0]
             y2 = curve_values_adj[max_points]
 
         xs = np.arange(max_points)
