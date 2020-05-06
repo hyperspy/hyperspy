@@ -25,6 +25,8 @@ from hyperspy.components1d import EELSCLEdge
 from hyperspy.components1d import PowerLaw
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
+from hyperspy.misc.eels.tools import get_edge_onset
+from hyperspy.signal_tools import EstimateAndSetCorelossEdgeOnset
 
 _logger = logging.getLogger(__name__)
 
@@ -984,3 +986,83 @@ class EELSModel(Model1D):
                 self.resolve_fine_structure()
         else:
             warnings.warn("Not suspended, nothing to resume.")
+
+    def estimate_and_set_coreloss_edge_onset(
+            self, component, signal_range='interactive', only_current=False,
+            percent_position=0.1, display=True, toolkit=None):
+        """Set onset energy of an EELS core loss ionization edge component.
+
+        The minimum (baseline) and maximum (peak) in the signal range is
+        found. The minimum is subtracted from the maximum. The onset threshold
+        is this difference multiplied with percent_position.
+        The onset energy is the energy closest to the where
+        the intensity equals the onset threshold added to the baseline.
+
+        Onset value = (highest value - lowest value)*percent position
+        + lowest value.
+
+        Onset energy = Energy(onset value),
+        between E(highest value) and E(lowest value).
+
+        See the publication detailing this for more information:
+        https://doi.org/10.1016/j.ultramic.2016.07.004
+        (arXiv version: https://arxiv.org/abs/1608.07814)
+
+        Parameters
+        ----------
+        component : EELSCLEdge component instance
+            The component must be in the model, otherwise an exception
+            is raised. The component can be specified by name, index or itself.
+        signal_range : tuple (left_value, right_value)
+        only_current : bool
+            If False sets the onset for the full dataset. Default is False.
+        percent_position : float
+            At what fraction of the ELNES signal the onset energy will be
+            placed as explained above. Default is 0.1.
+
+        Examples
+        --------
+
+        >>> s = load('some_spectrum.hdf5')
+        >>> s.add_elements(['Mn',])
+        >>> s.set_microscope_parameters(
+        ...     convergence_angle=24., collection_angle=26.)
+        >>> m = s.create_model()
+        >>> m.estimate_and_set_coreloss_edge_onset(
+        ...     Mn_L3, signal_range=(625.,643.))
+
+        All the parameters
+
+        >>> m.estimate_and_set_coreloss_edge_onset(
+        ...     Mn_L3, signal_range=(625.,643.), only_current=True,
+        ...     percent_position=0.2)
+
+        """
+        component = self._get_component(component)
+        if signal_range == "interactive":
+            cf = EstimateAndSetCorelossEdgeOnset(self, component)
+            cf.gui(display=display, toolkit=toolkit)
+        else:
+            self._estimate_and_set_coreloss_edge_onset(
+                    component=component, signal_range=signal_range,
+                    only_current=only_current,
+                    percent_position=percent_position)
+
+    def _estimate_and_set_coreloss_edge_onset(
+            self, component, signal_range, only_current=False,
+            percent_position=0.1):
+        x_axis = self.axes_manager.signal_axes[0].axis
+
+        if only_current:
+            edge_onset_energy = get_edge_onset(
+                self.signal(), signal_range[0], signal_range[1],
+                x_axis, percent_position=percent_position)
+            component.onset_energy.value = edge_onset_energy
+            component.onset_energy.store_current_value_in_array()
+        else:
+            for index in self.axes_manager:
+                edge_onset_energy = get_edge_onset(
+                    self.signal(), signal_range[0], signal_range[1],
+                    x_axis, percent_position=percent_position)
+                component.onset_energy.value = edge_onset_energy
+                component.onset_energy.store_current_value_in_array()

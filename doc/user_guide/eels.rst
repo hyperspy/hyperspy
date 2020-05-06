@@ -264,6 +264,8 @@ There are several methods that are only available in
   :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_width)`
   ionisation edge components. It is specially useful when fitting without
   convolving with a zero-loss peak.
+* :py:meth:`~.models.eelsmodel.EELSModel.estimate_and_set_coreloss_edge_onset`
+  quantitative way of setting the onset energy for core loss edges.
 
 The following methods permit to easily enable/disable background and ionisation
 edges components:

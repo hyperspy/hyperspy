@@ -19,10 +19,14 @@
 import numpy as np
 
 import pytest
+from pytest import approx
 from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+from hyperspy._components.arctan import Arctan
+from hyperspy._components.gaussian import Gaussian
+from hyperspy._signals.eels import EELSSpectrum
 
 
 @lazifyTestClass
@@ -216,3 +220,153 @@ class TestFitBackground:
                         2.13567839196)
         assert not self.m["B_K"].active
         assert not self.m["C_K"].active
+
+
+@lazifyTestClass
+class TestEstimateAndSetEdgeOnsetArctan:
+
+    def setup_method(self):
+        xaxis = np.arange(500, 800, 0.5)
+        data_list = []
+        self.x0_list = range(600, 604)
+        for x0 in self.x0_list:
+            arctan = Arctan(A=100, k=1, x0=x0, minimum_at_zero=True)
+            data = arctan.function(xaxis)
+            data_list.append(data)
+        s = EELSSpectrum(data_list, stack=True)
+        s.axes_manager[-1].offset = 500
+        s.axes_manager[-1].scale = 0.5
+
+        s.set_microscope_parameters(
+                beam_energy=200, convergence_angle=26, collection_angle=20)
+        s.add_elements(['Mn', ])
+        self.m = s.create_model(auto_background=False, GOS='hydrogenic')
+
+    def test_only_current(self):
+        m = self.m
+        m.estimate_and_set_coreloss_edge_onset(
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.5, only_current=True)
+        onset = m.components.Mn_L3.onset_energy.as_signal().data
+        assert approx(onset[0], abs=0.01) == self.x0_list[0]
+
+        m.estimate_and_set_coreloss_edge_onset(
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.5, only_current=False)
+        onset = m.components.Mn_L3.onset_energy.as_signal().data
+        assert_allclose(onset, np.array(self.x0_list), atol=0.01)
+
+    def test_percent_position(self):
+        m = self.m
+        m.estimate_and_set_coreloss_edge_onset(
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.5, only_current=False)
+        onset_50 = m.components.Mn_L3.onset_energy.as_signal().deepcopy().data
+
+        m.estimate_and_set_coreloss_edge_onset(
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.1, only_current=False)
+        onset_10 = m.components.Mn_L3.onset_energy.as_signal().deepcopy().data
+        assert (onset_50 > onset_10).all()
+
+        m.estimate_and_set_coreloss_edge_onset(
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.9, only_current=False)
+        onset_90 = m.components.Mn_L3.onset_energy.as_signal().deepcopy().data
+        assert (onset_90 > onset_50).all()
+
+    def test_signal_range(self):
+        m = self.m
+        data = np.zeros_like(m.signal.data)
+        data[:, 10:30] = 1000
+        m.signal.data += data
+        m.estimate_and_set_coreloss_edge_onset(
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.5, only_current=False)
+        onset = m.components.Mn_L3.onset_energy.as_signal().data
+        assert_allclose(onset, np.array(self.x0_list), atol=0.01)
+
+        m.estimate_and_set_coreloss_edge_onset(
+                m.components.Mn_L3, signal_range=(501, 515),
+                percent_position=0.5, only_current=False)
+        onset = m.components.Mn_L3.onset_energy.as_signal().data
+        for onset_value in onset:
+            assert approx(onset_value) == onset[0]
+            assert (501 < onset_value) and (515 > onset_value)
+
+
+@lazifyTestClass
+class TestEstimateAndSetEdgeOnsetGaussian:
+
+    def setup_method(self, method):
+        g = Gaussian()
+        g.A.value = 10000.0
+        g.centre.value = 5000.0
+        g.sigma.value = 500.0
+        axis = np.arange(10000)
+        s = EELSSpectrum(g.function(axis))
+        s.set_microscope_parameters(
+                beam_energy=100,
+                convergence_angle=10,
+                collection_angle=10)
+        s.add_elements(('O',))
+        m = s.create_model(auto_background=False)
+        self.model = m
+        self.g = g
+        self.top_point = s.data.max()
+        self.rtol = 0.1
+
+    def test_set_onset_100_percent(self):
+        m = self.model
+        g = self.g
+        top_point = self.top_point
+        percent_position = 1.0
+
+        m.estimate_and_set_coreloss_edge_onset(
+                m[0], signal_range=(1000, 5500),
+                percent_position=percent_position)
+        np.testing.assert_allclose(
+                g.function(m[0].onset_energy.value),
+                top_point*percent_position,
+                rtol=self.rtol)
+
+    def test_set_onset_50_percent(self):
+        m = self.model
+        g = self.g
+        top_point = self.top_point
+        percent_position = 0.5
+        m.estimate_and_set_coreloss_edge_onset(
+                m[0], signal_range=(1000, 5500),
+                percent_position=percent_position)
+        np.testing.assert_allclose(
+                g.function(m[0].onset_energy.value),
+                top_point*percent_position,
+                rtol=self.rtol)
+
+    def test_set_onset_10_percent(self):
+        m = self.model
+        g = self.g
+        top_point = self.top_point
+        percent_position = 0.1
+
+        m.estimate_and_set_coreloss_edge_onset(
+                m[0], signal_range=(1000, 5500),
+                percent_position=percent_position)
+        np.testing.assert_allclose(
+                g.function(m[0].onset_energy.value),
+                top_point*percent_position,
+                rtol=self.rtol)
+
+    def test_set_onset_1_percent(self):
+        m = self.model
+        g = self.g
+        top_point = self.top_point
+        percent_position = 0.01
+
+        m.estimate_and_set_coreloss_edge_onset(
+                m[0], signal_range=(1000, 5500),
+                percent_position=percent_position)
+        np.testing.assert_allclose(
+                g.function(m[0].onset_energy.value),
+                top_point*percent_position,
+                rtol=self.rtol)

@@ -325,3 +325,80 @@ def eels_constant(s, zlp, t):
         data=(t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2))
     k.metadata.General.title = "EELS proportionality constant K"
     return k
+
+
+def get_edge_onset(data, start, end, x_axis, percent_position):
+    """Get the onset energy for a core loss edge.
+
+    Parameters
+    ----------
+    data : NumPy array
+    x_axis : NumPy array
+        Same size as data
+    start, end : scalar
+        Region where the edge onset will be found, in x_axis values.
+    percent_position : float
+        At what fraction of the ELNES signal the onset energy will be
+        found. See EELSModel.estimate_and_set_coreloss_edge_onset for more
+        information.
+
+    Returns
+    -------
+    onset_energy : scalar
+
+    Examples
+    --------
+    >>> from hyperspy.misc.eels.tools import get_edge_onset
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> data, x_axis = s.data, s.axes_manager[0].axis
+    >>> onset = get_edge_onset(data, 600, 700, x_axis, 0.1)
+
+    """
+    if not ((percent_position >= 0.) and (percent_position <= 1.)):
+        raise ValueError(
+                "percent position ({0}) must be between 0 and 1".format(
+                    percent_position))
+    if start > end:
+        raise ValueError(
+                "start ({0}) can not be larger than end ({1})".format(
+                    start, end))
+    if not (x_axis[0] <= start <= x_axis[-1]):
+        raise ValueError(
+                "start ({0}) in out of bounds of x_axis ({1} to {2})".format(
+                    start, x_axis[0], x_axis[-1]))
+    if not (x_axis[0] <= end <= x_axis[-1]):
+        raise ValueError(
+                "end ({0}) in out of bounds of x_axis ({1} to {2})".format(
+                    end, x_axis[0], x_axis[-1]))
+    if len(data.shape) != 1:
+        raise ValueError("data must be 1 dimension, not {0}".format(
+            len(data.shape)))
+
+    start_i = np.argmax(x_axis > start)
+    if end == x_axis[-1]:
+        end_i = len(x_axis)
+    else:
+        end_i = np.argmax(x_axis > end)
+
+    data = data[start_i:end_i]
+    x_axis = x_axis[start_i:end_i]
+
+    data_max = data.max(-1)
+    data_min = data.min(-1)
+    data_max_i = data.argmax(-1)
+    data_onset_value = (data_max - data_min) * percent_position + data_min
+
+    bool_array = data < data_onset_value
+    bool_array[data_max_i:] = False
+    data_onset_i = len(bool_array) - np.argmax(bool_array[::-1])
+    if data_max_i < data_onset_i:
+        return np.nan
+
+    data_onset_i0 = data_onset_i - 1
+
+    x0, x1 = x_axis[data_onset_i0], x_axis[data_onset_i]
+    y0, y1 = data[data_onset_i0], data[data_onset_i]
+    a = (y1 - y0)/(x1 - x0)
+    b = -a * x0 + y0
+    onset_energy = (data_onset_value - b) / a
+    return onset_energy
