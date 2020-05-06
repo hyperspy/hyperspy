@@ -115,7 +115,7 @@ class TestCluster2d:
 
 
 
-class TestClusterEvaluate:
+class TestClusterEstimate:
 
     def setup_method(self):
         np.random.seed(1)
@@ -140,7 +140,7 @@ class TestClusterEvaluate:
     def test_scores(self, algorithm, use_decomposition_results,
                     scaling, use_decomposition_for_centers,metric):
 
-        self.signal.evaluate_number_of_clusters(
+        self.signal.estimate_number_of_clusters(
             8,
             scaling=scaling,
             use_decomposition_results=use_decomposition_results,
@@ -190,7 +190,7 @@ class TestClusterCustomScaling:
     def test_custom(self,  use_decomposition_results,
                 algorithm,use_decomposition_for_centers,metric):
             custom_scaling = import_sklearn.sklearn.preprocessing.MinMaxScaler
-            self.signal.evaluate_number_of_clusters(
+            self.signal.estimate_number_of_clusters(
                 8,
                 scaling=custom_scaling,
                 use_decomposition_results=use_decomposition_results,

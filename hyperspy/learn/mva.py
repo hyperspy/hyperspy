@@ -1642,83 +1642,6 @@ class MVA:
                 "set `copy=True` when calling s.decomposition()."
             )
 
-    def estimate_elbow_position(self, explained_variance_ratio=None, max_points=20):
-        """Estimate the elbow position of a scree plot curve.
-
-        Used to estimate the number of significant components in
-        a PCA variance ratio plot or other "elbow" type curves.
-
-        Find a line between first and last point on the scree plot.
-        With a classic elbow scree plot, this line more or less
-        defines a triangle. The elbow should be the point which
-        is the furthest distance from this line. For more details,
-        see [Satopää2011]_.
-
-        Parameters
-        ----------
-        explained_variance_ratio : {None, numpy array}
-            Explained variance ratio values that form the scree plot.
-            If None, uses the ``explained_variance_ratio`` array stored
-            in ``s.learning_results``, so a decomposition must have
-            been performed first.
-        max_points : int
-            Maximum number of points to consider in the calculation.
-
-        Returns
-        -------
-        elbow position : int
-            Index of the elbow position in the input array. Due to
-            zero-based indexing, the number of significant components
-            is `elbow_position + 1`.
-
-        References
-        ----------
-        .. [Satopää2011] V. Satopää, J. Albrecht, D. Irwin, and B. Raghavan.
-            "Finding a “Kneedle” in a Haystack: Detecting Knee Points in
-            System Behavior,. 31st International Conference on Distributed
-            Computing Systems Workshops, pp. 166-171, June 2011.
-
-        See Also
-        --------
-        * :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
-
-        """
-        if explained_variance_ratio is None:
-            if self.learning_results.explained_variance_ratio is None:
-                raise ValueError(
-                    "A decomposition must be performed before calling "
-                    "estimate_elbow_position(), or pass a numpy array directly."
-                )
-
-            curve_values = self.learning_results.explained_variance_ratio
-        else:
-            curve_values = explained_variance_ratio
-
-        max_points = min(max_points, len(curve_values) - 1)
-
-        # Clipping the curve_values from below with a v.small
-        # number avoids warnings below when taking np.log(0)
-        curve_values_adj = np.clip(curve_values, 1e-30, None)
-
-        x1 = 0
-        x2 = max_points
-
-        y1 = np.log(curve_values_adj[0])
-        y2 = np.log(curve_values_adj[max_points])
-
-        xs = np.arange(max_points)
-        ys = np.log(curve_values_adj[:max_points])
-
-        numer = np.abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
-        denom = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-        distance = np.nan_to_num(numer / denom)
-
-        # Point with the largest distance is the "elbow"
-        # (remember that np.argmax returns the FIRST instance)
-        elbow_position = np.argmax(distance)
-
-        return elbow_position
 
     def _mask_for_clustering(self,mask):
         # Deal with masks
@@ -2031,7 +1954,7 @@ class MVA:
                          return_info=False,
                          **kwargs):
         """
-        Cluster analysis of a signal
+        Cluster analysis of a signal or decomposition results of a signal
 
         Results are stored in `learning_results`.
 
@@ -2163,7 +2086,7 @@ class MVA:
         return to_return
 
 
-    def evaluate_number_of_clusters(self,
+    def estimate_number_of_clusters(self,
                                     max_clusters=12,
                                     scaling="minmax",
                                     scaling_kwargs={},
@@ -2178,8 +2101,9 @@ class MVA:
                                     **kwargs):
         """
         Performs cluster analysis of a signal for cluster sizes ranging from
-        n_clusters =2 to max_clusters ( default 15)
-
+        n_clusters =2 to max_clusters ( default 12)
+        Note that this can be a slow process for large datasets so please
+        consider reducing max_clusters in this case.
         For each cluster it evaluates the silhouette score which is a metric of
         how well seperated the clusters are. Maximima or peaks in the scores
         indicate good choices for cluster sizes.
@@ -2187,9 +2111,9 @@ class MVA:
 
         Parameters
         ----------
-        max_clusters : int, default 15
+        max_clusters : int, default 12
             Max number of clusters to use. The method will scan from 2 to
-            max_clusters
+            max_clusters. 
         scaling : {"standard","norm","minmax" or scikit learn scaling method}
             default: 'minmax'
             Preprocessing the data before cluster analysis requires scaling
@@ -2317,7 +2241,7 @@ class MVA:
                                  "The distance metric is :",
                                  inertia[-1])
                     to_return = inertia
-                    best_k =self._estimate_elbow_position(to_return,log=False)\
+                    best_k =self.estimate_elbow_position(to_return,log=False)\
                         +min_k
             elif metric == "silhouette":
                 k_range   = list(range(2, max_clusters+1))
