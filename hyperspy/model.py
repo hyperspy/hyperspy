@@ -283,7 +283,7 @@ class BaseModel(list):
               attributes, for more information, see
               :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
-              the model (see 
+              the model (see
               :py:meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
@@ -884,7 +884,7 @@ class BaseModel(list):
 
     def _get_variance(self, only_current=True):
         """Return the variance taking into account the `channel_switches`.
-        It only_current=True, the variance for the current navigation indices
+        If only_current=True, the variance for the current navigation indices
         is returned, otherwise the variance for all navigation indices is
         returned.
         """
@@ -1288,11 +1288,11 @@ class BaseModel(list):
         iterpath : str
             If 'flyback', at each new row the index begins at the first column,
             in accordance with the way np.ndindex generates indices.
-            If 'serpentine', iterate through the signal in a serpentine, 
-            "snake-game"-like manner instead of beginning each new row at 
-            the first index. Works for n-dimensional navigation space, 
+            If 'serpentine', iterate through the signal in a serpentine,
+            "snake-game"-like manner instead of beginning each new row at
+            the first index. Works for n-dimensional navigation space,
             not only 2D.
-            Default: None -> flyback. The default argument will use the 
+            Default: None -> flyback. The default argument will use the
             'flyback' iterpath, but shows a warning that this will change to
             'serpentine' in version 2.0.
 

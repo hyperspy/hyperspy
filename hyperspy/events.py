@@ -517,8 +517,7 @@ class EventSuppressor(object):
          - Any iterable collection of the above target types
         """
         # Remove useless layers of iterables:
-        while (isinstance(to_suppress, Iterable) and
-                len(to_suppress) == 1):
+        while isinstance(to_suppress, Iterable) and len(to_suppress) == 1:
             to_suppress = to_suppress[0]
         # If single target passed, add directly:
         if self._is_target(to_suppress):

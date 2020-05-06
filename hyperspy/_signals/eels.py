@@ -30,8 +30,8 @@ from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline)
+from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
@@ -153,6 +153,50 @@ class EELSSpectrum_mixin:
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
+
+    def get_edges_near_energy(self, energy, width=10):
+        """Find edges near a given energy that are within the given energy 
+        window.
+        
+        Parameters
+        ----------
+        energy : float
+            Energy to search, in eV
+        width : float
+            Width of window, in eV, around energy in which to find nearby 
+            energies, i.e. a value of 1 eV (the default) means to 
+            search +/- 0.5 eV. The default is 10.
+        
+        Returns
+        -------
+        edges : list
+            All edges that are within the given energy window, sorted by 
+            energy difference to the given energy.
+        """        
+        
+        if width < 0:
+            raise ValueError("Provided width needs to be >= 0.")
+        
+        Emin, Emax = energy - width/2, energy + width/2            
+
+        # find all subshells that have its energy within range
+        valid_edges = []
+        for element, element_info in elements_db.items():
+            try:
+                for shell, shell_info in element_info[
+                    'Atomic_properties']['Binding_energies'].items():
+                    if shell[-1] != 'a' and \
+                        Emin <= shell_info['onset_energy (eV)'] <= Emax:
+                        subshell = '{}_{}'.format(element, shell)
+                        Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
+                        valid_edges.append((subshell, Ediff))           
+            except KeyError:
+                continue 
+            
+        # Sort by energy difference and return only the edges
+        edges = [edge for edge, _ in sorted(valid_edges, key=lambda x: x[1])]
+        
+        return edges
 
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
@@ -630,9 +674,9 @@ class EELSSpectrum_mixin:
         tapped_channels = s.hanning_taper()
         # Conservative new size to solve the wrap-around problem
         size = zlp_size + self_size - 1
-        # Increase to the closest power of two to enhance the FFT
-        # performance
-        size = closest_power_of_two(size)
+        # Calculate optimal FFT padding for performance
+        complex_result = (zlp.data.dtype.kind == 'c' or s.data.dtype.kind == 'c')
+        size = optimal_fft_size(size, not complex_result)
 
         axis = self.axes_manager.signal_axes[0]
         if self._lazy or zlp._lazy:
@@ -744,9 +788,8 @@ class EELSSpectrum_mixin:
         cl_size = self.axes_manager.signal_axes[0].size
         # Conservative new size to solve the wrap-around problem
         size = ll_size + cl_size - 1
-        # Increase to the closest multiple of two to enhance the FFT
-        # performance
-        size = int(2 ** np.ceil(np.log2(size)))
+        # Calculate the optimal FFT size
+        size = optimal_fft_size(size)
 
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
@@ -1220,10 +1263,10 @@ class EELSSpectrum_mixin:
             # Kramers Kronig Transform:
             # We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
             # Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
-            # Use a size that is a power of two to speed up the fft and
+            # Use an optimal FFT size to speed up the calculation, and
             # make it double the closest upper value to workaround the
             # wrap-around problem.
-            esize = 2 * closest_power_of_two(axis.size)
+            esize = optimal_fft_size(2 * axis.size)
             q = -2 * np.fft.fft(Im, esize,
                                 axis.index_in_array).imag / esize
 
