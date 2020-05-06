@@ -34,7 +34,7 @@ def iMFP_Iakoubovskii(density, electron_energy):
         Material density in g/cm**3
     beam_energy : float
         Electron beam energy in keV
-    
+
     Notes:
     ------
     For details see Equation 9 in:
@@ -42,6 +42,11 @@ def iMFP_Iakoubovskii(density, electron_energy):
       ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
       Microscopy Research and Technique 71, no. 8 (2008): 626–31.
       https://doi.org/10.1002/jemt.20597.
+
+    Returns
+    -------
+    float
+        Inelastic mean free path in nanometers
     """
     theta_C = 20 # mrad
     inv_lambda = 11 * density ** 0.3 / (200 * _F(electron_energy) * electron_energy) * np.log(theta_C ** 2 / _theta_E(density, electron_energy) ** 2)
@@ -63,6 +68,11 @@ def iMFP_TPP2M(electron_energy, density, M, N_v, E_g):
         Number of valence electron
     E_g : float
         Band gap in eV
+
+    Returns
+    -------
+    float
+        Inelastic mean free path in nanometers
 
     Notes
     -----
