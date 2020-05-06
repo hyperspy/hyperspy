@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,12 +22,11 @@ import numpy.ma as ma
 import dask.array as da
 import scipy as sp
 import logging
-from scipy.fftpack import fftn, ifftn
 from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.math_tools import symmetrize, antisymmetrize
+from hyperspy.misc.math_tools import symmetrize, antisymmetrize, optimal_fft_size
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
@@ -81,7 +80,7 @@ def sobel_filter(im):
     return sob
 
 
-def fft_correlation(in1, in2, normalize=False):
+def fft_correlation(in1, in2, normalize=False, real_only=False):
     """Correlation of two N-dimensional arrays using FFT.
 
     Adapted from scipy's fftconvolve.
@@ -89,20 +88,36 @@ def fft_correlation(in1, in2, normalize=False):
     Parameters
     ----------
     in1, in2 : array
-    normalize: bool
-        If True performs phase correlation
+        Input arrays to convolve.
+    normalize: bool, default False
+        If True performs phase correlation.
+    real_only : bool, default False
+        If True, and in1 and in2 are real-valued inputs, uses
+        rfft instead of fft for approx. 2x speed-up.
 
     """
     s1 = np.array(in1.shape)
     s2 = np.array(in2.shape)
     size = s1 + s2 - 1
-    # Use 2**n-sized FFT
-    fsize = (2 ** np.ceil(np.log2(size))).astype("int")
-    fprod = fftn(in1, fsize)
-    fprod *= fftn(in2, fsize).conjugate()
+
+    # Calculate optimal FFT size
+    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
+    fsize = [optimal_fft_size(a, not complex_result) for a in size]
+
+    # For real-valued inputs, rfftn is ~2x faster than fftn
+    if not complex_result and real_only:
+        fft_f, ifft_f = np.fft.rfftn, np.fft.irfftn
+    else:
+        fft_f, ifft_f = np.fft.fftn, np.fft.ifftn
+
+    fprod = fft_f(in1, fsize)
+    fprod *= fft_f(in2, fsize).conjugate()
+
     if normalize is True:
         fprod = np.nan_to_num(fprod / np.absolute(fprod))
-    ret = ifftn(fprod).real.copy()
+
+    ret = ifft_f(fprod).real.copy()
+
     return ret, fprod
 
 
@@ -121,7 +136,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Parameters
     ----------
-
     ref : 2D numpy.ndarray
         Reference image
     image : 2D numpy.ndarray
@@ -134,11 +148,11 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         apply a median filter for noise reduction
     hanning : bool
         Apply a 2d hanning filter
-    plot : bool | matplotlib.Figure
+    plot : bool or matplotlib.Figure
         If True, plots the images after applying the filters and the phase
         correlation. If a figure instance, the images will be plotted to the
         given figure.
-    reference : 'current' | 'cascade'
+    reference : 'current' or 'cascade'
         If 'current' (default) the image at the current
         coordinates is taken as reference. If 'cascade' each image
         is aligned with the previous one.
@@ -153,7 +167,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Returns
     -------
-
     shifts: np.array
         containing the estimate shifts
     max_value : float
@@ -161,19 +174,15 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Notes
     -----
-
     The statistical analysis approach to the translation estimation
-    when using `reference`='stat' roughly follows [1]_ . If you use
+    when using reference='stat' roughly follows [*]_ . If you use
     it please cite their article.
 
     References
     ----------
-
-    .. [1] Bernhard Schaffer, Werner Grogger and Gerald
-        Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
-        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
-
+    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner. 
+       “Automated Spatial Drift Correction for EFTEM Image Series.” 
+       Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
 
@@ -195,11 +204,19 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         if hanning is True:
             im *= hanning2d(*im.shape)
         if medfilter is True:
-            im[:] = sp.signal.medfilt(im)
+            # This is faster than sp.signal.med_filt,
+            # which was the previous implementation.
+            # The size is fixed at 3 to be consistent
+            # with the previous implementation.
+            im[:] = sp.ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
+
+    # If sub-pixel alignment not being done, use faster real-valued fft
+    real_only = (sub_pixel_factor == 1)
+
     phase_correlation, image_product = fft_correlation(
-        ref, image, normalize=normalize_corr)
+        ref, image, normalize=normalize_corr, real_only=real_only)
 
     # Estimate the shift by getting the coordinates of the maximum
     argmax = np.unravel_index(np.argmax(phase_correlation),
@@ -367,7 +384,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Parameters
         ----------
-
         reference : {'current', 'cascade' ,'stat'}
             If 'current' (default) the image at the current
             coordinates is taken as reference. If 'cascade' each image
@@ -376,25 +392,26 @@ class Signal2D(BaseSignal, CommonSignal2D):
             performing statistical analysis on the result the
             translation is estimated.
         correlation_threshold : {None, 'auto', float}
-            This parameter is only relevant when `reference` is 'stat'.
+            This parameter is only relevant when reference='stat'.
             If float, the shift estimations with a maximum correlation
             value lower than the given value are not used to compute
             the estimated shifts. If 'auto' the threshold is calculated
             automatically as the minimum maximum correlation value
             of the automatically selected reference image.
-        chunk_size: {None, int}
-            If int and `reference`=='stat' the number of images used
+        chunk_size : {None, int}
+            If int and reference='stat' the number of images used
             as reference are limited to the given value.
         roi : tuple of ints or floats (left, right, top, bottom)
-             Define the region of interest. If int(float) the position
-             is given axis index(value).
+            Define the region of interest. If int(float) the position
+            is given axis index(value). Note that ROIs can be used
+            in place of a tuple.
         sobel : bool
             apply a sobel filter for edge enhancement
         medfilter :  bool
             apply a median filter for noise reduction
         hanning : bool
             Apply a 2d hanning filter
-        plot : bool or "reuse"
+        plot : bool or 'reuse'
             If True plots the images after applying the filters and
             the phase correlation. If 'reuse', it will also plot the images,
             but it will only use one figure, and continuously update the images
@@ -409,23 +426,20 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Returns
         -------
-
-        list of applied shifts
+        shifts : list of array
+            List of estimated shifts
 
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
-        when using `reference`='stat' roughly follows [1]_ . If you use
+        when using reference='stat' roughly follows [*]_ . If you use
         it please cite their article.
 
         References
         ----------
-
-        .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
-        Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
-        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+        .. [*] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
+           “Automated Spatial Drift Correction for EFTEM Image Series.”
+           Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
         if show_progressbar is None:
@@ -590,17 +604,14 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
-        when using `reference`='stat' roughly follows [1]_ . If you use
+        when using reference='stat' roughly follows [*]_ . If you use
         it please cite their article.
 
         References
         ----------
-
-        .. [1] Bernhard Schaffer, Werner Grogger and Gerald
-           Kothleitner. “Automated Spatial Drift Correction for EFTEM
-           Image Series.”
+        .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
+           “Automated Spatial Drift Correction for EFTEM Image Series.” 
            Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
@@ -700,8 +711,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, convert the signal units using the 'convert_to_units'
             method of the 'axes_manager'. If False, does nothing.
 
-        See also:
-        ---------
+        See also
+        --------
         crop
 
         """

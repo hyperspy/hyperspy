@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,6 +19,7 @@
 import numpy as np
 import numpy.testing as npt
 import os
+import sys
 import tempfile
 import pytest
 from time import perf_counter, sleep
@@ -123,7 +124,7 @@ class TestPythonMrcz:
                     sleep(0.001)
             print("Time to save file: {} s".format(
                 perf_counter() - (t_stop - MAX_ASYNC_TIME)))
-            sleep(0.005)
+            sleep(0.1)
 
         reSignal = load(mrcName)
         try:

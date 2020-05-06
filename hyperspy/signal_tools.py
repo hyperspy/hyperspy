@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -102,8 +102,8 @@ class LineInSignal1D(t.HasTraits):
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     position : float
         The position of the vertical line in the one dimensional signal. Moving
         the line changes the position but the reverse is not true.
@@ -938,16 +938,20 @@ class IntegrateArea(SpanSelectorInSignal1D):
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
-        'Power Law',
         'Gaussian',
+        'Lorentzian',
         'Offset',
         'Polynomial',
+        'Power Law',
+        'Exponential',
+        'SkewNormal',
+        'Voigt',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
                         " estimation of the background. Otherwise use "
-                        "use non-linear least squares."))
+                        "non-linear least squares."))
     zero_fill = t.Bool(
         False,
         desc=("Set all spectral channels lower than the lower \n"
@@ -987,11 +991,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.rm_line = None
 
     def set_background_estimator(self):
-        if self.background_type == 'Power Law':
-            self.background_estimator = components1d.PowerLaw()
-            self.bg_line_range = 'from_left_range'
-        elif self.background_type == 'Gaussian':
+        if self.background_type == 'Gaussian':
             self.background_estimator = components1d.Gaussian()
+            self.bg_line_range = 'full'
+        elif self.background_type == 'Lorentzian':
+            self.background_estimator = components1d.Lorentzian()
             self.bg_line_range = 'full'
         elif self.background_type == 'Offset':
             self.background_estimator = components1d.Offset()
@@ -1000,6 +1004,19 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             with ignore_warning(message="The API of the `Polynomial` component"):
                 self.background_estimator = components1d.Polynomial(
                     self.polynomial_order)
+            self.bg_line_range = 'full'
+        elif self.background_type == 'Power Law':
+            self.background_estimator = components1d.PowerLaw()
+            self.bg_line_range = 'from_left_range'
+        elif self.background_type == 'Exponential':
+            self.background_estimator = components1d.Exponential()
+            self.bg_line_range = 'from_left_range'
+        elif self.background_type == 'SkewNormal':
+            self.background_estimator = components1d.SkewNormal()
+            self.bg_line_range = 'full'
+        elif self.background_type == 'Voigt':
+            with ignore_warning(message="The API of the `Voigt` component"):
+                self.background_estimator = components1d.Voigt(legacy=False)
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):

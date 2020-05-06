@@ -33,6 +33,24 @@ information is stored in the :py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). This information is saved to file
 when saving in the hspy format (HyperSpy's HDF5 specification).
 
+A method :py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy`
+can be helpful to identify possible elements in the sample.
+:py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy` returns a
+list of edges arranged in the order closest to the specified energy within a
+window, both measured in eV. The size of the window can be controlled by the
+argument `width` (default as 10)--- If the specified energy is 849 eV and the
+width is 6 eV, it returns a list of edges with onset energy between 846 eV to
+852 eV and they are arranged in the order closest to 849 eV.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.get_edges_near_energy(532)
+    ['O_K', 'Pd_M3', 'Sb_M5', 'Sb_M4']
+    >>> s.get_edges_near_energy(849, width=6)
+    ['La_M4', 'Fe_L1']
+
+
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -111,8 +129,8 @@ EELS curve fitting
 
 HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
-EELS spectrum from the `The EELS Data Base
-<https://eelsdb.eu/>`_ (see :ref:`example-data-label`).
+EELS spectrum from the `EELS Data Base
+<https://eelsdb.eu/>`__ (see :ref:`example-data-label`).
 
 Load the core-loss and low-loss spectra
 
@@ -169,6 +187,7 @@ Conveniently, all the EELS core-loss components of the added elements are added
 automatically, names after its element symbol.
 
 .. code-block:: python
+
     >>> m.components.N_K
     <N_K (EELSCLEdge component)>
     >>> m.components.B_K
@@ -198,6 +217,14 @@ image
 
     >>> m.multifit(kind='smart')
 
+.. NOTE::
+
+    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.
+    The fitting procedure acts in iterative manner along the energy-loss-axis.
+    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit.
+    Then it only activates the the first two, fits, and repeats this until all edges are fitted simultanously.
+
+    Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
 
 Print the result of the fit
 
@@ -221,8 +248,8 @@ Visualize the result
    :align:   center
    :width:   500
 
-   Curve fitting quantification of a boron nitride EELS core-loss spectrum from
-   `The EELS Data Base <https://eelsdb.eu>`_
+   Curve fitting quantification of a boron nitride EELS core-loss spectrum
+   from the `EELS Data Base <https://eelsdb.eu>`__.
 
 
 There are several methods that are only available in
