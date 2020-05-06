@@ -316,24 +316,24 @@ class Test_Estimate_Thickness:
 
     def test_thickness_density(self):
         t = self.s.estimate_thickness(zlp=self.zlp, density=3.6)
-        np.testing.assert_allclose(t.data, 134 * np.arange(0.3,2,0.1), rtol=3e-3)
+        np.testing.assert_allclose(t.data, 142 * np.arange(0.3,2,0.1), rtol=3e-3)
         assert t.metadata.Signal.quantity == "thickness (nm)"
 
     def test_thickness_density_and_mfp(self):
         t = self.s.estimate_thickness(zlp=self.zlp, density=3.6, mean_free_path=120)
-        np.testing.assert_allclose(t.data, 127 * np.arange(0.3,2,0.1), rtol=3e-3)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
         assert t.metadata.Signal.quantity == "thickness (nm)"
 
     def test_threshold(self):
         t = self.s.estimate_thickness(threshold=4.5, density=3.6, mean_free_path=120)
-        np.testing.assert_allclose(t.data, 127 * np.arange(0.3,2,0.1), rtol=3e-3)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
         assert t.metadata.Signal.quantity == "thickness (nm)"
 
     def test_threshold_nd(self):
         threshold = self.s._get_navigation_signal()
         threshold.data[:] = 4.5
         t = self.s.estimate_thickness(threshold=threshold, density=3.6, mean_free_path=120)
-        np.testing.assert_allclose(t.data, 127 * np.arange(0.3,2,0.1), rtol=3e-3)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
         assert t.metadata.Signal.quantity == "thickness (nm)"
 
     def test_no_zlp_or_threshold(self):

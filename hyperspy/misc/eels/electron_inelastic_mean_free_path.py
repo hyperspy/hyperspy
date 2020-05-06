@@ -4,8 +4,7 @@ def _F(beam_energy):
     return (1 + beam_energy / 1022) / (1 + beam_energy / 511) ** 2
 
 def _theta_E(density, beam_energy):
-    gamma = 1 + beam_energy/511 # keV
-    return 5.5 * density ** 0.3 / (gamma * _F(beam_energy) * beam_energy)
+    return 5.5 * density ** 0.3 / (_F(beam_energy) * beam_energy)
 
 def iMFP(density, beam_energy):
     """Estimate electron inelastic mean free path from density

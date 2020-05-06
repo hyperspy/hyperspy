@@ -1100,7 +1100,7 @@ class EELSSpectrum_mixin:
             is estimated and returned. It is only required when `t` is None.
         t: {None, number, Signal1D}
             The sample thickness in nm. Used for normalization of the
-            SSD to obtain the energy loss function. It is only required when
+             to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
             given by a number. Otherwise, it can be provided as a BaseSignal
             with signal dimension 0 and navigation_dimension equal to the

@@ -44,12 +44,11 @@ The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method can
 estimate the thickness from a low-loss EELS spectrum using the log-ratio
 method. If the beam energy, collection angle, convergence angle and sample
 density are known, the absolute thickness is computed using the method in
-:ref:`[Iakoubovskii2008] <Iakoubovskii2008>` modified to include the
-relativistic correction in :math:`\theta_{E}` proposed in :ref:`[Egerton2011]
-<Egerton2011>`.  It is possible to input the inelastic electron mean free path
-(iMFP) if known.  Otherwise it is internally estimated from the density of the
-material.  If the density and/or the iMFP are not known, the output is the
-thickness relative to the (unknown) iMFP without any angular corrections.
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`. This includes the estimation of
+the inelastic mean free path (iMFP). For more accurate results, it is possible
+to input the iMFP of the material if known.  If the density and/or the iMFP are
+not known, the output is the thickness relative to the (unknown) iMFP without
+any angular corrections.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
