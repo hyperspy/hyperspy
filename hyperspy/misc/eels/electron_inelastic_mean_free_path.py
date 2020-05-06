@@ -1,13 +1,13 @@
 import numpy as np
 import math
 
-def _F(beam_energy):
-    return (1 + beam_energy / 1022) / (1 + beam_energy / 511) ** 2
+def _F(electron_energy):
+    return (1 + electron_energy / 1022) / (1 + electron_energy / 511) ** 2
 
-def _theta_E(density, beam_energy):
-    return 5.5 * density ** 0.3 / (_F(beam_energy) * beam_energy)
+def _theta_E(density, electron_energy):
+    return 5.5 * density ** 0.3 / (_F(electron_energy) * electron_energy)
 
-def iMFP_Iakoubovskii(density, beam_energy):
+def iMFP_Iakoubovskii(density, electron_energy):
     """Estimate electron inelastic mean free path from density
 
     Parameters:
@@ -26,16 +26,16 @@ def iMFP_Iakoubovskii(density, beam_energy):
       https://doi.org/10.1002/jemt.20597.
     """
     theta_C = 20 # mrad
-    inv_lambda = 11 * density ** 0.3 / (200 * _F(beam_energy) * beam_energy) * np.log(theta_C ** 2 / _theta_E(density, beam_energy) ** 2)
+    inv_lambda = 11 * density ** 0.3 / (200 * _F(electron_energy) * electron_energy) * np.log(theta_C ** 2 / _theta_E(density, electron_energy) ** 2)
     return 1 / inv_lambda
 
 
-def iMFP_TPP2M(beam_energy, density, M, N_v, E_g):
+def iMFP_TPP2M(electron_energy, density, M, N_v, E_g):
     """Electron inelastic mean free path using TPP-2M
 
     Parameters
     ----------
-    beam_energy : float
+    electron_energy : float
         Electron beam energy in keV
     density : float
         Material density in g/cm**3
@@ -55,7 +55,7 @@ def iMFP_TPP2M(beam_energy, density, M, N_v, E_g):
     Interface Analysis 47, no. 9 (September 2015): 871–88.
     https://doi.org/10.1002/sia.5789.
     """
-    E = beam_energy * 1e3
+    E = electron_energy * 1e3
     rho = density
     alpha = (1 + E / 1021999.8) / (1 + E / 510998.9)**2
     E_p = 28.816 * math.sqrt(N_v * rho / M)

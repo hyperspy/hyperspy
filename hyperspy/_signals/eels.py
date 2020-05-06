@@ -608,7 +608,7 @@ class EELSSpectrum_mixin:
                 )
                 if mean_free_path is None:
                     mean_free_path = iMFP_Iakoubovskii(
-                        beam_energy=self.metadata.Acquisition_instrument.TEM.beam_energy,
+                        electron_energy=self.metadata.Acquisition_instrument.TEM.beam_energy,
                         density=density)
                     _logger.info(f"The estimated iMFP is {mean_free_path} nm")
         else:
