@@ -22,6 +22,7 @@ import numpy.ma as ma
 import dask.array as da
 import scipy as sp
 import logging
+import warnings
 from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
@@ -625,14 +626,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             return_shifts = True
 
             if not np.any(shifts):
-                _logger.warning(
+                warnings.warn(
                     "The estimated shifts are all zero, suggesting "
-                    "the images are already aligned"
+                    "the images are already aligned",
+                    UserWarning,
                 )
                 return shifts
 
         elif not np.any(shifts):
-            _logger.warning("The provided shifts are all zero, no alignment done")
+            warnings.warn(
+                "The provided shifts are all zero, no alignment done",
+                UserWarning,
+            )
             return None
 
         if expand:
