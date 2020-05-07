@@ -26,7 +26,7 @@ from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 from hyperspy.misc.utils import parse_quantity
 
 
@@ -141,7 +141,7 @@ class ComplexSignal_mixin:
         return angle
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
-                        show_progressbar=None, parallel=None):
+                        show_progressbar=None, parallel=None, max_workers=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
@@ -155,6 +155,7 @@ class ComplexSignal_mixin:
         seed : int, optional
             Unwrapping 2D or 3D images uses random initialization. This sets the
             seed of the PRNG to achieve deterministic behavior.
+        %s
         %s
         %s
 
@@ -176,12 +177,12 @@ class ComplexSignal_mixin:
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar, ragged=False,
-                  parallel=parallel)
+                  parallel=parallel, max_workers=max_workers)
         phase.metadata.General.title = 'unwrapped {}'.format(
             phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def __call__(self, axes_manager=None, power_spectrum=False,
                  fft_shift=False):

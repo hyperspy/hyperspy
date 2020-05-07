@@ -34,7 +34,7 @@ from hyperspy.misc.utils import isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -831,7 +831,7 @@ class EELSSpectrum_mixin:
 
     def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
                                       show_progressbar=None,
-                                      parallel=None):
+                                      parallel=None, max_workers=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -844,6 +844,7 @@ class EELSSpectrum_mixin:
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
+        %s
         %s
         %s
 
@@ -876,7 +877,8 @@ class EELSSpectrum_mixin:
             return result
         ds = self.map(deconv_function, kernel=psf, iterations=iterations,
                       psf_size=psf_size, show_progressbar=show_progressbar,
-                      parallel=parallel, ragged=False, inplace=False)
+                      parallel=parallel, max_workers=max_workers,
+                      ragged=False, inplace=False)
 
         ds.metadata.General.title += (
             ' after Richardson-Lucy deconvolution %i iterations' %
@@ -886,8 +888,7 @@ class EELSSpectrum_mixin:
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
-    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG,
-                                              PARALLEL_ARG)
+    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def _are_microscope_parameters_missing(self, ignore_parameters=[]):
         """
