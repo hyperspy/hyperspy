@@ -146,7 +146,6 @@ class TestClusterEstimate:
             max_clusters,
             scaling=scaling,
             use_decomposition_results=use_decomposition_results,
-            use_decomposition_results_for_centers=use_decomposition_results_for_centers,
             algorithm=algorithm,
             metric=metric)
         k_range = self.signal.learning_results.cluster_metric_index
