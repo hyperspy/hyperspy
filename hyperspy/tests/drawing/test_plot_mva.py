@@ -121,22 +121,10 @@ class TestPlotClusterAnalysis:
         s2.cluster_analysis(3, algorithm='kmeans',
                             scaling="minmax", random_state=0)
         
-        image_array=np.zeros((5,5))
-        X=[]
-        for i in range(250):
-            image_array[:,:] = 0.
-            image_array[0,:] = 10.
-            X.append(image_array.copy())
-        for i in range(100):
-            image_array[:,:] = 0.
-            image_array[2,:] = 2.
-            X.append(image_array.copy())
-        for i in range(50):
-            image_array[:,:] = 0.
-            image_array[:,4] = 20.
-            X.append(image_array.copy())
-
-        data = np.concatenate(X)
+        data = np.zeros((2000, 5))
+        data[:250*5:5, :] = 10
+        data[2 + 250*5:350*5:5, :] = 2
+        data[350*5:400*5, 4] = 20
 
         # nav2, sig2
         s3 = signals.Signal2D(data.reshape(20, 20, 5, 5))

@@ -34,6 +34,7 @@ class TestCluster1d:
         # Use prime numbers to avoid fluke equivalences
         self.signal = signals.Signal1D(np.random.rand(11, 5, 7))
         self.signal.decomposition()
+        self.signal.blind_source_separation(number_of_components=3)
         self.navigation_mask = np.zeros((11, 5), dtype=bool)
         self.navigation_mask[4:6, 1:4] = True
         self.signal_mask = np.zeros((7,), dtype=bool)
@@ -41,12 +42,12 @@ class TestCluster1d:
 
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False))
+    @pytest.mark.parametrize("use_decomposition_results", (True, False,"bss","decomposition"))
     @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
-    @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
+    @pytest.mark.parametrize("use_decomposition_results_for_centers", (True, False))
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_parameters(self, algorithm, use_decomposition_results,
-                        scaling, use_decomposition_for_centers,
+                        scaling, use_decomposition_results_for_centers,
                         use_masks):
         if use_masks:
             navigation_mask = self.navigation_mask
@@ -58,8 +59,8 @@ class TestCluster1d:
                                      scaling=scaling,
                                      use_decomposition_results=\
                                          use_decomposition_results,
-                                     use_decomposition_for_centers=\
-                                         use_decomposition_for_centers,
+                                     use_decomposition_results_for_centers=\
+                                         use_decomposition_results_for_centers,
                                      navigation_mask=navigation_mask,
                                      signal_mask=signal_mask,
                                      algorithm=algorithm,
@@ -77,18 +78,19 @@ class TestCluster2d:
     def setup_method(self):
         self.signal = signals.Signal2D(np.random.rand(11, 5, 7))
         self.signal.decomposition()
+        self.signal.blind_source_separation(number_of_components=3)
         self.navigation_mask = np.zeros((11,), dtype=bool)
         self.navigation_mask[4:6] = True
         self.signal_mask = np.zeros((5, 7), dtype=bool)
         self.signal_mask[1:4, 2:6] = True
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False))
+    @pytest.mark.parametrize("use_decomposition_results", (True, False,"bss","decomposition"))
     @pytest.mark.parametrize("scaling", ("standard", "norm","minmax",None))
-    @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
+    @pytest.mark.parametrize("use_decomposition_results_for_centers", (True, False))
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_parameters(self, algorithm, use_decomposition_results,
-                        scaling, use_decomposition_for_centers,
+                        scaling, use_decomposition_results_for_centers,
                         use_masks):
         if use_masks:
             navigation_mask = self.navigation_mask
@@ -100,8 +102,8 @@ class TestCluster2d:
                                      scaling=scaling,
                                      use_decomposition_results=\
                                          use_decomposition_results,
-                                     use_decomposition_for_centers=\
-                                         use_decomposition_for_centers,
+                                     use_decomposition_results_for_centers=\
+                                         use_decomposition_results_for_centers,
                                      navigation_mask=navigation_mask,
                                      signal_mask=signal_mask,
                                      algorithm=algorithm,
@@ -124,27 +126,27 @@ class TestClusterEstimate:
         n_samples=[400]*3
         std = [1.0]*3
         X = []
-        centers = np.random.uniform(-20,20,size=(3, 5))
+        centers = np.array([[-12.,-12.,11,10],[12.,-12.,-12.,-11],[1.,1.,1.,1.]])
         for i, (n, std) in enumerate(zip(n_samples, std)):
-            X.append(centers[i] + np.random.normal(scale=std,size=(n, 5)))
+            X.append(centers[i] + np.random.normal(scale=std,size=(n, 4)))
         X = np.concatenate(X)
         np.random.shuffle(X)
         self.signal = signals.Signal1D(X)
         self.signal.decomposition()
+        self.signal.blind_source_separation(number_of_components=3)
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False))
+    @pytest.mark.parametrize("use_decomposition_results", (True, False,"bss","decomposition"))
     @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
-    @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
     @pytest.mark.parametrize("metric", ("elbow","silhouette","gap"))
     def test_scores(self, algorithm, use_decomposition_results,
-                    scaling, use_decomposition_for_centers,metric):
-
+                    scaling,metric):
+        max_clusters = 6
         self.signal.estimate_number_of_clusters(
-            8,
+            max_clusters,
             scaling=scaling,
             use_decomposition_results=use_decomposition_results,
-            use_decomposition_for_centers=use_decomposition_for_centers,
+            use_decomposition_results_for_centers=use_decomposition_results_for_centers,
             algorithm=algorithm,
             metric=metric)
         k_range = self.signal.learning_results.cluster_metric_index
@@ -152,12 +154,12 @@ class TestClusterEstimate:
         if isinstance(best_k,list):
             best_k = best_k[0]
 
-        test_k_range=list(range(1,9))
+        test_k_range=list(range(1,max_clusters+1))
         if(algorithm == "agglomerative"):
-            test_k_range   = list(range(2, 9))
+            test_k_range   = list(range(2, max_clusters+1))
         elif(algorithm == "kmeans"):
             if metric == "silhouette":
-                test_k_range   = list(range(2,9))
+                test_k_range   = list(range(2,max_clusters+1))
 
         np.testing.assert_allclose(k_range,test_k_range)
         np.testing.assert_allclose(best_k, 3)
@@ -167,34 +169,35 @@ class TestClusterEstimate:
 
 class TestClusterCustomScaling:
 
+    
+
     def setup_method(self):
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
-        n_samples=[400] * 3
-        std = [1.0] * 3
+        n_samples=[400]*3
+        std = [1.0]*3
         X = []
-        centers = np.random.uniform(-20, 20, size=(3, 5))
+        centers = np.array([[-12.,-12.,11,10],[12.,-12.,-12.,-11],[1.,1.,1.,1.]])
         for i, (n, std) in enumerate(zip(n_samples, std)):
-            X.append(centers[i] + np.random.normal(scale=std, size=(n, 5)))
+            X.append(centers[i] + np.random.normal(scale=std,size=(n, 4)))
         X = np.concatenate(X)
         np.random.shuffle(X)
         self.signal = signals.Signal1D(X)
         self.signal.decomposition()
-
+        self.signal.blind_source_separation(number_of_components=3)
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False))
-    @pytest.mark.parametrize("use_decomposition_for_centers", (True, False))
+    @pytest.mark.parametrize("use_decomposition_results", (True, False,"decomposition","bss"))
     @pytest.mark.parametrize("metric", ("elbow", "silhouette", "gap"))
     def test_custom(self,  use_decomposition_results,
-                algorithm,use_decomposition_for_centers,metric):
+                algorithm,metric):
             custom_scaling = import_sklearn.sklearn.preprocessing.MinMaxScaler
+            max_clusters = 6
             self.signal.estimate_number_of_clusters(
-                8,
+                max_clusters,
                 scaling=custom_scaling,
                 use_decomposition_results=use_decomposition_results,
-                use_decomposition_for_centers=use_decomposition_for_centers,
                 algorithm=algorithm,
                 metric=metric)
             best_k = self.signal.learning_results.number_of_clusters

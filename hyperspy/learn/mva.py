@@ -1658,9 +1658,9 @@ class MVA:
 
     def scale_data_for_clustering(self,
                                   use_decomposition_results=True,
-                                  scaling="minmax",
+                                  scaling="norm",
                                   scaling_kwargs={},
-                                  number_pca_components=None,
+                                  number_of_components=None,
                                   navigation_mask=None,
                                   signal_mask=None):
         """scale data for cluster analysis
@@ -1671,13 +1671,14 @@ class MVA:
         ----------
         n_clusters : int
             Number of clusters to find.
-        use_decomposition_results : bool or numpy array
-            If True (recommended) the signal's decomposition results are used
-            for clustering. Note - If this option is not used the raw data
-            is used. This can be memory intensive and is only recommened if
-            the Signal has a small `signal_dimension`.
+        use_decomposition_results : {True,False,"decomposition","bss"}
+            If True or "decomposition" the signal's decomposition results are used
+            for clustering. If "bss" the blind source separation results are used
+            If False the raw data is used Note that this can be memory intensive 
+            and is only recommened if the Signal has a small signal
+            or navigation dimensions.
         scaling : {"standard","norm","minmax",None or scikit learn scaling method}
-            default: 'minmax'
+            default: 'norm'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
@@ -1691,9 +1692,9 @@ class MVA:
         scaling_kwargs :
             Additional parameters passed to the cluster scaling algorithm.
             See sklearn.preprocessing scaling methods for further details
-        number_pca_components: int , default None
+        number_of_components: int , default None
             If you are clustering using the decomposition results
-            (use_decomposition_results = True) you can define how many PCA
+            (use_decomposition_results = True) you can define how many 
             components to use.   if set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method
@@ -1741,8 +1742,9 @@ class MVA:
         # Deal with masks
         navigation_mask = self._mask_for_clustering(navigation_mask)
         if use_decomposition_results:
-            dc = self.learning_results.loadings.copy()
-            data = dc[:,slice(0,number_pca_components,1)]
+            factors,loadings = self._get_decomposition_results(use_decomposition_results)
+            dc = loadings.copy()
+            data = dc[:,slice(0,number_of_components,1)]
             signal_mask =  self._mask_for_clustering(None)
         else:
             data = self.data
@@ -1755,15 +1757,51 @@ class MVA:
             scaler = algorithm(**scaling_kwargs)
             return scaler.fit_transform(dc[:, signal_mask][navigation_mask, :])
 
-    def _get_number_pca_components_for_clustering(self):
+
+    def _get_decomposition_results(self,use_decomposition_results=True):
+        """ Return the decomposition factors or loadings - from BSS or 
+        results of the decomposition method call using PCA, NMF etc.
+        
+        Parameters
+        ----------
+        use_decomposition_results : {"decomposition","bss",True}
+            If True or "decomposition" use the results from decomposition method
+            if "bss" use the blind source seperation results
+        
+        Returns
+        -------
+        factors,loadings : tuple
+        
+        """
+        if isinstance(use_decomposition_results,str):            
+            use_decomposition_results = use_decomposition_results.lower()
+        if use_decomposition_results not in ("decomposition","bss",True):
+            raise ValueError("use_decomposition_results must be specified"
+                             "as True,False,decomposition or bss")
+
+        if use_decomposition_results in ("decomposition",True):
+            factors = self.learning_results.factors 
+            loadings = self.learning_results.loadings
+        else:
+            factors = self.learning_results.bss_factors 
+            loadings = self.learning_results.bss_loadings        
+        return factors,loadings
+        
+    def _get_number_of_components_for_clustering(self):
+        """
+        Returns the number of components 
+        """        
         if self.learning_results.number_significant_components is None:
             raise ValueError("Number of pca components not defined, "
                              "please run decomposition first.")
         else:
-            number_pca_components = self.learning_results.number_significant_components
-        return number_pca_components
+            number_of_components = self.learning_results.number_significant_components
+        return number_of_components
 
     def _get_number_clusters_for_clustering(self):
+        """
+        
+        """
         if self.learning_results.number_of_clusters is None:
             raise ValueError("Number of clusters not defined, "
                              "please run evaluate_number_of_clusters first.")
@@ -1842,8 +1880,8 @@ class MVA:
         return ax
 
     def _create_cluster_centers_from_labels(self, labels,
-                                           use_decomposition_for_centers=False,
-                                           number_pca_components=None,
+                                           use_decomposition_results_for_centers=False,
+                                           number_of_components=None,
                                            navigation_mask=None):
         """
         From a set of cluster labels generate the cluster centers from the
@@ -1853,17 +1891,18 @@ class MVA:
         ----------
         labels : int array of length n_samples where each value is a cluster
             label from 0 to n_clusters-1
-        use_decomposition_for_centers : bool
+        use_decomposition_results_for_centers : bool
             If True (recommended) the pca results are used for building the
             the cluster centers from the clustered label results.
             If False the original signal data is used.
-        number_pca_components : int, default None
+        number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (use_decomposition_for_centers=True) you can define how
-            many PCA components to use. If set to None the method uses the
+            results (use_decomposition_results_for_centers=True) you can define how
+            components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
+            This applies to both bss and decomposition results.
 
         Returns
         -------
@@ -1871,8 +1910,10 @@ class MVA:
         cluster_centers : array  - (n_clusters, signal_shape)
         """
 
-        if use_decomposition_for_centers and number_pca_components is None:
-            number_pca_components = self._get_number_pca_components_for_clustering()
+        if use_decomposition_results_for_centers:
+            if number_of_components is None:
+                number_of_components = self._get_number_of_components_for_clustering()
+            factors,loadings = self._get_decomposition_results(use_decomposition_results_for_centers)
 
         if navigation_mask is None:
             navigation_mask = self._mask_for_clustering(navigation_mask)
@@ -1893,7 +1934,7 @@ class MVA:
         # We can produce the representative 1D or 2D signals for each cluster
         # by averaging all points with a given label or averaging
         # PCA components*loadings with a given label
-        if not use_decomposition_for_centers:
+        if not use_decomposition_results_for_centers:
             clusterdata = self.data \
                 if self.axes_manager[0].index_in_array == 0 else self.data.T
             cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
@@ -1909,11 +1950,10 @@ class MVA:
             clus_index = np.where(labels == i)
             clustersizes[i] = labels[np.where(labels == i)].shape[0]
             # if using the pca components
-            if use_decomposition_for_centers:
+            if use_decomposition_results_for_centers:
                 # pca clustered...
-                a = self.learning_results.loadings[clus_index][:,
-                                                       0:number_pca_components]
-                b = self.learning_results.factors[:, 0:number_pca_components].T
+                a = loadings[clus_index][:,0:number_of_components]
+                b = factors[:, 0:number_of_components].T
                 center = np.dot(a, b).sum(axis=0)
                 cluster_centers[i, :] = cluster_centers[i, :] + center
                 cluster_centers[i, :] = cluster_centers[i, :] 
@@ -1943,11 +1983,11 @@ class MVA:
 
     def cluster_analysis(self,
                          n_clusters=None,
-                         scaling="minmax",
+                         scaling="norm",
                          scaling_kwargs={},
                          use_decomposition_results=True,
-                         use_decomposition_for_centers=False,
-                         number_pca_components=None,
+                         use_decomposition_results_for_centers=False,
+                         number_of_components=None,
                          navigation_mask=None,
                          signal_mask=None,
                          algorithm='kmeans',
@@ -1963,7 +2003,7 @@ class MVA:
         n_clusters : int
             Number of clusters to find.
         scaling : {"standard","norm","minmax",None or scikit learn scaling method}
-            default: 'minmax'
+            default: 'norm'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
@@ -1977,22 +2017,25 @@ class MVA:
         scaling_kwargs : dict
             Additional parameters passed to the cluster scaling algorithm.
             See sklearn.preprocessing scaling methods for further details
-        use_decomposition_results : bool
-            If True (recommended) the signal's decomposition results are used
-            for clustering. Note - If this option is not used the raw data
-            is used. This can be memory intensive and is only recommened if
-            the Signal has a small `signal_dimension`.
-        use_decomposition_for_centers : bool
-            If True (recommended) the pca results are used for building the
-            the cluster centers from the clustered label results.
+        use_decomposition_results : {True,False,"decomposition","bss"}
+            If True or "decomposition" the signal's decomposition results are used
+            for clustering. If "bss" the blind source separation results are used
+            If False the raw data is used Note that this can be memory intensive 
+            and is only recommened if the Signal has a small signal
+            or navigation dimensions.
+        use_decomposition_results_for_centers : {True,False,"decomposition","bss"}
+            If True or "decomposition" the signal's decomposition results are used
+            for building he cluster centers from the clustered label results.
+            If "bss" the blind source separation results are used.
             If False the original signal data is used.
-        number_pca_components : int, default None
+        number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (use_decomposition_for_centers=True) you can define how
-            many PCA components to use. If set to None the method uses the
+            results (use_decomposition_results_for_centers=True) you can define how
+            many components to use.  If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
+            This applies to both bss and decomposition results.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decomposition.
@@ -2022,8 +2065,8 @@ class MVA:
         # backup the original data
         self._data_before_treatments = self.data.copy()
 
-        if use_decomposition_results and number_pca_components is None:
-            number_pca_components = self._get_number_pca_components_for_clustering()
+        if use_decomposition_results and number_of_components is None:
+            number_of_components = self._get_number_of_components_for_clustering()
 
         if n_clusters is None:
             n_clusters = self._get_number_clusters_for_clustering()
@@ -2042,7 +2085,7 @@ class MVA:
             scaled_data = self.scale_data_for_clustering(
                 use_decomposition_results=use_decomposition_results,
                 scaling=scaling,
-                number_pca_components=number_pca_components,
+                number_of_components=number_of_components,
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
             alg = self._cluster_analysis(n_clusters,
@@ -2064,8 +2107,8 @@ class MVA:
             sorted_membership,cluster_labels, cluster_centers = \
                 self._create_cluster_centers_from_labels(
                     labels,
-                    use_decomposition_for_centers=use_decomposition_for_centers,
-                    number_pca_components=number_pca_components,
+                    use_decomposition_results_for_centers=use_decomposition_results_for_centers,
+                    number_of_components=number_of_components,
                     navigation_mask=self._mask_for_clustering(navigation_mask)
                 )
         finally:
@@ -2088,11 +2131,10 @@ class MVA:
 
     def estimate_number_of_clusters(self,
                                     max_clusters=12,
-                                    scaling="minmax",
+                                    scaling="norm",
                                     scaling_kwargs={},
                                     use_decomposition_results=True,
-                                    use_decomposition_for_centers=False,
-                                    number_pca_components=None,
+                                    number_of_components=None,
                                     navigation_mask=None,
                                     signal_mask=None,
                                     algorithm='kmeans',
@@ -2115,7 +2157,7 @@ class MVA:
             Max number of clusters to use. The method will scan from 2 to
             max_clusters. 
         scaling : {"standard","norm","minmax" or scikit learn scaling method}
-            default: 'minmax'
+            default: 'norm'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
@@ -2129,18 +2171,15 @@ class MVA:
         scaling_kwargs : dict, default empty
             Additional parameters passed to the cluster scaling algorithm.
             See sklearn.preprocessing scaling methods for further details
-        use_decomposition_results : bool, default : True
-            If True (recommended) the signal's decomposition results are used
-            for clustering. Note - If this option is not used the raw data
-            is used. This can be memory intensive and is only recommened if
-            the Signal has a small `signal_dimension`.
-        use_decomposition_for_centers : bool
-            If True (recommended) the pca results are used for building the
-            the cluster centers from the clustered label results.
-            If False the original signal data is used.
-        number_pca_components : int, default None
+        use_decomposition_results : {True,False,"decomposition","bss"}
+            If True or "decomposition" the signal's decomposition results are used
+            for clustering. If "bss" the blind source separation results are used
+            If False the raw data is used Note that this can be memory intensive 
+            and is only recommened if the Signal has a small signal
+            or navigation dimensions.
+        number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (use_decomposition_for_centers=True) you can define how
+            results (use_decomposition_results_for_centers=True) you can define how
             many PCA components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
@@ -2184,8 +2223,8 @@ class MVA:
                 (2.*data[memberships == c, :].shape[0]))
                 for c in np.unique(memberships)]
 
-        if use_decomposition_results and number_pca_components is None:
-            number_pca_components = self._get_number_pca_components_for_clustering()
+        if use_decomposition_results and number_of_components is None:
+            number_of_components = self._get_number_of_components_for_clustering()
 
         if max_clusters < 2:
             raise ValueError("The number of clusters, max_clusters "
@@ -2217,7 +2256,7 @@ class MVA:
             scaled_data = self.scale_data_for_clustering(
                 use_decomposition_results=use_decomposition_results,
                 scaling=scaling, scaling_kwargs=scaling_kwargs,
-                number_pca_components=number_pca_components,
+                number_of_components=number_of_components,
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
 
@@ -2323,11 +2362,13 @@ class MVA:
                 std_error = np.abs(std_error)
                 gap       = reference_inertia-data_inertia
                 to_return = gap
-                best_k = min_k
-                for i in range(1,len(k_range)-1):
-                    if gap[i] >= (gap[i+1]- std_error[i+1]):
-                        best_k=i+min_k
-                        break
+                # finding the first max..check if first point is max
+                # otherwise use elbow method to find first knee
+                if np.argmax(gap) == 0:
+                    best_k = min_k
+                else:
+                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=False)\
+                        +min_k
         finally:
             target.cluster_metric_index      = k_range
             target.cluster_metric_data       = to_return

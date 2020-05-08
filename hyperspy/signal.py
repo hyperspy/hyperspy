@@ -1269,14 +1269,16 @@ class MVATools(object):
         label_format : string
             The extension of the format that you wish to save to. default
             is "hspy". The format determines the kind of output.
-            - For image formats (tif, png, jpg, etc.), plots are
-              created using the plotting flags as below, and saved at
-              600 dpi. One plot per loading is saved.
-            - For multidimensional formats ("rpl", "hspy"), arrays are
-              saved in single files.  Membership is contained in the
-              one file.
-            - For spectral formats (msa), each loading is saved to a
-              separate file.
+            
+                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                  plots are created using the plotting flags as below, and saved
+                  at 600 dpi. One plot is saved per loading.
+                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                  are saved in single files.  All loadings are contained in the
+                  one file.
+                * For spectral formats (``'msa'``), each loading is saved to a
+                  separate file.
+                  
         multiple_files : bool
             If True, on exporting a file per center will
             be created. Otherwise only two files will be created, one for

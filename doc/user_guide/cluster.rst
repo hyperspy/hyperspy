@@ -1,26 +1,39 @@
 
+
 Cluster analysis
 ================
 
 .. versionadded:: 1.6
 
-A Hyperspy signal can represent a number of large arrays of different signals such as a map of chemical composition (EDS, XRF),
-a stack of elemental maps, chemical state (EELS/XANES), or structure (diffraction pattern). 
-Identifying and extracting trends from large datasets is often difficult and PCA, BSS, NMF and cluster analysis play an important role
-in this process. 
-Cluster analysis aims to group the data, or rather features in the data, into N sets with similar properties and it does this 
-by comparing the "distances" (or similar metric) between different features and grouping those that are closest.   
+`Cluster analysis <https://en.wikipedia.org/wiki/Cluster_analysis>`_ or clustering 
+is the task of grouping a set of measurements such that measurements in the same 
+group (called a cluster) are more similar (in some sense) to each other than to 
+those in other groups (clusters).
+A Hyperspy signal can represent a number of large arrays of different measurements
+which can represent spectra, images or sets of paramaters.
+Identifying and extracting trends from large datasets is often difficult and 
+PCA, BSS, NMF and cluster analysis play an important role in this process. 
 
-Cluster analysis can be performed on raw data but is more commonly used on an extracted set of features.
-PCA decomposition is one way to produce a set of features as it reduces the description of the data into a set of loadings and factors. 
-The loadings capture a core representation of the features in the spectra or images and the factors provide the mixing of these loadings
-to describe that describe the original data.  
-These mixing factors can be interrogated to find similar regions and for PCA these represent relatively small data sets (typically <20 values)
-compared to finding clusters within raw data which can be several thousand features points per measurement.
+Cluster analysis, in essence, compares the "distances" (or similar metric) 
+between different sets of measurements and groups those that are closest together.   
+The features it groups can be raw data points, for example, comparing for 
+every navigation dimension all points of a spectrum. However if the 
+dataset is large the process of clustering can be computationally intensive so 
+clustering is more commonly used on an extracted set of features or parameters.
+For example, extraction of two peak positions of interest via a fitting process
+rather than clustering all spectra points.
+ 
+Decomposition or Blind Source Separation (PCA, NMF, BSS etc.) can produce a smaller set 
+of features as it reduces the description of the data into a set of loadings and factors. 
+The loadings capture a core representation of the features in the data and the factors 
+provide the mixing ratios of these loadings that best describe the original data. 
+Overall this represents a much smaller data volume compared to the original data 
+and can helps to identify initial differences. Cluster analysis is then performed 
+on the factors. 
 
-A detailed description of the application of cluster analysis in spectro-microscopy and further details on the theory and implementation can be found here.  
+A detailed description of the application of cluster analysis in x-ray
+spectro-microscopy and further details on the theory and implementation can be found here.  
 :ref:`[Lerotic2004] <Lerotic2004>`.
-
 
 Nomenclature
 ------------
@@ -34,8 +47,40 @@ dimensions `(3, 4)` (each centre has a coordinate in each feature).
 If you take all features within a given cluster and average them
 this average set of features is the center of that cluster. 
 
-Example
--------
+
+Whitening or scaling
+--------------------
+
+Cluster analysis measures the distances between features and groups them
+but may require some pre-processing of the data in order to do this effectively
+
+If the signal magnitude varies strongly from spectra to 
+spectra or image to image then the clustering would group the data into clusters 
+based on differences in magnitude. However if the objective is to identify,
+for example, that peak 1 is the same size as peak 2 then this magnitude variation
+needs to be removed and the spectra should therefore all be normalized first to remove
+the effect of peak height. 
+As discussed previously decomposition methods reduce data into a set of components
+and a set of factors defining the mixing needed to represent the data.  
+If signal 1 is reduced to three components with mixing 0.1 0.5 2.0
+and signal 2 is reduced to a mixing of 0.2 1.0 4.0 it should be clear that these 
+represent the same result but with a scaling difference. Normalization of the data
+can again be used to remove scaling effects.
+ 
+Pre-processing to remove scaling effects is handled within the cluster analysis
+methods and implements the ``standard`` , ``minmax`` or ``norm``  pre-processing 
+methods as standard or allows for custom methods from  `sklearn.preprocessing <https://scikit-learn.org/stable/modules/preprocessing.html>`_
+For the reasons described above the scaling will influence the results and should 
+be evaluated for the problem under investigation. Briefly, ``norm`` is commonly used 
+for experimental data and treats the features as a vector and normalizes the vector length.
+This is the default scaling used in the cluster analysis methods. 
+``standard`` re-scales each feature by removing the mean and scaling to unit variance. 
+so each feature becomes equally weighted. ``minmax``  normalizes  each feature 
+between the min and max range of that feature. 
+
+
+Examples 
+--------
 
 We can use the `make_blobs <https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_blobs.html>`_
 supplied by `scikit-learn` to make dummy data to see how clustering might work in practice.
@@ -50,7 +95,7 @@ supplied by `scikit-learn` to make dummy data to see how clustering might work i
     >>>         shuffle=False)[0].reshape(50, 10, 4)
     >>> s = hs.signals.Signal1D(data)
 
-The resultant signal contains 3 distinct "types" of signal. 
+make_blobs creates 3 distinct centres or 3 "types" of signal by default. 
 If we examine the signal using PCA we can see that there are 3 regions but
 their interpretation of the signal is a little ambigous.  
 
@@ -109,6 +154,9 @@ methods in the following manner:
     >>> s.plot_cluster_results()
 
 
+Estimating the number of clusters
+---------------------------------
+
 In this case we know there are 3 signals but for real examples it is difficult
 to define the number of clusters to use. A number of metrics, such as elbow, 
 Silhouette and Gap can be used to determine the optimal number of clusters. 
@@ -144,6 +192,24 @@ specified the algorithm will attempt to use the estimated number of clusters
 
     >>> s.cluster_analysis()
 
+
+Clustering fit results
+----------------------
+
+As discussed in the introduction, clustering can be performed on fitted or
+extracted parameters. Given an existing fitted model the parameters 
+can be extracted as signals and stacked. Decomposition and clustering can then 
+be applied as described previously to identify trends in the
+fitted results.
+
+.. code-block:: python
+
+    >>> import hyperspy.misc.utils.stack
+    >>> # model created using two gaussians and fitting performed... 
+    >>> fitted_centre1 = g1.centre.as_signal()
+    >>> fitted_centre2 = g2.centre.as_signal()
+    >>> new_signal = stack([fitted_centre1,fitted_centre2]])
+    >>> new_signal.cluster_analysis(use_decomposition_results=False)
 
 
 
