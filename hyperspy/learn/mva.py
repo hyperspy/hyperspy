@@ -2367,7 +2367,7 @@ class MVA:
                 if np.argmax(gap) == 0:
                     best_k = min_k
                 else:
-                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=False)\
+                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=True)\
                         +min_k
         finally:
             target.cluster_metric_index      = k_range

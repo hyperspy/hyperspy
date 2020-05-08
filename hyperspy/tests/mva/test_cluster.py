@@ -123,10 +123,10 @@ class TestClusterEstimate:
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
-        n_samples=[800]*3
-        std = [1.0]*3
+        n_samples=[400]*3
+        std = [0.05]*3
         X = []
-        centers = np.array([[-12.,-12.,11,10],[12.,-12.,-12.,-11],[1.,1.,1.,1.]])
+        centers = np.array([[-1.,-1.,1,1],[1.,-1.,-1.,-1],[-1.,1.,1.,-1.]])
         for i, (n, std) in enumerate(zip(n_samples, std)):
             X.append(centers[i] + np.random.normal(scale=std,size=(n, 4)))
         X = np.concatenate(X)
@@ -141,7 +141,7 @@ class TestClusterEstimate:
     @pytest.mark.parametrize("metric", ("elbow","silhouette","gap"))
     def test_scores(self, algorithm, use_decomposition_results,
                     scaling,metric):
-        max_clusters = 6
+        max_clusters = 8
         self.signal.estimate_number_of_clusters(
             max_clusters,
             scaling=scaling,
@@ -174,10 +174,11 @@ class TestClusterCustomScaling:
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
-        n_samples=[800]*3
-        std = [1.0]*3
+        n_samples=[400]*3
+        std = [0.05]*3
         X = []
-        centers = np.array([[-12.,-12.,11,10],[12.,-12.,-12.,-11],[1.,1.,1.,1.]])
+        centers = np.array([[-1.,-1.,1,1],[1.,-1.,-1.,-1],[-1.,1.,1.,-1.]])
+
         for i, (n, std) in enumerate(zip(n_samples, std)):
             X.append(centers[i] + np.random.normal(scale=std,size=(n, 4)))
         X = np.concatenate(X)
@@ -192,7 +193,7 @@ class TestClusterCustomScaling:
     def test_custom(self,  use_decomposition_results,
                 algorithm,metric):
             custom_scaling = import_sklearn.sklearn.preprocessing.MinMaxScaler
-            max_clusters = 6
+            max_clusters = 8
             self.signal.estimate_number_of_clusters(
                 max_clusters,
                 scaling=custom_scaling,
