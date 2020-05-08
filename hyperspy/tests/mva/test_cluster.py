@@ -123,7 +123,7 @@ class TestClusterEstimate:
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
-        n_samples=[400]*3
+        n_samples=[800]*3
         std = [1.0]*3
         X = []
         centers = np.array([[-12.,-12.,11,10],[12.,-12.,-12.,-11],[1.,1.,1.,1.]])
@@ -174,7 +174,7 @@ class TestClusterCustomScaling:
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
-        n_samples=[400]*3
+        n_samples=[800]*3
         std = [1.0]*3
         X = []
         centers = np.array([[-12.,-12.,11,10],[12.,-12.,-12.,-11],[1.,1.,1.,1.]])
