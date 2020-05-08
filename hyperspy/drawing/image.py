@@ -344,7 +344,7 @@ class ImagePlot(BlittedFigure):
         optimize_contrast : bool, optional
             Force automatic resetting of the intensity limits. The default is
             False.
-        **kwargs : TYPE
+        **kwargs : dict
             The kwargs are passed to :py:func:`matplotlib.pyplot.imshow`.
 
         Raises

@@ -79,10 +79,8 @@ class MPL_HyperExplorer(object):
             self._get_navigation_sliders()
             return
         title = title or self.signal_title + " Navigator" if self.signal_title else ""
-        if self.navigator_plot is not None:
-            self.navigator_plot.plot()
-            return
-        elif len(self.navigator_data_function().shape) == 1:
+
+        if len(self.navigator_data_function().shape) == 1:
             # Create the figure
             sf = signal1d.Signal1DFigure(title=title)
             axis = self.axes_manager.navigation_axes[0]
@@ -94,14 +92,13 @@ class MPL_HyperExplorer(object):
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
 
-            # Create a line to the left axis with the default
-            # indices
+            # Create a line to the left axis with the default indices
             sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
 
             # Set all kwargs value to the image figure before passing the rest
             # of the kwargs to plot method of the image figure
-            for key, value in list(kwargs.items()):
+            for key in list(kwargs.keys()):
                 if hasattr(sl, key):
                     setattr(sl, key, kwargs.pop(key))
             sl.set_line_properties(color='blue',
@@ -151,6 +148,10 @@ class MPL_HyperExplorer(object):
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 
+        if self.navigator_plot is not None:
+            self.navigator_plot.events.closed.connect(
+                self._on_navigator_plot_closing, [])
+
     def _get_navigation_sliders(self):
         try:
             self.axes_manager.gui_navigation_sliders(
@@ -164,7 +165,13 @@ class MPL_HyperExplorer(object):
 
     @property
     def is_active(self):
-        if self.signal_plot and self.signal_plot.figure is not None:
+        """A plot is active when it has the figure open meaning that it has
+        either one of 'signal_plot' or 'navigation_plot' is not None and it
+        has a attribute 'figure' which is not None.
+        """
+        if self.signal_plot and self.signal_plot.figure:
+            return True
+        elif self.navigator_plot and self.navigator_plot.figure:
             return True
         else:
             return False
@@ -181,6 +188,9 @@ class MPL_HyperExplorer(object):
                 self.pointer.color = 'red'
                 self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
+            if pointer is not None:
+                self.navigator_plot.events.closed.connect(
+                    self.pointer.disconnect, [])
         self.plot_signal(**kwargs)
 
     def assign_pointer(self):
@@ -206,9 +216,16 @@ class MPL_HyperExplorer(object):
     def _on_navigator_plot_closing(self):
         self.navigator_plot = None
 
+    def _on_signal_plot_closing(self):
+        self.signal_plot = None
+
     def close(self):
+        """When closing, we make sure:
+        - close the matplotlib figure
+        - drawing events are disconnected
+        - the attribute 'signal_plot' and 'navigation_plot' are set to None
+        """
         if self.is_active:
             if self.signal_plot:
                 self.signal_plot.close()
-            if self.navigator_plot:
-                self.navigator_plot.close()
+            self.close_navigator_plot()

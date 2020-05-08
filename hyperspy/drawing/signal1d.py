@@ -307,20 +307,16 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self,
-             data=1,
-             data_function_kwargs={},
-             intensity_autoscale=True,
-             norm='linear',
-             axes_autoscale=True):
-        self.data_function_kwargs = data_function_kwargs
-        self.norm = norm
-        self.intensity_autoscale = intensity_autoscale
-        self.axes_autoscale = axes_autoscale
+    def plot(self, data=1, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
         data = self._get_data()
         if self.line is not None:
             self.line.remove()
 
+        norm = self.norm
         if norm == 'log':
             plot = self.ax.semilogy
         elif (isinstance(norm, mpl.colors.Normalize) or

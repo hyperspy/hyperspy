@@ -18,7 +18,6 @@
 
 from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.docstrings.plot import PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING
 from hyperspy.defaults_parser import preferences
 
 
@@ -32,9 +31,6 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             The kwargs are passed to plot method of the image figure.
 
         """
-        if self.signal_plot is not None:
-            self.signal_plot.plot(**kwargs)
-            return
         super().plot_signal()
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
@@ -63,6 +59,5 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             if self.navigator_plot is not None:
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
-                self.navigator_plot.events.closed.connect(
-                    self._on_navigator_plot_closing, [])
                 imf.events.closed.connect(self.close_navigator_plot, [])
+            imf.events.closed.connect(self._on_signal_plot_closing, [])

@@ -2022,17 +2022,13 @@ class BaseSignal(FancySlicing,
         %s
         """
         if self._plot is not None:
-            try:
-                self._plot.close()
-            except BaseException:
-                # If it was already closed it will raise an exception,
-                # but we want to carry on...
-                pass
-        if ('power_spectrum' in kwargs and
-                not self.metadata.Signal.get_item('FFT', False)):
-            _logger.warning('The option `power_spectrum` is considered only '
-                            'for signals in Fourier space.')
-            del kwargs['power_spectrum']
+            self._plot.close()
+        if 'power_spectrum' in kwargs:
+            from hyperspy._signals.complex_signal import ComplexSignal
+            if not isinstance(self, ComplexSignal):
+                raise ValueError('The parameter `power_spectrum` required a '
+                                 'signal with complex data type.')
+                del kwargs['power_spectrum']
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -2148,8 +2144,8 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
-                    "navigator must be one of \"spectrum\",\"auto\","
-                    " \"slider\", None, a Signal instance")
+                    'navigator must be one of "spectrum","auto", '
+                    '"slider", None, a Signal instance')
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
