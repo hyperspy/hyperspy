@@ -208,6 +208,22 @@ def _test_plot_two_cursors(ndim):
     return s
 
 
+@pytest.mark.parametrize('intensity_autoscale', [True, False])
+@pytest.mark.parametrize('axes_autoscale', [True, False])
+@pytest.mark.parametrize('norm', ['log', 'auto'])
+def test_plot_two_cursos_parameters(intensity_autoscale, axes_autoscale, norm):
+    kwargs = {'intensity_autoscale':intensity_autoscale,
+              'axes_autoscale':axes_autoscale,
+              'norm':norm}
+    test_plot = _TestPlot(ndim=2, sdim=1)  # sdim=2 not supported
+    s = test_plot.signal
+    s.plot(**kwargs)
+    s._plot.add_right_pointer(**kwargs)
+    for line in s._plot.signal_plot.ax_lines:
+        assert line.intensity_autoscale == intensity_autoscale
+        assert line.axes_autoscale == axes_autoscale
+
+
 def _generate_parameter():
     parameters = []
     for ndim in [1, 2]:
