@@ -947,16 +947,13 @@ HyperSpy supports reading in one or more USID datasets
 Extra loading arguments
 +++++++++++++++++++++++
 - ``dset_path`` : ``str`` - Absolute path of USID Main HDF5 dataset. (default is ``None`` - all USID Main Datasets will be read)
-- ``file_format`` : ``str`` - Hyperspy, USID and Nexus use hdf5 and so can allow hdf5 file extensions. If
-reading files with h5, hdf or hdf5 extensions specify ``file_format='USID`` to
-load the data with this loader. 
 
 
 Reading the sole dataset within a h5USID file:
 
 .. code-block:: python
 
-    >>> hs.load("sample.h5",file_format='USID')
+    >>> hs.load("sample.h5")
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 If multiple datasets are present within the h5USID file and you try the same command again,
@@ -983,7 +980,7 @@ absolute path of the desired dataset will cause the single dataset to be loaded.
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data',file_format='USID')
+    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data')
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 h5USID files support the storage of HDF5 dataset with
@@ -1020,7 +1017,7 @@ In order to prevent accidental misinterpretation of information downstream, the 
 
 .. code-block:: python
 
-    >>> hs.load("sample.h5",file_format='USID')
+    >>> hs.load("sample.h5")
     ValueError: Cannot load provided dataset. Parameter: Bias was varied non-linearly.
     Supply keyword argument "ignore_non_linear_dims=True" to ignore this error
 
@@ -1033,7 +1030,7 @@ HDF5 file. All other keyword arguments will be passed to
 
 .. code-block:: python
 
-    >>> sig.save("USID.h5",file_format='USID')
+    >>> sig.save("USID.h5")
 
 Note that the model and other secondary data artifacts linked to the signal are not
 written to the file but these can be implemented at a later stage.
@@ -1054,15 +1051,12 @@ For specific types of experiments an Application Definition may exist which
 defines an agreed common layout that facilities can adhere to.
 Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
-Files must use the ``.nxs`` , ``.hdf`` , ``.hdf5`` , ``.h5`` file extension 
-in order to use this io plugin.
+Files must use the ``.nxs`` file extension in order to use this io plugin.
 Using the ``.nxs`` extension will default to the Nexus loader 
-Using any other extension with Nexus reader will require the 
-format is specfied as Nexus in the loader 
 
 As the Nexus format uses HDF5 and needs to read data and metadata structured
 in different ways the loader is written to quite flexible and can also be used 
-to load any hdf5 based file.  
+to inpsect any hdf5 based file.  
 
 
 Import differences with respect to hspy
@@ -1142,7 +1136,7 @@ file metadata to hyperspy metdata.
 
 Inspecting
 ^^^^^^^^^^
-Looking in a Nexus file for specific metadatda is often useful - .e.g to find
+Looking in a Nexus of HDF file for specific metadatda is often useful - .e.g to find
 what position a specific stage was at: 
 
     >>> from hyperspy.io_plugins.nexus import get_metadata_in_file
@@ -1183,7 +1177,6 @@ Extra loading arguments
 +++++++++++++++++++++++
 - ``dset_search_keys`` : ``str`` or ``list`` - Absolute path(s) or substring(s) used to find one or more datasets. (default is ``None`` all Nexus Datasets will be read)
 - ``meta_search_keys`` : ``str`` or ``list`` of strings - Absolute path(s) or substring(s) to use to find one or more datasets. (default is ``None`` all Nexus Metadata will be read)
-- ``file_format`` : ``str`` - Hyperspy, USID and Nexus use hdf5 and so can allow hdf5 file extensions. If reading files with h5, hdf or hdf5 extensions specify file_format='Nexus' to load the data with this loader. 
 - ``nxdata_only`` : ``bool`` - Only convert NXdata formatted data to signals
 - ``small_metadata_only`` : ``bool`` - Only load items of size<2 into the metadata to avoid linking to large datasets
    
@@ -1197,15 +1190,11 @@ Reading the sole Nexus dataset within a Nexus file:
 
 If multiple datasets are present within the Nexus file and you try the same 
 command again **all** available NXdata datasets will be loaded.
-To load NXdata and hdf datasets as well
+To load NXdata sets from a Nexus file
 
 .. code-block:: python
 
     >>> hs.load("sample.nxs",nxdata_only=False)
-
-.. code-block:: python
-
-    >>> hs.load("sample.h5",file_format="Nexus")
 
 Given that HDF5 files can accommodate very large datasets ``lazy=True`` is 
 set by default. This prevents issues with regard to loading datasets
@@ -1221,7 +1210,7 @@ one of the substrings will be loaded.
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.h5", dset_search_keys='/entry/experiment/EDS/data')
+    >>> hs.load("sample.nxs", dset_search_keys='/entry/experiment/EDS/data')
 
 We can also choose to load only specific items from the metadata using
 ``dset_path`` keyword argument. 
@@ -1247,16 +1236,12 @@ function.
 
 Extra saving arguments
 +++++++++++++++++++++++++++++++++++
-- ``file_format`` : ``str`` - Hyperspy,USID and Nexus use hdf5 and so can save to hdf5. If storing a files with h5, hdf or hdf5 extensions specify file_format='Nexus' to save with this format. 
 - ``small_metadata_only`` : ``bool`` - Default is True, Option to ignore large datasets contained in the original_metadata when storing to file
 
 .. code-block:: python
 
     >>> sig.save("output.nxs")
 
-.. code-block:: python
-
-    >>> sig.save("output.h5",file_format="Nexus")
 
 Saving to Nexus format 
 ----------------------
@@ -1265,7 +1250,6 @@ Using the save method will store the nexus file with the following structure:
 
 .. code-block:: python
     >>> sig.save("test.nxs")
-
 
 ::
 

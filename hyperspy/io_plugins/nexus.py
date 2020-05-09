@@ -59,10 +59,10 @@ _logger = logging.getLogger(__name__)
 
 format_name = 'Nexus'
 description = \
-    'Read NXdata, hdf datasets and metadata from hdf5 or Nexus files'
+    'Read NXdata sets from Nexus files and metadata. Data and metadata can also be examined from general hdf5 files'
 full_support = False
 # Recognised file extension
-file_extensions = ['nxs','NXS','h5','hdf','hdf5']
+file_extensions = ['nxs','NXS']
 default_extension = 0
 # Writing capabilities:
 writes = True
@@ -383,8 +383,8 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
     return dictionary
 
 
-def file_reader(filename,lazy=True, dset_search_keys=None,
-                meta_search_keys=None,
+def file_reader(filename,lazy=True, dataset_keys=None,
+                metadata_keys=None,
                 nxdata_only=True,
                 small_metadata_only=True,
                 **kwds):   
@@ -393,7 +393,7 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
     Note
     ----
     Loading all datasets can result in a large number of signals
-    Please review your datasets and use the dset_search_keys to target
+    Please review your datasets and use the dataset_keys to target
     the datasets of interest. 
     value and keys are special keywords and prepended with fix_ in the metadata
     structure to avoid any issues.
@@ -403,11 +403,11 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
     Parameters
     ----------
     myDict : dict or h5py.File object
-    dset_search_keys  : str list or None  
+    dataset_keys  : str list or None  
         Only return items whose path contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         data entries with instrument or Fe in their hdf path.
-    meta_search_keys: : str list or None
+    metadata_keys: : str list or None
         Only return items from the original metadata whose path contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         all metadata entries with instrument or Fe in their hdf path.
@@ -439,10 +439,10 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
    
     """
     # search for NXdata sets...
-    if dset_search_keys == None:
-        dset_search_keys=[""]
-    if meta_search_keys == None:
-        meta_search_keys=[""]
+    if dataset_keys == None:
+        dataset_keys=[""]
+    if metadata_keys == None:
+        metadata_keys=[""]
     mapping  = kwds.get('mapping',{})   
     original_metadata={}
     learning = {}
@@ -451,13 +451,13 @@ def file_reader(filename,lazy=True, dset_search_keys=None,
 
     
     nexus_data_paths, hdf_data_paths = _find_data(fin,
-                                                  search_keys=dset_search_keys)
+                                                  search_keys=dataset_keys)
     #
     # strip out the metadata 
     #
     all_metadata = _load_metadata(fin,small_metadata_only=small_metadata_only)
     original_metadata = _find_search_keys_in_dict(all_metadata,
-                                            search_keys=meta_search_keys)
+                                            search_keys=metadata_keys)
        
     for data_path in nexus_data_paths:        
         dictionary = _nexus_dataset_to_signal(fin,data_path,lazy)
@@ -943,7 +943,7 @@ def _guess_signal_type(data):
         
 
 
-def get_metadata_from_file(filename,search_keys=None,
+def read_metadata_from_file(filename,search_keys=None,
                         small_metadata_only=False,
                         verbose=True):   
     """ Read the metadata from a nexus or hdf file       
@@ -983,7 +983,7 @@ def get_metadata_from_file(filename,search_keys=None,
     return stripped_metadata    
 
 
-def get_datasets_from_file(filename,search_keys=None,
+def read_datasets_from_file(filename,search_keys=None,
                           verbose=True):
     """ Read from a nexus or hdf file and return a list of the paths
     to the dataset entries. This method is used to inspect the contents
