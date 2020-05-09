@@ -22,7 +22,11 @@ import numpy.ma as ma
 import dask.array as da
 import scipy as sp
 import logging
-from skimage.feature.register_translation import _upsampled_dft
+try:
+    # For scikit-image >= 0.17.0
+    from skimage.registration._phase_cross_correlation import _upsampled_dft
+except ModuleNotFoundError:
+    from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
