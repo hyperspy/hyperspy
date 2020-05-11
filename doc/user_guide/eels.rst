@@ -54,9 +54,19 @@ width is 6 eV, it returns a list of edges with onset energy between 846 eV to
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can
-estimate the thickness from a low-loss EELS spectrum using the Log-Ratio
-method.
+.. versionadded:: 1.6
+    Option to compute the absolute thickness, including the angular corrections
+    and mean free path estimation.
+
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method can
+estimate the thickness from a low-loss EELS spectrum using the log-ratio
+method. If the beam energy, collection angle, convergence angle and sample
+density are known, the absolute thickness is computed using the method in
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`. This includes the estimation of
+the inelastic mean free path (iMFP). For more accurate results, it is possible
+to input the iMFP of the material if known.  If the density and/or the iMFP are
+not known, the output is the thickness relative to the (unknown) iMFP without
+any angular corrections.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

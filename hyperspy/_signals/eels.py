@@ -32,6 +32,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
+from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
@@ -575,47 +576,56 @@ class EELSSpectrum_mixin:
         return threshold
 
     def estimate_thickness(self,
-                           threshold,
-                           zlp=None,):
-        """Estimates the thickness (relative to the mean free path)
+                           threshold=None,
+                           zlp=None,
+                           density=None,
+                           mean_free_path=None,):
+        """Estimates the thickness (relative and absolute)
         of a sample using the log-ratio method.
 
         The current EELS spectrum must be a low-loss spectrum containing
         the zero-loss peak. The hyperspectrum must be well calibrated
-        and aligned.
+        and aligned. To obtain the thickness relative to the mean free path
+        don't set the `density` and the `mean_free_path`.
 
         Parameters
         ----------
-        threshold : {Signal1D, float, int}
-            Truncation energy to estimate the intensity of the
-            elastic scattering. The threshold can be provided as a signal of
+        threshold : {BaseSignal, float}, optional
+            If the zero-loss-peak is not provided, use this energy threshold
+            to roughly estimate its intensity by truncation.
+            If the threshold is constant across the dataset use a float. Otherwise,
+            provide a signal of
             the same dimension as the input spectrum navigation space
-            containing the threshold value in the energy units. Alternatively a
-            constant threshold can be specified in energy/index units by
-            passing float/int.
-        zlp : {None, EELSSpectrum}
+            containing the threshold value in the energy units.
+        zlp : BaseSignal, optional
             If not None the zero-loss peak intensity is calculated from the ZLP
-            spectrum supplied by integration using Simpson's rule. If None
-            estimates the zero-loss peak intensity using
-            `estimate_elastic_scattering_intensity` by truncation.
+            spectrum supplied by integration.
+        mean_free_path : float, optional
+            The mean free path of the material in nanometers.
+            If not provided, the thickness
+            is given relative to the mean free path.
+        density : float, optional
+            The density of the material in g/cm**3. This is used to estimate the mean
+            free path when the mean free path is not known and to perform the
+            angular corrections.
 
         Returns
         -------
-        s : Signal1D
+        s : BaseSignal
             The thickness relative to the MFP. It returns a Signal1D,
             Signal2D or a BaseSignal, depending on the current navigation
             dimensions.
 
         Notes
         -----
-        For details see: Egerton, R. Electron Energy-Loss
-        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-
+        For details see Egerton, R. Electron Energy-Loss Spectroscopy in the Electron
+        Microscope.  Springer-Verlag, 2011.
         """
-        # TODO: Write units tests
-        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         total_intensity = self.integrate1D(axis.index_in_array).data
+        if threshold is None and zlp is None:
+            raise ValueError("Please provide one of the following keywords: "
+                             "`threshold`, `zlp`")
         if zlp is not None:
             I0 = zlp.integrate1D(axis.index_in_array).data
         else:
@@ -625,13 +635,51 @@ class EELSSpectrum_mixin:
             t_over_lambda = da.log(total_intensity / I0)
         else:
             t_over_lambda = np.log(total_intensity / I0)
+        if density is not None:
+            if self._are_microscope_parameters_missing():
+                raise RuntimeError(
+                    "Some microscope parameters are missing. Please use the "
+                    "`set_microscope_parameters()` method to set them. "
+                    "If you don't know them, don't set the `density` keyword."
+                )
+            else:
+                md = self.metadata.Acquisition_instrument.TEM
+                t_over_lambda *= iMFP_angular_correction(
+                    beam_energy=md.beam_energy,
+                    alpha=md.convergence_angle,
+                    beta=md.Detector.EELS.collection_angle,
+                    density=density,
+                )
+                if mean_free_path is None:
+                    mean_free_path = iMFP_Iakoubovskii(
+                        electron_energy=self.metadata.Acquisition_instrument.TEM.beam_energy,
+                        density=density)
+                    _logger.info(f"The estimated iMFP is {mean_free_path} nm")
+        else:
+            _logger.warning(
+                "Computing the thickness without taking into account the effect of"
+                "the limited collection angle, what usually leads to underestimating"
+                "the thickness. To perform the angular corrections you must provide"
+                "the density of the material.")
+
         s = self._get_navigation_signal(data=t_over_lambda)
-        s.metadata.General.title = (self.metadata.General.title +
-                                    ' $\\frac{t}{\\lambda}$')
+        if mean_free_path is not None:
+            s.data *= mean_free_path
+            s.metadata.General.title = (
+                self.metadata.General.title +
+                ' thickness (nm)')
+            s.metadata.Signal.quantity = "thickness (nm)"
+        else:
+            _logger.warning(
+                "Computing the relative thickness. To compute the absolute "
+                "thickness provide the `mean_free_path` and/or the `density`")
+            s.metadata.General.title = (self.metadata.General.title +
+                                        ' $\\frac{t}{\\lambda}$')
+            s.metadata.Signal.quantity = "$\\frac{t}{\\lambda}$"
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
-                '_relative_thickness')
+                '_thickness')
             s.tmp_parameters.folder = self.tmp_parameters.folder
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
@@ -1097,7 +1145,7 @@ class EELSSpectrum_mixin:
             is estimated and returned. It is only required when `t` is None.
         t: {None, number, Signal1D}
             The sample thickness in nm. Used for normalization of the
-            SSD to obtain the energy loss function. It is only required when
+             to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
             given by a number. Otherwise, it can be provided as a BaseSignal
             with signal dimension 0 and navigation_dimension equal to the
@@ -1145,8 +1193,6 @@ class EELSSpectrum_mixin:
         This method is based in Egerton's Matlab code [1]_ with some
         minor differences:
 
-        * The integrals are performed using the simpsom rule instead of using
-          a summation.
         * The wrap-around problem when computing the ffts is workarounded by
           padding the signal instead of substracting the reflected tail.
 
