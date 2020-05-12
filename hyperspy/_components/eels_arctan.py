@@ -43,7 +43,7 @@ class Arctan(Expression):
             msg = (
                 "The API of the `Arctan` component will change in v2.0. "
                 "This component will become `EELSArctan`."
-                "To use the new API set `minimum_at_zero=False`.")
+                "To use the new API, omit the `minimum_at_zero` option.")
             deprecation_warning(msg)
 
             self.__class__ = EELSArctan
