@@ -20,31 +20,12 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from hyperspy.components1d import Arctan
+from hyperspy.components1d import EELSArctan
 from hyperspy.signals import Signal1D
 
 
-def test_function():
-    g = Arctan()
-    g.A.value = 10
-    g.k.value = 2
-    g.x0.value = 1
-    assert_allclose(g.function(0), -11.07148718)
-    assert_allclose(g.function(1), 0)
-    assert_allclose(g.function(1e4), 10*np.pi/2,1e-4)
-
-# Legacy tests
-def test_function_legacyF():
-    g = Arctan(minimum_at_zero=False)
-    g.A.value = 10
-    g.k.value = 2
-    g.x0.value = 1
-    assert_allclose(g.function(0), -11.07148718)
-    assert_allclose(g.function(1), 0)
-    assert_allclose(g.function(1e4), 10*np.pi/2,1e-4)
-
-def test_function_legacyT():
-    g = Arctan(minimum_at_zero=True)
+def test_function2():
+    g = EELSArctan()
     g.A.value = 10
     g.k.value = 2
     g.x0.value = 1
