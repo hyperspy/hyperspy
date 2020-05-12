@@ -290,8 +290,6 @@ class TestRebin:
         assert s2.axes_manager[0].offset == 1.5
         assert s2.axes_manager[1].offset == 2.5
         assert s2.axes_manager[2].offset == s.axes_manager[2].offset
-<<<<<<< a8ae0eda2fbf3eee4a514e0bac0ea5e1f87bb3c0
-
 
 @lazifyTestClass
 class Test_Estimate_Thickness:
