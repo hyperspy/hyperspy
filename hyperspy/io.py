@@ -374,7 +374,7 @@ def assign_signal_subclass(dtype,
           'object' in dtype.name):
         dtype = 'real'
     else:
-        raise ValueError('Data type "{}" not understood!'.format(dtype.name))
+        raise ValueError(f'Data type "{dtype.name}" not understood!')
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
 
