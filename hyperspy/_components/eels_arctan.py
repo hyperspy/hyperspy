@@ -24,19 +24,17 @@ from hyperspy._components.expression import Expression
 
 class Arctan(Expression):
     # Legacy class to be removed in v2.0
-    """This is the legacy Arctan component dedicated to EELS measurements
-    that will renamed to `EELSArctan` in v2.0. To use the new Arctan component 
+    r"""This is the legacy Arctan component dedicated to EELS measurements
+    that will renamed to `EELSArctan` in v2.0. 
+
+    To use the new Arctan component 
     set `minimum_at_zero=False`. See the documentation of 
-    :meth:`hyperspy._components.acrtan.Arctan` for details on 
-    the usage of the new Arctan component.
-    
-    .. math::
-    
-        f(x) = A \cdot \arctan\left[ k \left( x-x_0 \right)\right]
-    
-    EELSArctan (`minimum_at_zero=True`) shifts the function by pi/2 in the y 
-    direction
-    
+    :meth:`hyperspy._components.arctan.Arctan` for details on 
+    the usage.
+
+    The EELS version :meth:`hyperspy._components.eels_arctan.EELSArctan` 
+    (`minimum_at_zero=True`) shifts the function by A in the y direction
+
     """
 
     def __init__(self, minimum_at_zero=False, **kwargs):
@@ -62,8 +60,9 @@ class EELSArctan(Expression):
 
     .. math::
     
-        f(x) = A \cdot \left{\frac{\pi}{2} + 
-               \arctan\left[ k \left( x-x_0 \right)\right]\right}
+        f(x) = A \cdot \left( \frac{\pi}{2} +
+               \arctan \left[ k \left( x-x_0 \right) \right] \right)
+
 
     ============ =============
     Variable      Parameter 
@@ -73,11 +72,17 @@ class EELSArctan(Expression):
     :math:`x_0`   x0 
     ============ =============
 
+
     Parameters
     -----------
     A : float
+        Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=0` and 
+        :math:`\lim_{x\to\infty}f(x)=2A`
     k : float
+        Slope (steepness of the step). The larger :math:`k`, the sharper the 
+        step.
     x0 : float
+        Center parameter (:math:`f(x_0)=A`).
 
     """
 

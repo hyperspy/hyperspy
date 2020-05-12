@@ -29,7 +29,8 @@ class Arctan(Expression):
 
     .. math::
     
-        f(x) = A \cdot \arctan\left[ k \left( x-x_0 \right)\right]
+        f(x) = A \cdot \arctan \left[ k \left( x-x_0 \right) \right]
+
 
     ============ =============
     Variable      Parameter 
@@ -39,11 +40,17 @@ class Arctan(Expression):
     :math:`x_0`   x0 
     ============ =============
 
+
     Parameters
     -----------
     A : float
+        Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=-A` and 
+        :math:`\lim_{x\to\infty}f(x)=A`
     k : float
+        Slope (steepness of the step). The larger :math:`k`, the sharper the 
+        step.
     x0 : float
+        Center parameter (position of zero crossing :math:`f(x_0)=0`).
 
     """
 
