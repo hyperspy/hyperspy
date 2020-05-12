@@ -48,6 +48,7 @@ import os
 import h5py 
 import sys
 import pprint
+import traits.api as t
 from hyperspy.io_plugins.hspy import overwrite_dataset
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -346,7 +347,6 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
                     nav_list.append({   
                             'size': data.shape[named_axes[detector_index]],
                             'index_in_array': named_axes[detector_index],
-                            'name': "detector_%d"%detector_index,
                             'scale': 1,
                             'offset': 0.0,
                             'units': '',
@@ -370,6 +370,7 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
             nav_list[-2]["navigate"] = False
         if signal_type == "Signal1D":
             nav_list[-1]["navigate"] = False
+            nav_list[-2]["navigate"] = True
         title = _text_split(nexus_dataset_path, '/')[-1]
         metadata = {'General': {'title': title},\
                     "Signal": {'signal_type': signal_type}}
@@ -795,7 +796,7 @@ def _find_smalldata_in_dict(tree):
     which only contains small metadata (item size < 2)
     Size of data in attrs groups is ignored
     This is a convenience method to filter data at time of 
-    loading and saving
+    saving
     
     Parameters
     ----------
@@ -824,9 +825,9 @@ def _find_smalldata_in_dict(tree):
                     tree[key]=value                    
             elif isinstance(value,dict):
                 if key == "attrs":
-                    find_smallmeta_in_tree(value,sizefilter=False)
+                    tree[key] = find_smallmeta_in_tree(value,sizefilter=False)
                 else:
-                    find_smallmeta_in_tree(value,sizefilter=True)                    
+                    tree[key] = find_smallmeta_in_tree(value,sizefilter=True)                    
         return tree
     metadata_dict=find_smallmeta_in_tree(tree)
     return metadata_dict
@@ -1062,17 +1063,14 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
     overwrite_dataset(nxdata, signal.data, u"data", chunks=None, **kwds)
     axis_names=[b"."]*len(signal.axes_manager.shape)
     for i,axis in enumerate(signal.axes_manager._axes):
-        try:
-            axname  = _parse_to_file(axis.name)
+        if axis.name != t.Undefined:
+            axname = _parse_to_file(axis.name)
+            axindex = axis.index_in_array
             indices = _parse_to_file(axis.name + "_indices")
-        except:
-            axname  = _parse_to_file("axis"+str(i))            
-            indices = _parse_to_file("axis"+str(i) + "_indices")
-        axindex = axis.index_in_array
-        nxdata.attrs[indices] = axindex
-        nxdata.require_dataset(axname,data=axis.axis,shape=axis.axis.shape,
-                               dtype=axis.axis.dtype)
-        axis_names[axis.index_in_array]=axname
+            nxdata.attrs[indices] = axindex
+            nxdata.require_dataset(axname,data=axis.axis,shape=axis.axis.shape,
+                                   dtype=axis.axis.dtype)
+            axis_names[axis.index_in_array]=axname
 
     nxdata.attrs[u"axes"] = axis_names
     return nxdata
