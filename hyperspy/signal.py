@@ -4129,7 +4129,7 @@ class BaseSignal(FancySlicing,
                     res = np.asarray(res)
                     res_data.flat[ind] = res
 
-                    if not ragged:
+                    if ragged is False:
                         shapes.add(res.shape)
                         if len(shapes) != 1:
                             raise ValueError(
@@ -4151,7 +4151,7 @@ class BaseSignal(FancySlicing,
                 res = np.asarray(res)
                 res_data.flat[ind] = res
 
-                if not ragged:
+                if ragged is False:
                     shapes.add(res.shape)
                     if len(shapes) != 1:
                         raise ValueError(
