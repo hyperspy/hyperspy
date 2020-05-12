@@ -39,7 +39,7 @@ class Arctan(Expression):
     
     """
 
-    def __init__(self, minimum_at_zero=True, **kwargs):
+    def __init__(self, minimum_at_zero=False, **kwargs):
         if minimum_at_zero:
             from hyperspy.misc.utils import deprecation_warning
             msg = (
