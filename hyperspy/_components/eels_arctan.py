@@ -22,14 +22,48 @@ import numpy as np
 
 from hyperspy._components.expression import Expression
 
-
 class Arctan(Expression):
-
-    r"""Arctan function component.
-
+    # Legacy class to be removed in v2.0
+    """This is the legacy Arctan component dedicated to EELS measurements
+    that will renamed to `EELSArctan` in v2.0. To use the new Arctan component 
+    set `minimum_at_zero=False`. See the documentation of 
+    :meth:`hyperspy._components.acrtan.Arctan` for details on 
+    the usage of the new Arctan component.
+    
     .. math::
     
         f(x) = A \cdot \arctan\left[ k \left( x-x_0 \right)\right]
+    
+    EELSArctan (`minimum_at_zero=True`) shifts the function by pi/2 in the y 
+    direction
+    
+    """
+
+    def __init__(self, minimum_at_zero=True, **kwargs):
+        if minimum_at_zero:
+            from hyperspy.misc.utils import deprecation_warning
+            msg = (
+                "The API of the `Arctan` component will change in v2.0. "
+                "This component will become `EELSArctan`."
+                "To use the new API set `minimum_at_zero=False`.")
+            deprecation_warning(msg)
+
+            self.__class__ = EELSArctan
+            self.__init__(**kwargs)
+        else:
+            from hyperspy._components.arctan import Arctan
+            self.__class__ = Arctan
+            self.__init__(**kwargs)
+
+
+class EELSArctan(Expression):
+
+    r"""Arctan function component for EELS (with minimum at zero).
+
+    .. math::
+    
+        f(x) = A \cdot \left{\frac{\pi}{2} + 
+               \arctan\left[ k \left( x-x_0 \right)\right]\right}
 
     ============ =============
     Variable      Parameter 
@@ -51,8 +85,8 @@ class Arctan(Expression):
         # Not to break scripts once we remove the legacy Arctan
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]
-        super(Arctan, self).__init__(
-            expression="A * arctan(k * (x - x0))",
+        super(EELSArctan, self).__init__(
+            expression="A * (pi /2 + arctan(k * (x - x0)))",
             name="Arctan",
             A=A,
             k=k,
