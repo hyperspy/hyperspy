@@ -387,7 +387,8 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
 def file_reader(filename,lazy=True, dataset_keys=None,
                 metadata_keys=None,
                 nxdata_only=True,
-                small_metadata_only=True,
+                small_metadata_only=False,
+                follow_links=True,
                 **kwds):   
     """ Reads NXdata class or hdf datasets from a file and returns signal
     
@@ -459,7 +460,6 @@ def file_reader(filename,lazy=True, dataset_keys=None,
     all_metadata = _load_metadata(fin,small_metadata_only=small_metadata_only)
     original_metadata = _find_search_keys_in_dict(all_metadata,
                                             search_keys=metadata_keys)
-       
     for data_path in nexus_data_paths:        
         dictionary = _nexus_dataset_to_signal(fin,data_path,lazy)
         dictionary["mapping"] = mapping 
@@ -659,15 +659,16 @@ def _find_data(group,search_keys=None):
 
 
 def _load_metadata(group,lazy=True,
-                          small_metadata_only=False):
+                          follow_links=True):
     """Search through a hdf group and return the group
     structure, datasets and attributes
 
-    Paramaters
+    Parameters
     ----------
     group : hdf group
-    small_metadata_only : bool, default : true
-        If true only return items of size <2 (no arrays) as metadata
+    follow_links : bool, default : true
+        If true follow soft and external links.
+        If false ignore the links
 
     Returns
     -------
@@ -678,10 +679,8 @@ def _load_metadata(group,lazy=True,
     """
     rootname=""
     def find_meta_in_tree(group,rootname,lazy=False,
-                          small_metadata_only=False,
-                          follow_links=True):
-        tree={}
-        
+                          follow_links=False):
+        tree={}        
         for key,item in group.attrs.items():
             new_key=_fix_exclusion_keys(key)
             if "attrs" not in tree.keys():
@@ -694,8 +693,9 @@ def _load_metadata(group,lazy=True,
             else:
                 rootkey = "/" + key
             new_key =_fix_exclusion_keys(key)
+            target,b,c, = _getlink(item,rootkey)
             if type(item) is h5py._hl.dataset.Dataset:
-                if item.size >= 2 and small_metadata_only:
+                if follow_links == False and target is not None:
                     continue
                 else:
                     if new_key not in tree.keys():
@@ -707,12 +707,14 @@ def _load_metadata(group,lazy=True,
                         tree[new_key]["attrs"][k] =  _parse_from_file(v,lazy=lazy)
                     
             elif type(item) is h5py._hl.group.Group:
-                tree[new_key]=find_meta_in_tree(item,rootkey,lazy=lazy,
-                    small_metadata_only=small_metadata_only,
-                    follow_links=follow_links)                    
+                if follow_links == False and target is not None:
+                    continue
+                else:
+                    tree[new_key]=find_meta_in_tree(item,rootkey,lazy=lazy,
+                        follow_links=follow_links)                    
         return tree   
     return find_meta_in_tree(group,rootname,lazy=lazy,
-                          small_metadata_only=small_metadata_only)
+                          follow_links=follow_links)
 
 
 
@@ -790,7 +792,6 @@ def _find_search_keys_in_dict(tree,search_keys=None):
     find_searchkeys_in_tree(tree,rootname)
     return metadata_dict
 
-
 def _find_smalldata_in_dict(tree):    
     """Search through a dict and return a dictionary
     which only contains small metadata (item size < 2)
@@ -817,6 +818,12 @@ def _find_smalldata_in_dict(tree):
         for key, value in metadata_dict.items():
             if isinstance(value,(int,float,str,bytes)):
                 tree[key]=value
+            elif isinstance(value,(list,tuple)):
+                if sizefilter:
+                    if len(value) < 2:
+                        tree[key]=value
+                else:
+                    tree[key]=value                    
             elif isinstance(value,(np.ndarray,da.Array)):
                 if sizefilter:
                     if value.size < 2:
@@ -831,7 +838,6 @@ def _find_smalldata_in_dict(tree):
         return tree
     metadata_dict=find_smallmeta_in_tree(tree)
     return metadata_dict
-
 
     
 def _guess_chunks(data):    
@@ -946,6 +952,7 @@ def _guess_signal_type(data):
 
 def read_metadata_from_file(filename,search_keys=None,
                         small_metadata_only=False,
+                        follow_links=True,
                         verbose=True):   
     """ Read the metadata from a nexus or hdf file       
     The method iterates through the group and returns a dictionary of 
@@ -976,9 +983,12 @@ def read_metadata_from_file(filename,search_keys=None,
     fin = h5py.File(filename,"r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
-    metadata = _load_metadata(fin,small_metadata_only=small_metadata_only)
+    metadata = _load_metadata(fin,follow_links=follow_links)
+    # strip out the search keys
     stripped_metadata = _find_search_keys_in_dict(metadata,search_keys=search_keys)
-
+    # strip out the small metadata if needed
+    if small_metadata_only:
+        stripped_metadata = _find_smalldata_in_dict(stripped_metadata)
     if verbose:
         pprint.pprint(stripped_metadata)
     return stripped_metadata    
