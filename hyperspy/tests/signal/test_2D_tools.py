@@ -127,6 +127,21 @@ class TestAlignTools:
         print(self.ishifts)
         assert np.allclose(shifts, self.ishifts)
 
+    def test_align_no_shift(self):
+        s = self.signal
+        shifts = s.estimate_shift2D()
+        shifts.fill(0)
+        with pytest.warns(UserWarning, match="provided shifts are all zero"):
+            shifts = s.align2D(shifts=shifts)
+            assert shifts is None
+
+    def test_align_twice(self):
+        s = self.signal
+        s.align2D()
+        with pytest.warns(UserWarning, match="the images are already aligned"):
+            shifts = s.align2D()
+            assert shifts.sum() == 0
+
     def test_align(self):
         # Align signal
         m = mock.Mock()

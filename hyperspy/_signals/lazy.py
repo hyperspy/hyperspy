@@ -495,6 +495,7 @@ class LazySignal(BaseSignal):
                      iterating_kwargs=(),
                      show_progressbar=None,
                      parallel=None,
+                     max_workers=None,
                      ragged=None,
                      inplace=True,
                      **kwargs):
