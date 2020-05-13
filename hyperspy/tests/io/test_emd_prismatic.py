@@ -19,6 +19,7 @@
 import os
 import numpy as np
 import traits.api as t
+import pytest
 
 import hyperspy.api as hs
 
@@ -104,6 +105,27 @@ def test_all_but_4D():
         np.testing.assert_allclose(axis.scale, 0.339375)
         np.testing.assert_allclose(axis.offset, 0)
         np.testing.assert_allclose(axis.size, 16)
+
+
+@pytest.mark.parametrize("dataset_path",
+                         ['4DSTEM_simulation/data/realslices/annular_detector_depth0000',
+                          '4DSTEM_simulation/data/realslices/virtual_detector_depth0000',
+                          '4DSTEM_simulation/data/realslices/DPC_CoM_depth0000',
+                          '4DSTEM_simulation/data/realslices/ppotential'])
+def test_load_single_dataset(dataset_path):
+    filename = os.path.join(FILES_PATH, 'Si100_2D_3D_DPC_potential_2slices.emd')
+    s = hs.load(filename, dataset_path=dataset_path)
+
+    assert isinstance(s, hs.signals.Signal2D)
+
+
+def test_load_specific_datasets():
+    filename = os.path.join(FILES_PATH, 'Si100_2D_3D_DPC_potential_2slices.emd')
+    dataset_path = ['4DSTEM_simulation/data/realslices/annular_detector_depth0000',
+                    '4DSTEM_simulation/data/realslices/virtual_detector_depth0000']
+    s = hs.load(filename, dataset_path=dataset_path)
+
+    assert len(s) == 2
 
 
 def test_3D_only():

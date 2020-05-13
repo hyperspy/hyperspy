@@ -31,7 +31,6 @@ from datetime import datetime
 import time
 import logging
 import traits.api as t
-from numbers import Number
 
 import h5py
 import numpy as np
@@ -493,9 +492,8 @@ class EMDBerkeley:
 
     Attributes
     ----------
-    signals: dictionary
-        Dictionary which contains all datasets as
-        :class:`~hyperspy.signal.Signal` instances.
+    dictionaries: list
+        List of dictionaries which are passed to the file_reader.
     user : dictionary
         Dictionary which contains user related metadata.
     microscope : dictionary
@@ -508,19 +506,14 @@ class EMDBerkeley:
 
     # mapping: 'EMD_group': subgroup
     prismatic_key_mapping = {'4DSTEM_simulation/data/datacubes':
-                                 ['CBED_array_depth'],
+                                 ['CBED_array_depth0000'],
                              '4DSTEM_simulation/data/realslices':
-                                 ['annular_detector_depth',
-                                  'virtual_detector_depth',
-                                  'DPC_CoM_depth',
-                                  'ppotential'],
-                             '4DSTEM_simulation/data/diffractionslices': [],
-                             '4DSTEM_simulation/data/pointlistarrays': [],
-                             '4DSTEM_simulation/data/pointlists': []}
+                                 ['annular_detector_depth0000',
+                                  'virtual_detector_depth0000',
+                                  'DPC_CoM_depth0000',
+                                  'ppotential']}
 
-    def __init__(self, filename, user=None, microscope=None, sample=None,
-                 comments=None, lazy=False):
-        self.filename = filename
+    def __init__(self, user=None, microscope=None, sample=None, comments=None):
         # Create dictionaries if not present:
         if user is None:
             user = {}
@@ -549,62 +542,64 @@ class EMDBerkeley:
         self.comments = comments
         self._ureg = pint.UnitRegistry()
 
-    def read_file(self, file, datasets=None, lazy=None):
+    def read_file(self, file, lazy=None, dataset_path=None):
         """
         Read the data from an emd file
 
         Parameters
         ----------
-        filename : str
-            DESCRIPTION.
-        datasets : None, str or list of str
-            If . The default is None.
+        file : file handle
+            Handle of the file to read the data from.
         lazy : bool, optional
             Load the data lazily. The default is False.
-
+        dataset_path : None, str or list of str
+            Path of the dataset. If None, load all supported datasets,
+            otherwise the specified dataset. The default is None.
         """
         self.file = file
         self.lazy = lazy
 
-        # dataset can be a group with any name, for example, prismatic makes
-        # a group named '4DSTEM_simulation'
-        # if 'datasets' is not provided, we load all the datasets
-        # Find all the paths of the nested structure
-        if datasets is None:
-            datasets = []
-            # top group: for example '4DSTEM_simulation'
-            for group_name, group in file.items():
-                # EMD group should have a data group
-                if self._get_emd_group_type(group):
-                    for subgroup_name, subgroup in group.get('data').items():
-                        # subgroup: for example 'realslices'
-                        datasets.append(f'{group_name}/data/{subgroup_name}')
+        # if 'datasets' is not provided, we load all valid datasets
+        if dataset_path is None:
+            dataset_path = self.find_data_group_paths()
+        elif isinstance(dataset_path, str):
+            dataset_path = [dataset_path]
 
         self.dictionaries = []
-        for dataset_path in datasets:
-            _logger.debug(f'Loading datasets: {dataset_path}')
-            emd_group_version = self._read_emd_version(
-                file.get(dataset_path.split('/')[0]))
-            EMD_group = file.get(dataset_path)
-            if len(EMD_group.keys()) == 0:
-                continue
-
+        for path in dataset_path:
+            _logger.debug(f'Loading datasets: {path}')
             if self._is_prismatic_file:
-                keys_list = self.prismatic_key_mapping[dataset_path]
+                keys_list = [os.path.basename(path).replace('0000', '')]
+                # keys_list = self.prismatic_key_mapping[path]
+                EMD_item = file.get(os.path.dirname(path))
             else:
-                keys_list = self._parse_all_subgroup_name(EMD_group)
+                EMD_item = file.get(path)
+                if EMD_item is None:
+                    _logger.warning('Dataset not found.')
+                    continue
+                # if we have a path to a dataset
+                elif isinstance(EMD_item, h5py.Dataset):
+                    path = os.path.dirname(path)
+                    keys_list = [os.path.basename(path)]
+                elif len(EMD_item.keys()) == 0:
+                    continue
+                    _logger.warning('Dataset not valid.')
+                else:
+                    keys_list = self._parse_all_subgroup_name(EMD_item)
+
+            emd_version = self._read_emd_version(file.get(path.split('/')[0]))
 
             for key in keys_list:
-                subkeys_list = self._parse_all_subgroup_name(EMD_group, key,
+                subkeys_list = self._parse_all_subgroup_name(EMD_item, key,
                                                              True)
-                subkeys_list
+                # if they are no matching dataset is found
                 if len(subkeys_list) == 0:
                     continue
-                data, axes = self._read_data_from_subgroup(EMD_group,
+                data, axes = self._read_data_from_subgroup(EMD_item,
                                                            subkeys_list, key)
-                md = self._parse_metadata(EMD_group, title=key)
-                om = self._parse_original_metadata(EMD_group)
-                om.update({'EMD_group_version':emd_group_version})
+                md = self._parse_metadata(EMD_item, title=key)
+                om = self._parse_original_metadata(EMD_item)
+                om.update({'EMD_version':emd_version})
                 d = {'data': data,
                       'axes': axes,
                       'metadata': md,
@@ -612,23 +607,66 @@ class EMDBerkeley:
                       }
                 self.dictionaries.append(d)
 
+    def find_data_group_paths(self):
+        """
+        Find the paths of all groups containing valid EMD data.
+
+        Returns
+        -------
+        datasets : list
+            List of path to these group.
+
+        """
+        dataset_path = []
+        if self._is_prismatic_file:
+            for emd_group_name, keys in self.prismatic_key_mapping.items():
+                emd_group_keys = self.file.get(emd_group_name).keys()
+                for key in keys:
+                    if key in emd_group_keys:
+                        dataset_path.append(f"{emd_group_name}/{key}")
+            return dataset_path
+
+        for item_l1_name, item_l1 in self.file.items():
+            data_item = item_l1.get('data')
+            if data_item is None:
+                for item_l2_name, item_l2 in item_l1.items():
+                    if item_l2.get('data'):
+                        dataset_path.append(f'{item_l1_name}')
+            elif isinstance(data_item, h5py.Dataset):
+                # For emd file <=0.3, the datasets are in this group
+                dataset_path.append('/')
+            else:
+                # items at level 3
+                for item_l3_name, item_l3 in data_item.items():
+                    # subgroup: for example 'realslices'
+                    dataset_path.append(f'{item_l1_name}/data/{item_l3_name}')
+
+        return dataset_path
+
     @property
     def _is_prismatic_file(self):
         return True if '4DSTEM_simulation' in self.file.keys() else False
 
     @property
-    def _is_py4DSTEM_file(file):
-        return True if '4DSTEM_experiment' in self.ile.keys() else False
+    def _is_py4DSTEM_file(self):
+        return True if '4DSTEM_experiment' in self.file.keys() else False
 
     @staticmethod
     def _get_emd_group_type(group):
         """ Return the value of the 'emd_group_type' attribute if it exist,
-        otherwise,
+        otherwise returns False
         """
-        try:
-            return group.attrs.get('emd_group_type')
-        except ValueError:
-            return False
+        return group.attrs.get('emd_group_type', False)
+
+    def _read_emd_version(self, group):
+        """ Return the group version if the group is an EMD group, otherwise
+        return None.
+        """
+        if 'version_major' in group.attrs.keys():
+            version = [str(group.attrs.get(v))
+                       for v in ['version_major', 'version_minor']]
+            version =  ".".join(version)
+            return version
 
     @staticmethod
     def _parse_all_subgroup_name(group, matching_key=None, data_only=False):
@@ -661,7 +699,11 @@ class EMDBerkeley:
         dataset_key = self._parse_all_subgroup_name(group0, data_only=True)[0]
 
         array_list = [group.get(key)[dataset_key] for key in keys_list]
-        data = np.stack(array_list).squeeze()
+        if len(array_list) > 1:
+            # Squeze the data only when
+            data = np.stack(array_list).squeeze()
+        else:
+            data = np.array(array_list[0])
 
         if len(array_list) > 1:
             i_offset =+ 1
@@ -677,9 +719,12 @@ class EMDBerkeley:
         for i in range(i_offset, len(shape)):
             dim = group0.get(f'dim{i+1-i_offset}')
             offset, scale = self._parse_axis(dim)
-            navigate = dim.name.split('/')[-1] not in ['dim1', 'dim2']
-            if self._is_prismatic_file and dataset_key == 'datacube':
-                navigate = not navigate
+            if self._is_prismatic_file:
+                navigate = dim.name.split('/')[-1] not in ['dim1', 'dim2']
+                if dataset_key == 'datacube':
+                    navigate = not navigate
+            else:
+                navigate = False
             axes.append({'index_in_array': i,
                          'name': self._parse_attribute(dim, 'name'),
                          'units': self._parse_attribute(dim, 'units'),
@@ -695,7 +740,8 @@ class EMDBerkeley:
         if value is None:
             value = t.Undefined
         else:
-            value = value.decode()
+            if not isinstance(value, str):
+                value = value.decode()
             if key == 'units':
                 # Get all the units
                 units_list = re.findall("(\[.+?\])", value)
@@ -709,9 +755,10 @@ class EMDBerkeley:
         return value
 
     def _parse_metadata(self, group_name, title=''):
+        filename = self.file if isinstance(self.file, str) else self.file.filename
         md = {
             'General': {'title': title.replace('_depth', ''),
-                'original_filename': os.path.split(self.filename)[1]},
+                'original_filename': os.path.split(filename)[1]},
             "Signal": {'signal_type': ""}
             }
         if 'CBED' in group_name:
@@ -726,7 +773,7 @@ class EMDBerkeley:
         """
         Estimate, offset, scale from a 1D array
         """
-        if isinstance(axis_data[0], Number):
+        if axis_data.ndim > 0 and np.issubdtype(axis_data.dtype, np.number):
             offset, scale = axis_data[0], np.diff(axis_data).mean()
         else:
             # This is a string, return default values
@@ -735,15 +782,70 @@ class EMDBerkeley:
             offset, scale = 0, 1
         return offset, scale
 
-    @staticmethod
-    def _read_emd_version(group):
-        if group.attrs.keys():
-            version = [group.attrs.get(v)
-                       for v in ['version_major', 'version_minor']]
-            version =  ".".join(str(version))
-        else:
-            version = ""
-        return version
+    def write_file(self, file, signal, **kwargs):
+        if isinstance(file, str):
+            emd_file = h5py.File(file, 'w')
+        # Write version:
+        ver_maj, ver_min = EMD_VERSION.split('.')
+        emd_file.attrs['version_major'] = ver_maj
+        emd_file.attrs['version_minor'] = ver_min
+        # Write user:
+        user_group = emd_file.require_group('user')
+        for key, value in self.user.items():
+            user_group.attrs[key] = value
+        # Write microscope:
+        microscope_group = emd_file.require_group('microscope')
+        for key, value in self.microscope.items():
+            microscope_group.attrs[key] = value
+        # Write sample:
+        sample_group = emd_file.require_group('sample')
+        for key, value in self.sample.items():
+            sample_group.attrs[key] = value
+        # Write comments:
+        comments_group = emd_file.require_group('comments')
+        for key, value in self.comments.items():
+            comments_group.attrs[key] = value
+        # Write signals:
+        signal_group = emd_file.require_group('signals')
+        signal_group.attrs['emd_group_type'] = 1
+        self._write_signal_to_group(signal_group, signal)
+        emd_file.close()
+
+    def _write_signal_to_group(self, signal_group, signal):
+        # Save data:
+        title = signal.metadata.General.title or '__unnamed__'
+        dataset = signal_group.require_group(title)
+        maxshape = tuple(None for _ in signal.data.shape)
+        dataset.create_dataset(
+            'data',
+            data=signal.data,
+            chunks=True,
+            maxshape=maxshape)
+        # Iterate over all dimensions:
+        for i in range(len(signal.data.shape)):
+            key = f'dim{i+1}'
+            axis = signal.axes_manager._axes[i]
+            offset = axis.offset
+            scale = axis.scale
+            dim = dataset.create_dataset(key, data=[offset, offset + scale])
+            name = axis.name
+            if name is t.Undefined:
+                name = ''
+            dim.attrs['name'] = name
+            units = axis.units
+            if units is t.Undefined:
+                units = ''
+            else:
+                units = '[{}]'.format('_'.join(list(units)))
+            dim.attrs['units'] = units
+        # Write metadata:
+        dataset.attrs['emd_group_type'] = 1
+        for key, value in signal.metadata.Signal:
+            try:  # If something h5py can't handle is saved in the metadata...
+                dataset.attrs[key] = value
+            except Exception:  # ...let the user know what could not be added!
+                _logger.warning("The following information couldn't be "
+                                f"written in the file: {key}: {value}")
 
 
 def _get_keys_from_group(group):
@@ -818,6 +920,7 @@ class FeiEMDReader(object):
         self.original_metadata = {}
 
     def read_file(self, f):
+        self.filename = f.filename
         self.d_grp = f.get('Data')
         self._check_im_type()
         self._parse_metadata_group(f.get('Operations'), 'Operations')
@@ -1525,23 +1628,24 @@ def file_reader(filename, lazy=False, **kwds):
 
     file = h5py.File(filename, 'r')
     dictionaries = []
-    if is_EMD_Velox(file):
-        _logger.debug('EMD file is Velox format.')
-        reader = FeiEMDReader
-    elif is_EMD_Berkeley(file):
-        _logger.debug('EMD file is Bekerley format.')
-        reader = EMDBerkeley
-    else:
-        raise IOError("The file is not a supported EMD file.")
-
-    emd_reader = reader(filename, lazy=lazy, **kwds)
     try:
-        emd_reader.read_file(file)
+        if is_EMD_Velox(file):
+            _logger.debug('EMD file is a Velox variant.')
+            emd_reader = FeiEMDReader(lazy=lazy, **kwds)
+            emd_reader.read_file(file)
+        elif is_EMD_Berkeley(file):
+            _logger.debug('EMD file is a Bekerley variant.')
+            dataset_path = kwds.pop('dataset_path', None)
+            emd_reader = EMDBerkeley(**kwds)
+            emd_reader.read_file(file, lazy=lazy, dataset_path=dataset_path)
+        else:
+            raise IOError("The file is not a supported EMD file.")
     except Exception as e:
         raise e
     finally:
         if not lazy:
             file.close()
+
     dictionaries = emd_reader.dictionaries
 
     return dictionaries
@@ -1554,10 +1658,9 @@ def file_writer(filename, signal, signal_metadata=None, user=None,
     microscope = microscope or metadata.get('microscope', None)
     sample = sample or metadata.get('sample', None)
     comments = comments or metadata.get('comments', None)
-    emd = EMD(
+    emd = EMDBerkeley(
         user=user,
         microscope=microscope,
         sample=sample,
         comments=comments)
-    emd.add_signal(signal, metadata=signal_metadata)
-    emd.save_to_emd(filename)
+    emd.write_file(filename, signal)
