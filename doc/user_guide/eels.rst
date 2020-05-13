@@ -50,14 +50,6 @@ they are arranged in the order closest to 849 eV.
     >>> get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
-The same functionality is also available as a method in `EELS` signal.
-
-.. code-block:: python
-
-    >>> import hyperspy.api as hs
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
-    >>> s.get_edges_near_energy(532)
-    ['O_K', 'Pd_M3', 'Sb_M5', 'Sb_M4']
 
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
