@@ -75,20 +75,13 @@ def test_spectrum_1d_loading():
 
 def test_metadata():
     signal = load(os.path.join(my_path, 'emd_files', 'example_metadata.emd'))
+    om = signal.original_metadata
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.metadata.General.title, test_title)
-    # np.testing.assert_equal(signal.metadata.General.user.as_dictionary(), user)
-    # np.testing.assert_equal(
-    #     signal.metadata.General.microscope.as_dictionary(),
-    #     microscope)
-    # np.testing.assert_equal(
-    #     signal.metadata.General.sample.as_dictionary(), sample)
-    # np.testing.assert_equal(
-    #     signal.metadata.General.comments.as_dictionary(),
-    #     comments)
-    # for key, ref_value in sig_metadata.items():
-    #     np.testing.assert_equal(
-    #         signal.metadata.Signal.as_dictionary().get(key), ref_value)
+    np.testing.assert_equal(om.user.as_dictionary(), user)
+    np.testing.assert_equal(om.microscope.as_dictionary(), microscope)
+    np.testing.assert_equal(om.sample.as_dictionary(), sample)
+    np.testing.assert_equal(om.comments.as_dictionary(), comments)
     assert isinstance(signal, Signal2D)
 
 
@@ -247,11 +240,15 @@ class TestCaseSaveAndRead():
         signal_ref.axes_manager[0].units = 'nm'
         signal_ref.axes_manager[1].units = 'µm'
         signal_ref.axes_manager[2].units = 'mm'
+        signal_ref.original_metadata.add_dictionary({'user':user})
+        signal_ref.original_metadata.add_dictionary({'microscope':microscope})
+        signal_ref.original_metadata.add_dictionary({'sample':sample})
+        signal_ref.original_metadata.add_dictionary({'comments':comments})
+
         signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
-                        overwrite=True, signal_metadata=sig_metadata,
-                        user=user, microscope=microscope, sample=sample,
-                        comments=comments)
+                        overwrite=True)
         signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+        om = signal.original_metadata
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.axes_manager[0].name, 'x')
         np.testing.assert_equal(signal.axes_manager[1].name, 'y')
@@ -266,18 +263,11 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.axes_manager[1].units, 'µm')
         np.testing.assert_equal(signal.axes_manager[2].units, 'mm')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        np.testing.assert_equal(
-            signal.metadata.General.user.as_dictionary(), user)
-        np.testing.assert_equal(
-            signal.metadata.General.microscope.as_dictionary(),
-            microscope)
-        np.testing.assert_equal(
-            signal.metadata.General.sample.as_dictionary(), sample)
-        np.testing.assert_equal(
-            signal.metadata.General.comments.as_dictionary(), comments)
-        for key, ref_value in sig_metadata.items():
-            np.testing.assert_equal(
-                signal.metadata.Signal.as_dictionary().get(key), ref_value)
+        np.testing.assert_equal(om.user.as_dictionary(), user)
+        np.testing.assert_equal(om.microscope.as_dictionary(), microscope)
+        np.testing.assert_equal(om.sample.as_dictionary(), sample)
+        np.testing.assert_equal(om.comments.as_dictionary(), comments)
+
         assert isinstance(signal, BaseSignal)
 
     def teardown_method(self, method):

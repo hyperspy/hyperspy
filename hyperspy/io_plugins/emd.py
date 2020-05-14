@@ -605,7 +605,7 @@ class EMDBerkeley:
             d = {'data': data,
                  'axes': axes,
                  'metadata': md,
-                 'original_metadata': om
+                 'original_metadata': om,
                  }
             self.dictionaries.append(d)
 
@@ -729,7 +729,12 @@ class EMDBerkeley:
         return md
 
     def _parse_original_metadata(self):
+        f = self.file
         om = {'EMD_version':self._read_emd_version(self.file.get('/'))}
+        for group_name in ['microscope', 'sample', 'user', 'comments']:
+            group = f.get(group_name)
+            if group is not None:
+                om.update({group_name:{key:value for key, value in group.attrs.items()}})
         return om
 
     @staticmethod
@@ -753,22 +758,16 @@ class EMDBerkeley:
         ver_maj, ver_min = EMD_VERSION.split('.')
         emd_file.attrs['version_major'] = ver_maj
         emd_file.attrs['version_minor'] = ver_min
-        # Write user:
-        user_group = emd_file.require_group('user')
-        for key, value in self.user.items():
-            user_group.attrs[key] = value
-        # Write microscope:
-        microscope_group = emd_file.require_group('microscope')
-        for key, value in self.microscope.items():
-            microscope_group.attrs[key] = value
-        # Write sample:
-        sample_group = emd_file.require_group('sample')
-        for key, value in self.sample.items():
-            sample_group.attrs[key] = value
-        # Write comments:
-        comments_group = emd_file.require_group('comments')
-        for key, value in self.comments.items():
-            comments_group.attrs[key] = value
+
+        # Write attribute from the original_metadata
+        om = signal.original_metadata
+        for group_name in ['microscope', 'sample', 'user', 'comments']:
+            group = emd_file.require_group(group_name)
+            d = om.get_item(group_name, None)
+            if d is not None:
+                for key, value in d.as_dictionary().items():
+                    group.attrs[key] = value
+
         # Write signals:
         signal_group = emd_file.require_group('signals')
         signal_group.attrs['emd_group_type'] = 1
@@ -1623,16 +1622,6 @@ def file_reader(filename, lazy=False, **kwds):
     return dictionaries
 
 
-def file_writer(filename, signal, signal_metadata=None, user=None,
-                microscope=None, sample=None, comments=None, **kwds):
-    metadata = signal.metadata.General.as_dictionary()
-    user = user or metadata.get('user', None)
-    microscope = microscope or metadata.get('microscope', None)
-    sample = sample or metadata.get('sample', None)
-    comments = comments or metadata.get('comments', None)
-    emd = EMDBerkeley(
-        user=user,
-        microscope=microscope,
-        sample=sample,
-        comments=comments)
-    emd.write_file(filename, signal)
+def file_writer(filename, signal, **kwds):
+    emd = EMDBerkeley()
+    emd.write_file(filename, signal, **kwds)
