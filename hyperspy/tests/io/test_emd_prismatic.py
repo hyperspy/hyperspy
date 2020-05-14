@@ -129,9 +129,12 @@ def test_load_specific_datasets():
     assert len(s) == 2
 
 
-def test_3D_only():
+@pytest.mark.parametrize("lazy", (True, False))
+def test_3D_only(lazy):
     filename = os.path.join(FILES_PATH, 'Si100_3D.emd')
-    s = hs.load(filename)
+    s = hs.load(filename, lazy=lazy)
+    if lazy:
+        s.compute(close_file=True)
 
     assert s.data.shape == (22, 22, 37)
 
@@ -172,10 +175,12 @@ def test_non_square_3D():
         np.testing.assert_allclose(axis.offset, 0)
 
 
-def test_4D():
+@pytest.mark.parametrize("lazy", (True, False))
+def test_4D(lazy):
     filename = os.path.join(FILES_PATH, 'Si100_4D.emd')
-    s = hs.load(filename)
-
+    s = hs.load(filename, lazy=lazy)
+    if lazy:
+        s.compute(close_file=True)
     assert s.data.shape == (2, 11, 11, 8, 8)
 
     # navigation x, y axes

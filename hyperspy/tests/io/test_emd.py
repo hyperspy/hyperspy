@@ -55,8 +55,12 @@ comments = {'comment': 'Test'}
 test_title = 'This is a test!'
 
 
-def test_signal_3d_loading():
-    signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'))
+@pytest.mark.parametrize("lazy", (True, False))
+def test_signal_3d_loading(lazy):
+    signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'),
+                  lazy=lazy)
+    if lazy:
+        signal.compute(close_file=True)
     np.testing.assert_equal(signal.data, data_signal)
     assert isinstance(signal, BaseSignal)
 
@@ -225,7 +229,8 @@ class TestReadSeveralDatasets:
 
 class TestCaseSaveAndRead():
 
-    def test_save_and_read(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_save_and_read(self, lazy):
         signal_ref = BaseSignal(data_save)
         signal_ref.metadata.General.title = test_title
         signal_ref.axes_manager[0].name = 'x'
@@ -247,7 +252,10 @@ class TestCaseSaveAndRead():
 
         signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
                         overwrite=True)
-        signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+        signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
+                      lazy=lazy)
+        if lazy:
+            signal.compute(close_file=True)
         om = signal.original_metadata
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.axes_manager[0].name, 'x')

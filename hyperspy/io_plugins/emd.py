@@ -661,12 +661,24 @@ class EMDBerkeley:
 
         array_list = [self.file.get(f'{key}/{dataset_name}') for key in group_path]
         if None in array_list:
-            raise IOError("Dataset can't be found")
+            raise IOError("Dataset can't be found.")
+        if self.lazy:
+            chunks = array_list[0].chunks
+            if chunks is None:
+                chunks = calculate_chunks(array_list[0].shape, array_list[0].dtype)
         if len(array_list) > 1:
-            # Squeze the data only when
-            data = np.stack(array_list).squeeze()
+            # Squeeze the data only when
+            if self.lazy:
+                data_list = [da.from_array(d, chunks=chunks) for d in array_list]
+                data = da.stack(data_list)
+                data = da.squeeze(data)
+            else:
+                data = np.stack(array_list).squeeze()
         else:
-            data = np.array(array_list[0])
+            if self.lazy:
+                data = da.from_array(array_list[0], chunks=chunks)
+            else:
+                data = np.asanyarray(array_list[0])
 
         if len(array_list) > 1:
             i_offset =+ 1
