@@ -313,7 +313,7 @@ passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-- `compression` : One of None, 'gzip', 'szip', 'lzf' (default is 'gzip').
+- ``compression`` : One of None, 'gzip', 'szip', 'lzf' (default is 'gzip').
 
 
 .. _netcdf-format:
@@ -375,7 +375,7 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- `do_async`: currently supported within Hyperspy for writing only, this will
+- ``do_async``: currently supported within Hyperspy for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
@@ -385,13 +385,13 @@ Extra saving arguments
     asychronous write has finished.
 
 
-- `compressor`: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
+- ``compressor``: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
   Defaults to `None`.
-- `clevel`: The compression level, an `int` from 1 to 9. Defaults to 1.
-- `n_threads`: The number of threads to use for `blosc` compression. Defaults to
+- ``clevel``: The compression level, an `int` from 1 to 9. Defaults to 1.
+- ``n_threads``: The number of threads to use for 'blosc' compression. Defaults to
   the maximum number of virtual cores (including Intel Hyperthreading)
   on your system, which is recommended for best performance. If \
-  `do_asyc = True` you may wish to leave one thread free for the
+  ``do_asyc = True`` you may wish to leave one thread free for the
   Python GIL.
 
 The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for
@@ -553,10 +553,10 @@ us aware of the problem.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-optimize: bool, default is True. During loading, the data is replaced by its
-:ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
-e. g. iteration over navigation axes. The cost of this speed improvement is to
-double the memory requirement during data loading.
+- ``optimize``: bool, default is True. During loading, the data is replaced by
+  its :ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
+  e. g. iteration over navigation axes. The cost of this speed improvement is to
+  double the memory requirement during data loading.
 
 .. _edax-format:
 
@@ -588,9 +588,9 @@ SpcMap-spd.file.format.pdf>`_, and
 Extra loading arguments for SPD file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `spc_fname`: {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
-- `ipr_fname`: {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
-- `**kwargs`: remaining arguments are passed to the Numpy ``memmap`` function.
+- ``spc_fname``: {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
+- ``ipr_fname``: {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
+- ``**kwargs``: remaining arguments are passed to the Numpy ``memmap`` function.
 
 Extra loading arguments for SPD and SPC files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -622,7 +622,7 @@ with it, all of them will be read and returned as a list.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- `only_valid_data` : bool, in case of series or linescan data with the
+- ``only_valid_data`` : bool, in case of series or linescan data with the
   acquisition stopped before the end: if True, load only the acquired data.
   If False, the empty data are filled with zeros. The default is False and this
   default value will change to True in version 2.0.
@@ -707,19 +707,19 @@ currently supported by HyperSpy.
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the
+- ``select_type`` : one of (None, 'spectrum', 'image'). If specified, only the
   corresponding type of data, either spectrum or image, is returned.
   By default (None), all data are loaded.
-- `index` : one of (None, int, "all"). Allow to select the index of the dataset
+- ``index`` : one of (None, int, "all"). Allow to select the index of the dataset
   in the bcf file, which can contains several datasets. Default None value
   result in loading the first dataset. When set to 'all', all available datasets
   will be loaded and returned as separate signals.
-- `downsample` : the downsample ratio of hyperspectral array (height and width
+- ``downsample`` : the downsample ratio of hyperspectral array (height and width
   only), can be integer >=1, where '1' results in no downsampling (default 1).
   The underlying method of downsampling is unchangeable: sum. Differently than
   ``block_reduce`` from skimage.measure it is memory efficient (does not creates
   intermediate arrays, works inplace).
-- `cutoff_at_kV` : if set (can be int or float >= 0) can be used either to crop
+- ``cutoff_at_kV`` : if set (can be int or float >= 0) can be used either to crop
   or enlarge energy (or channels) range at max values (default None).
 
 Example of loading reduced (downsampled, and with energy range cropped)
@@ -774,15 +774,26 @@ stored in an HDF5 file, as well as tags and other metadata.
 EMD (NCEM)
 ^^^^^^^^^^
 
-This EMD format was developed by Colin Ophus at the National Center for
-Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
+This `EMD format <http://emdatasets.com>`_ was developed by Colin Ophus at the
+National Center for Electron Microscopy (NCEM).
+This format is used by the `prismatic software <https://prism-em.com/docs-outputs/>`_
+to save the simulation outputs.
+
+Extra loading arguments
++++++++++++++++++++++++
+
+- ``dataset_path`` : None, str or list of str. Path of the dataset. If None,
+  load all supported datasets, otherwise the specified dataset(s).
+- ``stack_group`` : bool, default is True. Stack datasets of groups with common
+  path. Relevant for emd file version >= 0.5 where groups can be named
+  'group0000', 'group0001', etc.
 
 For files containing several datasets, the `dataset_name` argument can be
 used to select a specific one:
 
 .. code-block:: python
 
-    >>> s = hs.load("adatafile.emd", dataset_name="/experimental/science_data_1")
+    >>> s = hs.load("adatafile.emd", dataset_name="/experimental/science_data_1/data")
 
 
 Or several by using a list:
@@ -791,11 +802,9 @@ Or several by using a list:
 
     >>> s = hs.load("adatafile.emd",
     ...             dataset_name=[
-    ...                 "/experimental/science_data_1",
-    ...                 "/experimental/science_data_1"])
+    ...                 "/experimental/science_data_1/data",
+    ...                 "/experimental/science_data_2/data"])
 
-
-asdf
 
 .. _emd_fei-format:
 
@@ -844,19 +853,20 @@ the data size in memory.
    a file, please report it  to the HyperSpy developers so that they can
    add support for newer versions of the format.
 
+
 .. _Extra-loading-arguments-fei-emd:
 
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `select_type` : one of {None, 'image', 'single_spectrum', 'spectrum_image'} (default is None).
-- `first_frame` : integer (default is 0).
-- `last_frame` : integer (default is None)
-- `sum_frames` : boolean (default is True)
-- `sum_EDS_detectors` : boolean (default is True)
-- `rebin_energy` : integer (default is 1)
-- `SI_dtype` : numpy dtype (default is None)
-- `load_SI_image_stack` : boolean (default is False)
+- ``select_type`` : one of {None, 'image', 'single_spectrum', 'spectrum_image'} (default is None).
+- ``first_frame`` : integer (default is 0).
+- ``last_frame`` : integer (default is None)
+- ``sum_frames`` : boolean (default is True)
+- ``sum_EDS_detectors`` : boolean (default is True)
+- ``rebin_energy`` : integer (default is 1)
+- ``SI_dtype`` : numpy dtype (default is None)
+- ``load_SI_image_stack`` : boolean (default is False)
 
 The ``select_type`` parameter specifies the type of data to load: if `image` is selected,
 only images (including EDS maps) are loaded, if `single_spectrum` is selected, only
@@ -908,7 +918,7 @@ good approximation. Further release of HyperSpy will read the time axis more
 precisely by supporting non-linear axis.
 
 
-. _usid-format:
+.. _usid-format:
 
 USID
 ----
@@ -928,19 +938,19 @@ forms the foundation for other materials microscopy scientific python package ca
 `pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html>`_.
 
 If you have any questions regarding this module, please consider
-`contacting <https://pycroscopy.github.io/pyUSID/contact.html>`_  the developers of pyUSID
+`contacting <https://pycroscopy.github.io/pyUSID/contact.html>`_  the developers of pyUSID.
 
 Requirements
 ^^^^^^^^^^^^
 1. Reading and writing h5USID files require the
    `installation of pyUSID <https://pycroscopy.github.io/pyUSID/install.html>`_.
 2. Files must use the ``.h5`` file extension in order to use this io plugin.
-   Using the ``.hdf5`` extension will default to HyperSpy's own plugin
+   Using the ``.hdf5`` extension will default to HyperSpy's own plugin.
 
 Reading
 ^^^^^^^
 h5USID files can contain multiple USID datasets within the same file.
-HyperSpy supports reading in one or more USID datasets
+HyperSpy supports reading in one or more USID datasets.
 
 Extra loading arguments
 +++++++++++++++++++++++
