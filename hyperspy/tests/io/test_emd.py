@@ -126,18 +126,19 @@ class TestDatasetName:
     def setup_method(self):
         tmpdir = tempfile.TemporaryDirectory()
         hdf5_dataset_path = os.path.join(tmpdir.name, "test_dataset.emd")
+        hdf5_dataset_path = "test_dataset.emd"
         f = h5py.File(hdf5_dataset_path, mode="w")
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
 
-        dataset_name_list = [
-            '/experimental/science_data_0',
-            '/experimental/science_data_1',
-            '/processed/science_data_0']
+        dataset_path_list = [
+            '/experimental/science_data_0/data',
+            '/experimental/science_data_1/data',
+            '/processed/science_data_0/data']
         data_size_list = [(50, 50), (20, 10), (16, 32)]
 
-        for dataset_name, data_size in zip(dataset_name_list, data_size_list):
-            group = f.create_group(dataset_name)
+        for dataset_path, data_size in zip(dataset_path_list, data_size_list):
+            group = f.create_group(os.path.dirname(dataset_path))
             group.attrs.create('emd_group_type', 1)
             group.create_dataset(name='data', data=np.random.random(data_size))
             group.create_dataset(name='dim1', data=range(data_size[0]))
@@ -147,39 +148,45 @@ class TestDatasetName:
 
         self.hdf5_dataset_path = hdf5_dataset_path
         self.tmpdir = tmpdir
-        self.dataset_name_list = dataset_name_list
+        self.dataset_path_list = dataset_path_list
         self.data_size_list = data_size_list
 
     def teardown_method(self):
         self.tmpdir.cleanup()
 
-    def test_load_with_dataset_name(self):
+    def test_load_with_dataset_path(self):
         s = load(self.hdf5_dataset_path)
-        assert len(s) == len(self.dataset_name_list)
-        for dataset_name, data_size in zip(
-                self.dataset_name_list, self.data_size_list):
-            s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
-            assert s.metadata.General.title == dataset_name
+        assert len(s) == len(self.dataset_path_list)
+        for dataset_path, data_size in zip(
+                self.dataset_path_list, self.data_size_list):
+            s = load(self.hdf5_dataset_path, dataset_path=dataset_path)
+            title = os.path.basename(os.path.dirname(dataset_path))
+            assert s.metadata.General.title == title
             assert s.data.shape == data_size
 
-    def test_load_with_dataset_name_several(self):
-        dataset_name = self.dataset_name_list[0:2]
-        s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
-        assert len(s) == len(dataset_name)
-        assert s[0].metadata.General.title in dataset_name
-        assert s[1].metadata.General.title in dataset_name
+    def test_load_with_dataset_path_several(self):
+        dataset_path = self.dataset_path_list[0:2]
+        s = load(self.hdf5_dataset_path, dataset_path=dataset_path)
+        assert len(s) == len(dataset_path)
+        assert s[0].metadata.General.title in dataset_path[0]
+        assert s[1].metadata.General.title in dataset_path[1]
 
-    def test_wrong_dataset_name(self):
+    def test_wrong_dataset_path(self):
         with pytest.raises(IOError):
-            load(self.hdf5_dataset_path, dataset_name='a_wrong_name')
+            load(self.hdf5_dataset_path, dataset_path='a_wrong_name')
         with pytest.raises(IOError):
             load(self.hdf5_dataset_path,
-                 dataset_name=[self.dataset_name_list[0], 'a_wrong_name'])
+                 dataset_path=[self.dataset_path_list[0], 'a_wrong_name'])
+
+    def test_deprecated_dataset_name(self):
+        with pytest.warns(UserWarning):
+            dataset_name = os.path.dirname(self.dataset_path_list[0])
+            load(self.hdf5_dataset_path, dataset_name=dataset_name)
 
 
 class TestMinimalSave():
 
-    def test_minimal_save():
+    def test_minimal_save(self):
         signal = Signal1D([0, 1])
         with tempfile.TemporaryDirectory() as tmp:
             signal.save(os.path.join(tmp, 'testfile.emd'))
@@ -194,7 +201,9 @@ class TestReadSeveralDatasets:
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
 
-        group_path_list = ['/exp/data_0', '/exp/data_1', '/calc/data_0']
+        group_path_list = ['/exp/data_0/data',
+                           '/exp/data_1/data',
+                           '/calc/data_0/data']
 
         for group_path in group_path_list:
             group = f.create_group(group_path)
@@ -205,7 +214,6 @@ class TestReadSeveralDatasets:
             group.create_dataset(name='dim2', data=range(128))
 
         f.close()
-        s = load(hdf5_dataset_path)
 
         self.group_path_list = group_path_list
         self.hdf5_dataset_path = hdf5_dataset_path
@@ -218,7 +226,8 @@ class TestReadSeveralDatasets:
         s = load(self.hdf5_dataset_path)
         assert len(s) == len(self.group_path_list)
         title_list = [s_temp.metadata.General.title for s_temp in s]
-        assert sorted(self.group_path_list) == sorted(title_list)
+        for _s, path in zip(s, self.group_path_list):
+            assert _s.metadata.General.title in path
 
 
 class TestCaseSaveAndRead():

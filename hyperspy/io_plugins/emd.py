@@ -29,6 +29,7 @@ import json
 import os
 from datetime import datetime
 import time
+import warnings
 import logging
 import traits.api as t
 
@@ -533,7 +534,7 @@ class EMDBerkeley:
         self.comments = comments
         self._ureg = pint.UnitRegistry()
 
-    def read_file(self, file, lazy=None, dataset_path=None, stack_group=True):
+    def read_file(self, file, lazy=None, dataset_path=None, stack_group=None):
         """
         Read the data from an emd file
 
@@ -547,16 +548,26 @@ class EMDBerkeley:
             Path of the dataset. If None, load all supported datasets,
             otherwise the specified dataset. The default is None.
         stack_group : bool, optional
-            Stack of dataset of similar groups
+            Stack datasets of groups with common name. Relevant for emd file
+            version >= 0.5 where groups can be named 'group0000', 'group0001',
+            etc.
         """
         self.file = file
         self.lazy = lazy
 
-        # if 'datasets' is not provided, we load all valid datasets
-        if dataset_path is None:
-            dataset_path = self.find_dataset_paths(file)
+        if isinstance(dataset_path, list):
+            if stack_group:
+                _logger.warning("The argument 'dataset_path' and "
+                                "'stack_group' are not compatible.")
+            stack_group = False
+            dataset_path = dataset_path.copy()
         elif isinstance(dataset_path, str):
             dataset_path = [dataset_path]
+        # if 'datasets' is not provided, we load all valid datasets
+        elif dataset_path is None:
+            dataset_path = self.find_dataset_paths(file)
+            if stack_group is None:
+                stack_group = True
 
         self.dictionaries = []
 
@@ -649,6 +660,8 @@ class EMDBerkeley:
         i_offset = 0
 
         array_list = [self.file.get(f'{key}/{dataset_name}') for key in group_path]
+        if None in array_list:
+            raise IOError("Dataset can't be found")
         if len(array_list) > 1:
             # Squeze the data only when
             data = np.stack(array_list).squeeze()
@@ -1586,8 +1599,14 @@ def file_reader(filename, lazy=False, **kwds):
             emd_reader.read_file(file)
         elif is_EMD_Berkeley(file):
             _logger.debug('EMD file is a Bekerley variant.')
+            dataset_name = kwds.pop('dataset_name', None)
+            if dataset_name is not None:
+                warnings.warn("Using 'dataset_name' is deprecated and will "
+                              "be removed in HyperSpy 2.0, use "
+                              "'dataset_path' instead.", UserWarning)
+                dataset_path = f"{dataset_name}/data"
             dataset_path = kwds.pop('dataset_path', None)
-            stack_group = kwds.pop('stack_group', True)
+            stack_group = kwds.pop('stack_group', None)
             emd_reader = EMDBerkeley(**kwds)
             emd_reader.read_file(file, lazy=lazy, dataset_path=dataset_path,
                                  stack_group=stack_group)
