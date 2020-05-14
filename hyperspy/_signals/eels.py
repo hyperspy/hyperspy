@@ -32,6 +32,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
+from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
@@ -154,50 +155,6 @@ class EELSSpectrum_mixin:
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
-
-    def get_edges_near_energy(self, energy, width=10):
-        """Find edges near a given energy that are within the given energy 
-        window.
-        
-        Parameters
-        ----------
-        energy : float
-            Energy to search, in eV
-        width : float
-            Width of window, in eV, around energy in which to find nearby 
-            energies, i.e. a value of 1 eV (the default) means to 
-            search +/- 0.5 eV. The default is 10.
-        
-        Returns
-        -------
-        edges : list
-            All edges that are within the given energy window, sorted by 
-            energy difference to the given energy.
-        """        
-        
-        if width < 0:
-            raise ValueError("Provided width needs to be >= 0.")
-        
-        Emin, Emax = energy - width/2, energy + width/2            
-
-        # find all subshells that have its energy within range
-        valid_edges = []
-        for element, element_info in elements_db.items():
-            try:
-                for shell, shell_info in element_info[
-                    'Atomic_properties']['Binding_energies'].items():
-                    if shell[-1] != 'a' and \
-                        Emin <= shell_info['onset_energy (eV)'] <= Emax:
-                        subshell = '{}_{}'.format(element, shell)
-                        Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
-                        valid_edges.append((subshell, Ediff))           
-            except KeyError:
-                continue 
-            
-        # Sort by energy difference and return only the edges
-        edges = [edge for edge, _ in sorted(valid_edges, key=lambda x: x[1])]
-        
-        return edges
 
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
