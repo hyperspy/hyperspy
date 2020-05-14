@@ -5,25 +5,48 @@
 Running and writing tests
 =========================
 
-
-Write tests
-^^^^^^^^^^^
+Writing tests
+^^^^^^^^^^^^^
 
 Every new function that is written in to HyperSpy needs to be tested and
-documented.
+documented. HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library
+for testing. The tests reside in the ``hyperspy.tests`` module.
 
-Tests are short functions found in hyperspy/tests that call your functions
+Tests are short functions, found in ``hyperspy/tests``, that call your functions
 under some known conditions and check the outputs against known values. They
 should depend on as few other features as possible so that when they break
 we know exactly what caused it. Ideally, the tests should be written at the
-same time as the code itself, because they are very convenient to run in order 
-to check outputs when coding. Writing tests can seem laborious but you'll 
-probably soon find that they're very important as they force you to sanity 
-check all you do.
+same time than the code itself, as they are very convenient to run to check
+outputs when coding. Writing tests can seem laborious but you'll probably
+soon find that they're very important as they force you to sanity check all
+you do.
+
+**Useful hints on testing:**
+
+* When comparing integers, it's fine to use ``==``
+* When comparing floats, be sure to use :py:meth:`np.testing.assert_almost_equal`
+  or :py:meth:`np.testing.assert_allclose()`
+* :py:meth:`np.testing.assert_allclose()` is also convenient for comparing
+  numpy arrays
+* The ``hyperspy.misc.test_utils.py`` contains a few useful functions for
+  testing
+* ``@pytest.mark.parametrize()`` is a very convenient decorator to test several
+  parameters of the same function without having to write to much repetitive
+  code, which is often error-prone. See `pytest documentation
+  <http://doc.pytest.org/en/latest/parametrize.html>`_ for more details.
+* It is good to check that the tests does not use too much of memory after
+  creating new tests. If you need to explicitly delete your objects and free
+  memory, you can do the following to release the memory associated to the
+  ``s`` object, for example:
+
+.. code:: python
+
+   >>> del s
+   >>> gc.collect()
 
 
-HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
-tests reside in the :py:mod:`hyperspy.tests` module.
+Running tests
+^^^^^^^^^^^^^
 
 First ensure pytest and its plugins are installed by:
 
@@ -31,8 +54,10 @@ First ensure pytest and its plugins are installed by:
 
    # If using a standard hyperspy install
    pip install hyperspy[test]
+
    # Or, from a hyperspy local development directory
    pip install -e .[test]
+
    # Or just installing the dependencies using conda
    conda install -c conda-forge pytest pytest-mpl
 
@@ -48,39 +73,33 @@ Or, from HyperSpy's project folder, simply:
 
    pytest
 
+.. note::
 
-Useful hints on testing:
+  pytest configuration options are set in the ``setup.cfg`` file, under the
+  ``[tool:pytest]`` section. See the `pytest configuration documentation
+  <https://docs.pytest.org/en/latest/customize.html>`_ for more details.
 
-* When comparing integers, it's fine to use ``==``. When comparing floats, be
-  sure to use ``numpy.testing.assert_almost_equal()`` or
-  ``numpy.testing.assert_allclose()``.
-* ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
-* The ``hyperspy.misc.test_utils.py`` contains a few useful functions for
-  testing.
-* ``@pytest.mark.parametrize()`` is a very convenient decorator to test several
-  parameters of the same function without having to write too much repetitive
-  code, which is often error-prone. See `pytest documentation for more details
-  <http://doc.pytest.org/en/latest/parametrize.html>`_.
-* It is good to check that the tests do not use too much memory after
-  creating new tests. If you need to explicitly delete your objects and free
-  memory, you can do the following to release the memory associated to the
-  ``s`` object:
+Test coverage
+^^^^^^^^^^^^^
 
-.. code:: python
+Once, you have pushed your pull request to the official HyperSpy repository,
+it can be useful to check the coverage of your tests using the
+`codecov.io <https://codecov.io/gh/hyperspy/hyperspy>`_ check of
+your PR. There should be a link to it at the bottom of your PR on the Github
+PR page. This service can help you to find how well your code is being tested
+and exactly which parts are not currently tested.
 
-    del s
-    gc.collect()
+You can also measure code coverage locally. If you have installed ``pytest-cov``,
+you can run (from HyperSpy's project folder):
 
+.. code:: bash
 
-* Once, you have pushed your PR to the official HyperSpy repository, it can be
-  useful to check the coverage of your tests using the coveralls.io check of
-  your PR. There should be a link to it at the bottom of your PR on the github
-  PR page. This service can help you to find out how well your code is being tested
-  and exactly which part is not currently tested.
-* `pytest-sugar <https://pypi.python.org/pypi/pytest-sugar>`_ can be installed
-  to have a nicer look and feel of pytest in the console (encoding issues have
-  been reported in the Windows console).
+   pytest --cov=hyperspy
 
+Configuration options for code coverage are also set in the ``setup.cfg`` file,
+under the ``[coverage:run]`` and ``[coverage:report]`` sections. See the `coverage
+documentation <https://coverage.readthedocs.io/en/coverage-5.1/config.html>`_
+for more details.
 
 Continuous integration (CI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -175,7 +194,6 @@ and run by:
 .. code:: bash
 
    pytest --mpl --html=report.html
-
 
 See `pytest-mpl <https://pypi.python.org/pypi/pytest-mpl>`_ for more details.
 
