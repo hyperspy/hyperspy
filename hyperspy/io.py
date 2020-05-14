@@ -164,6 +164,11 @@ def load(filenames=None,
         Only for EMD NCEM. Stack datasets of groups with common name. Relevant
         for emd file version >= 0.5 where groups can be named 'group0000',
         'group0001', etc.
+    ignore_non_linear_dims : bool, default is True
+        Only for HDF5 USID. If True, parameters that were varied non-linearly
+        in the desired dataset will result in Exceptions.
+        Else, all such non-linearly varied parameters will be treated as
+        linearly varied parameters and a Signal object will be generated.
     only_valid_data : bool, optional
         Only for FEI emi/ser file in case of series or linescan with the
         acquisition stopped before the end: if True, load only the acquired

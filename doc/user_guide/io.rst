@@ -933,12 +933,12 @@ Hierarchical Data Format Files (HDF5) and the combination of USID within HDF5 fi
 referred to as h5USID.
 
 `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_
-provides a convenient interface to I/O operations on such h5USID files. USID (via pyUSID)
-forms the foundation for other materials microscopy scientific python package called
-`pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html>`_.
-
+provides a convenient interface to I/O operations on such h5USID files. USID
+(via pyUSID) forms the foundation for other materials microscopy scientific
+python package called `pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html>`_.
 If you have any questions regarding this module, please consider
-`contacting <https://pycroscopy.github.io/pyUSID/contact.html>`_  the developers of pyUSID.
+`contacting <https://pycroscopy.github.io/pyUSID/contact.html>`_
+the developers of pyUSID.
 
 Requirements
 ^^^^^^^^^^^^
@@ -954,7 +954,12 @@ HyperSpy supports reading in one or more USID datasets.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dset_path`` : ``str`` - Absolute path of USID Main HDF5 dataset. (default is ``None`` - all USID Main Datasets will be read)
+- ``dataset_path``: str. Absolute path of USID Main HDF5 dataset.
+  (default is ``None`` - all USID Main Datasets will be read)
+- ``ignore_non_linear_dims``: bool, default is True. If True, parameters that
+  were varied non-linearly in the desired dataset will result in Exceptions.
+  Else, all such non-linearly varied parameters will be treated as
+  linearly varied parameters and a Signal object will be generated.
 
 Reading the sole dataset within a h5USID file:
 
