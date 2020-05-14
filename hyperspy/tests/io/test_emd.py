@@ -179,7 +179,7 @@ class TestDatasetName:
 
 class TestMinimalSave():
 
-    def test_minimal_save(self):
+    def test_minimal_save():
         signal = Signal1D([0, 1])
         with tempfile.TemporaryDirectory() as tmp:
             signal.save(os.path.join(tmp, 'testfile.emd'))
@@ -205,6 +205,7 @@ class TestReadSeveralDatasets:
             group.create_dataset(name='dim2', data=range(128))
 
         f.close()
+        s = load(hdf5_dataset_path)
 
         self.group_path_list = group_path_list
         self.hdf5_dataset_path = hdf5_dataset_path

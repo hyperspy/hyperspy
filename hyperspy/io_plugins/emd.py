@@ -504,15 +504,6 @@ class EMDBerkeley:
         Dictionary which contains additional commentary metadata.
     """
 
-    # mapping: 'EMD_group': subgroup
-    prismatic_key_mapping = {'4DSTEM_simulation/data/datacubes':
-                                 ['CBED_array_depth0000'],
-                             '4DSTEM_simulation/data/realslices':
-                                 ['annular_detector_depth0000',
-                                  'virtual_detector_depth0000',
-                                  'DPC_CoM_depth0000',
-                                  'ppotential']}
-
     def __init__(self, user=None, microscope=None, sample=None, comments=None):
         # Create dictionaries if not present:
         if user is None:
@@ -542,7 +533,7 @@ class EMDBerkeley:
         self.comments = comments
         self._ureg = pint.UnitRegistry()
 
-    def read_file(self, file, lazy=None, dataset_path=None):
+    def read_file(self, file, lazy=None, dataset_path=None, stack_group=True):
         """
         Read the data from an emd file
 
@@ -555,59 +546,60 @@ class EMDBerkeley:
         dataset_path : None, str or list of str
             Path of the dataset. If None, load all supported datasets,
             otherwise the specified dataset. The default is None.
+        stack_group : bool, optional
+            Stack of dataset of similar groups
         """
         self.file = file
         self.lazy = lazy
 
         # if 'datasets' is not provided, we load all valid datasets
         if dataset_path is None:
-            dataset_path = self.find_data_group_paths()
+            dataset_path = self.find_dataset_paths(file)
         elif isinstance(dataset_path, str):
             dataset_path = [dataset_path]
 
         self.dictionaries = []
-        for path in dataset_path:
-            _logger.debug(f'Loading datasets: {path}')
-            if self._is_prismatic_file:
-                keys_list = [os.path.basename(path).replace('0000', '')]
-                # keys_list = self.prismatic_key_mapping[path]
-                EMD_item = file.get(os.path.dirname(path))
+
+        while len(dataset_path) > 0:
+            path = dataset_path.pop(0)
+            group_paths = [os.path.dirname(path)]
+            dataset_name = os.path.basename(path)
+
+            if stack_group:
+                # Find all the datasets in this group which are also listed
+                # in dataset_path:
+                # 1. add them to 'group_paths'
+                # 2. remove them from 'dataset_path'
+                group_basename = group_paths[0]
+                if self._is_prismatic_file and 'ppotential' not in path:
+                    # In prismatic file, the group name have '0000' except
+                    # for 'ppotential'
+                    group_basename = group_basename[:-4]
+                for _path in dataset_path[:]:
+                    if path != _path and group_basename in _path:
+                        group_paths.append(os.path.dirname(_path))
+                        dataset_path.remove(_path)
+                title = os.path.basename(group_basename)
             else:
-                EMD_item = file.get(path)
-                if EMD_item is None:
-                    _logger.warning('Dataset not found.')
-                    continue
-                # if we have a path to a dataset
-                elif isinstance(EMD_item, h5py.Dataset):
-                    path = os.path.dirname(path)
-                    keys_list = [os.path.basename(path)]
-                elif len(EMD_item.keys()) == 0:
-                    continue
-                    _logger.warning('Dataset not valid.')
-                else:
-                    keys_list = self._parse_all_subgroup_name(EMD_item)
+                title = os.path.basename(group_paths[0])
 
-            emd_version = self._read_emd_version(file.get(path.split('/')[0]))
+            _logger.debug(f'Loading dataset: {path}')
+            data, axes = self._read_data_from_groups(
+                group_paths,
+                dataset_name,
+                title)
 
-            for key in keys_list:
-                subkeys_list = self._parse_all_subgroup_name(EMD_item, key,
-                                                             True)
-                # if they are no matching dataset is found
-                if len(subkeys_list) == 0:
-                    continue
-                data, axes = self._read_data_from_subgroup(EMD_item,
-                                                           subkeys_list, key)
-                md = self._parse_metadata(EMD_item, title=key)
-                om = self._parse_original_metadata(EMD_item)
-                om.update({'EMD_version':emd_version})
-                d = {'data': data,
-                      'axes': axes,
-                      'metadata': md,
-                      'original_metadata': om
-                      }
-                self.dictionaries.append(d)
+            md = self._parse_metadata(group_paths[0], title=title)
+            om = self._parse_original_metadata()
+            d = {'data': data,
+                 'axes': axes,
+                 'metadata': md,
+                 'original_metadata': om
+                 }
+            self.dictionaries.append(d)
 
-    def find_data_group_paths(self):
+    @staticmethod
+    def find_dataset_paths(file):
         """
         Find the paths of all groups containing valid EMD data.
 
@@ -617,29 +609,13 @@ class EMDBerkeley:
             List of path to these group.
 
         """
-        dataset_path = []
-        if self._is_prismatic_file:
-            for emd_group_name, keys in self.prismatic_key_mapping.items():
-                emd_group_keys = self.file.get(emd_group_name).keys()
-                for key in keys:
-                    if key in emd_group_keys:
-                        dataset_path.append(f"{emd_group_name}/{key}")
-            return dataset_path
+        def print_dataset_only(item_name, item):
+            if not os.path.basename(item_name).startswith(('dim', 'index_coords')):
+                if isinstance(item, h5py.Dataset):
+                    dataset_path.append(item_name)
 
-        for item_l1_name, item_l1 in self.file.items():
-            data_item = item_l1.get('data')
-            if data_item is None:
-                for item_l2_name, item_l2 in item_l1.items():
-                    if item_l2.get('data'):
-                        dataset_path.append(f'{item_l1_name}')
-            elif isinstance(data_item, h5py.Dataset):
-                # For emd file <=0.3, the datasets are in this group
-                dataset_path.append('/')
-            else:
-                # items at level 3
-                for item_l3_name, item_l3 in data_item.items():
-                    # subgroup: for example 'realslices'
-                    dataset_path.append(f'{item_l1_name}/data/{item_l3_name}')
+        dataset_path = []
+        file.visititems(print_dataset_only)
 
         return dataset_path
 
@@ -668,37 +644,11 @@ class EMDBerkeley:
             version =  ".".join(version)
             return version
 
-    @staticmethod
-    def _parse_all_subgroup_name(group, matching_key=None, data_only=False):
-        """ return keys of a group containing the matching key.
-        """
-        _logger.debug(f"Group keys: {group.keys()}")
-        if matching_key is None:
-            keys_list = [key for key in group.keys()]
-        else:
-            keys_list = [key for key in group.keys() if matching_key in key]
-
-        if data_only:
-            def is_data_key(key):
-                # Get all the keys excluding the ones containing 'dim' and
-                # 'index_coords'
-                return not ('dim' in key or 'index_coords' in key)
-            keys_list = [key for key in keys_list if is_data_key(key)]
-
-        _logger.debug(f"Subgroup to load: {keys_list}")
-
-        return keys_list
-
-    def _read_data_from_subgroup(self, group, keys_list, key=None,
-                                 data_only=True):
+    def _read_data_from_groups(self, group_path, dataset_name, stack_key=None):
         axes = []
         i_offset = 0
 
-        # To get the dataset from the list of group, we need to know its name
-        group0 = group.get(keys_list[0])
-        dataset_key = self._parse_all_subgroup_name(group0, data_only=True)[0]
-
-        array_list = [group.get(key)[dataset_key] for key in keys_list]
+        array_list = [self.file.get(f'{key}/{dataset_name}') for key in group_path]
         if len(array_list) > 1:
             # Squeze the data only when
             data = np.stack(array_list).squeeze()
@@ -708,7 +658,7 @@ class EMDBerkeley:
         if len(array_list) > 1:
             i_offset =+ 1
             axes.append({'index_in_array': 0,
-                         'name': key if key is not None else t.Undefined,
+                         'name': stack_key if stack_key is not None else t.Undefined,
                          'offset': 0,
                          'scale': 1,
                          'size': len(array_list),
@@ -717,11 +667,11 @@ class EMDBerkeley:
 
         shape = data.shape
         for i in range(i_offset, len(shape)):
-            dim = group0.get(f'dim{i+1-i_offset}')
+            dim = self.file.get(f'{group_path[0]}/dim{i+1-i_offset}')
             offset, scale = self._parse_axis(dim)
             if self._is_prismatic_file:
                 navigate = dim.name.split('/')[-1] not in ['dim1', 'dim2']
-                if dataset_key == 'datacube':
+                if dataset_name == 'datacube':
                     navigate = not navigate
             else:
                 navigate = False
@@ -754,19 +704,20 @@ class EMDBerkeley:
                     pass
         return value
 
-    def _parse_metadata(self, group_name, title=''):
+    def _parse_metadata(self, group_basename, title=''):
         filename = self.file if isinstance(self.file, str) else self.file.filename
         md = {
             'General': {'title': title.replace('_depth', ''),
                 'original_filename': os.path.split(filename)[1]},
             "Signal": {'signal_type': ""}
             }
-        if 'CBED' in group_name:
+        if 'CBED' in group_basename:
             md['Signal']['signal_type'] = 'electron_diffraction'
         return md
 
-    def _parse_original_metadata(self, group):
-        return {}
+    def _parse_original_metadata(self):
+        om = {'EMD_version':self._read_emd_version(self.file.get('/'))}
+        return om
 
     @staticmethod
     def _parse_axis(axis_data):
@@ -1636,8 +1587,10 @@ def file_reader(filename, lazy=False, **kwds):
         elif is_EMD_Berkeley(file):
             _logger.debug('EMD file is a Bekerley variant.')
             dataset_path = kwds.pop('dataset_path', None)
+            stack_group = kwds.pop('stack_group', True)
             emd_reader = EMDBerkeley(**kwds)
-            emd_reader.read_file(file, lazy=lazy, dataset_path=dataset_path)
+            emd_reader.read_file(file, lazy=lazy, dataset_path=dataset_path,
+                                 stack_group=stack_group)
         else:
             raise IOError("The file is not a supported EMD file.")
     except Exception as e:

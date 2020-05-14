@@ -31,14 +31,14 @@ def test_all_but_4D():
     s = hs.load(filename)
 
     assert len(s) == 4
-    # virtual detectors: navigation dimension are depth and scattering angle
-    assert s[0].data.shape == (2, 22, 22)
-    # annular detectors: navigation dimension is depth
-    assert s[1].data.shape == (2, 22, 22, 18)
     # DPC: navigation dimension are DPC and depth
-    assert s[2].data.shape == (2, 22, 22, 2)
+    assert s[0].data.shape == (2, 22, 22, 2)
+    # annular detectors: navigation dimension is depth
+    assert s[1].data.shape == (2, 22, 22)
+    # virtual detectors: navigation dimension are depth and scattering angle
+    assert s[2].data.shape == (16, 16, 4)
     # projected potential: navigation dimension is number of slices
-    assert s[3].data.shape == (16, 16, 4)
+    assert s[3].data.shape == (2, 22, 22, 18)
 
     def check_depth_axis(axis):
         assert "depth" in axis.name
@@ -56,48 +56,40 @@ def test_all_but_4D():
             np.testing.assert_allclose(axis.offset, 0)
             np.testing.assert_allclose(axis.size, 22)
 
-    # signal axis
-    check_signal_axes(s[0].axes_manager.signal_axes)
-    check_signal_axes(s[1].axes_manager.signal_axes)
+    for i in [0, 1, 3]:
+        # signal axis
+        check_signal_axes(s[i].axes_manager.signal_axes)
+        # depth axis
+        check_depth_axis(s[i].axes_manager.navigation_axes[-1])
 
-    axis = s[0].axes_manager[0]
-    assert axis.name == "annular_detector_depth"
+    axis = s[0].axes_manager[1]
+    assert axis.name == "DPC_CoM_depth"
     assert axis.units == t.Undefined
     np.testing.assert_allclose(axis.scale, 1, rtol=1E-6)
     np.testing.assert_allclose(axis.offset, 0)
     np.testing.assert_allclose(axis.size, 2)
 
-    # depth axis
-    check_depth_axis(s[1].axes_manager[1])
-
-    axis = s[1].axes_manager[0]
-    assert axis.name == "bin_outer_angle"
-    assert axis.units == "mrad"
-    np.testing.assert_allclose(axis.scale, 0.001, rtol=1E-6)
-    np.testing.assert_allclose(axis.offset, 0.0005)
-    np.testing.assert_allclose(axis.size, 18)
-
     # DPC axis
-    axis = s[2].axes_manager[0]
+    axis = s[0].axes_manager[0]
     assert axis.name == t.Undefined
     assert axis.units == t.Undefined
     np.testing.assert_allclose(axis.scale, 1)
     np.testing.assert_allclose(axis.offset, 0)
     np.testing.assert_allclose(axis.size, 2)
-    # depth axis
-    check_depth_axis(s[2].axes_manager[1])
-    # signal axis
-    check_signal_axes(s[2].axes_manager.signal_axes)
 
-    axis = s[3].axes_manager[0]
+    axis = s[2].axes_manager[0]
     assert axis.name == "R_z"
     assert axis.units == "nm"
     np.testing.assert_allclose(axis.scale, 1.3575)
     np.testing.assert_allclose(axis.offset, 0)
     np.testing.assert_allclose(axis.size, 4)
 
+    axis = s[1].axes_manager[0]
+    assert axis.name == "annular_detector_depth"
+    assert axis.units == t.Undefined
+
     # signal axes
-    signal_axes = s[3].axes_manager.signal_axes
+    signal_axes = s[2].axes_manager.signal_axes
     assert signal_axes[0].name == 'R_y'
     assert signal_axes[1].name == 'R_x'
     for axis in signal_axes:
@@ -107,11 +99,20 @@ def test_all_but_4D():
         np.testing.assert_allclose(axis.size, 16)
 
 
+def test_all_but_4D_no_stack():
+    filename = os.path.join(FILES_PATH, 'Si100_2D_3D_DPC_potential_2slices.emd')
+    s = hs.load(filename, stack_group=False)
+    assert len(s) == 7
+
+    s2 = hs.load(filename, stack_group=True)
+    np.testing.assert_allclose(np.stack([s[0].data, s[1].data]), s2[0].data)
+
+
 @pytest.mark.parametrize("dataset_path",
-                         ['4DSTEM_simulation/data/realslices/annular_detector_depth0000',
-                          '4DSTEM_simulation/data/realslices/virtual_detector_depth0000',
-                          '4DSTEM_simulation/data/realslices/DPC_CoM_depth0000',
-                          '4DSTEM_simulation/data/realslices/ppotential'])
+                         ['4DSTEM_simulation/data/realslices/annular_detector_depth0000/realslice',
+                          '4DSTEM_simulation/data/realslices/virtual_detector_depth0000/realslice',
+                          '4DSTEM_simulation/data/realslices/DPC_CoM_depth0000/realslice',
+                          '4DSTEM_simulation/data/realslices/ppotential/realslice'])
 def test_load_single_dataset(dataset_path):
     filename = os.path.join(FILES_PATH, 'Si100_2D_3D_DPC_potential_2slices.emd')
     s = hs.load(filename, dataset_path=dataset_path)
@@ -121,8 +122,8 @@ def test_load_single_dataset(dataset_path):
 
 def test_load_specific_datasets():
     filename = os.path.join(FILES_PATH, 'Si100_2D_3D_DPC_potential_2slices.emd')
-    dataset_path = ['4DSTEM_simulation/data/realslices/annular_detector_depth0000',
-                    '4DSTEM_simulation/data/realslices/virtual_detector_depth0000']
+    dataset_path = ['4DSTEM_simulation/data/realslices/annular_detector_depth0000/realslice',
+                    '4DSTEM_simulation/data/realslices/virtual_detector_depth0000/realslice']
     s = hs.load(filename, dataset_path=dataset_path)
 
     assert len(s) == 2
@@ -205,10 +206,3 @@ def test_4D():
         assert axis.units == "1 / nm"
         np.testing.assert_allclose(axis.scale, 0.18416205)
         np.testing.assert_allclose(axis.offset, -0.73664826)
-
-
-def other():
-    filename = os.path.join(FILES_PATH, 'Si100_2x1x1_4D.emd')
-    s = hs.load(filename)
-
-    s = hs.load('/home/eric/test_prismatic/Si100_all_outputs.emd')
