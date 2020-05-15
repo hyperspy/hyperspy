@@ -1217,7 +1217,7 @@ def plot_spectra(
         If a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
-    padding : float, optional, default 0.1
+    padding : float, optional, default 1.0
         Option for "cascade". 1 guarantees that there is not overlapping.
         However, in many cases a value between 0 and 1 can produce a tighter
         plot without overlapping. Negative values have the same effect but
