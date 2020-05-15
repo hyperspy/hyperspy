@@ -391,7 +391,7 @@ Extra saving arguments
 - ``n_threads``: The number of threads to use for 'blosc' compression. Defaults to
   the maximum number of virtual cores (including Intel Hyperthreading)
   on your system, which is recommended for best performance. If \
-  ``do_asyc = True`` you may wish to leave one thread free for the
+  ``do_async = True`` you may wish to leave one thread free for the
   Python GIL.
 
 The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for
@@ -774,7 +774,7 @@ stored in an HDF5 file, as well as tags and other metadata.
 EMD (NCEM)
 ^^^^^^^^^^
 
-This `EMD format <http://emdatasets.com>`_ was developed by Colin Ophus at the
+This `EMD format <https://emdatasets.com>`_ was developed by Colin Ophus at the
 National Center for Electron Microscopy (NCEM).
 This format is used by the `prismatic software <https://prism-em.com/docs-outputs/>`_
 to save the simulation outputs.
