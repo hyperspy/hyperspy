@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -52,7 +52,7 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.model_tools import current_model_values
 from IPython.display import display_pretty, display
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 
 _logger = logging.getLogger(__name__)
 
@@ -122,19 +122,22 @@ class BaseModel(list):
     """Model and data fitting tools applicable to signals of both one and two
     dimensions.
 
-    Models of one-dimensional signals should use the :class:`Model1D` and
-    models of two-dimensional signals should use the :class:`Model2D`.
+    Models of one-dimensional signals should use the
+    :py:class:`~hyperspy.models.model1d` and models of two-dimensional signals
+    should use the :class:`~hyperspy.models.model2d`.
 
-    A model is constructed as a linear combination of :mod:`components` that
-    are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predefined components available in the in the :mod:`components`
+    A model is constructed as a linear combination of
+    :py:mod:`~hyperspy._components` that are added to the model using the
+    :py:meth:`~hyperspy.model.BaseModel.append` or
+    :py:meth:`~hyperspy.model.BaseModel.extend`. There are many predefined
+    components available in the in the :py:mod:`~hyperspy._components`
     module. If needed, new components can be created easily using the code of
     existing components as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
-    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
-    the maximum number of iterations the new value of the component parameters
-    are stored in the components.
+    :py:meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    the convergence criteria or the maximum number of iterations the new value
+    of the component parameters are stored in the components.
 
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
@@ -212,8 +215,8 @@ class BaseModel(list):
     See also
     --------
 
-    Model1D
-    Model2D
+    :py:class:`~hyperspy.models.model1d.Model1D`
+    :py:class:`~hyperspy.models.model2d.Model2D`
 
     """
 
@@ -273,15 +276,17 @@ class BaseModel(list):
 
         Parameters
         ----------
-        dic : dictionary
-            _whitelist : dictionary
-                a dictionary with keys used as references of save attributes,
-                for more information, see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            components : dictionary (optional)
-                Dictionary, with information about components of the model (see
-                the documentation of component.as_dictionary() method)
-            * any field from _whitelist.keys() *
+        dic : dict
+            A dictionary containing at least the following fields:
+
+            * _whitelist: a dictionary with keys used as references of save
+              attributes, for more information, see
+              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+            * components: a dictionary, with information about components of
+              the model (see 
+              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              documentation for more details)
+            * any field from _whitelist.keys()
         """
 
         if 'components' in dic:
@@ -420,7 +425,7 @@ class BaseModel(list):
             self.update_plot()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None, out=None, parallel=None):
+                  show_progressbar=None, out=None, parallel=None, max_workers=None):
         """Returns a recreation of the dataset using the model.
         The spectral range that is not fitted is filled with nans.
 
@@ -438,6 +443,7 @@ class BaseModel(list):
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
+        %s
         %s
 
         Returns
@@ -460,6 +466,16 @@ class BaseModel(list):
             show_progressbar = preferences.General.show_progressbar
         if parallel is None:
             parallel = preferences.General.parallel
+
+        if not isinstance(parallel, bool):
+            warnings.warn(
+                "Passing integer arguments to 'parallel' has been deprecated and will be removed "
+                f"in HyperSpy 2.0. Please use 'parallel=True, max_workers={parallel}' instead.",
+                VisibleDeprecationWarning,
+            )
+            max_workers = parallel
+            parallel = True
+
         if out is None:
             data = np.empty(self.signal.data.shape, dtype='float')
             data.fill(np.nan)
@@ -473,18 +489,21 @@ class BaseModel(list):
             signal = out
             data = signal.data
 
-        if parallel is True:
-            from os import cpu_count
-            parallel = cpu_count()
-        if not isinstance(parallel, int):
-            parallel = int(parallel)
-        if parallel < 2:
-            parallel = False
         if out_of_range_to_nan is True:
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
 
-        if parallel is False:
+        # We set this value to equal cpu_count, with a maximum
+        # of 32 cores, since the earlier default value was inappropriate
+        # for many-core machines.
+        if max_workers is None:
+            max_workers = min(32, os.cpu_count())
+
+        # Avoid any overhead of additional threads
+        if max_workers < 2:
+            parallel = False
+
+        if not parallel:
             self._as_signal_iter(component_list=component_list,
                                  show_progressbar=show_progressbar, data=data)
         else:
@@ -498,9 +517,9 @@ class BaseModel(list):
                 return self.as_signal(component_list=component_list,
                                       show_progressbar=show_progressbar,
                                       out=signal, parallel=False)
-            parallel = min(parallel, size / 2)
+            max_workers = min(max_workers, size / 2)
             splits = [len(sp) for sp in np.array_split(np.arange(size),
-                                                       parallel)]
+                                                       max_workers)]
             models = []
             data_slices = []
             slices = [slice(None), ] * len(nav_shape)
@@ -510,14 +529,16 @@ class BaseModel(list):
                 array_slices = self.signal._get_array_slices(tuple(slices),
                                                              True)
                 data_slices.append(data[array_slices])
+
             from concurrent.futures import ThreadPoolExecutor
-            with ThreadPoolExecutor(max_workers=parallel) as exe:
+            with ThreadPoolExecutor(max_workers=max_workers) as exe:
                 _map = exe.map(
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],
                         component_list=component_list,
                         show_progressbar=thing[2] + 1 if show_progressbar else False),
-                    zip(models, data_slices, range(int(parallel))))
+                    zip(models, data_slices, range(int(max_workers))))
+
             _ = next(_map)
 
         if out_of_range_to_nan is True:
@@ -525,7 +546,7 @@ class BaseModel(list):
 
         return signal
 
-    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
+    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def _as_signal_iter(self, component_list=None, show_progressbar=None,
                         data=None):
@@ -1646,7 +1667,6 @@ class BaseModel(list):
         component_list : list of hyperspy components, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
-
         only_current : bool, default False
             If True, will only change the parameter value at the current
             position in the model.
@@ -1700,7 +1720,7 @@ class BaseModel(list):
               component
             * _whitelist: a dictionary with keys used as references for saved
               attributes, for more information, see 
-              :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
         Examples

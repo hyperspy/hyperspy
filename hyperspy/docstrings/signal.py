@@ -1,4 +1,21 @@
 # -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 """Common docstring snippets for signal.
 
 """
@@ -51,11 +68,11 @@ SHOW_PROGRESSBAR_ARG = \
 
 PARALLEL_ARG = \
     """parallel : None or bool
-           If ``True``, perform computation in parallel using multiple cores. If
-           ``None``, the default from the preferences settings is used."""
+           If ``True``, perform computation in parallel using multithreading. If
+           ``None``, the default from the preferences settings is used. The number
+           of threads is controlled by the ``max_workers`` argument."""
 
-PARALLEL_INT_ARG = \
-    """parallel : None, bool, or int
-           If True, perform computation in parallel using multiple cores. If
-           int, use as many cores as specified. If None the default from
-           the preferences settings is used."""
+MAX_WORKERS_ARG = \
+    """max_workers : None or int
+           Maximum number of threads used when ``parallel=True``. If None, defaults
+           to ``min(32, os.cpu_count())``."""

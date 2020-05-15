@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,9 +21,11 @@ import logging
 from datetime import datetime, timedelta
 from dateutil import parser
 import pint
-from tifffile import imsave, TiffFile, TIFF
+from tifffile import imwrite, TiffFile, TIFF
+import tifffile
 import traits.api as t
 import numpy as np
+from distutils.version import LooseVersion
 
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
@@ -100,10 +102,11 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
                                          formatting='datetime')
         kwds['datetime'] = dt
 
-    imsave(filename, data,
-           software="hyperspy",
-           photometric=photometric,
-           **kwds)
+    imwrite(filename,
+            data,
+            software="hyperspy",
+            photometric=photometric,
+            **kwds)
 
 
 def file_reader(filename, record_by='image', force_read_resolution=False,
@@ -158,7 +161,11 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
             dtype = np.dtype({'names': names[:lastshape],
                               'formats': [dtype] * lastshape})
             shape = shape[:-1]
-        op = {key: tag.value for key, tag in tiff.pages[0].tags.items()}
+        if LooseVersion(tifffile.__version__) >= LooseVersion("2020.2.16"):
+            op = {tag.name: tag.value for tag in tiff.pages[0].tags}
+        else:
+            op = {key: tag.value for key, tag in tiff.pages[0].tags.items()}
+
         names = [axes_label_codes[axis] for axis in axes]
 
         _logger.debug('Tiff tags list: %s' % op)
@@ -250,7 +257,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     offsets = {axis: 0.0 for axis in axes_l}
     units = {axis: t.Undefined for axis in axes_l}
     intensity_axis = {}
-    
+
     if force_read_resolution and 'ResolutionUnit' in op \
             and 'XResolution' in op:
         res_unit_tag = op['ResolutionUnit']
@@ -262,13 +269,13 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                 for key in ['x', 'y']:
                     units[key] = 'µm'
                     scales[key] = scales[key] * 25400
-            elif res_unit_tag == TIFF.RESUNIT.CENTIMETER:  
+            elif res_unit_tag == TIFF.RESUNIT.CENTIMETER:
                 for key in ['x', 'y']:
                     units[key] = 'µm'
                     scales[key] = scales[key] * 10000
-    
+
         return scales, units, offsets, intensity_axis
-    
+
     # for files created with FEI, ZEISS or TVIPS (no DM or ImageJ metadata)
     if 'fei' in tiff.flags:
         _logger.debug("Reading FEI tif metadata")
@@ -312,7 +319,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                 op, factor=1e-2)
             units.update({'x': 'm', 'y': 'm'})
         return scales, units, offsets, intensity_axis
-    
+
     # for files containing DM metadata
     if '65003' in op:
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
@@ -339,7 +346,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
         intensity_axis['offset'] = op['65024']   # intensity offset
     if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
-    
+
     # for files containing ImageJ metadata
     if 'imagej' in tiff.flags:
         imagej_metadata = tiff.imagej_metadata
@@ -352,7 +359,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                 scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
             if 'spacing' in imagej_metadata:
                 scales['z'] = imagej_metadata['spacing']
-    
+
     return scales, units, offsets, intensity_axis
 
 
@@ -432,7 +439,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
         extratags.extend([(65005, 's', 3, units[0], False),  # z unit
                           (65008, 'd', 1, offsets[0], False),  # z origin
                           (65011, 'd', 1, float(scales[0]), False),  # z scale
-                          #(65014, 's', 3, units[0], False), # z unit full name
+                          # (65014, 's', 3, units[0], False), # z unit full name
                           (65017, 'i', 1, 1, False)])
     return extratags
 
@@ -535,7 +542,7 @@ mapping_fei = {
     ("General.time", lambda x: parser.parse(x).time().isoformat()),
     'fei_metadata.User.User':
     ("General.authors", None)
-    }
+}
 
 
 mapping_cz_sem = {
@@ -567,7 +574,7 @@ mapping_cz_sem = {
      lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='nA')),
     'CZ_SEM.dp_detector_type':
     ("Acquisition_instrument.SEM.Detector.detector_type",
-      lambda tup: _parse_tuple_Zeiss(tup)),
+     lambda tup: _parse_tuple_Zeiss(tup)),
     'CZ_SEM.sv_serial_number':
     ("Acquisition_instrument.SEM.microscope", _parse_tuple_Zeiss),
     'CZ_SEM.ap_date':
@@ -576,35 +583,35 @@ mapping_cz_sem = {
     ("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
     'CZ_SEM.sv_user_name':
     ("General.authors", _parse_tuple_Zeiss),
-    }
+}
 
 
 def get_tvips_mapping(mapped_magnification):
     mapping_tvips = {
-    'TVIPS.TemMagnification':
-    ("Acquisition_instrument.TEM.%s" % mapped_magnification, None),
-    'TVIPS.CameraType':
-    ("Acquisition_instrument.TEM.Detector.Camera.name", None),
-    'TVIPS.ExposureTime':
-    ("Acquisition_instrument.TEM.Detector.Camera.exposure",
-     lambda x: float(x) * 1e-3),
-    'TVIPS.TemHighTension':
-    ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
-    'TVIPS.Comment':
-    ("General.notes", _parse_string),
-    'TVIPS.Date':
-    ("General.date", _parse_tvips_date),
-    'TVIPS.Time':
-    ("General.time", _parse_tvips_time),
-    'TVIPS.TemStagePosition': 
-    ("Acquisition_instrument.TEM.Stage", lambda stage: {
-        'x': stage[0] * 1E3,
-        'y': stage[1] * 1E3,
-        'z': stage[2] * 1E3,
-        'tilt_alpha': stage[3],
-        'tilt_beta': stage[4]
+        'TVIPS.TemMagnification':
+        ("Acquisition_instrument.TEM.%s" % mapped_magnification, None),
+        'TVIPS.CameraType':
+        ("Acquisition_instrument.TEM.Detector.Camera.name", None),
+        'TVIPS.ExposureTime':
+        ("Acquisition_instrument.TEM.Detector.Camera.exposure",
+         lambda x: float(x) * 1e-3),
+        'TVIPS.TemHighTension':
+        ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
+        'TVIPS.Comment':
+        ("General.notes", _parse_string),
+        'TVIPS.Date':
+        ("General.date", _parse_tvips_date),
+        'TVIPS.Time':
+        ("General.time", _parse_tvips_time),
+        'TVIPS.TemStagePosition':
+        ("Acquisition_instrument.TEM.Stage", lambda stage: {
+            'x': stage[0] * 1E3,
+            'y': stage[1] * 1E3,
+            'z': stage[2] * 1E3,
+            'tilt_alpha': stage[3],
+            'tilt_beta': stage[4]
         }
-    )
+        )
     }
     return mapping_tvips
 
@@ -612,10 +619,10 @@ def get_tvips_mapping(mapped_magnification):
 def get_metadata_mapping(tiff_page, op):
     if tiff_page.is_fei:
         return mapping_fei
-    
+
     elif tiff_page.is_sem:
         return mapping_cz_sem
-    
+
     elif tiff_page.is_tvips:
         try:
             if op['TVIPS']['TemMode'] == 3:

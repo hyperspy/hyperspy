@@ -1,6 +1,22 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import pytest
 
 from hyperspy.misc.test_utils import assert_warns
 from hyperspy.misc import utils
@@ -249,8 +265,10 @@ class TestMaps:
 
     def test_lines_intensity(self):
         s = self.s
+
         m = s.create_model()
-        m.multifit()    # m.fit() is just too inaccurate
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(iterpath='serpentine')
         ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
         for x in range(self.mix.shape[0]):
@@ -264,3 +282,13 @@ class TestMaps:
             s.compute()
         for fitted, expected in zip(m.get_lines_intensity(xray_lines), w):
             np.testing.assert_allclose(fitted, expected, atol=1e-7)
+
+        m_single_fit = s.create_model()
+        # make sure we fit the navigation indices (0, 0) and don't rely on
+        # the current index of the axes_manager.
+        m_single_fit.inav[0, 0].fit()
+
+        for fitted, expected in zip(
+                m.inav[0, 0].get_lines_intensity(xray_lines),
+                m_single_fit.inav[0, 0].get_lines_intensity(xray_lines)):
+            np.testing.assert_allclose(fitted, expected, atol=1e-7)  

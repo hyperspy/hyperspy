@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import math
 import numpy as np
 from functools import reduce
@@ -112,3 +130,41 @@ def hann_window_nth_order(m, order):
     return m / (order * 2 * np.pi) * sum([(-1) ** i / i *
                                           np.sin(i * sin_arg) * (np.cos(i * cos_arg) - 1)
                                           for i in range(1, order + 1)])
+
+
+def optimal_fft_size(target, real=False):
+    """Wrapper around scipy function next_fast_len() for calculating optimal FFT padding.
+
+    scipy.fft was only added in 1.4.0, so we fall back to scipy.fftpack
+    if it is not available. The main difference is that next_fast_len()
+    does not take a second argument in the older implementation.
+
+    Parameters
+    ----------
+    target : int
+        Length to start searching from. Must be a positive integer.
+    real : bool, optional
+        True if the FFT involves real input or output, only available
+        for scipy > 1.4.0
+
+    Returns
+    -------
+    int
+        Optimal FFT size.
+
+    """
+
+    try:
+        from scipy.fft import next_fast_len
+
+        support_real = True
+
+    except ImportError:
+        from scipy.fftpack import next_fast_len
+
+        support_real = False
+
+    if support_real:
+        return next_fast_len(target, real)
+    else:
+        return next_fast_len(target)

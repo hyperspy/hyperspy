@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -518,7 +518,8 @@ class BaseDataAxis(t.HasTraits):
 
         Raises
         ------
-        ValueError if any value is out of the axis limits.
+        ValueError
+            If any value is out of the axis limits.
 
         """
         if value is None:
@@ -564,6 +565,7 @@ class BaseDataAxis(t.HasTraits):
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised.
+
         Returns
         -------
         A boolean indicating whether any changes were made.
@@ -1291,7 +1293,8 @@ class AxesManager(t.HasTraits):
 
         Raises
         ------
-        ValueError if the Axis is not present.
+        ValueError
+            If the Axis is not present.
 
         """
         axis = self._axes_getter(axis)
@@ -1608,8 +1611,8 @@ class AxesManager(t.HasTraits):
 
         Raises
         ------
-        ValueError if value if greater than the number of axes or
-        is negative
+        ValueError
+            If value if greater than the number of axes or is negative.
 
         """
         if len(self._axes) == 0:

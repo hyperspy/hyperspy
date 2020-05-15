@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 """Registry of user interface widgets.
 
 Format {"tool_key" : {"toolkit" : <function(obj, display, \*\*kwargs)>}}
@@ -34,26 +52,24 @@ if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
 
 def _toolkits_to_string(toolkits):
     if isinstance(toolkits, str):
-        return "{} toolkit".format(toolkits)
+        return f"{toolkits} toolkit"
     else:
         toolkits = tuple(toolkits)
         if len(toolkits) == 1:
-            return "{} toolkit".format(toolkits[0])
+            return f"{toolkits[0]} toolkit"
 
         elif len(toolkits) == 2:
             return " and ".join(toolkits) + " toolkits"
         else:  # > 2
             txt = ", ".join(toolkits[:-1])
-            return txt + " and {}".format(toolkits[-1]) + " toolkits"
+            return f"{txt} and {toolkits[-1]} toolkits"
 
 
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     if not TOOLKIT_REGISTRY:
         raise ImportError(
             "No toolkit registered. Install hyperspy_gui_ipywidgets or "
-            "hyperspy_gui_traitsui GUI elements. If hyperspy_gui_traitsui"
-            "is installed, initialize a toolkit supported by traitsui "
-            "before importing HyperSpy."
+            "hyperspy_gui_traitsui GUI elements."
         )
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
@@ -64,9 +80,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             if tk in TOOLKIT_REGISTRY:
                 toolkits.add(tk)
             else:
-                raise ValueError(
-                    "{} is not a registered toolkit.".format(tk)
-                )
+                raise ValueError(f"{tk} is not a registered toolkit.")
     elif toolkit is None:
         toolkits = set()
         available_disabled_toolkits = set()
@@ -86,11 +100,11 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             them_or_it = ("it" if len(available_disabled_toolkits) == 1
                           else "them")
             raise ValueError(
-                "No toolkit available. The {} {} installed but "
-                "disabled in `preferences`. Enable {} in `preferences` or "
-                "manually select a toolkit with the `toolkit` argument.".format(
-                    _toolkits_to_string(available_disabled_toolkits),
-                    is_or_are, them_or_it)
+                "No toolkit available. The "
+                f"{_toolkits_to_string(available_disabled_toolkits)} "
+                f"{is_or_are} installed but disabled in `preferences`. "
+                f"Enable {them_or_it} in `preferences` or "
+                "manually select a toolkit with the `toolkit` argument."
             )
 
     else:
@@ -99,15 +113,16 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     if toolkey not in UI_REGISTRY or not UI_REGISTRY[toolkey]:
         propose = KNOWN_TOOLKITS - TOOLKIT_REGISTRY
         if propose:
-            propose = ["hyperspy_gui_{}".format(tk) for tk in propose]
+            propose = [f"hyperspy_gui_{tk}" for tk in propose]
             if len(propose) > 1:
                 propose_ = ", ".join(propose[:-1])
-                propose = propose_ + " and/or {}".format(propose[-1])
+                propose = f"{propose_} and/or {propose[-1]}"
             else:
                 propose = propose.pop()
         raise NotImplementedError(
             "There is no user interface registered for this feature."
-            "Try installing {}.".format(propose))
+            f"Try installing {propose}."
+        )
     if not display:
         widgets = {}
     available_toolkits = set()
@@ -135,11 +150,10 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     if not used_toolkits and available_toolkits:
         is_or_are = "is" if len(toolkits) == 1 else "are"
         raise NotImplementedError(
-            "The {} {} not available for this functionality,try with "
-            "the {}.".format(
-                _toolkits_to_string(toolkits),
-                is_or_are,
-                _toolkits_to_string(available_toolkits)))
+            f"The {_toolkits_to_string(toolkits)} {is_or_are} not available "
+            "for this functionality, try with the "
+            f"{_toolkits_to_string(available_toolkits)}."
+        )
     if not display:
         return widgets
 

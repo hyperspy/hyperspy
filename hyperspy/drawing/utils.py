@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -54,7 +54,8 @@ def contrast_stretching(data, saturated_pixels):
 
     Raises
     ------
-    ValueError if the value of `saturated_pixels` is out of the valid range.
+    ValueError
+        If the value of `saturated_pixels` is out of the valid range.
 
     """
     # Sanity check
@@ -481,11 +482,11 @@ def plot_images(images,
         image.
         If any signal shape is not suitable, a ValueError will be raised.
     cmap : matplotlib colormap, list, or ``'mpl_colors'``, *optional*
-        The colormap used for the images, by default read from ``pyplot``.
-        A list of colormaps can also be provided, and the images will
-        cycle through them. Optionally, the value ``'mpl_colors'`` will
-        cause the cmap to loop through the default ``matplotlib``
-        colors (to match with the default output of the
+        The colormap used for the images, by default use the setting
+        ``color map signal`` from the Plot preferences. A list of colormaps can
+        also be provided, and the images will cycle through them. Optionally,
+        the value ``'mpl_colors'`` will cause the cmap to loop through the default 
+        ``matplotlib`` colors (to match with the default output of the
         :py:func:`~.drawing.utils.plot_spectra` method.
         Note: if using more than one colormap, using the ``'single'``
         option for ``colorbar`` is disallowed.
@@ -652,7 +653,7 @@ def plot_images(images,
 
     # If no cmap given, get default colormap from pyplot:
     if cmap is None:
-        cmap = [plt.get_cmap().name]
+        cmap = [preferences.Plot.cmap_signal]
     elif cmap == 'mpl_colors':
         for n_color, c in enumerate(mpl.rcParams['axes.prop_cycle']):
             make_cmap(colors=['#000000', c['color']],
