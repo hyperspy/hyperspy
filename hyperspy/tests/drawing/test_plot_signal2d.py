@@ -251,7 +251,7 @@ class TestPlotNonLinearAxis:
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_non_linear_sig(self):
         s2 = self.s.T
-        s2.plot()
+        s2.plot(navigator=None)
         return s2._plot.signal_plot.figure
 
 
