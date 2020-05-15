@@ -311,6 +311,7 @@ class TestBSS2D:
 
         mask_sig = s._get_signal_signal(dtype="bool")
         mask_sig.unfold()
+        mask_sig.data[:] = False
         mask_sig.isig[5] = True
         mask_sig.fold()
 
@@ -356,8 +357,9 @@ class TestBSS2D:
             3, diff_order=0, fun="exp", on_loadings=False,
             factors=factors.derivative(axis="x", order=1),
             mask=self.mask_sig)
-        assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                            atol=1e-6)
+        np.testing.assert_allclose(
+            matrix, self.s.learning_results.unmixing_matrix, atol=1e-4
+        )
 
     def test_diff_axes_string_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].derivative(
