@@ -123,7 +123,6 @@ class TestDatasetName:
     def setup_method(self):
         tmpdir = tempfile.TemporaryDirectory()
         hdf5_dataset_path = os.path.join(tmpdir.name, "test_dataset.emd")
-        hdf5_dataset_path = "test_dataset.emd"
         f = h5py.File(hdf5_dataset_path, mode="w")
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
