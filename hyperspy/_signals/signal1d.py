@@ -544,8 +544,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 **kwargs)
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             return dat
-        self._map_iterate(interpolating_function, ragged=False,
-                          parallel=parallel, show_progressbar=show_progressbar, max_workers=max_workers)
+        self._map_iterate(interpolating_function,
+                          ragged=False,
+                          parallel=parallel,
+                          show_progressbar=show_progressbar,
+                          max_workers=max_workers)
         self.events.data_changed.trigger(obj=self)
 
     interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -1378,9 +1381,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self.events.data_changed.trigger(obj=self)
         return channels
 
-    def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
-                            subchannel=True, medfilt_radius=5, maxpeakn=30000,
-                            peakgroup=10, parallel=None):
+    def find_peaks1D_ohaver(self, xdim=None,
+                            slope_thresh=0,
+                            amp_thresh=None,
+                            subchannel=True,
+                            medfilt_radius=5,
+                            maxpeakn=30000,
+                            peakgroup=10,
+                            parallel=None,
+                            max_workers=None):
         """Find positive peaks along a 1D Signal. It detects peaks by looking
         for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
