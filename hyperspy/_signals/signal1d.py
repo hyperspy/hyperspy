@@ -1199,7 +1199,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Exponential':
                 background_estimator = components1d.Exponential()
-            elif background_type in ('SkewNormal', 'Skew Normal'):
+            elif background_type in ('SkewNormal', 'Skew Normal', 'Skew normal'):
                 background_estimator = components1d.SkewNormal()
             elif background_type == 'Voigt':
                 with ignore_warning(message="The API of the `Voigt` component"):

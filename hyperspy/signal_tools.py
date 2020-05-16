@@ -944,9 +944,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Polynomial',
         'Power law',
         'Exponential',
-        'SkewNormal',
+        'Skew normal',
         'Voigt',
-        default='Power Law')
+        default='Power law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
@@ -976,6 +976,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         # For the GUIs, we display 'Power law' 
         if background_type in ['Power Law', 'PowerLaw']:
             background_type = 'Power law'
+        if background_type in ['Skew Normal', 'SkewNormal']:
+            background_type = 'Skew normal'
         self.background_type = background_type
         self.set_background_estimator()
         self.fast = fast
@@ -1014,7 +1016,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         elif self.background_type == 'Exponential':
             self.background_estimator = components1d.Exponential()
             self.bg_line_range = 'from_left_range'
-        elif self.background_type == 'SkewNormal':
+        elif self.background_type == 'Skew normal':
             self.background_estimator = components1d.SkewNormal()
             self.bg_line_range = 'full'
         elif self.background_type == 'Voigt':
@@ -1121,6 +1123,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         else:
             plot = False
         background_type = ("PowerLaw" if self.background_type == "Power law"
+                           else self.background_type)
+        background_type = ("SkewNormal" if self.background_type == "Skew normal"
                            else self.background_type)
         new_spectra = self.signal.remove_background(
             signal_range=(self.ss_left_value, self.ss_right_value),

@@ -261,7 +261,7 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('background_type',
                          ['Gaussian', 'Lorentzian', 'Offset', 'Polynomial',
                           'PowerLaw', 'Power Law', 'Power law', 
-                          'SkewNormal', 'Voigt'])
+                          'SkewNormal', 'Skew Normal', 'Skew normal', 'Voigt'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,
