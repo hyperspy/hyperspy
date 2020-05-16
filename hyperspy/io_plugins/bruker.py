@@ -299,10 +299,12 @@ class SFS_reader(object):
     This class can be used stand alone or inherited in construction of
     file readers using sfs technolgy.
 
-    Attributes:
+    Attributes
+    ----------
     filename
 
-    Methods:
+    Methods
+    -------
     get_file
     """
 
@@ -331,7 +333,8 @@ class SFS_reader(object):
         """Setup the virtual file system tree represented as python dictionary
         with values populated with SFSTreeItem instances
 
-        See also:
+        See also
+        --------
         SFSTreeItem
         """
         with open(self.filename, 'rb') as fn:
@@ -420,21 +423,27 @@ class SFS_reader(object):
         """Return the SFSTreeItem (aka internal file) object from
         sfs container.
 
-        Arguments:
-        path -- internal file path in sfs file tree. Path accepts only
+        Parameters
+        ----------
+        path : str
+            Internal file path in sfs file tree. Path accepts only
             standard - forward slash for directories.
 
-        Returns:
-        object (SFSTreeItem), which can be read into byte stream, in
-        chunks or whole using objects methods.
+        Returns
+        -------
+        object : SFSTreeItem
+            SFSTreeItem, which can be read into byte stream, in chunks or 
+            whole using objects methods.
 
-        Example:
+        Example
+        -------
         to get "file" object 'kitten.png' in folder 'catz' which
         resides in root directory of sfs, you would use:
 
         >>> instance_of_SFSReader.get_file('catz/kitten.png')
 
-        See also:
+        See also
+        --------
         SFSTreeItem
         """
         item = self.vfs
@@ -489,9 +498,11 @@ class EDXSpectrum(object):
         Wrap the objectified bruker EDS spectrum xml part
         to the python object, leaving all the xml and bruker clutter behind.
 
-        Arguments:
-        spectrum -- etree xml object, where spectrum.attrib['Type'] should
-            be 'TRTSpectrum'
+        Parameters
+        ----------
+        spectrum : etree xml object 
+            etree xml object, where spectrum.attrib['Type'] should
+            be 'TRTSpectrum'.
         """
         TRTHeader = spectrum.find('./TRTHeaderedClass')
         hardware_header = TRTHeader.find(
@@ -738,14 +749,16 @@ class HyperHeader(object):
             self.spectra_data[i] = EDXSpectrum(spec_node)
 
     def estimate_map_channels(self, index=0):
-        """estimate minimal size of energy axis so any spectra from any pixel
+        """Estimate minimal size of energy axis so any spectra from any pixel
         would not be truncated.
 
-        Arguments:
-        index -- index of the map if multiply hypermaps are present
-        in the same bcf.
+        Parameters
+        ----------
+        index : int
+            Index of the map if multiply hypermaps are present in the same bcf.
 
-        Returns:
+        Returns
+        -------
         optimal channel number
         """
         bruker_hv_range = self.spectra_data[index].amplification / 1000
@@ -755,26 +768,32 @@ class HyperHeader(object):
             return self.spectra_data[index].energy_to_channel(self.hv)
 
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
-        """estimate minimal dtype of array using cumulative spectra
+        """Estimate minimal dtype of array using cumulative spectra
         of the all pixels so that no data would be truncated.
-
-        Arguments:
-        index -- index of the hypermap if multiply hypermaps are
-          present in the same bcf. (default 0)
-        downsample -- downsample factor (should be integer; default 1)
-        for_numpy -- False produce unsigned, True signed (or unsigned) types:
-          if hypermap will be loaded using the pure python
-          function where numpy's inplace integer addition will be used --
-          the dtype should be signed; if cython implementation will
-          be used (default), then any returned dtypes can be safely
-          unsigned. (default False)
-
-        Returns:
-        numpy dtype large enought to use in final hypermap numpy array.
 
         The method estimates the value from sum eds spectra, dividing
         the maximum  energy pulse value from raster x and y and to be on the
         safe side multiplying by 2.
+
+        Parameters
+        ----------
+        index : int
+            Index of the hypermap if multiply hypermaps are present in the 
+            same bcf. (default 0)
+        downsample : int
+            Downsample factor. (default 1)
+        for_numpy : bool
+            If False produce unsigned, otherwise signed types: if hypermap 
+            will be loaded using the pure python function where numpy's inplace
+            integer addition will be used, the dtype should be signed;
+            If cython implementation will be used (default), then any returned 
+            dtypes can be safely unsigned. (default False)
+
+        Returns
+        -------
+        depth : numpy.dtype
+            numpy dtype large enought to use in final hypermap numpy array.
+
         """
         sum_eds = self.spectra_data[index].data
         # the most intensive peak is Bruker reference peak at 0kV:
@@ -903,19 +922,27 @@ class BCF_reader(SFS_reader):
         cython/memoryview/numpy implimentation if compilied and present
         (fast) is used.
 
-        Arguments:
-        index -- the index of hypermap in bcf if there is more than one
+        Parameters
+        ----------
+        index : None or int
+            The index of hypermap in bcf if there is more than one
             hyper map in file.
-        downsample -- downsampling factor (integer). Diferently than
-            block_reduce from skimage.measure, the parser populates
-            reduced array by suming results of pixels, thus having lower
-            memory requiriments. (default 1)
-        cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
-          size of array. (default None)
-        lazy -- return dask.array (True) or numpy.array (False) (default False)
+        downsample : int
+            Downsampling factor. Differently than block_reduce from 
+            skimage.measure, the parser populates reduced array by suming 
+            results of pixels, thus having lower memory requiriments. Default 
+            is 1.
+        cutoff_at_kV : None or float
+            Value in keV to truncate the array at. Helps reducing size of
+            array. Default is None.
+        lazy : bool
+            It True, returns dask.array otherwise a numpy.array. Default is 
+            False.
 
-        Returns:
-        numpy or dask array of bruker hypermap, with (y,x,E) shape.
+        Returns
+        -------
+        result : numpy.ndarray or dask.array.array
+            Bruker hypermap, with (y,x,E) shape.
         """
         if index is None:
             index = self.def_index
@@ -1024,8 +1051,8 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
     The method is only meant to be used if for some
     reason c (generated with cython) version of the parser is not compiled.
 
-    Arguments:
-    ---------
+    Parameters
+    ----------
     virtual_file -- virtual file handle returned by SFS_reader instance
         or by object inheriting it (e.g. BCF_reader instance)
     shape -- numpy shape
@@ -1036,8 +1063,8 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
     to be properly calculated otherwise wrong output or segfault
     is expected
 
-    Returns:
-    ---------
+    Return
+    ------
     numpy array of bruker hypermap, with (y, x, E) shape.
     """
     iter_data, size_chnk = virtual_file.get_iter_and_properties()[:2]
@@ -1198,21 +1225,27 @@ def bcf_reader(filename, select_type=None, index=None,  # noqa
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
 
-    Keyword arguments:
-    select_type -- One of: spectrum_image, image. If none specified, then function
-      loads everything, else if specified, loads either just sem imagery,
-      or just hyper spectral mapping data (default None).
-    index -- index of dataset in bcf v2 can be None integer and 'all'
-      (default None); None will select first available mapping if more than one.
-      'all' will return all maps if more than one present;
-      integer will return only selected map.
-    downsample -- the downsample ratio of hyperspectral array (downsampling
-      height and width only), can be integer from 1 to inf, where '1' means
-      no downsampling will be applied (default 1).
-    cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
-       crop or enlarge energy range at max values. (default None)
-    instrument -- str, either 'TEM' or 'SEM'. Default is None.
-      """
+    Parameters
+    ----------
+    select_type : str or None
+        One of: spectrum_image, image. If none specified, then function
+        loads everything, else if specified, loads either just sem imagery,
+        or just hyper spectral mapping data (default None).
+    index : int, None or str
+        Index of dataset in bcf v2 can be None integer and 'all'
+        (default None); None will select first available mapping if more than 
+        one. 'all' will return all maps if more than one present;
+        integer will return only selected map.
+    downsample : int
+        the downsample ratio of hyperspectral array (downsampling
+        height and width only), can be integer from 1 to inf, where '1' means
+        no downsampling will be applied. (default 1)
+    cutoff_at_kV : int, float or None
+        if set (can be int of float >= 0) can be used either, to
+        crop or enlarge energy range at max values. (default None)
+    instrument : str or None
+        Can be either 'TEM' or 'SEM'. Default is None.
+    """
 
     # objectified bcf file:
     obj_bcf = BCF_reader(filename, instrument=instrument)
