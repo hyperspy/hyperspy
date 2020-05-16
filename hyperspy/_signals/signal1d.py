@@ -49,12 +49,10 @@ from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.signal_tools import IntegrateArea
-from hyperspy import components1d
+from hyperspy.signal_tools import IntegrateArea, _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
-from hyperspy.misc.test_utils import ignore_warning
 
 
 _logger = logging.getLogger(__name__)
@@ -1234,32 +1232,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             if return_model:
                 return model
         else:
-            if background_type == 'Doniach':
-                background_estimator = components1d.Doniach()
-            elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
-            elif background_type == 'Lorentzian':
-                background_estimator = components1d.Lorentzian()
-            elif background_type == 'Offset':
-                background_estimator = components1d.Offset()
-            elif background_type == 'Polynomial':
-                with ignore_warning(message="The API of the `Polynomial` component"):
-                    background_estimator = components1d.Polynomial(
-                        polynomial_order, legacy=False)
-            elif background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Exponential':
-                background_estimator = components1d.Exponential()
-            elif background_type in ('SkewNormal', 'Skew Normal'):
-                background_estimator = components1d.SkewNormal()
-            elif background_type in ('SplitVoigt', 'Split Voigt'):
-                background_estimator = components1d.SplitVoigt()
-            elif background_type == 'Voigt':
-                with ignore_warning(message="The API of the `Voigt` component"):
-                    background_estimator = components1d.Voigt(legacy=False)
-            else:
-                raise ValueError(f"Background type: {background_type} not "
-                                 "recognized.")
+            background_estimator = _get_background_estimator(
+                background_type, polynomial_order)[0]
             result = self._remove_background_cli(
                 signal_range=signal_range,
                 background_estimator=background_estimator,

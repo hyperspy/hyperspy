@@ -1011,39 +1011,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.model is not None:
             for component in self.model:
                 self.model.remove(component)
-        if self.background_type == 'Doniach':
-            self.background_estimator = components1d.Doniach()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Gaussian':
-            self.background_estimator = components1d.Gaussian()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Lorentzian':
-            self.background_estimator = components1d.Lorentzian()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Offset':
-            self.background_estimator = components1d.Offset()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Polynomial':
-            with ignore_warning(message="The API of the `Polynomial` component"):
-                self.background_estimator = components1d.Polynomial(
-                    self.polynomial_order, legacy=False)
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Power Law':
-            self.background_estimator = components1d.PowerLaw()
-            self.bg_line_range = 'from_left_range'
-        elif self.background_type == 'Exponential':
-            self.background_estimator = components1d.Exponential()
-            self.bg_line_range = 'from_left_range'
-        elif self.background_type == 'SkewNormal':
-            self.background_estimator = components1d.SkewNormal()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'SplitVoigt':
-            self.background_estimator = components1d.SplitVoigt()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Voigt':
-            with ignore_warning(message="The API of the `Voigt` component"):
-                self.background_estimator = components1d.Voigt(legacy=False)
-            self.bg_line_range = 'full'
+        self.background_estimator, self.bg_line_range = _get_background_estimator(
+            self.background_type, self.polynomial_order)
         if self.model is not None and len(self.model) == 0:
             self.model.append(self.background_estimator)
 
@@ -1176,6 +1145,70 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         axes_manager = self.signal.axes_manager
         if self._fit in axes_manager.events.indices_changed.connected:
             axes_manager.events.indices_changed.disconnect(self._fit)
+
+
+def _get_background_estimator(background_type, polynomial_order=1):
+    """
+    Assign 1D component to specified background type.
+
+    Parameters
+    ----------
+    background_type : str
+        The name of the component to model the background.
+    polynomial_order : int, optional
+        The polynomial order used in the polynomial component
+
+    Raises
+    ------
+    ValueError
+        When the background type is not a valid string.
+
+    Returns
+    -------
+    background_estimator : Component1D
+        The component mdeling the background.
+    bg_line_range : 'full' or 'from_left_range'
+        The range to draw the component (used in the BackgroundRemoval tool)
+
+    """
+    background_type = background_type.lower().replace(' ', '')
+    if background_type == 'doniach':
+        background_estimator = components1d.Doniach()
+        bg_line_range = 'full'
+    elif background_type == 'gaussian':
+        background_estimator = components1d.Gaussian()
+        bg_line_range = 'full'
+    elif background_type == 'lorentzian':
+        background_estimator = components1d.Lorentzian()
+        bg_line_range = 'full'
+    elif background_type == 'offset':
+        background_estimator = components1d.Offset()
+        bg_line_range = 'full'
+    elif background_type == 'polynomial':
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            background_estimator = components1d.Polynomial(
+                 order=polynomial_order, legacy=False)
+        bg_line_range = 'full'
+    elif background_type == 'powerlaw':
+        background_estimator = components1d.PowerLaw()
+        bg_line_range = 'from_left_range'
+    elif background_type == 'exponential':
+        background_estimator = components1d.Exponential()
+        bg_line_range = 'from_left_range'
+    elif background_type == 'skewnormal':
+        background_estimator = components1d.SkewNormal()
+        bg_line_range = 'full'
+    elif background_type == 'splitvoigt':
+        background_estimator = components1d.SplitVoigt()
+        bg_line_range = 'full'
+    elif background_type == 'voigt':
+        with ignore_warning(message="The API of the `Voigt` component"):
+            background_estimator = components1d.Voigt(legacy=False)
+        bg_line_range = 'full'
+    else:
+        raise ValueError(f"Background type '{background_type}' not recognized.")
+
+    return background_estimator, bg_line_range
 
 
 SPIKES_REMOVAL_INSTRUCTIONS = (
