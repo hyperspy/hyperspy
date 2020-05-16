@@ -22,7 +22,12 @@ import numpy.ma as ma
 import dask.array as da
 import scipy as sp
 import logging
-from skimage.feature.register_translation import _upsampled_dft
+import warnings
+try:
+    # For scikit-image >= 0.17.0
+    from skimage.registration._phase_cross_correlation import _upsampled_dft
+except ModuleNotFoundError:
+    from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -32,7 +37,7 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -374,13 +379,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
                          dtype='float',
                          show_progressbar=None,
                          sub_pixel_factor=1):
-        """Estimate the shifts in a image using phase correlation
+        """Estimate the shifts in an image using phase correlation.
 
         This method can only estimate the shift by comparing
-        bidimensional features that should not change position
+        bi-dimensional features that should not change position
         between frames. To decrease the memory usage, the time of
         computation and the accuracy of the results it is convenient
-        to select a region of interest by setting the roi keyword.
+        to select a region of interest by setting the ``roi`` argument.
 
         Parameters
         ----------
@@ -405,12 +410,15 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Define the region of interest. If int(float) the position
             is given axis index(value). Note that ROIs can be used
             in place of a tuple.
-        sobel : bool
-            apply a sobel filter for edge enhancement
-        medfilter :  bool
-            apply a median filter for noise reduction
-        hanning : bool
-            Apply a 2d hanning filter
+        normalize_corr : bool, default False
+            If True, use phase correlation to align the images, otherwise
+            use cross correlation.
+        sobel : bool, default True
+            Apply a Sobel filter for edge enhancement
+        medfilter : bool, default True
+            Apply a median filter for noise reduction
+        hanning : bool, default True
+            Apply a 2D hanning filter
         plot : bool or 'reuse'
             If True plots the images after applying the filters and
             the phase correlation. If 'reuse', it will also plot the images,
@@ -432,14 +440,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Notes
         -----
         The statistical analysis approach to the translation estimation
-        when using reference='stat' roughly follows [*]_ . If you use
-        it please cite their article.
+        when using ``reference='stat'`` roughly follows [Schaffer2004]_.
+        If you use it please cite their article.
 
         References
         ----------
-        .. [*] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
+        .. [Schaffer2004] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
            “Automated Spatial Drift Correction for EFTEM Image Series.”
            Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+
+        See Also
+        --------
+        * :py:meth:`~._signals.signal2d.Signal2D.align2D`
 
         """
         if show_progressbar is None:
@@ -556,27 +568,25 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     estimate_shift2D.__doc__ %= SHOW_PROGRESSBAR_ARG
 
-    def align2D(self, crop=True, fill_value=np.nan, shifts=None, expand=False,
-                roi=None,
-                sobel=True,
-                medfilter=True,
-                hanning=True,
-                plot=False,
-                normalize_corr=False,
-                reference='current',
-                dtype='float',
-                correlation_threshold=None,
-                chunk_size=30,
-                interpolation_order=1,
-                sub_pixel_factor=1,
-                show_progressbar=None,
-                parallel=None):
-        """Align the images in place using user provided shifts or by
-        estimating the shifts.
+    def align2D(
+        self,
+        crop=True,
+        fill_value=np.nan,
+        shifts=None,
+        expand=False,
+        interpolation_order=1,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        **kwargs,
+    ):
+        """Align the images in-place using :py:func:`scipy.ndimage.shift`.
 
-        Please, see `estimate_shift2D` docstring for details
-        on the rest of the parameters not documented in the following
-        section
+        The images can be aligned using either user-provided shifts or
+        by first estimating the shifts.
+
+        See :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+        for more details on estimating image shifts.
 
         Parameters
         ----------
@@ -588,7 +598,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Default is nan.
         shifts : None or list of tuples
             If None the shifts are estimated using
-            `estimate_shift2D`.
+            :py:meth:`~._signals.signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -596,62 +606,58 @@ class Signal2D(BaseSignal, CommonSignal2D):
             The order of the spline interpolation. Default is 1, linear
             interpolation.
         %s
+        %s
+        %s
+        **kwargs :
+            Keyword arguments passed to :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
 
         Returns
         -------
         shifts : np.array
-            The shifts are returned only if `shifts` is None
+            The estimated shifts are returned only if ``shifts`` is None
 
-        Notes
-        -----
-        The statistical analysis approach to the translation estimation
-        when using reference='stat' roughly follows [*]_ . If you use
-        it please cite their article.
-
-        References
-        ----------
-        .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
-           “Automated Spatial Drift Correction for EFTEM Image Series.” 
-           Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+        See Also
+        --------
+        * :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
 
         """
         self._check_signal_dimension_equals_two()
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
+
+        return_shifts = False
+
         if shifts is None:
-            shifts = self.estimate_shift2D(
-                roi=roi,
-                sobel=sobel,
-                medfilter=medfilter,
-                hanning=hanning,
-                plot=plot,
-                reference=reference,
-                dtype=dtype,
-                correlation_threshold=correlation_threshold,
-                normalize_corr=normalize_corr,
-                chunk_size=chunk_size,
-                sub_pixel_factor=sub_pixel_factor,
-                show_progressbar=show_progressbar)
+            shifts = self.estimate_shift2D(**kwargs)
             return_shifts = True
-        else:
-            return_shifts = False
-        if not np.any(shifts):
-            # The shift array if filled with zeros, nothing to do.
-            return
+
+            if not np.any(shifts):
+                warnings.warn(
+                    "The estimated shifts are all zero, suggesting "
+                    "the images are already aligned",
+                    UserWarning,
+                )
+                return shifts
+
+        elif not np.any(shifts):
+            warnings.warn(
+                "The provided shifts are all zero, no alignment done",
+                UserWarning,
+            )
+            return None
 
         if expand:
             # Expand to fit all valid data
-            left, right = (int(np.floor(shifts[:, 1].min())) if
-                           shifts[:, 1].min() < 0 else 0,
-                           int(np.ceil(shifts[:, 1].max())) if
-                           shifts[:, 1].max() > 0 else 0)
-            top, bottom = (int(np.floor(shifts[:, 0].min())) if
-                           shifts[:, 0].min() < 0 else 0,
-                           int(np.ceil(shifts[:, 0].max())) if
-                           shifts[:, 0].max() > 0 else 0)
+            left, right = (
+                int(np.floor(shifts[:, 1].min())) if shifts[:, 1].min() < 0 else 0,
+                int(np.ceil(shifts[:, 1].max())) if shifts[:, 1].max() > 0 else 0,
+            )
+            top, bottom = (
+                int(np.floor(shifts[:, 0].min())) if shifts[:, 0].min() < 0 else 0,
+                int(np.ceil(shifts[:, 0].max())) if shifts[:, 0].max() > 0 else 0,
+            )
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
             padding = []
+
             for i in range(self.data.ndim):
                 if i == xaxis.index_in_array:
                     padding.append((right, -left))
@@ -659,8 +665,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
                     padding.append((bottom, -top))
                 else:
                     padding.append((0, 0))
-            self.data = np.pad(self.data, padding, mode='constant',
-                               constant_values=(fill_value,))
+
+            self.data = np.pad(
+                self.data, padding, mode="constant", constant_values=(fill_value,)
+            )
+
             if left < 0:
                 xaxis.offset += left * xaxis.scale
             if np.any((left < 0, right > 0)):
@@ -670,32 +679,40 @@ class Signal2D(BaseSignal, CommonSignal2D):
             if np.any((top < 0, bottom > 0)):
                 yaxis.size += bottom - top
 
-        # Translate with sub-pixel precision if necesary
-        self._map_iterate(shift_image, iterating_kwargs=(('shift', -shifts),),
-                          fill_value=fill_value,
-                          ragged=False,
-                          parallel=parallel,
-                          interpolation_order=interpolation_order,
-                          show_progressbar=show_progressbar)
+        # Translate, with sub-pixel precision if necesary,
+        # note that we operate in-place here
+        self._map_iterate(
+            shift_image,
+            iterating_kwargs=(("shift", -shifts),),
+            show_progressbar=show_progressbar,
+            parallel=parallel,
+            max_workers=max_workers,
+            ragged=False,
+            inplace=True,
+            fill_value=fill_value,
+            interpolation_order=interpolation_order,
+        )
+
         if crop and not expand:
             # Crop the image to the valid size
             shifts = -shifts
-            bottom, top = (int(np.floor(shifts[:, 0].min())) if
-                           shifts[:, 0].min() < 0 else None,
-                           int(np.ceil(shifts[:, 0].max())) if
-                           shifts[:, 0].max() > 0 else 0)
-            right, left = (int(np.floor(shifts[:, 1].min())) if
-                           shifts[:, 1].min() < 0 else None,
-                           int(np.ceil(shifts[:, 1].max())) if
-                           shifts[:, 1].max() > 0 else 0)
+            bottom, top = (
+                int(np.floor(shifts[:, 0].min())) if shifts[:, 0].min() < 0 else None,
+                int(np.ceil(shifts[:, 0].max())) if shifts[:, 0].max() > 0 else 0,
+            )
+            right, left = (
+                int(np.floor(shifts[:, 1].min())) if shifts[:, 1].min() < 0 else None,
+                int(np.ceil(shifts[:, 1].max())) if shifts[:, 1].max() > 0 else 0,
+            )
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
 
         self.events.data_changed.trigger(obj=self)
+
         if return_shifts:
             return shifts
 
-    align2D.__doc__ %= (PARALLEL_ARG)
+    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def crop_image(self, top=None, bottom=None,
                    left=None, right=None, convert_units=False):

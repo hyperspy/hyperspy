@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 
 import numpy as np
 import pytest
@@ -22,6 +23,9 @@ import pytest
 from hyperspy import signals, model
 from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.io import load
+
+MYPATH = os.path.dirname(__file__)
 
 
 @lazifyTestClass
@@ -287,28 +291,55 @@ class TestRebin:
         assert s2.axes_manager[1].offset == 2.5
         assert s2.axes_manager[2].offset == s.axes_manager[2].offset
 
-class TestGetNearEdgeEnergy:
+@lazifyTestClass
+class Test_Estimate_Thickness:
 
     def setup_method(self, method):
-        # Create a dummy spectrum
-        s = signals.EELSSpectrum(np.ones(1024))
-        self.signal = s
+        # Create an empty spectrum
+        self.s = load(os.path.join(
+            MYPATH,
+            "data/EELS_LL_linescan_simulated_thickness_variation.hspy"))
+        self.zlp = load(os.path.join(
+            MYPATH,
+            "data/EELS_ZLP_linescan_simulated_thickness_variation.hspy"))
 
-    def test_single_edge(self):
-        s = self.signal
-        edges = s.get_edges_near_energy(532, width=0)
-        assert len(edges) == 1
-        assert edges == ['O_K']
+    def test_relative_thickness(self):
+        t = self.s.estimate_thickness(zlp=self.zlp)
+        np.testing.assert_allclose(t.data, np.arange(0.3,2,0.1), atol=4e-3)
+        assert t.metadata.Signal.quantity == "$\\frac{t}{\\lambda}$"
 
-    def test_multiple_edges(self):
-        s = self.signal
-        edges = s.get_edges_near_energy(640, width=100)
-        assert len(edges) == 12
-        assert edges == ['Mn_L3','I_M4','Cd_M2','Mn_L2','V_L1','I_M5','Cd_M3',
-                         'In_M3','Xe_M5','Ag_M2','F_K','Xe_M4']
-        
-    def test_negative_energy_width(self):
-        s = self.signal
-        with pytest.raises(Exception):
-            s.get_edges_near_energy(849, width=-5)
-        
+    def test_thickness_mfp(self):
+        t = self.s.estimate_thickness(zlp=self.zlp, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 120 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_thickness_density(self):
+        t = self.s.estimate_thickness(zlp=self.zlp, density=3.6)
+        np.testing.assert_allclose(t.data, 142 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_thickness_density_and_mfp(self):
+        t = self.s.estimate_thickness(zlp=self.zlp, density=3.6, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_threshold(self):
+        t = self.s.estimate_thickness(threshold=4.5, density=3.6, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_threshold_nd(self):
+        threshold = self.s._get_navigation_signal()
+        threshold.data[:] = 4.5
+        t = self.s.estimate_thickness(threshold=threshold, density=3.6, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_no_zlp_or_threshold(self):
+        with pytest.raises(ValueError):
+            self.s.estimate_thickness()
+
+    def test_no_metadata(self):
+        del self.s.metadata.Acquisition_instrument
+        with pytest.raises(RuntimeError):
+            self.s.estimate_thickness(zlp=self.zlp, density=3.6)

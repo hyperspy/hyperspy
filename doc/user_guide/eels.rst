@@ -33,30 +33,40 @@ information is stored in the :py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). This information is saved to file
 when saving in the hspy format (HyperSpy's HDF5 specification).
 
-A method :py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy`
-can be helpful to identify possible elements in the sample.
-:py:meth:`~._signals.eels.EELSSpectrum_mixin.get_edges_near_energy` returns a
-list of edges arranged in the order closest to the specified energy within a
-window, both measured in eV. The size of the window can be controlled by the
-argument `width` (default as 10)--- If the specified energy is 849 eV and the
-width is 6 eV, it returns a list of edges with onset energy between 846 eV to
-852 eV and they are arranged in the order closest to 849 eV.
+An utility function :py:meth:`~.misc.eels.tools.get_edges_near_energy` can be
+helpful to identify possible elements in the sample.
+:py:meth:`~.misc.eels.tools.get_edges_near_energy` returns a list of edges
+arranged in the order closest to the specified energy within a window, both
+measured in eV. The size of the window can be controlled by the argument
+`width` (default as 10)--- If the specified energy is 849 eV and the width is
+6 eV, it returns a list of edges with onset energy between 846 eV to 852 eV and
+they are arranged in the order closest to 849 eV.
 
 .. code-block:: python
 
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
-    >>> s.get_edges_near_energy(532)
+    >>> from hyperspy.misc.eels.tools import get_edges_near_energy
+    >>> get_edges_near_energy(532)
     ['O_K', 'Pd_M3', 'Sb_M5', 'Sb_M4']
-    >>> s.get_edges_near_energy(849, width=6)
+    >>> get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
 
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can
-estimate the thickness from a low-loss EELS spectrum using the Log-Ratio
-method.
+.. versionadded:: 1.6
+    Option to compute the absolute thickness, including the angular corrections
+    and mean free path estimation.
+
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method can
+estimate the thickness from a low-loss EELS spectrum using the log-ratio
+method. If the beam energy, collection angle, convergence angle and sample
+density are known, the absolute thickness is computed using the method in
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`. This includes the estimation of
+the inelastic mean free path (iMFP). For more accurate results, it is possible
+to input the iMFP of the material if known.  If the density and/or the iMFP are
+not known, the output is the thickness relative to the (unknown) iMFP without
+any angular corrections.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
