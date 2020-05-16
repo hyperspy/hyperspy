@@ -32,10 +32,11 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
+from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -154,50 +155,6 @@ class EELSSpectrum_mixin:
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
-
-    def get_edges_near_energy(self, energy, width=10):
-        """Find edges near a given energy that are within the given energy 
-        window.
-        
-        Parameters
-        ----------
-        energy : float
-            Energy to search, in eV
-        width : float
-            Width of window, in eV, around energy in which to find nearby 
-            energies, i.e. a value of 1 eV (the default) means to 
-            search +/- 0.5 eV. The default is 10.
-        
-        Returns
-        -------
-        edges : list
-            All edges that are within the given energy window, sorted by 
-            energy difference to the given energy.
-        """        
-        
-        if width < 0:
-            raise ValueError("Provided width needs to be >= 0.")
-        
-        Emin, Emax = energy - width/2, energy + width/2            
-
-        # find all subshells that have its energy within range
-        valid_edges = []
-        for element, element_info in elements_db.items():
-            try:
-                for shell, shell_info in element_info[
-                    'Atomic_properties']['Binding_energies'].items():
-                    if shell[-1] != 'a' and \
-                        Emin <= shell_info['onset_energy (eV)'] <= Emax:
-                        subshell = '{}_{}'.format(element, shell)
-                        Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
-                        valid_edges.append((subshell, Ediff))           
-            except KeyError:
-                continue 
-            
-        # Sort by energy difference and return only the edges
-        edges = [edge for edge, _ in sorted(valid_edges, key=lambda x: x[1])]
-        
-        return edges
 
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
@@ -879,7 +836,7 @@ class EELSSpectrum_mixin:
 
     def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
                                       show_progressbar=None,
-                                      parallel=None):
+                                      parallel=None, max_workers=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -892,6 +849,7 @@ class EELSSpectrum_mixin:
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
+        %s
         %s
         %s
 
@@ -924,7 +882,8 @@ class EELSSpectrum_mixin:
             return result
         ds = self.map(deconv_function, kernel=psf, iterations=iterations,
                       psf_size=psf_size, show_progressbar=show_progressbar,
-                      parallel=parallel, ragged=False, inplace=False)
+                      parallel=parallel, max_workers=max_workers,
+                      ragged=False, inplace=False)
 
         ds.metadata.General.title += (
             ' after Richardson-Lucy deconvolution %i iterations' %
@@ -934,8 +893,7 @@ class EELSSpectrum_mixin:
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
-    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG,
-                                              PARALLEL_ARG)
+    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def _are_microscope_parameters_missing(self, ignore_parameters=[]):
         """
