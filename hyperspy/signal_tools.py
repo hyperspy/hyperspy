@@ -1026,7 +1026,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         elif self.background_type == 'Polynomial':
             with ignore_warning(message="The API of the `Polynomial` component"):
                 self.background_estimator = components1d.Polynomial(
-                    self.polynomial_order)
+                    self.polynomial_order, legacy=False)
             self.bg_line_range = 'full'
         elif self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
@@ -1288,8 +1288,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
-        m = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
-                        title="Instructions"),
+        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
+                        title="Instructions")
 
     def _show_derivative_histogram_fired(self):
         self.signal._spikes_diagnosis(signal_mask=self.signal_mask,
@@ -1515,8 +1515,6 @@ class DerivativeTextParameters(object):
 class DerivativeTextHandler(object):
 
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
-        x0, y0 = handlebox.xdescent, handlebox.ydescent
-        width, height = handlebox.width, handlebox.height
         patch = mpl_text.Text(
             text=orig_handle.my_text,
             color=orig_handle.my_color)

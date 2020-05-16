@@ -496,10 +496,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
     shift1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def interpolate_in_between(
-        self, 
+        self,
         start,
         end,
-        delta=3,        
+        delta=3,
         show_progressbar=None,
         parallel=None,
         max_workers=None,
@@ -614,9 +614,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        An array with the result of the estimation in the axis units. 
-        Although the computation is performed in batches if the signal is 
-        lazy, the result is computed in memory because it depends on the 
+        An array with the result of the estimation in the axis units.
+        Although the computation is performed in batches if the signal is
+        lazy, the result is computed in memory because it depends on the
         current state of the axes that could change later on in the workflow.
 
         Raises
@@ -887,7 +887,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         differential_order=0,
         parallel=None,
         max_workers=None,
-        display=True, 
+        display=True,
         toolkit=None,
     ):
         """

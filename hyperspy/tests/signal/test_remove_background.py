@@ -307,3 +307,4 @@ def test_remove_background_metadata_axes_manager_copy(nav_dim,
                               plot_remainder=plot_remainder,
                               background_type=background_type)
     compare_axes_manager_metadata(s, s_r)
+    assert s_r.data.shape == s.data.shape
