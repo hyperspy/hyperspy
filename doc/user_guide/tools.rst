@@ -246,7 +246,7 @@ function as in the following example:
     particular type of data (i.e. with non-empty ``signal_type``). All those
     signals currently distributed with HyperSpy will be moved to new
     packages.
-    
+
 The following example shows how to transform between different subclasses.
 
    .. code-block:: python
@@ -869,7 +869,7 @@ each element corresponds to the result of the function (or arbitrary object
 type). As such, most HyperSpy functions cannot operate on such Signal, and the
 data should be accessed directly.
 
-``inplace`` keyword (by default ``True``) of the
+The ``inplace`` keyword (by default ``True``) of the
 :py:meth:`~.signal.BaseSignal.map` method allows either overwriting the current
 data (default, ``True``) or storing it to a new signal (``False``).
 
@@ -895,12 +895,6 @@ data (default, ``True``) or storing it to a new signal (``False``).
     (512, 512)
     (724, 724)
 
-
-.. versionadded:: 1.2.0
-    ``parallel`` keyword.
-
-
-
 .. _parallel-map-label:
 
 The execution can be sped up by passing ``parallel`` keyword to the
@@ -920,6 +914,12 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> # some operations will be done in parallel:
     >>> s.map(slow_func, parallel=True)
     100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
+
+.. note::
+
+   HyperSpy implements *thread-based* parallelism for the :py:meth:`~.signal.BaseSignal.map`
+   method. You can control the number of threads that are created by passing an integer value
+   to the ``max_workers`` keyword argument. By default, it will use ``min(32, os.cpu_count())``.
 
 .. versionadded:: 1.4
     Iterating over signal using a parameter with no navigation dimension.
@@ -1582,9 +1582,8 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
   :align:   center
   :width:   500
 
-Notably,
-since ROIs are independent from the signals they sub-select, the widget can be
-plotted on a different signal altogether.
+Notably, since ROIs are independent from the signals they sub-select, the widget
+can be plotted on a different signal altogether.
 
 .. code-block:: python
 
@@ -1640,22 +1639,44 @@ order to increase responsiveness.
     ROIs can be used in place of slices when indexing and to define a
     signal range in functions taken a ``signal_range`` argument.
 
+.. _roi-slice-label:
 
-ROIs can be used in place of slices when indexing and to define a
-signal range in functions taken a ``signal_range`` argument. For example:
+Slicing using ROIs
+^^^^^^^^^^^^^^^^^^
+
+ROIs can be used in place of slices when indexing. For example:
 
 .. code-block:: python
 
     >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
-    >>> s.remove_background(signal_range=roi, background_type="Polynomial")
     >>> im = hs.datasets.example_signals.object_hologram()
     >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
     >>> imc = im.isig[roi]
 
 .. versionadded:: 1.3
     :meth:`gui` method.
+
+.. versionadded:: 1.6
+    New :meth:`__getitem__` method for all ROIs.
+
+In addition the following all ROIs have a py:meth:`__getitem__` method that enables
+using them in place of tuples.
+For example, the method :py:meth:`~._signals.signal2d.align2D` takes a ``roi``
+argument with the left, right, top, bottom coordinates of the ROI.
+Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+    >>> im = hs.signals.Signal2D(np.random.random((10,30,30))
+    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5))
+    >>> tuple(roi)
+    (2.0, 10.0, 0.0, 5.0)
+    >>> im.align2D(roi=roi)
+
 
 
 All ROIs have a :meth:`gui` method that displays an user interface if
@@ -1768,6 +1789,25 @@ complex phase of a signal can be unwrapped and returned as a new signal. The
 underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
 algorithm described in :ref:`[Herraez] <Herraez>`.
 
+
+.. _complex.argand:
+
+Calculate and display Argand diagram
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes it is convenient to visualize a complex signal as a plot of its
+imaginary part versus real one. In this case so called Argand diagrams can
+be calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
+method, which returns the plot as a
+:py:class:`~._signals.complex_signal.Signal2D`. Optional arguments ``size``
+and ``display_range`` can be used to change the size (and therefore
+resolution) of the plot and to change the range for the display of the
+plot respectively. The last one is especially useful in order to zoom
+into specific regions of the plot or to limit the plot in case of noisy
+data points.
+
+An example of calculation of Aragand diagram is :ref:`shown for electron
+holography data <holo.argand-example>`.
 
 Add a linear phase ramp
 ^^^^^^^^^^^^^^^^^^^^^^^

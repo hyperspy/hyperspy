@@ -1,19 +1,20 @@
-# Copyright 2007-2018 The Hyperspy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
 import numpy as np
@@ -101,26 +102,26 @@ def test_apodization(lazy, window_type, inplace):
             signal3d_a = signal3d.apply_apodization(window=window_type, inplace=inplace)
         data3_a = data3 * window3d[np.newaxis, :, :, :]
 
-        assert np.alltrue(signal1d_a.data == data_a)
-        assert np.alltrue(signal2d_a.data == data2_a)
+        assert np.allclose(signal1d_a.data, data_a)
+        assert np.allclose(signal2d_a.data, data2_a)
         assert np.allclose(signal3d_a.data, data3_a)
 
         for hann_order in 9 * (np.random.rand(5)) + 1:
             window = hann_window_nth_order(SIZE_SIG0, order=int(hann_order))
             signal1d_a = signal1d.apply_apodization(window=window_type, hann_order=int(hann_order))
             data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
-            assert np.alltrue(signal1d_a.data == data_a)
+            assert np.allclose(signal1d_a.data, data_a)
     elif window_type == 'hamming':
         window = np.hamming(SIZE_SIG0)
         signal1d_a = signal1d.apply_apodization(window=window_type)
         data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
-        assert np.alltrue(signal1d_a.data == data_a)
+        assert np.allclose(signal1d_a.data, data_a)
     elif window_type == 'tukey':
         for tukey_alpha in np.random.rand(5):
             window = tukey(SIZE_SIG0, alpha=tukey_alpha)
             signal1d_a = signal1d.apply_apodization(window=window_type, tukey_alpha=tukey_alpha)
             data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
-            assert np.alltrue(signal1d_a.data == data_a)
+            assert np.allclose(signal1d_a.data, data_a)
 
     # 2. Test raises:
     with pytest.raises(ValueError):

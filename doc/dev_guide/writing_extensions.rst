@@ -23,7 +23,7 @@ HyperSpy. Because of HyperSpy's structure, we anticipate that most packages
 registering HyperSpy extensions will provide support for specific sorts of
 data.
 
-Models can be provided by external packages too but don't need to
+Models can also be provided by external packages, but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
 the relevant :py:class:`hyperspy.signal.BaseSignal` subclass, see for example,
 the :py:meth:`hyperspy._signals.eds_tem.EDSTEM_mixin.create_model` of the
@@ -31,22 +31,22 @@ the :py:meth:`hyperspy._signals.eds_tem.EDSTEM_mixin.create_model` of the
 
 It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
-<https://github.com/hyperspy/hyperspy-extensions-list>`_ regardless their
-maturity level. In this way we can avoid duplication of efforts and issues
+<https://github.com/hyperspy/hyperspy-extensions-list>`_ regardless of their
+maturity level. In this way, we can avoid duplication of efforts and issues
 arising from naming conflicts.
 
-At this point it is worth noting that HyperSpy's main strength is its amazing
+At this point, it is worth noting that HyperSpy's main strength is its amazing
 community of users and developers. We trust that the developers of packages
 that extend HyperSpy will play by the same rules that have made the Python
 scientific ecosystem successful. In particular, avoiding duplication of
 efforts and being good community players by contributing code to the best
-matching project are essential for the sustainability of our software
+matching project are essential for the sustainability of our open software
 ecosystem.
 
 Registering extensions
 ----------------------
 
-In order to register HyperSpy extensions you need to:
+In order to register HyperSpy extensions, you need to:
 
 1. Add the following line to your package's ``setup.py``:
 
@@ -59,7 +59,7 @@ In order to register HyperSpy extensions you need to:
 3. Declare all new HyperSpy objects provided by your package in the
    ``hyperspy_extension.yaml`` file.
 
-For a full example on how to create a package that extends HyperSpy see
+For a full example on how to create a package that extends HyperSpy, see
 `the HyperSpy Sample Extension package
 <https://github.com/hyperspy/hyperspy_sample_extension>`_.
 
@@ -67,7 +67,7 @@ For a full example on how to create a package that extends HyperSpy see
 Creating new HyperSpy BaseSignal subclasses
 -------------------------------------------
 
-When and where create a new ``BaseSignal`` subclass
+When and where to create a new ``BaseSignal`` subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy provides most of its functionality through the different
@@ -80,7 +80,7 @@ specialized subclasses.
 
 The flowchart below can help you decide where to add
 a new data analysis function. Notice that only if no suitable package exists
-for your function you should consider creating your own.
+for your function, you should consider creating your own.
 
 ..  This is the original mermaid code. It produces a nicer looking diagram
     with the defaults, but, as of version 0.3.1, it raises an exception in
@@ -90,14 +90,14 @@ for your function you should consider creating your own.
 
        graph TD
 
-         A(New function needed)
+         A(New function needed!)
          B{Is it useful for data of any type and dimensions?}
          C(Contribute it to BaseSignal)
-         D{Does an SignalxD for the required dimension exist in HyperSpy?}
+         D{Does a SignalxD for the required dimension exist in HyperSpy?}
          E[Contribute new SignalxD to HyperSpy]
-         F{Is the function useful only for some sort of data?}
+         F{Is the function useful for a specific type of data only?}
          G(Contribute it to SignalxD)
-         H{Does an signal for that sort of data exists?}
+         H{Does a signal for that sort of data exists?}
          I(Contribute to package providing the relevant signal)
          J(Create you own package and signal subclass to host the funtion)
          A-->B
@@ -115,14 +115,14 @@ for your function you should consider creating your own.
 .. graphviz::
 
     digraph G {
-         A [label="New function needed"]
+         A [label="New function needed!"]
          B [label="Is it useful for data of any type and dimensions?",shape="diamond"]
          C [label="Contribute it to BaseSignal"]
-         D [label="Does an SignalxD for the required dimension exist in HyperSpy",shape="diamond"]
+         D [label="Does a SignalxD for the required dimension exist in HyperSpy?",shape="diamond"]
          E [label="Contribute new SignalxD to HyperSpy"]
-         F [label="Is the function useful only for some sort of data?",shape="diamond"]
+         F [label="Is the function useful for a specific type of data only?",shape="diamond"]
          G [label="Contribute it to SignalxD"]
-         H [label="Does an signal for that sort of data exists?",shape="diamond"]
+         H [label="Does a signal for that sort of data exist?",shape="diamond"]
          I [label="Contribute to package providing the relevant signal"]
          J [label="Create you own package and signal subclass to host the funtion"]
          A->B
@@ -143,7 +143,7 @@ Registering a new BaseSignal subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To register a new :py:class:`hyperspy.signal.BaseSignal` subclass you must add it to the
-``hyperspy_extension.yaml`` file as in the following example:
+``hyperspy_extension.yaml`` file, as in the following example:
 
 .. code-block:: yaml
 
@@ -172,7 +172,7 @@ match for each sort of data.
 .. warning::
     HyperSpy assumes that only one signal
     subclass exists for a particular ``signal_type``. It is up to external
-    packages developers to avoid ``signal_type`` clashes, typically by collaborating
+    package developers to avoid ``signal_type`` clashes, typically by collaborating
     in developing a single package per data type.
 
 The optional ``signal_type_aliases`` are used to determine the most appropriate
@@ -187,8 +187,8 @@ acronyms for ``signal_type_aliases``.
 Creating new HyperSpy model components
 --------------------------------------
 
-When and where create a new component
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When and where to create a new component
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy provides the :py:class:`hyperspy._components.expression.Expression`
 component that enables easy creation of 1D and 2D components from
@@ -201,8 +201,8 @@ HyperSpy itself (if they are of common interest) or to specialized external
 packages extending HyperSpy.
 
 The flowchart below can help you decide when and where to add
-a new hyperspy model :py:class:`hyperspy.component.Component`.
-for your function you should consider creating your own.
+a new hyperspy model :py:class:`hyperspy.component.Component`
+for your function, should you consider creating your own.
 
 ..  This is the original mermaid code. It produces a nicer looking diagram
     with the defaults, but, as of version 0.3.1, it raises an exception in
@@ -213,15 +213,15 @@ for your function you should consider creating your own.
 
        graph TD
 
-         A(New component needed)
+         A(New component needed!)
          B{Can it be declared using Expression?}
          C{Can it be useful to other users?}
          D(Just use Expression)
          E[Create new component using Expression]
-         F[Create new component from the scratch]
+         F[Create new component from scratch]
          G{Is it useful for general users?}
          H(Contribute it to HyperSpy)
-         I{Does a suitable package for it exist?}
+         I{Does a suitable package exist?}
          J[Contribute it to the relevant package]
          K[Create your own package to host it]
 
@@ -243,15 +243,15 @@ for your function you should consider creating your own.
     digraph G {
 
 
-        A [label="New component needed"]
+        A [label="New component needed!"]
         B [label="Can it be declared using Expression?",shape="diamond"]
         C [label="Can it be useful to other users?",shape="diamond"]
         D [label="Just use Expression"]
         E [label="Create new component using Expression"]
-        F [label="Create new component from the scratch"]
+        F [label="Create new component from scratch"]
         G [label="Is it useful for general users?",shape="diamond"]
         H [label="Contribute it to HyperSpy"]
-        I [label="Does a suitable package for it exist?",shape="diamond"]
+        I [label="Does a suitable package exist?",shape="diamond"]
         J [label="Contribute it to the relevant package"]
         K [label="Create your own package to host it"]
 
@@ -280,7 +280,7 @@ example:
 .. code-block:: yaml
 
     components1D:
-      # _id_name of the component. It must be an UUID4. This can be generated
+      # _id_name of the component. It must be a UUID4. This can be generated
       # using ``uuid.uuid4()``. Also, many editors can automatically generate
       # UUIDs. The same UUID must be stored in the components ``_id_name`` attribute.
       fc731a2c-0a05-4acb-91df-d15743b531c3:
@@ -294,7 +294,7 @@ Equivalently, to add a new component 2D:
 .. code-block:: yaml
 
     components2D:
-      # _id_name of the component. It must be an UUID4. This can be generated
+      # _id_name of the component. It must be a UUID4. This can be generated
       # using ``uuid.uuid4()``. Also, many editors can automatically generate
       # UUIDs. The same UUID must be stored in the components ``_id_name`` attribute.
       2ffbe0b5-a991-4fc5-a089-d2818a80a7e0:
@@ -304,21 +304,23 @@ Equivalently, to add a new component 2D:
 
 .. note::
 
-  HyperSpy's legacy components use their class name instead of an UUID as
-  ``_id_name``. This is for compatibility with old versions of the software. New components
-  (including those provided through the extension mechanism) must use an UUID4 in order to i) avoid
-  name clashes ii) make it easy to find the component online if e.g. the package
-  is renamed or the component relocated.
+  HyperSpy's legacy components use their class name instead of a UUID as
+  ``_id_name``. This is for compatibility with old versions of the software.
+  New components (including those provided through the extension mechanism) 
+  must use a UUID4 in order to i) avoid name clashes ii) make it easy to find
+  the component online if e.g. the package is renamed or the component
+  relocated.
 
 
 Creating and registering new widgets and toolkeys
 -------------------------------------------------
 
-To generate GUIs of specific method and functions, HyperSpy use widgets and toolkeys:
+To generate GUIs of specific methods and functions, HyperSpy use widgets and
+toolkeys:
 
 * *widgets* (typically ipywidgets or traitsui objects) generate GUIs,
-* *toolkeys* are functions to which it is possible to associate widgets to a signal
-  method or to a module function.
+* *toolkeys* are functions using which it is possible to associate widgets to
+  a signal method or to a module function.
 
 An extension can declare new toolkeys and widgets. For example, the
 `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_ and
@@ -329,10 +331,10 @@ Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
 To register a new toolkey:
 
-1. declare a new toolkey, *e. g.* by adding the :py:func:`hyperspy.ui_registry.add_gui_method`
-   decorator to the function you want to assign a widget to,
-2. register a new toolkey that you have declared in your package by adding it to
-   the ``hyperspy_extension.yaml`` file as in the following example:
+1. Declare a new toolkey, *e. g.* by adding the :py:func:`hyperspy.ui_registry.add_gui_method`
+   decorator to the function you want to assign a widget to.
+2. Register a new toolkey that you have declared in your package by adding it to
+   the ``hyperspy_extension.yaml`` file, as in the following example:
 
 
 .. code-block:: yaml
@@ -340,8 +342,8 @@ To register a new toolkey:
     GUI:
       # In order to assign a widget to a function, that function must declare
       # a `toolkey`. The `toolkeys` list contains a list of all the toolkeys
-      # provided by the extensions. In order to avoid name clashes, by convention
-      # toolkeys must start by the name of the packages that provides them.
+      # provided by extensions. In order to avoid name clashes, by convention,
+      # toolkeys must start with the name of the package that provides them.
       toolkeys:
         - my_package.MyComponent
 
@@ -349,7 +351,7 @@ To register a new toolkey:
 Registering widgets
 ^^^^^^^^^^^^^^^^^^^
 
-In the example below we register a new ipywidget widget for the
+In the example below, we register a new ``ipywidget`` widget for the
 ``my_package.MyComponent`` toolkey of the previous example. The ``function``
 simply returns the widget to display. The key *module* defines where the functions
 resides.

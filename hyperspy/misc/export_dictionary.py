@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -53,37 +53,36 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
 
     Parameters
     ----------
-        target : object
-            must contain the (nested) attributes of the whitelist.keys()
-        whitelist : dictionary
-            A dictionary, keys of which are used as attributes for exporting.
-            Key 'self' is only available with tag 'id', when the id of the
-            target is saved. The values are either None, or a tuple, where:
-                - the first item a string, which containts flags, separated by
-                commas.
-                - the second item is None if no 'init' flag is given, otherwise
-                the object required for the initialization.
-            The flag conventions are as follows:
-            * 'init':
-                object used for initialization of the target. The object is
-                saved in the tuple in whitelist
-            * 'fn':
-                the targeted attribute is a function, and may be pickled. A
-                tuple of (thing, value) will be exported to the dictionary,
-                where thing is None if function is passed as-is, and True if
-                dill package is used to pickle the function, with the value as
-                the result of the pickle.
-            * 'id':
-                the id of the targeted attribute is exported (e.g.
-                id(target.name))
-            * 'sig':
-                The targeted attribute is a signal, and will be converted to a
-                dictionary if fullcopy=True
-        dic : dictionary
-            A dictionary where the object will be exported
-        fullcopy : bool
-            Copies of objects are stored, not references. If any found,
-            functions will be pickled and signals converted to dictionaries
+    target : object
+        must contain the (nested) attributes of the whitelist.keys()
+    whitelist : dictionary
+        A dictionary, keys of which are used as attributes for exporting.
+        Key 'self' is only available with tag 'id', when the id of the
+        target is saved. The values are either None, or a tuple, where:
+
+        * the first item a string, which containts flags, separated by
+          commas.
+        * the second item is None if no 'init' flag is given, otherwise
+          the object required for the initialization.
+
+        The flag conventions are as follows:
+
+        * 'init': object used for initialization of the target. The object is
+          saved in the tuple in whitelist
+        * 'fn': the targeted attribute is a function, and may be pickled. A
+          tuple of (thing, value) will be exported to the dictionary,
+          where thing is None if function is passed as-is, and True if
+          dill package is used to pickle the function, with the value as
+          the result of the pickle.
+        * 'id': the id of the targeted attribute is exported (e.g. id(target.name))
+        * 'sig': The targeted attribute is a signal, and will be converted to a
+          dictionary if fullcopy=True
+
+    dic : dictionary
+        A dictionary where the object will be exported
+    fullcopy : bool
+        Copies of objects are stored, not references. If any found,
+        functions will be pickled and signals converted to dictionaries
 
     """
     whitelist_flags = {}
@@ -100,7 +99,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
         flags_str, value = value
         flags = parse_flag_string(flags_str)
         check_that_flags_make_sense(flags)
-        if key is 'self':
+        if key == 'self':
             if 'id' not in flags:
                 raise ValueError(
                     'Key "self" is only available with flag "id" given')
@@ -151,18 +150,15 @@ def load_from_dictionary(target, dic):
             A dictionary, containing field '_whitelist', which is a dictionary
             with all keys that were exported, with values being flag strings.
             The convention of the flags is as follows:
-            * 'init':
-                object used for initialization of the target. Will be copied to
-                the _whitelist after loading
-            * 'fn':
-                the targeted attribute is a function, and may have been pickled
-                (preferably with dill package).
-            * 'id':
-                the id of the original object was exported and the attribute
-                will not be set. The key has to be '_id_'
-            * 'sig':
-                The targeted attribute was a signal, and may have been converted
-                to a dictionary if fullcopy=True
+
+            * 'init': object used for initialization of the target. Will be 
+              copied to the _whitelist after loading
+            * 'fn': the targeted attribute is a function, and may have been 
+              pickled (preferably with dill package).
+            * 'id': the id of the original object was exported and the 
+              attribute will not be set. The key has to be '_id_'
+            * 'sig': The targeted attribute was a signal, and may have been 
+              converted to a dictionary if fullcopy=True
 
     """
     new_whitelist = {}

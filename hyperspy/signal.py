@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -53,7 +53,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
@@ -260,55 +260,58 @@ class MVATools(object):
                                 cmap=plt.cm.gray, quiver_color='white',
                                 vector_scale=1,
                                 per_row=3, ax=None):
-        """Plot components from PCA or ICA, or peak characteristics
+        """Plot components from PCA or ICA, or peak characteristics.
+
         Parameters
         ----------
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given
+            If None, returns maps of all components.
+            If int, returns maps of components with ids from 0 to given
             int.
             if list of ints, returns maps of components with ids in
             given list.
         calibrate : bool
-            if True, plots are calibrated according to the data in the
-            axes
-            manager.
+            If True, plots are calibrated according to the data in the
+            axes manager.
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default True.
+            If True, plots each factor to the same window. They are not scaled.
+            Default True.
         comp_label : str
             Title of the plot
         cmap : a matplotlib colormap
-            The colormap used for factor images or
-            any peak characteristic scatter map
-            overlay.
+            The colormap used for factor images or any peak characteristic
+            scatter map overlay. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
 
-        Parameters only valid for peak characteristics (or pk char factors)
-        -------------------------------------------------------------------
-        img_data - 2D numpy array,
-            The array to overlay peak characteristics onto.  If None,
+        Other Parameters
+        ----------------
+        img_data : 2D numpy array,
+            The array to overlay peak characteristics onto. If None,
             defaults to the average image of your stack.
-        plot_shifts - bool, default is True
+        plot_shifts : bool, default is True
             If true, plots a quiver (arrow) plot showing the shifts for
             each
             peak present in the component being plotted.
-        plot_char - None or int
+        plot_char : None or int
             If int, the id of the characteristic to plot as the colored
             scatter plot.
             Possible components are:
-               4: peak height
-               5: peak orientation
-               6: peak eccentricity
-       quiver_color : any color recognized by matplotlib
-           Determines the color of vectors drawn for
-           plotting peak shifts.
-       vector_scale : integer or None
-           Scales the quiver plot arrows.  The vector
-           is defined as one data unit along the X axis.
-           If shifts are small, set vector_scale so
-           that when they are multiplied by vector_scale,
-           they are on the scale of the image plot.
-           If None, uses matplotlib's autoscaling.
+
+            * 4: peak height
+            * 5: peak orientation
+            * 6: peak eccentricity
+        quiver_color : any color recognized by matplotlib
+            Determines the color of vectors drawn for
+            plotting peak shifts.
+        vector_scale : integer or None
+            Scales the quiver plot arrows. The vector is defined as one data
+            unit along the X axis. If shifts are small, set vector_scale so
+            that when they are multiplied by vector_scale, they are on the 
+            scale of the image plot. If None, uses matplotlib's autoscaling.
+
+        Returns
+        -------
+        matplotlib figure or list of figure if same_window=False
 
         """
         if same_window is None:
@@ -758,16 +761,16 @@ class MVATools(object):
                                    calibrate=True,
                                    same_window=True,
                                    comp_label=None,
+                                   title=None,
                                    cmap=plt.cm.gray,
-                                   per_row=3,
-                                   title=None):
+                                   per_row=3
+                                   ):
         """Plot factors from a decomposition. In case of 1D signal axis, each
         factors line can be toggled on and off by clicking on their
         corresponding line in the legend.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
@@ -777,23 +780,18 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             If ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-
         title : str
             Title of the plot.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the factor images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -808,6 +806,9 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.factors is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
         factors = self.learning_results.factors
@@ -831,9 +832,15 @@ class MVATools(object):
                                             cmap=cmap,
                                             per_row=per_row)
 
-    def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=True, comp_label=None,
-                         per_row=3, title=None):
+    def plot_bss_factors(self,
+                         comp_ids=None,
+                         calibrate=True,
+                         same_window=True,
+                         comp_label=None,
+                         title=None,
+                         cmap=plt.cm.gray,
+                         per_row=3
+                         ):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
@@ -847,21 +854,20 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-
         comp_label : str
             Will be deprecated in 2.0, please use `title` instead
-
         title : str
             Title of the plot.
-
+        cmap : :py:class:`~matplotlib.colors.Colormap`
+            The colormap used for the factor images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -876,6 +882,10 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.bss_factors is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
 
         if same_window is None:
             same_window = True
@@ -895,20 +905,19 @@ class MVATools(object):
                                     comp_ids=None,
                                     calibrate=True,
                                     same_window=True,
+                                    title=None,
                                     comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
                                     per_row=3,
-                                    axes_decor='all',
-                                    title=None):
+                                    axes_decor='all'):
         """Plot loadings from a decomposition. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
@@ -918,34 +927,26 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             if ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
-
         same_window : bool
             if ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-
         title : str
             Title of the plot.
-
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the loadings images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
-
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-
         axes_decor : str or None, optional
             One of: ``'all'``, ``'ticks'``, ``'off'``, or ``None``
             Controls how the axes are displayed on each image; default is
@@ -966,6 +967,9 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.loadings is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
         loadings = self.learning_results.loadings.T
@@ -998,55 +1002,52 @@ class MVATools(object):
             per_row=per_row,
             axes_decor=axes_decor)
 
-    def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=True, comp_label=None,
-                          with_factors=False, cmap=plt.cm.gray,
-                          no_nans=False, per_row=3, axes_decor='all',
-                          title=None):
+    def plot_bss_loadings(self,
+                          comp_ids=None,
+                          calibrate=True,
+                          same_window=True,
+                          title=None,
+                          comp_label=None,
+                          with_factors=False,
+                          cmap=plt.cm.gray,
+                          no_nans=False,
+                          per_row=3,
+                          axes_decor='all'
+                          ):
         """Plot loadings from blind source separation results. In case of 1D
         navigation axis, each loading line can be toggled on and off by
         clicking on their corresponding line in the legend.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned. If it is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             if ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             If ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-
         comp_label : str
             Will be deprecated in 2.0, please use `title` instead
-
         title : str
             Title of the plot.
-
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the loading image, or for peak
+            characteristics,. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
-
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-
         axes_decor : str or None, optional
             One of: ``'all'``, ``'ticks'``, ``'off'``, or ``None``
             Controls how the axes are displayed on each image;
@@ -1066,6 +1067,10 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_bss_results` instead.")
+        if self.learning_results.bss_loadings is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
         if same_window is None:
             same_window = True
         title = _change_API_comp_label(title, comp_label)
@@ -1139,6 +1144,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1147,6 +1153,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -1171,9 +1178,9 @@ class MVATools(object):
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
+            The colormap used for images, such as factors, loadings, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : :py:class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1256,6 +1263,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+            
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1264,6 +1272,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -1288,9 +1297,9 @@ class MVATools(object):
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
+            The colormap used for images, such as factors, loadings, or
+            for peak characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : :py:class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1335,6 +1344,8 @@ class MVATools(object):
                               save_figures_format=save_figures_format)
 
     def _get_loadings(self, loadings):
+        if loadings is None:
+            raise RuntimeError("No learning results found.")
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
@@ -1348,6 +1359,8 @@ class MVATools(object):
         return signal
 
     def _get_factors(self, factors):
+        if factors is None:
+            raise RuntimeError("No learning results found.")
         signal = self.__class__(
             factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
             axes=[{"size": factors.shape[-1], "navigate": True}] +
@@ -1358,8 +1371,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_loadings(self):
-        """Return the decomposition loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition loadings.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1373,8 +1389,11 @@ class MVATools(object):
         return signal
 
     def get_decomposition_factors(self):
-        """Return the decomposition factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition factors.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1388,8 +1407,11 @@ class MVATools(object):
         return signal
 
     def get_bss_loadings(self):
-        """Return the blind source separation loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation loadings.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1404,8 +1426,11 @@ class MVATools(object):
         return signal
 
     def get_bss_factors(self):
-        """Return the blind source separation factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation factors.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1508,6 +1533,7 @@ class MVATools(object):
         plot_bss_results
 
         """
+
         factors = self.get_decomposition_factors()
         loadings = self.get_decomposition_loadings()
         _plot_x_results(factors=factors, loadings=loadings,
@@ -1837,22 +1863,20 @@ class BaseSignal(FancySlicing,
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
             following items:
-            data : :py:class:`numpy.ndarray`
-               The signal data. It can be an array of any dimensions.
-            axes : dict, optional
-                Dictionary to define the axes (see the
-                documentation of the AxesManager class for more details).
-            attributes : dict, optional
-                A dictionary whose items are stored as attributes.
-            metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `metadata` attribute.
-                Some parameters might be mandatory in some cases.
-            original_metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `original_metadata` attribute. It
-                typically contains all the parameters that has been
-                imported from the original data file.
+
+            * data: the signal data. It can be an array of any dimensions.
+
+            * axes: a dictionary to define the axes (see the documentation of
+              the :py:class:`~hyperspy.axes.AxesManager` class for more details).
+            * attributes: a dictionary whose items are stored as attributes.
+
+            * metadata: a dictionary containing a set of parameters that will
+              to stores in the `metadata` attribute. Some parameters might be
+              mandatory in some cases.
+            * original_metadata: a dictionary containing a set of parameters
+              that will to stores in the `original_metadata` attribute. It
+              typically contains all the parameters that has been
+              imported from the original data file.
 
         """
         self.data = file_data_dict['data']
@@ -2145,12 +2169,13 @@ class BaseSignal(FancySlicing,
 
         The function gets the format from the specified extension (see
         :ref:`supported-formats` in the User Guide for more information):
-            * ``'hspy'`` for HyperSpy's HDF5 specification
-            * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
-            * ``'msa'`` for EMSA/MSA single spectrum saving.
-            * ``'unf'`` for SEMPER unf binary format.
-            * ``'blo'`` for Blockfile diffraction stack saving.
-            * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
+
+        * ``'hspy'`` for HyperSpy's HDF5 specification
+        * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
+        * ``'msa'`` for EMSA/MSA single spectrum saving.
+        * ``'unf'`` for SEMPER unf binary format.
+        * ``'blo'`` for Blockfile diffraction stack saving.
+        * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
@@ -2181,9 +2206,10 @@ class BaseSignal(FancySlicing,
             compatibility with HyperSpy versions older than 1.2 is required.
             If ``None``, the extension is determined from the following list in
             this order:
-                i) the filename
-                ii)  `Signal.tmp_parameters.extension`
-                iii) ``'hspy'`` (the default extension)
+
+            i) the filename
+            ii)  `Signal.tmp_parameters.extension`
+            iii) ``'hspy'`` (the default extension)
 
         """
         if filename is None:
@@ -3383,7 +3409,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shift=False, apodization=False, **kwargs):
+    def fft(self, shift=False, apodization=False, real_fft_only=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3403,6 +3429,9 @@ class BaseSignal(FancySlicing,
             If ``True`` or ``'hann'``, applies a Hann window.
             If ``'hamming'`` or ``'tukey'``, applies Hamming or Tukey
             windows, respectively (default is ``False``).
+        real_fft_only : bool, default False
+            If ``True`` and data is real-valued, uses :py:func:`numpy.fft.rfftn`
+            instead of :py:func:`numpy.fft.fftn`
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.fftn`
 
@@ -3437,20 +3466,33 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+
+        use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
+
         if isinstance(self.data, da.Array):
+            if use_real_fft:
+                fft_f = da.fft.rfftn
+            else:
+                fft_f = da.fft.fftn
+
             if shift:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    da.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
+                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
-                    da.fft.fftn(self.data, axes=axes, **kwargs))
+                    fft_f(self.data, axes=axes, **kwargs))
         else:
+            if use_real_fft:
+                fft_f = np.fft.rfftn
+            else:
+                fft_f = np.fft.fftn
+
             if shift:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    np.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
+                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
-                    np.fft.fftn(self.data, axes=axes, **kwargs))
+                    fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
@@ -3472,7 +3514,7 @@ class BaseSignal(FancySlicing,
                 axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shift=None, **kwargs):
+    def ifft(self, shift=None, return_real=True, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3489,6 +3531,9 @@ class BaseSignal(FancySlicing,
             If ``True``, the origin of the FFT will be shifted to the centre.
             If ``False``, the origin will be kept at (0, 0)
             (default is ``None``).
+        return_real : bool, default True
+            If ``True``, returns only the real part of the inverse FFT.
+            If ``False``, returns all parts.
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.ifftn`
 
@@ -3538,7 +3583,9 @@ class BaseSignal(FancySlicing,
             im_ifft.metadata.General.title)
         if im_ifft.metadata.has_item('Signal.FFT'):
             del im_ifft.metadata.Signal.FFT
-        im_ifft = im_ifft.real
+
+        if return_real:
+            im_ifft = im_ifft.real
 
         ureg = UnitRegistry()
         for axis in im_ifft.axes_manager.signal_axes:
@@ -3816,10 +3863,16 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     get_histogram.__doc__ %= (OUT_ARG, RECHUNK_ARG)
 
-    def map(self, function,
-            show_progressbar=None,
-            parallel=None, inplace=True, ragged=None,
-            **kwargs):
+    def map(
+        self,
+        function,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        inplace=True,
+        ragged=None,
+        **kwargs
+    ):
         """Apply a function to the signal data at all the navigation
         coordinates.
 
@@ -3842,8 +3895,9 @@ class BaseSignal(FancySlicing,
             Any function that can be applied to the signal.
         %s
         %s
-        inplace : bool
-            if ``True`` (default), the data is replaced by the result. Otherwise
+        %s
+        inplace : bool, default True
+            if ``True``, the data is replaced by the result. Otherwise
             a new Signal with the results is returned.
         ragged : None or bool
             Indicates if the results for each navigation pixel are of identical
@@ -3936,14 +3990,14 @@ class BaseSignal(FancySlicing,
             # Iteration over coordinates.
             res = self._map_iterate(function, iterating_kwargs=ndkwargs,
                                     show_progressbar=show_progressbar,
-                                    parallel=parallel, inplace=inplace,
-                                    ragged=ragged,
+                                    parallel=parallel, max_workers=max_workers,
+                                    ragged=ragged, inplace=inplace,
                                     **kwargs)
         if inplace:
             self.events.data_changed.trigger(obj=self)
         return res
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
@@ -3956,10 +4010,17 @@ class BaseSignal(FancySlicing,
             return None
         return self._deepcopy_with_new_data(newdata)
 
-    def _map_iterate(self, function, iterating_kwargs=(),
-                     show_progressbar=None, parallel=None,
-                     ragged=None,
-                     inplace=True, **kwargs):
+    def _map_iterate(
+        self,
+        function,
+        iterating_kwargs=(),
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        ragged=None,
+        inplace=True,
+        **kwargs,
+    ):
         """Iterates the signal navigation space applying the function.
 
         Parameters
@@ -3973,16 +4034,17 @@ class BaseSignal(FancySlicing,
             with the signal navigation.
         %s
         %s
-        inplace : bool
-            if ``True`` (default), the data is replaced by the result. Otherwise
+        %s
+        inplace : bool, default True
+            if ``True``, the data is replaced by the result. Otherwise
             a new signal with the results is returned.
-        ragged : None or bool
+        ragged : None or bool, default None
             Indicates if results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             an appropriate choice is made while processing. Note: ``None`` is
             not allowed for Lazy signals!
         **kwargs : dict
-            Additional keyword arguments are passed to `function`
+            Additional keyword arguments passed to :std:term:`function`
 
         Notes
         -----
@@ -4002,10 +4064,10 @@ class BaseSignal(FancySlicing,
         ...                                    np.random.rand(5,400).flat),))
         >>> s.data.T
         array([[  0.82869603,   1.04961735,   2.21513949,   3.61329091,
-                  4.2481755 ,   5.81184375,   6.47696867,   7.07682618,
-                  8.16850697,   9.37771809,  10.42794054,  11.24362699,
-                 12.11434077,  13.98654036,  14.72864184,  15.30855499,
-                 16.96854373,  17.65077064,  18.64925703,  19.16901297]])
+                    4.2481755 ,   5.81184375,   6.47696867,   7.07682618,
+                    8.16850697,   9.37771809,  10.42794054,  11.24362699,
+                    12.11434077,  13.98654036,  14.72864184,  15.30855499,
+                    16.96854373,  17.65077064,  18.64925703,  19.16901297]])
 
         Storing function result to other signal (e.g. calculated shifts)
 
@@ -4021,75 +4083,106 @@ class BaseSignal(FancySlicing,
         array([  6.,  22.,  38.,  54.,  70.])
 
         """
-        if parallel is None:
-            parallel = preferences.General.parallel
-        if parallel is True:
-            from os import cpu_count
-            parallel = cpu_count() or 1
-        # Because by default it's assumed to be I/O bound, and cpu_count*5 is
-        # used. For us this is not the case.
+        from os import cpu_count
+        from hyperspy.misc.utils import create_map_objects, map_result_construction
 
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
+        if parallel is None:
+            parallel = preferences.General.parallel
+
         size = max(1, self.axes_manager.navigation_size)
-        from hyperspy.misc.utils import (create_map_objects,
-                                         map_result_construction)
-        func, iterators = create_map_objects(function, size, iterating_kwargs,
-                                             **kwargs)
+        func, iterators = create_map_objects(function, size, iterating_kwargs, **kwargs)
         iterators = (self._iterate_signal(),) + iterators
         res_shape = self.axes_manager._navigation_shape_in_array
+
         # no navigation
         if not len(res_shape):
             res_shape = (1,)
+
         # pre-allocate some space
-        res_data = np.empty(res_shape, dtype='O')
+        res_data = np.empty(res_shape, dtype="O")
         shapes = set()
 
-        # parallel or sequential maps
+        if show_progressbar:
+            pbar = progressbar(total=size, leave=True, disable=not show_progressbar)
+
+        # We set this value to equal cpu_count, with a maximum
+        # of 32 cores, since the earlier default value was inappropriate
+        # for many-core machines.
+        if max_workers is None:
+            max_workers = min(32, cpu_count())
+
+        # Avoid any overhead of additional threads
+        if max_workers < 2:
+            parallel = False
+
+        # parallel or sequential mapping
         if parallel:
             from concurrent.futures import ThreadPoolExecutor
-            executor = ThreadPoolExecutor(max_workers=parallel)
-            thismap = executor.map
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                for ind, res in zip(
+                    range(res_data.size), executor.map(func, zip(*iterators))
+                ):
+                    res = np.asarray(res)
+                    res_data.flat[ind] = res
+
+                    if ragged is False:
+                        shapes.add(res.shape)
+                        if len(shapes) != 1:
+                            raise ValueError(
+                                "The result shapes are not identical, but ragged=False"
+                            )
+                    else:
+                        try:
+                            shapes.add(res.shape)
+                        except AttributeError:
+                            shapes.add(None)
+
+                    if show_progressbar:
+                        pbar.update(1)
+
         else:
-            from builtins import map as thismap
-        pbar = progressbar(total=size, leave=True, disable=not
-                           show_progressbar)
-        for ind, res in zip(range(res_data.size),
-                            thismap(func, zip(*iterators))):
-            # In what follows we assume that res is a numpy scalar or array
-            # The following line guarantees that that's the case.
-            res = np.asarray(res)
-            res_data.flat[ind] = res
-            if ragged is False:
-                # to be able to break quickly and not waste time / resources
-                shapes.add(res.shape)
-                if len(shapes) != 1:
-                    raise ValueError('The result shapes are not identical, but'
-                                     'ragged=False')
-            else:
-                try:
+            from builtins import map
+
+            for ind, res in zip(range(res_data.size), map(func, zip(*iterators))):
+                res = np.asarray(res)
+                res_data.flat[ind] = res
+
+                if ragged is False:
                     shapes.add(res.shape)
-                except AttributeError:
-                    shapes.add(None)
-            pbar.update(1)
-        if parallel:
-            executor.shutdown()
+                    if len(shapes) != 1:
+                        raise ValueError(
+                            "The result shapes are not identical, but ragged=False"
+                        )
+                else:
+                    try:
+                        shapes.add(res.shape)
+                    except AttributeError:
+                        shapes.add(None)
+
+                if show_progressbar:
+                    pbar.update(1)
 
         # Combine data if required
         shapes = list(shapes)
         suitable_shapes = len(shapes) == 1 and shapes[0] is not None
         ragged = ragged or not suitable_shapes
         sig_shape = None
+
         if not ragged:
             sig_shape = () if shapes[0] == (1,) else shapes[0]
             res_data = np.stack(res_data.ravel()).reshape(
-                self.axes_manager._navigation_shape_in_array + sig_shape)
-        res = map_result_construction(self, inplace, res_data, ragged,
-                                      sig_shape)
+                self.axes_manager._navigation_shape_in_array + sig_shape
+            )
+
+        res = map_result_construction(self, inplace, res_data, ragged, sig_shape)
+
         return res
 
-    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def copy(self):
         """
@@ -4563,7 +4656,7 @@ class BaseSignal(FancySlicing,
         Raises
         ------
         DataDimensionError
-            when `data.ndim` < 2
+            When `data.ndim` < 2
 
         See also
         --------
@@ -4635,7 +4728,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         signal_type : str, optional
-            If no arguments are passed, the `signal_type` is set to undefined
+            If no arguments are passed, the ``signal_type`` is set to undefined
             and the current signal converted to a generic signal subclass.
             Otherwise, set the signal_type to the given signal
             type or to the signal type corresponding to the given signal type
@@ -4651,7 +4744,7 @@ class BaseSignal(FancySlicing,
         Examples
         --------
 
-        Let's first print all known `signal_type`s:
+        Let's first print all known signal types:
 
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s
@@ -4960,7 +5053,7 @@ class BaseSignal(FancySlicing,
         ----
         This method uses :py:func:`numpy.random.poisson`
         (or :py:func:`dask.array.random.poisson` for lazy signals) to
-        generate the Gaussian noise. In order to seed it,
+        generate the Poissonian noise. In order to seed it,
         you must use :py:func:`numpy.random.seed`.
 
         """

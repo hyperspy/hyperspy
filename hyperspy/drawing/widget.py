@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -815,19 +815,19 @@ class ResizersMixin(object):
     boundaries. By default, the handles are only displayed when the widget is
     selected (`picked` in matplotlib terminology).
 
-    Attributes:
-    -----------
-        resizers : {bool}
-            Property that determines whether the resizer handles should be used
-        resize_color : {matplotlib color}
-            The color of the resize handles.
-        resize_pixel_size : {tuple | None}
-            Size of the resize handles in screen pixels. If None, it is set
-            equal to the size of one 'data-pixel' (image pixel size).
-        resizer_picked : {False | int}
-            Inidcates which, if any, resizer was selected the last time the
-            widget was picked. `False` if another patch was picked, or the
-            index of the resizer handle that was picked.
+    Attributes
+    ----------
+    resizers : bool
+        Property that determines whether the resizer handles should be used
+    resize_color : matplotlib color
+        The color of the resize handles.
+    resize_pixel_size : tuple or None
+        Size of the resize handles in screen pixels. If None, it is set
+        equal to the size of one 'data-pixel' (image pixel size).
+    resizer_picked : False or int
+        Inidcates which, if any, resizer was selected the last time the
+        widget was picked. `False` if another patch was picked, or the
+        index of the resizer handle that was picked.
 
     """
 
