@@ -1744,7 +1744,7 @@ class AxesManager(t.HasTraits):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
         ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
-        ax_signature_non_uniform = "% 16s | %6g | %6s |  non-uniform axis  | %6s "
+        ax_signature_non_uniform = "% 16s | %6g | %6s | non uniform axis | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
                              'units')

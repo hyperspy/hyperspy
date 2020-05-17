@@ -414,7 +414,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         NonUniformAxisError
-            If the signal axis is not a linear axis.
+            If the signal axis is not a uniform axis.
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
