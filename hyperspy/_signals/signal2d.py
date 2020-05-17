@@ -618,7 +618,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Raises
         ------
-        NonUniformAxisError
+        NotImplementedError
             If one of the signal axes is not a linear axis.
 
         See Also
@@ -662,7 +662,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
             if (not xaxis.is_uniform) or (not yaxis.is_uniform):
-                raise NonUniformAxisError()
+                raise NotImplementedError(
+                        "This operation is not implemented for images with non-uniform axes.")
             padding = []
 
             for i in range(self.data.ndim):

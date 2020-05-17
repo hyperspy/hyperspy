@@ -413,7 +413,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
-        NonUniformAxisError
+        NotImplementedError
             If the signal axis is not a linear axis.
         """
         if not np.any(shift_array):
@@ -425,7 +425,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         axis = self.axes_manager.signal_axes[0]
         
         if not axis.is_uniform:
-            raise NonUniformAxisError()
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
 
         # Figure out min/max shifts, and translate to shifts in index as well
         minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)

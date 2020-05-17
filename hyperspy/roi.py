@@ -1275,8 +1275,9 @@ class Line2DROI(BaseInteractiveROI):
         """
         for axis in axes:
             if not axis.is_uniform:
-                raise NonUniformAxisError()        
-        
+                raise NotImplementedError(
+                    "Line profiles on data with non-uniform axes is not implemented.")
+
         import scipy.ndimage as nd
         # Convert points coordinates from axes units to pixels
         p0 = ((src[0] - axes[0].offset) / axes[0].scale,

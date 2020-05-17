@@ -33,7 +33,6 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
-from hyperspy.exceptions import NonUniformAxisError
 from hyperspy._components.expression import _parse_substitutions
 
 
@@ -1408,7 +1407,7 @@ class AxesManager(t.HasTraits):
         return self
 
     def _append_axis(self, **kwargs):
-        axis = c_create_axisreate_axis(**kwargs)
+        axis = _create_axis(**kwargs)
         axis.axes_manager = self
         self._axes.append(axis)
 
@@ -1489,7 +1488,9 @@ class AxesManager(t.HasTraits):
 
         for axis in axes:
             if not axis.is_uniform:
-                raise NonUniformAxisError()
+                raise NotImplementedError(
+                    "This operation is not implemented for non-uniform axes "
+                    f"such as {axis}")
 
         if isinstance(units, str) or units is None:
             units = [units] * len(axes)

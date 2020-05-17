@@ -44,7 +44,6 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.exceptions import NonUniformAxisError
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
@@ -2426,7 +2425,8 @@ class BaseSignal(FancySlicing,
                 raise ValueError("Wrong new_shape size")
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
-                    raise NonUniformAxisError()
+                    raise NotImplementedError(
+                            "rebinning of non-uniform axes is not yet implemented.")
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
                                            for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
@@ -2435,7 +2435,8 @@ class BaseSignal(FancySlicing,
                 raise ValueError("Wrong scale size")
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
-                    raise NonUniformAxisError()
+                    raise NotImplementedError(
+                            "rebinning of non-uniform axes is not yet implemented.")
             factors = np.array([scale[axis.index_in_axes_manager]
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
@@ -2615,9 +2616,9 @@ class BaseSignal(FancySlicing,
 
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
-        
         if self.axes_manager[axis].is_uniform is False:
-            raise NonUniformAxisError()
+            raise NotImplementedError(
+                    "Splitting of signals over a non-uniform axis is not implemented")
 
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
@@ -3542,8 +3543,9 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-        if any([not axs.is_uniform for axs in self.axes_manager[axes]]): 
-            raise NonUniformAxisError()
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
+            raise NotImplementedError(
+                    "Not implemented for non-uniform axes.")
         use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
         if isinstance(self.data, da.Array):
             if use_real_fft:
@@ -3636,8 +3638,9 @@ class BaseSignal(FancySlicing,
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-        if any([not axs.is_uniform for axs in self.axes_manager[axes]]): 
-            raise NonUniformAxisError()
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
+            raise NotImplementedError(
+                    "Not implemented for non-uniform axes.")
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
