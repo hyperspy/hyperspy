@@ -5,6 +5,7 @@ Loading and saving data
 ***********************
 
 .. contents::
+   :depth: 3
 
 .. _loading_files:
 
@@ -19,9 +20,12 @@ image ascent.jpg you can type:
 
     >>> s = hs.load("ascent.jpg")
 
-If the loading was successful, the variable ``s`` contains a generic
-:py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or
-an :py:class:`~._signals.signal2d.Signal2D`.
+If loading was successful, the variable ``s`` contains a HyperSpy signal
+or a signal of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
+- see available :ref:`signal subclasses <transforming_signal-label>` for more
+information.
+If the loaded file contains several datasets, the :py:func:`~.io.load`
+functions will return a list of the corresponding signal.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array
@@ -178,7 +182,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | FEI's emi and ser  |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
-    | HDF5               |    Yes |    Yes |    Yes |
+    | hspy               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
     | Image: jpg         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
@@ -255,7 +259,7 @@ filename e.g.:
 
 
 When saving to ``hspy``, all supported objects in the signal's
-:py:attr:`~.signal.BaseSignal.metadata` is stored. This includes  lists, tuples and signals.
+:py:attr:`~.signal.BaseSignal.metadata` is stored. This includes lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,
 the inner-most structures are converted to numpy arrays when saved. This
 procedure homogenizes any types of the objects inside, most notably casting
@@ -814,8 +818,8 @@ the data size in memory.
 .. note::
 
     Pruned Velox EMD files only contain the spectrum image in a proprietary
-    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in
-    you intend to read them with HyperSpy.
+    format that HyperSpy cannot read. Therefore, don't prune Velox EMD files
+    if you intend to read them with HyperSpy.
 
 .. code-block:: python
 
