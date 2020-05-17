@@ -736,6 +736,7 @@ class FunctionalDataAxis(BaseDataAxis):
         self.axis = self._function(x=self.x.axis, **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
+        self.size = len(self.axis)
 
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
