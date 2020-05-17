@@ -81,7 +81,7 @@ def generate_uniform_axis(offset, scale, size, offset_index=0):
                        size)
 
 
-def create_axis(**kwargs):
+def _create_axis(**kwargs):
     """Creates a uniform, a non-uniform axis or a functional axis depending on 
     the kwargs provided. If `axis` or  `expression` are provided, a non-uniform
     or a functional axis is created, respectively. Otherwise a uniform axis is 
@@ -1408,7 +1408,7 @@ class AxesManager(t.HasTraits):
         return self
 
     def _append_axis(self, **kwargs):
-        axis = create_axis(**kwargs)
+        axis = c_create_axisreate_axis(**kwargs)
         axis.axes_manager = self
         self._axes.append(axis)
 
