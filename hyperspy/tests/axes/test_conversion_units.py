@@ -23,7 +23,7 @@ import pytest
 from hyperspy.axes import (DataAxis, UniformDataAxis, AxesManager,
                            UnitConversion, _ureg)
 from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
-from hyperspy.exceptions import NonLinearAxisError
+from hyperspy.exceptions import NonUniformAxisError
 
 
 class TestUnitConversion:
@@ -455,5 +455,5 @@ class TestAxesManager:
 
     def test_conversion_non_uniform_axis(self):
         self.am._axes[0] = DataAxis(axis=np.arange(16)**2)
-        with pytest.raises(NonLinearAxisError):
+        with pytest.raises(NonUniformAxisError):
             self.am.convert_units()

@@ -68,7 +68,7 @@ def _get_dim_dict(labels, units, val_func, ignore_non_uniform_dims=True):
     dim_dict = dict()
     for dim_name, units in zip(labels, units):
         # dim_vals below contains the full 1D tensor that shows how a dimension
-        # was varied. If the parameter was varied linearly, the offset, size,
+        # was varied. If the parameter was varied uniformly, the offset, size,
         # and scale can be extracted easily.
         dim_vals = val_func(dim_name)
         if len(dim_vals) == 1:
@@ -223,7 +223,7 @@ def _usidataset_to_signal(h5_main, ignore_non_uniform_dims=True, lazy=True,
         If True, parameters that were varied non-uniformly in the desired
         dataset will result in Exceptions.
         Else, all such non-uniformly varied parameters will be treated as
-        linearly varied parameters and
+        uniformly varied parameters and
         a Signal object will be generated.
     lazy : bool, Optional
         If set to True, data will be read as a Dask array.
@@ -401,7 +401,7 @@ def file_reader(filename, dset_path=None, ignore_non_uniform_dims=True, **kwds):
         If True, parameters that were varied non-uniformly in the desired
         dataset will result in Exceptions.
         Else, all such non-uniformly varied parameters will be treated as
-        linearly varied parameters and a Signal object will be generated.
+        uniformly varied parameters and a Signal object will be generated.
 
     Returns
     -------

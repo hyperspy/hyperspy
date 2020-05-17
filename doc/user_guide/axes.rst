@@ -320,7 +320,7 @@ is a function defined as a ``string`` using the
 `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_ text expression
 format. An example would be ``expression = a / x + b``. Any variables in the
 expression, in this case ``a`` and ``b`` must be defined as additional
-attributes of the axis. The property ``is_linear`` is automatically set to
+attributes of the axis. The property ``is_uniform`` is automatically set to
 ``False``.
 
 By default, the axis is built using a vector ``x = np.arange(size)``. However,
@@ -352,15 +352,15 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
                 Name |   size |  index |          offset |           scale |  units
     ================ | ====== | ====== | =============== | =============== | ======
     ---------------- | ------ | ------ | --------------- | --------------- | ------
-                     |    500 |        | non linear axis | non linear axis |       
+                     |    500 |        | non uniform axis | non linear axis |       
 
 
-(Non linear) Data axis
+(Non uniform) Data axis
 ^^^^^^^^^^^^^^^^^^^^^^
 
 A :py:class:`~.axes.DataAxis` is the most flexible type of axis. The axis
 points are directly given by a vector named ``axis``. As this can be any
-vector, the property ``is_linear`` is automatically set to ``False``.
+vector, the property ``is_uniform`` is automatically set to ``False``.
 
 
 Sample dictionary for a :py:class:`~.axes.DataAxis`:

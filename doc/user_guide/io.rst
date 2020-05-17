@@ -997,8 +997,8 @@ signal for each named component in the dataset:
 h5USID files also support parameters or dimensions that have been varied non-uniformly.
 This capability is important in several spectroscopy techniques where the bias is varied as a
 `bi-polar triangular waveform <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_usi_dataset.html#values-for-each-dimension>`_
-rather than linearly from the minimum value to the maximum value.
-Since HyperSpy Signals expect linear variation of parameters / axes, such non-uniform information
+rather than uniformly from the minimum value to the maximum value.
+Since HyperSpy Signals expect uniform variation of parameters / axes, such non-uniform information
 would be lost in the axes manager. The USID plugin will default to a warning
 when it encounters a parameter that has been varied non-uniformly:
 

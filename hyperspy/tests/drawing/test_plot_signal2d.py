@@ -230,9 +230,9 @@ class _TestIteratedSignal:
 class TestPlotNonLinearAxis:   
     
     def setup_method(self):
-        dict0 = {'axis': np.arange(10)**0.5, 'name':'Non linear 0', 'units':'A',
+        dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
                  'navigate':True}
-        dict1 = {'axis': np.arange(10)**0.5, 'name':'Non linear 1', 'units':'A',
+        dict1 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 1', 'units':'A',
                  'navigate':False}
         dict2 = {'size': 100, 'name':'Linear 2', 'units':'A', 'scale':0.2,
                  'offset':1, 'navigate':False}

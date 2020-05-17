@@ -22,7 +22,7 @@ import numpy as np
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_linear_axis
+from hyperspy.axes import generate_uniform_axis
 from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
@@ -321,7 +321,7 @@ class Model1D(BaseModel):
                     self.signal.axes_manager.navigation_shape):
                 raise ValueError('The low-loss does not have the same '
                                  'navigation dimension as the core-loss.')
-            if not value.axes_manager.signal_axes[0].is_linear:
+            if not value.axes_manager.signal_axes[0].is_uniform:
                 raise ValueError('Low loss convolution is not supported with '
                                  'non linear signal axes.')
             self._low_loss = value
@@ -344,7 +344,7 @@ class Model1D(BaseModel):
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
-        self.convolution_axis = generate_linear_axis(self.axis.offset, step,
+        self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
                                                      dimension, knot_position)
 
     def append(self, thing):

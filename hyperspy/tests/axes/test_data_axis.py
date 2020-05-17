@@ -41,14 +41,14 @@ class TestBaseDataAxis:
         assert self.axis.name is t.Undefined
         assert self.axis.units is t.Undefined
         assert self.axis.navigate is t.Undefined
-        assert not self.axis.is_linear
+        assert not self.axis.is_uniform
 
     def test_initialisation_BaseDataAxis(self):
         axis = BaseDataAxis(name='named axis', units='s', navigate=True)
         assert axis.name == 'named axis'
         assert axis.units == 's'
         assert axis.navigate
-        assert not self.axis.is_linear
+        assert not self.axis.is_uniform
         assert_deep_almost_equal(axis.get_axis_dictionary(),
                                  {'name': 'named axis',
                                   'units': 's',
@@ -75,7 +75,7 @@ class TestDataAxis:
     def test_axis_value(self):
         assert_allclose(self.axis.axis, np.arange(16)**2)
         assert self.axis.size == 16
-        assert not self.axis.is_linear
+        assert not self.axis.is_uniform
 
     def test_update_axes(self):
         values = np.arange(20)**2
@@ -137,9 +137,9 @@ class TestDataAxis:
         assert self.axis.size == 5
         np.testing.assert_allclose(self.axis.axis, np.arange(0, 10, 2)**2)
 
-    def test_convert_to_linear_axis(self):
+    def test_convert_to_uniform_axis(self):
         scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
-        self.axis.convert_to_linear_axis()
+        self.axis.convert_to_uniform_axis()
         assert isinstance(self.axis, UniformDataAxis)
         assert self.axis.size == 16
         assert self.axis.scale == scale
@@ -266,7 +266,7 @@ class TestUniformDataAxis:
         self._test_initialisation_parameters(axis)
 
     def test_value_range_to_indices_in_range(self):
-        assert self.axis.is_linear
+        assert self.axis.is_uniform
         assert (
             self.axis.value_range_to_indices(
                 10.1, 10.8) == (1, 8))

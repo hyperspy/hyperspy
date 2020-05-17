@@ -413,7 +413,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
-        NonLinearAxisError
+        NonUniformAxisError
             If the signal axis is not a linear axis.
         """
         if not np.any(shift_array):
@@ -424,8 +424,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         
-        if not axis.is_linear:
-            raise NonLinearAxisError()
+        if not axis.is_uniform:
+            raise NonUniformAxisError()
 
         # Figure out min/max shifts, and translate to shifts in index as well
         minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
@@ -924,7 +924,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         More information about the filter in `scipy.signal.savgol_filter`.
         """
         self._check_signal_dimension_equals_one()
-        if not self.axes_manager.signal_axes[0].is_linear:
+        if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
             "This functionality is not implement for signals with non-uniform axes. ")
             "Consider using `smooth_lowess` instead."
@@ -1040,7 +1040,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If the signal dimension is not 1.
         """
         self._check_signal_dimension_equals_one()
-        if not self.axes_manager.signal_axes[0].is_linear:
+        if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
             "This functionality is not implement for signals with non-uniform axes. ")
             "Consider using `smooth_lowess` instead."
@@ -1073,7 +1073,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         """
-        if not self.axes_manager.signal_axes[0].is_linear:
+        if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
             "This functionality is not implement for signals with non-uniform axes. ")
             "Consider using `smooth_lowess` instead."

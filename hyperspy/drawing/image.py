@@ -165,7 +165,7 @@ class ImagePlot(BlittedFigure):
         if yaxis.units is not Undefined:
             self._ylabel += ' (%s)' % yaxis.units
 
-        if (xaxis.is_linear and yaxis.is_linear and
+        if (xaxis.is_uniform and yaxis.is_uniform and
                 xaxis.units == yaxis.units and xaxis.scale == yaxis.scale):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
@@ -180,7 +180,7 @@ class ImagePlot(BlittedFigure):
     def _set_extent(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
-        if xaxis.is_linear and yaxis.is_linear:
+        if xaxis.is_uniform and yaxis.is_uniform:
             xaxis_half_px = xaxis.scale / 2.
             yaxis_half_px = yaxis.scale / 2.
         else:
@@ -210,7 +210,7 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp ** -1 * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
-        if xaxis.is_linear and yaxis.is_linear:
+        if xaxis.is_uniform and yaxis.is_uniform:
             self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
         else:
             self._aspect = 1.0

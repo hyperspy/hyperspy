@@ -317,7 +317,7 @@ class LazySignal(BaseSignal):
         self._make_lazy(rechunk=True)
 
     def diff(self, axis, order=1, out=None, rechunk=True):
-        if not self.axes_manager[axis].is_linear:
+        if not self.axes_manager[axis].is_uniform:
             raise NotImplementedError(
             "Performing a numerical difference on a non-uniform axis "
             "is not implemented. Consider using `derivative` instead."

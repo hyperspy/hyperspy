@@ -282,13 +282,13 @@ class WidgetBase(object):
     def _i2v(self, axis, i):
         """Wrapped version of DataAxis.index2value, which bounds the value
         inbetween axis.low_value and axis.high_value + axis.scale when the axis
-        is linear and does not raise a ValueError.
+        is uniform and does not raise a ValueError.
         """
         try:
             return axis.index2value(i)
         except ValueError:
             if i > axis.high_index:
-                if axis.is_linear:
+                if axis.is_uniform:
                     return axis.high_value + axis.scale
                 else:
                     return axis.high_value
@@ -574,7 +574,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _get_step(self, axis):
         # TODO: need to check if this is working fine, particularly with
         """ Use to determine the size of the widget with support for non 
-        linear axis.
+        uniform axis.
         """
         return axis.index2value(axis.index + 1) - axis.index2value(axis.index)
 

@@ -1274,8 +1274,8 @@ class Line2DROI(BaseInteractiveROI):
 
         """
         for axis in axes:
-            if not axis.is_linear:
-                raise NonLinearAxisError()        
+            if not axis.is_uniform:
+                raise NonUniformAxisError()        
         
         import scipy.ndimage as nd
         # Convert points coordinates from axes units to pixels

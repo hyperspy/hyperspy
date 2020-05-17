@@ -44,7 +44,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.exceptions import NonLinearAxisError
+from hyperspy.exceptions import NonUniformAxisError
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
@@ -2088,13 +2088,13 @@ class BaseSignal(FancySlicing,
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension > 1 and
-                    np.any(np.array([not axis.is_linear for axis in
+                    np.any(np.array([not axis.is_uniform for axis in
                                      self.axes_manager.navigation_axes]))):
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if (self.axes_manager.navigation_axes[0].is_linear and 
-                        self.axes_manager.signal_axes[0].is_linear):
+                if (self.axes_manager.navigation_axes[0].is_uniform and 
+                        self.axes_manager.signal_axes[0].is_uniform):
                     navigator = "data"
                 else:
                     navigator = "spectrum"
@@ -2425,8 +2425,8 @@ class BaseSignal(FancySlicing,
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
             for axis in self.axes_manager._axes:
-                if axis.is_linear is False:
-                    raise NonLinearAxisError()
+                if axis.is_uniform is False:
+                    raise NonUniformAxisError()
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
                                            for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
@@ -2434,8 +2434,8 @@ class BaseSignal(FancySlicing,
             if len(scale) != len(self.data.shape):
                 raise ValueError("Wrong scale size")
             for axis in self.axes_manager._axes:
-                if axis.is_linear is False:
-                    raise NonLinearAxisError()
+                if axis.is_uniform is False:
+                    raise NonUniformAxisError()
             factors = np.array([scale[axis.index_in_axes_manager]
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
@@ -2616,8 +2616,8 @@ class BaseSignal(FancySlicing,
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
         
-        if self.axes_manager[axis].is_linear is False:
-            raise NonLinearAxisError()
+        if self.axes_manager[axis].is_uniform is False:
+            raise NonUniformAxisError()
 
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
@@ -3078,7 +3078,7 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
-        if any([not ax.is_linear for ax in axes]):
+        if any([not ax.is_uniform for ax in axes]):
             warnings.warn("You are summing over a non-uniform axis. The result "
                           "can not be used as an approximation of the "
                           "integral of the signal. For this functionality, "
@@ -3276,7 +3276,7 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
-        if any([not ax.is_linear for ax in axes]):
+        if any([not ax.is_uniform for ax in axes]):
             warnings.warn("You are summing over a non-uniform axis. The result "
                           "can not be used as an approximation of the "
                           "integral of the signal. For this functionaliy, "
@@ -3367,7 +3367,7 @@ class BaseSignal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
-        if not self.axes_manager[axis].is_linear:
+        if not self.axes_manager[axis].is_uniform:
             raise NotImplementedError(
             "Performing a numerical difference on a non-uniform axis "
             "is not implemented. Consider using `derivative` instead."
@@ -3542,8 +3542,8 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-        if any([not axs.is_linear for axs in self.axes_manager[axes]]): 
-            raise NonLinearAxisError()
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]): 
+            raise NonUniformAxisError()
         use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
         if isinstance(self.data, da.Array):
             if use_real_fft:
@@ -3636,8 +3636,8 @@ class BaseSignal(FancySlicing,
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-        if any([not axs.is_linear for axs in self.axes_manager[axes]]): 
-            raise NonLinearAxisError()
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]): 
+            raise NonUniformAxisError()
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
@@ -4027,7 +4027,7 @@ class BaseSignal(FancySlicing,
                 ndkwargs += ((key, value),)
 
         # TODO: Consider support for non linear signal axis
-        if any([not ax.is_linear for ax in self.axes_manager.signal_axes]):
+        if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
             _logger.warning(
                 "At least one axis of the signal is non-uniform. Can your "
                 "`function` operate on non-uniform axes?")

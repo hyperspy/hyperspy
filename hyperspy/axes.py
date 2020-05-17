@@ -33,7 +33,7 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
-from hyperspy.exceptions import NonLinearAxisError
+from hyperspy.exceptions import NonUniformAxisError
 from hyperspy._components.expression import _parse_substitutions
 
 
@@ -56,8 +56,8 @@ class ndindex_nat(np.ndindex):
         return super(ndindex_nat, self).next()[::-1]
 
 
-def generate_linear_axis(offset, scale, size, offset_index=0):
-    """Creates a linear axis vector given the offset, scale and number of
+def generate_uniform_axis(offset, scale, size, offset_index=0):
+    """Creates a uniform axis vector given the offset, scale and number of
     channels.
 
     Alternatively, the offset_index of the offset channel can be specified.
@@ -82,9 +82,9 @@ def generate_linear_axis(offset, scale, size, offset_index=0):
 
 
 def create_axis(**kwargs):
-    """Creates a linear, a non-uniform axis or a functional axis depending on 
+    """Creates a uniform, a non-uniform axis or a functional axis depending on 
     the kwargs provided. If `axis` or  `expression` are provided, a non-uniform
-    or a functional axis is created, respectively. Otherwise a linear axis is 
+    or a functional axis is created, respectively. Otherwise a uniform axis is 
     created, which can be defined by `scale`, `size` and `offset`.
 
     Alternatively, the offset_index of the offset channel can be specified.
@@ -102,11 +102,11 @@ def create_axis(**kwargs):
     A DataAxis, FunctionalDataAxis or a UniformDataAxis
 
     """
-    if 'axis' in kwargs.keys():  # non linear axis
+    if 'axis' in kwargs.keys():  # non uniform axis
         axis_class = DataAxis
     elif 'expression' in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
-    else:  # if not argument is provided fall back to linear axis
+    else:  # if not argument is provided fall back to uniform axis
         axis_class = UniformDataAxis
     return axis_class(**kwargs)
 
@@ -302,7 +302,7 @@ class BaseDataAxis(t.HasTraits):
         self._update_slice(self.navigate)
 
     @property
-    def is_linear(self):
+    def is_uniform(self):
         return self._is_uniform
 
     def _index_changed(self, name, old, new):
@@ -385,9 +385,9 @@ class BaseDataAxis(t.HasTraits):
 
         """
         if isinstance(slice_, slice):
-            if not self.is_linear and isfloat(slice_.step):
+            if not self.is_uniform and isfloat(slice_.step):
                 raise ValueError(
-                    "Float steps are only supported for linear axes.")
+                    "Float steps are only supported for uniform axes.")
 
         v2i = self.value2index
 
@@ -582,9 +582,9 @@ class BaseDataAxis(t.HasTraits):
         return any_changes
 
     def calibrate(self, *args, **kwargs):
-        raise TypeError("This function works only for linear axes.")
+        raise TypeError("This function works only for uniform axes.")
 
-    def convert_to_linear_axis(self):
+    def convert_to_uniform_axis(self):
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
         del d["axis"]
@@ -1274,8 +1274,8 @@ class AxesManager(t.HasTraits):
         return tuple(navigation_extent)
 
     @property
-    def all_linear(self):
-        if any([axis.is_linear == False for axis in self._axes]):
+    def all_uniform(self):
+        if any([axis.is_uniform == False for axis in self._axes]):
             return False
         else:
             return True
@@ -1463,7 +1463,7 @@ class AxesManager(t.HasTraits):
 
         Note
         ----
-        Requires a linear axis.
+        Requires a uniform axis.
         """
         convert_navigation = convert_signal = True
 
@@ -1488,8 +1488,8 @@ class AxesManager(t.HasTraits):
                 'Axes type `{}` is not correct.'.format(type(axes)))
 
         for axis in axes:
-            if not axis.is_linear:
-                raise NonLinearAxisError()
+            if not axis.is_uniform:
+                raise NonUniformAxisError()
 
         if isinstance(units, str) or units is None:
             units = [units] * len(axes)
@@ -1743,7 +1743,7 @@ class AxesManager(t.HasTraits):
     def __repr__(self):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
-        ax_signature_linear = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
         ax_signature_non_uniform = "% 16s | %6g | %6s |  non-uniform axis  | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
@@ -1752,9 +1752,9 @@ class AxesManager(t.HasTraits):
         text += signature % ('=' * 16, '=' * 6, '=' * 6,
                              '=' * 7, '=' * 7, '=' * 6)
 
-        def axis_repr(ax, ax_signature_linear, ax_signature_non_uniform):
-            if ax.is_linear:
-                return ax_signature_linear % (str(ax.name)[:16], ax.size,
+        def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
+            if ax.is_uniform:
+                return ax_signature_uniform % (str(ax.name)[:16], ax.size,
                                               str(ax.index), ax.offset,
                                               ax.scale, ax.units)
             else:
@@ -1763,13 +1763,13 @@ class AxesManager(t.HasTraits):
 
         for ax in self.navigation_axes:
             text += '\n'
-            text += axis_repr(ax, ax_signature_linear, ax_signature_non_uniform)
+            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
         text += '\n'
         text += signature % ('-' * 16, '-' * 6, '-' * 6,
                              '-' * 7, '-' * 7, '-' * 6)
         for ax in self.signal_axes:
             text += '\n'
-            text += axis_repr(ax, ax_signature_linear, ax_signature_non_uniform)
+            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
 
         return text
 
@@ -1797,12 +1797,12 @@ class AxesManager(t.HasTraits):
 
         def axis_repr(ax):
             index = ax.index if ax.navigate else ""
-            if ax.is_linear:
+            if ax.is_uniform:
                 return format_row(ax.name, ax.size, index, ax.offset,
                                   ax.scale, ax.units)
             else:
-                return format_row(ax.name, ax.size, index, "non linear axis",
-                                  "non linear axis", ax.units)
+                return format_row(ax.name, ax.size, index, "non uniform axis",
+                                  "non uniform axis", ax.units)
 
         if self.navigation_axes:
             text += "<table style='width:100%'>\n"
