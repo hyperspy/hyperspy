@@ -205,7 +205,6 @@ def test_sklearn_convergence_warning():
             diff_order=1,
             on_loadings=True,
             tol=1e-15,
-            max_iter=3,
         )
 
 
