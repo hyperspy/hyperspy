@@ -26,7 +26,7 @@ import traits.api as t
 import pytest
 
 from hyperspy.axes import (BaseDataAxis, DataAxis, FunctionalDataAxis,
-                           LinearDataAxis, create_axis)
+                           UniformDataAxis, create_axis)
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -140,7 +140,7 @@ class TestDataAxis:
     def test_convert_to_linear_axis(self):
         scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
         self.axis.convert_to_linear_axis()
-        assert isinstance(self.axis, LinearDataAxis)
+        assert isinstance(self.axis, UniformDataAxis)
         assert self.axis.size == 16
         assert self.axis.scale == scale
         assert self.axis.offset == 0
@@ -246,10 +246,10 @@ class TestReciprocalDataAxis:
         np.testing.assert_almost_equal(axis.axis[-1], 10.025)
 
 
-class TestLinearDataAxis:
+class TestUniformDataAxis:
 
     def setup_method(self, method):
-        self.axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        self.axis = UniformDataAxis(size=10, scale=0.1, offset=10)
 
     def _test_initialisation_parameters(self, axis):
         assert axis.scale == 0.1
@@ -262,7 +262,7 @@ class TestLinearDataAxis:
 
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
-        assert isinstance(axis, LinearDataAxis)
+        assert isinstance(axis, UniformDataAxis)
         self._test_initialisation_parameters(axis)
 
     def test_value_range_to_indices_in_range(self):
@@ -340,7 +340,7 @@ class TestLinearDataAxis:
             slice(2, 4, 2))
 
     def test_update_from(self):
-        ax2 = LinearDataAxis(size=2, units="nm", scale=0.5)
+        ax2 = UniformDataAxis(size=2, units="nm", scale=0.5)
         self.axis.update_from(ax2, attributes=("units", "scale"))
         assert ((ax2.units, ax2.scale) ==
                 (self.axis.units, self.axis.scale))
@@ -365,9 +365,9 @@ class TestLinearDataAxis:
         ax.index += 1
         assert m.trigger_me.called
 
-    def test_convert_to_non_linear_axis(self):
+    def test_convert_to_non_uniform_axis(self):
         axis = np.copy(self.axis.axis)
-        self.axis.convert_to_non_linear_axis()
+        self.axis.convert_to_non_uniform_axis()
         assert isinstance(self.axis, DataAxis)
         assert self.axis.size == 10
         assert self.axis.low_value == 10
@@ -376,7 +376,7 @@ class TestLinearDataAxis:
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         start = 10.2
         if use_indices:
             start = axis.value2index(start)
@@ -387,7 +387,7 @@ class TestLinearDataAxis:
         np.testing.assert_almost_equal(axis.offset, 10.2)
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         end = 10.4
         if use_indices:
             end = axis.value2index(end)
@@ -398,7 +398,7 @@ class TestLinearDataAxis:
         np.testing.assert_almost_equal(axis.offset, 10.2)
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         axis.crop(None, end)
         assert axis.size == 4
         np.testing.assert_almost_equal(axis.axis[0], 10.0)
@@ -408,7 +408,7 @@ class TestLinearDataAxis:
 
     @pytest.mark.parametrize("mixed", (False, True))
     def test_crop_reverses_indexing(self, mixed):
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         if mixed:
             i1, i2 = 2, -6
         else:

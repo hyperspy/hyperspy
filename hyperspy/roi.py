@@ -52,7 +52,7 @@ import numpy as np
 
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.axes import LinearDataAxis
+from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.ui_registry import add_gui_method
 
@@ -1361,7 +1361,7 @@ class Line2DROI(BaseInteractiveROI):
             axm = signal.axes_manager.deepcopy()
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)
             axm.remove([ax.index_in_array + 3j for ax in axes])
-            axis = LinearDataAxis(size=profile.shape[i0],
+            axis = UniformDataAxis(size=profile.shape[i0],
                                   scale=length / profile.shape[i0],
                                   units=axes[0].units,
                                   navigate=axes[0].navigate)

@@ -169,7 +169,7 @@ It is also possible to set the axes properties using a GUI by calling the
    AxesManager ipywidgets GUI.
 
 or, for a specific axis, the respective method of e.g.
-:py:class:`~.axes.LinearDataAxis`:
+:py:class:`~.axes.UniformDataAxis`:
 
 .. code-block:: python
 
@@ -180,7 +180,7 @@ or, for a specific axis, the respective method of e.g.
 .. figure::  images/data_axis_gui_ipywidgets.png
    :align:   center
 
-   LinearDataAxis ipywidgets GUI.
+   UniformDataAxis ipywidgets GUI.
 
 To simply change the "current position" (i.e. the indices of the navigation
 axes) you could use the navigation sliders:
@@ -238,21 +238,21 @@ defined:
 
 * :py:class:`~.axes.DataAxis` defined by a vector ``axis``, 
 * :py:class:`~.axes.FunctionalDataAxis` defined by a function ``expression`` or 
-* :py:class:`~.axes.LinearDataAxis` defined by the initial value ``offset``
+* :py:class:`~.axes.UniformDataAxis` defined by the initial value ``offset``
   and spacing ``scale``.
 
 The main disambiguation is whether the
-axis is **linear**, where the data points are equidistantly spaced, or
-**non linear**, where the spacing may vary. The latter can become important
+axis is **uniform**, where the data points are equidistantly spaced, or
+**non-uniform**, where the spacing may vary. The latter can become important
 when, e.g., a spectrum recorded over a *wavelength* axis is converted to a
 *wavenumber* or *energy* scale, where the conversion is based on a ``1/x``
 dependence so that the axis spacing of the new axis varies along the length
-of the axis. Whether an axis is linear or not can be queried through the 
-property ``is_linear`` (bool) of the axis.
+of the axis. Whether an axis is uniform or not can be queried through the 
+property ``is_uniform`` (bool) of the axis.
 
 Every axis of a signal object may be of a different type. For example, it will
-be common that the *navigation* axes are *linear*, while the *signal* axis is
-*non linear*.
+the *navigation* axes may be *uniform*, while the *signal* axes may be
+*non-uniform*.
 
 When an axis is created, the type is automatically determined by the attributes
 passed to the generator. The three different axis types are summarized in the
@@ -261,32 +261,31 @@ following table.
 .. table:: BaseDataAxis subclasses.
 
     +-------------------------------------------------------------------+------------------------+-------------+
-    |                   BaseDataAxis subclass                           |  defining attributes   |  is_linear  |
+    |                   BaseDataAxis subclass                           |  defining attributes   |  is_uniform |
     +===================================================================+========================+=============+
     |                :py:class:`~.axes.DataAxis`                        |         axis           |  False      |
     +-------------------------------------------------------------------+------------------------+-------------+
     |           :py:class:`~.axes.FunctionalDataAxis`                   |      expression        |  False      |
     +-------------------------------------------------------------------+------------------------+-------------+
-    |             :py:class:`~.axes.LinearDataAxis`                     |    offset, scale       |  True       |
+    |             :py:class:`~.axes.UniformDataAxis`                     |    offset, scale       |  True       |
     +-------------------------------------------------------------------+------------------------+-------------+    
 
 .. NOTE::
 
-    Certain functionalities require the ``offest`` and ``scale`` parameters of
-    a ``LinearDataAxis`` and thus may not support the non linear axis types.
+    Not all features are implemented for non-uniform axes.
 
 
-Linear data axis
-^^^^^^^^^^^^^^^^
+Non-uniform data axis
+^^^^^^^^^^^^^^^^^^^^^
 
-The most common case is the :py:class:`~.axes.LinearDataAxis`. Here, the axis
+The most common case is the :py:class:`~.axes.UniformDataAxis`. Here, the axis
 is defined by the ``offset`` and ``scale`` parameters, which determine the
 `initial value` and `spacing`, respectively. The actual ``axis`` vector is
-automatically calculated from these two values. The ``LinearDataAxis`` is a
+automatically calculated from these two values. The ``UniformDataAxis`` is a
 special case of the ``FunctionalDataAxis`` defined by the function
 ``scale * x + offset``.
 
-Sample dictionary for a :py:class:`~.axes.LinearDataAxis`:
+Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
 
 .. code-block:: python
 
@@ -405,7 +404,7 @@ directly:
 
 .. code-block:: python
 
-    >>> axis = axes.LinearDataAxis(offset=10,scale=0.5,size=20)
+    >>> axis = axes.UniformDataAxis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
     
@@ -431,7 +430,7 @@ signal<signal_initialization>`.
 Using quantity and converting units
 -----------------------------------
 
-The ``scale`` and the ``offset`` of each :py:class:`~.axes.LinearDataAxis` axis
+The ``scale`` and the ``offset`` of each :py:class:`~.axes.UniformDataAxis` axis
 can be set and retrieved as quantity.
 
 .. code-block:: python
@@ -472,7 +471,7 @@ units, which by default (no parameters provided) converts all axis units to an
 optimal unit to avoid using too large or small numbers.
 
 Each axis can also be converted individually using the ``convert_to_units``
-method of the :py:class:`~.axes.LinearDataAxis`:
+method of the :py:class:`~.axes.UniformDataAxis`:
 
 .. code-block:: python
 

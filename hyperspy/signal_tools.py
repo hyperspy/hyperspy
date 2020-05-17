@@ -29,7 +29,7 @@ import traits.api as t
 
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.axes import AxesManager, LinearDataAxis
+from hyperspy.axes import AxesManager, UniformDataAxis
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -190,7 +190,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
-        if not isinstance(self.axis, LinearDataAxis):
+        if not isinstance(self.axis, UniformDataAxis):
             raise ValueError("The calibration tool supports only linear axis.")
         self.units = self.axis.units
         self.scale = self.axis.scale
@@ -689,7 +689,7 @@ class ImageContrastEditor(t.HasTraits):
     def _set_xaxis(self):
         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
         # Set this attribute to restrict the span selector to the xaxis
-        self.span_selector.step_ax = LinearDataAxis(size=len(self.xaxis),
+        self.span_selector.step_ax = UniformDataAxis(size=len(self.xaxis),
                                                     offset=self.xaxis[1],
                                                     scale=self.xaxis[1]-self.xaxis[0])
 

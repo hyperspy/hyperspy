@@ -82,8 +82,8 @@ def generate_linear_axis(offset, scale, size, offset_index=0):
 
 
 def create_axis(**kwargs):
-    """Creates a linear, a non-linear axis or a functional axis depending on 
-    the kwargs provided. If `axis` or  `expression` are provided, a non-linear
+    """Creates a linear, a non-uniform axis or a functional axis depending on 
+    the kwargs provided. If `axis` or  `expression` are provided, a non-uniform
     or a functional axis is created, respectively. Otherwise a linear axis is 
     created, which can be defined by `scale`, `size` and `offset`.
 
@@ -99,7 +99,7 @@ def create_axis(**kwargs):
 
     Returns
     -------
-    A DataAxis, FunctionalDataAxis or a LinearDataAxis
+    A DataAxis, FunctionalDataAxis or a UniformDataAxis
 
     """
     if 'axis' in kwargs.keys():  # non linear axis
@@ -107,7 +107,7 @@ def create_axis(**kwargs):
     elif 'expression' in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
     else:  # if not argument is provided fall back to linear axis
-        axis_class = LinearDataAxis
+        axis_class = UniformDataAxis
     return axis_class(**kwargs)
 
 
@@ -295,7 +295,7 @@ class BaseDataAxis(t.HasTraits):
         self.index = 0
         self.navigate = navigate
         self.axes_manager = None
-        self._is_linear = False
+        self._is_uniform = False
 
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
@@ -303,7 +303,7 @@ class BaseDataAxis(t.HasTraits):
 
     @property
     def is_linear(self):
-        return self._is_linear
+        return self._is_uniform
 
     def _index_changed(self, name, old, new):
         self.events.index_changed.trigger(obj=self, index=self.index)
@@ -591,7 +591,7 @@ class BaseDataAxis(t.HasTraits):
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
-        self.__class__ = LinearDataAxis
+        self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
@@ -643,7 +643,7 @@ class DataAxis(BaseDataAxis):
             steps = self.axis[1:] - self.axis[:-1]
             # check axis is ordered
             if not (np.all(steps > 0) or np.all(steps < 0)):
-                raise ValueError('The non-linear axis needs to be ordered.')
+                raise ValueError('The non-uniform axis needs to be ordered.')
         self.size = len(self.axis)
 
     def get_axis_dictionary(self):
@@ -706,7 +706,7 @@ class FunctionalDataAxis(BaseDataAxis):
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
-            self.x = LinearDataAxis(scale=1, offset=0, size=size)
+            self.x = UniformDataAxis(scale=1, offset=0, size=size)
         else:
             self.x = x
             self.size = self.x.size
@@ -767,7 +767,7 @@ class FunctionalDataAxis(BaseDataAxis):
             d[kwarg] = getattr(self, kwarg)
         return d
 
-    def convert_to_non_linear_axis(self):
+    def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
@@ -803,7 +803,7 @@ class FunctionalDataAxis(BaseDataAxis):
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the LinearDataAxis accordingly.
+        change the offset and scale of the UniformDataAxis accordingly.
 
         Parameters
         ----------
@@ -820,7 +820,7 @@ class FunctionalDataAxis(BaseDataAxis):
         return my_slice
 
 
-class LinearDataAxis(BaseDataAxis, UnitConversion):
+class UniformDataAxis(BaseDataAxis, UnitConversion):
     scale = t.CFloat(1)
     offset = t.CFloat(0)
     size = t.CInt(0)
@@ -842,12 +842,12 @@ class LinearDataAxis(BaseDataAxis, UnitConversion):
         self.offset = offset
         self.size = size
         self.update_axis()
-        self._is_linear = True
+        self._is_uniform = True
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the LinearDataAxis accordingly.
+        change the offset and scale of the UniformDataAxis accordingly.
         Parameters
         ----------
         slice_ : {float, int, slice}
@@ -936,8 +936,8 @@ class LinearDataAxis(BaseDataAxis, UnitConversion):
 
         Parameters
         ----------
-        axis : LinearDataAxis
-            The LinearDataAxis instance to use as a source for values.
+        axis : UniformDataAxis
+            The UniformDataAxis instance to use as a source for values.
         attributes : iterable container of strings.
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
@@ -1004,10 +1004,10 @@ class LinearDataAxis(BaseDataAxis, UnitConversion):
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
         self.__class__ = FunctionalDataAxis
-        self.__init__(expression=expression, x=LinearDataAxis(**this_kwargs), **d)
+        self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 
-    def convert_to_non_linear_axis(self):
+    def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
@@ -1477,8 +1477,8 @@ class AxesManager(t.HasTraits):
         elif axes == 'signal':
             axes = self.signal_axes
             convert_navigation = False
-        elif isinstance(axes, (LinearDataAxis, int, str)):
-            if not isinstance(axes, LinearDataAxis):
+        elif isinstance(axes, (UniformDataAxis, int, str)):
+            if not isinstance(axes, UniformDataAxis):
                 axes = self[axes]
             axes = (axes, )
             convert_navigation = axes[0].navigate
@@ -1744,7 +1744,7 @@ class AxesManager(t.HasTraits):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
         ax_signature_linear = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
-        ax_signature_non_linear = "% 16s | %6g | %6s |  non-linear axis  | %6s "
+        ax_signature_non_uniform = "% 16s | %6g | %6s |  non-uniform axis  | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
                              'units')
@@ -1752,24 +1752,24 @@ class AxesManager(t.HasTraits):
         text += signature % ('=' * 16, '=' * 6, '=' * 6,
                              '=' * 7, '=' * 7, '=' * 6)
 
-        def axis_repr(ax, ax_signature_linear, ax_signature_non_linear):
+        def axis_repr(ax, ax_signature_linear, ax_signature_non_uniform):
             if ax.is_linear:
                 return ax_signature_linear % (str(ax.name)[:16], ax.size,
                                               str(ax.index), ax.offset,
                                               ax.scale, ax.units)
             else:
-                return ax_signature_non_linear % (str(ax.name)[:16], ax.size,
+                return ax_signature_non_uniform % (str(ax.name)[:16], ax.size,
                                                   str(ax.index), ax.units)
 
         for ax in self.navigation_axes:
             text += '\n'
-            text += axis_repr(ax, ax_signature_linear, ax_signature_non_linear)
+            text += axis_repr(ax, ax_signature_linear, ax_signature_non_uniform)
         text += '\n'
         text += signature % ('-' * 16, '-' * 6, '-' * 6,
                              '-' * 7, '-' * 7, '-' * 6)
         for ax in self.signal_axes:
             text += '\n'
-            text += axis_repr(ax, ax_signature_linear, ax_signature_non_linear)
+            text += axis_repr(ax, ax_signature_linear, ax_signature_non_uniform)
 
         return text
 

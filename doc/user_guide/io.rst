@@ -905,7 +905,7 @@ experiment. The reader returns a list of signal with each signal corresponding
 to a quantity. Since there is a small fluctuation in the step of the time axis,
 the reader assumes that the step is constant and takes its mean, which is a
 good approximation. Further release of HyperSpy will read the time axis more
-precisely by supporting non-linear axis.
+precisely by supporting non-uniform axis.
 
 
 . _usid-format:
@@ -994,29 +994,29 @@ signal for each named component in the dataset:
     Signal2D, title: blue, dimensions: (|128, 128)>,
     Signal2D, title: green, dimensions: (|128, 128)>]
 
-h5USID files also support parameters or dimensions that have been varied non-linearly.
+h5USID files also support parameters or dimensions that have been varied non-uniformly.
 This capability is important in several spectroscopy techniques where the bias is varied as a
 `bi-polar triangular waveform <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_usi_dataset.html#values-for-each-dimension>`_
 rather than linearly from the minimum value to the maximum value.
-Since HyperSpy Signals expect linear variation of parameters / axes, such non-linear information
+Since HyperSpy Signals expect linear variation of parameters / axes, such non-uniform information
 would be lost in the axes manager. The USID plugin will default to a warning
-when it encounters a parameter that has been varied non-linearly:
+when it encounters a parameter that has been varied non-uniformly:
 
 .. code-block:: python
 
     >>> hs.load("sample.h5")
-    UserWarning: Ignoring non-linearity of dimension: Bias
+    UserWarning: Ignoring non-uniformity of dimension: Bias
     <BaseSignal, title: , dimensions: (|7, 3, 5, 2)>
 
 Obviously, the
 In order to prevent accidental misinterpretation of information downstream, the keyword argument
-``ignore_non_linear_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
+``ignore_non_uniform_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
 
 .. code-block:: python
 
     >>> hs.load("sample.h5")
-    ValueError: Cannot load provided dataset. Parameter: Bias was varied non-linearly.
-    Supply keyword argument "ignore_non_linear_dims=True" to ignore this error
+    ValueError: Cannot load provided dataset. Parameter: Bias was varied non-uniformly.
+    Supply keyword argument "ignore_non_uniform_dims=True" to ignore this error
 
 Writing
 ^^^^^^^

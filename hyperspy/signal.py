@@ -2501,8 +2501,8 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
-        # TODO: Adapt so that it works if a non_linear_axis exists, but is not
-        # changed; for new_shape, a non_linear_axis should be interpolated to a
+        # TODO: Adapt so that it works if a non_uniform_axis exists, but is not
+        # changed; for new_shape, a non_uniform_axis should be interpolated to a
         # linear grid
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
@@ -3055,7 +3055,7 @@ class BaseSignal(FancySlicing,
         If you intend to calculate the numerical integral, please use the
         :py:meth:`integrate1D` function instead. To avoid erroneous misuse of the
         `sum` function as integral, it raises a warning when working with 
-        a non-linear axis.
+        a non-uniform axis.
 
         See also
         --------
@@ -3079,7 +3079,7 @@ class BaseSignal(FancySlicing,
         if not np.iterable(axes):
             axes = (axes,)
         if any([not ax.is_linear for ax in axes]):
-            warnings.warn("You are summing over a non-linear axis. The result "
+            warnings.warn("You are summing over a non-uniform axis. The result "
                           "can not be used as an approximation of the "
                           "integral of the signal. For this functionality, "
                           "use integrate1D instead.")
@@ -3277,7 +3277,7 @@ class BaseSignal(FancySlicing,
         if not np.iterable(axes):
             axes = (axes,)
         if any([not ax.is_linear for ax in axes]):
-            warnings.warn("You are summing over a non-linear axis. The result "
+            warnings.warn("You are summing over a non-uniform axis. The result "
                           "can not be used as an approximation of the "
                           "integral of the signal. For this functionaliy, "
                           "use integrate1D instead.")
@@ -3352,7 +3352,7 @@ class BaseSignal(FancySlicing,
         If you intend to calculate the numerical derivative, please use the
         proper :py:meth:`derivative` function instead. To avoid erroneous
         misuse of the `diff` function as derivative, it raises an error when
-        when working with a non-linear axis.
+        when working with a non-uniform axis.
         
         See also
         --------
@@ -3369,7 +3369,7 @@ class BaseSignal(FancySlicing,
         """
         if not self.axes_manager[axis].is_linear:
             raise NotImplementedError(
-            "Performing a numerical difference on a non-linear axis "
+            "Performing a numerical difference on a non-uniform axis "
             "is not implemented. Consider using `derivative` instead."
         )
         s = out or self._deepcopy_with_new_data(None)
@@ -4029,8 +4029,8 @@ class BaseSignal(FancySlicing,
         # TODO: Consider support for non linear signal axis
         if any([not ax.is_linear for ax in self.axes_manager.signal_axes]):
             _logger.warning(
-                "At least one axis of the signal is non-linear. Can your "
-                "`function` operate on non-linear axes?")
+                "At least one axis of the signal is non-uniform. Can your "
+                "`function` operate on non-uniform axes?")
         else:
             # Check if the signal axes have inhomogeneous scales and/or units and
             # display in warning if yes.

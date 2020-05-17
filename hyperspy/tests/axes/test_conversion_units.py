@@ -20,7 +20,7 @@ import numpy as np
 import traits.api as t
 import pytest
 
-from hyperspy.axes import (DataAxis, LinearDataAxis, AxesManager,
+from hyperspy.axes import (DataAxis, UniformDataAxis, AxesManager,
                            UnitConversion, _ureg)
 from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
 from hyperspy.exceptions import NonLinearAxisError
@@ -188,10 +188,10 @@ class TestUnitConversion:
         assert self.uc.scale == 0.05
 
 
-class TestLinearDataAxis:
+class TestUniformDataAxis:
 
     def setup_method(self, method):
-        self.axis = LinearDataAxis(size=2048, scale=12E-12, units='m',
+        self.axis = UniformDataAxis(size=2048, scale=12E-12, units='m',
                                    offset=5E-9)
 
     def test_scale_offset_as_quantity_property(self):
@@ -207,7 +207,7 @@ class TestLinearDataAxis:
         np.testing.assert_almost_equal(self.axis.axis[1], 7.5)
 
     def test_scale_as_quantity_setter_string_no_previous_units(self):
-        axis = LinearDataAxis(size=2048, scale=12E-12, offset=5.0)
+        axis = UniformDataAxis(size=2048, scale=12E-12, offset=5.0)
         axis.scale_as_quantity = '2.5 nm'
         assert axis.scale == 2.5
         # the units haven't been set previously, so the offset is not converted
@@ -453,7 +453,7 @@ class TestAxesManager:
         assert_deep_almost_equal(self.am._get_axes_dicts(),
                                  self.axes_list)
 
-    def test_conversion_non_linear_axis(self):
+    def test_conversion_non_uniform_axis(self):
         self.am._axes[0] = DataAxis(axis=np.arange(16)**2)
         with pytest.raises(NonLinearAxisError):
             self.am.convert_units()

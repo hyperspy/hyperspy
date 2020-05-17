@@ -319,7 +319,7 @@ class LazySignal(BaseSignal):
     def diff(self, axis, order=1, out=None, rechunk=True):
         if not self.axes_manager[axis].is_linear:
             raise NotImplementedError(
-            "Performing a numerical difference on a non-linear axis "
+            "Performing a numerical difference on a non-uniform axis "
             "is not implemented. Consider using `derivative` instead."
         )
         arr_axis = self.axes_manager[axis].index_in_array

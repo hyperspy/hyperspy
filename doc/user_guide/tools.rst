@@ -442,7 +442,7 @@ array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
     For numerical **differentiation** and **integration**, use the proper
     methods :py:meth:`~.signal.BaseSignal.derivative` and
     :py:meth:`~.signal.BaseSignal.integrate1D`. In certain cases, particularly
-    when operating on a non-linear axis, the approximations using the
+    when operating on a non-uniform axis, the approximations using the
     :py:meth:`~.signal.BaseSignal.diff` and :py:meth:`~.signal.BaseSignal.sum`
     methods will lead to erroneous results.
 
