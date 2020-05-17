@@ -246,7 +246,7 @@ function as in the following example:
     particular type of data (i.e. with non-empty ``signal_type``). All those
     signals currently distributed with HyperSpy will be moved to new
     packages.
-    
+
 The following example shows how to transform between different subclasses.
 
    .. code-block:: python
@@ -869,7 +869,7 @@ each element corresponds to the result of the function (or arbitrary object
 type). As such, most HyperSpy functions cannot operate on such Signal, and the
 data should be accessed directly.
 
-``inplace`` keyword (by default ``True``) of the
+The ``inplace`` keyword (by default ``True``) of the
 :py:meth:`~.signal.BaseSignal.map` method allows either overwriting the current
 data (default, ``True``) or storing it to a new signal (``False``).
 
@@ -895,12 +895,6 @@ data (default, ``True``) or storing it to a new signal (``False``).
     (512, 512)
     (724, 724)
 
-
-.. versionadded:: 1.2.0
-    ``parallel`` keyword.
-
-
-
 .. _parallel-map-label:
 
 The execution can be sped up by passing ``parallel`` keyword to the
@@ -920,6 +914,12 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> # some operations will be done in parallel:
     >>> s.map(slow_func, parallel=True)
     100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
+
+.. note::
+
+   HyperSpy implements *thread-based* parallelism for the :py:meth:`~.signal.BaseSignal.map`
+   method. You can control the number of threads that are created by passing an integer value
+   to the ``max_workers`` keyword argument. By default, it will use ``min(32, os.cpu_count())``.
 
 .. versionadded:: 1.4
     Iterating over signal using a parameter with no navigation dimension.

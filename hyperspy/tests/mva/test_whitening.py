@@ -16,22 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Import sklearn.* and randomized_svd from scikit-learn
-"""
+import numpy as np
+import pytest
 
-import warnings
+from hyperspy.learn.whitening import whiten_data
 
 
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import sklearn
-        import sklearn.decomposition
-        from sklearn.utils.extmath import randomized_svd
+@pytest.mark.parametrize("method", ["pca", "zca"])
+@pytest.mark.parametrize("centre", [True, False])
+def test_whiten(method, centre):
+    rng = np.random.RandomState(123)
+    m, n = 500, 4
 
-        sklearn_installed = True
+    X = rng.randn(m, n)
 
-except ImportError:
-    randomized_svd = None
-    sklearn_installed = False
+    Y, W = whiten_data(X, centre=centre, method=method)
+    cov = Y.T @ Y
+    cov *= n / np.trace(cov)
+
+    # Y.T @ Y should be approximately an identity matrix
+    np.testing.assert_allclose(cov, np.eye(n), atol=1e-6)
+
+
+def test_whiten_error():
+    rng = np.random.RandomState(123)
+    m, n = 500, 4
+
+    X = rng.randn(m, n)
+
+    with pytest.raises(ValueError, match="method must be one of"):
+        Y, W = whiten_data(X, method="uniform")

@@ -33,6 +33,7 @@ from ..external.progressbar import progressbar
 from ..external.astroML.histtools import dasky_histogram
 from hyperspy.misc.array_tools import _requires_linear_rebin
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.machine_learning import import_sklearn
 
 _logger = logging.getLogger(__name__)
 
@@ -494,6 +495,7 @@ class LazySignal(BaseSignal):
                      iterating_kwargs=(),
                      show_progressbar=None,
                      parallel=None,
+                     max_workers=None,
                      ragged=None,
                      inplace=True,
                      **kwargs):
@@ -634,154 +636,193 @@ class LazySignal(BaseSignal):
                 yield chunk.reshape(chunk.shape[:-1] +
                                     self.axes_manager.signal_shape[::-1])
 
-    def decomposition(self,
-                      normalize_poissonian_noise=False,
-                      algorithm='svd',
-                      output_dimension=None,
-                      signal_mask=None,
-                      navigation_mask=None,
-                      get=threaded.get,
-                      num_chunks=None,
-                      reproject=True,
-                      bounds=False,
-                      **kwargs):
-        """Perform Incremental (Batch) decomposition on the data, keeping n
-        significant components.
+    def decomposition(
+        self,
+        normalize_poissonian_noise=False,
+        algorithm="svd",
+        output_dimension=None,
+        signal_mask=None,
+        navigation_mask=None,
+        get=threaded.get,
+        num_chunks=None,
+        reproject=True,
+        print_info=True,
+        **kwargs
+    ):
+        """Perform Incremental (Batch) decomposition on the data.
+
+        The results are stored in ``self.learning_results``.
+
+        Read more in the :ref:`User Guide <big_data.decomposition>`.
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool
-            If True, scale the SI to normalize Poissonian noise
-        algorithm : str
-            One of ('svd', 'PCA', 'ORPCA', 'ORNMF'). By default 'svd',
-            lazy SVD decomposition from dask.
-        output_dimension : int
-            the number of significant components to keep. If None, keep all
-            (only valid for SVD)
+        normalize_poissonian_noise : bool, default False
+            If True, scale the signal to normalize Poissonian noise using
+            the approach described in [KeenanKotula2004]_.
+        algorithm : {'svd', 'pca', 'orpca', 'ornmf'}, default 'svd'
+            The decomposition algorithm to use.
+        output_dimension : int or None, default None
+            Number of components to keep/calculate. If None, keep all
+            (only valid for 'svd' algorithm)
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
-        num_chunks : int
+        num_chunks : int or None, default None
             the number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
-            increased to contain atleast output_dimension signals.
+            increased to contain at least ``output_dimension`` signals.
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not used in the
             decompostion.
         signal_mask : {BaseSignal, numpy array, dask array}
             The signal locations marked as True are not used in the
             decomposition.
-        reproject : bool
+        reproject : bool, default True
             Reproject data on the learnt components (factors) after learning.
+        print_info : bool, default True
+            If True, print information about the decomposition being performed.
+            In the case of sklearn.decomposition objects, this includes the
+            values of all arguments of the chosen sklearn algorithm.
         **kwargs
             passed to the partial_fit/fit functions.
 
-        Notes
-        -----
-        Various algorithm parameters and their default values:
-            ORNMF:
-                lambda1=1,
-                kappa=1,
-                robust=False,
-                store_r=False
-                batch_size=None
-            ORPCA:
-                fast=True,
-                lambda1=None,
-                lambda2=None,
-                method=None,
-                learning_rate=None,
-                init=None,
-                training_samples=None,
-                momentum=None
-            PCA:
-                batch_size=None,
-                copy=True,
-                white=False
+        References
+        ----------
+        .. [KeenanKotula2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+            Interface Anal 36(3) (2004): 203-212.
 
+        See Also
+        --------
+        * :py:meth:`~.learn.mva.MVA.decomposition` for non-lazy signals
+        * :py:func:`dask.array.linalg.svd`
+        * :py:class:`sklearn.decomposition.IncrementalPCA`
+        * :py:class:`~.learn.rpca.ORPCA`
+        * :py:class:`~.learn.ornmf.ORNMF`
 
         """
-        if bounds:
-            msg = (
+        if kwargs.get("bounds", False):
+            warnings.warn(
                 "The `bounds` keyword is deprecated and will be removed "
-                "in v2.0. Since version > 1.3 this has no effect.")
-            warnings.warn(msg, VisibleDeprecationWarning)
+                "in v2.0. Since version > 1.3 this has no effect.",
+                VisibleDeprecationWarning,
+            )
+            kwargs.pop("bounds", None)
+
+        # Deprecate 'ONMF' for 'ORNMF'
+        if algorithm == "ONMF":
+            warnings.warn(
+                "The argument `algorithm='ONMF'` has been deprecated and may "
+                "be removed in future. Please use `algorithm='ornmf'` instead.",
+                VisibleDeprecationWarning,
+            )
+            algorithm = "ornmf"
+
+        # Deprecate uppercase to favour lowercase (consistent
+        # with non-lazy decomposition)
+        if algorithm in ["PCA", "ORPCA", "ORNMF"]:
+            warnings.warn(
+                "The argument `algorithm='{}'` has been deprecated and may "
+                "be removed in future. Please use `algorithm='{}'` instead.".format(
+                    algorithm, algorithm.lower()
+                ),
+                VisibleDeprecationWarning,
+            )
+            algorithm = algorithm.lower()
+
+        # Check algorithms requiring output_dimension
+        algorithms_require_dimension = ["pca", "orpca", "ornmf"]
+        if algorithm in algorithms_require_dimension and output_dimension is None:
+            raise ValueError(
+                "`output_dimension` must be specified for '{}'".format(algorithm)
+            )
+
         explained_variance = None
         explained_variance_ratio = None
+
         _al_data = self._data_aligned_with_axes
-        nav_chunks = _al_data.chunks[:self.axes_manager.navigation_dimension]
-        sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension:]
+        nav_chunks = _al_data.chunks[: self.axes_manager.navigation_dimension]
+        sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension :]
 
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
         nblocks = multiply([len(c) for c in nav_chunks])
-        if algorithm != "svd" and output_dimension is None:
-            raise ValueError("With the %s the output_dimension "
-                             "must be specified" % algorithm)
+
         if output_dimension and blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
+
         blocksize *= num_chunks
+
+        # Initialize return_info and print_info
+        to_return = None
+        to_print = [
+            "Decomposition info:",
+            "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
+            "  algorithm={}".format(algorithm),
+            "  output_dimension={}".format(output_dimension)
+        ]
+
         # LEARN
-        if algorithm == 'PCA':
-            from sklearn.decomposition import IncrementalPCA
-            obj = IncrementalPCA(n_components=output_dimension)
+        if algorithm == "pca":
+            if not import_sklearn.sklearn_installed:
+                raise ImportError("algorithm='pca' requires scikit-learn")
+
+            obj = import_sklearn.sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
             reproject = True
+            to_print.extend(["scikit-learn estimator:", obj])
 
-        elif algorithm == 'ORPCA':
+        elif algorithm == "orpca":
             from hyperspy.learn.rpca import ORPCA
-            kwg = {'fast': True}
-            kwg.update(kwargs)
-            obj = ORPCA(output_dimension, **kwg)
-            method = partial(obj.fit, iterating=True)
 
-        elif algorithm in ('ONMF', 'ORNMF'):
+            batch_size = kwargs.pop("batch_size", None)
+            obj = ORPCA(output_dimension, **kwargs)
+            method = partial(obj.fit, batch_size=batch_size)
+
+        elif algorithm == "ornmf":
             from hyperspy.learn.ornmf import ORNMF
-            batch_size = kwargs.pop('batch_size', None)
+
+            batch_size = kwargs.pop("batch_size", None)
             obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-            if algorithm == 'ONMF':
-                warnings.warn(
-                    "The argument `algorithm='ONMF'` has been deprecated and may "
-                    "be removed in future. Please use `algorithn='ORNMF'` instead.",
-                    VisibleDeprecationWarning,
-                )
-
         elif algorithm != "svd":
-            raise ValueError('algorithm not known')
+            raise ValueError("'algorithm' not recognised")
 
         original_data = self.data
         try:
+            _logger.info("Performing decomposition analysis")
+
             if normalize_poissonian_noise:
+                _logger.info("Scaling the data to normalize Poissonian noise")
+
                 data = self._data_aligned_with_axes
                 ndim = self.axes_manager.navigation_dimension
                 sdim = self.axes_manager.signal_dimension
                 nm = da.logical_not(
-                    da.zeros(
-                        self.axes_manager.navigation_shape[::-1],
-                        chunks=nav_chunks)
-                    if navigation_mask is None else to_array(
-                        navigation_mask, chunks=nav_chunks))
+                    da.zeros(self.axes_manager.navigation_shape[::-1], chunks=nav_chunks)
+                    if navigation_mask is None
+                    else to_array(navigation_mask, chunks=nav_chunks)
+                )
                 sm = da.logical_not(
-                    da.zeros(
-                        self.axes_manager.signal_shape[::-1],
-                        chunks=sig_chunks)
-                    if signal_mask is None else to_array(
-                        signal_mask, chunks=sig_chunks))
+                    da.zeros(self.axes_manager.signal_shape[::-1], chunks=sig_chunks)
+                    if signal_mask is None
+                    else to_array(signal_mask, chunks=sig_chunks)
+                )
                 ndim = self.axes_manager.navigation_dimension
                 sdim = self.axes_manager.signal_dimension
                 bH, aG = da.compute(
                     data.sum(axis=tuple(range(ndim))),
-                    data.sum(axis=tuple(range(ndim, ndim + sdim))))
+                    data.sum(axis=tuple(range(ndim, ndim + sdim))),
+                )
                 bH = da.where(sm, bH, 1)
                 aG = da.where(nm, aG, 1)
 
                 raG = da.sqrt(aG)
                 rbH = da.sqrt(bH)
 
-                coeff = raG[(..., ) + (None, ) * rbH.ndim] *\
-                    rbH[(None, ) * raG.ndim + (...,)]
+                coeff = raG[(...,) + (None,) * rbH.ndim] * rbH[(None,) * raG.ndim + (...,)]
                 coeff.map_blocks(np.nan_to_num)
                 coeff = da.where(coeff == 0, 1, coeff)
                 data = data / coeff
@@ -791,14 +832,24 @@ class LazySignal(BaseSignal):
             if algorithm == "svd":
                 reproject = False
                 from dask.array.linalg import svd
+
                 try:
                     self._unfolded4decomposition = self.unfold()
                     # TODO: implement masking
                     if navigation_mask or signal_mask:
-                        raise NotImplemented(
-                            "Masking is not yet implemented for lazy SVD."
-                        )
+                        raise NotImplementedError("Masking is not yet implemented for lazy SVD")
+
                     U, S, V = svd(self.data)
+
+                    if output_dimension is None:
+                        min_shape = min(min(U.shape), min(V.shape))
+                    else:
+                        min_shape = output_dimension
+
+                    U = U[:, :min_shape]
+                    S = S[:min_shape]
+                    V = V[:min_shape]
+
                     factors = V.T
                     explained_variance = S ** 2 / self.data.shape[0]
                     loadings = U * S
@@ -810,14 +861,16 @@ class LazySignal(BaseSignal):
                 this_data = []
                 try:
                     for chunk in progressbar(
-                            self._block_iterator(
-                                flat_signal=True,
-                                get=get,
-                                signal_mask=signal_mask,
-                                navigation_mask=navigation_mask),
-                            total=nblocks,
-                            leave=True,
-                            desc='Learn'):
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Learn",
+                    ):
                         this_data.append(chunk)
                         if len(this_data) == num_chunks:
                             thedata = np.concatenate(this_data, axis=0)
@@ -830,66 +883,66 @@ class LazySignal(BaseSignal):
                     pass
 
             # GET ALREADY CALCULATED RESULTS
-            if algorithm == 'PCA':
+            if algorithm == "pca":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
 
-            elif algorithm == 'ORPCA':
-                _, _, U, S, V = obj.finish()
-                factors = U * S
-                loadings = V
-                explained_variance = S**2 / len(factors)
+            elif algorithm == "orpca":
+                factors, loadings = obj.finish()
+                loadings = loadings.T
 
-            elif algorithm == 'ORNMF':
+            elif algorithm == "ornmf":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
             # REPROJECT
             if reproject:
-                if algorithm == 'PCA':
+                if algorithm == "pca":
                     method = obj.transform
 
-                    def post(a): return np.concatenate(a, axis=0)
-                elif algorithm == 'ORPCA':
-                    method = obj.project
-                    obj.R = []
+                    def post(a):
+                        return np.concatenate(a, axis=0)
 
-                    def post(a): return obj.finish()[4]
-                elif algorithm == 'ORNMF':
+                elif algorithm == "orpca":
                     method = obj.project
 
-                    def post(a): return np.concatenate(a, axis=1).T
+                    def post(a):
+                        return np.concatenate(a, axis=1).T
 
-                _map = map(lambda thing: method(thing),
-                           self._block_iterator(
-                               flat_signal=True,
-                               get=get,
-                               signal_mask=signal_mask,
-                               navigation_mask=navigation_mask))
+                elif algorithm == "ornmf":
+                    method = obj.project
+
+                    def post(a):
+                        return np.concatenate(a, axis=1).T
+
+                _map = map(
+                    lambda thing: method(thing),
+                    self._block_iterator(
+                        flat_signal=True,
+                        get=get,
+                        signal_mask=signal_mask,
+                        navigation_mask=navigation_mask,
+                    ),
+                )
                 H = []
                 try:
-                    for thing in progressbar(
-                            _map, total=nblocks, desc='Project'):
+                    for thing in progressbar(_map, total=nblocks, desc="Project"):
                         H.append(thing)
                 except KeyboardInterrupt:
                     pass
                 loadings = post(H)
 
-            if explained_variance is not None and \
-                    explained_variance_ratio is None:
-                explained_variance_ratio = \
-                    explained_variance / explained_variance.sum()
+            if explained_variance is not None and explained_variance_ratio is None:
+                explained_variance_ratio = explained_variance / explained_variance.sum()
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
             if algorithm != "svd":  # Only needed for online algorithms
                 try:
                     loadings = _reshuffle_mixed_blocks(
-                        loadings,
-                        ndim,
-                        (output_dimension,),
-                        nav_chunks).reshape((-1, output_dimension))
+                        loadings, ndim, (output_dimension,), nav_chunks
+                    ).reshape((-1, output_dimension))
                 except ValueError:
                     # In case the projection step was not finished, it's left
                     # as scrambled
@@ -911,6 +964,10 @@ class LazySignal(BaseSignal):
         if normalize_poissonian_noise is True:
             target.factors = target.factors * rbH.ravel()[:, np.newaxis]
             target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
+
+        # Print details about the decomposition we just performed
+        if print_info:
+            print("\n".join([str(pr) for pr in to_print]))
 
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
