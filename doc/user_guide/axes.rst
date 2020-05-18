@@ -191,7 +191,7 @@ Types of data axes
 HyperSpy supports different *data axis types*, which differ in how the axis is
 defined: 
 
-* :py:class:`~.axes.DataAxis` defined by a vector ``axis``, 
+* :py:class:`~.axes.DataAxis` defined by an array ``axis``, 
 * :py:class:`~.axes.FunctionalDataAxis` defined by a function ``expression`` or 
 * :py:class:`~.axes.UniformDataAxis` defined by the initial value ``offset``
   and spacing ``scale``.
@@ -205,9 +205,9 @@ dependence so that the axis spacing of the new axis varies along the length
 of the axis. Whether an axis is uniform or not can be queried through the 
 property ``is_uniform`` (bool) of the axis.
 
-Every axis of a signal object may be of a different type. For example, it will
-the *navigation* axes may be *uniform*, while the *signal* axes may be
-*non-uniform*.
+Every axis of a signal object may be of a different type. For example, it is
+common that the *navigation* axes would be *uniform*, while the *signal* axes
+are *non-uniform*.
 
 When an axis is created, the type is automatically determined by the attributes
 passed to the generator. The three different axis types are summarized in the
@@ -222,7 +222,7 @@ following table.
     +-------------------------------------------------------------------+------------------------+-------------+
     |           :py:class:`~.axes.FunctionalDataAxis`                   |      expression        |  False      |
     +-------------------------------------------------------------------+------------------------+-------------+
-    |             :py:class:`~.axes.UniformDataAxis`                     |    offset, scale       |  True       |
+    |             :py:class:`~.axes.UniformDataAxis`                    |    offset, scale       |  True       |
     +-------------------------------------------------------------------+------------------------+-------------+    
 
 .. NOTE::
@@ -230,12 +230,12 @@ following table.
     Not all features are implemented for non-uniform axes.
 
 
-Non-uniform data axis
-^^^^^^^^^^^^^^^^^^^^^
+Uniform data axis
+^^^^^^^^^^^^^^^^^
 
 The most common case is the :py:class:`~.axes.UniformDataAxis`. Here, the axis
 is defined by the ``offset`` and ``scale`` parameters, which determine the
-`initial value` and `spacing`, respectively. The actual ``axis`` vector is
+`initial value` and `spacing`, respectively. The actual ``axis`` array is
 automatically calculated from these two values. The ``UniformDataAxis`` is a
 special case of the ``FunctionalDataAxis`` defined by the function
 ``scale * x + offset``.
@@ -251,19 +251,19 @@ Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
     'units': <undefined>,
     'navigate': False,
     'size': 500,
-    'scale': 1,
-    'offset': 300}
+    'scale': 1.0,
+    'offset': 300.0}
 
 Corresponding output of :py:class:`~.axes.AxesManager`:
 
 .. code-block:: python
 
     >>> s.axes_manager
-    < Axes manager, axes: (|1000) >
-                Name |   size |  index |  offset |   scale |  units
-    ================ | ====== | ====== | ======= | ======= | ======
-    ---------------- | ------ | ------ | ------- | ------- | ------
-                     |    500 |        |     300 |       1 |       
+    < Axes manager, axes: (|500) >
+                Name |   size |  offset |   scale |  units
+    ================ | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------- | ------- | ------
+                     |    500 |     300 |       1 |       
 
 
 Functional data axis
@@ -278,10 +278,11 @@ expression, in this case ``a`` and ``b`` must be defined as additional
 attributes of the axis. The property ``is_uniform`` is automatically set to
 ``False``.
 
-By default, the axis is built using a vector ``x = np.arange(size)``. However,
-the expression can also reference a vector ``x0`` that contains an array of 
-`x-values` at which to evaluate `expression`. For example: ``expression = '1240
-/ x0', x0 = np.arange(300,400,0.5)``
+``x`` itself is an instance of :py:class:`~.axes.BaseDataAxis`. By default, 
+it will be a :py:class:`~.axes.UniformDataAxis` with ``offset = 0`` and
+``scale = 1`` of the given ``size``. However, it can also be initialized with
+custom ``offset`` and ``scale`` values. Alternatively, it can be a non
+uniform :py:class:`~.axes.DataAxis`.
 
 Sample dictionary for a :py:class:`~.axes.FunctionalDataAxis`:
 
@@ -293,8 +294,9 @@ Sample dictionary for a :py:class:`~.axes.FunctionalDataAxis`:
     {'name': <undefined>,
     'units': <undefined>,
     'navigate': False,
-    'expression': 'a / (x +1) + b',
+    'expression': 'a / (x + 1) + b',
     'size': 500,
+    'x': <Unnamed axis, size: 500>,
     'a': 100,
     'b': 10}
 
@@ -304,18 +306,51 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     < Axes manager, axes: (|1000) >
-                Name |   size |  index |          offset |           scale |  units
-    ================ | ====== | ====== | =============== | =============== | ======
-    ---------------- | ------ | ------ | --------------- | --------------- | ------
-                     |    500 |        | non uniform axis | non linear axis |       
+                Name |   size |           offset |            scale |  units
+    ================ | ====== | ================ | ================ | ======
+    ---------------- | ------ | ---------------- | ---------------- | ------
+                     |    500 | non uniform axis | non uniform axis |       
+
+
+Initializing ``x`` with ``offset`` and ``scale``:
+
+.. code-block:: python
+
+    >>> from hyperspy.axes import UniformDataAxis
+    >>> dict0 = {'expression': 'a / x + b', 'a': 100, 'b': 10, 'x': UniformDataAxis(size=10,offset=10,scale=0.1)}
+    >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
+    >>> # the x array
+    >>> s.axes_manager[0].x.axis
+    array([10. , 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9])
+    >>> # the actual axis array
+    >>> s.axes_manager[0].axis
+    array([20.        , 19.9009901 , 19.80392157, 19.70873786, 19.61538462,
+       19.52380952, 19.43396226, 19.34579439, 19.25925926, 19.17431193])
+
+
+Initializing ``x`` as non uniform :py:class:`~.axes.DataAxis`:
+
+.. code-block:: python
+
+    >>> from hyperspy.axes import DataAxis
+    >>> dict0 = {'expression': 'a / x + b', 'a': 100, 'b': 10, 'x': DataAxis(axis=np.arange(1,10)**2)}
+    >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
+    >>> # the x array
+    >>> s.axes_manager[0].x.axis
+    array([ 1,  4,  9, 16, 25, 36, 49, 64, 81])
+    >>> # the actual axis array
+    >>> s.axes_manager[0].axis
+    array([110.        ,  35.        ,  21.11111111,  16.25      ,
+        14.        ,  12.77777778,  12.04081633,  11.5625    ,
+        11.2345679 ])
 
 
 (Non uniform) Data axis
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 A :py:class:`~.axes.DataAxis` is the most flexible type of axis. The axis
-points are directly given by a vector named ``axis``. As this can be any
-vector, the property ``is_uniform`` is automatically set to ``False``.
+points are directly given by an array named ``axis``. As this can be any
+array, the property ``is_uniform`` is automatically set to ``False``.
 
 
 Sample dictionary for a :py:class:`~.axes.DataAxis`:
@@ -336,10 +371,10 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     < Axes manager, axes: (|1000) >
-                Name |   size |  index |  offset |   scale |  units
-    ================ | ====== | ====== | ======= | ======= | ======
-    ---------------- | ------ | ------ | ------- | ------- | ------
-                     |     12 |        |     300 |       1 |       
+                Name |   size |           offset |            scale |  units
+    ================ | ====== | ================ | ================ | ======
+    ---------------- | ------ | ---------------- | ---------------- | ------
+                     |     12 | non uniform axis | non uniform axis |       
 
 
 Defining a new axis
