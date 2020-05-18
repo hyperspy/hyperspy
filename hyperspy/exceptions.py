@@ -193,7 +193,7 @@ class NavigationSizeError(Exception):
 class NonUniformAxisError(Exception):
 
     def __init__(self):
-        self.error = ("Non-uniform axis are not supported.")
+        self.error = ("Non-uniform axes are not supported.")
 
     def __str__(self):
         return repr(self.error)
