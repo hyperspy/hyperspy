@@ -673,6 +673,9 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes")
         s = self.deepcopy()
         zlp_size = zlp.axes_manager.signal_axes[0].size
         self_size = self.axes_manager.signal_axes[0].size
@@ -761,6 +764,13 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
+        if not ll.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "The low-loss energy axis is non-uniform. "
+                "This operation is not yet implemented for non-uniform energy axes")
         orig_cl_size = self.axes_manager.signal_axes[0].size
 
         if threshold is None:
@@ -861,6 +871,9 @@ class EELSSpectrum_mixin:
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
@@ -1157,6 +1170,9 @@ class EELSSpectrum_mixin:
            Microscope", Springer-Verlag, 2011.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         output = {}
         if iterations == 1:
             # In this case s.data is not modified so there is no need to make

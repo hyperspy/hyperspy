@@ -215,6 +215,10 @@ class HologramImage(Signal2D):
 
         array([124, 452])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_position = self.map(
             estimate_sideband_position,
@@ -268,6 +272,10 @@ class HologramImage(Signal2D):
         >>> sb_size.data
         array([ 68.87670143])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_size = sb_position.map(
             estimate_sideband_size,
@@ -363,6 +371,11 @@ class HologramImage(Signal2D):
         # TODO: Use defaults for choosing sideband, smoothness, relative filter
         # size and output shape if not provided
         # TODO: Plot FFT with marked SB and SB filter if plotting is enabled
+
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         # Parsing reference:
         if not isinstance(reference, HologramImage):
@@ -676,6 +689,10 @@ class HologramImage(Signal2D):
         'Carrier frequency (1 / nm)': 0.28685808994016415}
         """
 
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
         # Testing match of navigation axes of reference and self
         # (exception: reference nav_dim=1):
 
