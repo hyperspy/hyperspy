@@ -1150,7 +1150,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         background_type : str
             The type of component which should be used to fit the background.
             Possible components:  Gaussian, Lorentzian, Offset, Polynomial,
-             PowerLaw, Exponential, SkewNormal, Voigt.
+            PowerLaw, Exponential, SkewNormal, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
