@@ -1270,7 +1270,7 @@ class Line2DROI(BaseInteractiveROI):
         Notes
         -----
         The destination point is included in the profile, in contrast to
-        standard numpy indexing. Requires linear navigation axes.
+        standard numpy indexing. Requires uniform navigation axes.
 
         """
         for axis in axes:

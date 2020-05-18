@@ -2484,7 +2484,7 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        Currently requires a linear axis.
+        Currently requires a uniform axis.
 
         Examples
         --------
@@ -2589,7 +2589,7 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        Requires a linear axis.
+        Requires a uniform axis.
 
         Returns
         -------
@@ -3528,7 +3528,7 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        Requires a linear axis. For further information see the documentation
+        Requires a uniform axis. For further information see the documentation
         of :py:func:`numpy.fft.fftn`
         """
 
@@ -3630,7 +3630,7 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        Requires a linear axis. For further information see the documentation
+        Requires a uniform axis. For further information see the documentation
         of :py:func:`numpy.fft.ifftn`
         """
 
@@ -4020,7 +4020,7 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        Currently requires a linear axis.
+        Currently requires a uniform axis.
 
         """
         # Sepate ndkwargs
@@ -4029,7 +4029,7 @@ class BaseSignal(FancySlicing,
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 
-        # TODO: Consider support for non linear signal axis
+        # TODO: Consider support for non uniform signal axis
         if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
             _logger.warning(
                 "At least one axis of the signal is non-uniform. Can your "
