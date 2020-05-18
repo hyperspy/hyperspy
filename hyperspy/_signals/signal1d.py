@@ -1152,8 +1152,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components: Gaussian, Lorentzian, Offset, Polynomial,
-            PowerLaw, Exponential, SkewNormal, Voigt.
+            Possible components: Doniach, Gaussian, Lorentzian, Offset, Polynomial,
+            PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
