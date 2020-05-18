@@ -1017,8 +1017,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.model.append(self.background_estimator)
 
     def _polynomial_order_changed(self, old, new):
-        self.background_estimator, _ = _get_background_estimator(
-            self.background_type, new)
+        self.set_background_estimator()
         self.span_selector_changed()
 
     def _background_type_changed(self, old, new):
