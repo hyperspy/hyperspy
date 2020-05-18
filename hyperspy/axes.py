@@ -650,7 +650,7 @@ class DataAxis(BaseDataAxis):
         d.update({'axis': self.axis})
         return d
 
-    def update_from(self, axis, attributes=["units"]):
+    def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
 
         Parameters
@@ -660,12 +660,14 @@ class DataAxis(BaseDataAxis):
         attributes : iterable container of strings.
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
-            raised.
+            raised. If `None`, `units` will be updated.
         Returns
         -------
         A boolean indicating whether any changes were made.
 
         """
+        if attributes is None:
+            attributes = ["units"]
         return super().update_from(axis, attributes)
 
     def crop(self, start=None, end=None):
@@ -744,10 +746,10 @@ class FunctionalDataAxis(BaseDataAxis):
         ----------
         axis : FunctionalDataAxis
             The FunctionalDataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
-            The name of the attribute to update. If the attribute does not
+        attributes : iterable container of strings or None.
+            A list of the name of the attribute to update. If an attribute does not
             exist in either of the AxesManagers, an AttributeError will be
-            raised.
+            raised. If None, the parameters of `expression` are updated.
         Returns
         -------
         A boolean indicating whether any changes were made.
@@ -930,22 +932,24 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         else:
             return offset, scale
 
-    def update_from(self, axis, attributes=["scale", "offset", "units"]):
+    def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
 
         Parameters
         ----------
         axis : UniformDataAxis
             The UniformDataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
+        attributes : iterable container of strings or None
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
-            raised.
+            raised. If `None`, `scale`, `offset` and `units` are updated.
         Returns
         -------
         A boolean indicating whether any changes were made.
 
         """
+        if attributes is None:
+            attributes = ["scale", "offset", "units"]
         return super().update_from(axis, attributes)
 
     def crop(self, start=None, end=None):
@@ -1536,7 +1540,7 @@ class AxesManager(t.HasTraits):
                 axis.convert_to_units(unit, factor=factor)
 
     def update_axes_attributes_from(self, axes,
-                                    attributes=["scale", "offset", "units"]):
+                                    attributes=None):
         """Update the axes attributes to match those given.
 
         The axes are matched by their index in the array. The purpose of this
