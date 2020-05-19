@@ -4029,7 +4029,7 @@ class BaseSignal(FancySlicing,
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 
-        # TODO: Consider support for non uniform signal axis
+        # TODO: Consider support for non-uniform signal axis
         if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
             _logger.warning(
                 "At least one axis of the signal is non-uniform. Can your "

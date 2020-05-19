@@ -101,7 +101,7 @@ def _create_axis(**kwargs):
     A DataAxis, FunctionalDataAxis or a UniformDataAxis
 
     """
-    if 'axis' in kwargs.keys():  # non uniform axis
+    if 'axis' in kwargs.keys():  # non-uniform axis
         axis_class = DataAxis
     elif 'expression' in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
@@ -1749,7 +1749,7 @@ class AxesManager(t.HasTraits):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
         ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
-        ax_signature_non_uniform = "% 16s | %6g | %6s | non uniform axis | %6s "
+        ax_signature_non_uniform = "% 16s | %6g | %6s | non-uniform axis | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
                              'units')
@@ -1806,8 +1806,8 @@ class AxesManager(t.HasTraits):
                 return format_row(ax.name, ax.size, index, ax.offset,
                                   ax.scale, ax.units)
             else:
-                return format_row(ax.name, ax.size, index, "non uniform axis",
-                                  "non uniform axis", ax.units)
+                return format_row(ax.name, ax.size, index, "non-uniform axis",
+                                  "non-uniform axis", ax.units)
 
         if self.navigation_axes:
             text += "<table style='width:100%'>\n"

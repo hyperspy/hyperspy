@@ -309,7 +309,7 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
                 Name |   size |           offset |            scale |  units
     ================ | ====== | ================ | ================ | ======
     ---------------- | ------ | ---------------- | ---------------- | ------
-                     |    500 | non uniform axis | non uniform axis |       
+                     |    500 | non-uniform axis | non-uniform axis |       
 
 
 Initializing ``x`` with ``offset`` and ``scale``:
@@ -328,7 +328,7 @@ Initializing ``x`` with ``offset`` and ``scale``:
        19.52380952, 19.43396226, 19.34579439, 19.25925926, 19.17431193])
 
 
-Initializing ``x`` as non uniform :py:class:`~.axes.DataAxis`:
+Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
 
 .. code-block:: python
 
@@ -345,7 +345,7 @@ Initializing ``x`` as non uniform :py:class:`~.axes.DataAxis`:
         11.2345679 ])
 
 
-(Non uniform) Data axis
+(non-uniform) Data axis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 A :py:class:`~.axes.DataAxis` is the most flexible type of axis. The axis
@@ -374,7 +374,7 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
                 Name |   size |           offset |            scale |  units
     ================ | ====== | ================ | ================ | ======
     ---------------- | ------ | ---------------- | ---------------- | ------
-                     |     12 | non uniform axis | non uniform axis |       
+                     |     12 | non-uniform axis | non-uniform axis |       
 
 
 Defining a new axis
