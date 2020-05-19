@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -25,13 +25,15 @@ import dask.array as da
 import traits.api as t
 from traits.trait_errors import TraitError
 import pint
+from sympy.utilities.lambdify import lambdify
+import itertools
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
-from hyperspy.exceptions import NonLinearAxisError
+from hyperspy._components.expression import _parse_substitutions
 
 
 import warnings
@@ -53,8 +55,9 @@ class ndindex_nat(np.ndindex):
         return super(ndindex_nat, self).next()[::-1]
 
 
-def generate_linear_axis(offset, scale, size, offset_index=0):
-    """Creates a linear axis given the offset, scale and number of channels
+def generate_uniform_axis(offset, scale, size, offset_index=0):
+    """Creates a uniform axis vector given the offset, scale and number of
+    channels.
 
     Alternatively, the offset_index of the offset channel can be specified.
 
@@ -77,17 +80,17 @@ def generate_linear_axis(offset, scale, size, offset_index=0):
                        size)
 
 
-def create_axis(**kwargs):
-    """Creates a linear, a non-linear axis or a functional axis depending on 
-    the kwargs provided. If `axis` or  `expression` are provided, a non-linear
-    or a functional axis is created, respectively. Otherwise a linear axis is 
+def _create_axis(**kwargs):
+    """Creates a uniform, a non-uniform axis or a functional axis depending on 
+    the kwargs provided. If `axis` or  `expression` are provided, a non-uniform
+    or a functional axis is created, respectively. Otherwise a uniform axis is 
     created, which can be defined by `scale`, `size` and `offset`.
 
     Alternatively, the offset_index of the offset channel can be specified.
 
     Parameters
     ----------
-    axis : iteratable of values (list, tuple or 1D numpy array) (optional)
+    axis : iterable of values (list, tuple or 1D numpy array) (optional)
     expression : Component function in SymPy text expression format (str) (optional)
     offset : float (optional)
     scale : float (optional)
@@ -95,15 +98,15 @@ def create_axis(**kwargs):
 
     Returns
     -------
-    A DataAxis, FunctionalDataAxis or a LinearDataAxis
+    A DataAxis, FunctionalDataAxis or a UniformDataAxis
 
     """
-    if 'axis' in kwargs.keys():  # non linear axis
+    if 'axis' in kwargs.keys():  # non uniform axis
         axis_class = DataAxis
     elif 'expression' in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
-    else:  # if not argument is provided fall back to linear axis
-        axis_class = LinearDataAxis
+    else:  # if not argument is provided fall back to uniform axis
+        axis_class = UniformDataAxis
     return axis_class(**kwargs)
 
 
@@ -291,15 +294,15 @@ class BaseDataAxis(t.HasTraits):
         self.index = 0
         self.navigate = navigate
         self.axes_manager = None
-        self._is_linear = False
+        self._is_uniform = False
 
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
 
     @property
-    def is_linear(self):
-        return self._is_linear
+    def is_uniform(self):
+        return self._is_uniform
 
     def _index_changed(self, name, old, new):
         self.events.index_changed.trigger(obj=self, index=self.index)
@@ -381,9 +384,9 @@ class BaseDataAxis(t.HasTraits):
 
         """
         if isinstance(slice_, slice):
-            if not self.is_linear and isfloat(slice_.step):
+            if not self.is_uniform and isfloat(slice_.step):
                 raise ValueError(
-                    "Float steps are only supported for linear axes.")
+                    "Float steps are only supported for uniform axes.")
 
         v2i = self.value2index
 
@@ -441,31 +444,7 @@ class BaseDataAxis(t.HasTraits):
         return slice(start, stop, step)
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and set the 
-        axis accordingly.
-
-        Parameters
-        ----------
-        slice_ : {int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-
-        """
-        my_slice = self._get_array_slices(slice_)
-        start, step = my_slice.start, my_slice.step
-
-        if start is None:
-            if step is None or step > 0:
-                start = 0
-            else:
-                start = self.size - 1
-
-        self.axis = self.axis[my_slice]
-        self.update_axis()
-
-        return my_slice
+        raise NotImplementedError("This method must be implemented by subclasses")
 
     def _get_name(self):
         name = (self.name
@@ -502,9 +481,6 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        return self._get_axis_dictionary()
-
-    def _get_axis_dictionary(self):
         return {'name': self.name,
                 'units': self.units,
                 'navigate': self.navigate
@@ -541,7 +517,8 @@ class BaseDataAxis(t.HasTraits):
 
         Raises
         ------
-        ValueError if any value is out of the axis limits.
+        ValueError
+            If any value is out of the axis limits.
 
         """
         if value is None:
@@ -587,6 +564,7 @@ class BaseDataAxis(t.HasTraits):
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised.
+
         Returns
         -------
         A boolean indicating whether any changes were made.
@@ -603,15 +581,16 @@ class BaseDataAxis(t.HasTraits):
         return any_changes
 
     def calibrate(self, *args, **kwargs):
-        raise TypeError("This function works only for linear axes.")
+        raise TypeError("This function works only for uniform axes.")
 
-    def convert_to_linear_axis(self):
+    def convert_to_uniform_axis(self):
         scale = (self.high_value - self.low_value) / self.size
-        d = self._get_axis_dictionary()
+        d = self.get_axis_dictionary()
+        del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
-        self.__class__ = LinearDataAxis
+        self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
@@ -627,8 +606,26 @@ class DataAxis(BaseDataAxis):
         self.axis = axis
         self.update_axis()
 
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and set the 
+        axis accordingly.
+
+        Parameters
+        ----------
+        slice_ : {int, slice}
+
+        Returns
+        -------
+        my_slice : slice
+
+        """
+        my_slice = self._get_array_slices(slice_)
+        self.axis = self.axis[my_slice]
+        self.update_axis()
+        return my_slice
+
     def update_axis(self):
-        """Set the value of a axis. The axis value needs to be ordered.
+        """Set the value of a axis. The axis values need to be ordered.
 
         Parameters
         ----------
@@ -645,7 +642,7 @@ class DataAxis(BaseDataAxis):
             steps = self.axis[1:] - self.axis[:-1]
             # check axis is ordered
             if not (np.all(steps > 0) or np.all(steps < 0)):
-                raise ValueError('The non-linear axis needs to be ordered.')
+                raise ValueError('The non-uniform axis needs to be ordered.')
         self.size = len(self.axis)
 
     def get_axis_dictionary(self):
@@ -653,7 +650,7 @@ class DataAxis(BaseDataAxis):
         d.update({'axis': self.axis})
         return d
 
-    def update_from(self, axis, attributes=["units"]):
+    def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
 
         Parameters
@@ -663,12 +660,14 @@ class DataAxis(BaseDataAxis):
         attributes : iterable container of strings.
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
-            raised.
+            raised. If `None`, `units` will be updated.
         Returns
         -------
         A boolean indicating whether any changes were made.
 
         """
+        if attributes is None:
+            attributes = ["units"]
         return super().update_from(axis, attributes)
 
     def crop(self, start=None, end=None):
@@ -687,63 +686,55 @@ class DataAxis(BaseDataAxis):
             is calculated using the axis calibration. If `start`/`end` is
             ``None`` the method crops from/to the low/high end of the axis.
         """
-        if start is None:
-            start = 0
-        if end is None:
-            end = self.size
-        # Use `_get_positive_index` to support reserved indexing
-        i1 = self._get_positive_index(self._get_index(start))
-        i2 = self._get_positive_index(self._get_index(end))
 
-        # Not sure, if we should support unordered values or not...
-        if i1 > i2:
-            raise ValueError("The `start` value must be lower than the `end` "
-                             "value.")
-
-        self.axis = self.axis[i1:i2]
+        slice_ = self._get_array_slices(slice(start, end))
+        self.axis = self.axis[slice_]
         self.size = len(self.axis)
 
 
 class FunctionalDataAxis(BaseDataAxis):
-
+    x = t.Instance(BaseDataAxis)
     def __init__(self,
+                 expression,
+                 x=None,
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
-                 size=1.,
-                 expression=None,
+                 size=t.Undefined,
                  **parameters):
         super().__init__(index_in_array, name, units, navigate)
-        self.size = size
-
-        self.parameters_list = [key for key in parameters.keys()]
+        if x is None:
+            if size is t.Undefined:
+                raise ValueError("Please provide either `x` or `size`.")
+            self.x = UniformDataAxis(scale=1, offset=0, size=size)
+        else:
+            self.x = x
+            self.size = self.x.size
         self._expression = expression
-        self.compile_function()
-
-        # Set the value of the parameters
-        for kwarg, value in parameters.items():
-            setattr(self, kwarg, value)
-
-        self.update_axis()
-
-    def compile_function(self):
-        from sympy.utilities.lambdify import lambdify
-        from hyperspy._components.expression import _parse_substitutions
+        # Compile function
         expr = _parse_substitutions(self._expression)
-
         variables = ["x"]
-        parameters = [symbol for symbol in expr.free_symbols
-                      if symbol.name not in variables]
+        expr_parameters = [symbol for symbol in expr.free_symbols
+                           if symbol.name not in variables]
+        if set(parameters) != set([parameter.name for parameter in expr_parameters]):
+            raise ValueError(
+                "The values of the following expression parameters "
+                f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
 
-        self.function = lambdify(variables + parameters, expr.evalf(),
-                                 dummify=False)
+        self._function = lambdify(
+            variables + expr_parameters, expr.evalf(), dummify=False)
+        for parameter in parameters.keys():
+            self.add_trait(parameter, t.CFloat(parameters[parameter]))
+        self.parameters_list = list(parameters.keys())
+        self.update_axis()
+        self.on_trait_change(self.update_axis, self.parameters_list)
 
     def update_axis(self):
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
-        self.axis = self.function(x=np.arange(self.size), **kwargs)
+        self.axis = self._function(x=self.x.axis, **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
         self.size = len(self.axis)
@@ -755,10 +746,10 @@ class FunctionalDataAxis(BaseDataAxis):
         ----------
         axis : FunctionalDataAxis
             The FunctionalDataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
-            The name of the attribute to update. If the attribute does not
+        attributes : iterable container of strings or None.
+            A list of the name of the attribute to update. If an attribute does not
             exist in either of the AxesManagers, an AttributeError will be
-            raised.
+            raised. If None, the parameters of `expression` are updated.
         Returns
         -------
         A boolean indicating whether any changes were made.
@@ -771,18 +762,18 @@ class FunctionalDataAxis(BaseDataAxis):
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d['size'] = self.size
+        d.update({'size': self.size, })
+        d.update({'x': self.x.copy(), })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
 
-    def convert_to_non_linear_axis(self):
-        d = super()._get_axis_dictionary()
+    def convert_to_non_uniform_axis(self):
+        d = super().get_axis_dictionary()
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
 
     def crop(self, start=None, end=None):
-        
         """Crop the axis in place.
 
         Parameters
@@ -797,42 +788,23 @@ class FunctionalDataAxis(BaseDataAxis):
             the value is taken as the axis index. If type is ``float`` the index
             is calculated using the axis calibration. If `start`/`end` is
             ``None`` the method crops from/to the low/high end of the axis.
-            
+
         Note
         ----
-        Function still needs to be implemented.
+        When cropping an axis with descending axis values based on the axis
+        calibration, the `start`/`end` tuple also has to be in descending
+        order.
         """
 
-        raise ValueError('Function still needs to be implemented')
-
-        # TODO
-        pass
-
-
-class LinearDataAxis(FunctionalDataAxis, UnitConversion):
-    scale = t.Float()
-    offset = t.Float()
-
-    def __init__(self,
-                 index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
-                 navigate=t.Undefined,
-                 size=1.,
-                 scale=1.,
-                 offset=0.):
-        self.expression = "scale * x + offset"
-        super().__init__(index_in_array, name, units, navigate, size=size,
-                         expression=self.expression, scale=scale,
-                         offset=offset)
+        slice_ = self._get_array_slices(slice(start, end))
+        self.x.crop(start=slice_.start, end=slice_.stop)
+        self.size = self.x.size
         self.update_axis()
-        self.on_trait_change(self.update_axis,
-                             ['scale', 'offset', 'size'])
-        self._is_linear = True
+    crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the LinearDataAxis accordingly.
+        change the offset and scale of the UniformDataAxis accordingly.
 
         Parameters
         ----------
@@ -842,6 +814,47 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
         -------
         my_slice : slice
 
+        """
+        my_slice = self._get_array_slices(slice_)
+        self.x._slice_me(my_slice)
+        self.update_axis()
+        return my_slice
+
+
+class UniformDataAxis(BaseDataAxis, UnitConversion):
+    scale = t.CFloat(1)
+    offset = t.CFloat(0)
+    size = t.CInt(0)
+    def __init__(self,
+                 index_in_array=None,
+                 name=t.Undefined,
+                 units=t.Undefined,
+                 navigate=t.Undefined,
+                 size=1.,
+                 scale=1.,
+                 offset=0.):
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            )
+        self.scale = scale
+        self.offset = offset
+        self.size = size
+        self.update_axis()
+        self._is_uniform = True
+        self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
+
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and
+        change the offset and scale of the UniformDataAxis accordingly.
+        Parameters
+        ----------
+        slice_ : {float, int, slice}
+        Returns
+        -------
+        my_slice : slice
         """
         my_slice = self._get_array_slices(slice_)
         start, step = my_slice.start, my_slice.step
@@ -854,12 +867,11 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
         self.offset = self.index2value(start)
         if step is not None:
             self.scale *= step
-
+        self.size = len(self.axis[my_slice])
         return my_slice
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
-        del d['expression']
         d.update({'size': self.size,
                   'scale': self.scale,
                   'offset': self.offset})
@@ -907,6 +919,9 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
             else:
                 raise ValueError("The value is out of the axis limits")
 
+    def update_axis(self):
+        self.axis = self.offset + self.scale * np.arange(self.size)
+
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
             (index_tuple[1] - index_tuple[0])
@@ -917,27 +932,28 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
         else:
             return offset, scale
 
-    def update_from(self, axis, attributes=["scale", "offset", "units"]):
+    def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
 
         Parameters
         ----------
-        axis : LinearDataAxis
-            The LinearDataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
+        axis : UniformDataAxis
+            The UniformDataAxis instance to use as a source for values.
+        attributes : iterable container of strings or None
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
-            raised.
+            raised. If `None`, `scale`, `offset` and `units` are updated.
         Returns
         -------
         A boolean indicating whether any changes were made.
 
         """
+        if attributes is None:
+            attributes = ["scale", "offset", "units"]
         return super().update_from(axis, attributes)
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
-
         Parameters
         ----------
         start : int, float, or None
@@ -981,6 +997,43 @@ class LinearDataAxis(FunctionalDataAxis, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
+    def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
+        d = super().get_axis_dictionary()
+        axes_manager = self.axes_manager
+        if units:
+            d["units"] = units
+        if name:
+            d["name"] = name
+        d.update(kwargs)
+        this_kwargs = self.get_axis_dictionary()
+        self.__class__ = FunctionalDataAxis
+        self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
+        self.axes_manager = axes_manager
+
+    def convert_to_non_uniform_axis(self):
+        d = super().get_axis_dictionary()
+        self.__class__ = DataAxis
+        self.__init__(**d, axis=self.axis)
+
+def serpentine_iter(shape):
+    '''Similar to np.ndindex, but yields indices 
+    in serpentine pattern, like snake game
+    
+    Code by Stackoverflow user Paul Panzer,
+    from https://stackoverflow.com/questions/57366966/
+    '''
+    N = len(shape)
+    idx = N*[0]
+    drc = N*[1]
+    while True:
+        yield (*idx,)
+        for j in reversed(range(N)):
+            if idx[j] + drc[j] not in (-1, shape[j]):
+                idx[j] += drc[j]
+                break
+            drc[j] *= -1
+        else:
+            break
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
@@ -992,9 +1045,9 @@ class AxesManager(t.HasTraits):
     It can only be indexed and sliced to access the DataAxis objects that it
     contains. Standard indexing and slicing follows the "natural order" as in
     Signal, i.e. [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis
-    and `s` a signal axis. In addition AxesManager support indexing using
-    complex numbers a + bj, where b can be one of 0, 1, 2 and 3 and a a valid
-    index. If b is 3 AxesManager is indexed using the order of the axes in the
+    and `s` a signal axis. In addition, AxesManager supports indexing using
+    complex numbers a + bj, where b can be one of 0, 1, 2 and 3 and a valid
+    index. If b is 3, AxesManager is indexed using the order of the axes in the
     array. If b is 1(2), indexes only the navigation(signal) axes in the
     natural order. In addition AxesManager supports subscription using
     axis name.
@@ -1003,12 +1056,12 @@ class AxesManager(t.HasTraits):
     ----------
 
     coordinates : tuple
-        Get and set the current coordinates if the navigation dimension
-        is not 0. If the navigation dimension is 0 it raises
+        Get and set the current coordinates, if the navigation dimension
+        is not 0. If the navigation dimension is 0, it raises
         AttributeError when attempting to set its value.
     indices : tuple
-        Get and set the current indices if the navigation dimension
-        is not 0. If the navigation dimension is 0 it raises
+        Get and set the current indices, if the navigation dimension
+        is not 0. If the navigation dimension is 0, it raises
         AttributeError when attempting to set its value.
     signal_axes, navigation_axes : list
         Contain the corresponding DataAxis objects
@@ -1108,7 +1161,10 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self._index = None  # index for the iterator
+        self._index = None  # index for the iterpath
+        # Can use serpentine or flyback scan pattern 
+        # for the axes manager indexing
+        self._iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -1221,12 +1277,11 @@ class AxesManager(t.HasTraits):
         return tuple(navigation_extent)
 
     @property
-    def all_linear(self):
-        if any([axis.is_linear == False for axis in self._axes]):
+    def all_uniform(self):
+        if any([axis.is_uniform == False for axis in self._axes]):
             return False
         else:
             return True
-            
 
     def remove(self, axes):
         """Remove one or more axes
@@ -1242,7 +1297,8 @@ class AxesManager(t.HasTraits):
 
         Raises
         ------
-        ValueError if the Axis is not present.
+        ValueError
+            If the Axis is not present.
 
         """
         axis = self._axes_getter(axis)
@@ -1269,12 +1325,12 @@ class AxesManager(t.HasTraits):
         return tuple(cslice)
 
     def create_axes(self, axes_list):
-        """Given a list of dictionaries defining the axes properties
+        """Given a list of dictionaries defining the axes properties,
         create the DataAxis instances and add them to the AxesManager.
 
         The index of the axis in the array and in the `_axes` lists
         can be defined by the index_in_array keyword if given
-        for all axes. Otherwise it is defined by their index in the
+        for all axes. Otherwise, it is defined by their index in the
         list.
 
         See also
@@ -1313,18 +1369,38 @@ class AxesManager(t.HasTraits):
             iteration.
 
         """
+        if self._iterpath not in ['serpentine', 'flyback']:
+            raise ValueError('''The iterpath scan pattern is set to {}. \
+            It must be either "serpentine" or "flyback", and is set either \
+            as multifit `iterpath` argument or \
+            `axes_manager._iterpath`'''.format(self._iterpath))
         if self._index is None:
             self._index = 0
-            val = (0,) * self.navigation_dimension
+            if self._iterpath == 'serpentine':
+                self._iterpath_generator = serpentine_iter(
+                    self._navigation_shape_in_array)
+                val = next(self._iterpath_generator)
+            else: # flyback
+                val = (0,) * self.navigation_dimension
             self.indices = val
         elif self._index >= self._max_index:
             raise StopIteration
         else:
             self._index += 1
-            val = np.unravel_index(
-                self._index,
-                tuple(self._navigation_shape_in_array)
-            )[::-1]
+            if self._iterpath == 'serpentine':
+                # In case we need to start further out in the generator
+                # for some reason. This is possibly expensive, as it needs
+                # to calculate all previous values first
+                # self._iterpath_generator = itertools.islice(
+                #     serpentine_iter(self._navigation_shape_in_array), 
+                #     self._index, 
+                #     None)
+                val = next(self._iterpath_generator)[::-1]
+            else:
+                val = np.unravel_index(
+                    self._index,
+                    tuple(self._navigation_shape_in_array)
+                )[::-1]
             self.indices = val
         return val
 
@@ -1335,7 +1411,7 @@ class AxesManager(t.HasTraits):
         return self
 
     def _append_axis(self, **kwargs):
-        axis = create_axis(**kwargs)
+        axis = _create_axis(**kwargs)
         axis.axes_manager = self
         self._axes.append(axis)
 
@@ -1390,7 +1466,7 @@ class AxesManager(t.HasTraits):
 
         Note
         ----
-        Requires a linear axis.
+        Requires a uniform axis.
         """
         convert_navigation = convert_signal = True
 
@@ -1404,8 +1480,8 @@ class AxesManager(t.HasTraits):
         elif axes == 'signal':
             axes = self.signal_axes
             convert_navigation = False
-        elif isinstance(axes, (LinearDataAxis, int, str)):
-            if not isinstance(axes, LinearDataAxis):
+        elif isinstance(axes, (UniformDataAxis, int, str)):
+            if not isinstance(axes, UniformDataAxis):
                 axes = self[axes]
             axes = (axes, )
             convert_navigation = axes[0].navigate
@@ -1415,8 +1491,10 @@ class AxesManager(t.HasTraits):
                 'Axes type `{}` is not correct.'.format(type(axes)))
 
         for axis in axes:
-            if not axis.is_linear:
-                raise NonLinearAxisError()
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not implemented for non-uniform axes "
+                    f"such as {axis}")
 
         if isinstance(units, str) or units is None:
             units = [units] * len(axes)
@@ -1462,7 +1540,7 @@ class AxesManager(t.HasTraits):
                 axis.convert_to_units(unit, factor=factor)
 
     def update_axes_attributes_from(self, axes,
-                                    attributes=["scale", "offset", "units"]):
+                                    attributes=None):
         """Update the axes attributes to match those given.
 
         The axes are matched by their index in the array. The purpose of this
@@ -1539,8 +1617,8 @@ class AxesManager(t.HasTraits):
 
         Raises
         ------
-        ValueError if value if greater than the number of axes or
-        is negative
+        ValueError
+            If value if greater than the number of axes or is negative.
 
         """
         if len(self._axes) == 0:
@@ -1670,8 +1748,8 @@ class AxesManager(t.HasTraits):
     def __repr__(self):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
-        ax_signature_linear = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
-        ax_signature_non_linear = "% 16s | %6g | %6s |  non-linear axis  | %6s "
+        ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        ax_signature_non_uniform = "% 16s | %6g | %6s | non uniform axis | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
                              'units')
@@ -1679,24 +1757,24 @@ class AxesManager(t.HasTraits):
         text += signature % ('=' * 16, '=' * 6, '=' * 6,
                              '=' * 7, '=' * 7, '=' * 6)
 
-        def axis_repr(ax, ax_signature_linear, ax_signature_non_linear):
-            if ax.is_linear:
-                return ax_signature_linear % (str(ax.name)[:16], ax.size,
+        def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
+            if ax.is_uniform:
+                return ax_signature_uniform % (str(ax.name)[:16], ax.size,
                                               str(ax.index), ax.offset,
                                               ax.scale, ax.units)
             else:
-                return ax_signature_non_linear % (str(ax.name)[:16], ax.size,
+                return ax_signature_non_uniform % (str(ax.name)[:16], ax.size,
                                                   str(ax.index), ax.units)
 
         for ax in self.navigation_axes:
             text += '\n'
-            text += axis_repr(ax, ax_signature_linear, ax_signature_non_linear)
+            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
         text += '\n'
         text += signature % ('-' * 16, '-' * 6, '-' * 6,
                              '-' * 7, '-' * 7, '-' * 6)
         for ax in self.signal_axes:
             text += '\n'
-            text += axis_repr(ax, ax_signature_linear, ax_signature_non_linear)
+            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
 
         return text
 
@@ -1724,12 +1802,12 @@ class AxesManager(t.HasTraits):
 
         def axis_repr(ax):
             index = ax.index if ax.navigate else ""
-            if ax.is_linear:
+            if ax.is_uniform:
                 return format_row(ax.name, ax.size, index, ax.offset,
                                   ax.scale, ax.units)
             else:
-                return format_row(ax.name, ax.size, index, "non linear axis",
-                                  "non linear axis", ax.units)
+                return format_row(ax.name, ax.size, index, "non uniform axis",
+                                  "non uniform axis", ax.units)
 
         if self.navigation_axes:
             text += "<table style='width:100%'>\n"

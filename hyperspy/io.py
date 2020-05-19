@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -59,6 +59,9 @@ def load(filenames=None,
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
     Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
     tif, and a number of image formats.
+
+    Depending on the number of datasets to load in the file, this function will
+    return a HyperSpy signal instance or list of HyperSpy signal instances.
 
     Any extra keyword is passed to the corresponding reader. For
     available options see their individual documentation.

@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -185,13 +185,13 @@ class TestPlotNonLinearAxis:
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_non_linear_sig(self):
+    def test_plot_non_uniform_sig(self):
         self.s.plot()
         return self.s._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_non_linear_nav(self):
+    def test_plot_non_uniform_nav(self):
         s2 = self.s.T
         s2.plot()
         return s2._plot.navigator_plot.figure

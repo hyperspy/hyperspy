@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,8 +21,8 @@ __doc__ = """
 
 Components that can be used to define a 2D model for e.g. 2D model fitting.
 
-Writing a new template is really easy, just edit _template.py and maybe take a
-look to the other components.
+Writing a new template is easy: see the user guide documentation on creating
+components.
 
 For more details see each component docstring.
 ====================================================================

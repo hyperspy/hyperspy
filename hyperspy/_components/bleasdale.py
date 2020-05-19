@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -40,7 +40,6 @@ class Bleasdale(Expression):
     
         **kwargs
             Extra keyword arguments are passed to the ``Expression`` component.
-        
     
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
     """

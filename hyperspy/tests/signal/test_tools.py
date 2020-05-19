@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from unittest import mock
 import sys
 
@@ -203,8 +221,8 @@ class Test2D:
         s.crop(1, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_crop_image_unit_convertion_signal2D(self):
@@ -252,8 +270,8 @@ class Test2D:
         s.crop_image(0, 5.0, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "um"
-        assert s.axes_manager[1].units == "um"
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_split_axis0(self):
@@ -754,8 +772,8 @@ class TestDerivative:
 
     def test_derivative_data(self):
         der = self.s.derivative(axis=0, order=4)
-        nt.assert_allclose(der.data, np.sin(
-            der.axes_manager[0].axis), atol=1e-2)
+        nt.assert_allclose(der.data[4:-4], np.sin(
+            der.axes_manager[0].axis[4:-4]), atol=1e-2)
 
 
 @lazifyTestClass
@@ -1118,11 +1136,10 @@ def test_lazy_reduce_rechunk():
 
 def test_lazy_diff_rechunk():
     s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
-    for rm in (s.derivative, s.diff):
-        # The data has been rechunked
-        assert rm(axis=-1).data.chunks == ((10,), (99,))
-        assert rm(axis=-1, rechunk=False).data.chunks == ((1,) *
-                                                          10, (1,) * 99)  # The data has not been rechunked
+    # The data has been rechunked
+    assert s.diff(axis=-1).data.chunks == ((10,), (99,))
+    assert s.diff(axis=-1, rechunk=False).data.chunks == ((1,) *
+                                                      10, (1,) * 99)  # The data has not been rechunked
 
 
 def test_spikes_removal_tool():
