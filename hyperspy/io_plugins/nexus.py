@@ -311,36 +311,47 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
                     units=""
                 named_axes.remove(ind_in_array)
                 if _is_numeric_data(dataentry[ax]):
-                    if _is_linear_axis(dataentry[ax]):
-                        nav_list.append({   
-                            'size': data.shape[ind_in_array],
-                            'index_in_array': ind_in_array,
-                            'name': ax,
-                            'scale': abs(dataentry[ax][1]-\
-                                         dataentry[ax][0]),
-                            'offset': min(dataentry[ax][0],\
-                                          dataentry[ax][-1] ),
-                            'units': units,
-                            'navigate': True,
-                            })
+                    if dataentry[ax].size > 1:
+                        if _is_linear_axis(dataentry[ax]):
+                            nav_list.append({   
+                                'size': data.shape[ind_in_array],
+                                'index_in_array': ind_in_array,
+                                'name': ax,
+                                'scale': abs(dataentry[ax][1]-\
+                                             dataentry[ax][0]),
+                                'offset': min(dataentry[ax][0],\
+                                              dataentry[ax][-1] ),
+                                'units': units,
+                                'navigate': True,
+                                })
+                        else:
+                            nav_list.append({   
+                                'size': data.shape[ind_in_array],
+                                'index_in_array': ind_in_array,
+                                'name': ax,
+                                'scale': 1,
+                                'offset': 0,
+                                'navigate': True,
+                                })
+                             # when non-linear axes supported...
+    #                        nav_list.append({   
+    #                            'index_in_array': ind_in_array,
+    #                            'name': axname,
+    #                            'axis' : dataentry[ax],
+    #                            'units': units,
+    #                            'navigate': True,
+    #                            })
                     else:
                         nav_list.append({   
-                            'size': data.shape[ind_in_array],
+                            'size': 1,
                             'index_in_array': ind_in_array,
                             'name': ax,
                             'scale': 1,
-                            'offset': 0,
+                            'offset': dataentry[ax][0],
+                            'units': units,
                             'navigate': True,
                             })
-                         # when non-linear axes supported...
-#                        nav_list.append({   
-#                            'index_in_array': ind_in_array,
-#                            'name': axname,
-#                            'axis' : dataentry[ax],
-#                            'units': units,
-#                            'navigate': True,
-#                            })
-                    
+                        
         for i,ax in enumerate(axes_list):
             if ax == ".":
                 if(len(data.shape)==len(axes_list)):
@@ -457,9 +468,11 @@ def file_reader(filename,lazy=True, dataset_keys=None,
     #
     # strip out the metadata 
     #
-    all_metadata = _load_metadata(fin,small_metadata_only=small_metadata_only)
+    all_metadata = _load_metadata(fin,follow_links=follow_links)
     original_metadata = _find_search_keys_in_dict(all_metadata,
                                             search_keys=metadata_keys)
+    if small_metadata_only:
+        original_metadata = _find_smalldata_in_dict(original_metadata)
     for data_path in nexus_data_paths:        
         dictionary = _nexus_dataset_to_signal(fin,data_path,lazy)
         dictionary["mapping"] = mapping 
@@ -887,6 +900,7 @@ def _write_nexus_groups(dictionary, group, **kwds):
                       **kwds)
         
         if isinstance(value, (list, tuple,np.ndarray, da.Array)):
+            print("key",key,value)
             data = _parse_to_file(value)
             overwrite_dataset(group, data, key, chunks=None, **kwds)
         elif isinstance(value, (int,float,str,bytes)):
@@ -1087,7 +1101,7 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
 
 def file_writer(filename,
                 signals,
-                small_metadata_only=True,
+                small_metadata_only=False,
                 *args, **kwds):
     """ Write the signal and metadata as a nexus file
     This will save the signal in NXdata format in the file.
@@ -1119,13 +1133,15 @@ def file_writer(filename,
             #
             # write the signals
             #
+
             for i,sig in enumerate(signals):
                 signal_name = sig.metadata.General.title if \
                 sig.metadata.General.title else '__unnamed__%d'% i
                 if "/" in signal_name:
                     signal_name = signal_name.replace("/", "_")
                 nxsignal = nxexpt.create_group(signal_name)
-                nxsignal.attrs["NX_class"] = b"NXentry"                
+                nxsignal.attrs["NX_class"] = b""  
+                
                 _write_signal(sig, nxsignal,signal_name,**kwds)
     
                 if sig.learning_results:
