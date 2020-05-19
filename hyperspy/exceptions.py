@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -188,15 +188,6 @@ class NavigationSizeError(Exception):
         self.expected_navigation_size = expected_navigation_size
         self.msg = 'navigation_size =%i, %i expected' % (
             self.navigation_size, self.expected_navigation_size)
-
-
-class NonLinearAxisError(Exception):
-
-    def __init__(self):
-        self.error = ("Non linear axis are not supported.")
-
-    def __str__(self):
-        return repr(self.error)
 
 
 class VisibleDeprecationWarning(UserWarning):

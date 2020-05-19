@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -68,7 +68,7 @@ class TestImageObject():
 
     def test_parse_string(self):
         assert self.imageobject._parse_string("") is None
-        assert self.imageobject._parse_string("string") is "string"
+        assert self.imageobject._parse_string("string") == "string"
 
 
 def test_missing_tag():

@@ -15,7 +15,8 @@ HyperSpy User Guide
     install.rst
     getting_started.rst
     axes.rst
-    tools.rst
+    signal.rst
+    interactive_operations_ROIs.rst
     signal1d.rst
     signal2d.rst
     visualisation.rst

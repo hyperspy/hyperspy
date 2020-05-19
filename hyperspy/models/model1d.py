@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,7 +22,7 @@ import numpy as np
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_linear_axis
+from hyperspy.axes import generate_uniform_axis
 from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
@@ -321,7 +321,7 @@ class Model1D(BaseModel):
                     self.signal.axes_manager.navigation_shape):
                 raise ValueError('The low-loss does not have the same '
                                  'navigation dimension as the core-loss.')
-            if not value.axes_manager.signal_axes[0].is_linear:
+            if not value.axes_manager.signal_axes[0].is_uniform:
                 raise ValueError('Low loss convolution is not supported with '
                                  'non linear signal axes.')
             self._low_loss = value
@@ -344,7 +344,7 @@ class Model1D(BaseModel):
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
-        self.convolution_axis = generate_linear_axis(self.axis.offset, step,
+        self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
                                                      dimension, knot_position)
 
     def append(self, thing):
@@ -899,7 +899,6 @@ class Model1D(BaseModel):
              be manually specified by passing a tuple of floats. If None
              the current signal range is used. Note that ROIs can be used
              in place of a tuple.
-
         estimate_parameters : bool, default True
             If True will check if the component has an
             estimate_parameters function, and use it to estimate the
@@ -909,6 +908,11 @@ class Model1D(BaseModel):
             component paramemeters are fixed.
         %s
         %s
+        **kwargs : dict
+            All extra keyword arguments are passed to the
+            py:meth:`~hyperspy.model.BaseModel.fit` or 
+            py:meth:`~hyperspy.model.BaseModel.multifit`
+            method, depending if ``only_current`` is True or False.
 
         Examples
         --------

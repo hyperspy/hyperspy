@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,11 +30,13 @@ from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline)
+from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.math_tools import optimal_fft_size
+from hyperspy.misc.eels.tools import get_edges_near_energy
+from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -531,47 +533,56 @@ class EELSSpectrum_mixin:
         return threshold
 
     def estimate_thickness(self,
-                           threshold,
-                           zlp=None,):
-        """Estimates the thickness (relative to the mean free path)
+                           threshold=None,
+                           zlp=None,
+                           density=None,
+                           mean_free_path=None,):
+        """Estimates the thickness (relative and absolute)
         of a sample using the log-ratio method.
 
         The current EELS spectrum must be a low-loss spectrum containing
         the zero-loss peak. The hyperspectrum must be well calibrated
-        and aligned.
+        and aligned. To obtain the thickness relative to the mean free path
+        don't set the `density` and the `mean_free_path`.
 
         Parameters
         ----------
-        threshold : {Signal1D, float, int}
-            Truncation energy to estimate the intensity of the
-            elastic scattering. The threshold can be provided as a signal of
+        threshold : {BaseSignal, float}, optional
+            If the zero-loss-peak is not provided, use this energy threshold
+            to roughly estimate its intensity by truncation.
+            If the threshold is constant across the dataset use a float. Otherwise,
+            provide a signal of
             the same dimension as the input spectrum navigation space
-            containing the threshold value in the energy units. Alternatively a
-            constant threshold can be specified in energy/index units by
-            passing float/int.
-        zlp : {None, EELSSpectrum}
+            containing the threshold value in the energy units.
+        zlp : BaseSignal, optional
             If not None the zero-loss peak intensity is calculated from the ZLP
-            spectrum supplied by integration using Simpson's rule. If None
-            estimates the zero-loss peak intensity using
-            `estimate_elastic_scattering_intensity` by truncation.
+            spectrum supplied by integration.
+        mean_free_path : float, optional
+            The mean free path of the material in nanometers.
+            If not provided, the thickness
+            is given relative to the mean free path.
+        density : float, optional
+            The density of the material in g/cm**3. This is used to estimate the mean
+            free path when the mean free path is not known and to perform the
+            angular corrections.
 
         Returns
         -------
-        s : Signal1D
+        s : BaseSignal
             The thickness relative to the MFP. It returns a Signal1D,
             Signal2D or a BaseSignal, depending on the current navigation
             dimensions.
 
         Notes
         -----
-        For details see: Egerton, R. Electron Energy-Loss
-        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-
+        For details see Egerton, R. Electron Energy-Loss Spectroscopy in the Electron
+        Microscope.  Springer-Verlag, 2011.
         """
-        # TODO: Write units tests
-        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         total_intensity = self.integrate1D(axis.index_in_array).data
+        if threshold is None and zlp is None:
+            raise ValueError("Please provide one of the following keywords: "
+                             "`threshold`, `zlp`")
         if zlp is not None:
             I0 = zlp.integrate1D(axis.index_in_array).data
         else:
@@ -581,13 +592,51 @@ class EELSSpectrum_mixin:
             t_over_lambda = da.log(total_intensity / I0)
         else:
             t_over_lambda = np.log(total_intensity / I0)
+        if density is not None:
+            if self._are_microscope_parameters_missing():
+                raise RuntimeError(
+                    "Some microscope parameters are missing. Please use the "
+                    "`set_microscope_parameters()` method to set them. "
+                    "If you don't know them, don't set the `density` keyword."
+                )
+            else:
+                md = self.metadata.Acquisition_instrument.TEM
+                t_over_lambda *= iMFP_angular_correction(
+                    beam_energy=md.beam_energy,
+                    alpha=md.convergence_angle,
+                    beta=md.Detector.EELS.collection_angle,
+                    density=density,
+                )
+                if mean_free_path is None:
+                    mean_free_path = iMFP_Iakoubovskii(
+                        electron_energy=self.metadata.Acquisition_instrument.TEM.beam_energy,
+                        density=density)
+                    _logger.info(f"The estimated iMFP is {mean_free_path} nm")
+        else:
+            _logger.warning(
+                "Computing the thickness without taking into account the effect of"
+                "the limited collection angle, what usually leads to underestimating"
+                "the thickness. To perform the angular corrections you must provide"
+                "the density of the material.")
+
         s = self._get_navigation_signal(data=t_over_lambda)
-        s.metadata.General.title = (self.metadata.General.title +
-                                    ' $\\frac{t}{\\lambda}$')
+        if mean_free_path is not None:
+            s.data *= mean_free_path
+            s.metadata.General.title = (
+                self.metadata.General.title +
+                ' thickness (nm)')
+            s.metadata.Signal.quantity = "thickness (nm)"
+        else:
+            _logger.warning(
+                "Computing the relative thickness. To compute the absolute "
+                "thickness provide the `mean_free_path` and/or the `density`")
+            s.metadata.General.title = (self.metadata.General.title +
+                                        ' $\\frac{t}{\\lambda}$')
+            s.metadata.Signal.quantity = "$\\frac{t}{\\lambda}$"
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
-                '_relative_thickness')
+                '_thickness')
             s.tmp_parameters.folder = self.tmp_parameters.folder
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
@@ -624,15 +673,18 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes")
         s = self.deepcopy()
         zlp_size = zlp.axes_manager.signal_axes[0].size
         self_size = self.axes_manager.signal_axes[0].size
         tapped_channels = s.hanning_taper()
         # Conservative new size to solve the wrap-around problem
         size = zlp_size + self_size - 1
-        # Increase to the closest power of two to enhance the FFT
-        # performance
-        size = closest_power_of_two(size)
+        # Calculate optimal FFT padding for performance
+        complex_result = (zlp.data.dtype.kind == 'c' or s.data.dtype.kind == 'c')
+        size = optimal_fft_size(size, not complex_result)
 
         axis = self.axes_manager.signal_axes[0]
         if self._lazy or zlp._lazy:
@@ -712,6 +764,13 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
+        if not ll.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "The low-loss energy axis is non-uniform. "
+                "This operation is not yet implemented for non-uniform energy axes")
         orig_cl_size = self.axes_manager.signal_axes[0].size
 
         if threshold is None:
@@ -744,9 +803,8 @@ class EELSSpectrum_mixin:
         cl_size = self.axes_manager.signal_axes[0].size
         # Conservative new size to solve the wrap-around problem
         size = ll_size + cl_size - 1
-        # Increase to the closest multiple of two to enhance the FFT
-        # performance
-        size = int(2 ** np.ceil(np.log2(size)))
+        # Calculate the optimal FFT size
+        size = optimal_fft_size(size)
 
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
@@ -788,7 +846,7 @@ class EELSSpectrum_mixin:
 
     def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
                                       show_progressbar=None,
-                                      parallel=None):
+                                      parallel=None, max_workers=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -803,6 +861,7 @@ class EELSSpectrum_mixin:
             current spectrum.
         %s
         %s
+        %s
 
         Notes
         -----
@@ -812,6 +871,9 @@ class EELSSpectrum_mixin:
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
@@ -833,7 +895,8 @@ class EELSSpectrum_mixin:
             return result
         ds = self.map(deconv_function, kernel=psf, iterations=iterations,
                       psf_size=psf_size, show_progressbar=show_progressbar,
-                      parallel=parallel, ragged=False, inplace=False)
+                      parallel=parallel, max_workers=max_workers,
+                      ragged=False, inplace=False)
 
         ds.metadata.General.title += (
             ' after Richardson-Lucy deconvolution %i iterations' %
@@ -843,8 +906,7 @@ class EELSSpectrum_mixin:
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
-    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG,
-                                              PARALLEL_ARG)
+    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def _are_microscope_parameters_missing(self, ignore_parameters=[]):
         """
@@ -1018,7 +1080,7 @@ class EELSSpectrum_mixin:
         dielectric function from a single scattering distribution (SSD) using
         the Kramers-Kronig relations.
 
-        It uses the FFT method as in [*]__.  The SSD is an
+        It uses the FFT method as in [1]_.  The SSD is an
         EELSSpectrum instance containing SSD low-loss EELS with no zero-loss
         peak. The internal loop is devised to approximately subtract the
         surface plasmon contribution supposing an unoxidized planar surface and
@@ -1053,7 +1115,7 @@ class EELSSpectrum_mixin:
             is estimated and returned. It is only required when `t` is None.
         t: {None, number, Signal1D}
             The sample thickness in nm. Used for normalization of the
-            SSD to obtain the energy loss function. It is only required when
+             to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
             given by a number. Otherwise, it can be provided as a BaseSignal
             with signal dimension 0 and navigation_dimension equal to the
@@ -1098,18 +1160,19 @@ class EELSSpectrum_mixin:
 
         Notes
         -----
-        This method is based in Egerton's Matlab code [*]__ with some
+        This method is based in Egerton's Matlab code [1]_ with some
         minor differences:
 
-        * The integrals are performed using the simpsom rule instead of using
-          a summation.
         * The wrap-around problem when computing the ffts is workarounded by
           padding the signal instead of substracting the reflected tail.
 
-        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
+        .. [1] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
            Microscope", Springer-Verlag, 2011.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         output = {}
         if iterations == 1:
             # In this case s.data is not modified so there is no need to make
@@ -1220,10 +1283,10 @@ class EELSSpectrum_mixin:
             # Kramers Kronig Transform:
             # We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
             # Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
-            # Use a size that is a power of two to speed up the fft and
+            # Use an optimal FFT size to speed up the calculation, and
             # make it double the closest upper value to workaround the
             # wrap-around problem.
-            esize = 2 * closest_power_of_two(axis.size)
+            esize = optimal_fft_size(2 * axis.size)
             q = -2 * np.fft.fft(Im, esize,
                                 axis.index_in_array).imag / esize
 
@@ -1329,6 +1392,11 @@ class EELSSpectrum_mixin:
 
         """
         from hyperspy.models.eelsmodel import EELSModel
+        if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "Multiple scattering is not implemented for spectra with an non-uniform energy axis. "
+                "To create a model that does not account for multiple-scattering do not set "
+                "the `ll` keyword.")
         model = EELSModel(self,
                           ll=ll,
                           auto_background=auto_background,

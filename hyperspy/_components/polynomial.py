@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -94,6 +94,9 @@ class Polynomial(Expression):
         super()._estimate_parameters(signal)
 
         axis = signal.axes_manager.signal_axes[0]
+        if not axis.is_uniform and self.binned:
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],

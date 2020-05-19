@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import copy
 import math
 from unittest import mock
@@ -8,7 +26,7 @@ import traits.api as t
 import pytest
 
 from hyperspy.axes import (BaseDataAxis, DataAxis, FunctionalDataAxis,
-                           LinearDataAxis, create_axis)
+                           UniformDataAxis, _create_axis)
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -23,14 +41,14 @@ class TestBaseDataAxis:
         assert self.axis.name is t.Undefined
         assert self.axis.units is t.Undefined
         assert self.axis.navigate is t.Undefined
-        assert not self.axis.is_linear
+        assert not self.axis.is_uniform
 
     def test_initialisation_BaseDataAxis(self):
         axis = BaseDataAxis(name='named axis', units='s', navigate=True)
         assert axis.name == 'named axis'
         assert axis.units == 's'
         assert axis.navigate
-        assert not self.axis.is_linear
+        assert not self.axis.is_uniform
         assert_deep_almost_equal(axis.get_axis_dictionary(),
                                  {'name': 'named axis',
                                   'units': 's',
@@ -50,14 +68,14 @@ class TestDataAxis:
         self._test_initialisation_parameters(self.axis)
 
     def test_create_axis(self):
-        axis = create_axis(**self.axis.get_axis_dictionary())
+        axis = _create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, DataAxis)
         self._test_initialisation_parameters(axis)
 
     def test_axis_value(self):
         assert_allclose(self.axis.axis, np.arange(16)**2)
         assert self.axis.size == 16
-        assert not self.axis.is_linear
+        assert not self.axis.is_uniform
 
     def test_update_axes(self):
         values = np.arange(20)**2
@@ -119,10 +137,10 @@ class TestDataAxis:
         assert self.axis.size == 5
         np.testing.assert_allclose(self.axis.axis, np.arange(0, 10, 2)**2)
 
-    def test_convert_to_linear_axis(self):
+    def test_convert_to_uniform_axis(self):
         scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
-        self.axis.convert_to_linear_axis()
-        assert isinstance(self.axis, LinearDataAxis)
+        self.axis.convert_to_uniform_axis()
+        assert isinstance(self.axis, UniformDataAxis)
         assert self.axis.size == 16
         assert self.axis.scale == scale
         assert self.axis.offset == 0
@@ -164,23 +182,34 @@ class TestDataAxis:
 class TestFunctionalDataAxis:
 
     def setup_method(self, method):
-        expression = "a * x + b"
-        self.axis = FunctionalDataAxis(size=10, expression=expression,
-                                       a=0.1, b=10)
-
-    def _test_initialisation_parameters(self, axis):
-        assert axis.a == 0.1
-        assert axis.b == 10
-        assert hasattr(axis, 'function')
-        np.testing.assert_allclose(axis.axis, np.linspace(10, 10.9, 10))
+        expression = "x ** power"
+        self.axis = FunctionalDataAxis(
+            size=10,
+            expression=expression,
+            power=2,)
 
     def test_initialisation_parameters(self):
-        self._test_initialisation_parameters(self.axis)
+        axis = self.axis
+        assert axis.power == 2
+        np.testing.assert_allclose(
+            axis.axis,
+            np.arange(10)**2)
 
     def test_create_axis(self):
-        axis = create_axis(**self.axis.get_axis_dictionary())
+        axis = _create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
-        self._test_initialisation_parameters(axis)
+
+    @pytest.mark.parametrize("use_indices", (True, False))
+    def test_crop(self, use_indices):
+        axis = self.axis
+        start, end = 3.9, 72.6
+        if use_indices:
+            start = 2
+            end = -1
+        axis.crop(start, end)
+        assert axis.size == 7
+        np.testing.assert_almost_equal(axis.axis[0], 4.)
+        np.testing.assert_almost_equal(axis.axis[-1], 64.)
 
 
 class TestReciprocalDataAxis:
@@ -193,8 +222,6 @@ class TestReciprocalDataAxis:
     def _test_initialisation_parameters(self, axis):
         assert axis.a == 0.1
         assert axis.b == 10
-        assert hasattr(axis, 'function')
-        assert hasattr(axis, '_expression')
         def func(x): return 0.1 / (x + 1) + 10
         np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
@@ -202,34 +229,44 @@ class TestReciprocalDataAxis:
         self._test_initialisation_parameters(self.axis)
 
     def test_create_axis(self):
-        axis = create_axis(**self.axis.get_axis_dictionary())
+        axis = _create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
-        self._test_initialisation_parameters(axis)        
+        self._test_initialisation_parameters(axis)
+
+    @pytest.mark.parametrize("use_indices", (True, False))
+    def test_crop(self, use_indices):
+        axis = self.axis
+        start, end = 10.05, 10.02
+        if use_indices:
+            start = axis.value2index(start)
+            end = axis.value2index(end)
+        axis.crop(start, end)
+        assert axis.size == 3
+        np.testing.assert_almost_equal(axis.axis[0], 10.05)
+        np.testing.assert_almost_equal(axis.axis[-1], 10.025)
 
 
-class TestLinearDataAxis:
+class TestUniformDataAxis:
 
     def setup_method(self, method):
-        self.axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        self.axis = UniformDataAxis(size=10, scale=0.1, offset=10)
 
     def _test_initialisation_parameters(self, axis):
         assert axis.scale == 0.1
         assert axis.offset == 10
-        assert hasattr(axis, 'function')
-        assert hasattr(axis, '_expression')
-        def func(x): return axis.scale* x + axis.offset
+        def func(x): return axis.scale * x + axis.offset
         np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
     def test_initialisation_parameters(self):
         self._test_initialisation_parameters(self.axis)
 
     def test_create_axis(self):
-        axis = create_axis(**self.axis.get_axis_dictionary())
-        assert isinstance(axis, LinearDataAxis)
-        self._test_initialisation_parameters(axis)  
+        axis = _create_axis(**self.axis.get_axis_dictionary())
+        assert isinstance(axis, UniformDataAxis)
+        self._test_initialisation_parameters(axis)
 
     def test_value_range_to_indices_in_range(self):
-        assert self.axis.is_linear
+        assert self.axis.is_uniform
         assert (
             self.axis.value_range_to_indices(
                 10.1, 10.8) == (1, 8))
@@ -303,7 +340,7 @@ class TestLinearDataAxis:
             slice(2, 4, 2))
 
     def test_update_from(self):
-        ax2 = LinearDataAxis(size=2, units="nm", scale=0.5)
+        ax2 = UniformDataAxis(size=2, units="nm", scale=0.5)
         self.axis.update_from(ax2, attributes=("units", "scale"))
         assert ((ax2.units, ax2.scale) ==
                 (self.axis.units, self.axis.scale))
@@ -328,9 +365,9 @@ class TestLinearDataAxis:
         ax.index += 1
         assert m.trigger_me.called
 
-    def test_convert_to_non_linear_axis(self):
+    def test_convert_to_non_uniform_axis(self):
         axis = np.copy(self.axis.axis)
-        self.axis.convert_to_non_linear_axis()
+        self.axis.convert_to_non_uniform_axis()
         assert isinstance(self.axis, DataAxis)
         assert self.axis.size == 10
         assert self.axis.low_value == 10
@@ -339,7 +376,7 @@ class TestLinearDataAxis:
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         start = 10.2
         if use_indices:
             start = axis.value2index(start)
@@ -350,7 +387,7 @@ class TestLinearDataAxis:
         np.testing.assert_almost_equal(axis.offset, 10.2)
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         end = 10.4
         if use_indices:
             end = axis.value2index(end)
@@ -361,7 +398,7 @@ class TestLinearDataAxis:
         np.testing.assert_almost_equal(axis.offset, 10.2)
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         axis.crop(None, end)
         assert axis.size == 4
         np.testing.assert_almost_equal(axis.axis[0], 10.0)
@@ -371,7 +408,7 @@ class TestLinearDataAxis:
 
     @pytest.mark.parametrize("mixed", (False, True))
     def test_crop_reverses_indexing(self, mixed):
-        axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
         if mixed:
             i1, i2 = 2, -6
         else:

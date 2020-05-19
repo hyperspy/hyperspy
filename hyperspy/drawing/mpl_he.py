@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +22,7 @@ import logging
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -97,7 +99,7 @@ class MPL_HyperExplorer(object):
             sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
             sl.set_line_properties(color='blue',
-                                   type='step' if axis.is_linear else 'line')
+                                   type='step' if axis.is_uniform else 'line')
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()
@@ -139,6 +141,8 @@ class MPL_HyperExplorer(object):
                                     imf.update), [])
 
             imf.title = title
+            if "cmap" not in kwds.keys() or kwds['cmap'] is None:
+                kwds["cmap"] = preferences.Plot.cmap_navigator
             imf.plot(**kwds)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf

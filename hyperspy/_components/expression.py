@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -55,7 +55,7 @@ def _parse_substitutions(string):
     splits = map(str.strip, string.split(';'))
     expr = sympy.sympify(next(splits))
     # We substitute one by one manually, as passing all at the same time does
-    # not work as we want (subsitutions inside other substitutions do not work)
+    # not work as we want (substitutions inside other substitutions do not work)
     for sub in splits:
         t = tuple(map(str.strip, sub.split('=')))
         expr = expr.subs(t[0], sympy.sympify(t[1]))

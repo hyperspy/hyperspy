@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -162,13 +162,16 @@ class Lorentzian(Expression):
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
         >>> s = hs.signals.Signal1D(data)
-        >>> s.axes_manager._axes[-1].offset = -10
-        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
         """
-        
+
         super(Lorentzian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        if not axis.is_uniform and self.binned:
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
         centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
                                                               only_current)
         if only_current is True:

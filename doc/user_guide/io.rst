@@ -5,6 +5,7 @@ Loading and saving data
 ***********************
 
 .. contents::
+   :depth: 3
 
 .. _loading_files:
 
@@ -19,9 +20,12 @@ image ascent.jpg you can type:
 
     >>> s = hs.load("ascent.jpg")
 
-If the loading was successful, the variable ``s`` contains a generic
-:py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or
-an :py:class:`~._signals.signal2d.Signal2D`.
+If loading was successful, the variable ``s`` contains a HyperSpy signal
+or a signal of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
+- see available :ref:`signal subclasses <transforming_signal-label>` for more
+information.
+If the loaded file contains several datasets, the :py:func:`~.io.load`
+functions will return a list of the corresponding signal.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array
@@ -75,9 +79,9 @@ Almost all file readers support accessing the data without reading it to memory
 analysing large files. To load a file without loading it to memory simply set
 ``lazy`` to ``True`` e.g.:
 
-The units of the navigation and signal axes can be converted automatically 
-during loading using the ``convert_units`` parameter. If `True`, the 
-``convert_to_units`` method of the ``axes_manager`` will be used for the conversion 
+The units of the navigation and signal axes can be converted automatically
+during loading using the ``convert_units`` parameter. If `True`, the
+``convert_to_units`` method of the ``axes_manager`` will be used for the conversion
 and if set to `False`, the units will not be converted. The default is `False`.
 
 .. code-block:: python
@@ -178,7 +182,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | FEI's emi and ser  |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
-    | HDF5               |    Yes |    Yes |    Yes |
+    | hspy               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
     | Image: jpg         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
@@ -213,6 +217,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     | EDAX .spc and .spd |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
     | h5USID .h5         |    Yes |   Yes  |   Yes  |
+    +--------------------+--------+--------+--------+
+    | Phenom .elid       |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
 
 .. _hspy-format:
@@ -253,7 +259,7 @@ filename e.g.:
 
 
 When saving to ``hspy``, all supported objects in the signal's
-:py:attr:`~.signal.BaseSignal.metadata` is stored. This includes  lists, tuples and signals.
+:py:attr:`~.signal.BaseSignal.metadata` is stored. This includes lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,
 the inner-most structures are converted to numpy arrays when saved. This
 procedure homogenizes any types of the objects inside, most notably casting
@@ -301,7 +307,7 @@ possible to customise the chunk shape using the ``chunks`` keyword. For example,
     >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
 
 Note that currently it is not possible to pass different customised chunk shapes to all signals and
-arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving 
+arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving
 will be applied to all arrays contained in the signal.
 
 By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
@@ -373,7 +379,7 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- `do_async`: currently supported within Hyperspy for writing only, this will 
+- `do_async`: currently supported within Hyperspy for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
@@ -593,7 +599,7 @@ Extra loading arguments for SPD file
 Extra loading arguments for SPD and SPC files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is 
+- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is
   read, or just the important parts for import into HyperSpy.
 
 
@@ -606,7 +612,7 @@ HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make us 
+`issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make us
 aware of the problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
@@ -620,9 +626,9 @@ with it, all of them will be read and returned as a list.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- `only_valid_data` : bool, in case of series or linescan data with the 
-  acquisition stopped before the end: if True, load only the acquired data. 
-  If False, the empty data are filled with zeros. The default is False and this 
+- `only_valid_data` : bool, in case of series or linescan data with the
+  acquisition stopped before the end: if True, load only the acquired data.
+  If False, the empty data are filled with zeros. The default is False and this
   default value will change to True in version 2.0.
 
 .. _unf-format:
@@ -705,16 +711,16 @@ currently supported by HyperSpy.
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the 
-  corresponding type of data, either spectrum or image, is returned. 
+- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the
+  corresponding type of data, either spectrum or image, is returned.
   By default (None), all data are loaded.
-- `index` : one of (None, int, "all"). Allow to select the index of the dataset 
-  in the bcf file, which can contains several datasets. Default None value 
-  result in loading the first dataset. When set to 'all', all available datasets 
+- `index` : one of (None, int, "all"). Allow to select the index of the dataset
+  in the bcf file, which can contains several datasets. Default None value
+  result in loading the first dataset. When set to 'all', all available datasets
   will be loaded and returned as separate signals.
-- `downsample` : the downsample ratio of hyperspectral array (height and width 
-  only), can be integer >=1, where '1' results in no downsampling (default 1). 
-  The underlying method of downsampling is unchangeable: sum. Differently than 
+- `downsample` : the downsample ratio of hyperspectral array (height and width
+  only), can be integer >=1, where '1' results in no downsampling (default 1).
+  The underlying method of downsampling is unchangeable: sum. Differently than
   ``block_reduce`` from skimage.measure it is memory efficient (does not creates
   intermediate arrays, works inplace).
 - `cutoff_at_kV` : if set (can be int or float >= 0) can be used either to crop
@@ -800,7 +806,7 @@ asdf
 EMD (Velox)
 ^^^^^^^^^^^
 
-This is a non-compliant variant of the standard EMD format developed by 
+This is a non-compliant variant of the standard EMD format developed by
 Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS
 spectrum streams (spectrum images stored in a sparse format). For spectrum
 streams, there are several loading options (described below) to control the frames
@@ -812,8 +818,8 @@ the data size in memory.
 .. note::
 
     Pruned Velox EMD files only contain the spectrum image in a proprietary
-    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in 
-    you intend to read them with HyperSpy.
+    format that HyperSpy cannot read. Therefore, don't prune Velox EMD files
+    if you intend to read them with HyperSpy.
 
 .. code-block:: python
 
@@ -824,14 +830,14 @@ the data size in memory.
 
 .. note::
 
-    Currently only lazy uncompression rather than lazy loading is implemented. 
-    This means that it is not currently possible to read EDS SI Veloz EMD files 
+    Currently only lazy uncompression rather than lazy loading is implemented.
+    This means that it is not currently possible to read EDS SI Veloz EMD files
     with size bigger than the available memory.
 
 
 .. note::
 
-    Loading a spectrum image can be slow if 
+    Loading a spectrum image can be slow if
     `numba <http://numba.pydata.org/>`_ is not installed.
 
 
@@ -903,7 +909,7 @@ experiment. The reader returns a list of signal with each signal corresponding
 to a quantity. Since there is a small fluctuation in the step of the time axis,
 the reader assumes that the step is constant and takes its mean, which is a
 good approximation. Further release of HyperSpy will read the time axis more
-precisely by supporting non-linear axis.
+precisely by supporting non-uniform axis.
 
 
 . _usid-format:
@@ -992,29 +998,29 @@ signal for each named component in the dataset:
     Signal2D, title: blue, dimensions: (|128, 128)>,
     Signal2D, title: green, dimensions: (|128, 128)>]
 
-h5USID files also support parameters or dimensions that have been varied non-linearly.
+h5USID files also support parameters or dimensions that have been varied non-uniformly.
 This capability is important in several spectroscopy techniques where the bias is varied as a
 `bi-polar triangular waveform <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_usi_dataset.html#values-for-each-dimension>`_
-rather than linearly from the minimum value to the maximum value.
-Since HyperSpy Signals expect linear variation of parameters / axes, such non-linear information
+rather than uniformly from the minimum value to the maximum value.
+Since HyperSpy Signals expect uniform variation of parameters / axes, such non-uniform information
 would be lost in the axes manager. The USID plugin will default to a warning
-when it encounters a parameter that has been varied non-linearly:
+when it encounters a parameter that has been varied non-uniformly:
 
 .. code-block:: python
 
     >>> hs.load("sample.h5")
-    UserWarning: Ignoring non-linearity of dimension: Bias
+    UserWarning: Ignoring non-uniformity of dimension: Bias
     <BaseSignal, title: , dimensions: (|7, 3, 5, 2)>
 
 Obviously, the
 In order to prevent accidental misinterpretation of information downstream, the keyword argument
-``ignore_non_linear_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
+``ignore_non_uniform_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
 
 .. code-block:: python
 
     >>> hs.load("sample.h5")
-    ValueError: Cannot load provided dataset. Parameter: Bias was varied non-linearly.
-    Supply keyword argument "ignore_non_linear_dims=True" to ignore this error
+    ValueError: Cannot load provided dataset. Parameter: Bias was varied non-uniformly.
+    Supply keyword argument "ignore_non_uniform_dims=True" to ignore this error
 
 Writing
 ^^^^^^^
@@ -1070,3 +1076,17 @@ Like the Digital Micrograph script above, it is used to easily transfer data
 from HyperSpy to MATLAB, while retaining spatial calibration information.
 
 Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.
+
+.. _elid-format:
+
+Phenom ELID format
+------------------
+
+This is the file format used by the software package Element Identification for the Thermo
+Fisher Scientific Phenom desktop SEM. It is a proprietary binary format which can contain
+images, single EDS spectra, 1D line scan EDS spectra and 2D EDS spectrum maps. The reader
+will convert all signals and its metadata into hyperspy signals.
+
+The current implementation supports ELID files created with Element Identification version
+3.8.0 and later. You can convert older ELID files by loading the file into a recent Element
+Identification release and then save the ELID file into the newer file format.
