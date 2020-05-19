@@ -310,6 +310,10 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         >>> w.argand_diagram(range=[-3, 3]).plot()
 
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         im = self.imag.data.ravel()
         re = self.real.data.ravel()
 

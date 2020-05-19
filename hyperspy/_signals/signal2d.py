@@ -628,6 +628,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """
         self._check_signal_dimension_equals_two()
 
+        for _axis in self.axes_manager.signal_axes:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not implememented for non-uniform axes")
+
         return_shifts = False
 
         if shifts is None:

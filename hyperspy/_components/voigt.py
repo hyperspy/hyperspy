@@ -158,6 +158,9 @@ class Voigt(Expression):
         """
         super(Voigt, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        if not axis.is_uniform and self.binned:
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
 

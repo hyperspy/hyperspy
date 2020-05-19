@@ -86,6 +86,9 @@ class Exponential(Expression):
         """
         super(Exponential, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        if not axis.is_uniform and self.binned:
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if i1 + 1 == i2:
             if i2 < axis.high_index:

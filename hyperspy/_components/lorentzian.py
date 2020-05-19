@@ -169,6 +169,9 @@ class Lorentzian(Expression):
 
         super(Lorentzian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        if not axis.is_uniform and self.binned:
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
         centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
                                                               only_current)
         if only_current is True:

@@ -1095,6 +1095,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             zero_fill=False, show_progressbar=None):
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
+        if fast and not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation with `fast=True` is not implemented for non-uniform axes.")
         model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,
@@ -1287,6 +1290,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If the signal dimension is not 1.
         """
         self._check_signal_dimension_equals_one()
+        for _axis in self.axes_manager.signal_axes:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         if FWHM <= 0:
             raise ValueError(
                 "FWHM must be greater than zero")
