@@ -715,6 +715,25 @@ class EMD_NCEM:
             group = f.get(group_name)
             if group is not None:
                 om.update({group_name:{key:value for key, value in group.attrs.items()}})
+
+        if self._is_prismatic_file:
+            md_mapping = {'i':'filenameAtoms', 'a': 'algorithm',
+                'fx':'interpolationFactorX', 'fy':'interpolationFactorY',
+                'F':'numFP', 'ns':'numSlices', 'te':'includeThermalEffects',
+                'oc':'includeOccupancy', '3D':'save3DOutput', '4D': 'save3DOutput',
+                'DPC':'saveDPC_CoM', 'ps':'savePotentialSlices', 'nqs':'nyquistSampling',
+                'px':'realspacePixelSizeX', 'py':'realspacePixelSizeY',
+                'P':'potBound', 's':'sliceThickness', 'zs': 'zStart', 'E':'E0',
+                'A':'alphaBeamMax', 'rx':'probeStepX', 'ry':'probeStepY',
+                'df':'probeDefocus', 'sa':'probeSemiangle', 'd':'detectorAngleStep',
+                'tx':'probeXtilt', 'ty':'probeYtilt', 'c':'cellDimension',
+                't':'tile', 'wx':'scanWindowX', 'wy':'scanWindowY',
+                'wxr':'scanWindowX_r', 'wyr':'scanWindowY_r','2D':'integrationAngle'}
+            simu_md = f.get(
+                '4DSTEM_simulation/metadata/metadata_0/original/simulation_parameters')
+
+        om['simulation_parameters'] = {md_mapping.get(k, k):v for k, v in simu_md.attrs.items()}
+
         return om
 
     @staticmethod
