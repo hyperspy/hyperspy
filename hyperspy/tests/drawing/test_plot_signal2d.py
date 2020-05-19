@@ -343,8 +343,7 @@ def test_plot_images_cmap_multi_signal():
     test_plot2.signal = test_plot2.signal.inav[::-1]
     test_plot2.signal.metadata.General.title = 'Descent'
 
-    hs.plot.plot_images([test_plot1.signal,
-                         test_plot2.signal],
+    hs.plot.plot_images([test_plot1.signal, test_plot2.signal],
                         axes_decor='off',
                         per_row=4,
                         cmap='mpl_colors')
@@ -364,9 +363,7 @@ def test_plot_images_cmap_multi_w_rgb():
     rgb_sig.change_dtype('rgb8')
     rgb_sig.metadata.General.title = 'Racoon!'
 
-    hs.plot.plot_images([test_plot1.signal,
-                         test_plot2.signal,
-                         rgb_sig],
+    hs.plot.plot_images([test_plot1.signal, test_plot2.signal, rgb_sig],
                         axes_decor='off',
                         per_row=4,
                         cmap='mpl_colors')
@@ -434,15 +431,20 @@ def test_plot_images_vmin_vmax_percentile(percentile):
     return ax[0].figure
 
 
+@pytest.mark.parametrize("vmin_vmax", [(50, 150),
+                                       ([0, 10], [120, None])])
 @pytest.mark.parametrize("colorbar", ['single', 'multi', None])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_colorbar(colorbar):
+def test_plot_images_colorbar(colorbar, vmin_vmax):
+    print("vmin_vmax:", vmin_vmax)
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    ax = hs.plot.plot_images([image0, image0], colorbar=colorbar,
-                             vmin=[0, 10], vmax=[120, None],
+    ax = hs.plot.plot_images([image0, image0],
+                             colorbar=colorbar,
+                             vmin=vmin_vmax[0],
+                             vmax=vmin_vmax[1],
                              axes_decor='ticks')
     return ax[0].figure
 
@@ -473,6 +475,8 @@ def test_plot_images_tranpose():
     hs.plot.plot_images([a, b])
 
 
+# Ignore numpy warning about clipping np.nan values
+@pytest.mark.filterwarnings("ignore:Passing `np.nan` to mean no clipping in np.clip")
 def test_plot_with_non_finite_value():
     s = hs.signals.Signal2D(np.array([[np.nan, 2.0] for v in range(2)]))
     s.plot()

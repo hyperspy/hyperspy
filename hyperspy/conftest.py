@@ -17,6 +17,10 @@ matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.vmin = 0.0
 hs.preferences.Plot.vmax = 0.0
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "parallel: a test that is itself parallel and should be run serially."
+    )
 
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):

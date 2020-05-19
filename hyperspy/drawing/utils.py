@@ -19,7 +19,7 @@
 import copy
 import itertools
 import textwrap
-from traits import trait_base
+import traits.api as t
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -43,9 +43,11 @@ def contrast_stretching(data, vmin=None, vmax=None):
     data: numpy array
     vmin, vmax: scalar, str, None
         If str, formatted as 'xth', use this value to calculate the percentage
-        of pixels that are left out of the bounds. For example, the low and 
-        high bounds of a value of 1 are the 0.5% and 99.5% percentiles. It 
-        must be in the [0, 100] range.
+        of pixels that are left out of the lower and upper bounds.
+        For example, for a vmin of '1th', 1% of the lowest will be ignored to
+        estimate the minimum value. Similarly, for a vmax value of '1th', 1%
+        of the highest value will be ignored in the estimation of the maximum
+        value. See :py:func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
         If float of integer, keep this value as bounds.
 
@@ -56,13 +58,13 @@ def contrast_stretching(data, vmin=None, vmax=None):
 
     Raises
     ------
-    ValueError if the value of `vmin` `vmax` is out of the valid range for 
+    ValueError if the value of `vmin` `vmax` is out of the valid range for
     percentile calculation (in case of string values).
 
     """
     def _parse_value(value, value_name):
         if value is None:
-            value = getattr(preferences.Plot, value_name)
+            value = f'{getattr(preferences.Plot, value_name)}th'
         if isinstance(value, str):
             value = float(value.split("th")[0])
         if not 0 <= value <= 100:
@@ -467,7 +469,6 @@ def plot_images(images,
                 suptitle_fontsize=18,
                 colorbar='multi',
                 centre_colormap="auto",
-                saturated_pixels=None,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -477,9 +478,8 @@ def plot_images(images,
                 min_asp=0.1,
                 namefrac_thresh=0.4,
                 fig=None,
-                vmin=f"{preferences.Plot.vmin}th",
-                vmax=f"{preferences.Plot.vmax}th",
-                *args,
+                vmin=None,
+                vmax=None,
                 **kwargs):
     """Plot multiple images as sub-images in one figure.
 
@@ -584,13 +584,18 @@ def plot_images(images,
         auto-label code.
     fig : mpl figure, optional
         If set, the images will be plotted to an existing MPL figure
-    vmin, vmax : scalar or list of scalar, optional, default: None
-        If list of scalar, the length should match the number of images to
-        show.
-        A list of scalar is not compatible with a single colorbar.
-        See vmin, vmax of matplotlib.imshow() for more details.
-    *args, **kwargs, optional
-        Additional arguments passed to matplotlib.imshow()
+    vmin, vmax: scalar, str, None
+        If str, formatted as 'xth', use this value to calculate the percentage
+        of pixels that are left out of the lower and upper bounds.
+        For example, for a vmin of '1th', 1% of the lowest will be ignored to
+        estimate the minimum value. Similarly, for a vmax value of '1th', 1%
+        of the highest value will be ignored in the estimation of the maximum
+        value. It must be in the range [0, 100]
+        See :py:func:`numpy.percentile` for more explanation.
+        If None, use the percentiles value set in the preferences.
+        If float of integer, keep this value as bounds.
+    **kwargs, optional
+        Additional keyword arguments passed to matplotlib.imshow()
 
     Returns
     -------
@@ -700,29 +705,6 @@ def plot_images(images,
     # finally, convert lists to cycle generators for adaptive length:
     centre_colormaps = itertools.cycle(centre_colormaps)
     cmap = itertools.cycle(cmap)
-
-    def _check_arg(arg, default_value, arg_name):
-        if colorbar == 'single':
-            # check that vmin and vmax are not list
-            for v in [vmin, vmax]:
-                if isinstance(v, list):
-                    _logger.warning(f'The provided {arg_name} value is ignored '
-                                    'because it needs to be a scalar or a str '
-                                    'to be compatible with a single colorbar. '
-                                    'The default value is used instead.')
-                    arg = default_value
-        elif isinstance(arg, list):
-            if len(arg) != n:
-                _logger.warning(f'The provided {arg_name} values is ignored '
-                                'because the length of the list does not '
-                                'match the number of images. The default value'
-                                'is used instead.')
-                arg = [default_value] * n
-        else:
-            arg = [arg] * n
-        return arg
-    vmin = _check_arg(vmin, f"{preferences.Plot.vmin}th", "vmin")
-    vmax = _check_arg(vmax, f"{preferences.Plot.vmax}th", "vmax")
 
     # Sort out the labeling:
     div_num = 0
@@ -848,19 +830,41 @@ def plot_images(images,
         colorbar = None
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
-    if colorbar == 'single':
-        l_vmin, l_vmax = contrast_stretching(
-            np.concatenate([i.data.flatten() for i in non_rgb]), vmin, vmax)
-
-        if next(centre_colormaps):
-            l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
-
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int)
                                           for x in scalebar):
         scalelist = True
     else:
         scalelist = False
+
+    def check_list_length(arg, arg_name):
+        if isinstance(arg, (list, tuple)):
+            if len(arg) != n:
+                _logger.warning(f'The provided {arg_name} values are ignored '
+                                'because the length of the list does not '
+                                'match the number of images')
+                arg = [None] * n
+        return arg
+
+    # Find global min and max values of all the non-rgb images for use with
+    # 'single' scalebar, otherwise define this value later.
+    if colorbar == 'single':
+        # check that vmin and vmax are not list
+        if any([isinstance(v, (tuple, list)) for v in [vmin, vmax]]):
+            _logger.warning(f'The provided vmin or vmax value are ignored '
+                            'because it needs to be a scalar or a str '
+                            'to be compatible with a single colorbar. '
+                            'The default values are used instead.')
+            vmin, vmax = None, None
+        vmin_max = np.array(
+            [contrast_stretching(i.data, vmin, vmax) for i in non_rgb])
+        _vmin, _vmax = vmin_max[:, 0].min(), vmin_max[:, 1].max()
+        if next(centre_colormaps):
+            _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+
+    else:
+        vmin = check_list_length(vmin, "vmin")
+        vmax = check_list_length(vmax, "vmax")
 
     idx = 0
     ax_im_list = [0] * len(isrgb)
@@ -883,16 +887,13 @@ def plot_images(images,
             # Enable RGB plotting
             if rgb_tools.is_rgbx(data):
                 data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-                l_vmin, l_vmax = None, None
-            else:
-                data = im.data
-                # Find min and max for contrast
-                l_vmin = vmin[idx] if isinstance(vmin, list) else vmin
-                l_vmax = vmax[idx] if isinstance(vmax, list) else vmax
-
-                l_vmin, l_vmax = contrast_stretching(data, l_vmin, l_vmax)
+                _vmin, _vmax = None, None
+            elif colorbar != 'single':
+                _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
+                _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
+                _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
                 if centre:
-                    l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
+                    _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
 
             # Remove NaNs (if requested)
             if no_nans:
@@ -936,36 +937,16 @@ def plot_images(images,
             if 'interpolation' not in kwargs.keys():
                 kwargs['interpolation'] = 'nearest'
 
-            # Get colormap for this image:
-            cm = next(cmap)
-
-            # Plot image data, using vmin and vmax to set bounds,
+            # Plot image data, using _vmin and _vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
-            if colorbar == 'single' and not isrgb[i]:
-                axes_im = ax.imshow(data,
-                                    cmap=cm,
-                                    extent=extent,
-                                    vmin=l_vmin,
-                                    vmax=l_vmax,
-                                    aspect=asp,
-                                    *args, **kwargs)
-                ax_im_list[i] = axes_im
-            else:
-                axes_im = ax.imshow(data,
-                                    cmap=cm,
-                                    extent=extent,
-                                    vmin=l_vmin,
-                                    vmax=l_vmax,
-                                    aspect=asp,
-                                    *args, **kwargs)
-                ax_im_list[i] = axes_im
+            kwargs.update({'cmap':next(cmap), 'extent':extent, 'aspect':asp})
+            axes_im = ax.imshow(data, vmin=_vmin, vmax=_vmax, **kwargs)
+            ax_im_list[i] = axes_im
 
             # If an axis trait is undefined, shut off :
-            if isinstance(xaxis.units, trait_base._Undefined) or  \
-                    isinstance(yaxis.units, trait_base._Undefined) or \
-                    isinstance(xaxis.name, trait_base._Undefined) or \
-                    isinstance(yaxis.name, trait_base._Undefined):
+            if (xaxis.units == t.Undefined or yaxis.units == t.Undefined or
+                xaxis.name == t.Undefined or yaxis.name == t.Undefined):
                 if axes_decor == 'all':
                     _logger.warning(
                         'Axes labels were requested, but one '
@@ -1058,7 +1039,7 @@ def plot_images(images,
         pass
     else:
         raise ValueError("Did not understand scalebar input. Must be None, "
-                         "\'all\', or list of ints.")
+                         "'all', or list of ints.")
 
     # Adjust subplot spacing according to user's specification
     if padding is not None:

@@ -246,7 +246,7 @@ class Parameter(t.HasTraits):
         if not self.twin_inverse_function:
             y = sympy.Symbol(x.name + "2")
             try:
-                inv = sympy.solveset(sympy.Eq(y, expr), x)
+                inv = list(sympy.solveset(sympy.Eq(y, expr), x))
                 self._twin_inverse_sympy = lambdify(y, inv)
                 self._twin_inverse_function = None
             except BaseException:

@@ -76,8 +76,7 @@ MKL libraries) and the easiest installation. The academic license is free.
         $ pip install --upgrade hyperspy==0.8.3-1
 
 To enable context-menu (right-click) startup in a chosen folder, install
-`start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_. (Currently
-only available for Gnome and Windows, not MacOS.)
+`start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_.
 
 
 For more options and details read the rest of the documentation.

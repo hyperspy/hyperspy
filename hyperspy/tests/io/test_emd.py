@@ -336,10 +336,10 @@ class TestFeiEMD():
         fei_image = np.load(os.path.join(self.fei_files_path,
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
-        assert signal.axes_manager[0].units == 'um'
+        assert signal.axes_manager[0].units == 'µm'
         assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
-        assert signal.axes_manager[1].units == 'um'
+        assert signal.axes_manager[1].units == 'µm'
         assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
         assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
