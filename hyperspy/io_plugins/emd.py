@@ -731,8 +731,8 @@ class EMD_NCEM:
                 'wxr':'scanWindowX_r', 'wyr':'scanWindowY_r','2D':'integrationAngle'}
             simu_md = f.get(
                 '4DSTEM_simulation/metadata/metadata_0/original/simulation_parameters')
-
-        om['simulation_parameters'] = {md_mapping.get(k, k):v for k, v in simu_md.attrs.items()}
+            om['simulation_parameters'] = {md_mapping.get(k, k):v for k, v in
+                                           simu_md.attrs.items()}
 
         return om
 
