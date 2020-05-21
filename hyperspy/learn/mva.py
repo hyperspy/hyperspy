@@ -2322,6 +2322,10 @@ class MVA:
                 pbar = progressbar(total=n_ref*len(k_range))
                 # only perform 1 pass of clustering
                 # otherwise std_dev isn't correct
+                for f_indx in range(scaled_data.shape[1]):
+                    xmin = np.min(scaled_data[:,f_indx])
+                    xmax = np.max(scaled_data[:,f_indx])
+                    reference[:,f_indx]= np.linspace(xmin, xmax, endpoint=True, num=reference[:,0].size)
 
                 for o_indx,k in enumerate(k_range):
                     # calculate the data metric
@@ -2338,14 +2342,10 @@ class MVA:
                     data_inertia[o_indx]=np.log(W)
                     # now do n_ref clusters for a uniform random distribution
                     # to determine "gap" between data and random distribution
+
                     for i_indx in range(n_ref):
                         # initiate with a known seed to make the overall results
                         # repeatable but still sampling different configurations
-                        for f_indx in range(scaled_data.shape[1]):
-                            xmin = np.min(scaled_data[:,f_indx])
-                            xmax = np.max(scaled_data[:,f_indx])
-                            reference[:,f_indx]=(xmax-xmin)*\
-                               np.random.random_sample(size=reference[:,0].shape)-xmin
 
                         alg = self._cluster_analysis(k,
                                                      reference,
@@ -2364,11 +2364,18 @@ class MVA:
                 to_return = gap
                 # finding the first max..check if first point is max
                 # otherwise use elbow method to find first knee
-                if np.argmax(gap) == 0:
-                    best_k = min_k
-                else:
-                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=True)\
-                        +min_k
+#                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=True)\
+#                        +min_k
+                best_k = min_k+1
+                for i in range(1,len(k_range)-1):
+                    if gap[i] >= (gap[i+1]- std_error[i+1]):
+                        best_k=i+min_k
+                        break
+#                if np.argmax(gap) == 0:
+#                    best_k = min_k
+#                else:
+#                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=True)\
+#                        +min_k
         finally:
             target.cluster_metric_index      = k_range
             target.cluster_metric_data       = to_return
