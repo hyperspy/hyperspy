@@ -2088,6 +2088,7 @@ class MVA:
                 number_of_components=number_of_components,
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
+            
             alg = self._cluster_analysis(n_clusters,
                                          scaled_data,
                                          algorithm,
@@ -2364,18 +2365,11 @@ class MVA:
                 to_return = gap
                 # finding the first max..check if first point is max
                 # otherwise use elbow method to find first knee
-#                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=True)\
-#                        +min_k
                 best_k = min_k+1
                 for i in range(1,len(k_range)-1):
                     if gap[i] >= (gap[i+1]- std_error[i+1]):
                         best_k=i+min_k
                         break
-#                if np.argmax(gap) == 0:
-#                    best_k = min_k
-#                else:
-#                    best_k = self.estimate_elbow_position(-to_return+1-np.min(-to_return),log=True)\
-#                        +min_k
         finally:
             target.cluster_metric_index      = k_range
             target.cluster_metric_data       = to_return
