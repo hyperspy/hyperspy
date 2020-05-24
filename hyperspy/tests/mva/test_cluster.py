@@ -41,13 +41,15 @@ class TestCluster1d:
         self.signal_mask[2:6] = True
 
 
-    @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False,"bss","decomposition"))
+    @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative",
+                                           "spectralclustering",
+                                           "minibatchkmeans"))
+    @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
+    @pytest.mark.parametrize("cluster_source_for_centers", (None,"signal","bss","decomposition"))
     @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
-    @pytest.mark.parametrize("use_decomposition_results_for_centers", (True, False))
     @pytest.mark.parametrize("use_masks", (True, False))
-    def test_parameters(self, algorithm, use_decomposition_results,
-                        scaling, use_decomposition_results_for_centers,
+    def test_parameters(self, algorithm, cluster_source,
+                        scaling, cluster_source_for_centers,
                         use_masks):
         if use_masks:
             navigation_mask = self.navigation_mask
@@ -55,12 +57,10 @@ class TestCluster1d:
         else:
             navigation_mask = None
             signal_mask = None
-        self.signal.cluster_analysis(3,
+        self.signal.cluster_analysis(cluster_source,n_clusters=3,
+                                     cluster_source_for_centers=\
+                                         cluster_source_for_centers,
                                      scaling=scaling,
-                                     use_decomposition_results=\
-                                         use_decomposition_results,
-                                     use_decomposition_results_for_centers=\
-                                         use_decomposition_results_for_centers,
                                      navigation_mask=navigation_mask,
                                      signal_mask=signal_mask,
                                      algorithm=algorithm,
@@ -83,14 +83,15 @@ class TestCluster2d:
         self.navigation_mask[4:6] = True
         self.signal_mask = np.zeros((5, 7), dtype=bool)
         self.signal_mask[1:4, 2:6] = True
-
-    @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False,"bss","decomposition"))
+    @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative",
+                                           "spectralclustering",
+                                           "minibatchkmeans"))
+    @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
+    @pytest.mark.parametrize("cluster_source_for_centers", (None,"signal","bss","decomposition"))
     @pytest.mark.parametrize("scaling", ("standard", "norm","minmax",None))
-    @pytest.mark.parametrize("use_decomposition_results_for_centers", (True, False))
     @pytest.mark.parametrize("use_masks", (True, False))
-    def test_parameters(self, algorithm, use_decomposition_results,
-                        scaling, use_decomposition_results_for_centers,
+    def test_parameters(self, algorithm, cluster_source,
+                        scaling, cluster_source_for_centers,
                         use_masks):
         if use_masks:
             navigation_mask = self.navigation_mask
@@ -98,12 +99,11 @@ class TestCluster2d:
         else:
             navigation_mask = None
             signal_mask = None
-        self.signal.cluster_analysis(3,
+        self.signal.cluster_analysis(cluster_source=\
+                                         cluster_source, n_clusters=3,
+                                     cluster_source_for_centers=\
+                                         cluster_source_for_centers,
                                      scaling=scaling,
-                                     use_decomposition_results=\
-                                         use_decomposition_results,
-                                     use_decomposition_results_for_centers=\
-                                         use_decomposition_results_for_centers,
                                      navigation_mask=navigation_mask,
                                      signal_mask=signal_mask,
                                      algorithm=algorithm,
@@ -114,6 +114,45 @@ class TestCluster2d:
             self.signal.learning_results.cluster_centers.shape, (3, 35))
         self.signal.get_cluster_labels()
         self.signal.get_cluster_centers()
+
+
+
+class TestClusterSource2d:
+
+    def setup_method(self):
+        self.signal = signals.Signal2D(np.random.rand(11, 5, 7))
+        self.signal.decomposition()
+        self.signal.blind_source_separation(number_of_components=3)
+        self.navigation_mask = np.zeros((11,), dtype=bool)
+        self.navigation_mask[4:6] = True
+        self.signal_mask = np.zeros((5, 7), dtype=bool)
+        self.signal_mask[1:4, 2:6] = True
+    @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
+    @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
+    @pytest.mark.parametrize("scaling", ("standard", "norm","minmax",None))
+    @pytest.mark.parametrize("use_masks", (True, False))
+    def test_parameters(self, algorithm, cluster_source,
+                        scaling, use_masks):
+        if use_masks:
+            navigation_mask = self.navigation_mask
+            signal_mask = self.signal_mask
+        else:
+            navigation_mask = None
+            signal_mask = None
+        signal_copy = self.signal.copy()
+        self.signal.cluster_analysis(cluster_source=\
+                                         cluster_source, n_clusters=3,
+                                     cluster_source_for_centers=\
+                                         signal_copy,
+                                     scaling=scaling,
+                                     navigation_mask=navigation_mask,
+                                     signal_mask=signal_mask,
+                                     algorithm=algorithm,
+                                     )
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_labels.shape, (3, 11))
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_centers.shape, (3, 35))
 
 
 
@@ -136,16 +175,16 @@ class TestClusterEstimate:
         self.signal.blind_source_separation(number_of_components=3)
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False,"bss","decomposition"))
+    @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
     @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
     @pytest.mark.parametrize("metric", ("elbow","silhouette","gap"))
-    def test_scores(self, algorithm, use_decomposition_results,
+    def test_scores(self, algorithm, cluster_source,
                     scaling,metric):
         max_clusters = 8
         self.signal.estimate_number_of_clusters(
-            max_clusters,
+            cluster_source,
+            max_clusters=max_clusters,
             scaling=scaling,
-            use_decomposition_results=use_decomposition_results,
             algorithm=algorithm,
             metric=metric)
         k_range = self.signal.learning_results.cluster_metric_index
@@ -168,8 +207,6 @@ class TestClusterEstimate:
 
 class TestClusterCustomScaling:
 
-    
-
     def setup_method(self):
         np.random.seed(1)
         # Use prime numbers to avoid fluke equivalences
@@ -188,16 +225,16 @@ class TestClusterCustomScaling:
         self.signal.blind_source_separation(number_of_components=3)
 
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
-    @pytest.mark.parametrize("use_decomposition_results", (True, False,"decomposition","bss"))
+    @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
     @pytest.mark.parametrize("metric", ("elbow", "silhouette", "gap"))
-    def test_custom(self,  use_decomposition_results,
+    def test_custom(self,  cluster_source,
                 algorithm,metric):
-            custom_scaling = import_sklearn.sklearn.preprocessing.MinMaxScaler
+            custom_scaling = import_sklearn.sklearn.preprocessing.MinMaxScaler()
             max_clusters = 8
             self.signal.estimate_number_of_clusters(
-                max_clusters,
+                cluster_source,
+                max_clusters=max_clusters,
                 scaling=custom_scaling,
-                use_decomposition_results=use_decomposition_results,
                 algorithm=algorithm,
                 metric=metric)
             best_k = self.signal.learning_results.number_of_clusters
@@ -205,3 +242,32 @@ class TestClusterCustomScaling:
                 best_k = best_k[0]
 
             np.testing.assert_allclose(best_k, 3)
+            
+            
+
+class TestCustomClusterAlgorithm:
+    
+    def setup_method(self):
+        self.signal = signals.Signal2D(np.random.rand(11, 5, 7))
+        self.signal.decomposition()
+        self.signal.blind_source_separation(number_of_components=3)
+        self.navigation_mask = np.zeros((11,), dtype=bool)
+        self.navigation_mask[4:6] = True
+        self.signal_mask = np.zeros((5, 7), dtype=bool)
+        self.signal_mask[1:4, 2:6] = True
+        self.signal.decomposition()
+        self.signal.blind_source_separation(number_of_components=3)
+
+    @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
+    @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
+    def test_custom(self, cluster_source, scaling):
+        custom_method =  import_sklearn.sklearn.cluster.KMeans(3)
+        self.signal.cluster_analysis(cluster_source=\
+                                         cluster_source,n_clusters=3,
+                                     scaling=scaling,
+                                     algorithm=custom_method,
+                                     )
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_labels.shape, (3, 11))
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_centers.shape, (3, 35))
