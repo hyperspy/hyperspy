@@ -204,6 +204,14 @@ Bibliography
    Ultramicroscopy 100 (2004) 35–57 
    [`<https://doi.org/10.1016/j.ultramic.2004.01.008>`_]
 
+.. _Iakoubovskii2008:
+
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`
+    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+      https://doi.org/10.1002/jemt.20597.
+
 
 Peer-review articles with results obtained using HyperSpy
 ---------------------------------------------------------
