@@ -78,6 +78,21 @@ This is the default scaling used in the cluster analysis methods.
 so each feature becomes equally weighted. ``minmax``  normalizes  each feature 
 between the min and max range of that feature. 
 
+Clustering
+----------
+
+The clustering itself uses either the ``kmeans`` , ``agglomerative``
+methods from `sklearn.clustering <https://scikit-learn.org/stable/modules/clustering.html>`_
+and further details on operation and implementation can be found there
+
+Cluster Centers and Labels
+--------------------------
+
+The cluster labels and centers found are based on the features after they've 
+been whitened or scaled.  
+To create a meaningful dataset the original data or PCA results 
+matching a given label are averaged to create a set of cluster centers. 
+
 
 Examples 
 --------

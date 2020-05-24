@@ -1669,22 +1669,42 @@ class MVATools(object):
                         factors_dim=factors_dim,
                         loadings_dim=loadings_dim)
 
-    def get_cluster_labels(self):
+    def get_cluster_labels(self,merged=False):
         """Return cluster labels as a Signal.
-
+    
+        Parameters:
+        --------
+        merged : bool 
+            If False the cluster label signal
+            has a navigation axes of length number_of_clusters and the signal
+            along the the navigation direction is binary - 0 the point is not 
+            in the cluster, 1 it is included. If True the cluster labels are 
+            merged (no navigation axes).
+            The value of the signal at any point will be between 
+            0 and Number of clusters-1
+    
         See Also
         --------
         get_cluster_centers
-
+        
+        Returns
+        --------
+        signal
+            Hyperspy signal of cluster labels        
+    
         """
         if self.learning_results.cluster_labels is None:
             raise RuntimeError("Cluster analysis needs to be performed first.")
-        signal = self._get_loadings(self.learning_results.cluster_labels.T)
-        signal.axes_manager._axes[0].name = "Cluster index"
-        signal.metadata.General.title = \
+        if merged:
+            label_signal = self._get_loadings(self.learning_results.cluster_membership)
+            label_signal = label_signal.squeeze()
+        else:
+            label_signal = self._get_loadings(self.learning_results.cluster_labels)
+        label_signal.axes_manager._axes[0].name = "Cluster index"
+        label_signal.metadata.General.title = \
             "Cluster labels of " + self.metadata.General.title
-        return signal
-
+        return label_signal
+    
     def get_cluster_centers(self):
         """Return the cluster centers as a Signal.
 
