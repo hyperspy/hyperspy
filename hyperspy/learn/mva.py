@@ -1710,7 +1710,7 @@ class MVA:
 
         Returns
         ----------
-        scaled_data : numpy array - unfoled array of shape (number_of_samples,
+        scaled_data : numpy array - unfolded array of shape (number_of_samples,
         no_of_features) scaled according to the selected algorithm
 
         """
