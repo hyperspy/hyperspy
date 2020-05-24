@@ -81,7 +81,7 @@ between the min and max range of that feature.
 Clustering
 ----------
 
-The clustering itself uses either the ``kmeans`` , ``agglomerative``
+The clustering itself uses either the ``kmeans`` or ``agglomerative``
 methods from `sklearn.clustering <https://scikit-learn.org/stable/modules/clustering.html>`_
 and further details on operation and implementation can be found there
 
