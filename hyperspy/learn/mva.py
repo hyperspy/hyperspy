@@ -1708,8 +1708,19 @@ class MVA:
             signal_mask is ignored. The number of PCA components is used to
             set the number of components to use.
 
+        See also
+        --------
+        * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
+        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+
         Returns
-        ----------
+        -------
         scaled_data : numpy array - unfolded array of shape (number_of_samples,
         no_of_features) scaled according to the selected algorithm
 
@@ -1744,7 +1755,7 @@ class MVA:
         if use_decomposition_results:
             factors,loadings = self._get_decomposition_results(use_decomposition_results)
             dc = loadings.copy()
-            data = dc[:,slice(0,number_of_components,1)]
+            data = dc[:,:number_of_components]
             signal_mask =  self._mask_for_clustering(None)
         else:
             data = self.data
@@ -1792,8 +1803,12 @@ class MVA:
         Returns the number of components 
         """        
         if self.learning_results.number_significant_components is None:
-            raise ValueError("Number of pca components not defined, "
-                             "please run decomposition first.")
+            raise ValueError("Use_decomposition_results has been set to True."
+                             "If you are clustering the signal data directly" 
+                             "please set to False and"
+                              "Use_decomposition_results_for_centers to False and re-run"
+                             "If you are clustering the signal decomposition" 
+                             "results please run a decomposition method first.")        
         else:
             number_of_components = self.learning_results.number_significant_components
         return number_of_components
@@ -1892,7 +1907,7 @@ class MVA:
         labels : int array of length n_samples where each value is a cluster
             label from 0 to n_clusters-1
         use_decomposition_results_for_centers : bool
-            If True (recommended) the pca results are used for building the
+            If True the pca results are used for building the
             the cluster centers from the clustered label results.
             If False the original signal data is used.
         number_of_components : int, default None
@@ -1961,7 +1976,7 @@ class MVA:
                 cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)
 
         # this sorts the labels based on clustersize for high to low
-        # i.e. point with laster number of points first
+        # i.e. point with least number of points first
         idx = np.argsort(clustersizes)[::-1]
         lut = np.zeros_like(idx)
         lut[idx] = np.arange(n_clusters)
@@ -2021,7 +2036,7 @@ class MVA:
             If True or "decomposition" the signal's decomposition results are used
             for clustering. If "bss" the blind source separation results are used
             If False the raw data is used Note that this can be memory intensive 
-            and is only recommened if the Signal has a small signal
+            and is only recommended if the Signal has a small signal
             or navigation dimensions.
         use_decomposition_results_for_centers : {True,False,"decomposition","bss"}
             If True or "decomposition" the signal's decomposition results are used
@@ -2054,6 +2069,16 @@ class MVA:
             For example, in case of the "kmeans" algorithm, `n_init` can be
             used to define the number of times the algorithm is restarted to
             optimize results.
+
+        See also
+        --------
+        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 
         Returns:
             If 'return_info' is True returns the Scikit-learn cluster object
@@ -2212,7 +2237,13 @@ class MVA:
 
         See also
         --------
-        :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+        * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 
         """
         def distances_within_cluster(data,memberships,squared=True):
