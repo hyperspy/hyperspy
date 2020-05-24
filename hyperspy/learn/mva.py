@@ -1674,8 +1674,6 @@ class MVA:
 
         Parameters
         ----------
-        n_clusters : int
-            Number of clusters to find.
         cluster_source : {"bss", "decomposition", "signal"}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
@@ -1697,7 +1695,7 @@ class MVA:
             See sklearn.preprocessing scaling methods for further details
         number_of_components: int , default None
             If you are clustering using the decomposition results
-            (use_decomposition_results = True) you can define how many 
+            (cluster_source = "decomposition") you can define how many 
             components to use.   if set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method
@@ -1707,8 +1705,8 @@ class MVA:
             clustering.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
-            clustering.  Note that if use_decomposition_results=True the
-            signal_mask is ignored. The number of PCA components is used to
+            clustering.  Note that if cluster_source="decomposition" or "bss" 
+            the signal_mask is ignored. The number of PCA components is used to
             set the number of components to use.
 
         See also
@@ -1755,7 +1753,7 @@ class MVA:
             signal_mask = self._mask_for_clustering(signal_mask)
             
         dc = data if self.axes_manager[0].index_in_array == 0 else data.T
-        if scaling_algorithm == None:
+        if scaling_algorithm is None:
             return dc[:, signal_mask][navigation_mask, :]
         else:
             return scaling_algorithm.fit_transform(dc[:, signal_mask][navigation_mask, :])
@@ -1797,11 +1795,11 @@ class MVA:
         Returns the number of components 
         """        
         if self.learning_results.number_significant_components is None:
-            raise ValueError("Use_decomposition_results has been set to True."
+            raise ValueError("cluster_source has been set to `decomposition` " 
                              "If you are clustering the signal data directly" 
-                             "please set to False and"
-                              "Use_decomposition_results_for_centers to False and re-run"
-                             "If you are clustering the signal decomposition" 
+                             "please set to `signal` and"
+                              "cluster_source_for_centers to `signal` and re-run"
+                             "If you are clustering the decomposition results" 
                              "results please run a decomposition method first.")        
         else:
             number_of_components = self.learning_results.number_significant_components
@@ -1917,7 +1915,6 @@ class MVA:
         cluster_centers : array  - (n_clusters, signal_shape)
         """
         from hyperspy.signals import BaseSignal
-
         if cluster_source_for_centers in ("decomposition","bss"):
             if number_of_components is None:
                 number_of_components = self._get_number_of_components_for_clustering()
@@ -1929,69 +1926,67 @@ class MVA:
         if (not self._unfolded4clustering and
                 self.axes_manager.navigation_dimension > 1):
             raise ValueError("Data (and labels) must be unfolded.")
-        try: 
-            # now re-organize the labels to fit with hyperspy loadings/factors
-            # and use the kmeans centers to extract real data cluster centers
-            # create an array to store the centers
-            n_clusters = int(np.amax(labels)) + 1
-            _unfolded4labeling=False
-    
-            # From the cluster labels we know which parts of the signal correspond
-            # to different clusters.
-            #
-            # We can produce the representative 1D or 2D signals for each cluster
-            # by averaging all points with a given label or averaging
-            # PCA components*loadings with a given label
-            if cluster_source_for_centers=="signal": 
-                clusterdata = self.data \
-                    if self.axes_manager[0].index_in_array == 0 else self.data.T
-                cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
-            elif isinstance(cluster_source_for_centers,BaseSignal):
-                _unfolded4labeling = cluster_source_for_centers.unfold()
-                if cluster_source_for_centers.axes_manager[0].index_in_array == 0:
-                    clusterdata = cluster_source_for_centers.data                    
-                else: 
-                    clusterdata = cluster_source_for_centers.data.T
-                cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
+
+        # now re-organize the labels to fit with hyperspy loadings/factors
+        # and use the kmeans centers to extract real data cluster centers
+        # create an array to store the centers
+        n_clusters = int(np.amax(labels)) + 1
+        _unfolded4labeling=False
+
+        # From the cluster labels we know which parts of the signal correspond
+        # to different clusters.
+        #
+        # We can produce the representative 1D or 2D signals for each cluster
+        # by averaging all points with a given label or averaging
+        # PCA components*loadings with a given label
+        if isinstance(cluster_source_for_centers,BaseSignal):
+            _unfolded4labeling = cluster_source_for_centers.unfold()
+            if cluster_source_for_centers.axes_manager[0].index_in_array == 0:
+                clusterdata = cluster_source_for_centers.data                    
+            else: 
+                clusterdata = cluster_source_for_centers.data.T
+            cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
+        elif cluster_source_for_centers=="signal": 
+            clusterdata = self.data \
+                if self.axes_manager[0].index_in_array == 0 else self.data.T
+            cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
+        else:
+            cluster_centers = np.zeros((n_clusters,factors.shape[0]))
+        #
+        # create the centers to match
+        #
+        clustersizes = np.zeros((n_clusters,), dtype=np.int)
+        for i in range(n_clusters):
+            clus_index = np.where(labels == i)
+            clustersizes[i] = labels[np.where(labels == i)].shape[0]
+            # if using the pca components
+            if cluster_source_for_centers in ("bss","decomposition"):
+                # pca clustered...
+                a = loadings[clus_index][:,0:number_of_components]
+                b = factors[:, 0:number_of_components].T
+                center = (a @ b).sum(axis=0)
+                cluster_centers[i, :] = cluster_centers[i, :] + center
+                cluster_centers[i, :] = cluster_centers[i, :] 
             else:
-                cluster_centers = np.zeros((n_clusters,factors.shape[0]))
-    
-            #
-            # create the centers to match
-            #
-            clustersizes = np.zeros((n_clusters,), dtype=np.int)
-            for i in range(n_clusters):
-                clus_index = np.where(labels == i)
-                clustersizes[i] = labels[np.where(labels == i)].shape[0]
-                # if using the pca components
-                if cluster_source_for_centers in ("bss","decomposition"):
-                    # pca clustered...
-                    a = loadings[clus_index][:,0:number_of_components]
-                    b = factors[:, 0:number_of_components].T
-                    center = (a @ b).sum(axis=0)
-                    cluster_centers[i, :] = cluster_centers[i, :] + center
-                    cluster_centers[i, :] = cluster_centers[i, :] 
-                else:
-                    cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)
-    
-            # this sorts the labels based on clustersize for high to low
-            # i.e. point with least number of points first
-            idx = np.argsort(clustersizes)[::-1]
-            lut = np.zeros_like(idx)
-            lut[idx] = np.arange(n_clusters)
-            sorted_labels = lut[labels]
-            shape = (n_clusters, self.data.shape[0])
-            cluster_labels = np.full(shape, np.nan)
-            sorted_cluster_centers = np.zeros_like(cluster_centers)            
-            # now create the labels from these sorted labels
-            for i in range(n_clusters):
-                cluster_labels[i, navigation_mask] = \
-                    np.where(sorted_labels == i, 1, 0)
-                sorted_cluster_centers[i,:] = cluster_centers[lut[i],:]\
-                    /clustersizes[lut[i]]                
-        finally:
-            if _unfolded4labeling:
-                cluster_source_for_centers.unfold()    
+                cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)
+
+        # this sorts the labels based on clustersize for high to low
+        # i.e. point with least number of points first
+        idx = np.argsort(clustersizes)[::-1]
+        lut = np.zeros_like(idx)
+        lut[idx] = np.arange(n_clusters)
+        sorted_labels = lut[labels]
+        shape = (n_clusters, self.data.shape[0])
+        cluster_labels = np.full(shape, np.nan)
+        sorted_cluster_centers = np.zeros_like(cluster_centers)            
+        # now create the labels from these sorted labels
+        for i in range(n_clusters):
+            cluster_labels[i, navigation_mask] = \
+                np.where(sorted_labels == i, 1, 0)
+            sorted_cluster_centers[i,:] = cluster_centers[lut[i],:]\
+                /clustersizes[lut[i]]                
+        if _unfolded4labeling:
+            cluster_source_for_centers.fold()    
         return sorted_labels,cluster_labels, sorted_cluster_centers
 
 
@@ -2048,7 +2043,7 @@ class MVA:
             See sklearn.preprocessing scaling methods for further details
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (use_decomposition_results_for_centers=True) you can define how
+            results (cluster_source_for_centers="decomposition") you can define how
             many components to use.  If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
@@ -2105,8 +2100,7 @@ class MVA:
         if cluster_source not in ("bss", "decomposition", "signal"):
             raise ValueError("cluster_source needs to be specified as "
                              "`decomposition`,`signal` or `bss`")
-
-        if cluster_source_for_centers == None:
+        if cluster_source_for_centers is None:
             cluster_source_for_centers = cluster_source
         if cluster_source_for_centers not in ("bss", "decomposition", "signal"):
             if not isinstance(cluster_source_for_centers,BaseSignal):
@@ -2120,7 +2114,6 @@ class MVA:
                 cluster_source_for_centers.axes_manager.navigation_shape:          
                 raise ValueError("source_for_cluster_centers is specified as a signal"
                                  "but the navigation shape does not match the signal source shape")
-        
         cluster_algorithm = \
             self._get_cluster_algorithm(algorithm,n_clusters,**kwargs)
 
@@ -2152,6 +2145,7 @@ class MVA:
             # now re-organize the labels to fit with hyperspy loadings/factors
             # and use the kmeans centers to extract real data cluster centers
             # create an array to store the centers
+ 
             sorted_membership,cluster_labels, cluster_centers = \
                 self._create_cluster_centers_from_labels(
                     labels,
@@ -2159,6 +2153,7 @@ class MVA:
                     number_of_components=number_of_components,
                     navigation_mask=self._mask_for_clustering(navigation_mask)
                 )
+
             # if an object is passed as the clustering algorithm
             # the number of clusters may vary...
             number_clusters = np.max(sorted_membership)+1
@@ -2271,7 +2266,7 @@ class MVA:
             See sklearn.preprocessing scaling methods for further details
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (use_decomposition_results_for_centers=True) you can define how
+            results (cluster_source_for_centers="decomposition") you can define how
             many PCA components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
