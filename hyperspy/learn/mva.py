@@ -20,7 +20,6 @@
 import logging
 import types
 import warnings
-import inspect
 import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
@@ -2249,7 +2248,7 @@ class MVA:
         max_clusters : int, default 12
             Max number of clusters to use. The method will scan from 2 to
             max_clusters. 
-        scaling : {"standard","norm","minmax" or scikit learn scaling method}
+        scaling : {"standard","norm","minmax" or scikit learn scaling object}
             default: 'norm'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
