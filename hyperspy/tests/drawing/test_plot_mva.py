@@ -138,50 +138,50 @@ class TestPlotClusterAnalysis:
         self.s2 = s2
         self.s3 = s3
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows 32")
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav1_sig1(self):
         return self.s.plot_cluster_labels()
 
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows 32")
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_centers_nav1_sig1(self):
         return self.s.plot_cluster_centers()
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows 32")
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig1(self):
         return self.s2.plot_cluster_labels()
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows 32")
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_centers_nav2_sig1(self):
         return self.s2.plot_cluster_centers()
     
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows 32")
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig2(self):
         return self.s3.plot_cluster_labels()
 
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows 32")
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_centers_nav2_sig2(self):
         return self.s3.plot_cluster_centers()
 
-    @pytest.mark.skipif(sys.platform == "win32", 
-                        reason="does not run on windows 32")
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_metric(self):
