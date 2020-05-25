@@ -115,10 +115,10 @@ class TestPlotClusterAnalysis:
 
         # Run decomposition and cluster analysis
         s.decomposition()
-        s.cluster_analysis(3, algorithm='kmeans',
+        s.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
                            scaling="minmax", random_state=0)
         s2.decomposition()
-        s2.cluster_analysis(3, algorithm='kmeans',
+        s2.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
                             scaling="minmax", random_state=0)
         
         data = np.zeros((2000, 5))
@@ -129,7 +129,7 @@ class TestPlotClusterAnalysis:
         # nav2, sig2
         s3 = signals.Signal2D(data.reshape(20, 20, 5, 5))
         s3.decomposition()
-        s3.cluster_analysis(3, algorithm='kmeans',
+        s3.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
                             scaling="minmax", random_state=0)
         
         self.s = s
