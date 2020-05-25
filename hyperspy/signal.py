@@ -1763,7 +1763,7 @@ class MVATools(object):
             same_window = True
         factors = self.learning_results.cluster_centers.T
         if cluster_ids is None:
-            cluster_ids = self.learning_results.number_of_clusters
+            cluster_ids = range(factors.shape[1])
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=cluster_ids,
@@ -1844,11 +1844,7 @@ class MVATools(object):
             centers = None
 
         if cluster_ids is None:
-            if self.learning_results.number_of_clusters:
-                cluster_ids = self.learning_results.number_of_clusters
-            else:
-                raise ValueError("Please provide the number of cluster labels "
-                                 "to plot via the ``cluster_ids`` argument.")
+            cluster_ids = range(labels.shape[0])
 
         title = _change_API_comp_label(title, comp_label)
         if title is None:

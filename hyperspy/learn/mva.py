@@ -1794,26 +1794,12 @@ class MVA:
         Returns the number of components 
         """        
         if self.learning_results.number_significant_components is None:
-            raise ValueError("cluster_source has been set to `decomposition` " 
-                             "If you are clustering the signal data directly" 
-                             "please set to `signal` and"
-                              "cluster_source_for_centers to `signal` and re-run"
-                             "If you are clustering the decomposition results" 
-                             "results please run a decomposition method first.")        
+            raise ValueError("cluster_source has been set to `decomposition` "
+                             "but no decomposition results are available. "
+                             "Please run a decomposition method first.")        
         else:
             number_of_components = self.learning_results.number_significant_components
         return number_of_components
-
-    def _get_number_clusters_for_clustering(self):
-        """
-        
-        """
-        if self.learning_results.number_of_clusters is None:
-            raise ValueError("Number of clusters not defined, "
-                             "please run evaluate_number_of_clusters first.")
-        else:
-            number_of_clusters = self.learning_results.number_of_clusters
-        return number_of_clusters
 
     def _cluster_analysis(self,
                           scaled_data,
@@ -1860,24 +1846,38 @@ class MVA:
                              "please run evaluate_number_of_clusters first.")
         if target.cluster_metric_index is not None:
             xdata = target.cluster_metric_index
-        nclusters = target.number_of_clusters
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(xdata, ydata)
         ax.set_xlabel('number of clusters')
         label =  str(target.cluster_metric) +"_metric"
         ax.set_ylabel(label)
-        if isinstance(nclusters, list):
-            for nc in nclusters:
-                ax.axvline(nc,
+        if target.number_of_clusters is not None:
+            nclusters = target.number_of_clusters
+            if isinstance(nclusters, list):
+                for nc in nclusters:
+                    ax.axvline(nc,
+                        linewidth=2,
+                        color='gray',
+                        linestyle='dashed')
+            else:
+                ax.axvline(nclusters,
                     linewidth=2,
                     color='gray',
                     linestyle='dashed')
-        else:
-            ax.axvline(nclusters,
-                linewidth=2,
-                color='gray',
-                linestyle='dashed')
+        if target.estimated_number_of_clusters is not None:
+            nclusters = target.estimated_number_of_clusters
+            if isinstance(nclusters, list):
+                for nc in nclusters:
+                    ax.axvline(nc,
+                        linewidth=2,
+                        color='green',
+                        linestyle='dashed')
+            else:
+                ax.axvline(nclusters,
+                    linewidth=2,
+                    color='green',
+                    linestyle='dashed')
 
         plt.draw()
         return ax
@@ -2211,7 +2211,7 @@ class MVA:
         elif hasattr(algorithm, "fit_transform"):
             process_algorithm = algorithm
         else:
-            raise ValueError("The cluster scaling method should be either %s"
+            raise ValueError("The cluster scaling method should be either %s "
                              "or an object with a fit_transform method"%scaling_methods)
         return process_algorithm
 
@@ -2295,6 +2295,11 @@ class MVA:
         **kwargs : dict {}  default empty
             Additional parameters passed to the clustering algorithm.
 
+        Returns
+        -------
+        best_k : int
+            Estimate of the best cluster size
+        
         See also
         --------
         * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
@@ -2461,11 +2466,12 @@ class MVA:
                     if gap[i] >= (gap[i+1]- std_error[i+1]):
                         best_k=i+min_k
                         break
+            return best_k
         finally:
             target.cluster_metric_index      = k_range
             target.cluster_metric_data       = to_return
             target.cluster_metric            = metric
-            target.number_of_clusters        = best_k
+            target.estimated_number_of_clusters = best_k
             # fold
             if self._unfolded4clustering is True:
                 self.fold()
@@ -2575,6 +2581,7 @@ class LearningResults(object):
     cluster_centers = None
     cluster_algorithm = None
     number_of_clusters = None
+    estimated_number_of_clusters = None
     cluster_metric_data  = None
     cluster_metric_index = None
     cluster_metric = None

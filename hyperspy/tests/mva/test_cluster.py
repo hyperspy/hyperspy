@@ -189,7 +189,7 @@ class TestClusterEstimate:
             algorithm=algorithm,
             metric=metric)
         k_range = self.signal.learning_results.cluster_metric_index
-        best_k = self.signal.learning_results.number_of_clusters
+        best_k = self.signal.learning_results.estimated_number_of_clusters
         if isinstance(best_k,list):
             best_k = best_k[0]
 
@@ -238,7 +238,7 @@ class TestClusterCustomScaling:
                 scaling=custom_scaling,
                 algorithm=algorithm,
                 metric=metric)
-            best_k = self.signal.learning_results.number_of_clusters
+            best_k = self.signal.learning_results.estimated_number_of_clusters
             if isinstance(best_k, list):
                 best_k = best_k[0]
 
