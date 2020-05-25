@@ -175,11 +175,10 @@ class TestPlotClusterAnalysis:
 
  #   @pytest.mark.skipif(sys.platform == "win32", 
  #                       reason="does not run on windows 32")
-    @pytest.mark.mpl_image_compare(
-        baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_cluster_centers_nav2_sig2(self):
-        return self.s3.plot_cluster_centers()
-
+ #   @pytest.mark.mpl_image_compare(
+ #       baseline_dir=baseline_dir, tolerance=default_tol)
+ #   def test_plot_cluster_centers_nav2_sig2(self):
+ #       return self.s3.plot_cluster_centers()
  #   @pytest.mark.skipif(sys.platform == "win32", 
  #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(
