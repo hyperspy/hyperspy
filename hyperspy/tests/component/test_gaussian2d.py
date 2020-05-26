@@ -77,6 +77,8 @@ def test_properties():
     g.sigma_y.value = 0.1
     assert g.ellipticity == 5.0
     assert g.rotation_angle.value == 0
+    assert g.sigma_major == 0.5
+    assert g.sigma_minor == 0.1
     angle = np.radians(20)
     g.rotation_angle.value = angle
     assert_allclose(g.rotation_angle_wrapped, angle)
@@ -85,8 +87,10 @@ def test_properties():
     g = Gaussian2D(add_rotation=True)
     g.sigma_x.value = 0.1
     g.sigma_y.value = 0.5
-    assert g.ellipticity == 0.2
+    assert g.ellipticity == 5.0
     assert g.rotation_angle.value == 0
+    assert g.sigma_major == 0.5
+    assert g.sigma_minor == 0.1
     angle = np.radians(20)
     g.rotation_angle.value = angle
     assert_allclose(g.rotation_angle_wrapped, angle)
