@@ -30,6 +30,7 @@ import os
 from datetime import datetime
 import time
 import warnings
+import math
 import logging
 import traits.api as t
 
@@ -563,13 +564,15 @@ class EMD_NCEM:
                 title = os.path.basename(group_paths[0])
 
             _logger.debug(f'Loading dataset: {path}')
+
+            om = self._parse_original_metadata()
             data, axes = self._read_data_from_groups(
                 group_paths,
                 dataset_name,
-                title)
+                title,
+                om)
 
             md = self._parse_metadata(group_paths[0], title=title)
-            om = self._parse_original_metadata()
             d = {'data': data,
                  'axes': axes,
                  'metadata': md,
@@ -623,7 +626,8 @@ class EMD_NCEM:
             version =  ".".join(version)
             return version
 
-    def _read_data_from_groups(self, group_path, dataset_name, stack_key=None):
+    def _read_data_from_groups(self, group_path, dataset_name, stack_key=None,
+                               original_metadata={}):
         axes = []
         i_offset = 0
 
@@ -650,12 +654,34 @@ class EMD_NCEM:
 
         if len(array_list) > 1:
             i_offset =+ 1
+            offset, scale, units = 0, 1, t.Undefined
+            if self._is_prismatic_file and 'depth' in stack_key:
+                simu_om = original_metadata.get('simulation_parameters', {})
+                if 'numSlices' in simu_om.keys():
+                    scale = simu_om['numSlices']
+                    scale *= simu_om.get('sliceThickness', 1.0)
+                if 'zStart' in simu_om.keys():
+                    offset = simu_om['zStart']
+                    # when zStart = 0, the first image is not at zero but
+                    # the first output: numSlices * sliceThickness (=scale)
+                    if offset == 0:
+                        offset = scale
+                units = 'Å'
+                total_thickness = (simu_om.get('tile', 0)[2] *
+                                   simu_om.get('cellDimension', 0)[0])
+                if not math.isclose(total_thickness, len(array_list) * scale,
+                                    rel_tol=1e-4):
+                    _logger.warning("Depth axis is non uniform and its offset "
+                                    "and scale can't be set accurately.")
+                    # When non-uniform/non-linear axis are implemented, adjust
+                    # the final depth to the "total_thickness"
+                    offset, scale, units = 0, 1, t.Undefined
             axes.append({'index_in_array': 0,
                          'name': stack_key if stack_key is not None else t.Undefined,
-                         'offset': 0,
-                         'scale': 1,
+                         'offset': offset,
+                         'scale': scale,
                          'size': len(array_list),
-                         'units': t.Undefined,
+                         'units': units,
                          'navigate': True})
 
         shape = data.shape

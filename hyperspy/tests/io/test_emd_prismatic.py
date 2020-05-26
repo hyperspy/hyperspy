@@ -42,9 +42,9 @@ def test_all_but_4D():
 
     def check_depth_axis(axis):
         assert "depth" in axis.name
-        assert axis.units == t.Undefined
-        np.testing.assert_allclose(axis.scale, 1)
-        np.testing.assert_allclose(axis.offset, 0)
+        assert axis.units == "Å"
+        np.testing.assert_allclose(axis.scale, 2.715)
+        np.testing.assert_allclose(axis.offset, 2.715)
         np.testing.assert_allclose(axis.size, 2)
 
     def check_signal_axes(signal_axes):
@@ -62,13 +62,6 @@ def test_all_but_4D():
         # depth axis
         check_depth_axis(s[i].axes_manager.navigation_axes[-1])
 
-    axis = s[0].axes_manager[1]
-    assert axis.name == "DPC_CoM_depth"
-    assert axis.units == t.Undefined
-    np.testing.assert_allclose(axis.scale, 1, rtol=1E-6)
-    np.testing.assert_allclose(axis.offset, 0)
-    np.testing.assert_allclose(axis.size, 2)
-
     # DPC axis
     axis = s[0].axes_manager[0]
     assert axis.name == t.Undefined
@@ -84,10 +77,6 @@ def test_all_but_4D():
     np.testing.assert_allclose(axis.offset, 0)
     np.testing.assert_allclose(axis.size, 4)
 
-    axis = s[1].axes_manager[0]
-    assert axis.name == "annular_detector_depth"
-    assert axis.units == t.Undefined
-
     # signal axes
     signal_axes = s[2].axes_manager.signal_axes
     assert signal_axes[0].name == 'R_y'
@@ -97,6 +86,31 @@ def test_all_but_4D():
         np.testing.assert_allclose(axis.scale, 0.339375)
         np.testing.assert_allclose(axis.offset, 0)
         np.testing.assert_allclose(axis.size, 16)
+
+
+
+def test_depth_axis_zStart():
+    filename = os.path.join(FILES_PATH, 'Si100_1x1x3-zStart5.43.emd')
+    s = hs.load(filename)
+    axis = s.axes_manager[1]
+
+    assert "depth" in axis.name
+    assert axis.units == "Å"
+    np.testing.assert_allclose(axis.scale, 5.43)
+    np.testing.assert_allclose(axis.offset, 5.43)
+    np.testing.assert_allclose(axis.size, 3)
+
+    # non-uniform depth axis, not supported yet
+    # only the depth of the last image differ from others
+    filename = os.path.join(FILES_PATH, 'Si100_1x1x3-zStart6.7875.emd')
+    s = hs.load(filename)
+    axis = s.axes_manager[1]
+
+    assert "depth" in axis.name
+    assert axis.units == t.Undefined
+    np.testing.assert_allclose(axis.scale, 1)
+    np.testing.assert_allclose(axis.offset, 0)
+    np.testing.assert_allclose(axis.size, 2)
 
 
 def test_all_but_4D_no_stack():
@@ -195,10 +209,10 @@ def test_4D(lazy):
 
     axis = s.axes_manager[2]
     assert axis.name == "CBED_array_depth"
-    assert axis.units == t.Undefined
+    assert axis.units == "Å"
     # Needs metadata to know these values?
-    np.testing.assert_allclose(axis.scale, 1)
-    np.testing.assert_allclose(axis.offset, 0)
+    np.testing.assert_allclose(axis.scale, 2.715)
+    np.testing.assert_allclose(axis.offset, 2.715)
     np.testing.assert_allclose(axis.size, 2)
 
     # signal axes
