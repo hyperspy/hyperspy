@@ -19,7 +19,7 @@
 import copy
 import itertools
 import textwrap
-from traits import trait_base
+import traits.api as t
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -470,7 +470,6 @@ def plot_images(images,
                 fig=None,
                 vmin=None,
                 vmax=None,
-                *args,
                 **kwargs):
     """Plot multiple images as sub-images in one figure.
 
@@ -584,12 +583,9 @@ def plot_images(images,
         If list of scalar, the length should match the number of images to
         show.
         A list of scalar is not compatible with a single colorbar.
-        See vmin, vmax of :py:func:`matplotlib.pyplot.imshow` for more details.
-    *args
-        Additional list arguments passed to
-        :py:func:`matplotlib.pyplot.imshow`.
+        See vmin, vmax of matplotlib.imshow() for more details.
     **kwargs, optional
-        Keywords arguments passed to :py:func:`matplotlib.pyplot.imshow`.
+        Additional keyword arguments passed to matplotlib.imshow()
 
     Returns
     -------
@@ -700,23 +696,26 @@ def plot_images(images,
     centre_colormaps = itertools.cycle(centre_colormaps)
     cmap = itertools.cycle(cmap)
 
-    def _check_arg(arg, default_value, arg_name):
-        if isinstance(arg, list):
+    def check_list_length(arg, default_value, arg_name):
+        if isinstance(arg, (list, tuple)):
             if len(arg) != n:
-                _logger.warning('The provided {} values are ignored because the '
-                                'length of the list does not match the number of '
-                                'images'.format(arg_name))
+                _logger.warning(f'The provided {arg_name} values are ignored '
+                                'because the length of the list does not '
+                                'match the number of images')
                 arg = [default_value] * n
-        else:
+        elif colorbar != 'single':
+            print('here')
             arg = [arg] * n
         return arg
-    vmin = _check_arg(vmin, None, 'vmin')
-    vmax = _check_arg(vmax, None, 'vmax')
+
     if saturated_pixels is None:
         saturated_pixels = preferences.Plot.saturated_pixels
-    saturated_pixels = _check_arg(saturated_pixels,
-                                  preferences.Plot.saturated_pixels,
-                                  'saturated_pixels')
+
+    vmin = check_list_length(vmin, None, 'vmin')
+    vmax = check_list_length(vmax, None, 'vmax')
+    saturated_pixels = check_list_length(saturated_pixels,
+                                         preferences.Plot.saturated_pixels,
+                                         'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -846,7 +845,6 @@ def plot_images(images,
     # 'single' scalebar
     if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
-        print(saturated_pixels)
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
         else:
@@ -899,9 +897,10 @@ def plot_images(images,
             if rgb_tools.is_rgbx(data):
                 data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
                 l_vmin, l_vmax = None, None
-            else:
+            elif colorbar != 'single':
+                # Find l_vmin and l_vmax for contrast only when colorbar is not
+                # 'single', otherwise, we use g_min, gmax
                 data = im.data
-                # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(
                     data, saturated_pixels[idx])
                 l_vmin = vmin[idx] if vmin[idx] is not None else l_vmin
@@ -951,35 +950,20 @@ def plot_images(images,
             if 'interpolation' not in kwargs.keys():
                 kwargs['interpolation'] = 'nearest'
 
-            # Get colormap for this image:
-            cm = next(cmap)
-
             # Plot image data, using vmin and vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
+            kwargs.update({'cmap':next(cmap), 'extent':extent, 'aspect':asp})
             if colorbar == 'single' and not isrgb[i]:
-                axes_im = ax.imshow(data,
-                                    cmap=cm,
-                                    extent=extent,
-                                    vmin=g_vmin, vmax=g_vmax,
-                                    aspect=asp,
-                                    *args, **kwargs)
+                axes_im = ax.imshow(data, vmin=g_vmin, vmax=g_vmax, **kwargs)
                 ax_im_list[i] = axes_im
             else:
-                axes_im = ax.imshow(data,
-                                    cmap=cm,
-                                    extent=extent,
-                                    vmin=l_vmin,
-                                    vmax=l_vmax,
-                                    aspect=asp,
-                                    *args, **kwargs)
+                axes_im = ax.imshow(data, vmin=l_vmin, vmax=l_vmax, **kwargs)
                 ax_im_list[i] = axes_im
 
             # If an axis trait is undefined, shut off :
-            if isinstance(xaxis.units, trait_base._Undefined) or  \
-                    isinstance(yaxis.units, trait_base._Undefined) or \
-                    isinstance(xaxis.name, trait_base._Undefined) or \
-                    isinstance(yaxis.name, trait_base._Undefined):
+            if (xaxis.units == t.Undefined or yaxis.units == t.Undefined or
+                xaxis.name == t.Undefined or yaxis.name == t.Undefined):
                 if axes_decor == 'all':
                     _logger.warning(
                         'Axes labels were requested, but one '
@@ -1072,7 +1056,7 @@ def plot_images(images,
         pass
     else:
         raise ValueError("Did not understand scalebar input. Must be None, "
-                         "\'all\', or list of ints.")
+                         "'all', or list of ints.")
 
     # Adjust subplot spacing according to user's specification
     if padding is not None:
