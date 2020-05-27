@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import math
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -60,3 +60,38 @@ def test_util_fwhm_getset():
     g1.fwhm_y = 0.33
     assert g1.fwhm_x == 0.33
     assert g1.fwhm_y == 0.33
+
+
+def test_properties():
+    g = Gaussian2D(add_rotation=True)
+    angle = np.radians(20)
+    g.rotation_angle.value = angle
+    assert_allclose(g.rotation_angle_wrapped, angle)
+
+    angle = np.radians(380)
+    g.rotation_angle.value = angle
+    assert_allclose(g.rotation_angle_wrapped, math.fmod(angle, 2 * np.pi))
+
+    g = Gaussian2D(add_rotation=True)
+    g.sigma_x.value = 0.5
+    g.sigma_y.value = 0.1
+    assert g.ellipticity == 5.0
+    assert g.rotation_angle.value == 0
+    assert g.sigma_major == 0.5
+    assert g.sigma_minor == 0.1
+    angle = np.radians(20)
+    g.rotation_angle.value = angle
+    assert_allclose(g.rotation_angle_wrapped, angle)
+    assert_allclose(g.rotation_major_axis, angle)
+
+    g = Gaussian2D(add_rotation=True)
+    g.sigma_x.value = 0.1
+    g.sigma_y.value = 0.5
+    assert g.ellipticity == 5.0
+    assert g.rotation_angle.value == 0
+    assert g.sigma_major == 0.5
+    assert g.sigma_minor == 0.1
+    angle = np.radians(20)
+    g.rotation_angle.value = angle
+    assert_allclose(g.rotation_angle_wrapped, angle)
+    assert_allclose(g.rotation_major_axis, angle - np.pi / 2)
