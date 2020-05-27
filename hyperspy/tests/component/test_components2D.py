@@ -223,7 +223,7 @@ class TestExpression2D:
         g.sy.value = 1
         g.x0.value = 1
         g.y0.value = 1
-        l = np.arange(0, 10)
+        l = np.arange(0, 3)
         x, y = np.meshgrid(l, l)
         s = hs.signals.Signal2D(g.function(x, y))
         s2 = hs.stack([s]*2)
