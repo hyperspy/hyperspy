@@ -1667,7 +1667,7 @@ class MVA:
                                   number_of_components=None,
                                   navigation_mask=None,
                                   signal_mask=None):
-        """scale data for cluster analysis
+        """Scale data for cluster analysis
 
         Results are stored in `learning_results`.
 
@@ -1706,7 +1706,8 @@ class MVA:
             the signal_mask is ignored. The number of PCA components is used to
             set the number of components to use.
 
-        See also
+
+        See Also
         --------
         * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
@@ -1716,6 +1717,7 @@ class MVA:
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
         * :py:meth:`~.signal.MVATools.plot_cluster_centers`
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+
 
         Returns
         -------
@@ -1757,8 +1759,8 @@ class MVA:
     def _cluster_analysis(self,
                           scaled_data,
                           algorithm):
-        """
-        Cluster analysis of a scaled data - internal
+        """Cluster analysis of a scaled data - internal
+
 
         Parameters
         ----------
@@ -1770,6 +1772,7 @@ class MVA:
             Additional parameters passed to the clustering algorithm.
             This may include `n_init`, the number of times the algorithm is
             restarted to optimize results.
+
             
         Returns
         -------
@@ -1793,7 +1796,7 @@ class MVA:
         """Plot the cluster metrics calculated
            using evaluate_number_of_clusters method
            
-        See also
+        See Also
         --------
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
         * :py:meth:`~.learn.mva.MVA.cluster_analysis`,        
@@ -1854,9 +1857,9 @@ class MVA:
                                            source_for_centers,
                                            number_of_components=None,
                                            navigation_mask=None):
-        """
-        From a set of cluster labels generate the cluster centers from the
+        """From a set of cluster labels generate the cluster centers from the
         raw data or PCA decomposition results
+
 
         Parameters
         ----------
@@ -1881,6 +1884,7 @@ class MVA:
             labels outside the navigation mask are set to -1 and centers in
             these regions are set to zero.
 
+
         Returns
         -------
         sorted_labels   : array  - (n_samples)        
@@ -1894,13 +1898,6 @@ class MVA:
         # and use the kmeans centers to extract real data cluster centers
         # create an array to store the centers
         n_clusters = int(np.amax(labels)) + 1
-            
-#        cluster_signal,nav_mask,sig_mask,unfolded = \
-#            self._get_cluster_signal(source_for_centers,
-#                                     number_of_components,
-#                                     navigation_mask,
-#                                     signal_mask=None,
-#                                     sum_over_navigation_mask=True)
 
         # From the cluster labels we know which parts of the signal correspond
         # to different clusters.
@@ -1953,10 +1950,9 @@ class MVA:
                             navigation_mask=None,
                             signal_mask=None,
                             sum_over_navigation_mask=False):
-        """
- 
-        A cluster source can be an external signal, the signal data
+        """A cluster source can be an external signal, the signal data
         or the decomposition or bss results  
+
     
         Parameters
         ----------
@@ -1994,7 +1990,7 @@ class MVA:
         
         from hyperspy.signals import BaseSignal
         
-        unfolded4clustering = False
+        unfolded4clustering=False
         toreturn=None
         if isinstance(cluster_source,BaseSignal):
            if cluster_source.axes_manager.navigation_size != self.axes_manager.navigation_size:
@@ -2089,10 +2085,9 @@ class MVA:
                          algorithm='kmeans',
                          return_info=False,
                          **kwargs):
-        """
-        Cluster analysis of a signal or decomposition results of a signal
-
+        """Cluster analysis of a signal or decomposition results of a signal
         Results are stored in `learning_results`.
+
 
         Parameters
         ----------
@@ -2156,7 +2151,7 @@ class MVA:
             used to define the number of times the algorithm is restarted to
             optimize results.
 
-        See also
+        See Also
         --------
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
@@ -2166,10 +2161,13 @@ class MVA:
         * :py:meth:`~.signal.MVATools.plot_cluster_centers`
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 
-        Returns:
+
+        Returns
+        -------
             If 'return_info' is True returns the Scikit-learn cluster object
             used for clustering. Useful if you wish to
             examine inertia or other outputs.
+      
         """
        
         if import_sklearn.sklearn_installed is False:
@@ -2254,8 +2252,7 @@ class MVA:
 
     def _get_cluster_algorithm(self,algorithm,n_clusters,**kwargs):
 
-        """
-        Convenience method to lookup cluster algorithm if algorithm is a string
+        """Convenience method to lookup cluster algorithm if algorithm is a string
         and instantiates it with n_clusters or if it's an object check that 
         the object has a fit method
         
@@ -2276,8 +2273,7 @@ class MVA:
         return cluster_algorithm
     
     def _get_cluster_preprocessing_algorithm(self,algorithm,**kwargs):
-        """
-        Convenience method to lookup method if algorithm is a string
+        """Convenience method to lookup method if algorithm is a string
         or if it's an object check that the object has a fit_transform method
         
         """
@@ -2308,8 +2304,7 @@ class MVA:
                                     metric="gap",
                                     n_ref=10,
                                     **kwargs):
-        """
-        Performs cluster analysis of a signal for cluster sizes ranging from
+        """Performs cluster analysis of a signal for cluster sizes ranging from
         n_clusters =2 to max_clusters ( default 12)
         Note that this can be a slow process for large datasets so please
         consider reducing max_clusters in this case.
@@ -2374,12 +2369,13 @@ class MVA:
         **kwargs : dict {}  default empty
             Additional parameters passed to the clustering algorithm.
 
+
         Returns
         -------
         best_k : int
             Estimate of the best cluster size
         
-        See also
+        See Also
         --------
         * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
@@ -2545,12 +2541,12 @@ class MVA:
                     if gap[i] >= (gap[i+1]- std_error[i+1]):
                         best_k=i+min_k
                         break
-            return best_k
-        finally:
             target.cluster_metric_index      = k_range
             target.cluster_metric_data       = to_return
             target.cluster_metric            = metric
             target.estimated_number_of_clusters = best_k
+            return best_k
+        finally:
             # fold
             if cluster_signal_unfolded is True:
                 cluster_signal.fold()
