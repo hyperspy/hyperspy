@@ -1730,7 +1730,7 @@ class MVA:
         scaling_algorithm = self._get_cluster_preprocessing_algorithm(scaling,**scaling_kwargs)                        
             
         cluster_signal,nav_mask,sig_mask,unfolded = \
-            self._get_cluster_source(cluster_source,
+            self._get_cluster_signal(cluster_source,
                                      number_of_components,
                                      navigation_mask,
                                      signal_mask)
@@ -1743,45 +1743,14 @@ class MVA:
             return scaling_algorithm.fit_transform(
                 dc[:, sig_mask][nav_mask, :]),cluster_signal,unfolded
 
-
-    def _get_decomposition_results(self,decomposition_source=None):
-        """ Return the decomposition factors or loadings - from BSS or 
-        results of the decomposition method call using PCA, NMF etc.
-        
-        Parameters
-        ----------
-        use_decomposition_results : {None,"decomposition","bss"}
-            If None or "decomposition" use the results from decomposition method
-            if "bss" use the blind source separation results
-        
-        Returns
-        -------
-        factors,loadings : tuple
-        
-        """
-        if isinstance(decomposition_source,str):            
-            decomposition_source = decomposition_source.lower()
-        if decomposition_source is None:
-            decomposition_source="decomposition"
-        if decomposition_source not in ("decomposition","bss"):
-            raise ValueError("decomposition_source must be specified"
-                             "as decomposition or bss")
-
-        if decomposition_source == "decomposition":
-            factors = self.learning_results.factors 
-            loadings = self.learning_results.loadings
-        else:
-            factors = self.learning_results.bss_factors 
-            loadings = self.learning_results.bss_loadings        
-        return factors,loadings
         
     def _get_number_of_components_for_clustering(self):
         """
         Returns the number of components 
         """        
         if self.learning_results.number_significant_components is None:
-            raise ValueError("cluster_source has been set to `decomposition` "
-                             "but no decomposition results are available. "
+            raise ValueError("A cluster source has been set to `decomposition` "
+                             "or `bss` but no decomposition results are available. "
                              "Please run a decomposition method first.")        
         else:
             number_of_components = self.learning_results.number_significant_components
@@ -1871,8 +1840,7 @@ class MVA:
     def _create_cluster_centers_from_labels(self, labels,
                                            source_for_centers,
                                            number_of_components=None,
-                                           navigation_mask=None,
-                                           signal_mask=None):
+                                           navigation_mask=None):
         """
         From a set of cluster labels generate the cluster centers from the
         raw data or PCA decomposition results
@@ -1885,7 +1853,8 @@ class MVA:
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
-            If np or dask array it should have shape [n_samples,signal_features]
+            If  providing a BaseSignal it should have the same navigation shape as
+            the signal.
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition or bss 
             results you can define how
@@ -1894,9 +1863,13 @@ class MVA:
             using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
             This applies to both bss and decomposition results.
+        navigation_mask : boolean numpy array
+            Create cluster labels and centers for navigation locations marked as as True.
+            labels outside the navigation mask are set to -1       
 
         Returns
         -------
+        sorted_labels   : array  - (n_samples)        
         cluster_labels  : array  - (n_clusters, n_samples)
         cluster_centers : array  - (n_clusters, signal_shape)
         """
@@ -1908,10 +1881,10 @@ class MVA:
         n_clusters = int(np.amax(labels)) + 1
             
         cluster_signal,nav_mask,sig_mask,unfolded = \
-            self._get_cluster_source(source_for_centers,
+            self._get_cluster_signal(source_for_centers,
                                      number_of_components,
                                      navigation_mask,
-                                     signal_mask,center=True)
+                                     signal_mask=None,center=True)
 
         # From the cluster labels we know which parts of the signal correspond
         # to different clusters.
@@ -1919,58 +1892,76 @@ class MVA:
         # We can produce the representative 1D or 2D signals for each cluster
         # by averaging all points with a given label or averaging
         # PCA components*loadings with a given label
-        clusterdata = cluster_signal.data \
-            if cluster_signal.axes_manager[0].index_in_array == 0 else cluster_signal.data.T
-        clusterdata = clusterdata[:, sig_mask][nav_mask, :]        
-        cluster_centers = np.zeros((n_clusters, clusterdata.shape[-1]))
-        #
-        # create the centers to match
         #
         clustersizes = np.zeros((n_clusters,), dtype=np.int)
         for i in range(n_clusters):
-            clus_index = np.where(labels == i)
             clustersizes[i] = labels[np.where(labels == i)].shape[0]
-            cluster_centers[i, :] = clusterdata[clus_index].sum(axis=0)
         # this sorts the labels based on clustersize for high to low
         # i.e. point with least number of points first
+        # Set the pixels that were not processed to nan
+            
         idx = np.argsort(clustersizes)[::-1]
         lut = np.zeros_like(idx)
         lut[idx] = np.arange(n_clusters)
         sorted_labels = lut[labels]
-        shape = (n_clusters, cluster_signal.data.shape[0])
-        cluster_labels = np.full(shape, np.nan)
-        sorted_cluster_centers = np.zeros_like(cluster_centers)            
+        
+        shape = (n_clusters,self.axes_manager.navigation_size)
+        cluster_labels = np.full(shape, -1)
+        sorted_labels = np.full((self.axes_manager.navigation_size),-1)
         # now create the labels from these sorted labels
+        nav_mask = self._mask_for_clustering(navigation_mask)
+        sorted_labels[nav_mask] = lut[labels]
+
+        cluster_centers=[]
         for i in range(n_clusters):
-            cluster_labels[i,:] = \
+
+            cluster_labels[i, :] = \
                 np.where(sorted_labels == i, 1, 0)
-            sorted_cluster_centers[i,:] = cluster_centers[lut[i],:]\
-                /clustersizes[lut[i]]                
-        return sorted_labels,cluster_labels,sorted_cluster_centers,\
-            cluster_signal,unfolded
+            clus_index = sorted_labels != i                
+
+            cluster_signal,nav_mask,sig_mask,unfolded = \
+                self._get_cluster_signal(source_for_centers,
+                                         number_of_components,
+                                         navigation_mask=clus_index,
+                                         signal_mask=None,center=True)
+            # the size of cluster centers depends on the data source used
+            # so append to list and concatentate to array at end 
+            cluster_centers.append(cluster_signal.data)
+        cluster_centers = np.stack(cluster_centers)
+
+        return sorted_labels,cluster_labels,cluster_centers
 
 
-    def _get_cluster_source(self,cluster_source,number_of_components=None,
+    def _get_cluster_signal(self,cluster_source,number_of_components=None,
                             navigation_mask=None,
                             signal_mask=None,
                             center=False):
         """
  
-        A cluster source can be an external signal or 
-        "decomposition","bss","signal"  
+        A cluster source can be an external signal, the signal data
+        or the decomposition or bss results  
     
         Parameters
         ----------
-        cluster_source : TYPE
-            DESCRIPTION.
-        number_of_components : TYPE, optional
-            DESCRIPTION. The default is None.
-        navigation_mask : TYPE, optional
-            DESCRIPTION. The default is None.
-        signal_mask : TYPE, optional
-            DESCRIPTION. The default is None.
-        center : TYPE, optional
-            DESCRIPTION. The default is False.
+        cluster_source : str or BaseSignal
+            "decomposition", "bss", "signal" or a Signal 
+        number_of_components : int, optional
+            Number of components to use with decomposition sources.
+            The default is None.
+        navigation_mask : ndarray, optional
+            mask used to select regions of the cluster_source to use. 
+            The default is None.
+        signal_mask : ndarray, optional
+            mask used to select regions of the cluster_source signal. 
+            For decomposition this is applied to the factors
+            The default is None.
+        center : bool, optional
+            Boolean to handle decomposition results. If using decomposition
+            results for clustering we use the factors. If using decomposition
+            results for cluster centers then we use factors @ loadings over
+            number of components 
+            produce 
+            The default is False.
 
  
         Returns
@@ -1992,61 +1983,82 @@ class MVA:
         unfolded4clustering = False
         toreturn=None
         if isinstance(cluster_source,BaseSignal):
-           if cluster_source.axes_manager.navigation_shape != self.axes_manager.navigation_shape:
-                raise ValueError("cluster_source signal supplied does not have the same "
-                                 " navigation shape as the this signal ")
+           if cluster_source.axes_manager.navigation_size != self.axes_manager.navigation_size:
+                raise ValueError("cluster_source does not have the same "
+                                 "navigation size as the this signal")
         else: 
             if cluster_source not in ("bss", "decomposition", "signal"):
                 if not isinstance(cluster_source,BaseSignal):
-                    raise ValueError("cluster source needs to be specified "
-                                     "`None` , `decomposition` , `signal` , `bss` "
-                                     "or a suitable Signal ")
-    
-            if cluster_source in ("decomposition","bss") and number_of_components is None:
-                number_of_components = self._get_number_of_components_for_clustering()
-    
+                    raise ValueError("cluster source needs to be set "
+                                     "to `decomposition` , `signal` , `bss` "
+                                     "or a suitable Signal")
+        
             if cluster_source == "decomposition":
                 if self.learning_results.factors is None:
-                    raise ValueError("cluster source has been set to decomposition "
-                                     " but no decomposition results found. "
-                                     " Please run decomposition method first")
+                    raise ValueError("A cluster source has been set to decomposition "
+                                     "but no decomposition results found. "
+                                     "Please run decomposition method first")
     
             if "bss" in cluster_source:
                 if self.learning_results.bss_factors is None:
-                    raise ValueError("cluster source has been set to bss "
+                    raise ValueError("A cluster source has been set to bss "
                                      " but no blind source separation results found. "
                                      " Please run blind source separation method first")
-                
+
+            if cluster_source in ("decomposition","bss") and number_of_components is None:
+                number_of_components = self._get_number_of_components_for_clustering()
+            
         navigation_mask = self._mask_for_clustering(navigation_mask)
+        if not isinstance(navigation_mask,slice):
+            if navigation_mask.size != self.axes_manager.navigation_size:
+                raise ValueError("Navigation mask size does not match signal navigation size")
+
         if isinstance(cluster_source,BaseSignal):
             signal_mask = self._mask_for_clustering(signal_mask)
+            if not isinstance(signal_mask,slice):
+                if signal_mask.size != cluster_source.axes_manager.signal_size:
+                    raise ValueError("signal mask size does not match your "
+                                     "cluster source signal size")
+
             unfolded4clustering=cluster_source.unfold()
-            toreturn = cluster_source
+            if center:
+                data = cluster_source.data \
+                   if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
+                toreturn = BaseSignal(data[navigation_mask,:].mean(axis=0))
+                unfolded4clustering = cluster_source.fold()
+            else:
+                toreturn = cluster_source
         elif cluster_source == "bss":
             signal_mask =  self._mask_for_clustering(None)
             if center == False:
                 toreturn = self._get_loadings(self.learning_results.bss_loadings[:,:number_of_components]).transpose() 
             else:
-                toreturn = self._get_factors(self.learning_results.bss_factors[:, :number_of_components] \
-                                             @ self.learning_results.bss_loadings[:, :number_of_components].T)                
+                toreturn = BaseSignal(self.learning_results.bss_factors[:, :number_of_components] \
+                                             @ self.learning_results.bss_loadings[:, :number_of_components].mean(axis=0).T)                
             toreturn.unfold()
         elif cluster_source == "decomposition":
             signal_mask =  self._mask_for_clustering(None)
             if center == False:
                 toreturn = self._get_loadings(self.learning_results.loadings[:,:number_of_components]).transpose()
             else:
-                toreturn = self._get_factors(self.learning_results.factors[:, :number_of_components] \
-                                             @ self.learning_results.loadings[:,:number_of_components].T)                
+                toreturn = BaseSignal(self.learning_results.factors[:, :number_of_components]\
+                                             @ self.learning_results.loadings[navigation_mask,:number_of_components].mean(axis=0).T)                
                 
             toreturn.unfold()
         elif cluster_source == "signal":
             signal_mask = self._mask_for_clustering(signal_mask)
+            if not isinstance(signal_mask,slice):    
+                if signal_mask.size != self.axes_manager.signal_size:
+                    raise ValueError("signal mask size does not match your "
+                                     "cluster source signal size")
             unfolded4clustering=self.unfold()
-            toreturn = self 
-
-        if toreturn.axes_manager.navigation_size < 2:
-            raise AttributeError("It is not possible to cluster a dataset "
-                                 "with navigation_size < 2")
+            if center:
+                data = self.data \
+                   if self.axes_manager[0].index_in_array == 0 else self.data.T
+                toreturn = BaseSignal(data[navigation_mask,:].mean(axis=0))
+                unfolded4clustering=self.fold()
+            else:
+                toreturn = self
 
         return toreturn, navigation_mask, signal_mask, unfolded4clustering
 
@@ -2070,23 +2082,23 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : {"bss", "decomposition", "signal"}
+        cluster_source : {"bss", "decomposition", "signal", BaseSignal}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
-            Note that using the signal can be memory intensive 
+            Note that using the signal or BaseSignal can be memory intensive 
             and is only recommended if the Signal dimension is small
+            BaseSignal must have the same navigation dimensions as the signal.
         n_clusters : int, default = 2
             Number of clusters to find using the one of the pre-defined methods
             "kmeans","agglomerative","minibatchkmeans","spectralclustering"
-        cluster_source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
+        source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
             default : None
             If None the cluster_source is used
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
-            An array source must have shape [n_samples,:] where n_samples is the same
-            as the signal navigation_size   (signal.axes_manager.navigation_size)
+            BaseSignal must have the same navigation dimensions as the signal.            
         scaling : {"standard","norm","minmax",None or scikit learn scaling method}
             default: 'norm'
             Preprocessing the data before cluster analysis requires scaling
@@ -2111,11 +2123,12 @@ class MVA:
             ``learning_results.number_significant_components`` attribute.
             This applies to both bss and decomposition results.
         navigation_mask : boolean numpy array
-            The navigation locations marked as True are not used in the
-            decomposition.
+            The navigation locations marked as as True. This is applied to
+            cluster source and source for centers.
         signal_mask : boolean numpy array
-            The signal locations marked as True are not used in the
-            decomposition.
+            Select the signal locations marked as True. This is used when
+            cluster_source is set to "signal" or is a BaseSignal. It is not 
+            applied to decomposition or bss results or to mask source_for_centers
         algorithm : { "kmeans" | "agglomerative" | "minibatchkmeans" | "spectralclustering"}
             See scikit-lear documentation. Default "kmeans"
         return_info : bool, default False
@@ -2150,13 +2163,11 @@ class MVA:
                 'sklearn is not installed. Nothing done')
 
         to_return = None
-        
+        cluster_signal_unfolded=False
  
         # backup the original data
         self._data_before_treatments = self.data.copy()
 
-        if cluster_source in ("decomposition","bss") and number_of_components is None:
-            number_of_components = self._get_number_of_components_for_clustering()
 
         if n_clusters < 2:
             raise ValueError("The number of clusters, n_clusters "
@@ -2185,7 +2196,7 @@ class MVA:
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
 
-            print("scd",scaled_data.shape)            
+            
             alg = self._cluster_analysis(scaled_data,
                                          cluster_algorithm)
             if return_info:
@@ -2193,39 +2204,34 @@ class MVA:
 
             labels = alg.labels_
 
-#            if cluster_signal_unfolded is True:
-#                folding = cluster_signal.metadata._HyperSpy.Folding
-#                target.original_shape = folding.original_shape
 
             # now re-organize the labels to fit with hyperspy loadings/factors
             # and use the kmeans centers to extract real data cluster centers
             # create an array to store the centers
  
-            sorted_membership,cluster_labels, cluster_centers,\
-                center_signal,center_signal_unfolded = \
+            sorted_membership,cluster_labels, cluster_centers =\
                 self._create_cluster_centers_from_labels(
                     labels,
                     source_for_centers=source_for_centers,
                     number_of_components=number_of_components,
-                    navigation_mask=navigation_mask,signal_mask=signal_mask)
+                    navigation_mask=navigation_mask)
                 
 
             # if an object is passed as the clustering algorithm
             # the number of clusters may vary...
             number_clusters = np.max(sorted_membership)+1
-        finally:
             target.cluster_membership = sorted_membership
             target.cluster_labels = cluster_labels
             target.cluster_centers = cluster_centers
             target.number_of_clusters = number_clusters
             target.cluster_algorithm = algorithm
+
+        finally:
             self.learning_results.__dict__.update(target.__dict__)
             # if the cluster_source or source_for_centers is a signal
             # fold it back, if required, when finished
             if cluster_signal_unfolded is True:
                 cluster_signal.fold()
-            if center_signal_unfolded is True:
-                center_signal.fold()
 
             # undo any pre-treatments
             self.undo_treatments()
@@ -2384,13 +2390,11 @@ class MVA:
         if algorithm not in cluster_algorithms.keys():
             raise ValueError("estimate_number_of_clusters only works with algorithm "
                              " keywords selected from %s "%list(cluster_algorithms.keys()))
-        if cluster_source in ("bss","decomposition") and number_of_components is None:
-            number_of_components = self._get_number_of_components_for_clustering()
 
         if max_clusters < 2:
             raise ValueError("The number of clusters, max_clusters "
                              "must be specified and be >= 2.")
-
+        cluster_signal_unfolded=False
         to_return = None
         best_k    = None
         k_range   = list(range(1, max_clusters+1))
@@ -2414,7 +2418,9 @@ class MVA:
 
         try:
             # scale the data
-            scaled_data = self.scale_data_for_clustering(
+            # scale the data before clustering
+            scaled_data,cluster_signal,cluster_signal_unfolded = \
+                self._scale_data_for_clustering(
                 cluster_source=cluster_source,
                 scaling=scaling, scaling_kwargs=scaling_kwargs,
                 number_of_components=number_of_components,
@@ -2533,9 +2539,8 @@ class MVA:
             target.cluster_metric            = metric
             target.estimated_number_of_clusters = best_k
             # fold
-            if self._unfolded4clustering is True:
-                self.fold()
-                self._unfolded4clustering = False
+            if cluster_signal_unfolded is True:
+                cluster_signal.fold()
             self.learning_results.__dict__.update(target.__dict__)
 
     def estimate_elbow_position(self, explained_variance_ratio=None,log=True,
