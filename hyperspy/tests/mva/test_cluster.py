@@ -437,3 +437,48 @@ def test_cluster_ncluster_error():
     with pytest.raises(ValueError, match="The number of clusters, n_clusters "
                              "must be specified and be >= 2."):
         s.cluster_analysis("signal",n_clusters=1)
+
+
+
+def test_max_cluster_error():
+    np.random.seed(1)
+    # Use prime numbers to avoid fluke equivalences
+    # create 3 random clusters
+    n_samples=[400]*3
+    std = [0.05]*3
+    X = []
+    centers = np.array([[-1.,-1.,1,1],[1.,-1.,-1.,-1],[-1.,1.,1.,-1.]])
+    for i, (n, std) in enumerate(zip(n_samples, std)):
+        X.append(centers[i] + np.random.normal(scale=std,size=(n, 4)))
+    X = np.concatenate(X)
+    np.random.shuffle(X)
+    signal = signals.Signal1D(X)
+    signal.decomposition()
+    max_clusters = 1
+    with pytest.raises(ValueError, match="The max number of clusters, max_clusters, "
+                             "must be specified and be >= 2."):
+
+        signal.estimate_number_of_clusters(
+                "signal",
+                max_clusters=max_clusters,
+                scaling=None,
+                algorithm="kmeans",
+                metric="elbow")
+
+def test_cluster_scaling_object_error():
+    rng = np.random.RandomState(123)
+    x = rng.random((20, 100))
+    s = signals.Signal1D(x)
+    scaling = object()
+    with pytest.raises(ValueError, match="The cluster scaling method should be either \w*"):
+        s.cluster_analysis("signal",scaling=scaling)
+    
+
+def test_clustering_object_error():
+    rng = np.random.RandomState(123)
+    x = rng.random((20, 100))
+    s = signals.Signal1D(x)
+    empty_object = object()
+    with pytest.raises(ValueError, match="The clustering method should be either \w*"):
+        s.cluster_analysis("signal",algorithm=empty_object)
+    

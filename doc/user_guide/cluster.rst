@@ -88,10 +88,12 @@ and further details on operation and implementation can be found there
 Cluster Centers and Labels
 --------------------------
 
-The cluster labels and centers found are based on the features after they've 
-been whitened or scaled.  
-To create a meaningful dataset the original data or PCA results 
-matching a given label are averaged to create a set of cluster centers. 
+The cluster labels and centers found using the sklearn methods are based on 
+the features after they've been whitened or scaled.  
+To create a meaningful representation of the clusters areas with identical label
+are averaged to create a set of cluster centers. This averaging can be performed
+on the  ``signal`` itself, the  ``bss``  or  ``decomposition`` results or a
+user supplied signal.
 
 
 Examples 
@@ -140,7 +142,8 @@ those regions
 .. code-block:: python
 
     >>> s.cluster_analysis(3)
-    >>> s.plot_cluster_results()
+    >>> s.plot_cluster_results("decomposition")
+    
 
 
 To see what the labels the cluster algorithm has assigned you can inspect:
@@ -164,7 +167,8 @@ methods in the following manner:
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(3, algorithm='agglomerative',
+    >>> s.cluster_analysis("decomposition",n_clusters=3,
+    >>>        algorithm='agglomerative',
     >>>        kwargs={affinity='cosine', linkage='average'})
     >>> s.plot_cluster_results()
 
@@ -189,8 +193,7 @@ well-defined the clustering is.
 
 .. code-block:: python
 
-    >>> s.evaluate_number_of_clusters(
-    >>>     use_decomposition_results=True,metric="gap")
+    >>> s.evaluate_number_of_clusters("decomposition",metric="gap")
     >>> s.plot_cluster_metric()
     
 The optimal number of clusters can be set or accessed from the learning 
@@ -220,11 +223,13 @@ fitted results.
 .. code-block:: python
 
     >>> import hyperspy.misc.utils.stack
+    >>> # create a signal called original signal and setup fitting
     >>> # model created using two gaussians and fitting performed... 
     >>> fitted_centre1 = g1.centre.as_signal()
     >>> fitted_centre2 = g2.centre.as_signal()
     >>> new_signal = stack([fitted_centre1,fitted_centre2]])
-    >>> new_signal.cluster_analysis(use_decomposition_results=False)
+    >>> new_signal.cluster_analysis("signal",source_for_centers=original_signal)
+    
 
 
 

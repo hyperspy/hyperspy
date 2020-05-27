@@ -1673,10 +1673,10 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : {"bss", "decomposition", "signal"}
+        cluster_source : {"bss", "decomposition", "signal", Signal}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
-            if "signal" the signal data is used 
+            if "signal" the signal data is used (signal should be unfolded)
         scaling : {"standard","norm","minmax",None or scikit learn scaling method}
             default: 'norm'
             Preprocessing the data before cluster analysis requires scaling
@@ -1684,9 +1684,7 @@ class MVA:
             adjusts each feature to have uniform variation. Norm scaling
             adjusts treats the set of features like a vector and
             each measurement is scaled to length 1.
-            You can also pass one of the scikit-learn preprocessing
-            scale_method = import sklearn.processing.StandadScaler
-            scaling = scale_method
+            You can also pass a cikit-learn preprocessing object
             See scaling methods in scikit-learn preprocessing for further
             details.
         scaling_kwargs :
@@ -1733,9 +1731,9 @@ class MVA:
             self._get_cluster_signal(cluster_source,
                                      number_of_components,
                                      navigation_mask,
-                                     signal_mask)
-        data = cluster_signal.data
-        dc = data if cluster_signal.axes_manager[0].index_in_array == 0 else data.T
+                                     signal_mask,
+                                     sum_over_navigation_mask=False)
+        dc = cluster_signal.data
         
         if scaling_algorithm is None:
             return dc[:, sig_mask][nav_mask, :],cluster_signal,unfolded
@@ -1767,13 +1765,17 @@ class MVA:
         n_clusters : int
             Number of clusters to find.
         scaled_data : numpy array - (number_of_samples,number_of_features)
-        algorithm: scikit learn clustering object or a clustering object 
-                   with fit method and labels_ attribute
+        algorithm: scikit learn clustering object 
         **kwargs
             Additional parameters passed to the clustering algorithm.
             This may include `n_init`, the number of times the algorithm is
             restarted to optimize results.
-
+            
+        Returns
+        -------
+        alg
+            return the sklearn.cluster object
+ 
         """
 
         algorithm.fit(scaled_data)
@@ -1790,6 +1792,17 @@ class MVA:
     def plot_cluster_metric(self):
         """Plot the cluster metrics calculated
            using evaluate_number_of_clusters method
+           
+        See also
+        --------
+        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
+        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+           
 
         """
         target = self.learning_results
@@ -1849,11 +1862,11 @@ class MVA:
         ----------
         labels : int array of length n_samples where each value is a cluster
             label from 0 to n_clusters-1
-        source_for_centers : {"decomposition","bss","signal", Hyperspy Signal}
+        source_for_centers : {"decomposition","bss","signal", Signal}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
-            If  providing a BaseSignal it should have the same navigation shape as
+            If  providing a Signal it should have the same navigation shape as
             the signal.
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition or bss 
@@ -1865,13 +1878,15 @@ class MVA:
             This applies to both bss and decomposition results.
         navigation_mask : boolean numpy array
             Create cluster labels and centers for navigation locations marked as as True.
-            labels outside the navigation mask are set to -1       
+            labels outside the navigation mask are set to -1 and centers in
+            these regions are set to zero.
 
         Returns
         -------
         sorted_labels   : array  - (n_samples)        
         cluster_labels  : array  - (n_clusters, n_samples)
         cluster_centers : array  - (n_clusters, signal_shape)
+        
         """
 
 
@@ -1880,11 +1895,12 @@ class MVA:
         # create an array to store the centers
         n_clusters = int(np.amax(labels)) + 1
             
-        cluster_signal,nav_mask,sig_mask,unfolded = \
-            self._get_cluster_signal(source_for_centers,
-                                     number_of_components,
-                                     navigation_mask,
-                                     signal_mask=None,center=True)
+#        cluster_signal,nav_mask,sig_mask,unfolded = \
+#            self._get_cluster_signal(source_for_centers,
+#                                     number_of_components,
+#                                     navigation_mask,
+#                                     signal_mask=None,
+#                                     sum_over_navigation_mask=True)
 
         # From the cluster labels we know which parts of the signal correspond
         # to different clusters.
@@ -1923,7 +1939,8 @@ class MVA:
                 self._get_cluster_signal(source_for_centers,
                                          number_of_components,
                                          navigation_mask=clus_index,
-                                         signal_mask=None,center=True)
+                                         signal_mask=None,
+                                         sum_over_navigation_mask=True)
             # the size of cluster centers depends on the data source used
             # so append to list and concatentate to array at end 
             cluster_centers.append(cluster_signal.data)
@@ -1935,7 +1952,7 @@ class MVA:
     def _get_cluster_signal(self,cluster_source,number_of_components=None,
                             navigation_mask=None,
                             signal_mask=None,
-                            center=False):
+                            sum_over_navigation_mask=False):
         """
  
         A cluster source can be an external signal, the signal data
@@ -1953,14 +1970,11 @@ class MVA:
             The default is None.
         signal_mask : ndarray, optional
             mask used to select regions of the cluster_source signal. 
-            For decomposition this is applied to the factors
+            For decomposition or bss this is not used.
             The default is None.
         center : bool, optional
-            Boolean to handle decomposition results. If using decomposition
-            results for clustering we use the factors. If using decomposition
-            results for cluster centers then we use factors @ loadings over
-            number of components 
-            produce 
+            If True the cluster_source is summed over the navigation axes
+            (accounting for the navigation_mask)
             The default is False.
 
  
@@ -1970,11 +1984,11 @@ class MVA:
             Creates or returns an unfolded hyperspy signal from 
             the selected cluster_source
         navigation_mask : ndarray
-            DESCRIPTION.
+            navigation_mask (flattened and inverted if needed)
         signal_mask : ndarray
-            DESCRIPTION.
+            signal mask (flattened and inverted if needed) 
         unfolded4clustering : bool
-            DESCRIPTION.
+            boolean indicating if the cluster source is unfolded.
 
         """
         
@@ -2021,7 +2035,7 @@ class MVA:
                                      "cluster source signal size")
 
             unfolded4clustering=cluster_source.unfold()
-            if center:
+            if sum_over_navigation_mask:
                 data = cluster_source.data \
                    if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
                 toreturn = BaseSignal(data[navigation_mask,:].mean(axis=0))
@@ -2030,7 +2044,7 @@ class MVA:
                 toreturn = cluster_source
         elif cluster_source == "bss":
             signal_mask =  self._mask_for_clustering(None)
-            if center == False:
+            if sum_over_navigation_mask == False:
                 toreturn = self._get_loadings(self.learning_results.bss_loadings[:,:number_of_components]).transpose() 
             else:
                 toreturn = BaseSignal(self.learning_results.bss_factors[:, :number_of_components] \
@@ -2038,7 +2052,7 @@ class MVA:
             toreturn.unfold()
         elif cluster_source == "decomposition":
             signal_mask =  self._mask_for_clustering(None)
-            if center == False:
+            if sum_over_navigation_mask == False:
                 toreturn = self._get_loadings(self.learning_results.loadings[:,:number_of_components]).transpose()
             else:
                 toreturn = BaseSignal(self.learning_results.factors[:, :number_of_components]\
@@ -2052,7 +2066,7 @@ class MVA:
                     raise ValueError("signal mask size does not match your "
                                      "cluster source signal size")
             unfolded4clustering=self.unfold()
-            if center:
+            if sum_over_navigation_mask:
                 data = self.data \
                    if self.axes_manager[0].index_in_array == 0 else self.data.T
                 toreturn = BaseSignal(data[navigation_mask,:].mean(axis=0))
@@ -2123,12 +2137,12 @@ class MVA:
             ``learning_results.number_significant_components`` attribute.
             This applies to both bss and decomposition results.
         navigation_mask : boolean numpy array
-            The navigation locations marked as as True. This is applied to
-            cluster source and source for centers.
+            The navigation locations marked as True are not used.
         signal_mask : boolean numpy array
-            Select the signal locations marked as True. This is used when
-            cluster_source is set to "signal" or is a BaseSignal. It is not 
-            applied to decomposition or bss results or to mask source_for_centers
+            The signal locations marked as True are not used in the
+            clustering for "signal" or Signals supplied as cluster source.
+            This is not applied to decomposition results or source_for_centers
+            (as it may be a different shape to the cluster source)
         algorithm : { "kmeans" | "agglomerative" | "minibatchkmeans" | "spectralclustering"}
             See scikit-lear documentation. Default "kmeans"
         return_info : bool, default False
@@ -2247,10 +2261,11 @@ class MVA:
         
         """
         algorithms_sklearn = list(cluster_algorithms.keys())
-        if algorithm in algorithms_sklearn:
-            if not import_sklearn.sklearn_installed:
-                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
-            cluster_algorithm = cluster_algorithms[algorithm](n_clusters=n_clusters, **kwargs)
+        if isinstance(algorithm, str):
+            if algorithm in algorithms_sklearn:
+                if not import_sklearn.sklearn_installed:
+                    raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
+                cluster_algorithm = cluster_algorithms[algorithm](n_clusters=n_clusters, **kwargs)
             
         elif hasattr(algorithm, "fit"):
             cluster_algorithm = algorithm
@@ -2283,7 +2298,7 @@ class MVA:
 
     def estimate_number_of_clusters(self,
                                     cluster_source,
-                                    max_clusters=12,
+                                    max_clusters=10,
                                     scaling="norm",
                                     scaling_kwargs={},
                                     number_of_components=None,
@@ -2311,19 +2326,17 @@ class MVA:
             if "signal" the signal data is used 
             Note that using the signal can be memory intensive 
             and is only recommended if the Signal dimension is small
-        max_clusters : int, default 12
+        max_clusters : int, default 10
             Max number of clusters to use. The method will scan from 2 to
             max_clusters. 
-        scaling : {"standard","norm","minmax" or scikit learn scaling object}
+        scaling : {"standard","norm","minmax" or sklearn preprocessing object}
             default: 'norm'
             Preprocessing the data before cluster analysis requires scaling
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
             adjusts treats the set of features like a vector and
             each measurement is scaled to length 1.
-            You can also pass one of the scikit-learn preprocessing
-            scale_method = import sklearn.processing.StandadScaler
-            scaling = scale_method
+            You can also pass an instance of a sklearn preprocessing module.
             See scaling methods in scikit-learn preprocessing for further
             details.
         scaling_kwargs : dict, default empty
@@ -2338,10 +2351,10 @@ class MVA:
             ``learning_results.number_significant_components`` attribute.
         navigation_mask : boolean numpy array, default : None
             The navigation locations marked as True are not used in the
-            decomposition.
+            clustering.
         signal_mask : boolean numpy array, default : None
             The signal locations marked as True are not used in the
-            decomposition.
+            clustering. Applies to "signal" or Signal cluster sources only.
         metric : {'elbow','silhouette','gap'} default 'gap'
             Use distance,silhouette analysis or gap statistics to estimate
             the optimal number of clusters.
@@ -2353,7 +2366,7 @@ class MVA:
             For gap the optimal k is the first k gap(k)>= gap(k+1)-std_error
             For silhouette the optimal k will be one of the "maxima" found with
             this method
-        n_ref :  int, default 5
+        n_ref :  int, default 10
             Number of random references to use in gap statistics method
             Gap statistics compares the results from clustering the data to
             clustering random data. This random clustering is
@@ -2368,7 +2381,7 @@ class MVA:
         
         See also
         --------
-        * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
+        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
@@ -2386,13 +2399,13 @@ class MVA:
                 squared=squared)/
                 (2.*data[memberships == c, :].shape[0]))
                 for c in np.unique(memberships)]
-        
+
         if algorithm not in cluster_algorithms.keys():
             raise ValueError("estimate_number_of_clusters only works with algorithm "
                              " keywords selected from %s "%list(cluster_algorithms.keys()))
 
         if max_clusters < 2:
-            raise ValueError("The number of clusters, max_clusters "
+            raise ValueError("The max number of clusters, max_clusters, "
                              "must be specified and be >= 2.")
         cluster_signal_unfolded=False
         to_return = None
