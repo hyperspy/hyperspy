@@ -203,6 +203,8 @@ class TestClusterCenterSource2d:
         self.navigation_mask[4:6] = True
         self.signal_mask = np.zeros((5, 7), dtype=bool)
         self.signal_mask[1:4, 2:6] = True
+        self.signal_two = signals.Signal2D(np.random.rand(11, 5, 10))
+
     @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative"))
     @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
     @pytest.mark.parametrize("scaling", ("standard", "norm","minmax",None))
@@ -216,7 +218,7 @@ class TestClusterCenterSource2d:
             navigation_mask = None
             signal_mask = None
         # test using cluster source centre is a signal
-        signal_copy = self.signal.copy()
+        signal_copy = self.signal_two
         self.signal.cluster_analysis(cluster_source=\
                                           cluster_source, n_clusters=3,
                                       source_for_centers=\
@@ -229,7 +231,7 @@ class TestClusterCenterSource2d:
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 11))
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centers.shape, (3, 35))
+            self.signal.learning_results.cluster_centers.shape, (3, 50))
 
 
 

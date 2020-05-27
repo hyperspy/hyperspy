@@ -211,8 +211,8 @@ specified the algorithm will attempt to use the estimated number of clusters
     >>> s.cluster_analysis()
 
 
-Clustering fit results
-----------------------
+Clustering different signal information
+---------------------------------------
 
 As discussed in the introduction, clustering can be performed on fitted or
 extracted parameters. Given an existing fitted model the parameters 
@@ -230,6 +230,18 @@ fitted results.
     >>> new_signal = stack([fitted_centre1,fitted_centre2]])
     >>> new_signal.cluster_analysis("signal",source_for_centers=original_signal)
     
+To extract cluster centers based on the decomposition results
+of a signal using the results of fitting on that signal 
+
+.. code-block:: python
+
+    >>> import hyperspy.misc.utils.stack
+    >>> # A signal called original signal and setup fitting
+    >>> # model created using two gaussians and fitting performed... 
+    >>> fitted_centre1 = g1.centre.as_signal()
+    >>> fitted_centre2 = g2.centre.as_signal()
+    >>> new_signal = stack([fitted_centre1,fitted_centre2]])
+    >>> original_signal.cluster_analysis(new_signal,source_for_centers="decomposition")
 
 
 
