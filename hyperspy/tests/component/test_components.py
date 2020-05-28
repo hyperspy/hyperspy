@@ -45,7 +45,10 @@ def get_components1d_name_list():
     return components1d_name_list
 
 
-@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in true_divide:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered in true_divide:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in cos:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:The API of the")
 @pytest.mark.parametrize('component_name', get_components1d_name_list())
 def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
