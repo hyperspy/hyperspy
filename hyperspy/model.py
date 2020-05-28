@@ -28,8 +28,7 @@ import numpy as np
 import dill
 import scipy
 import scipy.odr as odr
-from scipy.optimize import (leastsq, least_squares,
-                            minimize, differential_evolution, OptimizeWarning)
+from scipy.optimize import leastsq, least_squares, minimize, differential_evolution
 from scipy.linalg import svd
 from contextlib import contextmanager
 
@@ -1159,7 +1158,7 @@ class BaseModel(list):
                     warn_cov = True
 
                 if warn_cov:
-                    warnings.warn("Covariance of the parameters could not be estimated", OptimizeWarning)
+                    _logger.warning("Covariance of the parameters could not be estimated")
 
                 # Calculate standard deviation
                 self.p_std = np.sqrt(np.diag(pcov))
