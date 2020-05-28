@@ -254,7 +254,7 @@ class TestClusterEstimate:
             X.append(centers[i] + np.random.normal(scale=std,size=(n, 4)))
         X = np.concatenate(X)
         np.random.shuffle(X)
-        self.signal_shape = self.signal.data.shape
+        self.signal = signals.Signal1D(X)
         self.signal.decomposition()
         self.signal.blind_source_separation(number_of_components=3)
 
