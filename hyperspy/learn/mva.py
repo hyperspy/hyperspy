@@ -2313,12 +2313,14 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : {"bss", "decomposition", "signal"}
+        cluster_source : {"bss", "decomposition", "signal" or Signal}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
             Note that using the signal can be memory intensive 
-            and is only recommended if the Signal dimension is small
+            and is only recommended if the Signal dimension is small.
+            Input Signal must have the same navigation dimensions as the
+            signal instance.
         max_clusters : int, default 10
             Max number of clusters to use. The method will scan from 2 to
             max_clusters. 
@@ -2547,12 +2549,14 @@ class MVA:
             # fold
             if (type(cluster_source) is str and \
                 cluster_source == "signal"):
-                if hasattr(cluster_source,"unfolded4clustering"):
-                    self.fold()
+                if hasattr(self,"unfolded4clustering"):
+                    if self.unfolded4clustering:
+                        self.fold()
 
             if isinstance(cluster_source,self.__class__.__base__):
                 if hasattr(cluster_source,"unfolded4clustering"):
-                    cluster_source.fold()
+                    if cluster_source.unfolded4clustering:
+                        cluster_source.fold()
                 
             self.learning_results.__dict__.update(target.__dict__)
 
