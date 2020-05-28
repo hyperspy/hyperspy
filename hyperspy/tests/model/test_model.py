@@ -20,6 +20,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+import logging
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -28,6 +29,32 @@ from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 RTOL = 1E-6
+
+
+def test_leastsq_covar_est(caplog):
+    g = hs.model.components2D.Gaussian2D(
+        centre_x=-5.0, centre_y=-5.0, sigma_x=1.0, sigma_y=2.0
+    )
+    x = np.arange(-10, 10, 0.01)
+    y = np.arange(-10, 10, 0.01)
+    X, Y = np.meshgrid(x, y)
+    im = hs.signals.Signal2D(g.function(X, Y))
+    im.axes_manager[0].scale = 0.01
+    im.axes_manager[0].offset = -10
+    im.axes_manager[1].scale = 0.01
+    im.axes_manager[1].offset = -10
+
+    m = im.create_model()
+    gt = hs.model.components2D.Gaussian2D(
+        centre_x=-4.5, centre_y=-4.5, sigma_x=0.5, sigma_y=1.5
+    )
+    m.append(gt)
+
+    with caplog.at_level(logging.WARNING):
+        m.fit()
+
+    assert "Covariance of the parameters could not be estimated" in caplog.text
+    assert np.all(np.isinf(m.p_std))
 
 
 class TestModelJacobians:
