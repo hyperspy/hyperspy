@@ -1158,7 +1158,12 @@ class BaseModel(list):
                     warn_cov = True
 
                 if warn_cov:
-                    _logger.warning("Covariance of the parameters could not be estimated")
+                    _logger.warning(
+                        "Covariance of the parameters could not be estimated. "
+                        "Estimated parameter standard deviations will be np.inf. "
+                        "This could indicate that the model is a poor description "
+                        "of the data."
+                    )
 
                 # Calculate standard deviation
                 self.p_std = np.sqrt(np.diag(pcov))
