@@ -55,7 +55,7 @@ def test_assignment_class():
                 signal_type=case.sig_type,
                 lazy=False) is
             getattr(hs.signals, case.cls))
-        lazyclass = 'Lazy' + case.cls if case.cls is not 'BaseSignal' \
+        lazyclass = 'Lazy' + case.cls if case.cls != 'BaseSignal' \
             else 'LazySignal'
         assert (
             assign_signal_subclass(

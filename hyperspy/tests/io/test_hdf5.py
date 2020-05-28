@@ -377,7 +377,7 @@ class TestPassingArgs:
         BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
 
     def test_compression_opts(self):
-        f = h5py.File(self.filename)
+        f = h5py.File(self.filename, mode='r+')
         d = f['Experiments/__unnamed__/data']
         assert d.compression_opts == 8
         assert d.compression == 'gzip'
