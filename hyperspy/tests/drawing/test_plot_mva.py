@@ -18,7 +18,6 @@
 
 import numpy as np
 import pytest
-import sys
 
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
@@ -147,7 +146,7 @@ class TestPlotClusterAnalysis:
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_centers_nav1_sig1(self):
         return self.s.plot_cluster_centers()
-    
+
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig1(self):

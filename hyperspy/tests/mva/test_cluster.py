@@ -110,6 +110,9 @@ class TestCluster2d:
             self.signal.learning_results.cluster_labels.shape, (3, 11))
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_centers.shape, (3, 35))
+        np.testing.assert_array_equal(
+            self.signal.data.shape, (11,5,7))
+        
         self.signal.get_cluster_labels()
         self.signal.get_cluster_centers()
 
@@ -152,6 +155,8 @@ class TestClusterSource2d:
             self.signal.learning_results.cluster_labels.shape, (3, 11))
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_centers.shape, (3, 35))
+        np.testing.assert_array_equal(
+            self.signal.data.shape, (11,5,7))
 
 
 
@@ -249,7 +254,7 @@ class TestClusterEstimate:
             X.append(centers[i] + np.random.normal(scale=std,size=(n, 4)))
         X = np.concatenate(X)
         np.random.shuffle(X)
-        self.signal = signals.Signal1D(X)
+        self.signal_shape = self.signal.data.shape
         self.signal.decomposition()
         self.signal.blind_source_separation(number_of_components=3)
 
@@ -280,8 +285,6 @@ class TestClusterEstimate:
 
         np.testing.assert_allclose(k_range,test_k_range)
         np.testing.assert_allclose(best_k, 3)
-
-
 
 
 class TestClusterCustomScaling:

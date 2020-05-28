@@ -1951,7 +1951,7 @@ class MVA:
                             sum_over_navigation_mask=False):
         """A cluster source can be an external signal, the signal data
         or the decomposition or bss results  
-
+        Return a flatten version of the data, nav and signal mask
     
         Parameters
         ----------
@@ -2054,8 +2054,7 @@ class MVA:
                 toreturn = loadings[:,:number_of_components] 
             else:
                 toreturn = factors[:, :number_of_components] \
-                    @ loadings[:, :number_of_components].mean(axis=0).T          
-
+                    @ loadings[navigation_mask, :number_of_components].mean(axis=0).T          
         return toreturn, navigation_mask, signal_mask
 
         
