@@ -1729,19 +1729,19 @@ class MVA:
 
         scaling_algorithm = self._get_cluster_preprocessing_algorithm(scaling,**scaling_kwargs)                        
             
-        cluster_signal,nav_mask,sig_mask,unfolded = \
+        cluster_signal,nav_mask,sig_mask = \
             self._get_cluster_signal(cluster_source,
                                      number_of_components,
                                      navigation_mask,
                                      signal_mask,
                                      sum_over_navigation_mask=False)
-        dc = cluster_signal.data
+        
         
         if scaling_algorithm is None:
-            return dc[:, sig_mask][nav_mask, :],cluster_signal,unfolded
+            return cluster_signal[:, sig_mask][nav_mask, :]
         else:
             return scaling_algorithm.fit_transform(
-                dc[:, sig_mask][nav_mask, :]),cluster_signal,unfolded
+                cluster_signal[:, sig_mask][nav_mask, :])
 
         
     def _get_number_of_components_for_clustering(self):
@@ -1931,8 +1931,7 @@ class MVA:
             cluster_labels[i, :] = \
                 np.where(sorted_labels == i, 1, 0)
             clus_index = sorted_labels != i                
-
-            cluster_signal,nav_mask,sig_mask,unfolded = \
+            cluster_data,nav_mask,sig_mask = \
                 self._get_cluster_signal(source_for_centers,
                                          number_of_components,
                                          navigation_mask=clus_index,
@@ -1940,7 +1939,7 @@ class MVA:
                                          sum_over_navigation_mask=True)
             # the size of cluster centers depends on the data source used
             # so append to list and concatentate to array at end 
-            cluster_centers.append(cluster_signal.data)
+            cluster_centers.append(cluster_data)
         cluster_centers = np.stack(cluster_centers)
 
         return sorted_labels,cluster_labels,cluster_centers
@@ -1968,37 +1967,38 @@ class MVA:
             mask used to select regions of the cluster_source signal. 
             For decomposition or bss this is not used.
             The default is None.
-        center : bool, optional
+        sum_over_navigation_mask : bool, optional
             If True the cluster_source is summed over the navigation axes
-            (accounting for the navigation_mask)
+            (accounting for the navigation_mask).
+            For bss or decomposition results the sum is over the 
+            factor @ loadings result
             The default is False.
 
  
         Returns
         -------
-        toreturn : hyperspy signal
-            Creates or returns an unfolded hyperspy signal from 
+        toreturn : ndarray
+            Returns an unfolded dataset from 
             the selected cluster_source
         navigation_mask : ndarray
             navigation_mask (flattened and inverted if needed)
         signal_mask : ndarray
             signal mask (flattened and inverted if needed) 
-        unfolded4clustering : bool
-            boolean indicating if the cluster source is unfolded.
 
         """
-        
-        from hyperspy.signals import BaseSignal
-        
-        unfolded4clustering=False
+                
         toreturn=None
-        if isinstance(cluster_source,BaseSignal):
+        # Is it a signal - i.e. BaseSignal
+        if type(cluster_source) is str and cluster_source=="signal":
+            cluster_source = self
+
+        if isinstance(cluster_source,self.__class__.__base__):
            if cluster_source.axes_manager.navigation_size != self.axes_manager.navigation_size:
                 raise ValueError("cluster_source does not have the same "
                                  "navigation size as the this signal")
         else: 
             if cluster_source not in ("bss", "decomposition", "signal"):
-                if not isinstance(cluster_source,BaseSignal):
+                if not isinstance(cluster_source,self.__class__.__base__):
                     raise ValueError("cluster source needs to be set "
                                      "to `decomposition` , `signal` , `bss` "
                                      "or a suitable Signal")
@@ -2009,68 +2009,54 @@ class MVA:
                                      "but no decomposition results found. "
                                      "Please run decomposition method first")
     
-            if "bss" in cluster_source:
+            if cluster_source == "bss":
                 if self.learning_results.bss_factors is None:
                     raise ValueError("A cluster source has been set to bss "
                                      " but no blind source separation results found. "
                                      " Please run blind source separation method first")
 
+ 
             if cluster_source in ("decomposition","bss") and number_of_components is None:
                 number_of_components = self._get_number_of_components_for_clustering()
+
             
         navigation_mask = self._mask_for_clustering(navigation_mask)
         if not isinstance(navigation_mask,slice):
             if navigation_mask.size != self.axes_manager.navigation_size:
                 raise ValueError("Navigation mask size does not match signal navigation size")
 
-        if isinstance(cluster_source,BaseSignal):
+        if isinstance(cluster_source,self.__class__.__base__):
             signal_mask = self._mask_for_clustering(signal_mask)
             if not isinstance(signal_mask,slice):
                 if signal_mask.size != cluster_source.axes_manager.signal_size:
                     raise ValueError("signal mask size does not match your "
                                      "cluster source signal size")
-
-            unfolded4clustering=cluster_source.unfold()
-            if sum_over_navigation_mask:
+            # if it's not already unfolded - unfold but remember the unfolding so
+            # can restore later
+            if not cluster_source.metadata._HyperSpy.Folding.unfolded:
+                cluster_source.unfolded4clustering=cluster_source.unfold()
+            if sum_over_navigation_mask == True:
                 data = cluster_source.data \
-                   if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
-                toreturn = BaseSignal(data[navigation_mask,:].mean(axis=0))
-                unfolded4clustering = cluster_source.fold()
+                    if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
+                toreturn = data[navigation_mask,:].mean(axis=0)
             else:
-                toreturn = cluster_source
-        elif cluster_source == "bss":
+                toreturn = cluster_source.data
+        elif type(cluster_source) is str:
             signal_mask =  self._mask_for_clustering(None)
-            if sum_over_navigation_mask == False:
-                toreturn = self._get_loadings(self.learning_results.bss_loadings[:,:number_of_components]).transpose() 
+            if cluster_source == "bss":
+                loadings = self.learning_results.bss_loadings
+                factors  = self.learning_results.bss_factors
             else:
-                toreturn = BaseSignal(self.learning_results.bss_factors[:, :number_of_components] \
-                                             @ self.learning_results.bss_loadings[:, :number_of_components].mean(axis=0).T)                
-            toreturn.unfold()
-        elif cluster_source == "decomposition":
-            signal_mask =  self._mask_for_clustering(None)
-            if sum_over_navigation_mask == False:
-                toreturn = self._get_loadings(self.learning_results.loadings[:,:number_of_components]).transpose()
-            else:
-                toreturn = BaseSignal(self.learning_results.factors[:, :number_of_components]\
-                                             @ self.learning_results.loadings[navigation_mask,:number_of_components].mean(axis=0).T)                
+                loadings = self.learning_results.loadings
+                factors  = self.learning_results.factors
                 
-            toreturn.unfold()
-        elif cluster_source == "signal":
-            signal_mask = self._mask_for_clustering(signal_mask)
-            if not isinstance(signal_mask,slice):    
-                if signal_mask.size != self.axes_manager.signal_size:
-                    raise ValueError("signal mask size does not match your "
-                                     "cluster source signal size")
-            unfolded4clustering=self.unfold()
-            if sum_over_navigation_mask:
-                data = self.data \
-                   if self.axes_manager[0].index_in_array == 0 else self.data.T
-                toreturn = BaseSignal(data[navigation_mask,:].mean(axis=0))
-                unfolded4clustering=self.fold()
+            if sum_over_navigation_mask == False:
+                toreturn = loadings[:,:number_of_components] 
             else:
-                toreturn = self
+                toreturn = factors[:, :number_of_components] \
+                    @ loadings[:, :number_of_components].mean(axis=0).T          
 
-        return toreturn, navigation_mask, signal_mask, unfolded4clustering
+        return toreturn, navigation_mask, signal_mask
 
         
     def cluster_analysis(self,
@@ -2175,7 +2161,6 @@ class MVA:
                 'sklearn is not installed. Nothing done')
 
         to_return = None
-        cluster_signal_unfolded=False
  
         # backup the original data
         self._data_before_treatments = self.data.copy()
@@ -2200,7 +2185,7 @@ class MVA:
             cluster_centers = None
 
             # scale the data before clustering
-            scaled_data,cluster_signal,cluster_signal_unfolded = \
+            scaled_data = \
                 self._scale_data_for_clustering(
                 cluster_source=cluster_source,
                 scaling=scaling,
@@ -2208,7 +2193,6 @@ class MVA:
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
 
-            
             alg = self._cluster_analysis(scaled_data,
                                          cluster_algorithm)
             if return_info:
@@ -2242,8 +2226,22 @@ class MVA:
             self.learning_results.__dict__.update(target.__dict__)
             # if the cluster_source or source_for_centers is a signal
             # fold it back, if required, when finished
-            if cluster_signal_unfolded is True:
-                cluster_signal.fold()
+            if (type(cluster_source) is str and \
+                cluster_source == "signal") or   \
+                (type(source_for_centers) is str and \
+                source_for_centers == "signal"):
+                if hasattr(self,"unfolded4clustering"):
+                    if self.unfolded4clustering:
+                        self.fold()
+
+            if isinstance(cluster_source,self.__class__.__base__):
+                if hasattr(cluster_source,"unfolded4clustering"):
+                    if cluster_source.unfolded4clustering:
+                        cluster_source.fold()
+            if isinstance(source_for_centers,self.__class__.__base__):
+                if hasattr(source_for_centers,"unfolded4clustering"):
+                    if source_for_centers.unfolded4clustering:
+                        source_for_centers.fold()
 
             # undo any pre-treatments
             self.undo_treatments()
@@ -2403,7 +2401,6 @@ class MVA:
         if max_clusters < 2:
             raise ValueError("The max number of clusters, max_clusters, "
                              "must be specified and be >= 2.")
-        cluster_signal_unfolded=False
         to_return = None
         best_k    = None
         k_range   = list(range(1, max_clusters+1))
@@ -2428,7 +2425,7 @@ class MVA:
         try:
             # scale the data
             # scale the data before clustering
-            scaled_data,cluster_signal,cluster_signal_unfolded = \
+            scaled_data = \
                 self._scale_data_for_clustering(
                 cluster_source=cluster_source,
                 scaling=scaling, scaling_kwargs=scaling_kwargs,
@@ -2548,8 +2545,15 @@ class MVA:
             return best_k
         finally:
             # fold
-            if cluster_signal_unfolded is True:
-                cluster_signal.fold()
+            if (type(cluster_source) is str and \
+                cluster_source == "signal"):
+                if hasattr(cluster_source,"unfolded4clustering"):
+                    self.fold()
+
+            if isinstance(cluster_source,self.__class__.__base__):
+                if hasattr(cluster_source,"unfolded4clustering"):
+                    cluster_source.fold()
+                
             self.learning_results.__dict__.update(target.__dict__)
 
     def estimate_elbow_position(self, explained_variance_ratio=None,log=True,

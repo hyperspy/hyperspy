@@ -138,7 +138,7 @@ class TestClusterSource2d:
             navigation_mask = None
             signal_mask = None
         # test using cluster source centre is a signal
-        signal_copy = self.signal.copy()
+        signal_copy = self.signal.deepcopy()
         self.signal.cluster_analysis(cluster_source=\
                                           signal_copy, n_clusters=3,
                                       source_for_centers=\
@@ -177,7 +177,7 @@ class TestClusterSignalAsSource2d:
             navigation_mask = None
             signal_mask = None
         # test using cluster source centre is a signal
-        signal_copy = self.signal.copy()
+        signal_copy = self.signal.deepcopy()
         self.signal.cluster_analysis(cluster_source=\
                                           signal_copy, n_clusters=3,
                                       source_for_centers=\
