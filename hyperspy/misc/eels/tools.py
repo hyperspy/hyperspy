@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
+from hyperspy.misc.elements import elements as elements_db
 import hyperspy.defaults_parser
 
 _logger = logging.getLogger(__name__)
@@ -325,3 +326,47 @@ def eels_constant(s, zlp, t):
         data=(t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2))
     k.metadata.General.title = "EELS proportionality constant K"
     return k
+
+def get_edges_near_energy(energy, width=10):
+    """Find edges near a given energy that are within the given energy 
+    window.
+    
+    Parameters
+    ----------
+    energy : float
+        Energy to search, in eV
+    width : float
+        Width of window, in eV, around energy in which to find nearby 
+        energies, i.e. a value of 1 eV (the default) means to 
+        search +/- 0.5 eV. The default is 10.
+    
+    Returns
+    -------
+    edges : list
+        All edges that are within the given energy window, sorted by 
+        energy difference to the given energy.
+    """        
+    
+    if width < 0:
+        raise ValueError("Provided width needs to be >= 0.")
+    
+    Emin, Emax = energy - width/2, energy + width/2            
+
+    # find all subshells that have its energy within range
+    valid_edges = []
+    for element, element_info in elements_db.items():
+        try:
+            for shell, shell_info in element_info[
+                'Atomic_properties']['Binding_energies'].items():
+                if shell[-1] != 'a' and \
+                    Emin <= shell_info['onset_energy (eV)'] <= Emax:
+                    subshell = '{}_{}'.format(element, shell)
+                    Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
+                    valid_edges.append((subshell, Ediff))           
+        except KeyError:
+            continue 
+        
+    # Sort by energy difference and return only the edges
+    edges = [edge for edge, _ in sorted(valid_edges, key=lambda x: x[1])]
+    
+    return edges

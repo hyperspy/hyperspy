@@ -430,15 +430,20 @@ def test_plot_images_saturated_pixels(saturated_pixels):
     return ax[0].figure
 
 
+@pytest.mark.parametrize("vmin_vmax", [(50, 150),
+                                       ([0, 10], [120, None])])
 @pytest.mark.parametrize("colorbar", ['single', 'multi', None])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_colorbar(colorbar):
+def test_plot_images_colorbar(colorbar, vmin_vmax):
+    print("vmin_vmax:", vmin_vmax)
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    ax = hs.plot.plot_images([image0, image0], colorbar=colorbar,
-                             vmin=[0, 10], vmax=[120, None],
+    ax = hs.plot.plot_images([image0, image0],
+                             colorbar=colorbar,
+                             vmin=vmin_vmax[0],
+                             vmax=vmin_vmax[1],
                              axes_decor='ticks')
     return ax[0].figure
 

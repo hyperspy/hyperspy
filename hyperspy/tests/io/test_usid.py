@@ -225,6 +225,7 @@ def gen_2dim(all_pos=False, s2f_aux=True):
 # ################ HyperSpy Signal to h5USID ##################################
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestHS2USIDallKnown:
 
     def test_n_pos_0_spec(self):
@@ -318,6 +319,7 @@ class TestHS2USIDallKnown:
                                  empty_spec=False, dset_path=new_dset_path)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestHS2USIDlazy:
 
     def test_base_nd(self):
@@ -332,6 +334,7 @@ class TestHS2USIDlazy:
                                  empty_spec=False, axes_defined=False)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestHS2USIDedgeAxes:
 
     def test_no_axes(self):
@@ -393,7 +396,7 @@ class TestHS2USIDedgeAxes:
 
 # ################## h5USID to HyperSpy Signal(s)  ############################
 
-
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestUSID2HSbase:
 
     def test_n_pos_0_spec(self):
@@ -453,6 +456,7 @@ class TestUSID2HSbase:
         self.base_n_pos_m_spec(True)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestUSID2HSdtype:
     
     def test_complex(self):
@@ -523,6 +527,7 @@ class TestUSID2HSdtype:
                                  invalid_axes=True)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestUSID2HSmultiDsets:
 
     def test_pick_specific(self):

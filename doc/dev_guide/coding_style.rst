@@ -5,17 +5,19 @@
 Coding style
 ============
 
-HyperSpy follows the Style Guide for Python Code -- these are just some rules
-for consistency that you can read all about in the `Python Style Guide
-<https://www.python.org/dev/peps/pep-0008/>`_.
+HyperSpy follows the Style Guide for Python Code - these are rules
+for code consistency that you can read all about in the `Python Style Guide
+<https://www.python.org/dev/peps/pep-0008/>`_. You can use the
+`black <https://github.com/psf/black>`_ code formatter to automatically
+fix the style of your code. You can install and run ``black`` by:
 
-You can check your code with the `pep8 Code Checker
-<https://pypi.python.org/pypi/pep8>`_.
+.. code:: bash
 
-Additionally you could use ``autopep8`` to fix the style of your code
-automatically. In Linux and MacOS, you can run ``autopep8`` automatically after
-each commit by adding a ``post-commit`` file to ``.git/hook`` with the following
-content:
+   pip install black
+   black /path/to/your/file.py
+
+In Linux and MacOS you can run ``black`` automatically after each commit by
+adding a ``post-commit`` file to ``.git/hook`` with the following content:
 
 .. code-block:: bash
 
@@ -25,11 +27,11 @@ content:
     if [ -n "$FILES" ]; then
         for f in $FILES
         do
-            # auto pep8 correction
-            autopep8 --in-place -v --aggressive $f
+            # black correction
+            black -v $f
             git add $f
         done
-    #git commit -m "Automatic style corrections courtesy of autopep8"
-    GIT_COMMITTER_NAME="autopep8" GIT_COMMITTER_EMAIL="autopep8@email.com" git
-    commit --author="autopep8 <autopep8@email.com>" -m "Automatic style
-    corrections courtesy of autopep8"
+    #git commit -m "Automatic style corrections courtesy of black"
+    GIT_COMMITTER_NAME="black" GIT_COMMITTER_EMAIL="black@email.com" git
+    commit --author="black <black@email.com>" -m "Automatic style
+    corrections courtesy of black"
