@@ -456,9 +456,10 @@ def file_reader(filename,lazy=True, dataset_keys=None,
          'mapping':mapping}
     
 
-    See also 
+    See Also 
     --------
-    get_datasets_from_file 
+    * :py:meth:`~.io_plugins.nexus.read_datasets_from_file`
+    * :py:meth:`~.io_plugins.nexus.read_metadata_from_file`
                  
    
     """
@@ -985,7 +986,7 @@ def _guess_signal_type(data):
 def read_metadata_from_file(filename,search_keys=None,
                         small_metadata_only=False,
                         follow_links=True,
-                        verbose=True):   
+                        verbose=False):   
     """ Read the metadata from a nexus or hdf file       
     The method iterates through the group and returns a dictionary of 
     the entries.
@@ -1000,8 +1001,16 @@ def read_metadata_from_file(filename,search_keys=None,
         Only return items which contain the strings
         For example, search_keys = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
-    verbose: bool, default : True  
-        Print the results to screen 
+    verbose: bool, default : False  
+        Pretty Print the results to screen 
+
+
+    See Also 
+    --------
+    * :py:meth:`~.io_plugins.nexus.file_reader`
+    * :py:meth:`~.io_plugins.nexus.file_writer`
+    * :py:meth:`~.io_plugins.nexus.read_datasets_from_file`
+    
     
     Returns
     -------
@@ -1047,6 +1056,14 @@ def read_datasets_from_file(filename,search_keys=None,
         hdf entries with "instrument" or "Fe" in their hdf path.
     verbose : boolean, default : True  
         Prints the results to screen 
+
+
+    See Also 
+    --------
+    * :py:meth:`~.io_plugins.nexus.file_reader`
+    * :py:meth:`~.io_plugins.nexus.file_writer`
+    * :py:meth:`~.io_plugins.nexus.read_metadata_from_file`
+
     
     Returns
     -------
@@ -1134,6 +1151,13 @@ def file_writer(filename,
     small_metadata_only : bool , default : False
          Only save datasets of size < 2 to metadata. This is to avoid saving
          lazy dask arrays which may be in the metadata structure 
+
+
+    See Also 
+    --------
+    * :py:meth:`~.io_plugins.nexus.file_reader`
+    * :py:meth:`~.io_plugins.nexus.read_datasets_from_file`
+    * :py:meth:`~.io_plugins.nexus.read_metadata_from_file`
          
     """
     if not isinstance(signals,list):

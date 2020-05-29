@@ -1141,11 +1141,11 @@ file metadata to hyperspy metdata.
 
 Inspecting
 ^^^^^^^^^^
-Looking in a Nexus of HDF file for specific metadatda is often useful - .e.g to find
+Looking in a Nexus or HDF file for specific metadatda is often useful - .e.g to find
 what position a specific stage was at: 
 
-    >>> from hyperspy.io_plugins.nexus import get_metadata_in_file
-    >>> results=get_metadata_in_file("sample.hdf5",search_keys=["stage1_z"])
+    >>> from hyperspy.io_plugins.nexus import read_metadata_from_file
+    >>> read_metadata_from_file("sample.hdf5",search_keys=["stage1_z"])
     {'entry': {'instrument': {'scannables': {'stage1': {'stage1_z': {'value': -9.871700000000002,
     'attrs': {'gda_field_name': 'stage1_z',
     'local_name': 'stage1.stage1_z',
@@ -1154,8 +1154,8 @@ what position a specific stage was at:
     
 You can also inspect the file to see what datasets are stored in the file
     
-    >>> from hyperspy.io_plugins.nexus import get_data_in_file
-    >>> results=get_metadata_in_file("sample.hdf5",search_keys=["stage1_z"])
+    >>> from hyperspy.io_plugins.nexus import read_datasets_from_file
+    >>> results=read_datasets_from_file("sample.nxs",search_keys=["stage1_z"])
     NXdata found
     /entry/xsp3_addetector
     /entry/xsp3_addetector_total

@@ -77,33 +77,6 @@ def ensure_directory(path):
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
 
-def find_filenames_matching_substrings(path,substrings,sortfiles=True):
-    """
-    Find and return filenames which contain substrings in their names
-    A substrings can be a str or list of strings
-    Wildcard "*" or single character "?" options can be used
-    
-    Parameters
-    ----------
-    path : str
-    substrings : str or list of strings to search for
-
-    """
-    if isinstance(substrings,(int,str)):
-        substrings = [substrings]
-    files = []
-    filelist = os.listdir(path)
-    for i in filelist:
-        for jj in substrings:
-            if os.path.isfile(os.path.join(path,i)):
-                if fnmatch.fnmatch(i,jj):
-                     files.append(os.path.join(path,i))
-
-    if sortfiles:
-        return sorted(files)
-    else:
-        return files
-
 
 def overwrite(fname):
     """ If file exists 'fname', ask for overwriting and return True or False,
