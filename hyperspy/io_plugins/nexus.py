@@ -375,13 +375,24 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
            data_lazy = np.array(data)    
         # adjust the navigate boolean based on 
         # ifer the dataset isjudged to be 1D or 2D
-        signal_type = _guess_signal_type(data_lazy)
-        if signal_type == "Signal2D":
+        if detector_index == 2:
+            signal_type = "Signal2D"
             nav_list[-1]["navigate"] = False
-            nav_list[-2]["navigate"] = False
-        if signal_type == "Signal1D":
-            nav_list[-1]["navigate"] = False
-            nav_list[-2]["navigate"] = True
+            nav_list[-2]["navigate"] = False 
+        elif detector_index == 1:
+            signal_type = "Signal1D"
+        elif detector_index == 0:
+            if len(nav_list)==2:
+                signal_type = "Signal2D"
+                nav_list[-1]["navigate"] = False
+                nav_list[-2]["navigate"] = False 
+            elif len(nav_list)==1:
+                signal_type = "Signal1D"
+                nav_list[-1]["navigate"] = False
+            else:
+                signal_type = "BaseSignal"
+        else:
+            signal_type = "BaseSignal"
         title = _text_split(nexus_dataset_path, '/')[-1]
         metadata = {'General': {'title': title},\
                     "Signal": {'signal_type': signal_type}}
@@ -482,8 +493,8 @@ def file_reader(filename,lazy=True, dataset_keys=None,
                 learning = all_metadata["Experiments"][title]["learning_results"]
                 dictionary["attributes"]={}
                 dictionary["attributes"]["learning_results"] = learning
-            if "original_metadata" in all_metadata["Experiments"][title]:
-                orig_metadata = all_metadata["Experiments"][title]["original_metadata"]
+            if "original_metadata" in original_metadata["Experiments"][title]:
+                orig_metadata = original_metadata["Experiments"][title]["original_metadata"]
                 dictionary["original_metadata"] = orig_metadata
         else:
             dictionary["original_metadata"] = original_metadata 
@@ -900,7 +911,6 @@ def _write_nexus_groups(dictionary, group, **kwds):
                       **kwds)
         
         if isinstance(value, (list, tuple,np.ndarray, da.Array)):
-            print("key",key,value)
             data = _parse_to_file(value)
             overwrite_dataset(group, data, key, chunks=None, **kwds)
         elif isinstance(value, (int,float,str,bytes)):
