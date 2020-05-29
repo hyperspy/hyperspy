@@ -1992,13 +1992,13 @@ class MVA:
         if type(cluster_source) is str and cluster_source=="signal":
             cluster_source = self
 
-        if isinstance(cluster_source,self.__class__.__base__):
+        if self.is_hyperspy_signal(cluster_source):
            if cluster_source.axes_manager.navigation_size != self.axes_manager.navigation_size:
                 raise ValueError("cluster_source does not have the same "
                                  "navigation size as the this signal")
         else: 
             if cluster_source not in ("bss", "decomposition", "signal"):
-                if not isinstance(cluster_source,self.__class__.__base__):
+                if not self.is_hyperspy_signal(cluster_source):
                     raise ValueError("cluster source needs to be set "
                                      "to `decomposition` , `signal` , `bss` "
                                      "or a suitable Signal")
@@ -2025,7 +2025,7 @@ class MVA:
             if navigation_mask.size != self.axes_manager.navigation_size:
                 raise ValueError("Navigation mask size does not match signal navigation size")
 
-        if isinstance(cluster_source,self.__class__.__base__):
+        if self.is_hyperspy_signal(cluster_source):
             signal_mask = self._mask_for_clustering(signal_mask)
             if not isinstance(signal_mask,slice):
                 if signal_mask.size != cluster_source.axes_manager.signal_size:
@@ -2056,6 +2056,24 @@ class MVA:
                 toreturn = factors[:, :number_of_components] \
                     @ loadings[navigation_mask, :number_of_components].mean(axis=0).T          
         return toreturn, navigation_mask, signal_mask
+
+    def is_hyperspy_signal(self,input_object):
+        """
+        Check if an object is a Hyperspy Signal
+
+        Parameters
+        ----------
+        input_object : object
+            Object to be tests
+
+        Returns
+        -------
+        bool
+            If true the object is a subclass of hyperspy.signal.BaseSignal
+
+        """
+        from hyperspy.signals import BaseSignal
+        return isinstance(input_object,BaseSignal)
 
         
     def cluster_analysis(self,
@@ -2233,11 +2251,12 @@ class MVA:
                     if self.unfolded4clustering:
                         self.fold()
 
-            if isinstance(cluster_source,self.__class__.__base__):
+            if self.is_hyperspy_signal(cluster_source):
                 if hasattr(cluster_source,"unfolded4clustering"):
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()
-            if isinstance(source_for_centers,self.__class__.__base__):
+                        
+            if self.is_hyperspy_signal(cluster_source):
                 if hasattr(source_for_centers,"unfolded4clustering"):
                     if source_for_centers.unfolded4clustering:
                         source_for_centers.fold()
@@ -2552,7 +2571,7 @@ class MVA:
                     if self.unfolded4clustering:
                         self.fold()
 
-            if isinstance(cluster_source,self.__class__.__base__):
+            if self.is_hyperspy_signal(cluster_source):
                 if hasattr(cluster_source,"unfolded4clustering"):
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()
