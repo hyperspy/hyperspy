@@ -1063,8 +1063,8 @@ in different ways the loader is written to quite flexible and can also be used
 to inpsect any hdf5 based file.  
 
 
-Import differences with respect to hspy
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Differences with respect to hspy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Hyperspy metadata structure stores arrays as datasets without attributes
 and stores floats,ints and strings as attributes.
 
@@ -1126,16 +1126,17 @@ As this will likely break some specific hyperspy functions
 It's recommended that a "mapping" dictionary is passed to the load or
 file_reader to translate stored original_metadata to 
 hyperspy signal metadata.
-For example to map a hdf5 entry to hyperspy metadata.
+For example to map a nexus entry to hyperspy metadata.
 
 .. code-block:: python
 
-   >>> nexus_mapping = {"entry.instrument.beamline.DCM.dcm_energy":("Acquisition_instrument.TEM.beam_energy",None)}
+   >>> nexus_mapping = {"entry.instrument.energy.value":("Acquisition_instrument.TEM.beam_energy",None)}
    >>> a = hs.load("test.nxs",mapping=nexus_mapping)
       
 Hyperspy metadata is stored with "original_metadata" in the file
 Hyperspy metadata is not automatically restored when a signal is loaded
-from a Nexus file. A mapping dictionary is the preferred method to map
+from a Nexus file for the reasons given previously. 
+A mapping dictionary is the preferred method to map 
 file metadata to hyperspy metdata.   
 
 Inspecting
@@ -1179,10 +1180,11 @@ some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dset_search_keys`` : ``str`` or ``list`` - Absolute path(s) or substring(s) used to find one or more datasets. (default is ``None`` all Nexus Datasets will be read)
-- ``meta_search_keys`` : ``str`` or ``list`` of strings - Absolute path(s) or substring(s) to use to find one or more datasets. (default is ``None`` all Nexus Metadata will be read)
+- ``dataset_keys`` : ``str`` or ``list`` - Absolute path(s) or string(s) to search for in the path to find one or more datasets. (default is ``None`` all Nexus Datasets will be read)
+- ``metadata_keys`` : ``str`` or ``list`` of strings - Absolute path(s) or string(s) to search for in the path to find metadata. (default is ``None`` all Nexus Metadata will be read)
 - ``nxdata_only`` : ``bool`` - Only convert NXdata formatted data to signals
 - ``small_metadata_only`` : ``bool`` - Only load items of size<2 into the metadata to avoid linking to large datasets
+- ``follow_links`` : ``bool`` - Follow or ignore hard and soft links in the file
    
  
  
@@ -1192,9 +1194,10 @@ Reading the sole Nexus dataset within a Nexus file:
 
     >>> hs.load("sample.nxs")
 
-If multiple datasets are present within the Nexus file and you try the same 
-command again **all** available NXdata datasets will be loaded.
-To load NXdata sets from a Nexus file
+By default the loader will look for stored NXdata objects.
+If there are hdf datasets which are not stored as NXdata but which
+should be loaded as signals set the `nxdata_only`` keyword to False and all
+hdf datasets will be returned as signals.
 
 .. code-block:: python
 
@@ -1204,33 +1207,43 @@ Given that HDF5 files can accommodate very large datasets ``lazy=True`` is
 set by default. This prevents issues with regard to loading datasets
 far larger than memory.
 
-We can load a specific datasets using the ``dset_search_path`` keyword argument. 
+We can load a specific datasets using the ``dataset_keys`` keyword argument. 
 Setting it to the absolute path of the desired dataset will cause 
 the single dataset to be loaded.
-Setting it to a substring or list of substring, datasets who's paths contain 
-one of the substrings will be loaded.
-
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dset_search_keys='/entry/experiment/EDS/data')
+    >>> hs.load("sample.nxs", dataset_keys='/entry/experiment/EDS/data')
 
-We can also choose to load only specific items from the metadata using
-``dset_path`` keyword argument. 
-This can be a list of absolute paths of the desired dataset or substrings to 
-find in the metadata path.
+We can also choose to load datasets based on a search key using the
+``dataset_keys`` keyword argument. Instead of providing an absolute path
+a strings to can be provided and datasets with this key will be returned.
+The previous example could also be written as:
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dset_search_keys=["Fe","Ca"])
+    >>> hs.load("sample.nxs", dataset_keys=["EDS"])
+    
+Multiple datasets can be loaded by providing a number of keys:
+
+.. code-block:: python
+
+    >>> # Loading a specific dataset
+    >>> hs.load("sample.nxs", dataset_keys=["EDS","Fe","Ca"])
 
 Nexus files also support parameters or dimensions that have been varied 
 non-linearly.
 Since HyperSpy Signals expect linear variation of parameters / axes, such 
 non-linear information would be lost in the axes manager and replaced with
 indices
+Nexus and HDF makes use of soft-links internally or to external files.
+Soft-links help to define structures from data saved by a detector or other 
+process. If lazy loading is used this may not be a concern but care must be taken
+when saving the data. 
+To control whether links are loaded set the ``small_metadata_only`` follow_links``small_metadata_only`` keyword or use the 
+'metadata_keys' to load only the most relevant metadata.
 
 
 Writing
@@ -1240,20 +1253,13 @@ function.
 
 Extra saving arguments
 +++++++++++++++++++++++++++++++++++
-- ``small_metadata_only`` : ``bool`` - Default is True, Option to ignore large datasets contained in the original_metadata when storing to file
+- ``small_metadata_only`` : ``bool`` - Default is True, Option to ignore large datasets contained in the original_metadata when storing to file.
 
 .. code-block:: python
 
     >>> sig.save("output.nxs")
 
-
-Saving to Nexus format 
-----------------------
-
 Using the save method will store the nexus file with the following structure:
-
-.. code-block:: python
-    >>> sig.save("test.nxs")
 
 ::
 
@@ -1265,15 +1271,21 @@ Using the save method will store the nexus file with the following structure:
     │   │   ├── learning_results
  
 
+The original_metadata can include hdf datasets which you may not wish to store.
+Large datasets can be stripped from the metadata using ``small_metadata_only``.
+
+.. code-block:: python
+
+    >>> sig.save("output.nxs", small_metadata_only=True)
+
 To save multiple signals the file_writer method can be called directly.
 
 .. code-block:: python
 
-    >>> from hyperspy.io_plugins.nexus file_writer
+    >>> from hyperspy.io_plugins.nexus import file_writer
     >>> file_writer("test.nxs",[signal1,signal2])
     
-The output will be arranged by signal name which is 
-derived from the title stored in the metadata
+The output will be arranged by signal name.
 
 ::
     

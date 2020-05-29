@@ -23,6 +23,8 @@ import tempfile
 import numpy as np
 import pytest
 from hyperspy.io import load
+from hyperspy.io_plugins.nexus import read_metadata_from_file,\
+    read_datasets_from_file,file_writer
 import hyperspy.api as hs
 from hyperspy.signal import BaseSignal
 
@@ -36,6 +38,12 @@ file3 = os.path.join(dirpath, 'nexus_files', 'dls_nexus.nxs')
 
 my_path = os.path.dirname(__file__)
 
+
+@pytest.fixture()
+def tmpfilepath():
+    with tempfile.TemporaryDirectory() as tmp:
+         yield os.path.join(tmp, "test.nxs")
+         gc.collect()        # Make sure any memmaps are closed first!
 
 #
 # Test nexus loading..external dls file
@@ -159,44 +167,52 @@ class TestSavedMultiSignalLoad():
 
 
 
-# class TestExample1_10():
+class TestSavingMetadataContainers:
 
-#     def setup_method(self, method):
-#         self.s = load(os.path.join(
-#             my_path,
-#             "hdf5_files",
-#             "example1_v1.0.hdf5"),file_format="Nexus",
-#             nxdata_only=False)
+    def setup_method(self, method):
+        self.s = BaseSignal([0.1,0.2,0.3])
+
+    def test_save_unicode(self, tmpfilepath):
+        s = self.s
+        s.original_metadata.set_item('test1',44.0)
+        s.original_metadata.set_item('test2',54.0)
+        s.original_metadata.set_item('test3',64.0)        
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
+        assert isinstance(l.original_metadata.test1.value, float)
+        assert isinstance(l.original_metadata.test2.value, float)
+        assert isinstance(l.original_metadata.test3.value, float)
+        assert l.original_metadata.test2.value == 54.0
 
 
-# @pytest.fixture()
-# def tmpfilepath():
-#     with tempfile.TemporaryDirectory() as tmp:
-#         yield os.path.join(tmp, "test.nxs")
-#         gc.collect()        # Make sure any memmaps are closed first!
+class TestSavingMultiSignals:
+
+    def setup_method(self, method):
+        data = np.zeros((15,1,40,40))
+        self.sig = hs.signals.Signal2D(data)
+        self.sig.original_metadata.set_item("stage_y.value",4.0)
+        self.sig.original_metadata.set_item("stage_y.attrs.units","mm")
+        
+        data = np.zeros((30,30,10))
+        self.sig2 = hs.signals.Signal1D(data)
+        self.sig2.original_metadata.set_item("stage_x.value",8.0)
+        self.sig2.original_metadata.set_item("stage_x.attrs.units","mm")
 
 
-# class TestSavingMetadataContainers:
+    def test_save_unicode(self, tmpfilepath):
+        file_writer(tmpfilepath,[self.sig,self.sig2])
+        l = load(tmpfilepath)
+        assert len(l) == 2
+        assert l[0].original_metadata.stage_y.value == 4.0
+        assert l[1].original_metadata.stage_x.value == 8.0
+        assert l[1].original_metadata.stage_x.attrs.units == "mm"
 
-#     def setup_method(self, method):
-#         self.s = BaseSignal([0.1,0.2,0.3])
 
-#     def test_save_unicode(self, tmpfilepath):
-#         s = self.s
-#         s.original_metadata.set_item('test1',44.0)
-#         s.original_metadata.set_item('test2',54.0)
-#         s.original_metadata.set_item('test3',64.0)        
-#         s.save(tmpfilepath)
-#         l = load(tmpfilepath)
-#         assert isinstance(l.original_metadata.test1.value, float)
-#         assert isinstance(l.original_metadata.test2.value, float)
-#         assert isinstance(l.original_metadata.test3.value, float)
-#         assert l.original_metadata.test2.value == 54.0
 
 # #
 # # test keywords from loading nexus file
 # #
-def test_read_file2_signal1_meta_exception():
+def test_read_file2_dataset_key_test():
     s = hs.load(file2,dataset_keys=["unnamed__0"])
     assert not isinstance(s,list)
 
@@ -214,26 +230,22 @@ def test_read_file2_meta():
     assert s.original_metadata.instrument.\
             energy.value == 12.0
             
-def test_read_file2_signal1_meta_exception():
-    s = hs.load(file2,dataset_keys=["unnamed__0"],metadata_keys=["energy"])
-    with pytest.raises(AttributeError):
-        s.original_metadata.instrument.stages
+def test_read_file3_all_hdf():
+    s = hs.load(file3,nxdata_only=False)
+    assert len(s) == 9
 
-
-
-# def test_read1_search_keys():
-#     # should only find 2 data sets
-#     s = hs.load(file1,dset_search_keys=["xsp3"])
-#     assert len(s) == 2
-
-# def test_read2():
-#     s = hs.load(file2)
-#     assert len(s) == 20
-    
-# def test_read2_data_search_keys():
-#     # should only find 2 data sets
-#     s = hs.load(file2,dset_search_keys=["Fe"])
-#     assert len(s) == 1
             
+def test_read_file3_all_hdf_metadata():
+    s = hs.load(file3,nxdata_only=False)
+    assert s[1].original_metadata.entry.instrument.\
+            beamline.M1.m1_y.value == -4.0
 
-# =============================================================================
+def test_read_datasets():
+     s = read_datasets_from_file(file3)
+     assert len(s[1]) == 8
+
+def test_read_metadata():
+     s = read_metadata_from_file(file3)
+     assert s["entry"]["instrument"]\
+            ["beamline"]["M1"]["m1_y"]["attrs"]["units"] == "mm"
+    

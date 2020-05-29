@@ -679,7 +679,15 @@ def _find_data(group,search_keys=None):
     nx_datasets = list(dict.fromkeys(nx_datasets))
     nx_datasets = [s for s in nx_datasets if "original_metadata" not in s ]
     
-    return nx_datasets,hdf_datasets
+    for k in nx_datasets:
+        for v in hdf_datasets:
+            if k in v:
+                hdf_datasets.remove(v)
+    clean_hdf_datasets=[j 
+     for j in hdf_datasets
+     for i in nx_datasets 
+     if i not in j]    
+    return nx_datasets,clean_hdf_datasets
 
 
 def _load_metadata(group,lazy=True,
