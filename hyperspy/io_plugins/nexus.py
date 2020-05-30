@@ -122,7 +122,6 @@ def _parse_from_file(value,lazy=True):
                else:
                    chunks = _guess_chunks(value)
                    toreturn = da.from_array(value,chunks)
-                    
            else:
                toreturn = np.array(value)
 
@@ -191,40 +190,34 @@ def _text_split(s, sep):
         stack.remove('')
     return stack
 
-def _getlink(h5group,rootkey):    
-    """ Return the link target path and filename.
+def _getlink(h5group,rootkey,key):    
+    """ Return the link target path.
 
-    If a hdf group is a link to an external file or a soft link  
-    this method will return the target path within 
-    the external file, the external file name and if the external
-    file name is an absolute path or not
-    e.g. if /entry/data points to /raw_entry/tem/data in raw.nxs
-    returns /raw_entry/tem/data, raw.nxs, False 
+    If a hdf group is a soft link or has a target attribute  
+    this method will return the target path. If no link is found
+    return None.
     
     
     Returns
     -------
-    str, str, bool
-        Link path, filename, and boolean that is True if an absolute file
-        path is given.
+    str
+        Soft link path if it exists, otherwise None
     
     """
-    _target, _filename, _abspath = None, None, False
+    _target=None
     if rootkey != '/':
         if isinstance(h5group,h5py.Group):
-            _link = h5group.get(rootkey, getlink=True)
-            if isinstance(_link, h5py.ExternalLink):
-                _target, _filename = _link.path, _link.filename
-                _abspath = os.path.isabs(_filename)
-            elif isinstance(_link, h5py.SoftLink):
+            _link = h5group.get(key, getlink=True)
+            if isinstance(_link, h5py.SoftLink):
                 _target = _link.path
-        if 'target' in h5group.attrs:
+        if 'target' in h5group.attrs.keys():
             _target = _parse_from_file(h5group.attrs['target'])
             if not _target.startswith('/'):
                 _target = '/' + _target
             if _target == rootkey:
                 _target = None
-    return _target, _filename, _abspath
+
+    return _target
 
 
 def _extract_hdf_dataset(group,dataset,lazy=True):    
@@ -263,19 +256,21 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
     
     Parameters
     ----------
-    group : hdf group 
+    group : hdf group containing the NXdata
     nexus_data_path : str
         Path to the NXdata set in the group 
     lazy : bool, default : True    
-    
+        lazy loading of data
+        
     Returns
     -------
     dict    
-        A signal dictionary which can be used to instantiate a signal class
+        A signal dictionary which can be used to instantiate a signal class.
         signal_dictionary = {'data': data,
                              'axes': axes information,
                              'metadata': metadata dictionary}
-    
+        See Hyperspy axes and signal documentation
+        
     """
     detector_index = 0
     dataentry = group[nexus_dataset_path]
@@ -406,11 +401,10 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
     return dictionary
 
 
-def file_reader(filename,lazy=True, dataset_keys=None,
-                metadata_keys=None,
+def file_reader(filename,lazy=True, dataset_keys="hardlinks",
+                metadata_keys="hardlinks",
                 nxdata_only=True,
                 small_metadata_only=False,
-                follow_links=True,
                 **kwds):   
     """ Reads NXdata class or hdf datasets from a file and returns signal
     
@@ -427,7 +421,9 @@ def file_reader(filename,lazy=True, dataset_keys=None,
     Parameters
     ----------
     myDict : dict or h5py.File object
-    dataset_keys  : str list or None  
+    dataset_keys  : {"all","hardlinks",str,list of string} 
+        if "all" - all datasets are returned
+        if "hardlinks" - softlinks are ignored
         Only return items whose path contain the strings
         .e.g search_list = ["instrument","Fe"] will return
         data entries with instrument or Fe in their hdf path.
@@ -464,42 +460,39 @@ def file_reader(filename,lazy=True, dataset_keys=None,
    
     """
     # search for NXdata sets...
-    if dataset_keys == None:
-        dataset_keys=[""]
-    if metadata_keys == None:
-        metadata_keys=[""]
+
     mapping  = kwds.get('mapping',{})   
     original_metadata={}
     learning = {}
     fin = h5py.File(filename,"r")
     signal_dict_list = []
 
+    dataset_keys = _check_search_keys(dataset_keys)
+    metadata_keys = _check_search_keys(metadata_keys)
     
     nexus_data_paths, hdf_data_paths = _find_data(fin,
                                                   search_keys=dataset_keys)
     #
     # strip out the metadata 
     #
-    all_metadata = _load_metadata(fin,follow_links=follow_links)
-    original_metadata = _find_search_keys_in_dict(all_metadata,
-                                            search_keys=metadata_keys)
+    original_metadata = _load_metadata(fin,search_keys=metadata_keys)
+    
     if small_metadata_only:
         original_metadata = _find_smalldata_in_dict(original_metadata)
     for data_path in nexus_data_paths:        
         dictionary = _nexus_dataset_to_signal(fin,data_path,lazy)
         dictionary["mapping"] = mapping 
         title = dictionary["metadata"]["General"]["title"]
-        if "Experiments" in all_metadata:
-            if "learning_results" in all_metadata["Experiments"][title]:
-                learning = all_metadata["Experiments"][title]["learning_results"]
+        if "Experiments" in original_metadata:
+            if "learning_results" in original_metadata["Experiments"][title]:
+                learning = original_metadata["Experiments"][title]["learning_results"]
                 dictionary["attributes"]={}
                 dictionary["attributes"]["learning_results"] = learning
             if "original_metadata" in original_metadata["Experiments"][title]:
                 orig_metadata = original_metadata["Experiments"][title]["original_metadata"]
                 dictionary["original_metadata"] = orig_metadata
         else:
-            dictionary["original_metadata"] = original_metadata 
-                
+            dictionary["original_metadata"] = original_metadata              
         signal_dict_list.append(dictionary)
         
     if not nxdata_only:
@@ -537,26 +530,6 @@ def _is_linear_axis(data):
     steps = np.diff(data)
     est_steps = np.array([steps[0]]*len(steps))
     return np.allclose(est_steps,steps,rtol=1.0e-5)
-
-def _is_number(a):    
-    """ Check if the value is a number
-    # will be True also for 'NaN'
-    
-    Parameter
-    ---------
-    a : python object to be tested
-    
-    Returns
-    -------
-    bool
-       True or False    
-
-    """
-    try:
-        float(a)
-        return True
-    except ValueError:
-        return False
 
 def _is_numeric_data(data):    
     """ Check that data contains numeric data
@@ -597,8 +570,25 @@ def _is_int(s):
     except ValueError:
         return False
 
-        
-def _find_data(group,search_keys=None):   
+       
+def _check_search_keys(search_keys):
+    if type(search_keys) is str:
+        if search_keys not in ["all","hardlinks"]:
+            return [search_keys]
+        else:
+            return search_keys
+    elif type(search_keys) is list:
+        if type(search_keys[0]) is not str:
+            raise ValueError("search keys must be 'all', 'unique' a "
+                             "hdf path string or a list of strings")
+        else:
+            return search_keys
+    else:
+        raise ValueError("search keys must be 'all', 'unique' a "
+                         "hdf path string or a list of strings")
+            
+    
+def _find_data(group,search_keys="hardlinks"):   
     """Read from a nexus or hdf file and return a list 
     of the dataset entries
     The method iterates through group attributes and returns NXdata or 
@@ -622,10 +612,12 @@ def _find_data(group,search_keys=None):
         hdf_dataset_list is a list of all hdf_datasets not linked to an NXdata set
         
     """
-    hdf_datasets = []
-    linked_hdf_datasets={}
-    unlinked_hdf_datasets=[]
-    nx_datasets = []
+    
+    _check_search_keys(search_keys)    
+    all_hdf_datasets=[]
+    unique_hdf_datasets=[]    
+    all_nx_datasets = []
+    unique_nx_datasets=[]
     rootname=""
     def find_data_in_tree(group,rootname):
         for key, value in group.items():
@@ -633,75 +625,58 @@ def _find_data(group,search_keys=None):
                 rootkey = rootname +"/"+ key
             else:
                 rootkey = "/" + key
-            if isinstance(value,h5py.Dataset):  
-                if value.size >= 2:
-                    target,b,c, = _getlink(value,rootkey)
-                    #if target is not None:
-                    if search_keys:
-                        if any(s in rootkey for s in search_keys):
-                            if target is not None:
-                                linked_hdf_datasets[target]= rootkey
-                            else:
-                                unlinked_hdf_datasets.append(rootkey)
-                    else:
-                        if target is not None:
-                            linked_hdf_datasets[target]= rootkey
-                        else:
-                            unlinked_hdf_datasets.append(rootkey)
-                        linked_hdf_datasets[rootkey]=target
-
-            elif isinstance(value,h5py.Group):
+            if isinstance(value,h5py.Group):
+                target = _getlink(group,rootkey,key)
                 if "NX_class" in value.attrs:
                     if value.attrs["NX_class"] == b"NXdata" \
                         and "signal" in value.attrs.keys(): 
-                        if search_keys:
-                            if any(s in rootkey for s in search_keys):
-                                nx_datasets.append(rootkey)
-                        else:
-                            nx_datasets.append(rootkey) 
-                find_data_in_tree(value,rootkey)
+                        all_nx_datasets.append(rootkey)
+                        if target is None:
+                            unique_nx_datasets.append(rootkey)
+                if search_keys !="hardlinks":
+                    find_data_in_tree(value,rootkey)
+                else:
+                    if target is None:
+                        find_data_in_tree(value,rootkey)
+            else:
+                if isinstance(value,h5py.Dataset):  
+                    if value.size >= 2:
+                        target = _getlink(group,rootkey,key)
+                        all_hdf_datasets.append(rootkey)
+                        if target is None:
+                            unique_hdf_datasets.append(rootkey)
+
+    find_data_in_tree(group,rootname)
 
     # need to use custom recursive function as visititems in h5py
     # does not visit links
     
-    # if nxd in datasets - keep:
-    #
     # delete the targets from the list
+    if search_keys == "hardlinks":
+        # return only the stored data, no linked data
+        return unique_nx_datasets,unique_hdf_datasets
+    elif search_keys == "all":
+        # return all datasets
+        return all_nx_datasets,all_hdf_datasets
+    elif type(search_keys) is list:
+        # return data which contains a search string
+        matched_hdf = \
+        [j for j in all_hdf_datasets
+        if any(s in j for s in search_keys)]            
+        matched_nexus = \
+        [j for j in all_nx_datasets
+        if any(s in j for s in search_keys)]            
+        return matched_nexus,matched_hdf        
     
-    find_data_in_tree(group,rootname)
-    for k,v in linked_hdf_datasets.items():
-        hdf_datasets.append(v)    
-    for k in unlinked_hdf_datasets:
-        if k not in linked_hdf_datasets:
-            hdf_datasets.append(k)
-    # if loading from a saved file - ignore datasets stored in orignal metadata
-    hdf_datasets = [s for s in hdf_datasets if "original_metadata" not in s ]
-
-    nx_datasets = list(dict.fromkeys(nx_datasets))
-    nx_datasets = [s for s in nx_datasets if "original_metadata" not in s ]
-    
-    for k in nx_datasets:
-        for v in hdf_datasets:
-            if k in v:
-                hdf_datasets.remove(v)
-    clean_hdf_datasets=[j 
-     for j in hdf_datasets
-     for i in nx_datasets 
-     if i not in j]    
-    return nx_datasets,clean_hdf_datasets
 
 
-def _load_metadata(group,lazy=True,
-                          follow_links=True):
+def _load_metadata(group,lazy=True,search_keys="hardlinks"):
     """Search through a hdf group and return the group
     structure, datasets and attributes
 
     Parameters
     ----------
     group : hdf group
-    follow_links : bool, default : true
-        If true follow soft and external links.
-        If false ignore the links
 
     Returns
     -------
@@ -711,8 +686,7 @@ def _load_metadata(group,lazy=True,
         
     """
     rootname=""
-    def find_meta_in_tree(group,rootname,lazy=False,
-                          follow_links=False):
+    def find_meta_in_tree(group,rootname,lazy=False):
         tree={}        
         for key,item in group.attrs.items():
             new_key=_fix_exclusion_keys(key)
@@ -726,11 +700,10 @@ def _load_metadata(group,lazy=True,
             else:
                 rootkey = "/" + key
             new_key =_fix_exclusion_keys(key)
-            target,b,c, = _getlink(item,rootkey)
             if type(item) is h5py._hl.dataset.Dataset:
-                if follow_links == False and target is not None:
-                    continue
-                else:
+                target = _getlink(item,rootkey,key)
+                if ((search_keys == "hardlinks" and target is None) or
+                    search_keys != "hardlinks"):
                     if new_key not in tree.keys():
                         tree[new_key]={}
                     tree[new_key]["value"] = _parse_from_file(item,lazy=lazy)
@@ -738,16 +711,17 @@ def _load_metadata(group,lazy=True,
                         if "attrs" not in tree[new_key].keys():
                             tree[new_key]["attrs"]={}
                         tree[new_key]["attrs"][k] =  _parse_from_file(v,lazy=lazy)
-                    
             elif type(item) is h5py._hl.group.Group:
-                if follow_links == False and target is not None:
-                    continue
-                else:
-                    tree[new_key]=find_meta_in_tree(item,rootkey,lazy=lazy,
-                        follow_links=follow_links)                    
+                target = _getlink(item,rootkey,key)
+                if ((search_keys == "hardlinks" and target is None) or
+                    search_keys != "hardlinks"):
+                    tree[new_key]=find_meta_in_tree(item,rootkey,lazy=lazy)                    
         return tree   
-    return find_meta_in_tree(group,rootname,lazy=lazy,
-                          follow_links=follow_links)
+    extracted_tree = find_meta_in_tree(group,rootname,lazy=lazy)
+    if search_keys in ["hardlinks","all"]:
+        return extracted_tree
+    else:
+        return _find_search_keys_in_dict(extracted_tree,search_keys=search_keys)    
 
 
 
@@ -779,7 +753,7 @@ def _fix_exclusion_keys(key):
         return key
 
 
-def _find_search_keys_in_dict(tree,search_keys=None):    
+def _find_search_keys_in_dict(tree,search_keys="all"):    
     """Search through a dict and return a dictionary
     whose full path contains one of the search keys
 
@@ -789,7 +763,7 @@ def _find_search_keys_in_dict(tree,search_keys=None):
     Parameters
     ----------
     tree         : h5py File object 
-    search_keys  : str list or None  
+    search_keys  : string or list of strings
         Only return items which contain the strings
         .e.g search_keys = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
@@ -801,19 +775,20 @@ def _find_search_keys_in_dict(tree,search_keys=None):
         containing one or more search_keys will be returned 
         
     """
-    if search_keys == None:
-        search_keys=[""]
-        
+
+    _check_search_keys(search_keys)
     metadata_dict = {}
     rootname=""
+
     # recursive function    
     def find_searchkeys_in_tree(myDict,rootname):
         for key, value in myDict.items():
             if rootname != "":
                 rootkey = rootname +"/"+ key
             else:
-                rootkey = key            
-            if any(s1 in rootkey for s1 in search_keys):
+                rootkey = key
+            if type(search_keys) is list \
+            and any([s1 in rootkey for s1 in search_keys]):
                 mod_keys = _text_split(rootkey, (".","/") )                        
                 # create the key, values in the dict
                 p = metadata_dict
@@ -822,7 +797,11 @@ def _find_search_keys_in_dict(tree,search_keys=None):
                 p[mod_keys[-1]] = value
             if isinstance(value,dict):
                 find_searchkeys_in_tree(value,rootkey)
-    find_searchkeys_in_tree(tree,rootname)
+                    
+    if search_keys in ["all","hardlinks"]:
+        return tree
+    else:
+        find_searchkeys_in_tree(tree,rootname)
     return metadata_dict
 
 def _find_smalldata_in_dict(tree):    
@@ -983,9 +962,8 @@ def _guess_signal_type(data):
         
 
 
-def read_metadata_from_file(filename,search_keys=None,
+def read_metadata_from_file(filename,search_keys="all",
                         small_metadata_only=False,
-                        follow_links=True,
                         verbose=False):   
     """ Read the metadata from a nexus or hdf file       
     The method iterates through the group and returns a dictionary of 
@@ -997,8 +975,10 @@ def read_metadata_from_file(filename,search_keys=None,
     ----------
     filename : str  
         path of the file to read
-    search_keys  : str list or None  
-        Only return items which contain the strings
+    search_keys  : {'all','unique' list_of_strings} , default : 'unique'
+        'all' will return all datasets found including linked data
+        'unique' will return data which is not linked, i.e. the original data
+        A list of strings will only return items which contain the strings
         For example, search_keys = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
     verbose: bool, default : False  
@@ -1019,14 +999,13 @@ def read_metadata_from_file(filename,search_keys=None,
         matching the search keys will be returned 
         
     """
-    if search_keys == None:
-        search_keys=[""]
+    search_keys = _check_search_keys(search_keys)
     fin = h5py.File(filename,"r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
-    metadata = _load_metadata(fin,follow_links=follow_links)
+    stripped_metadata = _load_metadata(fin,search_keys=search_keys)
     # strip out the search keys
-    stripped_metadata = _find_search_keys_in_dict(metadata,search_keys=search_keys)
+    #stripped_metadata = _find_search_keys_in_dict(metadata,search_keys=search_keys)
     # strip out the small metadata if needed
     if small_metadata_only:
         stripped_metadata = _find_smalldata_in_dict(stripped_metadata)
@@ -1072,8 +1051,7 @@ def read_datasets_from_file(filename,search_keys=None,
         hdf file match the search keys will be returned 
         
     """
-    if search_keys == None:
-        search_keys=[""]
+    search_keys = _check_search_keys(search_keys)
     fin = h5py.File(filename,"r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
