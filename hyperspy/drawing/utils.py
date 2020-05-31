@@ -704,7 +704,6 @@ def plot_images(images,
                                 'match the number of images')
                 arg = [default_value] * n
         elif colorbar != 'single':
-            print('here')
             arg = [arg] * n
         return arg
 
