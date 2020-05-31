@@ -43,7 +43,7 @@ file_extensions = ['hspy', 'hdf5']
 default_extension = 0
 # Writing capabilities
 writes = True
-non_linear_axis = True
+non_uniform_axis = True
 version = "3.1"
 # ----------------------
 

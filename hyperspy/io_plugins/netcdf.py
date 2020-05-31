@@ -47,7 +47,7 @@ file_extensions = ('nc', 'NC')
 default_extension = 0
 # Writing capabilities
 writes = False
-non_linear_axis = False
+non_uniform_axis = False
 # ----------------------
 
 

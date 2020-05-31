@@ -40,7 +40,7 @@ file_extensions = ['blo', 'BLO']
 default_extension = 0
 # Writing capabilities:
 writes = [(2, 2), (2, 1), (2, 0)]
-non_linear_axis = False
+non_uniform_axis = False
 magics = [0x0102]
 # ----------------------
 

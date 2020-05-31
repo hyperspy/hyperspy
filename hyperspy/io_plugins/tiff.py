@@ -43,7 +43,7 @@ file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif
 # Writing capabilities
 writes = [(2, 0), (2, 1)]
-non_linear_axis = False
+non_uniform_axis = False
 # ----------------------
 
 

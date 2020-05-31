@@ -56,7 +56,7 @@ reads_spectrum = True
 reads_spectrum_image = True
 # Writing capabilities
 writes = False
-non_linear_axis = False
+non_uniform_axis = False
 # ----------------------
 
 

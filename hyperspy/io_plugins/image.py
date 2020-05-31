@@ -33,7 +33,7 @@ file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
 default_extension = 0  # png
 # Writing capabilities
 writes = [(2, 0), ]
-non_linear_axis = False
+non_uniform_axis = False
 # ----------------------
 
 

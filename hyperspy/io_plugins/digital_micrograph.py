@@ -49,7 +49,7 @@ file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
 # Writing capabilities
 writes = False
-non_linear_axis = False
+non_uniform_axis = False
 # ----------------------
 
 

@@ -32,7 +32,7 @@ file_extensions = ['mrc', 'MRC', 'mrcz', 'MRCZ']
 default_extension = 2
 # Writing capabilities:
 writes = True
-non_linear_axis = False
+non_uniform_axis = False
 # ----------------------
 
 

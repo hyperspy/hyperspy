@@ -55,7 +55,7 @@ reads_spectrum = True
 reads_spectrum_image = True
 # Writing capabilities
 writes = True  # Only Berkeley emd
-non_linear_axis = False
+non_uniform_axis = False
 EMD_VERSION = '0.2'
 # ----------------------
 
