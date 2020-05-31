@@ -230,15 +230,15 @@ def hdfgroup2signaldict(group, lazy=False):
     axes = []
     for i in range(len(exp['data'].shape)):
         try:
-            axes.append(dict(group['axis-%i' % i].attrs))
+            axes.append(hdfgroup2dict(group['axis-%i' % i]))
             axis = axes[-1]
             for key, item in axis.items():
                 if isinstance(item, np.bool_):
                     axis[key] = bool(item)
                 else:
                     axis[key] = ensure_unicode(item)
-            if 'axis' in group['axis-%i' % i].keys():
-                axis['axis'] = group['axis-%i/axis' % i][()]
+            #if 'axis' in group['axis-%i' % i].keys():
+            #    axis['axis'] = group['axis-%i/axis' % i][()]
         except KeyError:
             break
     if len(axes) != len(exp['data'].shape):  # broke from the previous loop
