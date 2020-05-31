@@ -101,7 +101,7 @@ class TestNonUniformAxisCheck:
         with pytest.raises(OSError):
             self.s.save('tmp.msa', overwrite = True)
 
-    def test_nonuniform_writer_characteristic():
+    def test_nonuniform_writer_characteristic(self):
         for plugin in io_plugins:
             try:
                 plugin.non_uniform_axis is True
