@@ -249,8 +249,31 @@ def _extract_hdf_dataset(group,dataset,lazy=True):
             chunks = _guess_chunks(data)
         data_lazy = da.from_array(data, chunks=chunks)
     else:
-       data_lazy = np.array(data)    
-    return data_lazy
+       data_lazy = np.array(data)   
+
+    signal_type = _guess_signal_type(data)
+    nav_list=[]
+    for i in range(data.ndim):
+        nav_list.append({   
+                'size': data.shape[i],
+                'index_in_array': i,
+                'scale': 1,
+                'offset': 0.0,
+                'units': '',
+                'navigate': True,
+               })
+    if signal_type == "Signal2D":
+        nav_list[-1]["navigate"]=False
+        nav_list[-2]["navigate"]=False
+    elif signal_type == "Signal1D":
+        nav_list[-1]["navigate"]=False
+    
+    dictionary = {'data': data_lazy,
+              'metadata': {},
+              'original_metadata':{},
+              'axes':nav_list}
+
+    return dictionary
 
     
 def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
@@ -362,44 +385,54 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
                            })
                     detector_index=detector_index+1
                             
-        if(lazy):
-            if "chunks" in data.attrs.keys():
-                 chunks = data.attrs["chunks"]
-            else:
-                chunks = _guess_chunks(data)
-            data_lazy = da.from_array(data, chunks=chunks)
+    if(lazy):
+        if "chunks" in data.attrs.keys():
+             chunks = data.attrs["chunks"]
         else:
-           data_lazy = np.array(data)    
-        # adjust the navigate boolean based on 
-        # ifer the dataset isjudged to be 1D or 2D
-        if detector_index == 2:
-            signal_type = "Signal2D"
-            nav_list[-1]["navigate"] = False
-            nav_list[-2]["navigate"] = False 
-        elif detector_index == 1:
-            signal_type = "Signal1D"
+            chunks = _guess_chunks(data)
+        data_lazy = da.from_array(data, chunks=chunks)
+    else:
+       data_lazy = np.array(data)    
+    # adjust the navigate boolean based on 
+    # if the dataset is judged to be 1D or 2D
+    signal_type = _guess_signal_type(data_lazy)
+    if nav_list:
+        if detector_index == data_lazy.ndim:
+            for nav in nav_list:
+                nav["navigate"]=True
+            if signal_type == "Signal2D":
+                nav_list[-1]["navigate"]=False
+                nav_list[-2]["navigate"]=False
+            elif signal_type == "Signal1D":
+                nav_list[-1]["navigate"]=False                    
         elif detector_index == 0:
             if len(nav_list)==2:
-                signal_type = "Signal2D"
                 nav_list[-1]["navigate"] = False
                 nav_list[-2]["navigate"] = False 
             elif len(nav_list)==1:
-                signal_type = "Signal1D"
                 nav_list[-1]["navigate"] = False
-            else:
-                signal_type = "BaseSignal"
-        else:
-            signal_type = "BaseSignal"
-        title = _text_split(nexus_dataset_path, '/')[-1]
-        metadata = {'General': {'title': title}} #,\
-#                    "Signal": {'signal_type': signal_type}}
-        if nav_list:      
-            dictionary = {'data': data_lazy,
-                          'axes': nav_list,
-                          'metadata':metadata}
-        else:
-            dictionary = {'data': data_lazy,
-                          'metadata': metadata}                    
+    else:
+        nav_list=[]
+        for i in range(data.ndim):
+            nav_list.append({   
+                    'size': data_lazy.shape[i],
+                    'index_in_array': i,
+                    'scale': 1,
+                    'offset': 0.0,
+                    'units': '',
+                    'navigate': True,
+                   })
+        if signal_type == "Signal2D":
+            nav_list[-1]["navigate"]=False
+            nav_list[-2]["navigate"]=False
+        elif signal_type == "Signal1D":
+            nav_list[-1]["navigate"]=False
+            
+    title = _text_split(nexus_dataset_path, '/')[-1]
+    metadata = {'General': {'title': title}} 
+    dictionary = {'data': data_lazy,
+                  'axes': nav_list,
+                  'metadata':metadata}
     return dictionary
 
 
@@ -465,7 +498,6 @@ def file_reader(filename,lazy=True, dataset_keys="hardlinks",
 
     mapping  = kwds.get('mapping',{})   
     original_metadata={}
-    metadata = {}
     learning = {}
     fin = h5py.File(filename,"r+")
     signal_dict_list = []
@@ -497,7 +529,6 @@ def file_reader(filename,lazy=True, dataset_keys="hardlinks",
             if "hyperspy_metadata" in original_metadata["auxiliary"][title]:
                 hyper_metadata = original_metadata["auxiliary"][title]["hyperspy_metadata"]
                 hyper_metadata.update(dictionary["metadata"])
-#                dictionary.setdefault("metadata",{})
                 dictionary["metadata"] = hyper_metadata
         else:
             dictionary["original_metadata"] = original_metadata              
@@ -505,19 +536,14 @@ def file_reader(filename,lazy=True, dataset_keys="hardlinks",
         
     if not nxdata_only:
         for data_path in hdf_data_paths:        
-            data = _extract_hdf_dataset(fin,data_path,lazy)
-            if data is not None:
-                signal_type =  _guess_signal_type(data)
+            datadict = _extract_hdf_dataset(fin,data_path,lazy)
+            if datadict:
                 title = data_path[1:].replace('/','_')
                 basic_metadata = {'General': {'original_filename': \
                           os.path.split(filename)[1],\
-                'title': title},\
-                "Signal": {'signal_type': signal_type}}
-                dictionary = {'data': data,
-                              'metadata': basic_metadata,
-                              'original_metadata':original_metadata,
-                              'mapping':mapping}                
-                signal_dict_list.append(dictionary)
+                'title': title}}
+                datadict["metadata"].update(basic_metadata)
+                signal_dict_list.append(datadict)
 
         
     return signal_dict_list
@@ -1021,7 +1047,6 @@ def read_metadata_from_file(filename,search_keys="all",
     fin = h5py.File(filename,"r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
-    print("search_keys",search_keys)
     stripped_metadata = _load_metadata(fin,search_keys=search_keys)
     # strip out the search keys
     #stripped_metadata = _find_search_keys_in_dict(metadata,search_keys=search_keys)

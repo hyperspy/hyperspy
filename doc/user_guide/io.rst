@@ -1202,7 +1202,7 @@ Extra loading arguments
    
  
  
-Reading the sole Nexus dataset within a Nexus file:
+Reading a Nexus file a single Nexus dataset:
 
 .. code-block:: python
 
@@ -1247,18 +1247,28 @@ Multiple datasets can be loaded by providing a number of keys:
     >>> # Loading a specific dataset
     >>> hs.load("sample.nxs", dataset_keys=["EDS","Fe","Ca"])
 
+Metadata can also be filtered in the same way using ``metadata_keys``
+
+.. code-block:: python
+
+    >>> # Load data with metadata matching metadata_keys
+    >>> hs.load("sample.nxs", metadata_keys="entry/instrument")
+
+.. note::
+
+    The Nexus loader removes any NXdata blocks from the metadata.  
+
+
 Nexus files also support parameters or dimensions that have been varied 
 non-linearly.
 Since HyperSpy Signals expect linear variation of parameters / axes, such 
 non-linear information would be lost in the axes manager and replaced with
 indices.
-Nexus and HDF makes use of soft-links internally or to external files.
-These links help to define structures from data saved by a detector or other 
-process but can result in large structures and datasets within the loaded 
+Nexus and HDF can result in large metadata structures with large datasets within the loaded 
 original_metadata. If lazy loading is used this may not be a concern but care must be taken
 when saving the data. 
 To control whether large datasets are loaded or saved  the ``small_metadata_only`` 
-keyword can be used or use the 'metadata_keys' to load only the most relevant information.
+keyword can be used or use the ``metadata_keys`` to load only the most relevant information.
 
 
 Writing

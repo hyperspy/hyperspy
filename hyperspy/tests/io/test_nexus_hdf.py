@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from os import remove
 import gc
 import tempfile
 import numpy as np
@@ -28,6 +27,7 @@ from hyperspy.io_plugins.nexus import read_metadata_from_file,\
         _fix_exclusion_keys,_byte_to_string
 import hyperspy.api as hs
 from hyperspy.signal import BaseSignal
+import traits.api as t
 
 
 dirpath = os.path.dirname(__file__)
@@ -35,6 +35,7 @@ dirpath = os.path.dirname(__file__)
 file1 = os.path.join(dirpath, 'nexus_files', 'simple_signal.nxs')
 file2 = os.path.join(dirpath, 'nexus_files', 'saved_multi_signal.nxs')
 file3 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example.nxs')
+file4 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example_no_axes.nxs')
 
 
 my_path = os.path.dirname(__file__)
@@ -122,7 +123,71 @@ class TestDLSNexus():
                  beamline.M1.m1_y.attrs.units == "mm"
 
     
+
 #
+# Test nexus loading..external dls file
+#
+class TestDLSNexusNoAxes():
+
+    def setup_method(self, method):
+        self.file = file4
+        self.s = load(file4,metadata_keys="all",dataset_keys="hardlinks",
+                      nxdata_only=True)
+
+    @pytest.mark.parametrize("lazy", [True,False])
+    @pytest.mark.parametrize("small_metadata_only", [True,False])
+    @pytest.mark.parametrize("nxdata_only",[True,False])    
+    @pytest.mark.parametrize("dataset_keys" ,["all","hardlinks"])
+    def test_general_keys(self,lazy,small_metadata_only,nxdata_only,
+                          dataset_keys):
+        s=load(self.file,lazy=lazy,small_metadata_only=small_metadata_only,
+               nxdata_only=nxdata_only,dataset_keys=dataset_keys)
+        if isinstance(s,list):
+            assert s[0].original_metadata.entry.instrument.\
+                scannables.m1.m1_y.attrs.units == "mm"
+        else:
+            assert s.original_metadata.entry.instrument.\
+                scannables.m1.m1_y.attrs.units == "mm"
+
+    @pytest.mark.parametrize("metadata_keys", ["all","xxxx"])
+    def test_hard_links(self,metadata_keys):
+        s=load(file3,metadata_keys=metadata_keys)
+        # hardlinks are false - soft linked data is loaded
+        if metadata_keys=="all":
+            assert s.original_metadata.alias_metadata.\
+            m1_y.attrs.units == "mm"
+        else:
+            with pytest.raises(AttributeError):
+                assert s.original_metadata.alias_metadata.\
+                m1_y.attrs.units == "mm"
+
+    def test_value(self):
+        assert self.s.original_metadata.entry.instrument.\
+             beamline.M1.m1_y.value == -4.0
+
+    def test_class(self):
+        assert self.s.original_metadata.entry.instrument.\
+            beamline.M1.attrs.NX_class == "NXmirror"
+
+    def test_string_array(self):
+        np.testing.assert_array_equal(self.s.original_metadata.entry.arraytest,
+                                      np.array([b"a",b"1.0",b"c"]))
+        
+    def test_signal_loaded(self):
+        assert self.s.metadata.General.title == "nexustest"
+
+
+    def test_axes_names(self):
+        assert self.s.axes_manager[0].name == t.Undefined
+        assert self.s.axes_manager[1].name == t.Undefined
+        
+
+    def test_string(self):
+        assert self.s.original_metadata.entry.instrument.\
+                 beamline.M1.m1_y.attrs.units == "mm"
+#
+
+
 # Test nexus loading..external dls file
 #
 class TestSavedSignalLoad():
@@ -239,6 +304,8 @@ class TestSavingMetadataContainers:
         np.testing.assert_array_equal(l.original_metadata.testarray3,np.array([1,2,3,4,5]))
 
 
+
+
 class TestSavingMultiSignals:
 
     def setup_method(self, method):
@@ -289,7 +356,6 @@ def test_read_file2_meta():
     s = hs.load(file2,dataset_keys=["unnamed__0"],metadata_keys=["energy"])
     assert s.original_metadata.instrument.\
             energy.value == 12.0
-            
 
 @pytest.mark.parametrize("verbose", [True,False])
 @pytest.mark.parametrize("search_keys", ["testdata","nexustest"])
@@ -300,7 +366,18 @@ def test_read_datasets(verbose,search_keys):
          assert len(s[1]) == 3
       else:
          assert len(s[1]) == 6
-          
+
+
+@pytest.mark.parametrize("search_keys", ["all","xxxxx"])
+def test_read_metdata(search_keys):
+    s = read_metadata_from_file(file3,\
+                                  search_keys=search_keys)
+    # hardlinks are false - soft linked data is loaded
+    if search_keys=="all":
+        assert s["alias_metadata"]["m1_y"]["attrs"]["units"] == "mm"
+    else:
+        with pytest.raises(KeyError):
+            assert s["alias_metadata"]["m1_y"]["attrs"]["units"] == "mm"          
     
 def test_is_int():
     assert _is_int("a")  == False
