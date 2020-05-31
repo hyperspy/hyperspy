@@ -1348,7 +1348,10 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            self._append_axis(**axis_dict)
+            if type(axis_dict) is dict:
+                self._append_axis(**axis_dict)
+            else:
+                self._axes.append(axis_dict)
 
     def set_axis(self, axis, index_in_axes_manager):
         self._axes[index_in_axes_manager] = axis
