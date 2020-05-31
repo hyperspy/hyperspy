@@ -87,18 +87,25 @@ class TestIOOverwriting:
     def teardown_method(self, method):
         self._clean_file()
 
-class TestNonLinearAxisCheck:
+class TestNonUniformAxisCheck:
 
     def setup_method(self, method):
         axis = DataAxis(axis = 1/np.arange(10), navigate = False)
         self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(), ))
         # make sure we start from a clean state
     
-    def test_io_nonlinear(self):
-        assert(self.s.axes_manager[0].is_linear == False)
+    def test_io_nonuniform(self):
+        assert(self.s.axes_manager[0].is_uniformlinea == False)
         self.s.save('tmp.hspy', overwrite = True)
         with pytest.raises(OSError):
             self.s.save('tmp.msa', overwrite = True)
+
+    def test_nonuniform_writer_characteristic():
+        for plugin in io_plugins
+            try:
+                plugin.non_uniform_axis is True]
+            except AttributeError:
+                print(plugin ' is missing the characteristic non_uniform_axis')
 
     def teardown_method(self):
         if os.path.exists('tmp.hspy'):
