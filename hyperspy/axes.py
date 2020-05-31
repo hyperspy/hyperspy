@@ -505,7 +505,7 @@ class BaseDataAxis(t.HasTraits):
             return self.axis[index]
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value, if between the limits.
+        """Return the closest index to the given value if between the limit.
 
         Parameters
         ----------
@@ -709,8 +709,11 @@ class FunctionalDataAxis(BaseDataAxis):
                 raise ValueError("Please provide either `x` or `size`.")
             self.x = UniformDataAxis(scale=1, offset=0, size=size)
         else:
-            self.x = x
-            self.size = self.x.size
+            if type(x) is dict:
+                self.x = _create_axis(**x)
+            else:
+                self.x = x
+                self.size = self.x.size
         self._expression = expression
         # Compile function
         expr = _parse_substitutions(self._expression)
@@ -763,7 +766,7 @@ class FunctionalDataAxis(BaseDataAxis):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
         d.update({'size': self.size, })
-        d.update({'x': self.x.copy(), })
+        d.update({'x': self.x.get_axis_dictionary(), })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
