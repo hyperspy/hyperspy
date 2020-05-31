@@ -24,6 +24,7 @@ from unittest.mock import patch
 
 from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
+from hyperspy.io_plugins import io_plugins
 
 
 DIRPATH = os.path.dirname(__file__)
@@ -101,11 +102,12 @@ class TestNonUniformAxisCheck:
             self.s.save('tmp.msa', overwrite = True)
 
     def test_nonuniform_writer_characteristic():
-        for plugin in io_plugins
+        for plugin in io_plugins:
             try:
-                plugin.non_uniform_axis is True]
+                plugin.non_uniform_axis is True
             except AttributeError:
-                print(plugin ' is missing the characteristic non_uniform_axis')
+                print(plugin.format_name + ' IO-plugin is missing the '
+                      'characteristic `non_uniform_axis`')
 
     def teardown_method(self):
         if os.path.exists('tmp.hspy'):
