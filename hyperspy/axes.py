@@ -258,7 +258,7 @@ class BaseDataAxis(t.HasTraits):
         super(BaseDataAxis, self).__init__()
 
         self.events = Events()
-        _name = self.__class__.__name__
+        _type = self.__class__.__name__
         self.events.index_changed = Event("""
             Event that triggers when the index of the `{}` changes
 
@@ -269,7 +269,7 @@ class BaseDataAxis(t.HasTraits):
             ---------
             obj : The {} that the event belongs to.
             index : The new index
-            """.format(_name, _name, _name), arguments=["obj", 'index'])
+            """.format(_type, _type, _type), arguments=["obj", 'index'])
         self.events.value_changed = Event("""
             Event that triggers when the value of the `{}` changes
 
@@ -280,7 +280,7 @@ class BaseDataAxis(t.HasTraits):
             ---------
             obj : The {} that the event belongs to.
             value : The new value
-            """.format(_name, _name, _name), arguments=["obj", 'value'])
+            """.format(_type, _type, _type), arguments=["obj", 'value'])
 
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
@@ -481,7 +481,8 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        return {'name': self.name,
+        return {'_type': self._type,
+                'name': self.name,
                 'units': self.units,
                 'navigate': self.navigate
                 }
@@ -598,12 +599,14 @@ class DataAxis(BaseDataAxis):
 
     def __init__(self,
                  index_in_array=None,
+                 _type=t.Undefined,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
                  axis=[1]):
         super().__init__(index_in_array, name, units, navigate)
         self.axis = axis
+        self._type = self.__class__.__name__
         self.update_axis()
 
     def _slice_me(self, slice_):
@@ -698,6 +701,7 @@ class FunctionalDataAxis(BaseDataAxis):
                  expression,
                  x=None,
                  index_in_array=None,
+                 _type=t.Undefined,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
@@ -715,6 +719,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 self.x = x
                 self.size = self.x.size
         self._expression = expression
+        self._type = self.__class__.__name__
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
@@ -830,6 +835,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
     size = t.CInt(0)
     def __init__(self,
                  index_in_array=None,
+                 _type=t.Undefined,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
@@ -847,6 +853,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.size = size
         self.update_axis()
         self._is_uniform = True
+        self._type = self.__class__.__name__
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
     def _slice_me(self, slice_):
