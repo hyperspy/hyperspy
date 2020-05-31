@@ -1060,27 +1060,56 @@ Using the ``.nxs`` extension will default to the Nexus loader
 
 As the Nexus format uses HDF5 and needs to read data and metadata structured
 in different ways the loader is written to quite flexible and can also be used 
-to inpsect any hdf5 based file.  
+to inspect any hdf5 based file.  
 
 
 Differences with respect to hspy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Hyperspy metadata structure stores arrays as datasets without attributes
+Hyperspy metadata structure stores arrays as hdf datasets without attributes
 and stores floats,ints and strings as attributes.
+Nexus formats typcial use hdf datasets attributes to store additional
+information such as an indication of the units for an axis or the NX_class which
+the dataset structure follows. The metadata, hyperspy  or original_metadata, 
+therefore needs to be able to indicate the values and attributes of a dataset. 
+To implment this structure the ``value`` and ``attrs`` of a dataset can also be
+defined. The value of a dataset is set using a ``value`` key. 
+The attributes of a dataset are defined by an ``attrs`` key. 
 
-Nexus requires datasets have attributes so the structure
-of the metadata needs to be able to indicate the values and attributes of a 
-dataset. For example to store an indication of the units for an axis.
+For example to store an array, called axis_x, with a units attribute within
+original_metadata the following structure would be used.
 
-Datasets and their attributes are defined through use of a   
-a defined metadata structure.
-The value of a dataset is set using a "value" keyword. 
-The attributes of a dataset are defined using a "attrs" dictionary. The 
-attributes of a group are defined using an "attrs" dictionary.
-The attributes can be set to define quantities such as units or 
-to implement Nexus attributes to conform to a Nexus format.
+::
 
-Example of a Nexus monochromator format defined in metadata
+    ├──original_metadata
+    │   ├── axis_x
+    │   │   ├── value : array([1.0,2.0,3.0,4.0,5.0])
+    │   │   ├── attrs
+    │   │   │   ├── units : mm
+
+
+.. code-block:: python
+
+    >>> original_metadata.set_item(axis_x.value,[1.0,2.0,3.0,4.0,5.0])
+    >>> original_metadata.set_item(axis_x.attrs.units,"mm")
+
+To access the axis information:
+
+.. code-block:: python
+
+    >>> original_metadata.axis_x.value
+    >>> original_metadata.axis_x.attrs.units
+    
+To modify the axis information:
+
+.. code-block:: python
+
+    >>> original_metadata.axis_x.value = [2.0,3.0,4.0,5.0,6.0]
+    >>> original_metadata.axis_x.attrs.units = "um"
+
+   
+To store data in a Nexus monochromator format the `value`` and ``attrs``
+ can define additional attributes.
+
 ::
     
     ├── monochromator
@@ -1089,55 +1118,41 @@ Example of a Nexus monochromator format defined in metadata
     │   │   ├── attrs
     │   │   │   ├── units : keV
     │   │   │   ├── NXclass : NXmonochromator
-    
-Example of axis data stored with units
-::
-    
-    ├── axis_x
-    │   ├── value : array([1.0,2.0,3.0,4.0,5.0])
-    │   ├── attrs
-    │   │   ├── units : mm
 
-Examples of Group structure
+
+The ``attrs`` key can also to define Nexus structures to define
+structures and relationships between data.
+
 ::
 
-    ├── instrument
+    ├── mydata
     │   ├── attrs    
-    │   │   ├── model : "JEOL"
-    │   ├── sample
-    │   │   ├── attrs
-    │   │   │   ├── name : "Standard"
-        
+    │   │   ├── NX_class : "NXdata"
+    │   │   ├── axes : ["x","."]
+    │   ├── data
+    │   │   ├──value : [[30,23...110]
+    │   ├── x
+    │   │   ├──value : [1,2.....100]
+    │   │   ├── attrs  
+    │   │   │   ├── unit : "mm"
+       
 
-When read in it is then consistent with the stored hdf format.
+The use of ``attrs`` or ``value`` to set values within the metadata is optional 
+and metadata values can also be set, read or modified in the normal way. 
 
+ 
 .. code-block:: python
 
-    >>> orginal_metadata.monochromator.energy.value = 12.5
-    >>> orginal_metadata.monochromator.energy.attrs.units = "keV"
+    >>> original_metadata.monochromator.energy = 12.5
 
-so "value" and "attrs" keywords are requirements to access information but
-also to add additional structure to the metadata such as datasets.
-If a hyperspy signal is stored to nexus format and then loaded back
-the hyperspy metadata would need to be updated to reflect this structure.
-``metadata.Acquisition_instrument.SEM.beam_current`` would need to change to 
-``metadata.Acquisition_instrument.SEM.beam_current.value`` for example. 
-As this will likely break some specific hyperspy functions
-It's recommended that a "mapping" dictionary is passed to the load or
-file_reader to translate stored original_metadata to 
-hyperspy signal metadata.
-For example to map a nexus entry to hyperspy metadata.
+Hyperspy metadata is stored within the Nexus file and should be automatically 
+restored when a signal is loaded from a previously saved Nexus file. 
 
-.. code-block:: python
+.. note::
 
-   >>> nexus_mapping = {"entry.instrument.energy.value":("Acquisition_instrument.TEM.beam_energy",None)}
-   >>> a = hs.load("test.nxs",mapping=nexus_mapping)
-      
-Hyperspy metadata is stored with "original_metadata" in the file
-Hyperspy metadata is not automatically restored when a signal is loaded
-from a Nexus file for the reasons given previously. 
-A mapping dictionary is the preferred method to map 
-file metadata to hyperspy metdata.   
+    Altering the standard metadata structure of a signal  
+    using ``attrs`` or ``value`` keywords is not recommended 
+    
 
 Inspecting
 ^^^^^^^^^^
@@ -1155,7 +1170,7 @@ what position a specific stage was at:
 You can also inspect the file to see what datasets are stored in the file
     
     >>> from hyperspy.io_plugins.nexus import read_datasets_from_file
-    >>> results=read_datasets_from_file("sample.nxs",search_keys=["stage1_z"])
+    >>> read_datasets_from_file("sample.nxs")
     NXdata found
     /entry/xsp3_addetector
     /entry/xsp3_addetector_total
@@ -1172,19 +1187,18 @@ Reading
 Nexus files can contain multiple datasets within the same file but the
 ordering of datasets can vary depending on the setup of an experiment or
 processing step when the data was collected.
-For example in experiment 1 Fe,Ca,P,Pb were collected in experiment 2
-Ca,P,K,Fe,Pb were collected. HyperSpy supports reading in one or more datasets and returns a list
-of signals but in this example case the indexing is different.
+For example in one experiment Fe,Ca,P,Pb were collected but in the next experiment
+Ca,P,K,Fe,Pb were collected. HyperSpy supports reading in one or more datasets 
+and returns a list of signals but in this example case the indexing is different.
 To control which data or metadata is loaded and in what order
 some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dataset_keys`` : ``str`` or ``list`` - Absolute path(s) or string(s) to search for in the path to find one or more datasets. (default is ``None`` all Nexus Datasets will be read)
-- ``metadata_keys`` : ``str`` or ``list`` of strings - Absolute path(s) or string(s) to search for in the path to find metadata. (default is ``None`` all Nexus Metadata will be read)
+- ``dataset_keys`` : ``all``, ``hardlinks``, ``str`` or ``list`` of strings - Absolute path(s) or string(s) to search for in the path to find one or more datasets. (default is ``all`` all Nexus Datasets will be read)
+- ``metadata_keys`` : ``all``, ``str`` or ``list`` of strings - Absolute path(s) or string(s) to search for in the path to find metadata. (default is ``all`` all Nexus Metadata will be read)
 - ``nxdata_only`` : ``bool`` - Only convert NXdata formatted data to signals
 - ``small_metadata_only`` : ``bool`` - Only load items of size<2 into the metadata to avoid linking to large datasets
-- ``follow_links`` : ``bool`` - Follow or ignore hard and soft links in the file
    
  
  
@@ -1192,7 +1206,7 @@ Reading the sole Nexus dataset within a Nexus file:
 
 .. code-block:: python
 
-    >>> hs.load("sample.nxs")
+    >>> sig = hs.load("sample.nxs")
 
 By default the loader will look for stored NXdata objects.
 If there are hdf datasets which are not stored as NXdata but which
@@ -1201,7 +1215,7 @@ hdf datasets will be returned as signals.
 
 .. code-block:: python
 
-    >>> hs.load("sample.nxs",nxdata_only=False)
+    >>> sig = hs.load("sample.nxs",nxdata_only=False)
 
 Given that HDF5 files can accommodate very large datasets ``lazy=True`` is 
 set by default. This prevents issues with regard to loading datasets
@@ -1224,7 +1238,7 @@ The previous example could also be written as:
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys=["EDS"])
+    >>> hs.load("sample.nxs", dataset_keys="EDS")
     
 Multiple datasets can be loaded by providing a number of keys:
 
@@ -1237,13 +1251,14 @@ Nexus files also support parameters or dimensions that have been varied
 non-linearly.
 Since HyperSpy Signals expect linear variation of parameters / axes, such 
 non-linear information would be lost in the axes manager and replaced with
-indices
+indices.
 Nexus and HDF makes use of soft-links internally or to external files.
-Soft-links help to define structures from data saved by a detector or other 
-process. If lazy loading is used this may not be a concern but care must be taken
+These links help to define structures from data saved by a detector or other 
+process but can result in large structures and datasets within the loaded 
+original_metadata. If lazy loading is used this may not be a concern but care must be taken
 when saving the data. 
-To control whether links are loaded set the ``small_metadata_only`` follow_links``small_metadata_only`` keyword or use the 
-'metadata_keys' to load only the most relevant metadata.
+To control whether large datasets are loaded or saved  the ``small_metadata_only`` 
+keyword can be used or use the 'metadata_keys' to load only the most relevant information.
 
 
 Writing
@@ -1252,7 +1267,7 @@ Signals can be written to new Nexus files using the standard ``.save()``
 function.
 
 Extra saving arguments
-+++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++
 - ``small_metadata_only`` : ``bool`` - Default is True, Option to ignore large datasets contained in the original_metadata when storing to file.
 
 .. code-block:: python
@@ -1263,13 +1278,14 @@ Using the save method will store the nexus file with the following structure:
 
 ::
 
-    ├── Experiments
+    ├── auxiliary
+    │   ├── signal_name
+    │   │   ├── original_metadata
+    │   │   ├── hyperspy_metadata
+    │   │   ├── learning_results
+    ├── signals 
     │   ├── signal_name
     │   │   ├── signal (NXdata format)
-    │   │   ├── original_metadata
-    │   │   │   ├── hyperspy_metadata
-    │   │   ├── learning_results
- 
 
 The original_metadata can include hdf datasets which you may not wish to store.
 Large datasets can be stripped from the metadata using ``small_metadata_only``.
@@ -1289,23 +1305,27 @@ The output will be arranged by signal name.
 
 ::
     
-    ├── Experiments
-    │   ├── first_signal_name
-    │   │   ├── first_signal
-    │   │   ├── first_signal_learning_results
-    │   │   ├── first_signal_original_metadata
-    │   │   │   ├── first_signal_hyperspy_metadata
-    │   ├── second_signal_name
-    │   │   ├── second_signal 
-    │   │   ├── second_signal_learning_results
-    │   │   ├── second_signal_original_metadata
-    │   │   │   ├── second_signal_hyperspy_metadata
+    ├── auxiliary
+    │   ├── signal_name1
+    │   │   ├── original_metadata
+    │   │   ├── hyperspy_metadata
+    │   │   ├── learning_results
+    │   ├── signal_name2
+    │   │   ├── original_metadata
+    │   │   ├── hyperspy_metadata
+    │   │   ├── learning_results
+    ├── signals 
+    │   ├── signal_name1
+    │   │   ├── signal (NXdata format)
+    │   ├── signal_name2
+    │   │   ├── signal (NXdata format)
 
 
 .. note::
 
     Signals saved as nxs by this plugin can be loaded normally and the
-    original_metadata, signal data, axes and learning_results will be restored.
+    original_metadata, signal data, axes, metadata and learning_results 
+    will be restored. Model information is not currently stored. 
 
 Reading data generated by HyperSpy using other software packages
 ================================================================

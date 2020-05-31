@@ -32,9 +32,9 @@ from hyperspy.signal import BaseSignal
 
 dirpath = os.path.dirname(__file__)
 
-file1 = os.path.join(dirpath, 'nexus_files', 'single_nxdata.nxs')
-file2 = os.path.join(dirpath, 'nexus_files', 'multi_signal.nxs')
-file3 = os.path.join(dirpath, 'nexus_files', 'dls_nexus.nxs')
+file1 = os.path.join(dirpath, 'nexus_files', 'simple_signal.nxs')
+file2 = os.path.join(dirpath, 'nexus_files', 'saved_multi_signal.nxs')
+file3 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example.nxs')
 
 
 my_path = os.path.dirname(__file__)
@@ -59,12 +59,11 @@ class TestDLSNexus():
     @pytest.mark.parametrize("lazy", [True,False])
     @pytest.mark.parametrize("small_metadata_only", [True,False])
     @pytest.mark.parametrize("nxdata_only",[True,False])    
-    @pytest.mark.parametrize("metadata_keys" ,["all","hardlinks"])
     @pytest.mark.parametrize("dataset_keys" ,["all","hardlinks"])
-    def test_general_keys(self,lazy,small_metadata_only,nxdata_only,metadata_keys,
+    def test_general_keys(self,lazy,small_metadata_only,nxdata_only,
                           dataset_keys):
         s=load(self.file,lazy=lazy,small_metadata_only=small_metadata_only,
-               nxdata_only=nxdata_only,dataset_keys=dataset_keys,metadata_keys=metadata_keys)
+               nxdata_only=nxdata_only,dataset_keys=dataset_keys)
         if isinstance(s,list):
             assert s[0].original_metadata.entry.instrument.\
                 scannables.m1.m1_y.attrs.units == "mm"
@@ -85,7 +84,7 @@ class TestDLSNexus():
         if nxdata_only == False and dataset_keys == "all":
             assert len(s) == 16
 
-    @pytest.mark.parametrize("metadata_keys", ["all","hardlinks"])
+    @pytest.mark.parametrize("metadata_keys", ["all","xxxx"])
     def test_hard_links(self,metadata_keys):
         s=load(file3,metadata_keys=metadata_keys)
         # hardlinks are false - soft linked data is loaded
@@ -106,11 +105,11 @@ class TestDLSNexus():
             beamline.M1.attrs.NX_class == "NXmirror"
 
     def test_string_array(self):
-        np.testing.assert_array_equal(self.s.original_metadata.entry.testdata.nexustest.attrs.axes\
-            ,np.array([b'y',b'x',b'.']))
-
+        np.testing.assert_array_equal(self.s.original_metadata.entry.arraytest,
+                                      np.array([b"a",b"1.0",b"c"]))
+        
     def test_signal_loaded(self):
-        assert self.s.metadata.Signal.signal_type == "Signal1D"
+        assert self.s.metadata.General.title == "nexustest"
 
 
     def test_axes_names(self):
@@ -148,7 +147,7 @@ class TestSavedSignalLoad():
             energy.attrs.NX_class == "NXmonochromater"
 
     def test_signal_loaded(self):
-        assert self.s.metadata.Signal.signal_type == "Signal2D"
+        assert self.s.metadata.General.title == "unnamed__0"
 
 
     def test_axes_names(self):
@@ -183,7 +182,7 @@ class TestSavedMultiSignalLoad():
             energy.attrs.NX_class == "NXmonochromater"
 
     def test_signal1_signal_loaded(self):
-        assert self.s[0].metadata.Signal.signal_type == "Signal2D"
+        assert self.s[0].metadata.General.title == "unnamed__0"
 
 
     def test_signal1_axes_names(self):
@@ -193,18 +192,18 @@ class TestSavedMultiSignalLoad():
 
     def test_signal2_string(self):
         assert self.s[1].original_metadata.instrument.processing.\
-            window_size.value == 20.0
+            window_size == 20.0
 
     def test_signal2_string_array(self):
-        np.testing.assert_array_equal(self.s[1].original_metadata.instrument.processing.lines.value\
+        np.testing.assert_array_equal(self.s[1].original_metadata.instrument.processing.lines\
             ,np.array([b"Fe_Ka",b"Cu_Ka",b"Compton"]) )
 
     def test_signal2_class(self):
-        assert self.s[1].original_metadata.instrument.scantype.value\
+        assert self.s[1].original_metadata.instrument.scantype\
               == "XRF"
 
     def test_signal2_signal_loaded(self):
-        assert self.s[1].metadata.Signal.signal_type == "BaseSignal"
+        assert self.s[1].metadata.General.title == "unnamed__1"        
 
 
     def test_signal2_axes_names(self):
@@ -223,10 +222,10 @@ class TestSavingMetadataContainers:
         s.original_metadata.set_item('test3',64.0)        
         s.save(tmpfilepath)
         l = load(tmpfilepath)
-        assert isinstance(l.original_metadata.test1.value, float)
-        assert isinstance(l.original_metadata.test2.value, float)
-        assert isinstance(l.original_metadata.test3.value, float)
-        assert l.original_metadata.test2.value == 54.0
+        assert isinstance(l.original_metadata.test1, float)
+        assert isinstance(l.original_metadata.test2, float)
+        assert isinstance(l.original_metadata.test3, float)
+        assert l.original_metadata.test2 == 54.0
 
     def test_save_arrays(self, tmpfilepath):
         s = self.s
@@ -235,9 +234,9 @@ class TestSavingMetadataContainers:
         s.original_metadata.set_item("testarray3",np.array([1,2,3,4,5]))        
         s.save(tmpfilepath)
         l = load(tmpfilepath)
-        np.testing.assert_array_equal(l.original_metadata.testarray1.value,np.array([b"a",b'2',b'b',b'4',b'5']))
-        np.testing.assert_array_equal(l.original_metadata.testarray2.value,np.array([1,2,3,4,5]))
-        np.testing.assert_array_equal(l.original_metadata.testarray3.value,np.array([1,2,3,4,5]))
+        np.testing.assert_array_equal(l.original_metadata.testarray1,np.array([b"a",b'2',b'b',b'4',b'5']))
+        np.testing.assert_array_equal(l.original_metadata.testarray2,np.array([1,2,3,4,5]))
+        np.testing.assert_array_equal(l.original_metadata.testarray3,np.array([1,2,3,4,5]))
 
 
 class TestSavingMultiSignals:
@@ -280,15 +279,14 @@ def test_read_file2_dataset_key_test():
 
 def test_read_file2_signal1():
     s = hs.load(file2,dataset_keys=["unnamed__0"])
-    assert s.metadata.Signal.signal_type == "Signal2D"
+    assert s.metadata.General.title == "unnamed__0"
 
 def test_read_file2_signal2():
     s = hs.load(file2,dataset_keys=["unnamed__1"])
-    assert s.metadata.Signal.signal_type == "BaseSignal"
+    assert s.metadata.General.title == "unnamed__1"
 
 def test_read_file2_meta():
     s = hs.load(file2,dataset_keys=["unnamed__0"],metadata_keys=["energy"])
-    assert s.metadata.Signal.signal_type == "Signal2D"
     assert s.original_metadata.instrument.\
             energy.value == 12.0
             

@@ -163,7 +163,9 @@ def _parse_to_file(value):
     elif isinstance(totest,(np.ndarray,da.Array)):  
         toreturn = totest
     if isinstance(totest, (str)):
-        toreturn = totest.encode("utf-8")        
+        toreturn = totest.encode("utf-8") 
+        toreturn = np.string_(toreturn)
+        
     return toreturn
 
 def _text_split(s, sep):   
@@ -389,8 +391,8 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
         else:
             signal_type = "BaseSignal"
         title = _text_split(nexus_dataset_path, '/')[-1]
-        metadata = {'General': {'title': title},\
-                    "Signal": {'signal_type': signal_type}}
+        metadata = {'General': {'title': title}} #,\
+#                    "Signal": {'signal_type': signal_type}}
         if nav_list:      
             dictionary = {'data': data_lazy,
                           'axes': nav_list,
@@ -402,7 +404,7 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=True):
 
 
 def file_reader(filename,lazy=True, dataset_keys="hardlinks",
-                metadata_keys="hardlinks",
+                metadata_keys="all",
                 nxdata_only=True,
                 small_metadata_only=False,
                 **kwds):   
@@ -463,34 +465,40 @@ def file_reader(filename,lazy=True, dataset_keys="hardlinks",
 
     mapping  = kwds.get('mapping',{})   
     original_metadata={}
+    metadata = {}
     learning = {}
-    fin = h5py.File(filename,"r")
+    fin = h5py.File(filename,"r+")
     signal_dict_list = []
 
     dataset_keys = _check_search_keys(dataset_keys)
     metadata_keys = _check_search_keys(metadata_keys)
-    
-    nexus_data_paths, hdf_data_paths = _find_data(fin,
-                                                  search_keys=dataset_keys)
+    original_metadata = _load_metadata(fin,search_keys=metadata_keys)
     #
     # strip out the metadata 
     #
-    original_metadata = _load_metadata(fin,search_keys=metadata_keys)
-    
     if small_metadata_only:
         original_metadata = _find_smalldata_in_dict(original_metadata)
+
+    nexus_data_paths, hdf_data_paths = _find_data(fin,
+                                                  search_keys=dataset_keys)
+
     for data_path in nexus_data_paths:        
         dictionary = _nexus_dataset_to_signal(fin,data_path,lazy)
         dictionary["mapping"] = mapping 
         title = dictionary["metadata"]["General"]["title"]
-        if "Experiments" in original_metadata:
-            if "learning_results" in original_metadata["Experiments"][title]:
-                learning = original_metadata["Experiments"][title]["learning_results"]
+        if "auxiliary" in original_metadata:
+            if "learning_results" in original_metadata["auxiliary"][title]:
+                learning = original_metadata["auxiliary"][title]["learning_results"]
                 dictionary["attributes"]={}
                 dictionary["attributes"]["learning_results"] = learning
-            if "original_metadata" in original_metadata["Experiments"][title]:
-                orig_metadata = original_metadata["Experiments"][title]["original_metadata"]
+            if "original_metadata" in original_metadata["auxiliary"][title]:
+                orig_metadata = original_metadata["auxiliary"][title]["original_metadata"]
                 dictionary["original_metadata"] = orig_metadata
+            if "hyperspy_metadata" in original_metadata["auxiliary"][title]:
+                hyper_metadata = original_metadata["auxiliary"][title]["hyperspy_metadata"]
+                hyper_metadata.update(dictionary["metadata"])
+#                dictionary.setdefault("metadata",{})
+                dictionary["metadata"] = hyper_metadata
         else:
             dictionary["original_metadata"] = original_metadata              
         signal_dict_list.append(dictionary)
@@ -579,12 +587,12 @@ def _check_search_keys(search_keys):
             return search_keys
     elif type(search_keys) is list:
         if type(search_keys[0]) is not str:
-            raise ValueError("search keys must be 'all', 'unique' a "
+            raise ValueError("search keys must be 'all', 'hardlinks' a "
                              "hdf path string or a list of strings")
         else:
             return search_keys
     else:
-        raise ValueError("search keys must be 'all', 'unique' a "
+        raise ValueError("search keys must be 'all', 'hardlinks' a "
                          "hdf path string or a list of strings")
             
     
@@ -670,7 +678,7 @@ def _find_data(group,search_keys="hardlinks"):
     
 
 
-def _load_metadata(group,lazy=True,search_keys="hardlinks"):
+def _load_metadata(group,lazy=True,search_keys="all"):
     """Search through a hdf group and return the group
     structure, datasets and attributes
 
@@ -701,9 +709,7 @@ def _load_metadata(group,lazy=True,search_keys="hardlinks"):
                 rootkey = "/" + key
             new_key =_fix_exclusion_keys(key)
             if type(item) is h5py._hl.dataset.Dataset:
-                target = _getlink(item,rootkey,key)
-                if ((search_keys == "hardlinks" and target is None) or
-                    search_keys != "hardlinks"):
+                if item.attrs:
                     if new_key not in tree.keys():
                         tree[new_key]={}
                     tree[new_key]["value"] = _parse_from_file(item,lazy=lazy)
@@ -711,14 +717,20 @@ def _load_metadata(group,lazy=True,search_keys="hardlinks"):
                         if "attrs" not in tree[new_key].keys():
                             tree[new_key]["attrs"]={}
                         tree[new_key]["attrs"][k] =  _parse_from_file(v,lazy=lazy)
+                else:
+                    # this is to support hyperspy where datasets are not saved
+                    # with attributes
+                    tree[new_key] = _parse_from_file(item,lazy=lazy)   
             elif type(item) is h5py._hl.group.Group:
-                target = _getlink(item,rootkey,key)
-                if ((search_keys == "hardlinks" and target is None) or
-                    search_keys != "hardlinks"):
-                    tree[new_key]=find_meta_in_tree(item,rootkey,lazy=lazy)                    
+                if "NX_class" in item.attrs:
+                    if item.attrs["NX_class"] != b"NXdata":
+                        tree[new_key]=find_meta_in_tree(item,rootkey,lazy=lazy)                                     
+                else:
+                    tree[new_key]=find_meta_in_tree(item,rootkey,lazy=lazy)                                     
+                    
         return tree   
     extracted_tree = find_meta_in_tree(group,rootname,lazy=lazy)
-    if search_keys in ["hardlinks","all"]:
+    if search_keys in ["all"]:
         return extracted_tree
     else:
         return _find_search_keys_in_dict(extracted_tree,search_keys=search_keys)    
@@ -891,6 +903,9 @@ def _write_nexus_groups(dictionary, group, **kwds):
             # we will handle attrs later...
             continue
         if isinstance(value, dict):
+            if "attrs" in value:
+                if "NX_class" in value["attrs"] and value["attrs"]["NX_class"]=="NXdata":
+                    continue
             if 'value' in value.keys() and not isinstance(value["value"],dict) \
             and len(set(list(value.keys())+["attrs","value"]))==2:
                value=value["value"]
@@ -922,10 +937,14 @@ def _write_nexus_attr(dictionary, group):
     """
     for key, value in dictionary.items():
         if key == 'attrs':
+
             for k, v in value.items():
                 group.attrs[k] = _parse_to_file(v)        
         else:
             if isinstance(value, dict):
+                if "attrs" in value:
+                    if "NX_class" in value["attrs"] and value["attrs"]["NX_class"]=="NXdata":
+                        continue
                 _write_nexus_attr(dictionary[key], group[key])
                 
 def _guess_signal_type(data):   
@@ -975,9 +994,8 @@ def read_metadata_from_file(filename,search_keys="all",
     ----------
     filename : str  
         path of the file to read
-    search_keys  : {'all','unique' list_of_strings} , default : 'unique'
+    search_keys  : {'all',str or list_of_strings} , default : 'all'
         'all' will return all datasets found including linked data
-        'unique' will return data which is not linked, i.e. the original data
         A list of strings will only return items which contain the strings
         For example, search_keys = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
@@ -1003,6 +1021,7 @@ def read_metadata_from_file(filename,search_keys="all",
     fin = h5py.File(filename,"r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
+    print("search_keys",search_keys)
     stripped_metadata = _load_metadata(fin,search_keys=search_keys)
     # strip out the search keys
     #stripped_metadata = _find_search_keys_in_dict(metadata,search_keys=search_keys)
@@ -1095,21 +1114,22 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
         smd.record_by = ""
 
     nxdata = nxgroup.require_group(signal_name)
-    nxdata.attrs["NX_class"] = b"NXdata"    
-    nxdata.attrs[u"signal"] = b"data"
-    overwrite_dataset(nxdata, signal.data, u"data", chunks=None, **kwds)
-    axis_names=[b"."]*len(signal.axes_manager.shape)
+    nxdata.attrs["NX_class"] =_parse_to_file("NXdata")  
+    nxdata.attrs["signal"] = _parse_to_file("data")
+    datastr = _parse_to_file("data")
+    overwrite_dataset(nxdata, signal.data, datastr, chunks=None, **kwds)
+    axis_names=[_parse_to_file(".")]*len(signal.axes_manager.shape)
     for i,axis in enumerate(signal.axes_manager._axes):
         if axis.name != t.Undefined:
             axname = _parse_to_file(axis.name)
-            axindex = axis.index_in_array
+            axindex = [axis.index_in_array]
             indices = _parse_to_file(axis.name + "_indices")
-            nxdata.attrs[indices] = axindex
+            nxdata.attrs[indices] = _parse_to_file(axindex)
             nxdata.require_dataset(axname,data=axis.axis,shape=axis.axis.shape,
                                    dtype=axis.axis.dtype)
             axis_names[axis.index_in_array]=axname
 
-    nxdata.attrs[u"axes"] = axis_names
+    nxdata.attrs["axes"] = _parse_to_file(axis_names)
     return nxdata
 
 def file_writer(filename,
@@ -1142,62 +1162,65 @@ def file_writer(filename,
         signals = [signals]
 
     with h5py.File(filename, mode='w') as f:
-        f.attrs['file_format'] = "Nexus"
-        f.attrs['file_writer'] = "Hyperspy_Nexus"        
-        nxexpt = f.create_group('Experiments')
-        nxexpt.attrs["NX_class"] = b"NXentry"                
+        f.attrs['file_format'] = "nexus_like"
+        f.attrs['file_writer'] = "hyperspy_nexus"        
+        nxaux = f.create_group("auxiliary")
+        nxaux.attrs["NX_class"] = _parse_to_file("NXentry")                
+        nxexpt = f.create_group('signals')
+        nxexpt.attrs["NX_class"] = _parse_to_file("NXentry")               
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
 
-        try:
-            #
-            # write the signals
-            #
+        #
+        # write the signals
+        #
 
-            for i,sig in enumerate(signals):
-                signal_name = sig.metadata.General.title if \
-                sig.metadata.General.title else '__unnamed__%d'% i
-                if "/" in signal_name:
-                    signal_name = signal_name.replace("/", "_")
-                nxsignal = nxexpt.create_group(signal_name)
-                nxsignal.attrs["NX_class"] = b""  
-                
-                _write_signal(sig, nxsignal,signal_name,**kwds)
-    
-                if sig.learning_results:
-                    nxlearn = nxsignal.create_group('learning_results')
-                    nxlearn.attrs["NX_class"] = b"NXcollection"    
-                    learn = sig.learning_results.__dict__
-                    _write_nexus_groups(learn,nxlearn,**kwds)
-                    _write_nexus_attr(learn,nxlearn)
-                #
-                # write metadata 
-                #
-                if sig.original_metadata:
-                    if isinstance(sig.original_metadata,DictionaryTreeBrowser):
-                        ometa = sig.original_metadata.as_dictionary()
-                    else:
-                        ometa = sig.original_metadata
-                    if small_metadata_only:
-                        ometa=_find_smalldata_in_dict(ometa)
-                    if sig.metadata:
-                        if isinstance(sig.metadata,DictionaryTreeBrowser):
-                            meta = sig.metadata.as_dictionary()
-                        else:
-                            meta = sig.metadata
-                        if "hyperspy_metadata" in ometa:
-                            ometa["hyperspy_metadata"].update(meta)
-                        else:
-                            ometa["hyperspy_metadata"] = meta
-                        
-                    nxometa = nxsignal.create_group('original_metadata')
-                    nxometa.attrs["NX_class"] = b"NXcollection"  
-                    # write the groups and structure
-                    _write_nexus_groups(ometa,nxometa,**kwds)
-                    _write_nexus_attr(ometa,nxometa)
+        for i,sig in enumerate(signals):
+            signal_name = sig.metadata.General.title if \
+            sig.metadata.General.title else 'unnamed__%d'% i
+            if "/" in signal_name:
+                signal_name = signal_name.replace("/", "_")
+            if signal_name.startswith("__"):
+                signal_name = signal_name[2:]
+            
+            _write_signal(sig, nxexpt,signal_name,**kwds)
+
+            if sig.learning_results:
+                nxauxsig = nxaux.create_group(signal_name)
+                nxauxsig.attrs["NX_class"] = _parse_to_file("NXentry")  
+
+                nxlearn = nxauxsig.create_group('learning_results')
+                nxlearn.attrs["NX_class"] = _parse_to_file("NXcollection")    
+                learn = sig.learning_results.__dict__
+                _write_nexus_groups(learn,nxlearn,**kwds)
+                _write_nexus_attr(learn,nxlearn)
+            #
+            # write metadata 
+            #
+            if sig.original_metadata:
+                if isinstance(sig.original_metadata,DictionaryTreeBrowser):
+                    ometa = sig.original_metadata.as_dictionary()
+                else:
+                    ometa = sig.original_metadata
+                if small_metadata_only:
+                    ometa=_find_smalldata_in_dict(ometa)
+
+                nxometa = nxauxsig.create_group('original_metadata')
+                nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")  
+                # write the groups and structure
+                _write_nexus_groups(ometa,nxometa,**kwds)
+                _write_nexus_attr(ometa,nxometa)
+                    
+            if sig.metadata:
+                if isinstance(sig.metadata,DictionaryTreeBrowser):
+                    meta = sig.metadata.as_dictionary()
+                else:
+                    meta = sig.metadata
+
+                nxometa = nxauxsig.create_group('hyperspy_metadata')
+                nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")  
+                # write the groups and structure
+                _write_nexus_groups(meta,nxometa,**kwds)
+                _write_nexus_attr(meta,nxometa)
                                         
-        except BaseException:
-            raise
-        finally:
-            f.close()
             
