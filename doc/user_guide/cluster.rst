@@ -48,35 +48,35 @@ If you take all features within a given cluster and average them
 this average set of features is the center of that cluster. 
 
 
-Whitening or scaling
---------------------
+Pre-processing
+--------------
 
-Cluster analysis measures the distances between features and groups them
-but may require some pre-processing of the data in order to do this effectively
+Cluster analysis measures the distances between features and groups them. It is
+often necessary to pre-process the features in order to obtain meaningful results.
 
-If the signal magnitude varies strongly from spectra to 
-spectra or image to image then the clustering would group the data into clusters 
-based on differences in magnitude. However if the objective is to identify,
-for example, that peak 1 is the same size as peak 2 then this magnitude variation
+For example, consider the case of a spectrum image. If the signal magnitude varies strongly from spectra to
+spectra or image to image, then the clustering would group the data into clusters
+based on differences in magnitude. However, if the objective is to identify,
+for example, that peak 1 is the same as peak 2, then this magnitude variation
 needs to be removed and the spectra should therefore all be normalized first to remove
-the effect of peak height. 
-As discussed previously decomposition methods reduce data into a set of components
-and a set of factors defining the mixing needed to represent the data.  
+the effect of peak height.
+
+As discussed previously, decomposition methods decompose data into a set of components
+and a set of factors defining the mixing needed to represent the data.
 If signal 1 is reduced to three components with mixing 0.1 0.5 2.0
 and signal 2 is reduced to a mixing of 0.2 1.0 4.0 it should be clear that these 
-represent the same result but with a scaling difference. Normalization of the data
+represent the same signal but with a scaling difference. Normalization of the data
 can again be used to remove scaling effects.
  
 Pre-processing to remove scaling effects is handled within the cluster analysis
 methods and implements the ``standard`` , ``minmax`` or ``norm``  pre-processing 
 methods as standard or allows for custom methods from  `sklearn.preprocessing <https://scikit-learn.org/stable/modules/preprocessing.html>`_
 For the reasons described above the scaling will influence the results and should 
-be evaluated for the problem under investigation. Briefly, ``norm`` is commonly used 
-for experimental data and treats the features as a vector and normalizes the vector length.
+be evaluated for the problem under investigation. Briefly, ``norm``
+treats the features as a vector and normalizes the vector length.
 This is the default scaling used in the cluster analysis methods. 
-``standard`` re-scales each feature by removing the mean and scaling to unit variance. 
-so each feature becomes equally weighted. ``minmax``  normalizes  each feature 
-between the min and max range of that feature. 
+``standard`` re-scales each feature by removing the mean and scaling to unit variance.
+``minmax``  normalizes  each feature between the minimum and maximum range of that feature.
 
 Clustering
 ----------
