@@ -592,6 +592,7 @@ class BaseDataAxis(t.HasTraits):
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         self.__class__ = UniformDataAxis
+        d["_type"] = 'UniformDataAxis'
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
@@ -599,14 +600,19 @@ class DataAxis(BaseDataAxis):
 
     def __init__(self,
                  index_in_array=None,
-                 _type=t.Undefined,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
-                 axis=[1]):
+                 axis=[1],
+                 **kwargs):
         super().__init__(index_in_array, name, units, navigate)
         self.axis = axis
-        self._type = self.__class__.__name__
+        if '_type' in kwargs:
+            if kwargs.get('_type') != self.__class__.__name__:
+                raise ValueError('The passed `_type` of axis is inconsistent '
+                                'with the given attributes')
+        else: 
+            self._type = self.__class__.__name__
         self.update_axis()
 
     def _slice_me(self, slice_):
@@ -701,7 +707,6 @@ class FunctionalDataAxis(BaseDataAxis):
                  expression,
                  x=None,
                  index_in_array=None,
-                 _type=t.Undefined,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
@@ -719,7 +724,14 @@ class FunctionalDataAxis(BaseDataAxis):
                 self.x = x
                 self.size = self.x.size
         self._expression = expression
-        self._type = self.__class__.__name__
+        if '_type' in parameters:
+            if parameters.get('_type') != self.__class__.__name__:
+                raise ValueError('The passed `_type` of axis is inconsistent '
+                                'with the given attributes')
+            del parameters['_type']
+            
+        else: 
+            self._type = self.__class__.__name__
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
@@ -729,7 +741,6 @@ class FunctionalDataAxis(BaseDataAxis):
             raise ValueError(
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
-
         self._function = lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False)
         for parameter in parameters.keys():
@@ -779,6 +790,7 @@ class FunctionalDataAxis(BaseDataAxis):
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
         self.__class__ = DataAxis
+        d["_type"] = 'DataAxis'
         self.__init__(**d, axis=self.axis)
 
     def crop(self, start=None, end=None):
@@ -835,13 +847,13 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
     size = t.CInt(0)
     def __init__(self,
                  index_in_array=None,
-                 _type=t.Undefined,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
                  size=1.,
                  scale=1.,
-                 offset=0.):
+                 offset=0.,
+                 **kwargs):
         super().__init__(
             index_in_array=index_in_array,
             name=name,
@@ -853,7 +865,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.size = size
         self.update_axis()
         self._is_uniform = True
-        self._type = self.__class__.__name__
+        if '_type' in kwargs:
+            if kwargs.get('_type') != self.__class__.__name__:
+                raise ValueError('The passed `_type` of axis is inconsistent '
+                                'with the given attributes')
+        else: 
+            self._type = self.__class__.__name__
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
     def _slice_me(self, slice_):
@@ -1017,12 +1034,14 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
         self.__class__ = FunctionalDataAxis
+        d["_type"] = 'FunctionalDataAxis'
         self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
         self.__class__ = DataAxis
+        d["_type"] = 'DataAxis'
         self.__init__(**d, axis=self.axis)
 
 def serpentine_iter(shape):
