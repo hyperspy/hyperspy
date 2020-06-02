@@ -129,8 +129,11 @@ scaling to unit variance. ``minmax`` normalizes each feature between the
 minimum and maximum range of that feature.
 
 
-Examples 
+Examples
 --------
+
+Clustering using decomposition results
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let's use the `make_blobs
 <https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_blobs.html>`_
@@ -143,143 +146,246 @@ might work in practice.
     >>> from sklearn.datasets import make_blobs
     >>> data = make_blobs(
     >>>         n_samples=500,
-    >>>         n_features=4,
+    >>>         n_features=3,
     >>>         shuffle=False)[0].reshape(50, 10, 4)
     >>> s = hs.signals.Signal1D(data)
 
-make_blobs creates 3 distinct centres or 3 "types" of signal by default. 
+make_blobs creates 3 distinct centres or 3 "types" of signal by default.
 If we examine the signal using PCA we can see that there are 3 regions but
-their interpretation of the signal is a little ambigous.  
+their interpretation of the signal is a little ambiguous.
+
+
+.. code-block:: python
+
+    >>> hs.plot.plot_images(data.T)
+
+
+.. image:: images/clustering_data.png
+
 
 To see how cluster analysis works it's best to first examine the signal.
 Moving around the image you should be able to see 3 distinct regions in which
-the 1D signal modulates slightly.  
+the 1D signal modulates slightly.
 
 .. code-block:: python
 
     >>> s.plot()
 
 
-If we then perform PCA we start to see the 3 regions a little more clearly but
-the factors and loadings don't match up with the original 1D signals or image.
+If we then perform PCA we start to see the 3 regions a little more clearly but,
+in general, it is not easy to interpret those results.
 
 .. code-block:: python
 
     >>> s.decomposition()
-    >>> s.plot_decomposition_results()
+    >>> s.plot_decomposition_loadings(comp_ids=3, axes_decor="off")
 
+.. image:: images/clustering_decomposition_loadings.png
 
 We can then cluster, using the decomposition results, to find similar regions
 and the representative features in those regions. 
-This indentifies 3 regions and the average or representative 1D signals in 
+This indentifies 3 regions and the average 1D signals in 
 those regions
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(3)
-    >>> s.plot_cluster_results("decomposition")
-    
+    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3)
+    >>> s.plot_cluster_labels(axes_decor="off")
 
+
+.. image:: images/clustering_labels.png
 
 To see what the labels the cluster algorithm has assigned you can inspect:
 
 .. code-block:: python
 
     >>> s.learning_results.cluster_membership
+    array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+       2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
 
 
-These are split into a cluster_labels array to help plotting and masking:
+Internally they are split into a ``cluster_labels`` array to help plotting and masking:
 
 .. code-block:: python
 
-    >>> s.learning_results.cluster_labels
+    >>> s.learning_results.cluster_labels[0]
+    array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+       1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-
-The clustering methods currently supported in hyperspy are kmeans and 
-agglomerative. Additional keywords can be passed directly to the scikit learn 
-methods in the following manner:
-
-
-.. code-block:: python
-
-    >>> s.cluster_analysis("decomposition",n_clusters=3,
-    >>>        algorithm='agglomerative',
-    >>>        kwargs={affinity='cosine', linkage='average'})
-    >>> s.plot_cluster_results()
-
-
-Estimating the number of clusters
----------------------------------
 
 In this case we know there are 3 signals but for real examples it is difficult
-to define the number of clusters to use. A number of metrics, such as elbow, 
-Silhouette and Gap can be used to determine the optimal number of clusters. 
-The elbow method measures the sum-of-squares of the distances within a 
-cluster and as for the PCA decomposition an "elbow" or point where the gains 
-diminish with increasing number of clusters indicates the ideal number of 
-clusters. Silhouette analysis measures how well separated clusters are and 
-can be used to determine the most likely number of clusters. As the scoring 
-is a measure of separation of clusters a number of solutions may occur and 
+to define the number of clusters to use. A number of metrics, such as elbow,
+Silhouette and Gap can be used to determine the optimal number of clusters.
+The elbow method measures the sum-of-squares of the distances within a
+cluster and, as for the PCA decomposition, an "elbow" or point where the gains
+diminish with increasing number of clusters indicates the ideal number of
+clusters. Silhouette analysis measures how well separated clusters are and
+can be used to determine the most likely number of clusters. As the scoring
+is a measure of separation of clusters a number of solutions may occur and
 maxima in the scores are used to indicate possible solutions. Gap analysis
-is similar but compares the “gap” between the clustered data results and 
-those from a randomly data set of the same size. The largest gap indicates 
-the best clustering. The metric results can be plotted to check how 
+is similar but compares the “gap” between the clustered data results and
+those from a randomly data set of the same size. The largest gap indicates
+the best clustering. The metric results can be plotted to check how
 well-defined the clustering is.
 
 .. code-block:: python
 
-    >>> s.evaluate_number_of_clusters("decomposition",metric="gap")
+    >>> s.estimate_number_of_clusters(cluster_source="decomposition", metric="gap")
     >>> s.plot_cluster_metric()
-    
+
+.. image:: images/clustering_Gap.png
+
 The optimal number of clusters can be set or accessed from the learning 
 results
 
 .. code-block:: python
 
     >>> s.learning_results.number_of_clusters
-    
-If running cluster analysis and the number of clusters have not been
-specified the algorithm will attempt to use the estimated number of clusters
+    3
+
+
+
+Clustering using another signal as source
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In this example we will perform clustering analysis on the position of two
+peaks. The signals containing the position of the peaks can be computed for
+example using :ref:`curve fitting <model-label>`. Given an existing fitted
+model, the parameters can be extracted as signals and stacked. Clustering can
+then be applied as described previously to identify trends in the fitted
+results.
+
+Let's start by creating a suitable synthetic dataset.
 
 .. code-block:: python
 
-    >>> s.cluster_analysis()
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+    >>> s_dummy = hs.signals.Signal1D(np.zeros((64, 64, 1000)))
+    >>> s_dummy.axes_manager.signal_axes[0].scale = 2e-3
+    >>> s_dummy.axes_manager.signal_axes[0].units = "eV"
+    >>> s_dummy.axes_manager.signal_axes[0].name = "energy"
+    >>> m = s_dummy.create_model()
+    >>> m.append(hs.model.components1D.GaussianHF(fwhm=0.2))
+    >>> m.append(hs.model.components1D.GaussianHF(fwhm=0.3))
+    >>> m.components.GaussianHF.centre.map["values"][:32, :] = .3 + .1 * np.random.normal(size=(32, 64))
+    >>> m.components.GaussianHF.centre.map["values"][32:, :] = .7 + .1 * np.random.normal(size=(32, 64))
+    >>> m.components.GaussianHF_0.centre.map["values"][:, 32:] = m.components.GaussianHF.centre.map["values"][:, 32:] * 2
+    >>> m.components.GaussianHF_0.centre.map["values"][:, :32] = m.components.GaussianHF.centre.map["values"][:, :32] * 0.5
+    >>> for component in m:
+    ...     component.centre.map["is_set"][:] = True 
+    >>> s = m.as_signal()
+    >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(),
+    >>> hs.plot.plot_images(stack, axes_decor="off", colorbar="single",
+    suptitle="")
 
+.. image:: images/clustering_gaussian_centres.png
 
-Clustering different signal information
----------------------------------------
-
-As discussed in the introduction, clustering can be performed on fitted or
-extracted parameters. Given an existing fitted model the parameters 
-can be extracted as signals and stacked. Decomposition and clustering can then 
-be applied as described previously to identify trends in the
-fitted results.
+Let's now perform cluster analysis on the stack and calculate the centres using
+the spectrum image. Notice that we don't need to fit the model to the data
+because this is a synthetic dataset. When analyzing experimental data you will
+need to fit the model first.
 
 .. code-block:: python
 
-    >>> import hyperspy.misc.utils.stack
-    >>> # create a signal called original signal and setup fitting
-    >>> # model created using two gaussians and fitting performed... 
-    >>> fitted_centre1 = g1.centre.as_signal()
-    >>> fitted_centre2 = g2.centre.as_signal()
-    >>> new_signal = stack([fitted_centre1,fitted_centre2]])
-    >>> new_signal.cluster_analysis("signal",source_for_centers=original_signal)
-    
-To extract cluster centers based on the decomposition results
-of a signal using the results of fitting on that signal 
+    >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(), m.components.GaussianHF_0.centre.as_signal()])s.cluster_analysis(cluster_source=stack.T, source_for_centers=s, n_clusters=2)
+    >>> s.plot_cluster_labels()
+
+.. image:: images/clustering_gaussian_centres_labels.png
 
 .. code-block:: python
 
-    >>> import hyperspy.misc.utils.stack
-    >>> # A signal called original signal and setup fitting
-    >>> # model created using two gaussians and fitting performed... 
-    >>> fitted_centre1 = g1.centre.as_signal()
-    >>> fitted_centre2 = g2.centre.as_signal()
-    >>> new_signal = stack([fitted_centre1,fitted_centre2]])
-    >>> original_signal.cluster_analysis(new_signal,source_for_centers="decomposition")
+    >>> s.plot_cluster_centers()
 
-
-
+.. image:: images/clustering_gaussian_centres_centres.png
 
 
 
