@@ -100,14 +100,6 @@ Cluster analysis measures the distances between features and groups them. It
 is often necessary to pre-process the features in order to obtain meaningful
 results.
 
-For example, consider the case of a spectrum image. If the signal magnitude
-varies strongly from spectra to spectra, then the
-clustering would group the data into clusters based on differences in
-magnitude. However, if the objective is to identify, for example, that peak 1
-is the same as peak 2, then this magnitude variation needs to be removed and
-the spectra should therefore all be normalized first to remove the effect of
-peak height.
-
 Similarly, pre-processing can also be useful to reveal clusters when
 performing cluster analysis of decomposition results. Decomposition methods
 decompose data into a set of components and a set of factors defining the
