@@ -15,24 +15,23 @@ those in other groups (clusters).
 A Hyperspy signal can represent a number of large arrays of different measurements
 which can represent spectra, images or sets of paramaters.
 Identifying and extracting trends from large datasets is often difficult and 
-PCA, BSS, NMF and cluster analysis play an important role in this process. 
+decomposition methods, blind source separation and cluster analysis play an important role in this process. 
 
 Cluster analysis, in essence, compares the "distances" (or similar metric) 
 between different sets of measurements and groups those that are closest together.   
 The features it groups can be raw data points, for example, comparing for 
-every navigation dimension all points of a spectrum. However if the 
-dataset is large the process of clustering can be computationally intensive so 
+every navigation dimension all points of a spectrum. However, if the 
+dataset is large, the process of clustering can be computationally intensive so 
 clustering is more commonly used on an extracted set of features or parameters.
 For example, extraction of two peak positions of interest via a fitting process
 rather than clustering all spectra points.
 
-Decomposition or Blind Source Separation (PCA, NMF, BSS etc.) can produce a smaller set 
-of features as it reduces the description of the data into a set of loadings and factors. 
-The loadings capture a core representation of the features in the data and the factors 
-provide the mixing ratios of these loadings that best describe the original data. 
-Overall this represents a much smaller data volume compared to the original data 
-and can helps to identify initial differences. Cluster analysis is then performed 
-on the factors. 
+In favourable cases, matrix decomposition and related methods can decompose the
+data into a (ideally small) set of significant loadings and factors.
+The factors capture a core representation of the features in the data and the loadings 
+provide the mixing ratios of these factors that best describe the original data. 
+Overall, this usually represents a much smaller data volume compared to the original data 
+and can helps to identify correlations.
 
 A detailed description of the application of cluster analysis in x-ray
 spectro-microscopy and further details on the theory and implementation can
@@ -60,6 +59,8 @@ All HyperSpy signals have the following methods for clustering analysis:
 * :py:meth:`~.signal.MVATools.plot_cluster_results`
 * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+* :py:meth:`~.signal.MVATools.get_cluster_centers`
+* :py:meth:`~.signal.MVATools.get_cluster_labels`
 * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`
 * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`
 
