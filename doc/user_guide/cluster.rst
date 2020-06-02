@@ -100,16 +100,16 @@ Cluster analysis measures the distances between features and groups them. It
 is often necessary to pre-process the features in order to obtain meaningful
 results.
 
-Similarly, pre-processing can also be useful to reveal clusters when
+For example, pre-processing can be useful to reveal clusters when
 performing cluster analysis of decomposition results. Decomposition methods
-decompose data into a set of components and a set of factors defining the
+decompose data into a set of factors and a set of loadings defining the
 mixing needed to represent the data. If signal 1 is reduced to three
 components with mixing 0.1 0.5 2.0, and signal 2 is reduced to a mixing of 0.2
 1.0 4.0, it should be clear that these represent the same signal but with a
 scaling difference. Normalization of the data can again be used to remove
 scaling effects.
 
-For the reasons described above the pre-processing step
+Therefore, the pre-processing step
 will highly influence the results and should be evaluated for the problem
 under investigation.
 
@@ -118,7 +118,7 @@ All pre-processing methods from (or compatible with) `sklearn.preprocessing
 to the ``scaling`` keyword of the :py:meth:`~.learn.mva.MVA.cluster_analysis`
 method. For convenience, the following methods from scikit-learn are
 available as standard: ``standard`` , ``minmax`` and ``norm`` as
-standard.Briefly, ``norm`` treats the features as a vector and normalizes the
+standard. Briefly, ``norm`` treats the features as a vector and normalizes the
 vector length. ``standard`` re-scales each feature by removing the mean and
 scaling to unit variance. ``minmax`` normalizes each feature between the
 minimum and maximum range of that feature.
@@ -145,9 +145,6 @@ might work in practice.
     >>>         shuffle=False)[0].reshape(50, 10, 4)
     >>> s = hs.signals.Signal1D(data)
 
-make_blobs creates 3 distinct centres or 3 "types" of signal by default.
-If we examine the signal using PCA we can see that there are 3 regions but
-their interpretation of the signal is a little ambiguous.
 
 
 .. code-block:: python
@@ -177,10 +174,9 @@ in general, it is not easy to interpret those results.
 
 .. image:: images/clustering_decomposition_loadings.png
 
-We can then cluster, using the decomposition results, to find similar regions
-and the representative features in those regions. 
-This indentifies 3 regions and the average 1D signals in 
-those regions
+We can then perform cluster analysis of decomposition results, to find similar regions
+and the representative features in those regions.
+This indentifies 3 regions and the average 1D signals in those regions
 
 .. code-block:: python
 
@@ -356,7 +352,7 @@ Let's start by creating a suitable synthetic dataset.
     >>> m.components.GaussianHF_0.centre.map["values"][:, 32:] = m.components.GaussianHF.centre.map["values"][:, 32:] * 2
     >>> m.components.GaussianHF_0.centre.map["values"][:, :32] = m.components.GaussianHF.centre.map["values"][:, :32] * 0.5
     >>> for component in m:
-    ...     component.centre.map["is_set"][:] = True 
+    ...     component.centre.map["is_set"][:] = True
     >>> s = m.as_signal()
     >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(),
     >>> hs.plot.plot_images(stack, axes_decor="off", colorbar="single",
@@ -366,7 +362,7 @@ Let's start by creating a suitable synthetic dataset.
 
 Let's now perform cluster analysis on the stack and calculate the centres using
 the spectrum image. Notice that we don't need to fit the model to the data
-because this is a synthetic dataset. When analyzing experimental data you will
+because this is a synthetic dataset. When analysing experimental data you will
 need to fit the model first.
 
 .. code-block:: python
