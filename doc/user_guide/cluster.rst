@@ -68,27 +68,29 @@ The :py:meth:`~.learn.mva.MVA.cluster_analysis` method can perform cluster
 analysis using any `sklearn.clustering
 <https://scikit-learn.org/stable/modules/clustering.html>`_ clustering
 algorithms or any other object with a compatible API. This involves importing
-the relevant algorithm class from scikit-learn. For convenience, the
-``kmeans`` and ``agglomerative`` algorithms are imported internally.
+the relevant algorithm class from scikit-learn.
+
+.. code-block:: python
+
+    >>> from sklearn.cluster import KMeans
+    >>> s.cluster_analysis(cluster_source="signal", algorithm=KMeans(n_clusters=3, n_init=8))
+
+
+For convenience, the default algorithm is ``kmeans`` algorithm and is imported
+internally. All extra keyword arguments are passed to the algorithm when
+present. Therefore the following code is equivalent to the previous one:
 
 For example:
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(cluster_source="signal", n_clusters=3,
-    algorithm="kmeans", n_init=8)
+    >>> s.cluster_analysis(cluster_source="signal", n_clusters=3, algorithm="kmeans", n_init=8)
 
 is equivalent to:
 
-.. code-block:: python
-
-    >>> from sklearn.cluster import KMeans
-    >>> s.cluster_analysis(cluster_source="signal",
-    algorithm=KMeans(n_clusters=3, n_init=8))
-
 :py:meth:`~.learn.mva.MVA.cluster_analysis` computes the cluster labels. The
 clusters areas with identical label are averaged to create a set of cluster
-centers. This averaging can be performed on the ``signal`` itself, the
+centres. This averaging can be performed on the ``signal`` itself, the
 ``bss`` or ``decomposition`` results or a user supplied signal.
 
 Pre-processing
