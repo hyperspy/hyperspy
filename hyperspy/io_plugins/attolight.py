@@ -113,7 +113,7 @@ def _get_metadata(filename, md_file_name, attolight_acquisition_system):
     # its 1024)
     try:
         total_channels
-    except:
+    except NameError:
         total_channels = attolight_systems[attolight_acquisition_system]['channels']
     channels = total_channels // binning
 
@@ -226,7 +226,7 @@ def _create_navigation_axis(data, metadata):
     name = ''
     scale = calax * 1000
     # changes micrometer to nm, value for the size of 1 pixel
-    units = '$nm$'
+    units = 'nm'
 
     axis_dict = {'units': units,
                  'navigate': True,
@@ -271,32 +271,19 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     filename : str, None
         The HYPCard.bin filepath for the file to be loaded, created by
         the AttoLight software.
-        If None, a pop-up window will be loaded.
     attolight_acquisition_system : str
         Specify which acquisition system the HYPCard was taken with, from the
         attolight_systems dictionary file. By default, it assumes it is
         the Cambridge Attolight SEM system.
-    lazy : bool
-        If True the file will be opened lazily, i.e. without actually reading
-        the data from the disk until required. Allows datasets much larger than
-        available memory to be loaded.
 
     Returns
     -------
-    s : Signal
-        A CLSEMSpectrum lumispy object containing the loaded data with the metadata,
-        the background (if available) and the respective SEM image.
-
-    NOTE
-    ----
-
-    The lumispy package must be installed for these files to run.
-    https://github.com/LumiSpy/lumispy
-
+    s: dictionary
+        A dictionary which will be loaded by the hyperspy loader.
     """
 
     # Get folder name
-    hypcard_folder = os.path.split(os.path.abspath(filename))[0]
+    hypcard_folder = os.path.dirname(filename)
 
     # Get folder name (which is the experiment name)
     name = os.path.basename(hypcard_folder)
