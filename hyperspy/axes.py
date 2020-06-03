@@ -254,11 +254,16 @@ class BaseDataAxis(t.HasTraits):
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined):
+                 navigate=t.Undefined,
+                 **kwargs):
         super(BaseDataAxis, self).__init__()
 
         self.events = Events()
-        _type = self.__class__.__name__
+        if '_type' in kwargs:
+            if kwargs.get('_type') != self.__class__.__name__:
+                raise ValueError('The passed `_type` of axis is inconsistent '
+                                'with the given attributes')
+        self._type = self.__class__.__name__
         self.events.index_changed = Event("""
             Event that triggers when the index of the `{}` changes
 
@@ -269,7 +274,7 @@ class BaseDataAxis(t.HasTraits):
             ---------
             obj : The {} that the event belongs to.
             index : The new index
-            """.format(_type, _type, _type), arguments=["obj", 'index'])
+            """.format(self._type, self._type, self._type), arguments=["obj", 'index'])
         self.events.value_changed = Event("""
             Event that triggers when the value of the `{}` changes
 
@@ -280,7 +285,7 @@ class BaseDataAxis(t.HasTraits):
             ---------
             obj : The {} that the event belongs to.
             value : The new value
-            """.format(_type, _type, _type), arguments=["obj", 'value'])
+            """.format(self._type, self._type, self._type), arguments=["obj", 'value'])
 
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
@@ -611,8 +616,7 @@ class DataAxis(BaseDataAxis):
             if kwargs.get('_type') != self.__class__.__name__:
                 raise ValueError('The passed `_type` of axis is inconsistent '
                                 'with the given attributes')
-        else: 
-            self._type = self.__class__.__name__
+        self._type = self.__class__.__name__
         self.update_axis()
 
     def _slice_me(self, slice_):
@@ -718,7 +722,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 raise ValueError("Please provide either `x` or `size`.")
             self.x = UniformDataAxis(scale=1, offset=0, size=size)
         else:
-            if type(x) is dict:
+            if isinstance(x, dict):
                 self.x = _create_axis(**x)
             else:
                 self.x = x
@@ -729,9 +733,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 raise ValueError('The passed `_type` of axis is inconsistent '
                                 'with the given attributes')
             del parameters['_type']
-            
-        else: 
-            self._type = self.__class__.__name__
+        self._type = self.__class__.__name__
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
@@ -869,8 +871,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             if kwargs.get('_type') != self.__class__.__name__:
                 raise ValueError('The passed `_type` of axis is inconsistent '
                                 'with the given attributes')
-        else: 
-            self._type = self.__class__.__name__
+        self._type = self.__class__.__name__
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
     def _slice_me(self, slice_):
@@ -1374,7 +1375,7 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            if type(axis_dict) is dict:
+            if isinstance(axis_dict,dict):
                 self._append_axis(**axis_dict)
             else:
                 self._axes.append(axis_dict)

@@ -97,6 +97,7 @@ class TestDictionaryBrowser:
                     'attributes': {'_lazy': False},
                     'axes': [
                         {
+                            '_type': 'UniformDataAxis',
                             'name': 'x',
                             'navigate': False,
                                     'offset': 0.0,

@@ -50,7 +50,8 @@ class TestBaseDataAxis:
         assert axis.navigate
         assert not self.axis.is_uniform
         assert_deep_almost_equal(axis.get_axis_dictionary(),
-                                 {'name': 'named axis',
+                                 {'_type': 'BaseDataAxis',
+                                  'name': 'named axis',
                                   'units': 's',
                                   'navigate': True})
 

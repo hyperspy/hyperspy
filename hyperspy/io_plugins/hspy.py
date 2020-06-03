@@ -702,6 +702,16 @@ def write_signal(signal, group, **kwds):
 
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
+        if 'legacy' in kwds:
+            if kwds['legacy'] == True:
+                if axis_dict['_type'] != 'UniformDataAxis':
+                    raise ValueError("Legacy writing of the hspy format is "
+                                     "only intended to provide backward "
+                                     "compatibility for signals with uniform "
+                                     "axes. It does not support non-uniform "
+                                     "axes.")
+                del axis_dict["_type"]
+            del kwds["legacy"]
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, **kwds)
