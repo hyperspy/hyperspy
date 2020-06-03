@@ -56,8 +56,8 @@ def test__create_navigation_axis():
     cl_sem = hs.load(test_file)
     x = cl_sem.axes_manager.navigation_axes[0]
     y = cl_sem.axes_manager.navigation_axes[1]
-    assert x.units == '$nm$'
-    assert y.units == '$nm$'
+    assert x.units == 'nm'
+    assert y.units == 'nm'
     assert_allclose(x.scale, 2483.2, 0.1)
     assert_allclose(y.scale, 2483.2, 0.1)
 
@@ -66,7 +66,7 @@ def test__create_signal_axis_in_wavelength():
     cl_sem = hs.load(test_file)
     s = cl_sem.axes_manager.signal_axes[0]
     assert s.name == 'Wavelength'
-    assert s.units == '$nm$'
+    assert s.units == 'nm'
     assert_allclose(s.scale, 0.53, 0.01)
     assert_allclose(s.offset, 427, 1)
 
@@ -76,23 +76,27 @@ def test__store_metadata():
     assert cl_sem.metadata.Acquisition_instrument is not None
 
 
-def test__get_metadata():
+def test_metadata():
     cl_sem = hs.load(test_file)
-    assert cl_sem.metadata.Acquisition_instrument.Spectrometer.grating == 150.0
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.Spectrometer.central_wavelength_nm, 700, 1)
-    assert cl_sem.metadata.Acquisition_instrument.SEM.resolution_x == 2
-    assert cl_sem.metadata.Acquisition_instrument.SEM.resolution_y == 2
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.FOV, 26391, 1)
-    assert cl_sem.metadata.Acquisition_instrument.CCD.binning == 1
-    assert cl_sem.metadata.Acquisition_instrument.CCD.channels == 1024
+
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.Spectrometer.Grating__Groove_Density.magnitude, 150.0, 1)
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.Spectrometer.Central_wavelength.magnitude, 700, 1)
+
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Resolution_X.magnitude == 2
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Resolution_Y.magnitude == 2
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Real_Magnification.magnitude, 26391, 1)
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Objective_Lens.magnitude, 0.325, 0.01)
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Aperture.magnitude == 100
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Aperture_Chamber_Pressure == '1.0426e-07 Torr'
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.HYP_Dwelltime.magnitude, 0.29, atol=0.1)
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Beam_Energy.magnitude, 6000, 100)
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Gun_Lens.magnitude == 1.2
+
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Horizontal_Binning.magnitude == 1
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Channels.magnitude == 1024
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Signal_Amplification == 'x1'
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Readout_Rate_horizontal_pixel_shift == '1Mhz'
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Exposure_Time.magnitude == 0.3
+
     assert cl_sem.metadata.Acquisition_instrument.acquisition_system == 'cambridge_uk_attolight'
-    assert cl_sem.metadata.Acquisition_instrument.CCD.amplification == 1
-    assert cl_sem.metadata.Acquisition_instrument.CCD.readout_rate == 1
-    assert cl_sem.metadata.Acquisition_instrument.CCD.exposure_time_s == 0.3
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.dwell_time_scan_s, 0.000293, atol=0.00001)
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.beam_acc_voltage_kv, 6, 0.1)
-    assert cl_sem.metadata.Acquisition_instrument.SEM.gun_lens_amps == 1.2
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.obj_lens_amps, 0.325, 0.01)
-    assert cl_sem.metadata.Acquisition_instrument.SEM.aperture_um == 100
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.chamber_pressure_torr, 1e-7, atol=1e-8)
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.real_magnification, 26400, atol=100)
+

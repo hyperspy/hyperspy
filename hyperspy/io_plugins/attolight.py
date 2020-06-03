@@ -82,6 +82,7 @@ def _get_original_metadata(filename, md_file_name, attolight_acquisition_system)
     # Correct channels to the actual value, accounting for binning. Get
     # channels on the detector used (if channels not defined, then assume
     # its 1024)
+
     try:
         original_metadata['Total channels']
     except KeyError:
@@ -125,8 +126,8 @@ def _parse_relevant_metadata_values(filename, md_file_name, attolight_acquisitio
         ]}
 
     metadata = {}
-    for key, value in original_metadata[md_subcategory].items():
-        if key in keys_of_interest:
+    for key, value in original_metadata.items():
+        if key in keys_of_interest[md_subcategory]:
             try:
                 value = Q_(value)
             except UndefinedUnitError:
@@ -156,8 +157,8 @@ def _store_metadata(dict_tree, hypcard_folder, md_file_name,
 
     # Store metadata
     for group in metadata:
-        for key, value in metadata.items():
-            s = "Aquisition_instrument." + group + "." + key
+        for key, value in metadata[group].items():
+            s = "Acquisition_instrument." + group + "." + key
             dict_tree.set_item(s, value)
 
     dict_tree.set_item("General.folder_path", hypcard_folder)
@@ -183,8 +184,10 @@ def _create_signal_axis_in_wavelength(data, metadata):
         Dictionary with the parameters of a linear axis.
     """
     # Get relevant parameters from metadata
-    central_wavelength = metadata.Acquisition_instrument.Spectrometer.Central_wavelength.magnitude
-    units = metadata.Acquisition_instrument.Spectrometer.Central_wavelength.units
+    central_wavelength = metadata.Acquisition_instrument.Spectrometer.Central_wavelength
+    central_wavelength.ito('nanometer')
+
+    central_wavelength = central_wavelength.magnitude
 
     # Estimate start and end wavelengths
     spectra_offset_array = [central_wavelength - 273, central_wavelength + 273]
@@ -195,6 +198,7 @@ def _create_signal_axis_in_wavelength(data, metadata):
     scale = (spectra_offset_array[1] - spectra_offset_array[0]) \
             / size
     offset = spectra_offset_array[0]
+    units = 'nm'
 
     axis_dict = {'name': name,
                  'units': units,
