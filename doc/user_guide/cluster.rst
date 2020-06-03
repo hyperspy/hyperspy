@@ -140,12 +140,12 @@ might work in practice.
     >>> import hyperspy.api as hs
     >>> from sklearn.datasets import make_blobs
     >>> data = make_blobs(
-    >>>         n_samples=500,
-    >>>         n_features=3,
-    >>>         shuffle=False)[0].reshape(50, 10, 4)
+    >>>         n_samples=1000,
+    >>>         n_features=100,
+    >>>         centers=3,
+    >>>         shuffle=False,
+    >>>         random_state=1)[0].reshape(50, 20, 100)
     >>> s = hs.signals.Signal1D(data)
-
-
 
 .. code-block:: python
 
@@ -164,25 +164,34 @@ the 1D signal modulates slightly.
     >>> s.plot()
 
 
-If we then perform PCA we start to see the 3 regions a little more clearly but,
-in general, it is not easy to interpret those results.
+Let's perform SVD to reduce the dimensionality of the dataset by exploiting
+redundancies:
+
 
 .. code-block:: python
 
     >>> s.decomposition()
+    >>> s.plot_explained_variance_ratio()
+
+.. image:: images/clustering_scree_plot.png
+
+From the scree plot we deduce that, as expected, that the dataset can be reduce
+to 3 components. Let's plot their loadings:
+
+.. code-block:: python
+
     >>> s.plot_decomposition_loadings(comp_ids=3, axes_decor="off")
 
 .. image:: images/clustering_decomposition_loadings.png
 
-We can then perform cluster analysis of decomposition results, to find similar regions
+In the SVD loading we can identify 3 regions, but they are mixed in the components.
+Let's perform cluster analysis of decomposition results, to find similar regions
 and the representative features in those regions.
-This indentifies 3 regions and the average 1D signals in those regions
 
 .. code-block:: python
 
     >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3)
     >>> s.plot_cluster_labels(axes_decor="off")
-
 
 .. image:: images/clustering_labels.png
 
@@ -292,9 +301,9 @@ Internally they are split into a ``cluster_labels`` array to help plotting and m
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 
-In this case we know there are 3 signals but for real examples it is difficult
-to define the number of clusters to use. A number of metrics, such as elbow,
-Silhouette and Gap can be used to determine the optimal number of clusters.
+In this case we know there are 3 cluster, but for real examples the number of
+clusters is not known *a priori*. A number of metrics, such as elbow,
+Silhouette and Gap can be used to estimate the optimal number of clusters.
 The elbow method measures the sum-of-squares of the distances within a
 cluster and, as for the PCA decomposition, an "elbow" or point where the gains
 diminish with increasing number of clusters indicates the ideal number of
