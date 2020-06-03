@@ -59,7 +59,7 @@ attolight_systems = {
 }
 
 
-def _get_metadata(filename, md_file_name, attolight_acquisition_system):
+def _get_original_metadata(filename, md_file_name, attolight_acquisition_system):
     """Import the metadata from the MicroscopeStatus.txt file.
     Returns binning, nx, ny, FOV, grating and central_wavelength.
     Parameters
@@ -68,59 +68,74 @@ def _get_metadata(filename, md_file_name, attolight_acquisition_system):
         The absolute folder path where the md_file_name exists.
     """
     path = os.path.join(filename, md_file_name)
-    with open(path, encoding='windows-1252') as status:
-        for line in status:
-            if 'Horizontal Binning:' in line:
-                binning = int(line[line.find(':') + 1:-1])  # binning = binning status
-            if 'Resolution_X' in line:
-                nx = int(line[line.find(':') + 1:-7])
-                # nx = pixel in x-direction
-            if 'Resolution_Y' in line:
-                ny = int(line[line.find(':') + 1:-7])
-                # ny = pixel in y-direction
-            if 'Real Magnification' in line:
-                FOV = float(line[line.find(':') + 1:-1])
-            if 'Grating - Groove Density:' in line:
-                grating = float(line[line.find(':') + 1:-6])
-            if 'Central wavelength:' in line:
-                central_wavelength_nm = float(line[line.find(':') + 1:-4])
-            if 'Channels:' in line:
-                total_channels = int(line[line.find(':') + 1:-1])
-            if 'Signal Amplification:' in line:
-                amplification = int(line[line.find(':x') + 2:-1])
-            if 'Readout Rate (horizontal pixel shift):' in line:
-                readout_rate = int(line[line.find(':') + 1:-4])
 
-            if 'Exposure Time:' in line:
-                exposure_time_ccd_s = float(line[line.find(':') + 1:-3])
-            if 'HYP Dwelltime:' in line:
-                dwell_time_scan_s = float(line[line.find(':') + 1:-4]) / 1000
-            if 'Beam Energy:' in line:
-                beam_acc_voltage_kv = float(line[line.find(':') + 1:-3]) / 1000
-            if 'Gun Lens:' in line:
-                gun_lens_amps = float(line[line.find(':') + 1:-3])
-            if 'Objective Lens:' in line:
-                obj_lens_amps = float(line[line.find(':') + 1:-3])
-            if 'Aperture:' in line:
-                aperture_um = float(line[line.find(':') + 1:-4])
-            if 'Aperture Chamber Pressure:' in line:
-                chamber_pressure_torr = float(line[line.find(':') + 1:-6])
-            if 'Real Magnification:' in line:
-                real_magnification = float(line[line.find(':') + 1:-3])
+    original_metadata = {}
+    with open(path, encoding='windows-1252') as f:
+        for line in f:
+            try:
+                key, value = line.split(":")
+                original_metadata[key] = value[:-1]
+            except ValueError:
+                # not enough values to unpack
+                pass
 
     # Correct channels to the actual value, accounting for binning. Get
     # channels on the detector used (if channels not defined, then assume
     # its 1024)
     try:
-        total_channels
-    except NameError:
-        total_channels = attolight_systems[attolight_acquisition_system]['channels']
-    channels = total_channels // binning
+        original_metadata['Total channels']
+    except KeyError:
+        original_metadata['Total channels'] = attolight_systems[attolight_acquisition_system]['channels']
 
-    # Return metadata
-    return binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate, \
-           exposure_time_ccd_s, dwell_time_scan_s, beam_acc_voltage_kv, gun_lens_amps, obj_lens_amps, aperture_um, \
-           chamber_pressure_torr, real_magnification
+    original_metadata['Channels'] = original_metadata['Total channels'] // int(original_metadata['Horizontal Binning'])
+
+    return original_metadata
+
+
+def _parse_relevant_metadata_values(filename, md_file_name, attolight_acquisition_system, md_subcategory):
+    original_metadata = _get_original_metadata(filename, md_file_name, attolight_acquisition_system)
+
+    from pint import UnitRegistry, UndefinedUnitError
+
+    ureg = UnitRegistry()
+    Q_ = ureg.Quantity
+
+    keys_of_interest = {
+        'Spectrometer' : [
+            'Grating - Groove Density',
+            'Central wavelength',
+        ],
+        'CCD' : [
+            'Horizontal Binning',
+            'Channels',
+            'Signal Amplification',
+            'Readout Rate (horizontal pixel shift)',
+            'Exposure Time',
+        ],
+        'SEM' : [
+            'Resolution_X',
+            'Resolution_Y',
+            'Real Magnification',
+            'HYP Dwelltime',
+            'Beam Energy',
+            'Gun Lens',
+            'Objective Lens',
+            'Aperture',
+            'Aperture Chamber Pressure',
+        ]}
+
+    metadata = {}
+    for key, value in original_metadata[md_subcategory].items():
+        if key in keys_of_interest:
+            try:
+                value = Q_(value)
+            except UndefinedUnitError:
+                value = value
+
+            key = key.replace(" ", "_")
+            metadata[key] = value
+
+    return metadata
 
 
 def _store_metadata(dict_tree, hypcard_folder, md_file_name,
@@ -131,38 +146,22 @@ def _store_metadata(dict_tree, hypcard_folder, md_file_name,
     """
 
     # Get metadata
-    binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate, \
-    exposure_time_ccd_s, dwell_time_scan_s, beam_acc_voltage_kv, gun_lens_amps, obj_lens_amps, aperture_um, \
-    chamber_pressure_torr, real_magnification = _get_metadata(
-        hypcard_folder, md_file_name, attolight_acquisition_system)
+    metadata = {}
+    metadata['Spectrometer'] = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
+                                                           attolight_acquisition_system, 'Spectrometer')
+    metadata['CCD']  = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
+                                                           attolight_acquisition_system, 'CCD')
+    metadata['SEM']  = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
+                                                           attolight_acquisition_system, 'SEM')
 
     # Store metadata
-    dict_tree.set_item("Acquisition_instrument.Spectrometer.grating",
-                                grating)
-    dict_tree.set_item("Acquisition_instrument.Spectrometer.central_wavelength_nm",
-                                central_wavelength_nm)
-    dict_tree.set_item("Acquisition_instrument.SEM.resolution_x",
-                                nx)
-    dict_tree.set_item("Acquisition_instrument.SEM.resolution_y",
-                                ny)
-    dict_tree.set_item("Acquisition_instrument.SEM.FOV", FOV)
-    dict_tree.set_item("Acquisition_instrument.CCD.binning",
-                                binning)
-    dict_tree.set_item("Acquisition_instrument.CCD.channels",
-                                channels)
-    dict_tree.set_item("Acquisition_instrument.acquisition_system",
-                                attolight_acquisition_system)
-    dict_tree.set_item("Acquisition_instrument.CCD.amplification", amplification)
-    dict_tree.set_item("Acquisition_instrument.CCD.readout_rate", readout_rate)
-    dict_tree.set_item("Acquisition_instrument.CCD.exposure_time_s", exposure_time_ccd_s)
-    dict_tree.set_item("Acquisition_instrument.SEM.dwell_time_scan_s", dwell_time_scan_s)
-    dict_tree.set_item("Acquisition_instrument.SEM.beam_acc_voltage_kv", beam_acc_voltage_kv)
-    dict_tree.set_item("Acquisition_instrument.SEM.gun_lens_amps", gun_lens_amps)
-    dict_tree.set_item("Acquisition_instrument.SEM.obj_lens_amps", obj_lens_amps)
-    dict_tree.set_item("Acquisition_instrument.SEM.aperture_um", aperture_um)
-    dict_tree.set_item("Acquisition_instrument.SEM.chamber_pressure_torr", chamber_pressure_torr)
-    dict_tree.set_item("Acquisition_instrument.SEM.real_magnification", real_magnification)
+    for group in metadata:
+        for key, value in metadata.items():
+            s = "Aquisition_instrument." + group + "." + key
+            dict_tree.set_item(s, value)
+
     dict_tree.set_item("General.folder_path", hypcard_folder)
+    dict_tree.set_item("Acquisition_instrument.acquisition_system", attolight_acquisition_system)
 
     return
 
@@ -184,7 +183,8 @@ def _create_signal_axis_in_wavelength(data, metadata):
         Dictionary with the parameters of a linear axis.
     """
     # Get relevant parameters from metadata
-    central_wavelength = metadata.Acquisition_instrument.Spectrometer.central_wavelength_nm
+    central_wavelength = metadata.Acquisition_instrument.Spectrometer.Central_wavelength.magnitude
+    units = metadata.Acquisition_instrument.Spectrometer.Central_wavelength.units
 
     # Estimate start and end wavelengths
     spectra_offset_array = [central_wavelength - 273, central_wavelength + 273]
@@ -195,7 +195,6 @@ def _create_signal_axis_in_wavelength(data, metadata):
     scale = (spectra_offset_array[1] - spectra_offset_array[0]) \
             / size
     offset = spectra_offset_array[0]
-    units = '$nm$'
 
     axis_dict = {'name': name,
                  'units': units,
@@ -215,8 +214,8 @@ def _create_navigation_axis(data, metadata):
     acquisition_system = metadata.Acquisition_instrument.acquisition_system
     cal_factor_x_axis \
         = attolight_systems[acquisition_system]['cal_factor_x_axis']
-    FOV = metadata.Acquisition_instrument.SEM.FOV
-    nx = metadata.Acquisition_instrument.SEM.resolution_x
+    FOV = metadata.Acquisition_instrument.SEM.Real_Magnification.magnitude
+    nx = metadata.Acquisition_instrument.SEM.Resolution_X.magnitude
 
     # Get the calibrated scanning axis scale from the acquisition_systems
     # dictionary
@@ -303,15 +302,14 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     metadata_file_name \
         = attolight_systems[attolight_acquisition_system]['metadata_file_name']
 
-    binning, nx, ny, FOV, grating, central_wavelength_nm, channels, amplification, readout_rate, \
-    exposure_time_ccd_s, dwell_time_scan_s, beam_acc_voltage_kv, gun_lens_amps, obj_lens_amps, aperture_um, \
-    chamber_pressure_torr, real_magnification = \
-        _get_metadata(hypcard_folder, metadata_file_name, attolight_acquisition_system)
-
     # Add all parameters as metadata
     _store_metadata(meta, hypcard_folder, metadata_file_name, attolight_acquisition_system)
 
     # Load data
+    channels = meta.Acquisition_instrument.CCD.Channels.magnitude
+    nx = meta.Acquisition_instrument.SEM.Resolution_X.magnitude
+    ny = meta.Acquisition_instrument.SEM.Resolution_Y.magnitude
+
     with open(filename, 'rb') as f:
         data = np.fromfile(f, dtype=[('bar', '<i4')], count=channels * nx * ny)
         array = np.reshape(data, [channels, nx, ny], order='F')
