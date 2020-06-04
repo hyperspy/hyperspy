@@ -186,11 +186,12 @@ to 3 components. Let's plot their loadings:
 
 In the SVD loading we can identify 3 regions, but they are mixed in the components.
 Let's perform cluster analysis of decomposition results, to find similar regions
-and the representative features in those regions.
+and the representative features in those regions. Notice that this dataset does
+not require any pre-processing for cluster analysis.
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3)
+    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, scaling=None)
     >>> s.plot_cluster_labels(axes_decor="off")
 
 .. image:: images/clustering_labels.png
@@ -373,7 +374,9 @@ Let's start by creating a suitable synthetic dataset.
 Let's now perform cluster analysis on the stack and calculate the centres using
 the spectrum image. Notice that we don't need to fit the model to the data
 because this is a synthetic dataset. When analysing experimental data you will
-need to fit the model first.
+need to fit the model first. Also notice that here we need to pre-process the
+dataset by normalization in order to reveal the clusters due to the
+proportionality relationship between the position of the peaks.
 
 .. code-block:: python
 
