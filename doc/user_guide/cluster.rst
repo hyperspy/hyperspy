@@ -84,7 +84,7 @@ For example:
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(cluster_source="signal", n_clusters=3, algorithm="kmeans", n_init=8)
+    >>> s.cluster_analysis(cluster_source="signal", n_clusters=3, scaling="norm", algorithm="kmeans", n_init=8)
 
 is equivalent to:
 
@@ -356,12 +356,13 @@ Let's start by creating a suitable synthetic dataset.
     >>> m = s_dummy.create_model()
     >>> m.append(hs.model.components1D.GaussianHF(fwhm=0.2))
     >>> m.append(hs.model.components1D.GaussianHF(fwhm=0.3))
-    >>> m.components.GaussianHF.centre.map["values"][:32, :] = .3 + .1 * np.random.normal(size=(32, 64))
-    >>> m.components.GaussianHF.centre.map["values"][32:, :] = .7 + .1 * np.random.normal(size=(32, 64))
+    >>> m.components.GaussianHF.centre.map["values"][:32, :] = .3 + .1
+    >>> m.components.GaussianHF.centre.map["values"][32:, :] = .7 + .1
     >>> m.components.GaussianHF_0.centre.map["values"][:, 32:] = m.components.GaussianHF.centre.map["values"][:, 32:] * 2
     >>> m.components.GaussianHF_0.centre.map["values"][:, :32] = m.components.GaussianHF.centre.map["values"][:, :32] * 0.5
     >>> for component in m:
     ...     component.centre.map["is_set"][:] = True
+    ...     component.centre.map["values"][:] += np.random.normal(size=(64, 64)) * 0.01
     >>> s = m.as_signal()
     >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(),
     >>> hs.plot.plot_images(stack, axes_decor="off", colorbar="single",
@@ -376,7 +377,11 @@ need to fit the model first.
 
 .. code-block:: python
 
-    >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(), m.components.GaussianHF_0.centre.as_signal()])s.cluster_analysis(cluster_source=stack.T, source_for_centers=s, n_clusters=2)
+    >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(),
+    m.components.GaussianHF_0.centre.as_signal()])
+    >>> s.estimate_number_of_clusters(cluster_source=stack.T, scaling="norm")
+    2
+    >>> s.cluster_analysis(cluster_source=stack.T, source_for_centers=s, n_clusters=2, scaling="norm")
     >>> s.plot_cluster_labels()
 
 .. image:: images/clustering_gaussian_centres_labels.png
