@@ -157,7 +157,8 @@ class EELSSpectrum_mixin:
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
 
-    def edges_near_energy(self, energy, width=10):
+    @staticmethod
+    def print_edges_near_energy(energy, width=10):
         """Find and print a table of edges near a given energy that are within 
         the given energy window.
         
@@ -172,8 +173,8 @@ class EELSSpectrum_mixin:
         
         Returns
         -------
-        A PrettyText object where its representation is ASCII in
-        terminal and html-formatted in Jupyter notebook 
+        A PrettyText object where its representation is ASCII in terminal and 
+        html-formatted in Jupyter notebook 
         """ 
         
         edges = get_edges_near_energy(energy, width=width)
