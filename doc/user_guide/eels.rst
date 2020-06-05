@@ -50,14 +50,14 @@ they are arranged in the order closest to 849 eV.
     >>> get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
-A method :py:meth:`~._signals.eels.EELSSpectrum_mixin.edges_near_energy` in 
-:py:class:`~._signals.eels.EELSSpectrum` has the same function and it will also
-output a table containing more information about the edges.
+The static method :py:meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` 
+in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing 
+more information about the edges.
 
 .. code-block:: python
 
     >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
-    >>> edges = s.edges_near_energy(401, width=20)
+    >>> s.print_edges_near_energy(401, width=20)
     +-------+-------------------+-----------+-----------------------------+
     |  edge | onset energy (eV) | relevance |         description         |
     +-------+-------------------+-----------+-----------------------------+
@@ -69,8 +69,6 @@ output a table containing more information about the edges.
     | Mo_M3 |       392.0       |   Minor   |          Sharp peak         |
     | Cd_M4 |       411.0       |   Major   |       Delayed maximum       |
     +-------+-------------------+-----------+-----------------------------+
-    >>> edges
-    ['N_K', 'Sc_L3', 'Cd_M5', 'Sc_L2', 'Mo_M2', 'Mo_M3', 'Cd_M4']
 
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
