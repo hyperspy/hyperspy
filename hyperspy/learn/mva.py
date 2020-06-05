@@ -34,7 +34,7 @@ from hyperspy.learn.rpca import orpca, rpca_godec
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.whitening import whiten_data
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import ordinal, stack
+from hyperspy.misc.utils import ordinal, stack,is_hyperspy_signal
 from hyperspy.external.progressbar import progressbar
 
 try:
@@ -56,8 +56,9 @@ if import_sklearn.sklearn_installed:
         "sklearn_fastica": import_sklearn.sklearn.decomposition.FastICA,
     }
     cluster_algorithms = {
-        'kmeans': import_sklearn.sklearn.cluster.KMeans,
-        'agglomerative': import_sklearn.sklearn.cluster.AgglomerativeClustering,
+        None : import_sklearn.sklearn.cluster.KMeans,
+        'kmeans' : import_sklearn.sklearn.cluster.KMeans,
+        'agglomerative' : import_sklearn.sklearn.cluster.AgglomerativeClustering,
         'minibatchkmeans' : import_sklearn.sklearn.cluster.MiniBatchKMeans,
         'spectralclustering' : import_sklearn.sklearn.cluster.SpectralClustering
     }
@@ -1662,11 +1663,11 @@ class MVA:
 
     def _scale_data_for_clustering(self,
                                   cluster_source,
-                                  scaling="norm",
-                                  scaling_kwargs={},
+                                  preprocessing="norm",
+                                  preprocessing_kwargs={},
                                   number_of_components=None,
                                   navigation_mask=None,
-                                  signal_mask=None):
+                                  signal_mask=None,**scaling_kwargs):
         """Scale data for cluster analysis
 
         Results are stored in `learning_results`.
@@ -1677,9 +1678,9 @@ class MVA:
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used (signal should be unfolded)
-        scaling : {"standard","norm","minmax",None or scikit learn scaling method}
+        preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
-            Preprocessing the data before cluster analysis requires scaling
+            Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
             adjusts treats the set of features like a vector and
@@ -1687,9 +1688,9 @@ class MVA:
             You can also pass a cikit-learn preprocessing object
             See scaling methods in scikit-learn preprocessing for further
             details.
-        scaling_kwargs :
-            Additional parameters passed to the cluster scaling algorithm.
-            See sklearn.preprocessing scaling methods for further details
+        preprocessing_kwargs :
+            Additional parameters passed to the cluster preprocessing algorithm.
+            See sklearn.preprocessing preprocessing methods for further details
         number_of_components: int , default None
             If you are clustering using the decomposition results
             (cluster_source = "decomposition") you can define how many 
@@ -1727,7 +1728,7 @@ class MVA:
         """
 
 
-        scaling_algorithm = self._get_cluster_preprocessing_algorithm(scaling,**scaling_kwargs)                        
+        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(preprocessing,**preprocessing_kwargs)                        
             
         cluster_signal,nav_mask,sig_mask = \
             self._get_cluster_signal(cluster_source,
@@ -1737,11 +1738,11 @@ class MVA:
                                      sum_over_navigation_mask=False)
         
         
-        if scaling_algorithm is None:
+        if preprocessing_algorithm is None:
             return cluster_signal[:, sig_mask][nav_mask, :]
         else:
-            return scaling_algorithm.fit_transform(
-                cluster_signal[:, sig_mask][nav_mask, :])
+            return preprocessing_algorithm.fit_transform(
+                cluster_signal[:, sig_mask][nav_mask, :],**scaling_kwargs)
 
         
     def _get_number_of_components_for_clustering(self):
@@ -1854,7 +1855,7 @@ class MVA:
         return ax
 
     def _create_cluster_centers_from_labels(self, labels,
-                                           source_for_centers,
+                                           source_for_estimates,
                                            number_of_components=None,
                                            navigation_mask=None):
         """From a set of cluster labels generate the cluster centers from the
@@ -1865,7 +1866,7 @@ class MVA:
         ----------
         labels : int array of length n_samples where each value is a cluster
             label from 0 to n_clusters-1
-        source_for_centers : {"decomposition","bss","signal", Signal}
+        source_for_estimates : {"decomposition","bss","signal", Signal}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
@@ -1924,7 +1925,6 @@ class MVA:
         # now create the labels from these sorted labels
         nav_mask = self._mask_for_clustering(navigation_mask)
         sorted_labels[nav_mask] = lut[labels]
-
         cluster_centers=[]
         for i in range(n_clusters):
 
@@ -1932,11 +1932,12 @@ class MVA:
                 np.where(sorted_labels == i, 1, 0)
             clus_index = sorted_labels != i                
             cluster_data,nav_mask,sig_mask = \
-                self._get_cluster_signal(source_for_centers,
+                self._get_cluster_signal(source_for_estimates,
                                          number_of_components,
                                          navigation_mask=clus_index,
                                          signal_mask=None,
                                          sum_over_navigation_mask=True)
+            
             # the size of cluster centers depends on the data source used
             # so append to list and concatentate to array at end 
             cluster_centers.append(cluster_data)
@@ -1948,7 +1949,7 @@ class MVA:
     def _get_cluster_signal(self,cluster_source,number_of_components=None,
                             navigation_mask=None,
                             signal_mask=None,
-                            sum_over_navigation_mask=False):
+                            operation_over_navigation_mask=False):
         """A cluster source can be an external signal, the signal data
         or the decomposition or bss results  
         Return a flatten version of the data, nav and signal mask
@@ -1992,13 +1993,13 @@ class MVA:
         if type(cluster_source) is str and cluster_source=="signal":
             cluster_source = self
 
-        if self.is_hyperspy_signal(cluster_source):
+        if is_hyperspy_signal(cluster_source):
            if cluster_source.axes_manager.navigation_size != self.axes_manager.navigation_size:
                 raise ValueError("cluster_source does not have the same "
                                  "navigation size as the this signal")
         else: 
             if cluster_source not in ("bss", "decomposition", "signal"):
-                if not self.is_hyperspy_signal(cluster_source):
+                if not is_hyperspy_signal(cluster_source):
                     raise ValueError("cluster source needs to be set "
                                      "to `decomposition` , `signal` , `bss` "
                                      "or a suitable Signal")
@@ -2025,7 +2026,7 @@ class MVA:
             if navigation_mask.size != self.axes_manager.navigation_size:
                 raise ValueError("Navigation mask size does not match signal navigation size")
 
-        if self.is_hyperspy_signal(cluster_source):
+        if is_hyperspy_signal(cluster_source):
             signal_mask = self._mask_for_clustering(signal_mask)
             if not isinstance(signal_mask,slice):
                 if signal_mask.size != cluster_source.axes_manager.signal_size:
@@ -2049,7 +2050,6 @@ class MVA:
             else:
                 loadings = self.learning_results.loadings
                 factors  = self.learning_results.factors
-                
             if sum_over_navigation_mask == False:
                 toreturn = loadings[:,:number_of_components] 
             else:
@@ -2057,31 +2057,13 @@ class MVA:
                     @ loadings[navigation_mask, :number_of_components].mean(axis=0).T          
         return toreturn, navigation_mask, signal_mask
 
-    def is_hyperspy_signal(self,input_object):
-        """
-        Check if an object is a Hyperspy Signal
-
-        Parameters
-        ----------
-        input_object : object
-            Object to be tests
-
-        Returns
-        -------
-        bool
-            If true the object is a subclass of hyperspy.signal.BaseSignal
-
-        """
-        from hyperspy.signals import BaseSignal
-        return isinstance(input_object,BaseSignal)
 
         
     def cluster_analysis(self,
                          cluster_source,
-                         n_clusters=2,
-                         source_for_centers=None,
-                         scaling="norm",
-                         scaling_kwargs={},
+                         source_for_estimates=None,
+                         preprocessing="norm",
+                         preprocessing_kwargs={},
                          number_of_components=None,
                          navigation_mask=None,
                          signal_mask=None,
@@ -2090,6 +2072,15 @@ class MVA:
                          **kwargs):
         """Cluster analysis of a signal or decomposition results of a signal
         Results are stored in `learning_results`.
+        
+        
+        Other Parameters
+        
+        ----------------        
+        n_clusters : int
+            Number of clusters to find using the one of the pre-defined methods
+            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
+            See sklearn.cluster for details 
 
 
         Parameters
@@ -2101,34 +2092,31 @@ class MVA:
             Note that using the signal or BaseSignal can be memory intensive 
             and is only recommended if the Signal dimension is small
             BaseSignal must have the same navigation dimensions as the signal.
-        n_clusters : int, default = 2
-            Number of clusters to find using the one of the pre-defined methods
-            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
-        source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
+        source_for_estimates : {None,"decomposition","bss","signal",BaseSignal},
             default : None
             If None the cluster_source is used
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
             BaseSignal must have the same navigation dimensions as the signal.            
-        scaling : {"standard","norm","minmax",None or scikit learn scaling method}
+        preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
-            Preprocessing the data before cluster analysis requires scaling
+            Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
             adjusts treats the set of features like a vector and
             each measurement is scaled to length 1.
             You can also pass one of the scikit-learn preprocessing
             scale_method = import sklearn.processing.StandadScaler()
-            scaling = scale_method
+            preprocessing = scale_method
             See scaling methods in scikit-learn preprocessing for further
             details.
-        scaling_kwargs : dict
-            Additional parameters passed to the cluster scaling algorithm.
+        preprocessing_kwargs : dict
+            Additional parameters passed to the cluster preprocessing algorithm.
             See sklearn.preprocessing scaling methods for further details
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (cluster_source_for_centers="decomposition") you can define how
+            results (cluster_source_for_estimates="decomposition") you can define how
             many components to use.  If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
@@ -2139,7 +2127,7 @@ class MVA:
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             clustering for "signal" or Signals supplied as cluster source.
-            This is not applied to decomposition results or source_for_centers
+            This is not applied to decomposition results or source_for_estimates
             (as it may be a different shape to the cluster source)
         algorithm : { "kmeans" | "agglomerative" | "minibatchkmeans" | "spectralclustering"}
             See scikit-lear documentation. Default "kmeans"
@@ -2183,16 +2171,12 @@ class MVA:
         self._data_before_treatments = self.data.copy()
 
 
-        if n_clusters < 2:
-            raise ValueError("The number of clusters, n_clusters "
-                             "must be specified and be >= 2.")
-
-        if source_for_centers is None:
-            source_for_centers = cluster_source
+        if source_for_estimates is None:
+            source_for_estimates = cluster_source
 
             
         cluster_algorithm = \
-            self._get_cluster_algorithm(algorithm,n_clusters,**kwargs)
+            self._get_cluster_algorithm(algorithm,**kwargs)
 
 
         target = LearningResults()
@@ -2205,7 +2189,7 @@ class MVA:
             scaled_data = \
                 self._scale_data_for_clustering(
                 cluster_source=cluster_source,
-                scaling=scaling,
+                preprocessing=preprocessing,
                 number_of_components=number_of_components,
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
@@ -2225,7 +2209,7 @@ class MVA:
             sorted_membership,cluster_labels, cluster_centers =\
                 self._create_cluster_centers_from_labels(
                     labels,
-                    source_for_centers=source_for_centers,
+                    source_for_estimates=source_for_estimates,
                     number_of_components=number_of_components,
                     navigation_mask=navigation_mask)
                 
@@ -2241,25 +2225,25 @@ class MVA:
 
         finally:
             self.learning_results.__dict__.update(target.__dict__)
-            # if the cluster_source or source_for_centers is a signal
+            # if the cluster_source or source_for_estimates is a signal
             # fold it back, if required, when finished
             if (type(cluster_source) is str and \
                 cluster_source == "signal") or   \
-                (type(source_for_centers) is str and \
-                source_for_centers == "signal"):
+                (type(source_for_estimates) is str and \
+                source_for_estimates == "signal"):
                 if hasattr(self,"unfolded4clustering"):
                     if self.unfolded4clustering:
                         self.fold()
 
-            if self.is_hyperspy_signal(cluster_source):
+            if is_hyperspy_signal(cluster_source):
                 if hasattr(cluster_source,"unfolded4clustering"):
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()
                         
-            if self.is_hyperspy_signal(cluster_source):
-                if hasattr(source_for_centers,"unfolded4clustering"):
-                    if source_for_centers.unfolded4clustering:
-                        source_for_centers.fold()
+            if is_hyperspy_signal(cluster_source):
+                if hasattr(source_for_estimates,"unfolded4clustering"):
+                    if source_for_estimates.unfolded4clustering:
+                        source_for_estimates.fold()
 
             # undo any pre-treatments
             self.undo_treatments()
@@ -2294,25 +2278,26 @@ class MVA:
         
         """
 
-        scaling_methods = list(cluster_preprocessing_algorithms.keys())
+        preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
         if algorithm is None:
             return None
-        if algorithm in scaling_methods:
+        if algorithm in preprocessing_methods:
             if not import_sklearn.sklearn_installed:
                 raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
             process_algorithm = cluster_preprocessing_algorithms[algorithm](**kwargs)
         elif hasattr(algorithm, "fit_transform"):
             process_algorithm = algorithm
         else:
-            raise ValueError("The cluster scaling method should be either %s "
-                             "or an object with a fit_transform method"%scaling_methods)
+            raise ValueError("The cluster preprocessing method should be either %s "
+                             "or an object with a fit_transform method"%preprocessing_methods)
         return process_algorithm
 
     def estimate_number_of_clusters(self,
                                     cluster_source,
                                     max_clusters=10,
-                                    scaling="norm",
-                                    scaling_kwargs={},
+                                    min_clusters=None,                                   
+                                    preprocessing="norm",
+                                    preprocessing_kwargs={},
                                     number_of_components=None,
                                     navigation_mask=None,
                                     signal_mask=None,
@@ -2342,22 +2327,29 @@ class MVA:
         max_clusters : int, default 10
             Max number of clusters to use. The method will scan from 2 to
             max_clusters. 
-        scaling : {"standard","norm","minmax" or sklearn preprocessing object}
+        min_clusters : int, default None
+            The minimum number of clusters or starting point for the estimate.
+            min_clusters is typically 2 but can be set to 1 for some methods.
+            If set to None and using one of the standard cluster algorithms
+            the lowest value possible will chosen depending on the metric and
+            algorithm chosen. If using an external clustering
+            method it will default to 2 unless otherwise specified.            
+        preprocessing : {"standard","norm","minmax" or sklearn preprocessing object}
             default: 'norm'
-            Preprocessing the data before cluster analysis requires scaling
+            Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard scaling
             adjusts each feature to have uniform variation. Norm scaling
             adjusts treats the set of features like a vector and
             each measurement is scaled to length 1.
             You can also pass an instance of a sklearn preprocessing module.
-            See scaling methods in scikit-learn preprocessing for further
+            See preprocessing methods in scikit-learn preprocessing for further
             details.
-        scaling_kwargs : dict, default empty
-            Additional parameters passed to the cluster scaling algorithm.
-            See sklearn.preprocessing scaling methods for further details
+        preprocessing_kwargs : dict, default empty
+            Additional parameters passed to the cluster preprocessing algorithm.
+            See sklearn.preprocessing preprocessing methods for further details
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (cluster_source_for_centers="decomposition") you can define how
+            results (cluster_source_for_estimates="decomposition") you can define how
             many PCA components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
@@ -2414,32 +2406,34 @@ class MVA:
                 (2.*data[memberships == c, :].shape[0]))
                 for c in np.unique(memberships)]
 
-        if algorithm not in cluster_algorithms.keys():
-            raise ValueError("estimate_number_of_clusters only works with algorithm "
-                             " keywords selected from %s "%list(cluster_algorithms.keys()))
 
         if max_clusters < 2:
             raise ValueError("The max number of clusters, max_clusters, "
                              "must be specified and be >= 2.")
         to_return = None
         best_k    = None
-        k_range   = list(range(1, max_clusters+1))
-        #
-        # for silhouette k starts at 2
-        # for kmeans or gap k starts at 1
-        # As these methods use random numbers we need to
-        # initiate the random number generator to ensure
-        # consistent/repeatable results
-        #
-        if(algorithm == "agglomerative"):
-            k_range   = list(range(2, max_clusters+1))
-        if(algorithm == "kmeans"):
-            if metric =="silhouette":
+        if min_clusters is None:
+            k_range   = list(range(1, max_clusters+1))
+            #
+            # for silhouette k starts at 2
+            # for kmeans or gap k starts at 1
+            # As these methods use random numbers we need to
+            # initiate the random number generator to ensure
+            # consistent/repeatable results
+            #
+            if(algorithm == "agglomerative"):
                 k_range   = list(range(2, max_clusters+1))
+            if(algorithm == "kmeans"):
+                if metric =="silhouette":
+                    k_range   = list(range(2, max_clusters+1))
             if metric == "gap":
                 # set number of averages to 1
                 kwargs['n_init']=1
-        min_k = np.min(k_range)
+            min_k = np.min(k_range)
+        else:
+            k_range   = list(range(min_clusters, max_clusters+1))
+            min_k = np.min(k_range)
+            
         target = LearningResults()
 
         try:
@@ -2448,7 +2442,7 @@ class MVA:
             scaled_data = \
                 self._scale_data_for_clustering(
                 cluster_source=cluster_source,
-                scaling=scaling, scaling_kwargs=scaling_kwargs,
+                preprocessing=preprocessing, preprocessing_kwargs=preprocessing_kwargs,
                 number_of_components=number_of_components,
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
@@ -2571,7 +2565,7 @@ class MVA:
                     if self.unfolded4clustering:
                         self.fold()
 
-            if self.is_hyperspy_signal(cluster_source):
+            if is_hyperspy_signal(cluster_source):
                 if hasattr(cluster_source,"unfolded4clustering"):
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()
@@ -2679,6 +2673,7 @@ class LearningResults(object):
     cluster_membership = None
     cluster_labels = None
     cluster_centers = None
+    cluster_centers_estimated = None
     cluster_algorithm = None
     number_of_clusters = None
     estimated_number_of_clusters = None

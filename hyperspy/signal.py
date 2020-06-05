@@ -1863,8 +1863,8 @@ class MVATools(object):
                                    axes_decor=axes_decor)
 
     def plot_cluster_results(self,
-                             centers_navigator="auto",
-                             labels_navigator="auto",
+                             centers_navigator="smart_auto",
+                             labels_navigator="smart_auto",
                              centers_dim=2,
                              labels_dim=2,
                              ):

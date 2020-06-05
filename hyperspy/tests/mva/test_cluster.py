@@ -71,6 +71,34 @@ class TestCluster1d:
         self.signal.get_cluster_labels()
         self.signal.get_cluster_centers()
 
+    @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative",
+                                            "spectralclustering",
+                                            "minibatchkmeans"))
+    @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
+    @pytest.mark.parametrize("source_for_centers", (None,"signal","bss","decomposition"))
+    @pytest.mark.parametrize("scaling", ("standard", "norm", "minmax",None))
+    @pytest.mark.parametrize("use_masks", (True, False))
+    def test_sklearn_exception(self, algorithm, cluster_source,
+                        scaling, source_for_centers,
+                        use_masks):
+        if use_masks:
+            navigation_mask = self.navigation_mask
+            signal_mask = self.signal_mask
+        else:
+            navigation_mask = None
+            signal_mask = None
+        import_sklearn.sklearn_installed = False
+        with pytest.raises(ImportError):
+            self.signal.cluster_analysis(cluster_source,n_clusters=3,
+                                          source_for_centers=\
+                                              source_for_centers,
+                                          scaling=scaling,
+                                          navigation_mask=navigation_mask,
+                                          signal_mask=signal_mask,
+                                          algorithm=algorithm)
+        import_sklearn.sklearn_installed = True
+            
+    
 
 class TestCluster2d:
 
@@ -286,6 +314,8 @@ class TestClusterEstimate:
         np.testing.assert_allclose(k_range,test_k_range)
         np.testing.assert_allclose(best_k, 3)
 
+       
+
 
 class TestClusterCustomScaling:
 
@@ -486,4 +516,4 @@ def test_clustering_object_error():
     empty_object = object()
     with pytest.raises(ValueError, match="The clustering method should be either \w*"):
         s.cluster_analysis("signal",algorithm=empty_object)
-    
+
