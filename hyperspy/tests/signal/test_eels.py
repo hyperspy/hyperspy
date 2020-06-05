@@ -343,3 +343,15 @@ class Test_Estimate_Thickness:
         del self.s.metadata.Acquisition_instrument
         with pytest.raises(RuntimeError):
             self.s.estimate_thickness(zlp=self.zlp, density=3.6)
+
+class Test_Edges_Near_Energy:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_at_532eV(self):
+        s = self.signal
+        edges = s.edges_near_energy(532)
+        
+        assert edges == ['O_K', 'Pd_M3', 'Sb_M5', 'Sb_M4']
