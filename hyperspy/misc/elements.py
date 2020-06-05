@@ -6,6 +6,9 @@
 #
 # The line weight, more precisely the approximate line weight for K,L M
 # shells are taken from epq library
+# 
+# The field 'threshold' and 'edge' are taken from Gatan EELS atlas
+# https://eels.info/atlas (retrieved in June 2020)
 
 from hyperspy.misc import utils
 
