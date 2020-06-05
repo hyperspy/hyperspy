@@ -2074,8 +2074,7 @@ class MVA:
         Results are stored in `learning_results`.
         
         
-        Other Parameters
-        
+        Other Parameters        
         ----------------        
         n_clusters : int
             Number of clusters to find using the one of the pre-defined methods
