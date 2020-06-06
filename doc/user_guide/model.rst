@@ -80,30 +80,30 @@ model.
 
 The following components are currently available for one-dimensional models:
 
+* :py:class:`~._components.arctan.Arctan`
+* :py:class:`~._components.bleasdale.Bleasdale`
 * :py:class:`~._components.eels_cl_edge.EELSCLEdge`
-* :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
-* :py:class:`~._components.power_law.PowerLaw`
-* :py:class:`~._components.offset.Offset`
+* :py:class:`~._components.error_function.Erf`
 * :py:class:`~._components.exponential.Exponential`
 * :py:class:`~._components.expression.Expression`
-* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
-* :py:class:`~._components.gaussian.Gaussian`
 * :py:class:`~._components.gaussianhf.GaussianHF`
-* :py:class:`~._components.lorentzian.Lorentzian`
-* :py:class:`~._components.voigt.Voigt`
-* :py:class:`~._components.skew_normal.SkewNormal`
-* :py:class:`~._components.polynomial.Polynomial`
-* :py:class:`~._components.logistic.Logistic`
-* :py:class:`~._components.bleasdale.Bleasdale`
-* :py:class:`~._components.error_function.Erf`
-* :py:class:`~._components.pes_see.SEE`
-* :py:class:`~._components.arctan.Arctan`
+* :py:class:`~._components.gaussian.Gaussian`
 * :py:class:`~._components.heaviside.HeavisideStep`
+* :py:class:`~._components.logistic.Logistic`
+* :py:class:`~._components.lorentzian.Lorentzian`
+* :py:class:`~._components.offset.Offset`
+* :py:class:`~._components.polynomial.Polynomial`
+* :py:class:`~._components.power_law.PowerLaw`
+* :py:class:`~._components.pes_see.SEE`
+* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+* :py:class:`~._components.skew_normal.SkewNormal`
+* :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
 The following components are currently available for two-dimensional models:
 
-* :py:class:`~._components.gaussian2d.Gaussian2D`
 * :py:class:`~._components.expression.Expression`
+* :py:class:`~._components.gaussian2d.Gaussian2D`
 
 However, this doesn't mean that you have to limit yourself to this meagre list
 of functions. A new function can easily be written as specified as below.
