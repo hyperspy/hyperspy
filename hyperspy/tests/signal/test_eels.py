@@ -343,3 +343,23 @@ class Test_Estimate_Thickness:
         del self.s.metadata.Acquisition_instrument
         with pytest.raises(RuntimeError):
             self.s.estimate_thickness(zlp=self.zlp, density=3.6)
+
+class Test_Print_Edges_Near_Energy:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_at_532eV(self):
+        s = self.signal
+        table_ascii = s.print_edges_near_energy(532)
+        
+        assert table_ascii.__repr__() == ('+-------+-------------------+------'
+        '-----+-----------------+\n|  edge | onset energy (eV) | relevance '
+        '|   description   |\n+-------+-------------------+-----------+'
+        '-----------------+\n|  O_K  |       532.0       |   Major   '
+        '|   Abrupt onset  |\n| Pd_M3 |       531.0       |   Minor   '
+        '|                 |\n| Sb_M5 |       528.0       |   Major   '
+        '| Delayed maximum |\n| Sb_M4 |       537.0       |   Major   '
+        '| Delayed maximum |\n+-------+-------------------+-----------+'
+        '-----------------+')
