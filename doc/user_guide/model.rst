@@ -80,30 +80,30 @@ model.
 
 The following components are currently available for one-dimensional models:
 
+* :py:class:`~._components.arctan.Arctan`
+* :py:class:`~._components.bleasdale.Bleasdale`
 * :py:class:`~._components.eels_cl_edge.EELSCLEdge`
-* :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
-* :py:class:`~._components.power_law.PowerLaw`
-* :py:class:`~._components.offset.Offset`
+* :py:class:`~._components.error_function.Erf`
 * :py:class:`~._components.exponential.Exponential`
 * :py:class:`~._components.expression.Expression`
-* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
-* :py:class:`~._components.gaussian.Gaussian`
 * :py:class:`~._components.gaussianhf.GaussianHF`
-* :py:class:`~._components.lorentzian.Lorentzian`
-* :py:class:`~._components.voigt.Voigt`
-* :py:class:`~._components.skew_normal.SkewNormal`
-* :py:class:`~._components.polynomial.Polynomial`
-* :py:class:`~._components.logistic.Logistic`
-* :py:class:`~._components.bleasdale.Bleasdale`
-* :py:class:`~._components.error_function.Erf`
-* :py:class:`~._components.pes_see.SEE`
-* :py:class:`~._components.arctan.Arctan`
+* :py:class:`~._components.gaussian.Gaussian`
 * :py:class:`~._components.heaviside.HeavisideStep`
+* :py:class:`~._components.logistic.Logistic`
+* :py:class:`~._components.lorentzian.Lorentzian`
+* :py:class:`~._components.offset.Offset`
+* :py:class:`~._components.polynomial.Polynomial`
+* :py:class:`~._components.power_law.PowerLaw`
+* :py:class:`~._components.pes_see.SEE`
+* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+* :py:class:`~._components.skew_normal.SkewNormal`
+* :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
 The following components are currently available for two-dimensional models:
 
-* :py:class:`~._components.gaussian2d.Gaussian2D`
 * :py:class:`~._components.expression.Expression`
+* :py:class:`~._components.gaussian2d.Gaussian2D`
 
 However, this doesn't mean that you have to limit yourself to this meagre list
 of functions. A new function can easily be written as specified as below.
@@ -112,6 +112,14 @@ Specifying custom components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _expression_component-label:
+
+In addition to the above specific components, Hyperspy can take any Signal1D as 
+well as most mathematical expressions as components, as detailed below.
+
+To turn a Signal1D into a component, pass a Signal1D that does not have any navigation 
+axes to :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`. ScaleableFixedPatterns
+can, as the name implies, be scaled in the x and y directions (by the :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale` and :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.yscale`) parameters. 
+They can additionally be shifted by the :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xshift`. By default the :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale.free` attribute of :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale` and :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xshift` is set to `False`.
 
 .. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component
                   can create 2D components.
