@@ -1591,7 +1591,7 @@ class MVA:
             Optional mask applied in the signal axis.
 
         """
-        _logger.info("Scaling the data to normalize Poissonian noise")
+        _logger.info("preprocessing the data to normalize Poissonian noise")
         with self.unfolded():
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that
@@ -1667,7 +1667,7 @@ class MVA:
                                   preprocessing_kwargs={},
                                   number_of_components=None,
                                   navigation_mask=None,
-                                  signal_mask=None,**scaling_kwargs):
+                                  signal_mask=None):
         """Scale data for cluster analysis
 
         Results are stored in `learning_results`.
@@ -1681,8 +1681,8 @@ class MVA:
         preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
-            the data to be clustered to similar scales. Standard scaling
-            adjusts each feature to have uniform variation. Norm scaling
+            the data to be clustered to similar scales. Standard preprocessing
+            adjusts each feature to have uniform variation. Norm preprocessing
             adjusts treats the set of features like a vector and
             each measurement is scaled to length 1.
             You can also pass a cikit-learn preprocessing object
@@ -1730,19 +1730,18 @@ class MVA:
 
         preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(preprocessing,**preprocessing_kwargs)                        
             
-        cluster_signal,nav_mask,sig_mask = \
+        cluster_signal = \
             self._get_cluster_signal(cluster_source,
                                      number_of_components,
                                      navigation_mask,
                                      signal_mask,
-                                     sum_over_navigation_mask=False)
+                                     loadings_only=True)
         
         
         if preprocessing_algorithm is None:
-            return cluster_signal[:, sig_mask][nav_mask, :]
+            return cluster_signal
         else:
-            return preprocessing_algorithm.fit_transform(
-                cluster_signal[:, sig_mask][nav_mask, :],**scaling_kwargs)
+            return preprocessing_algorithm.fit_transform(cluster_signal)
 
         
     def _get_number_of_components_for_clustering(self):
@@ -1854,10 +1853,11 @@ class MVA:
         plt.draw()
         return ax
 
-    def _create_cluster_centers_from_labels(self, labels,
-                                           source_for_estimates,
+    def _create_cluster_centers_from_labels(self, labels, distances,
+                                           source_for_centers,
                                            number_of_components=None,
-                                           navigation_mask=None):
+                                           navigation_mask=None,
+                                           center_signals_method="mean"):
         """From a set of cluster labels generate the cluster centers from the
         raw data or PCA decomposition results
 
@@ -1866,7 +1866,7 @@ class MVA:
         ----------
         labels : int array of length n_samples where each value is a cluster
             label from 0 to n_clusters-1
-        source_for_estimates : {"decomposition","bss","signal", Signal}
+        source_for_centers : {"decomposition","bss","signal", Signal}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
@@ -1917,39 +1917,50 @@ class MVA:
         idx = np.argsort(clustersizes)[::-1]
         lut = np.zeros_like(idx)
         lut[idx] = np.arange(n_clusters)
-        sorted_labels = lut[labels]
         
         shape = (n_clusters,self.axes_manager.navigation_size)
         cluster_labels = np.full(shape, -1)
-        sorted_labels = np.full((self.axes_manager.navigation_size),-1)
+        sorted_labels = np.full(shape[1],-1)
+        cluster_distances = np.full(shape ,np.nan)
+
         # now create the labels from these sorted labels
         nav_mask = self._mask_for_clustering(navigation_mask)
         sorted_labels[nav_mask] = lut[labels]
+        for i in range(n_clusters):
+            print(i,idx[i],lut[i],len(distances[i]),clustersizes[i])
         cluster_centers=[]
         for i in range(n_clusters):
-
             cluster_labels[i, :] = \
                 np.where(sorted_labels == i, 1, 0)
-            clus_index = sorted_labels != i                
-            cluster_data,nav_mask,sig_mask = \
-                self._get_cluster_signal(source_for_estimates,
+            
+            clus_index = sorted_labels != i            
+            cluster_distances[i][sorted_labels == i]=distances[idx[i]]
+            cluster_data = \
+                self._get_cluster_signal(source_for_centers,
                                          number_of_components,
                                          navigation_mask=clus_index,
                                          signal_mask=None,
-                                         sum_over_navigation_mask=True)
-            
+                                         loadings_only=False)
+            if center_signals_method == "median":
+                cluster_data = np.median(cluster_data,axis=0)
+            elif center_signals_method == "closest":
+                cluster_data = cluster_data[np.argmin(distances[idx[i]]),:]
+                if cluster_data.ndim == 2:
+                    cluster_data = cluster_data.mean(axis=0)    
+            else:
+                cluster_data = cluster_data.mean(axis=0)
             # the size of cluster centers depends on the data source used
             # so append to list and concatentate to array at end 
             cluster_centers.append(cluster_data)
         cluster_centers = np.stack(cluster_centers)
 
-        return sorted_labels,cluster_labels,cluster_centers
+        return sorted_labels,cluster_labels,cluster_distances,cluster_centers
 
 
     def _get_cluster_signal(self,cluster_source,number_of_components=None,
                             navigation_mask=None,
                             signal_mask=None,
-                            operation_over_navigation_mask=False):
+                            loadings_only=False):
         """A cluster source can be an external signal, the signal data
         or the decomposition or bss results  
         Return a flatten version of the data, nav and signal mask
@@ -2036,32 +2047,31 @@ class MVA:
             # can restore later
             if not cluster_source.metadata._HyperSpy.Folding.unfolded:
                 cluster_source.unfolded4clustering=cluster_source.unfold()
-            if sum_over_navigation_mask == True:
-                data = cluster_source.data \
-                    if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
-                toreturn = data[navigation_mask,:].mean(axis=0)
-            else:
-                toreturn = cluster_source.data
+            data = cluster_source.data \
+                if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
+            toreturn = data[:,signal_mask][navigation_mask,:]
         elif type(cluster_source) is str:
-            signal_mask =  self._mask_for_clustering(None)
             if cluster_source == "bss":
                 loadings = self.learning_results.bss_loadings
                 factors  = self.learning_results.bss_factors
             else:
                 loadings = self.learning_results.loadings
                 factors  = self.learning_results.factors
-            if sum_over_navigation_mask == False:
-                toreturn = loadings[:,:number_of_components] 
+        
+            if loadings_only:
+                toreturn = loadings[navigation_mask,:number_of_components] 
             else:
                 toreturn = factors[:, :number_of_components] \
-                    @ loadings[navigation_mask, :number_of_components].mean(axis=0).T          
-        return toreturn, navigation_mask, signal_mask
+                    @ loadings[navigation_mask, :number_of_components].T          
+                toreturn = toreturn.T       
+        return toreturn
 
 
         
     def cluster_analysis(self,
                          cluster_source,
-                         source_for_estimates=None,
+                         source_for_centers=None,
+                         center_signals_method="mean",
                          preprocessing="norm",
                          preprocessing_kwargs={},
                          number_of_components=None,
@@ -2091,7 +2101,7 @@ class MVA:
             Note that using the signal or BaseSignal can be memory intensive 
             and is only recommended if the Signal dimension is small
             BaseSignal must have the same navigation dimensions as the signal.
-        source_for_estimates : {None,"decomposition","bss","signal",BaseSignal},
+        source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
             default : None
             If None the cluster_source is used
             If "bss" the blind source separation results are used
@@ -2101,21 +2111,21 @@ class MVA:
         preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
-            the data to be clustered to similar scales. Standard scaling
-            adjusts each feature to have uniform variation. Norm scaling
+            the data to be clustered to similar scales. Standard preprocessing
+            adjusts each feature to have uniform variation. Norm preprocessing
             adjusts treats the set of features like a vector and
             each measurement is scaled to length 1.
             You can also pass one of the scikit-learn preprocessing
             scale_method = import sklearn.processing.StandadScaler()
             preprocessing = scale_method
-            See scaling methods in scikit-learn preprocessing for further
+            See preprocessing methods in scikit-learn preprocessing for further
             details.
         preprocessing_kwargs : dict
             Additional parameters passed to the cluster preprocessing algorithm.
             See sklearn.preprocessing scaling methods for further details
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (cluster_source_for_estimates="decomposition") you can define how
+            results (cluster_source_for_centers="decomposition") you can define how
             many components to use.  If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
@@ -2126,7 +2136,7 @@ class MVA:
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             clustering for "signal" or Signals supplied as cluster source.
-            This is not applied to decomposition results or source_for_estimates
+            This is not applied to decomposition results or source_for_centers
             (as it may be a different shape to the cluster source)
         algorithm : { "kmeans" | "agglomerative" | "minibatchkmeans" | "spectralclustering"}
             See scikit-lear documentation. Default "kmeans"
@@ -2170,8 +2180,8 @@ class MVA:
         self._data_before_treatments = self.data.copy()
 
 
-        if source_for_estimates is None:
-            source_for_estimates = cluster_source
+        if source_for_centers is None:
+            source_for_centers = cluster_source
 
             
         cluster_algorithm = \
@@ -2189,6 +2199,7 @@ class MVA:
                 self._scale_data_for_clustering(
                 cluster_source=cluster_source,
                 preprocessing=preprocessing,
+                preprocessing_kwargs=preprocessing_kwargs,
                 number_of_components=number_of_components,
                 navigation_mask=navigation_mask,
                 signal_mask=signal_mask)
@@ -2199,18 +2210,22 @@ class MVA:
                 to_return = alg
 
             labels = alg.labels_
-
+            # get the cluster distances for metrics and storage
+            distances = \
+                self._distances_within_cluster(scaled_data,labels,summed=False)
 
             # now re-organize the labels to fit with hyperspy loadings/factors
             # and use the kmeans centers to extract real data cluster centers
             # create an array to store the centers
  
-            sorted_membership,cluster_labels, cluster_centers =\
+            sorted_membership,cluster_labels, \
+                cluster_distances,cluster_centers =\
                 self._create_cluster_centers_from_labels(
-                    labels,
-                    source_for_estimates=source_for_estimates,
+                    labels, distances,
+                    source_for_centers=source_for_centers,
                     number_of_components=number_of_components,
-                    navigation_mask=navigation_mask)
+                    navigation_mask=navigation_mask,
+                    center_signals_method=center_signals_method)
                 
 
             # if an object is passed as the clustering algorithm
@@ -2218,18 +2233,19 @@ class MVA:
             number_clusters = np.max(sorted_membership)+1
             target.cluster_membership = sorted_membership
             target.cluster_labels = cluster_labels
+            target.cluster_distances = cluster_distances            
             target.cluster_centers = cluster_centers
             target.number_of_clusters = number_clusters
             target.cluster_algorithm = algorithm
 
         finally:
             self.learning_results.__dict__.update(target.__dict__)
-            # if the cluster_source or source_for_estimates is a signal
+            # if the cluster_source or source_for_centers is a signal
             # fold it back, if required, when finished
             if (type(cluster_source) is str and \
                 cluster_source == "signal") or   \
-                (type(source_for_estimates) is str and \
-                source_for_estimates == "signal"):
+                (type(source_for_centers) is str and \
+                source_for_centers == "signal"):
                 if hasattr(self,"unfolded4clustering"):
                     if self.unfolded4clustering:
                         self.fold()
@@ -2240,9 +2256,9 @@ class MVA:
                         cluster_source.fold()
                         
             if is_hyperspy_signal(cluster_source):
-                if hasattr(source_for_estimates,"unfolded4clustering"):
-                    if source_for_estimates.unfolded4clustering:
-                        source_for_estimates.fold()
+                if hasattr(source_for_centers,"unfolded4clustering"):
+                    if source_for_centers.unfolded4clustering:
+                        source_for_centers.fold()
 
             # undo any pre-treatments
             self.undo_treatments()
@@ -2291,10 +2307,21 @@ class MVA:
                              "or an object with a fit_transform method"%preprocessing_methods)
         return process_algorithm
 
+
+    def _distances_within_cluster(self,cluster_data,memberships,squared=True,summed=False):
+        result= [np.sum(
+            import_sklearn.sklearn.metrics.pairwise.\
+                euclidean_distances(cluster_data[memberships == c, :],
+            squared=squared),axis=0)/
+            (2.*cluster_data[memberships == c, :].shape[0])
+            for c in np.unique(memberships)]
+        if summed:
+            result = [np.sum(x) for x in result]
+        return result
+        
     def estimate_number_of_clusters(self,
                                     cluster_source,
                                     max_clusters=10,
-                                    min_clusters=None,                                   
                                     preprocessing="norm",
                                     preprocessing_kwargs={},
                                     number_of_components=None,
@@ -2336,8 +2363,8 @@ class MVA:
         preprocessing : {"standard","norm","minmax" or sklearn preprocessing object}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
-            the data to be clustered to similar scales. Standard scaling
-            adjusts each feature to have uniform variation. Norm scaling
+            the data to be clustered to similar scales. Standard preprocessing
+            adjusts each feature to have uniform variation. Norm preprocessing
             adjusts treats the set of features like a vector and
             each measurement is scaled to length 1.
             You can also pass an instance of a sklearn preprocessing module.
@@ -2348,7 +2375,7 @@ class MVA:
             See sklearn.preprocessing preprocessing methods for further details
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
-            results (cluster_source_for_estimates="decomposition") you can define how
+            results (cluster_source_for_centers="decomposition") you can define how
             many PCA components to use. If set to None the method uses the
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
@@ -2376,7 +2403,15 @@ class MVA:
             clustering random data. This random clustering is
             typically averaged n_ref times to get an statistical average
         **kwargs : dict {}  default empty
-            Additional parameters passed to the clustering algorithm.
+            Parameters passed to the clustering algorithm.
+
+        
+        Other Parameters        
+        ----------------        
+        n_clusters : int
+            Number of clusters to find using the one of the pre-defined methods
+            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
+            See sklearn.cluster for details 
 
 
         Returns
@@ -2395,43 +2430,32 @@ class MVA:
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 
         """
-        
-        def distances_within_cluster(data,memberships,squared=True):
-            return [np.sum(
-                import_sklearn.sklearn.metrics.pairwise.euclidean_distances(
-                data[memberships == c, :]
-                -np.mean(data[memberships == c],axis=0),
-                squared=squared)/
-                (2.*data[memberships == c, :].shape[0]))
-                for c in np.unique(memberships)]
 
+        
 
         if max_clusters < 2:
             raise ValueError("The max number of clusters, max_clusters, "
                              "must be specified and be >= 2.")
         to_return = None
         best_k    = None
-        if min_clusters is None:
-            k_range   = list(range(1, max_clusters+1))
-            #
-            # for silhouette k starts at 2
-            # for kmeans or gap k starts at 1
-            # As these methods use random numbers we need to
-            # initiate the random number generator to ensure
-            # consistent/repeatable results
-            #
-            if(algorithm == "agglomerative"):
-                k_range   = list(range(2, max_clusters+1))
-            if(algorithm == "kmeans"):
-                if metric =="silhouette":
-                    k_range   = list(range(2, max_clusters+1))
+        k_range   = list(range(1, max_clusters+1))
+        #
+        # for silhouette k starts at 2
+        # for kmeans or gap k starts at 1
+        # As these methods use random numbers we need to
+        # initiate the random number generator to ensure
+        # consistent/repeatable results
+        #
+        if(algorithm == "agglomerative"):
+            k_range   = list(range(2, max_clusters+1))
+        if(algorithm == "kmeans" or algorithm == "minibatchkmeans"):
             if metric == "gap":
                 # set number of averages to 1
                 kwargs['n_init']=1
-            min_k = np.min(k_range)
-        else:
-            k_range   = list(range(min_clusters, max_clusters+1))
-            min_k = np.min(k_range)
+        if metric =="silhouette":
+            k_range   = list(range(2, max_clusters+1))
+
+        min_k = np.min(k_range)
             
         target = LearningResults()
 
@@ -2456,7 +2480,7 @@ class MVA:
                     cluster_algorithm = self._get_cluster_algorithm(algorithm,k,**kwargs)
                     alg = self._cluster_analysis(scaled_data,cluster_algorithm)
 
-                    D = distances_within_cluster(scaled_data,alg.labels_)
+                    D = self._distances_within_cluster(scaled_data,alg.labels_,summed=True)
                     W = np.sum(D)
                     inertia[i]= np.log(W)
                     pbar.update(1)
@@ -2519,8 +2543,8 @@ class MVA:
                     alg = self._cluster_analysis(scaled_data,
                                                  cluster_algorithm)
 
-                    D = distances_within_cluster(scaled_data,alg.labels_,
-                                                 squared=False)
+                    D = self._distances_within_cluster(scaled_data,alg.labels_,
+                                                 squared=False,summed=True)
                     W = np.sum(D)
                     data_inertia[o_indx]=np.log(W)
                     # now do n_ref clusters for a uniform random distribution
@@ -2533,8 +2557,8 @@ class MVA:
                             self._get_cluster_algorithm(algorithm,k,**kwargs)
                         alg = self._cluster_analysis(reference,
                                                      cluster_algorithm)
-                        D = distances_within_cluster(reference,alg.labels_,
-                                                 squared=False)
+                        D = self._distances_within_cluster(reference,alg.labels_,
+                                                 squared=False,summed=True)
                         W = np.sum(D)
                         local_inertia[i_indx]=np.log(W)
                         pbar.update(1)
