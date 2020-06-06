@@ -113,6 +113,14 @@ Specifying custom components
 
 .. _expression_component-label:
 
+In addition to the above specific components, Hyperspy can take any Signal1D as 
+well as most mathematical expressions as components, as detailed below.
+
+To turn a Signal1D into a component, pass a Signal1D that does not have any navigation 
+axes to :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`. ScaleableFixedPatterns
+can, as the name implies, be scaled in the x and y directions (by the :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale` and :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.yscale`) parameters. 
+They can additionally be shifted by the :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xshift`. By default the :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale.free` attribute of :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale` and :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xshift` is set to `False`.
+
 .. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component
                   can create 2D components.
 
