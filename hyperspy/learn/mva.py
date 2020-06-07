@@ -1735,7 +1735,7 @@ class MVA:
                                      number_of_components,
                                      navigation_mask,
                                      signal_mask,
-                                     loadings_only=True)
+                                     reproject=False)
         
         
         if preprocessing_algorithm is None:
@@ -1864,8 +1864,12 @@ class MVA:
 
         Parameters
         ----------
-        labels : int array of length n_samples where each value is a cluster
-            label from 0 to n_clusters-1
+        labels : int ndarray 
+            Array of length n_samples where each value is a cluster
+            label from 0 to n_clusters-1. Values of -1 are ignored.
+        distances : list of len n_clusters. 
+            Each item in the list is a ndarray of distances from each
+            item in the cluster to every other item. 
         source_for_centers : {"decomposition","bss","signal", Signal}
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used 
@@ -1884,6 +1888,12 @@ class MVA:
             Create cluster labels and centers for navigation locations marked as as True.
             labels outside the navigation mask are set to -1 and centers in
             these regions are set to zero.
+        center_signals_method : {"mean","median","closest"}
+            default : 'mean'
+            Once the cluster labels have been obtained the cluster center
+            can be the mean or median of the values represent by those labels.
+            Alternatively it can be the value most similar or closest to all other
+            values.
 
 
         Returns
@@ -1891,6 +1901,7 @@ class MVA:
         sorted_labels   : array  - (n_samples)        
         cluster_labels  : array  - (n_clusters, n_samples)
         cluster_centers : array  - (n_clusters, signal_shape)
+        cluster_distances : array  - (n_clusters, signal_shape)
         
         """
 
@@ -1917,38 +1928,38 @@ class MVA:
         idx = np.argsort(clustersizes)[::-1]
         lut = np.zeros_like(idx)
         lut[idx] = np.arange(n_clusters)
-        
         shape = (n_clusters,self.axes_manager.navigation_size)
         cluster_labels = np.full(shape, -1)
         sorted_labels = np.full(shape[1],-1)
-        cluster_distances = np.full(shape ,np.nan)
+        cluster_distances = np.full(shape,-1.0)
 
         # now create the labels from these sorted labels
         nav_mask = self._mask_for_clustering(navigation_mask)
         sorted_labels[nav_mask] = lut[labels]
-        for i in range(n_clusters):
-            print(i,idx[i],lut[i],len(distances[i]),clustersizes[i])
         cluster_centers=[]
         for i in range(n_clusters):
             cluster_labels[i, :] = \
                 np.where(sorted_labels == i, 1, 0)
             
             clus_index = sorted_labels != i            
-            cluster_distances[i][sorted_labels == i]=distances[idx[i]]
+            cluster_distances[i,sorted_labels == i]=distances[idx[i]]
             cluster_data = \
                 self._get_cluster_signal(source_for_centers,
                                          number_of_components,
                                          navigation_mask=clus_index,
                                          signal_mask=None,
-                                         loadings_only=False)
+                                         reproject=True)
             if center_signals_method == "median":
                 cluster_data = np.median(cluster_data,axis=0)
             elif center_signals_method == "closest":
                 cluster_data = cluster_data[np.argmin(distances[idx[i]]),:]
                 if cluster_data.ndim == 2:
-                    cluster_data = cluster_data.mean(axis=0)    
+                    cluster_data = np.mean(cluster_data,axis=0)
+            elif center_signals_method == "mean":
+                cluster_data = np.mean(cluster_data,axis=0)
             else:
-                cluster_data = cluster_data.mean(axis=0)
+                raise ValueError(f'`center_signals_method` must be "mean","median" \
+                                 or closest" but {center_signals_method} given')
             # the size of cluster centers depends on the data source used
             # so append to list and concatentate to array at end 
             cluster_centers.append(cluster_data)
@@ -1960,7 +1971,7 @@ class MVA:
     def _get_cluster_signal(self,cluster_source,number_of_components=None,
                             navigation_mask=None,
                             signal_mask=None,
-                            loadings_only=False):
+                            reproject=False):
         """A cluster source can be an external signal, the signal data
         or the decomposition or bss results  
         Return a flatten version of the data, nav and signal mask
@@ -1979,12 +1990,10 @@ class MVA:
             mask used to select regions of the cluster_source signal. 
             For decomposition or bss this is not used.
             The default is None.
-        sum_over_navigation_mask : bool, optional
-            If True the cluster_source is summed over the navigation axes
-            (accounting for the navigation_mask).
-            For bss or decomposition results the sum is over the 
-            factor @ loadings result
-            The default is False.
+        reproject : bool, optional
+            If False the and the cluster_source is decomposition or bss
+            the loadings are returned. If True the factor @ loadings result
+            is used. The default is False.
 
  
         Returns
@@ -1992,10 +2001,6 @@ class MVA:
         toreturn : ndarray
             Returns an unfolded dataset from 
             the selected cluster_source
-        navigation_mask : ndarray
-            navigation_mask (flattened and inverted if needed)
-        signal_mask : ndarray
-            signal mask (flattened and inverted if needed) 
 
         """
                 
@@ -2033,7 +2038,7 @@ class MVA:
 
             
         navigation_mask = self._mask_for_clustering(navigation_mask)
-        if not isinstance(navigation_mask,slice):
+        if not isinstance(navigation_mask,slice) and navigation_mask.size != 1:
             if navigation_mask.size != self.axes_manager.navigation_size:
                 raise ValueError("Navigation mask size does not match signal navigation size")
 
@@ -2058,14 +2063,14 @@ class MVA:
                 loadings = self.learning_results.loadings
                 factors  = self.learning_results.factors
         
-            if loadings_only:
-                toreturn = loadings[navigation_mask,:number_of_components] 
-            else:
+            if reproject:
                 toreturn = factors[:, :number_of_components] \
                     @ loadings[navigation_mask, :number_of_components].T          
                 toreturn = toreturn.T       
-        return toreturn
+            else:
+                toreturn = loadings[navigation_mask,:number_of_components] 
 
+        return toreturn
 
         
     def cluster_analysis(self,
@@ -2084,14 +2089,6 @@ class MVA:
         Results are stored in `learning_results`.
         
         
-        Other Parameters        
-        ----------------        
-        n_clusters : int
-            Number of clusters to find using the one of the pre-defined methods
-            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
-            See sklearn.cluster for details 
-
-
         Parameters
         ----------
         cluster_source : {"bss", "decomposition", "signal", BaseSignal}
@@ -2108,6 +2105,12 @@ class MVA:
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
             BaseSignal must have the same navigation dimensions as the signal.            
+        center_signals_method : {"mean","median","closest"}
+            default : 'mean'
+            Once the cluster labels have been obtained the cluster center
+            can be the mean or median of the values represent by those labels.
+            Alternatively it can be the value most similar or closest to all other
+            values.
         preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
@@ -2121,7 +2124,7 @@ class MVA:
             See preprocessing methods in scikit-learn preprocessing for further
             details.
         preprocessing_kwargs : dict
-            Additional parameters passed to the cluster preprocessing algorithm.
+            Additional parameters passed to the supported sklearn preprocessing methods.
             See sklearn.preprocessing scaling methods for further details
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
@@ -2146,16 +2149,24 @@ class MVA:
             If True (the default is False)
             return the cluster object so the attributes can be accessed.
         **kwargs : dict  optional, default - empty
-            Additional parameters passed to the clustering algorithm.
+            Additional parameters passed to the clustering class for initialization.
             For example, in case of the "kmeans" algorithm, `n_init` can be
             used to define the number of times the algorithm is restarted to
             optimize results.
+
+        Other Parameters        
+        ----------------        
+        n_clusters : int
+            Number of clusters to find using the one of the pre-defined methods
+            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
+            See sklearn.cluster for details 
 
         See Also
         --------
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,      
+        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,        
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
         * :py:meth:`~.signal.MVATools.plot_cluster_centers`
@@ -2210,7 +2221,7 @@ class MVA:
                 to_return = alg
 
             labels = alg.labels_
-            # get the cluster distances for metrics and storage
+            # get the cluster distances for metrics
             distances = \
                 self._distances_within_cluster(scaled_data,labels,summed=False)
 
@@ -2227,7 +2238,6 @@ class MVA:
                     navigation_mask=navigation_mask,
                     center_signals_method=center_signals_method)
                 
-
             # if an object is passed as the clustering algorithm
             # the number of clusters may vary...
             number_clusters = np.max(sorted_membership)+1
@@ -2309,12 +2319,36 @@ class MVA:
 
 
     def _distances_within_cluster(self,cluster_data,memberships,squared=True,summed=False):
-        result= [np.sum(
-            import_sklearn.sklearn.metrics.pairwise.\
+        """        
+
+        Parameters
+        ----------
+        cluster_data : ndarray
+            scaled cluster data
+        memberships : ndarray
+            cluster labels
+        squared : bool, optional
+            square distance measurement. The default is True.
+        summed : bool, optional
+            If False returns array showing sum of distance from a given point 
+            to all other points in the cluster. 
+            If True returns a sum of all distances 
+            within a cluster. The results are scaled by 2*number of cluster points.
+            The default is False.
+
+        Returns
+        -------
+        result : list
+            list of distances for within the cluster
+
+        """
+        distances = \
+            [import_sklearn.sklearn.metrics.pairwise.\
                 euclidean_distances(cluster_data[memberships == c, :],
-            squared=squared),axis=0)/
-            (2.*cluster_data[memberships == c, :].shape[0])
-            for c in np.unique(memberships)]
+            squared=squared)
+            for c in range(np.max(memberships)+1)]
+        result = [np.mean(x,axis=0)/2.0 for x in distances]
+
         if summed:
             result = [np.sum(x) for x in result]
         return result
@@ -2329,7 +2363,7 @@ class MVA:
                                     signal_mask=None,
                                     algorithm='kmeans',
                                     metric="gap",
-                                    n_ref=10,
+                                    n_ref=4,
                                     **kwargs):
         """Performs cluster analysis of a signal for cluster sizes ranging from
         n_clusters =2 to max_clusters ( default 12)
@@ -2353,14 +2387,7 @@ class MVA:
         max_clusters : int, default 10
             Max number of clusters to use. The method will scan from 2 to
             max_clusters. 
-        min_clusters : int, default None
-            The minimum number of clusters or starting point for the estimate.
-            min_clusters is typically 2 but can be set to 1 for some methods.
-            If set to None and using one of the standard cluster algorithms
-            the lowest value possible will chosen depending on the metric and
-            algorithm chosen. If using an external clustering
-            method it will default to 2 unless otherwise specified.            
-        preprocessing : {"standard","norm","minmax" or sklearn preprocessing object}
+        preprocessing : {"standard","norm","minmax" or sklearn-like preprocessing object}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard preprocessing
@@ -2397,11 +2424,12 @@ class MVA:
             For gap the optimal k is the first k gap(k)>= gap(k+1)-std_error
             For silhouette the optimal k will be one of the "maxima" found with
             this method
-        n_ref :  int, default 10
-            Number of random references to use in gap statistics method
+        n_ref :  int, default 4
+            Number of references to use in gap statistics method
             Gap statistics compares the results from clustering the data to
-            clustering random data. This random clustering is
-            typically averaged n_ref times to get an statistical average
+            clustering uniformly distributed data. As clustering has
+            a random variation it is typically averaged n_ref times
+            to get an statistical average
         **kwargs : dict {}  default empty
             Parameters passed to the clustering algorithm.
 
@@ -2423,7 +2451,8 @@ class MVA:
         --------
         * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,        
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
         * :py:meth:`~.signal.MVATools.plot_cluster_centers`
@@ -2677,6 +2706,16 @@ class MVA:
 
         return elbow_position
 
+class PowerScaling(object):
+    
+    def __init__(self,power=0.5):
+        self.power = power
+        
+    def fit_transform(self,X):
+        scaled_data = X/np.linalg.norm(X,axis=1)        
+        scaled_data = scaled_data ** self.power
+
+        
 
 class LearningResults(object):
     """Stores the parameters and results from a decomposition."""

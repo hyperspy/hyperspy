@@ -115,12 +115,12 @@ class TestPlotClusterAnalysis:
         # Run decomposition and cluster analysis
         s.decomposition()
         s.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                           scaling="minmax", random_state=0)
+                           preprocessing="minmax", random_state=0)
         s.estimate_number_of_clusters("decomposition",metric="elbow")
         
         s2.decomposition()
         s2.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                            scaling="minmax", random_state=0)
+                            preprocessing="minmax", random_state=0)
         
         data = np.zeros((2000, 5))
         data[:250*5:5, :] = 10
@@ -131,7 +131,7 @@ class TestPlotClusterAnalysis:
         s3 = signals.Signal2D(data.reshape(20, 20, 5, 5))
         s3.decomposition()
         s3.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                            scaling="minmax", random_state=0)
+                            preprocessing="minmax", random_state=0)
         
         self.s = s
         self.s2 = s2
@@ -149,6 +149,11 @@ class TestPlotClusterAnalysis:
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_distances_nav1_sig1(self):
+        return self.s.plot_cluster_distances()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig1(self):
         return self.s2.plot_cluster_labels()
     
@@ -161,6 +166,11 @@ class TestPlotClusterAnalysis:
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig2(self):
         return self.s3.plot_cluster_labels()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_distances_nav2_sig2(self):
+        return self.s3.plot_cluster_distances()
 
  #   @pytest.mark.skipif(sys.platform == "win32", 
  #                       reason="does not run on windows 32")

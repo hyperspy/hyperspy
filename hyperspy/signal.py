@@ -1699,11 +1699,12 @@ class MVATools(object):
             label_signal = self._get_loadings(self.learning_results.cluster_membership)
             label_signal = label_signal.squeeze()
         else:
-            label_signal = self._get_loadings(self.learning_results.cluster_labels)
+            label_signal = self._get_loadings(self.learning_results.cluster_labels.T)
         label_signal.axes_manager._axes[0].name = "Cluster index"
         label_signal.metadata.General.title = \
             "Cluster labels of " + self.metadata.General.title
         return label_signal
+
     
     def get_cluster_centers(self):
         """Return the cluster centers as a Signal.
@@ -1720,6 +1721,29 @@ class MVATools(object):
         signal.metadata.General.title = ("Cluster centers of " +
                                          self.metadata.General.title)
         return signal
+
+    def get_cluster_distances(self):
+        """Return cluster distances as a Signal.
+    
+    
+        See Also
+        --------
+        get_cluster_centers
+        
+        Returns
+        --------
+        signal
+            Hyperspy signal of cluster distances        
+    
+        """
+        if self.learning_results.cluster_distances is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        distance_signal = self._get_loadings(self.learning_results.cluster_distances.T)
+        distance_signal.axes_manager._axes[0].name = "Cluster index"
+        distance_signal.metadata.General.title = \
+            "Cluster distances of " + self.metadata.General.title
+        return distance_signal
+
 
     def plot_cluster_centers(self,
                              cluster_ids=None,
@@ -1783,7 +1807,7 @@ class MVATools(object):
                             per_row=3,
                             axes_decor='all',
                             title=None):
-        """Plot loadings from a decomposition. In case of 1D navigation axis,
+        """Plot cluster labels from a cluster analysis. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
 
@@ -1861,6 +1885,99 @@ class MVATools(object):
                                    no_nans=no_nans,
                                    per_row=per_row,
                                    axes_decor=axes_decor)
+
+
+    def plot_cluster_distances(self,
+                            cluster_ids=None,
+                            calibrate=True,
+                            same_window=True,
+                            comp_label=None,
+                            with_centers=False,
+                            cmap=plt.cm.gray,
+                            no_nans=False,
+                            per_row=3,
+                            axes_decor='all',
+                            title=None):
+        """Plot inter cluster distances from a cluster analysis. 
+        In case of 1D navigation axis,
+        each line can be toggled on and off by clicking on the legended
+        line.
+
+        Parameters
+        ----------
+
+        cluster_ids : None, int, or list of ints
+            if None (default), returns maps of all components using the 
+            number_of_cluster was defined when
+            executing ``cluster``. Otherwise it raises a ValueError.
+            if int, returns maps of cluster labels with ids from 0 to
+            given int.
+            if list of ints, returns maps of cluster labels with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.  They are
+            not scaled. Default is True.
+        title : string
+            Title of the plot.
+        with_centers : bool
+            If True, also returns figure(s) with the cluster centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the loading plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
+        See Also
+        --------
+        plot_cluster_centers, plot_cluster_results, plot_cluster_labels
+
+        """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot labels of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_cluster_results` instead.")
+        if same_window is None:
+            same_window = True
+        distances = self.learning_results.cluster_distances
+        if with_centers:
+            centers = self.learning_results.cluster_centers.T
+        else:
+            centers = None
+
+        if cluster_ids is None:
+            cluster_ids = range(distances.shape[0])
+
+        title = _change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title('Cluster distances of',
+                                         same_window)
+
+        return self._plot_loadings(distances,
+                                   comp_ids=cluster_ids,
+                                   with_factors=with_centers,
+                                   factors=centers,
+                                   same_window=same_window,
+                                   comp_label=title,
+                                   cmap=cmap,
+                                   no_nans=no_nans,
+                                   per_row=per_row,
+                                   axes_decor=axes_decor)
+
 
     def plot_cluster_results(self,
                              centers_navigator="smart_auto",

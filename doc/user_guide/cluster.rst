@@ -84,7 +84,7 @@ For example:
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(cluster_source="signal", n_clusters=3, scaling="norm", algorithm="kmeans", n_init=8)
+    >>> s.cluster_analysis(cluster_source="signal", n_clusters=3, preprocessing="norm", algorithm="kmeans", n_init=8)
 
 is equivalent to:
 
@@ -191,7 +191,7 @@ not require any pre-processing for cluster analysis.
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, scaling=None)
+    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=None)
     >>> s.plot_cluster_labels(axes_decor="off")
 
 .. image:: images/clustering_labels.png
@@ -382,9 +382,9 @@ proportionality relationship between the position of the peaks.
 
     >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(),
     m.components.GaussianHF_0.centre.as_signal()])
-    >>> s.estimate_number_of_clusters(cluster_source=stack.T, scaling="norm")
+    >>> s.estimate_number_of_clusters(cluster_source=stack.T, preprocessing="norm")
     2
-    >>> s.cluster_analysis(cluster_source=stack.T, source_for_centers=s, n_clusters=2, scaling="norm")
+    >>> s.cluster_analysis(cluster_source=stack.T, source_for_centers=s, n_clusters=2, preprocessing="norm")
     >>> s.plot_cluster_labels()
 
 .. image:: images/clustering_gaussian_centres_labels.png
@@ -395,5 +395,70 @@ proportionality relationship between the position of the peaks.
 
 .. image:: images/clustering_gaussian_centres_centres.png
 
+Choice of Cluster centers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Clustering algorithms label samples with similar features.
+When constructing the cluster center we can decide how to
+use this set of labels or features. You may wish to select the mean 
+or median of the features or the point which is closest in similarity to
+the other features. This choice can be made using ``cluster_center_method``
+
+.. code-block:: python
+
+    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, cluster_center_method="median")
+
+Its important to understand how the clustering method works if 
+choosing values other than "mean". For example in ``kmeans``
+the clustering and labels are with respect to a center mean so selecting a 
+different center would need some justifcation based on outliers or skewing of the data.
+For other clustering methods the labels are chosen based on different criteria so a 
+flexibility in the choice of center can be helpful.   
 
 
+Clustering with user defined algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+User developed preprocessing or cluster algorithms can be 
+used in place of the sklearn methods.
+A preprocessing object needs a ``fit_transform`` which
+appropriately scales the data. 
+The example below defines a preprocessing class which normalizes 
+the data then applies a square root to enhances weaker features. 
+
+.. code-block:: python
+
+    
+    >>> class PowerScaling(object):
+    >>>     
+    >>>     def __init__(self,power=0.5):
+    >>>         self.power = power
+    >>>         
+    >>>     def fit_transform(self,data):
+    >>>         norm = np.amax(data,axis=1)
+    >>>         scaled_data = data/norm[:,None]
+    >>>         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
+    >>>         scaled_data = scaled_data ** self.power
+    >>>         return scaled_data 
+
+The PowerScaling class can then be passed to the cluster_analysis method for use.
+
+.. code-block:: python
+
+    >>> ps = PowerScaling()
+    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=ps)
+
+For user defined clustering algorithms the class must implementation
+``fit`` and have a ``label_`` attribute that contains the clustering labels.
+An example template would be:
+
+.. code-block:: python
+
+    
+    >>> class MyClustering(object):
+    >>>     
+    >>>     def __init__(self):
+    >>>         self.labels_ = None
+    >>>         
+    >>>     def fit_(self,X):
+    >>>         self.labels_ = do_something(X)       
+    

@@ -299,11 +299,37 @@ class TestClusterExceptions:
         with pytest.raises(ValueError, match="The clustering method should be either \w*"):
             self.s.cluster_analysis("signal",n_clusters=2,algorithm=empty_object)
     
+    def test_centre_method_error(self):
+        with pytest.raises(ValueError, match=f"`center_signals_method` must be \w*"):
+            self.s.cluster_analysis("signal",n_clusters=2,center_signals_method="orange")
+
 
     def test_sklearn_exception(self):
         import_sklearn.sklearn_installed = False
         with pytest.raises(ImportError):
             self.s.cluster_analysis("signal",n_clusters=2)
         import_sklearn.sklearn_installed = True
+
+
+def test_get_methods():
+    signal = signals.Signal1D(np.random.rand(11, 5, 7))
+    signal.decomposition()
+    signal.cluster_analysis("signal",n_clusters=2)
+    signal.unfold()
+    cl = signal.get_cluster_labels(merged=True)
+    np.testing.assert_array_equal(cl.data,
+       signal.learning_results.cluster_membership)
+    
+    cl = signal.get_cluster_labels(merged=False)
+    np.testing.assert_array_equal(cl.data,
+       signal.learning_results.cluster_labels)
+
+    cl = signal.get_cluster_centers()
+    np.testing.assert_array_equal(cl.data,
+       signal.learning_results.cluster_centers)
+    
+    cl = signal.get_cluster_distances()
+    np.testing.assert_array_equal(cl.data,
+       signal.learning_results.cluster_distances)
 
 
