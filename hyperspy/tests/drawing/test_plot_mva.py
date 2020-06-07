@@ -186,6 +186,11 @@ class TestPlotClusterAnalysis:
         ax = self.s.plot_cluster_metric()
         return ax.get_figure()
 
+    def test_except_nocluster_metric(self):
+        with pytest.raises(ValueError):
+            self.s2.plot_cluster_metric()
+
+
 def test_plot_without_decomposition():
     sources = np.random.random(size=(5, 100))
     mixmat = np.random.random((100, 5))

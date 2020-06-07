@@ -71,12 +71,11 @@ class TestCluster1d:
         self.signal.get_cluster_labels()
         self.signal.get_cluster_centers()
 
-    def test_custom_algorithm(self):
-        custom_method =  import_sklearn.sklearn.cluster.KMeans(3)
+    @pytest.mark.parametrize("center_signals_method", ("mean", "median", "closest"))
+    def test_custom_algorithm(self,center_signals_method):
         self.signal.cluster_analysis("signal",n_clusters=3,
                                       preprocessing="norm",
-                                      algorithm=custom_method,
-                                      )
+                                      center_signals_method=center_signals_method)
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 55))
         np.testing.assert_array_equal(
@@ -92,6 +91,7 @@ class TestCluster1d:
             self.signal.learning_results.cluster_labels.shape, (3, 55))
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_centers.shape, (3, 7))
+
 
 
 class TestClusterSignalSources:
@@ -212,7 +212,26 @@ class TestClusterEstimate:
  
         np.testing.assert_allclose(k_range,test_k_range)
         np.testing.assert_allclose(best_k, 3)
-            
+     
+        
+class DummyClusterAlgorithm:
+    
+    def __init__(self):
+        self.test= None
+        
+    def fit(self,X):
+        pass
+
+        
+class DummyScalingAlgorithm:
+    
+    def __init__(self):
+        self.test= None
+        
+    def fit(self,X):
+        pass
+
+
 
 class TestClusterExceptions:
     
@@ -310,6 +329,17 @@ class TestClusterExceptions:
             self.s.cluster_analysis("signal",n_clusters=2)
         import_sklearn.sklearn_installed = True
 
+
+    def test_preprocess_alg_exception(self):
+        sc = DummyScalingAlgorithm()
+        with pytest.raises(ValueError,match="The cluster preprocessing method should be \w*"):
+            self.s.cluster_analysis("signal",n_clusters=2,preprocessing=sc)
+
+
+    def test_cluster_alg_exception(self):
+        sc = DummyClusterAlgorithm()
+        with pytest.raises(AttributeError,match="Fited cluster estimator \w*"):
+            self.s.cluster_analysis("signal",n_clusters=2,algorithm=sc)
 
 def test_get_methods():
     signal = signals.Signal1D(np.random.rand(11, 5, 7))

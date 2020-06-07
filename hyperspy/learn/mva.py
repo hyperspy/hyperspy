@@ -2265,7 +2265,7 @@ class MVA:
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()
                         
-            if is_hyperspy_signal(cluster_source):
+            if is_hyperspy_signal(source_for_centers):
                 if hasattr(source_for_centers,"unfolded4clustering"):
                     if source_for_centers.unfolded4clustering:
                         source_for_centers.fold()
@@ -2704,18 +2704,7 @@ class MVA:
         distance = np.nan_to_num(numer / denom)
         elbow_position = np.argmax(distance)
 
-        return elbow_position
-
-class PowerScaling(object):
-    
-    def __init__(self,power=0.5):
-        self.power = power
-        
-    def fit_transform(self,X):
-        scaled_data = X/np.linalg.norm(X,axis=1)        
-        scaled_data = scaled_data ** self.power
-
-        
+        return elbow_position        
 
 class LearningResults(object):
     """Stores the parameters and results from a decomposition."""
