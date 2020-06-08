@@ -416,13 +416,13 @@ class ImagePlot(BlittedFigure):
 
                 norm = LogNorm(vmin=vmin, vmax=vmax)
             elif norm == 'symlog':
-                kwargs = {}
+                sym_log_kwargs = {}
                 if LooseVersion(matplotlib.__version__) >= LooseVersion("3.2"):
-                    kwargs['base'] = 10
+                    sym_log_kwargs['base'] = 10
                 norm = SymLogNorm(linthresh=self.linthresh,
-                                linscale=self.linscale,
-                                vmin=vmin, vmax=vmax,
-                                **kwargs)
+                                  linscale=self.linscale,
+                                  vmin=vmin, vmax=vmax,
+                                  **sym_log_kwargs)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
             elif norm not in ['auto', 'linear']:
