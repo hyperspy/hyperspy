@@ -41,12 +41,12 @@ class TestCluster1d:
         self.signal_mask[2:6] = True
 
 
-    @pytest.mark.parametrize("algorithm", ("kmeans", "agglomerative",
+    @pytest.mark.parametrize("algorithm", (None,"kmeans", "agglomerative",
                                             "spectralclustering",
                                             "minibatchkmeans"))
     @pytest.mark.parametrize("cluster_source", ("signal","bss","decomposition"))
     @pytest.mark.parametrize("source_for_centers", (None,"signal","bss","decomposition"))
-    @pytest.mark.parametrize("preprocessing", ("standard", "norm", "minmax",None))
+    @pytest.mark.parametrize("preprocessing", (None,"standard", "norm", "minmax",None))
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_combinations(self, algorithm, cluster_source,
                         preprocessing, source_for_centers,
@@ -309,26 +309,34 @@ class TestClusterExceptions:
     
     def test_cluster_preprocessing_object_error(self):
         preprocessing = object()
-        with pytest.raises(ValueError, match="The cluster preprocessing method should be either \w*"):
+        with pytest.raises(ValueError, match=r"The cluster preprocessing method should be either \w*"):
             self.s.cluster_analysis("signal",n_clusters=2,preprocessing=preprocessing)
 
     
     def test_clustering_object_error(self):
         empty_object = object()
-        with pytest.raises(ValueError, match="The clustering method should be either \w*"):
+        with pytest.raises(ValueError, match=r"The clustering method should be either \w*"):
             self.s.cluster_analysis("signal",n_clusters=2,algorithm=empty_object)
     
     def test_centre_method_error(self):
-        with pytest.raises(ValueError, match=f"`center_signals_method` must be \w*"):
+        with pytest.raises(ValueError, match=r"`center_signals_method` must be \w*"):
             self.s.cluster_analysis("signal",n_clusters=2,center_signals_method="orange")
 
+    def test_estimate_alg_error(self):
+        with pytest.raises(ValueError, match="Estimate number of clusters only works with "
+                           "supported clustering algorithms"):
+            self.s.estimate_number_of_clusters("signal",algorithm="orange")
+
+    def test_estimate_pre_error(self):
+        with pytest.raises(ValueError, match="Estimate number of clusters only works with "
+                           "supported preprocessing algorithms"):
+            self.s.estimate_number_of_clusters("signal",preprocessing="orange")
 
     def test_sklearn_exception(self):
         import_sklearn.sklearn_installed = False
         with pytest.raises(ImportError):
             self.s.cluster_analysis("signal",n_clusters=2)
         import_sklearn.sklearn_installed = True
-
 
     def test_sklearn_exception2(self):
         import_sklearn.sklearn_installed = False
@@ -345,13 +353,13 @@ class TestClusterExceptions:
 
     def test_preprocess_alg_exception(self):
         sc = DummyScalingAlgorithm()
-        with pytest.raises(ValueError,match="The cluster preprocessing method should be \w*"):
+        with pytest.raises(ValueError,match=r"The cluster preprocessing method should be \w*"):
             self.s.cluster_analysis("signal",n_clusters=2,preprocessing=sc)
 
 
     def test_cluster_alg_exception(self):
         sc = DummyClusterAlgorithm()
-        with pytest.raises(AttributeError,match="Fited cluster estimator \w*"):
+        with pytest.raises(AttributeError,match=r"Fited cluster estimator \w*"):
             self.s.cluster_analysis("signal",n_clusters=2,algorithm=sc)
 
 def test_get_methods():

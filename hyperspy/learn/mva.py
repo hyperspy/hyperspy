@@ -63,6 +63,7 @@ if import_sklearn.sklearn_installed:
         'spectralclustering' : import_sklearn.sklearn.cluster.SpectralClustering
     }
     cluster_preprocessing_algorithms = {
+        None : import_sklearn.sklearn.preprocessing.Normalizer,
         "norm": import_sklearn.sklearn.preprocessing.Normalizer,
         "standard": import_sklearn.sklearn.preprocessing.StandardScaler,
         "minmax": import_sklearn.sklearn.preprocessing.MinMaxScaler
@@ -2077,12 +2078,12 @@ class MVA:
                          cluster_source,
                          source_for_centers=None,
                          center_signals_method="mean",
-                         preprocessing="norm",
+                         preprocessing=None,
                          preprocessing_kwargs={},
                          number_of_components=None,
                          navigation_mask=None,
                          signal_mask=None,
-                         algorithm='kmeans',
+                         algorithm=None,
                          return_info=False,
                          **kwargs):
         """Cluster analysis of a signal or decomposition results of a signal
@@ -2288,7 +2289,8 @@ class MVA:
                 if not import_sklearn.sklearn_installed:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
                 cluster_algorithm = cluster_algorithms[algorithm](**kwargs)
-            
+        elif algorithm is None:
+            cluster_algorithm = cluster_algorithms[None](**kwargs)        
         elif hasattr(algorithm, "fit"):
             cluster_algorithm = algorithm
         else:
@@ -2304,8 +2306,6 @@ class MVA:
         """
 
         preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
-        if algorithm is None:
-            return None
         if algorithm in preprocessing_methods:
             if not import_sklearn.sklearn_installed:
                 raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
@@ -2356,12 +2356,12 @@ class MVA:
     def estimate_number_of_clusters(self,
                                     cluster_source,
                                     max_clusters=10,
-                                    preprocessing="norm",
+                                    preprocessing=None,
                                     preprocessing_kwargs={},
                                     number_of_components=None,
                                     navigation_mask=None,
                                     signal_mask=None,
-                                    algorithm='kmeans',
+                                    algorithm=None,
                                     metric="gap",
                                     n_ref=4,
                                     **kwargs):
@@ -2460,11 +2460,16 @@ class MVA:
 
         """
 
-        
-
         if max_clusters < 2:
             raise ValueError("The max number of clusters, max_clusters, "
                              "must be specified and be >= 2.")
+        if algorithm not in cluster_algorithms:
+            raise ValueError("Estimate number of clusters only works with "
+                             "supported clustering algorithms")
+        if preprocessing not in cluster_preprocessing_algorithms:
+            raise ValueError("Estimate number of clusters only works with "
+                             "supported preprocessing algorithms")
+
         to_return = None
         best_k    = None
         k_range   = list(range(1, max_clusters+1))
@@ -2506,7 +2511,7 @@ class MVA:
                 inertia = np.zeros(len(k_range))
 
                 for i,k in enumerate(k_range):
-                    cluster_algorithm = self._get_cluster_algorithm(algorithm,k,**kwargs)
+                    cluster_algorithm = self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
                     alg = self._cluster_analysis(scaled_data,cluster_algorithm)
 
                     D = self._distances_within_cluster(scaled_data,alg.labels_,summed=True)
@@ -2525,7 +2530,7 @@ class MVA:
                 silhouette_avg = []
                 for k in k_range:
                     cluster_algorithm = \
-                        self._get_cluster_algorithm(algorithm,k,**kwargs)
+                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
                     alg = self._cluster_analysis(scaled_data,cluster_algorithm)
                     cluster_labels = alg.labels_
                     silhouette_avg.append(
@@ -2568,7 +2573,7 @@ class MVA:
                     if(algorithm=="kmeans"):
                         kwargs['n_init']=1
                     cluster_algorithm = \
-                        self._get_cluster_algorithm(algorithm,k,**kwargs)
+                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
                     alg = self._cluster_analysis(scaled_data,
                                                  cluster_algorithm)
 
@@ -2583,7 +2588,7 @@ class MVA:
                         # initiate with a known seed to make the overall results
                         # repeatable but still sampling different configurations
                         cluster_algorithm = \
-                            self._get_cluster_algorithm(algorithm,k,**kwargs)
+                            self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
                         alg = self._cluster_analysis(reference,
                                                      cluster_algorithm)
                         D = self._distances_within_cluster(reference,alg.labels_,
