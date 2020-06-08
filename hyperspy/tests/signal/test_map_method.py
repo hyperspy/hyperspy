@@ -37,8 +37,7 @@ class TestImage:
                              [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_constant_sigma(self, parallel):
         s = self.im
-        s.map(gaussian_filter, sigma=1, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(gaussian_filter, sigma=1, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             [[[1.68829507, 2.2662213, 2.84414753],
               [3.42207377, 4., 4.57792623],
@@ -52,8 +51,7 @@ class TestImage:
                              [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_constant_sigma_navdim0(self, parallel):
         s = self.im.inav[0]
-        s.map(gaussian_filter, sigma=1, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(gaussian_filter, sigma=1, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             [[1.68829507, 2.2662213, 2.84414753],
              [3.42207377, 4., 4.57792623],
@@ -68,8 +66,7 @@ class TestImage:
         sigmas.axes_manager.set_signal_dimension(0)
 
         s.map(gaussian_filter,
-              sigma=sigmas, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+              sigma=sigmas, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             [[[0., 1., 2.],
                 [3., 4., 5.],
@@ -87,9 +84,8 @@ class TestImage:
         sigma = hs.signals.BaseSignal(np.array([1, ]))
         sigma.axes_manager.set_signal_dimension(0)
 
-        s.map(gaussian_filter,
-              sigma=sigma, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(gaussian_filter, sigma=sigma, parallel=parallel,
+              ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             [[[1.68829507, 2.2662213, 2.84414753],
               [3.42207377, 4., 4.57792623],
@@ -103,8 +99,8 @@ class TestImage:
                              [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_axes_argument(self, parallel):
         s = self.im
-        s.map(rotate, angle=45, reshape=False, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(rotate, angle=45, reshape=False, parallel=parallel,
+              ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             [[[0., 2.23223305, 0.],
               [0.46446609, 4., 7.53553391],
@@ -119,8 +115,8 @@ class TestImage:
     def test_different_shapes(self, parallel):
         s = self.im
         angles = hs.signals.BaseSignal([0, 45])
-        s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
-              parallel=parallel, ragged=True)
+        s.map(rotate, angle=angles.T, reshape=True, parallel=parallel,
+              ragged=True)
         # the dtype
         assert s.data.dtype is np.dtype('O')
         # the special slicing
@@ -152,8 +148,8 @@ class TestSignal1D:
         s = self.s
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(gaussian_filter1d, sigma=1, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(gaussian_filter1d, sigma=1, parallel=parallel,
+              ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             ([[0.42207377, 1., 1.57792623],
               [3.42207377, 4., 4.57792623]])))
@@ -165,8 +161,7 @@ class TestSignal1D:
         s = self.s
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda A, B: A - B, B=s, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(lambda A, B: A - B, B=s, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.zeros_like(s.data))
         assert m.data_changed.called
 
@@ -176,8 +171,8 @@ class TestSignal1D:
         s = self.s
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda A, B: A - B, B=s.inav[0], show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(lambda A, B: A - B, B=s.inav[0], parallel=parallel,
+              ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             ([[0., 0., 0.],
               [3., 3., 3.]])))
@@ -188,7 +183,6 @@ class TestSignal1D:
     def test_dtype(self, parallel):
         s = self.s
         s.map(lambda data: np.sqrt(np.complex128(data)),
-              show_progressbar=None,
               parallel=parallel, ragged=self.ragged)
         assert s.data.dtype is np.dtype('complex128')
 
@@ -207,8 +201,7 @@ class TestSignal0D:
         s = self.s
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(lambda x, e: x ** e, e=2, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(
             s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
         assert m.data_changed.called
@@ -219,8 +212,7 @@ class TestSignal0D:
         s = self.s.inav[1, 1]
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
-              parallel=parallel, ragged=self.ragged)
+        s.map(lambda x, e: x ** e, e=2, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(s.data, self.s.inav[1, 1].data ** 2)
         assert m.data_changed.called
 

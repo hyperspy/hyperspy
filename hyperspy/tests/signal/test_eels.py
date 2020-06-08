@@ -150,8 +150,7 @@ class TestAlignZLP:
         s = self.signal
         s.align_zero_loss_peak(
             calibrate=True,
-            print_stats=False,
-            show_progressbar=None)
+            print_stats=False)
         zlpc = s.estimate_zero_loss_peak_centre()
         np.testing.assert_allclose(zlpc.data.mean(), 0)
         np.testing.assert_allclose(zlpc.data.std(), 0)
@@ -163,7 +162,6 @@ class TestAlignZLP:
         s.align_zero_loss_peak(
             calibrate=True,
             print_stats=False,
-            show_progressbar=None,
             mask=mask)
         zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
         np.testing.assert_allclose(np.nanmean(zlpc.data), 0,
@@ -175,8 +173,7 @@ class TestAlignZLP:
         s = self.signal
         s.align_zero_loss_peak(
             calibrate=False,
-            print_stats=False,
-            show_progressbar=None)
+            print_stats=False)
         zlpc = s.estimate_zero_loss_peak_centre()
         np.testing.assert_allclose(zlpc.data.std(), 0, atol=10e-3)
 
@@ -185,8 +182,7 @@ class TestAlignZLP:
         s2 = s.deepcopy()
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,
-                               also_align=[s2],
-                               show_progressbar=None)
+                               also_align=[s2])
         zlpc = s2.estimate_zero_loss_peak_centre()
         assert zlpc.data.mean() == 0
         assert zlpc.data.std() == 0
@@ -210,8 +206,7 @@ class TestAlignZLP:
         original_size = s.axes_manager.signal_axes[0].size
         s.align_zero_loss_peak(
             crop=False,
-            print_stats=False,
-            show_progressbar=None)
+            print_stats=False)
         assert original_size == s.axes_manager.signal_axes[0].size
 
 
@@ -353,7 +348,7 @@ class Test_Print_Edges_Near_Energy:
     def test_at_532eV(self):
         s = self.signal
         table_ascii = s.print_edges_near_energy(532)
-        
+
         assert table_ascii.__repr__() == ('+-------+-------------------+------'
         '-----+-----------------+\n|  edge | onset energy (eV) | relevance '
         '|   description   |\n+-------+-------------------+-----------+'
