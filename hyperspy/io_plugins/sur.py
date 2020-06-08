@@ -906,26 +906,38 @@ class DigitalSurfHandler(object):
         metadict: dictionnary in the hyperspy metadata format
 
         """
+
+        #Formatting for complicated strings
+        quantity_str = " ".join([
+            unpacked_dict['_26_Name_of_Z_Axis'],
+            unpacked_dict['_29_Z_Step_Unit'],
+            ]).strip()
+
+        date_str =  "{:4d}-{:2d}-{:2d}".format( \
+            unpacked_dict['_45_Year'],
+            unpacked_dict['_44_Month'],
+            unpacked_dict['_43_Day'])
+
+        time_str = "{:2d}:{:2d}:{:2d}".format( \
+            unpacked_dict['_42_Hours'],
+            unpacked_dict['_41_Minutes'],
+            unpacked_dict['_40_Seconds'])
+
+        #Metadata dictionary initialization
         metadict = {
-        "General":{
-            "authors": unpacked_dict['_07_Operator_Name'],
-            "date": "{:4d}-{:2d}-{:2d}".format( \
-                unpacked_dict['_45_Year'],
-                unpacked_dict['_44_Month'],
-                unpacked_dict['_43_Day']),
-            "original_filename": os.path.split(self.filename)[1],
-            "time": "{:2d}:{:2d}:{:2d}".format( \
-                unpacked_dict['_42_Hours'],
-                unpacked_dict['_41_Minutes'],
-                unpacked_dict['_40_Seconds'])
-            },
-        "Signal": {
-            "binned": False,
-            "quantity": unpacked_dict['_26_Name_of_Z_Axis'] + " "
-                + unpacked_dict['_29_Z_Step_Unit'],
-            "signal_type": "",
-            },
-        }
+            "General":{
+                "authors": unpacked_dict['_07_Operator_Name'],
+                "date":date_str,
+                "original_filename": os.path.split(self.filename)[1],
+                "time": time_str,
+                },
+            "Signal": {
+                "binned": False,
+                "quantity": quantity_str,
+                "signal_type": "",
+                },
+            }
+
         return metadict
 
     def _build_original_metadata(self,):
@@ -1091,7 +1103,7 @@ class DigitalSurfHandler(object):
         if file is None :
             return default
         read_str = file.read(size).decode(encoding)
-        return read_str.strip()
+        return read_str.strip(' \t\n')
 
     def _set_str(self, file, val, size, encoding='latin-1'):
         """Write a str of defined size in bytes to a file. struct.pack
@@ -1189,7 +1201,8 @@ class DigitalSurfHandler(object):
             #    readsize*=Npts_channel
 
             #Read the exact size of the data
-            _points = np.fromstring(file.read(readsize),dtype=dtype)
+            _points = np.frombuffer(file.read(readsize),dtype=dtype)
+            #_points = np.fromstring(file.read(readsize),dtype=dtype)
 
         else:
             #If the points are compressed do the uncompress magic. There
@@ -1213,7 +1226,8 @@ class DigitalSurfHandler(object):
                 rawData += zlib.decompress(file.read(zipLengthData[i]))
 
             #Finally numpy converts it to a numeric object
-            _points = np.fromstring(rawData, dtype=dtype)
+            _points = np.frombuffer(rawData, dtype=dtype)
+            #_points = np.fromstring(rawData, dtype=dtype)
 
         # rescale data
         #We set non measured points to nan according to .sur ways
