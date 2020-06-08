@@ -2275,7 +2275,7 @@ class MVA:
 
         return to_return
 
-    def _get_cluster_algorithm(self,algorithm,n_clusters,**kwargs):
+    def _get_cluster_algorithm(self,algorithm,**kwargs):
 
         """Convenience method to lookup cluster algorithm if algorithm is a string
         and instantiates it with n_clusters or if it's an object check that 
@@ -2287,7 +2287,7 @@ class MVA:
             if algorithm in algorithms_sklearn:
                 if not import_sklearn.sklearn_installed:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
-                cluster_algorithm = cluster_algorithms[algorithm](n_clusters=n_clusters, **kwargs)
+                cluster_algorithm = cluster_algorithms[algorithm](**kwargs)
             
         elif hasattr(algorithm, "fit"):
             cluster_algorithm = algorithm

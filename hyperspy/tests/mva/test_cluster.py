@@ -117,7 +117,7 @@ class TestClusterSignalSources:
         signal_copy = self.signal.deepcopy()
         self.signal.cluster_analysis(signal_copy, n_clusters=3,
                                       source_for_centers=\
-                                          signal_copy,
+                                          "signal",
                                       preprocessing="norm",
                                       navigation_mask=navigation_mask,
                                       signal_mask=signal_mask,
@@ -327,6 +327,19 @@ class TestClusterExceptions:
         import_sklearn.sklearn_installed = False
         with pytest.raises(ImportError):
             self.s.cluster_analysis("signal",n_clusters=2)
+        import_sklearn.sklearn_installed = True
+
+
+    def test_sklearn_exception2(self):
+        import_sklearn.sklearn_installed = False
+        with pytest.raises(ImportError):
+            self.s._get_cluster_algorithm("kmeans")
+        import_sklearn.sklearn_installed = True
+
+    def test_sklearn_exception3(self):
+        import_sklearn.sklearn_installed = False
+        with pytest.raises(ImportError):
+            self.s._get_cluster_preprocessing_algorithm("norm")
         import_sklearn.sklearn_installed = True
 
 
