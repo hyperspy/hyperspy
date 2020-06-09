@@ -103,7 +103,11 @@ def _validate_metadata_from_h5dset(sig, h5_dset, compound_comp_name=None):
         if 'Measurement' in h5_meas_grp.name.split('/')[-1]:
             temp = usid.hdf_utils.get_attributes(h5_meas_grp)
             usid_grp_parms.update(temp)
-    assert sig.original_metadata.parameters.as_dictionary() == usid_grp_parms
+    # Remove timestamp key since there is 1s difference occasionally
+    usid_grp_parms.pop('timestamp', None)
+    om_dict = sig.original_metadata.parameters.as_dictionary()
+    om_dict.pop('timestamp', None)
+    assert om_dict == usid_grp_parms
 
 
 def compare_usid_from_signal(sig, h5_path, empty_pos=False, empty_spec=False,
@@ -427,12 +431,12 @@ class TestUSID2HSbase:
             file_path = tmp_dir + 'usid_0_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
-        
+
         new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=[])
-        
+
     def base_n_pos_m_spec(self, lazy, slow_to_fast=True):
         phy_quant = 'Current'
         phy_unit = 'nA'
@@ -443,7 +447,7 @@ class TestUSID2HSbase:
             file_path = tmp_dir + 'usid_n_pos_n_spec.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
-        
+
         new_sig = hs.load(file_path, lazy=lazy)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
@@ -458,7 +462,7 @@ class TestUSID2HSbase:
 
 @pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestUSID2HSdtype:
-    
+
     def test_complex(self):
         phy_quant = 'Current'
         phy_unit = 'nA'
@@ -470,12 +474,12 @@ class TestUSID2HSdtype:
             file_path = tmp_dir + 'usid_n_pos_n_spec_complex.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
-        
+
         new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.ComplexSignal,
                                  axes_to_spec=['Frequency', 'Bias'])
-        
+
     def test_compound(self):
         phy_quant = 'Current'
         phy_unit = 'nA'
@@ -487,7 +491,7 @@ class TestUSID2HSdtype:
             file_path = tmp_dir + 'usid_n_pos_n_spec_compound.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims, slow_to_fast=slow_to_fast)
-        
+
         objects = hs.load(file_path)
         assert isinstance(objects, list)
         assert len(objects) == 2
@@ -498,7 +502,7 @@ class TestUSID2HSdtype:
                                      sig_type=hs.signals.BaseSignal,
                                      axes_to_spec=['Frequency', 'Bias'],
                                      compound_comp_name=comp_name)
-            
+
     def test_non_linear_dimension(self):
         pos_dims = [usid.Dimension('Y', 'um', np.linspace(0, 60, num=5)),
                     usid.Dimension('X', 'nm', [-250, 750])]
@@ -555,12 +559,12 @@ class TestUSID2HSmultiDsets:
                                                   phy_unit, pos_dims,
                                                   spec_dims,
                                                   slow_to_fast=slow_to_fast)
-        
+
         dset_path = '/Measurement_001/Channel_000/Raw_Data'
         new_sig = hs.load(file_path, dset_path=dset_path)
         compare_signal_from_usid(file_path, ndata_2, new_sig,
                                  dset_path=dset_path)
-        
+
     def test_read_all_by_default(self):
         slow_to_fast = True
         pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=False,
@@ -577,7 +581,7 @@ class TestUSID2HSmultiDsets:
         pos_dims, spec_dims, ndata_2, data_2d_2 = ret_vals
         phy_quant = 'Current'
         phy_unit = 'nA'
-        
+
         with h5py.File(file_path, mode='r+') as h5_f:
             h5_meas_grp = h5_f.create_group('Measurement_001')
             _ = usid.hdf_utils.write_main_dataset(h5_meas_grp, data_2d_2,
@@ -585,7 +589,7 @@ class TestUSID2HSmultiDsets:
                                                   phy_unit, pos_dims,
                                                   spec_dims,
                                                   slow_to_fast=slow_to_fast)
-        
+
         objects = hs.load(file_path)
         assert isinstance(objects, list)
         assert len(objects) == 2
