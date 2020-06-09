@@ -979,6 +979,12 @@ class DigitalSurfHandler(object):
 
     def _check_comments(self,commentsstr,prefix,delimiter):
         """Check if comment string is parsable into metadata dictionary.
+        Some specific lines (empty or starting with @@) will be ignored,
+        but any non-ignored line must conform to being a title line (beginning
+        with the TITLESTART indicator) or being parsable (starting with Prefix
+        and containing the key data delimiter). At the end, the comment is
+        considered parsable if it contains minimum 1 parsable line and no
+        non-ignorable non-parsable non-title line.
 
         Parameters
         ----------
@@ -992,15 +998,38 @@ class DigitalSurfHandler(object):
         valid: boolean
         """
 
+        #Titlestart markers start with Prefix ($) followed by underscore
         TITLESTART = '{:s}_'.format(prefix)
-        #We handle empty strings by pre-allocating return bool to False if Input
-        #string is empty
-        valid = bool(commentsstr.strip())
+
+        #We start by assuming that the comment string is valid
+        #but contains 0 valid (= parsable) lines
+        valid = True
+        N_valid_lines = 0
 
         for line in commentsstr.splitlines():
-            if not line.startswith(TITLESTART):
-                if delimiter not in line and not line.startswith(prefix):
-                    valid = False
+            #Here we ignore any empty line or line starting with @@
+            ignore = False
+            if not line.strip() or line.startswith('@@'):
+                ignore = True
+            #If the line must not be ignored
+            if not ignore:
+                #If line starts with a titlestart marker we it counts as valid
+                if line.startswith(TITLESTART):
+                    N_valid_lines += 1
+                # if it does not we check that it has the delimiter and
+                # starts with prefix
+                else:
+                    #We check that line contains delimiter and prefix
+                    #if it does the count of valid line is increased
+                    if delimiter in line and line.startswith(prefix):
+                        N_valid_lines += 1
+                    #Otherwise the whole comment string is thrown out
+                    else:
+                        valid = False
+
+        #finally, it total number of valid line is 0 we throw out this comments
+        if N_valid_lines ==0:
+            valid = False
 
         #return falsiness of the string.
         return valid
@@ -1026,17 +1055,25 @@ class DigitalSurfHandler(object):
         dictMS = {}
         #Title lines start with an underscore
         TITLESTART = '{:s}_'.format(prefix)
-        if strMS.startswith(TITLESTART) :
-            # new way to save those parameters (with sections)
-            for line in strMS.splitlines() :
+
+        for line in strMS.splitlines() :
+            #Here we ignore any empty line or line starting with @@
+            ignore = False
+            if not line.strip() or line.startswith('@@'):
+                ignore = True
+            #If the line must not be ignored
+            if not ignore:
                 if line.startswith(TITLESTART):
-                    keyMain = line[len(TITLESTART):]
+                    #We strip keys from whitespace at the end and beginning
+                    keyMain = line[len(TITLESTART):].strip()
                     dictMS[keyMain] = {}
                 elif line.startswith(prefix):
                     key, *liValue = line.split(delimiter)
-                    key = key[len(prefix):]
+                    #Key is also stripped from beginning or end whitespace
+                    key = key[len(prefix):].strip()
                     strValue = liValue[0] if len(liValue)>0 else ""
-                    strValue = strValue.lstrip() # remove whitespace at the beginning
+                    # remove whitespace at the beginning of value
+                    strValue = strValue.strip()
                     liValue = strValue.split(' ')
                     try :
                         if key == "Grating":
@@ -1047,22 +1084,6 @@ class DigitalSurfHandler(object):
                         dictMS[keyMain][key] = liValue[0]
                     if len(liValue) > 1:
                         dictMS[keyMain][key+'_units'] = liValue[1]
-        else :
-            # old way to save microscope status (no section)
-            for line in strMS.splitlines() :
-                key, *liValue = line.split(delimiter)
-                strValue = liValue[0] if len(liValue)>0 else ""
-                strValue = strValue.lstrip() # remove whitespace at the beginning
-                liValue = strValue.split(' ')
-                try :
-                    if key == 'mono_current_grating' :
-                        dictMS[key] = liValue[0] # we don't want to eval this one
-                    else :
-                        dictMS[key] = eval(liValue[0])
-                except :
-                        dictMS[key] = liValue[0]
-                if len(liValue) > 1:
-                    dictMS["_"+key+"_units"] = liValue[1]
         return dictMS
 
     ### Post processing
