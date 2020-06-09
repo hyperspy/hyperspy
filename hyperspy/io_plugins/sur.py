@@ -497,11 +497,7 @@ class DigitalSurfHandler(object):
                 {
                 'value':0,
                 'b_unpack_fn': self._unpack_data,
-<<<<<<< HEAD
                 'b_pack_fn': lambda f,v: 0, #Not implemented
-=======
-                'b_pack_fn': lambda f,v: 0,
->>>>>>> bef72aebfce5704b1abb1b6e7f60805066462867
                 },
             }
 
