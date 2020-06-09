@@ -41,12 +41,12 @@ def test_dense_stream(lazy):
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
             last_frame=2)
         arrs = arrs.compute()
-        assert (arrs == arr).all()
+        np.testing.assert_equal(arr, arrs)
     else:
         arrs = stream_to_array(
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
             last_frame=2)
-        assert (arrs == arr).all()
+        np.testing.assert_equal(arr, arrs)
 
 
 @pytest.mark.parametrize("lazy", (True, False))
@@ -58,13 +58,12 @@ def test_empty_stream(lazy):
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
             last_frame=2)
         arrs = arrs.compute()
-        assert not arrs.any()
+        np.testing.assert_equal(arr, arrs)
     else:
         arrs = stream_to_array(
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
             last_frame=2)
-        assert not arrs.any()
-
+        np.testing.assert_equal(arr, arrs)
 
 @pytest.mark.parametrize("lazy", (True, False))
 def test_sparse_stream(lazy):
@@ -78,9 +77,9 @@ def test_sparse_stream(lazy):
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
             last_frame=2)
         arrs = arrs.compute()
-        assert (arrs == arr).all()
+        np.testing.assert_equal(arr, arrs)
     else:
         arrs = stream_to_array(
             stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
             last_frame=2)
-        assert (arrs == arr).all()
+        np.testing.assert_equal(arr, arrs)
