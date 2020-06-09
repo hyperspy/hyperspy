@@ -110,13 +110,13 @@ def test_load_RGB():
     s = load(fname)
     md = s.metadata
     assert md.Signal.quantity == 'Z'
-    assert s.data.shape == (1353, 1353)
+    assert s.data.shape == (200, 200)
     assert s.data.dtype == dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
 
     assert_allclose(s.axes_manager[0].scale,0.35277777)
-    assert_allclose(s.axes_manager[0].offset,0.0)
+    assert_allclose(s.axes_manager[0].offset,208.8444519)
     assert_allclose(s.axes_manager[1].scale,0.35277777)
-    assert_allclose(s.axes_manager[1].offset,0.0)
+    assert_allclose(s.axes_manager[1].offset,210.608337)
 
     assert s.axes_manager[0].name == 'X'
     assert s.axes_manager[0].units == 'mm'
@@ -284,15 +284,15 @@ def test_load_spectral_map_compressed():
     s = load(fname)
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity a.u.'
-    assert s.data.shape == (128, 128, 512)
+    assert s.data.shape == (12, 10, 281)
     assert s.data.dtype == dtype('float64')
 
-    assert_allclose(s.axes_manager[0].scale,8.252197585534304e-05)
-    assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[1].scale,8.252197585534304e-05)
-    assert_allclose(s.axes_manager[1].offset,0.0)
+    assert_allclose(s.axes_manager[0].scale,8.252198e-05)
+    assert_allclose(s.axes_manager[0].offset,0.005694016348570585)
+    assert_allclose(s.axes_manager[1].scale,8.252198e-05)
+    assert_allclose(s.axes_manager[1].offset,0.0054464503191411495)
     assert_allclose(s.axes_manager[2].scale,1.084000246009964e-06)
-    assert_allclose(s.axes_manager[2].offset,0.00017284281784668565)
+    assert_allclose(s.axes_manager[2].offset,0.00034411484375596046)
 
     assert s.axes_manager[0].name == 'Width'
     assert s.axes_manager[0].units == 'mm'
@@ -304,7 +304,7 @@ def test_load_spectral_map_compressed():
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0',]
 
-    assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header',]
+    assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header','Parsed']
     assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
         ['H01_Signature',
          'H02_Format',
@@ -368,6 +368,48 @@ def test_load_spectral_map_compressed():
          'H60_Comment',
          ]
 
+    assert list(omd.Object_0_Channel_0.Parsed.as_dictionary().keys()) == \
+        ['WAFER', 'SITE IMAGE', 'SEM', 'CHANNELS', 'SPECTROMETER', 'SCAN']
+
+    assert list(omd.Object_0_Channel_0.Parsed.WAFER.as_dictionary().keys()) == \
+        ['Lot Number',
+         'ID',
+         'Type',
+         'Center Position X',
+         'Center Position X_units',
+         'Center Position Y',
+         'Center Position Y_units',
+         'Orientation',
+         'Orientation_units',
+         'Diameter',
+         'Diameter_units',
+         'Flat Length',
+         'Flat Length_units',
+         'Edge Exclusion',
+         'Edge Exclusion_units',
+         ]
+
+    assert list(omd.Object_0_Channel_0.Parsed.SCAN.as_dictionary().keys()) == \
+        ['Mode',
+         'HYP Dwelltime',
+         'HYP Dwelltime_units',
+         'Resolution_X',
+         'Resolution_X_units',
+         'Resolution_Y',
+         'Resolution_Y_units',
+         'Reference_Size_X',
+         'Reference_Size_Y',
+         'Voltage Calibration Range_X',
+         'Voltage Calibration Range_X_units',
+         'Voltage Calibration Range_Y',
+         'Voltage Calibration Range_Y_units',
+         'Start_X',
+         'Size_X',
+         'Start_Y',
+         'Size_Y',
+         'Rotate',
+         'Rotate_units']
+
 #Also tests the parsing of metadata
 def test_load_spectral_map():
     fname = os.path.join(MY_PATH, "sur_data",
@@ -375,22 +417,22 @@ def test_load_spectral_map():
     s = load(fname)
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity a.u.'
-    assert s.data.shape == (128, 128, 512)
+    assert s.data.shape == (12, 10, 310)
     assert s.data.dtype == dtype('float64')
 
-    assert_allclose(s.axes_manager[0].scale,8.252197585534304e-02)
-    assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[1].scale,8.252197585534304e-02)
-    assert_allclose(s.axes_manager[1].offset,0.0)
-    assert_allclose(s.axes_manager[2].scale,1.084000246009964)
-    assert_allclose(s.axes_manager[2].offset,172.84281784668565)
+    assert_allclose(s.axes_manager[0].scale,8.252197585534304e-05)
+    assert_allclose(s.axes_manager[0].offset,0.00701436772942543)
+    assert_allclose(s.axes_manager[1].scale,8.252197585534304e-05)
+    assert_allclose(s.axes_manager[1].offset,0.003053313121199608)
+    assert_allclose(s.axes_manager[2].scale,1.084000246009964e-6)
+    assert_allclose(s.axes_manager[2].offset,0.0003332748601678759)
 
     assert s.axes_manager[0].name == 'Width'
-    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[0].units == 'mm'
     assert s.axes_manager[1].name == 'Height'
-    assert s.axes_manager[1].units == 'um'
+    assert s.axes_manager[1].units == 'mm'
     assert s.axes_manager[2].name == 'Wavelength'
-    assert s.axes_manager[2].units == 'nm'
+    assert s.axes_manager[2].units == 'mm'
 
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0',]
