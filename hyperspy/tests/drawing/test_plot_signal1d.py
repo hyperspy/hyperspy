@@ -174,9 +174,12 @@ class TestPlotSpectra():
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_spectra_auto_update(self):
         s = hs.signals.Signal1D(np.arange(100))
-        ax = hs.plot.plot_spectra([s], style='overlap')
+        s2 = s / 2
+        ax = hs.plot.plot_spectra([s, s2])
         s.data = -s.data
         s.events.data_changed.trigger(s)
+        s2.data = -s2.data * 4 + 50
+        s2.events.data_changed.trigger(s2)
 
         return ax.get_figure()
 
