@@ -74,6 +74,47 @@ and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use
     for more details.
 
 
+Further information
+^^^^^^^^^^^^^^^^^^^
+
+When installing packages, ``conda`` will verify that all requirements of `all`
+packages installed in an environment are met; this can lead to situations where
+a solution for dependencies resolution can't be found or an expected solution
+is found, such as not installing the lastest version of libraries or installing
+undesired version. Usually, it highly depends on what libraries are already
+present in the current environment, which can make resolving the dependencies
+satisfiability problematic. In such situation, possible solutions are:
+
+- use Miniconda instead of Anaconda, in case you are installing a python
+  distribution from scratch: Miniconda has very few packages installed, the
+  dependencies satisfiability resolution will be simple.
+- install hyperspy in a `new environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_;
+  the following example create a new environment named ``hspy_environment``,
+  activate it and install hyperspy in this environment.
+
+  .. code-block:: bash
+
+      $ conda create -n hspy_environment
+      $ conda activate hspy_environment
+      $ conda install hyperspy -c conda-forge
+
+  .. note::
+
+      A consequence of installing hyperspy in a new environment is that you need
+      to activate this environment using ``conda activate environment_name`` where
+      ``environment_name`` is the name of the environment, however `shortcuts` can
+      be created using different approaches:
+
+      - Install `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_
+        in the hyperspy environment.
+      - Install `nb_conda_kernels <https://github.com/Anaconda-Platform/nb_conda_kernels>`_.
+      - Create `IPython kernels for different environment <https://ipython.readthedocs.io/en/stable/install/kernel_install.html#kernels-for-different-environments>`_.
+
+To learn more about the Anaconda eco-system:
+
+- Choose between `Anaconda or Miniconda <https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html#anaconda-or-miniconda>`_?
+- Understanding `conda and pip <https://www.anaconda.com/blog/understanding-conda-and-pip>`_.
+
 .. _install-with-pip:
 
 Installation using pip
@@ -112,7 +153,7 @@ dependencies required by specific functionalities:
 * ``build-doc`` to install required libraries to build HyperSpy's documentation,
 * ``dev`` to install all the above,
 * ``all`` to install all the above expect the development requirements
-  (``tests`` and ``build-doc``).
+  (``tests``, ``build-doc`` and ``dev``).
 
 For example:
 
