@@ -265,6 +265,17 @@ instead:
     >>> s.plot(navigator='slider')
 
 
+.. _FitBigData-label:
+
+Model fitting
+-------------
+Most curve-fitting functionality will automatically work on models created from
+lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and fits to that.
+
+The linear 'lstsq' optimizer supports fitting the entire dataset in a vectorised manner
+using `dask.linalg.lstsq`. This can give potentially enormous performance benefits over fitting 
+with a nonlinear fitter, but comes with the restrictions explained in normal Model fitting section.
+
 Practical tips
 --------------
 
