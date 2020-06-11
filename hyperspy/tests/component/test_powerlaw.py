@@ -36,6 +36,16 @@ def test_function():
     assert g.function(2) == 1
     assert g.function(1) == 0.25
 
+def test_linear_override():
+    g = PowerLaw()
+    for para in g.parameters:
+        if para is g.A:
+            assert para._is_linear
+            assert para._is_linear_override
+        else:
+            assert not para._is_linear
+            assert not para._is_linear_override
+
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy):

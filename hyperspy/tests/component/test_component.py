@@ -21,6 +21,7 @@ from unittest import mock
 
 import numpy as np
 
+from hyperspy.component import Component, Parameter
 from hyperspy.axes import AxesManager
 from hyperspy.component import Component, _get_scaling_factor
 from hyperspy._signals.signal1d import Signal1D
@@ -285,3 +286,14 @@ def test_get_scaling_parameter(is_binned, non_uniform, dim):
         assert np.all(scaling_factor == 0.5)
     else:
         assert scaling_factor == 1
+
+
+class TestLinearProperties:
+    def setup_method(self, method):
+        self.C = Component(['one', 'two'])
+        self.P = Parameter()
+
+    def test_properties(self):
+        assert not self.C.linear_parameters
+        assert len(self.C.nonlinear_parameters) == 2
+        assert not self.P._is_linear

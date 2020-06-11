@@ -28,6 +28,7 @@ from functools import partial
 
 import dill
 import numpy as np
+import dask
 import dask.array as da
 import scipy
 import scipy.odr as odr
@@ -1138,6 +1139,9 @@ class BaseModel(list):
 
         elif optimizer == "lstsq" and self.signal._lazy:
             result, residual, *_ = da.linalg.lstsq(da.asarray(self._component_data).T, target_signal.T)
+            if self._precomputed_components and (LooseVersion(dask.__version__) < LooseVersion("2020.12.0")):
+                # Dask pre 2020.12 didn't support residuals on 2D input, we calculate them later.
+                residual = None
             self.coefficient_array = result.T
 
         elif optimizer == "matrix_inversion":
