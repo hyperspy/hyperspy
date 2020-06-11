@@ -34,7 +34,7 @@ from hyperspy.misc.export_dictionary import export_to_dictionary, \
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
 from IPython.display import display_pretty, display
-from hyperspy.misc.model_tools import current_component_values
+from hyperspy.misc.model_tools import current_component_values, get_top_parent_twin
 from hyperspy.misc.utils import get_object_package_info
 
 import logging
@@ -1327,6 +1327,15 @@ class Component(t.HasTraits):
             not_convolved = self._constant_term * np.ones(signal_shape)
             data = not_convolved
         return data.T[np.where(model.channel_switches)[::-1]].T
+
+    def _top_parent_twins_are_active(self):
+        'Check that the top parent twins of the components parameters are active'
+        active = True
+        for para in self.parameters:
+            if not get_top_parent_twin(para).component.active:
+                active = False
+        return active
+
 
 def convolve_component_values(component_values, model):
     '''Convolve component with model convolution axis

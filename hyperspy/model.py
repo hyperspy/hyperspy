@@ -28,6 +28,7 @@ from functools import partial
 
 import dill
 import numpy as np
+import dask.array as da
 import scipy
 import scipy.odr as odr
 from IPython.display import display, display_pretty
@@ -39,8 +40,9 @@ from scipy.optimize import (
     minimize,
     OptimizeResult
 )
-
+from tqdm.dask import TqdmCallback
 from hyperspy.component import Component
+from hyperspy.components1d import Expression, EELSCLEdge, Offset
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -53,12 +55,14 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.model_tools import current_model_values
+from hyperspy.misc.model_tools import current_model_values, all_set_non_free_para_have_identical_values, \
+    get_top_parent_twin, calc_covariance, std_err_from_cov, check_top_parent_twins_are_active
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.misc.utils import (dummy_context_manager, shorten_name, slugify,
+from hyperspy.misc.utils import (dummy_context_manager, is_binned, shorten_name, slugify,
                                  stash_active_state)
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.misc.machine_learning import import_sklearn
 
 _logger = logging.getLogger(__name__)
 
@@ -234,6 +238,7 @@ class BaseModel(list):
             obj : Model
                 The Model that the event belongs to
             """, arguments=['obj'])
+        self._linear_ndfit = False
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -655,12 +660,14 @@ class BaseModel(list):
     def _set_p0(self):
         "(Re)sets the initial values for the parameters used in the curve fitting functions"
         self.p0 = () # Stores the values and is fed as initial values to the fitter
+        self.free_parameters = ()
         for component in self:
             if component.active:
                 for parameter in component.free_parameters:
                     self.p0 = (self.p0 + (parameter.value,)
                                if parameter._number_of_elements == 1
                                else self.p0 + parameter.value)
+                    self.free_parameters = self.free_parameters + (parameter, )
 
     def set_boundaries(self, bounded=True):
         warnings.warn(
@@ -890,6 +897,312 @@ class BaseModel(list):
         self._fetch_values_from_p0()
         to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
+
+    @property
+    def nonlinear_parameters(self):
+        "List all active nonlinear parameters"
+        nonlinear = []
+        for comp in self:
+            if comp.active:
+                for para in comp.parameters:
+                    if not para._is_linear:
+                        nonlinear.append(para)
+        return nonlinear
+
+    @property
+    def linear_parameters(self):
+        "List all active linear parameters"
+        linear = []
+        for comp in self:
+            if comp.active:
+                for para in comp.parameters:
+                    if para._is_linear:
+                        linear.append(para)
+        return linear
+
+    def _set_linear_parameters_to_one(self, set_map=False):
+        """Sets the value of all linear parameters in the model to 1.
+        
+        Parameters
+        ----------
+        set_map : bool
+            Whether to set para.map['values'] or para.value
+        """
+        for para in self.linear_parameters:
+            if para.free:
+                if set_map:
+                    para.map['values'] = 1.
+                else:
+                    para.value = 1.
+
+    def p0_index_from_component(self, component):
+        "Get p0 index for components that have only one free parameter"
+        return self.free_parameters.index(component.free_parameters[0])
+
+    def p0_index_from_parameter(self, parameter):
+        "Get p0 index for components that have multiple free parameters"
+        return self.free_parameters.index(parameter)
+
+    def _set_twinned_lists(self):
+        "Create lists of twinned components and their parents"
+        self._twinned_components_parents = []
+        self._twinned_components = []
+        self._twinned_parameters = []
+        for comp in self:
+            for para in comp.parameters:
+                if para.twin and para._is_linear:
+                    # Add only parameters that are both twinned and linear
+                    self._twinned_components.append(comp)
+                    self._twinned_parameters.append(para)
+                    parent = get_top_parent_twin(para)
+                    self._twinned_components_parents.append(parent.component)
+
+    def _compute_component(self, component):
+        """Compute the component with current parameter values, and add that to the component_data array
+        used for linear fitting
+
+        Parameters
+        ----------
+        component : Component
+        """
+        assert component in self, "Component must already be in the model"
+        if component in self._twinned_components:
+            # These twinned components have a linear parameter that is twinned
+            i = self._twinned_components.index(component)
+            component_constant_data = component._compute_constant_term()
+
+            parent_twin = self._twinned_components_parents[i]
+            if parent_twin.free_parameters:
+                # component depends on some free component
+                top_parent_index = self.p0_index_from_component(
+                    self._twinned_components_parents[i]
+                )
+                component_data = component._compute_component()
+                self._component_data[top_parent_index] += (component_data - component_constant_data)
+            else:
+                # component was calculated under "_compute_constant_term"
+                self._component_data_fixed += component_constant_data
+
+        elif component.free_parameters:
+            # Normal linear component
+            index = self.p0_index_from_component(component)
+            if len(component.free_parameters) == 1:
+                component_data = component._compute_component()
+                component_constant_data = component._compute_constant_term()
+                self._component_data[index] += (component_data - component_constant_data)
+                self._component_data_fixed += component_constant_data
+            else:
+                # Components that can be separated into multiple linear parts, like 
+                # "C = a*x**2 + b*x + c" would need to be separated into several linear parts.
+                # This is done automatically for Expression components, but difficult to implement
+                # on a general basis for custom components.
+                if not isinstance(component, Expression):
+                    raise AttributeError(
+                        "Component {} has more than one free parameter, which is only "
+                        "supported for Expression type components.".format(component)
+                )
+                free, fixed = component._separate_pseudocomponents()
+                for free_parameter in component.free_parameters:
+                    index = self.p0_index_from_parameter(free_parameter)
+                    self._component_data[
+                        ..., index, :
+                    ] += component._compute_expression_part(free[free_parameter.name])
+                self._component_data_fixed += component._compute_expression_part(
+                    fixed
+                )
+        else:
+            # No free parameters, so component is fixed.
+            self._component_data_fixed += component._compute_component()
+
+    def _linear_fitting(self, optimizer="lstsq", **kwargs):
+        """
+        Multivariate linear fitting
+
+        Parameters
+        __________
+
+        optimizer: 
+            'lstsq' - Default, supports dask
+            'ridge_regression' - Supports regularisation, not dask
+
+        Developer Notes
+        ---------------
+        More linear optimizers can be added in future, but note that in order to support simultaneous
+        fitting across the dataset, the optimizer must support "two-dimensional y" (see the 
+        `b` parameter in numpy.linalg.lstsq).
+
+        Currently, the overhead in calculating the component data takes about 100 times longer than
+        actually running np.linalg.lstsq. That means that going pixel-by-pixel, calculating the 
+        component data each time is not faster than the normal nonlinear methods. Linear fitting
+        is hence currently only useful for fitting a dataset in the vectorised manner.
+        """
+
+        not_linear_error = (
+            "Not all free parameters are linear. "
+            "Fit with a "
+            "different optimizer or set non-linear "
+            "`parameters.free = False`. Consider using "
+            "`m.set_parameters_not_free(nonlinear=True)`. These "
+            "parameters are nonlinear and free:"
+        )
+
+        n_free_para = len(self.free_parameters)
+        if not n_free_para:
+            raise AttributeError("Model does not contain any free components!")
+
+        free_nonlinear_parameters = [para for para in self.nonlinear_parameters if para.free]
+        if free_nonlinear_parameters:
+            raise AttributeError(
+                not_linear_error
+                + "\n\t"
+                + str("\n\t".join(str(para) for para in free_nonlinear_parameters))
+            )
+
+        # Components that can be separated into multiple linear parts, like 
+        # "C = a*x + b" may have C._constant_term != 0, eg if b is 
+        # not free and nonzero. For Expression components, the constant term is
+        # calculated automatically. Custom components with one parameter 
+        # are fine, since either the entire component is free or fixed, 
+        # but for custom components with more than one parameter 
+        # we cannot automatically determine this.
+
+        # Some custom components are manually checked and supporte:
+        # EELSCLEdge: Cannot be divided into multiple linear components
+        # Offset: Is only one linear component
+        allowed_component_types = (Expression, EELSCLEdge, Offset)
+        if not all([isinstance(comp, allowed_component_types) or len(comp.parameters) == 1 for comp in self]):
+            warnings.warn(
+                "The model contains custom components not based on Expression, with more than"
+                "one component. "
+                "This is not recommended for linear optimizers, since the optimizer is unable "
+                "to determine if there are any parts of the component that are constant. "
+                "Example: comp = a*x+b, with b.free = False and non-zero. "
+                "Either continue at own risk, or define the component as a `Expression` instead."
+                )
+
+        self._set_linear_parameters_to_one()
+        self._set_p0()
+
+        channels_signal_shape = np.count_nonzero(self.channel_switches)
+
+        self._component_data = np.zeros((n_free_para, channels_signal_shape))
+        self._component_data_fixed = np.zeros(channels_signal_shape)
+
+        self._set_twinned_lists()
+        for component in self:
+            # only compute if component and topmost parent are active
+            if component.active and check_top_parent_twins_are_active(component):
+                self._compute_component(component)
+
+        if self._linear_ndfit:
+            nav_shape = self.axes_manager._navigation_shape_in_array
+            if self.channel_switches.all():
+                # If channel_switches is all True, then is much more performant
+                # and less memory-intensive to just reshape the signal than use 
+                # fancy indexing (which would create a copy of the signal),
+                # especially with dask
+                target_signal = self.signal.data.reshape(nav_shape + (-1,))
+            else:
+                target_signal = self.signal.data.T[np.where(self.channel_switches.T)].T
+        else:
+            target_signal = self.signal()[np.where(self.channel_switches)]
+            nav_shape = ()
+
+        if is_binned(self.signal):
+            target_signal = target_signal / np.prod(
+                tuple((ax.scale for ax in self.signal.axes_manager.signal_axes))
+            )
+
+        target_signal = target_signal - self._component_data_fixed
+
+        flat_sig_len = target_signal.shape[-1] #np.count_nonzero(self.channel_switches)
+
+        # Reshape what may potentially be Signal2D data into a long Signal1D shape
+        # and an nD navigation shape to a 1D nav shape
+        if self._linear_ndfit:
+            target_signal = target_signal.reshape((np.prod(nav_shape, dtype=int), ) + (flat_sig_len,))
+        else:
+            target_signal = target_signal.reshape((flat_sig_len,))
+
+        if optimizer == "lstsq" and not self.signal._lazy:
+            result, residual, *_ = np.linalg.lstsq(self._component_data.T, target_signal.T, rcond=None)
+            self.coefficient_array = result.T
+
+        elif optimizer == "lstsq" and self.signal._lazy:
+            result, residual, *_ = da.linalg.lstsq(da.asarray(self._component_data).T, target_signal.T)
+            if self._linear_ndfit and (LooseVersion(dask.__version__) < LooseVersion("2020.12.0")):
+                # Dask pre 2020.12 didn't support residuals on 2D input, we calculate them later.
+                residual = None
+            self.coefficient_array = result.T
+
+        elif optimizer == "ridge_regression":
+            if self.signal._lazy:
+                lazy_ridge_warning = (
+                    "You appear to be using the 'ridge_regression' optimizer on a "
+                    "lazy signal. If the signal doesn't fit into memory, it may be much faster to "
+                    "use the 'lstsq' optimizer, as ridge does not support lazy loading with Dask."
+                )
+                warnings.warn(lazy_ridge_warning)
+
+            ridge_regression_solver = kwargs.pop("solver", "auto")
+            ridge_regression_alpha = kwargs.pop("alpha", 0.0)
+
+            ridge_regression = (
+                import_sklearn.sklearn.linear_model._ridge.ridge_regression
+            )
+            self.coefficient_array = ridge_regression(
+                X=self._component_data.T,
+                y=target_signal.T,
+                alpha=ridge_regression_alpha,
+                solver=ridge_regression_solver,
+            )
+            residual = None
+        else:
+            raise ValueError(
+                "Optimizer {} not supported. Use 'lstsq' or 'ridge_regression'.".format(
+                    optimizer
+                )
+            )
+
+        fit_output = {"success": True}
+        fit_output["x"] = self.coefficient_array
+        try:
+            # Give a nice compute progressbar if data is a dask array
+            # Ridge Regression doesn't support dask for larger-than-memory :(
+            with TqdmCallback(desc="Computing fit lazily"):
+                fit_output["x"] = fit_output["x"].compute()
+        except:
+            pass
+        
+        # Calculate errors
+        # We only do this if going pixel-by-pixel or if `calculate_errors = True` is specified
+        # to multifit. This is because it is a very large calculation and can eat all our ram,
+        # even when run lazily.
+        if not self._linear_ndfit or ("calculate_errors", True) in kwargs.items():
+            fit_output["covar"] = calc_covariance(
+                target_signal=target_signal, 
+                coefficients = self.coefficient_array,
+                component_data = self._component_data,
+                residual=residual,
+                lazy=self.signal._lazy)
+            fit_output["perror"] = abs(fit_output["x"]) * std_err_from_cov(
+                fit_output["covar"]
+            )
+
+        if self._linear_ndfit:
+            # The nav shape will have been flattened. We reshape it here.
+            fit_output['x'] = fit_output['x'].reshape(nav_shape + (n_free_para,))
+
+            if ("calculate_errors", True) in kwargs.items():
+                fit_output['covar'] = fit_output['covar'].reshape(nav_shape + (n_free_para, n_free_para))
+                fit_output["perror"] = fit_output["perror"].reshape(nav_shape + (n_free_para,))
+        try:
+            with TqdmCallback(desc="Computing errors lazily"):
+                fit_output["perror"] = fit_output["perror"].compute()
+        except:
+            pass
+        
+        return fit_output
 
     def _errfunc_sq(self, param, y, weights=None):
         if weights is None:
@@ -1397,6 +1710,31 @@ class BaseModel(list):
                 self.p0 = self.fit_output.x
                 self.p_std = self.fit_output.perror
 
+            elif optimizer in ["lstsq", "ridge_regression"]:
+                fit_output = self._linear_fitting(optimizer=optimizer, **kwargs)
+                self.fit_output = OptimizeResult(**fit_output)
+
+                # Only calculated errors if fit pixel by pixel, or specified m.fit(calculate_errors=True)
+                has_errors = True if not self._linear_ndfit or ("calculate_errors", True) in kwargs.items() else False
+
+                if self._linear_ndfit:
+                    for i, para in enumerate(self.free_parameters):
+                        para.map['values'] = self.fit_output.x[..., i]
+                        para.map['std'] = self.fit_output.perror[...,i] if has_errors else np.nan
+                        para.map['is_set'] = True
+                    self.p0 = self.fit_output.x[self.axes_manager.indices[::-1]]
+                    self.p_std = self.fit_output.perror[self.axes_manager.indices[::-1]] if has_errors else len(self.free_parameters) * (np.nan,)
+
+                    # The nonlinear parameters' .map attribute doesn't get set during 
+                    # "all in one go" linear fitting, only during regular multifit.
+                    for para in self.nonlinear_parameters:
+                        para.map['values'] = para.value
+                        para.map['is_set'] = True
+
+                else:
+                    self.p0 = self.fit_output.x
+                    self.p_std = self.fit_output.perror
+                
             else:
                 # scipy.optimize.* functions
                 if loss_function == "ls":
@@ -1449,6 +1787,7 @@ class BaseModel(list):
 
             self._fetch_values_from_p0(p_std=self.p_std)
             self.store_current_values()
+
             self._calculate_chisq()
             self._set_current_degrees_of_freedom()
 
@@ -1560,9 +1899,9 @@ class BaseModel(list):
                 "The mask must be a numpy array of boolean type with "
                 f"shape: {self.axes_manager._navigation_shape_in_array}"
             )
-
+        is_linear_fitting = "optimizer" in kwargs.keys() and kwargs['optimizer'] in ["lstsq", "ridge_regression"]
         if iterpath is None:
-            if self.axes_manager.iterpath == "flyback":
+            if self.axes_manager.iterpath == "flyback" and not is_linear_fitting:
                 # flyback is set by default in axes_manager.iterpath on signal creation
                 warnings.warn(
                     "The `iterpath` default will change from 'flyback' to 'serpentine' "
@@ -1578,42 +1917,67 @@ class BaseModel(list):
         maxval = self.axes_manager._get_iterpath_size(masked_elements)
         show_progressbar = show_progressbar and (maxval != 0)
 
-        i = 0
-        with self.axes_manager.events.indices_changed.suppress_callback(
-            self.fetch_stored_values
-        ):
-            if interactive_plot:
-                outer = dummy_context_manager
-                inner = self.suspend_update
+        if is_linear_fitting:
+            para_are_identical, non_identical_para = all_set_non_free_para_have_identical_values(self)
+            if para_are_identical:
+                self._linear_ndfit = True # when True, reuse linear fitting components
             else:
-                outer = self.suspend_update
-                inner = dummy_context_manager
+                w = (
+                    "The model contains non-free parameters that have set "
+                    "values that vary across the navigation indices. Fitting "
+                    "proceeds using a slower approach than if all parameters "
+                    "had constant values. These parameters are:\n\t"
+                    + "\n\t".join(str(x) for x in non_identical_para))
+                warnings.warn(w)
+                self._linear_ndfit = False
+        else:
+            self._linear_ndfit = False
 
-            with outer(update_on_resume=True):
-                with progressbar(
-                    total=maxval, disable=not show_progressbar, leave=True
-                ) as pbar:
-                    for index in self.axes_manager:
-                        with inner(update_on_resume=True):
-                            if mask is None or not mask[index[::-1]]:
-                                # first check if model has set initial values in
-                                # parameters.map['values'][indices],
-                                # otherwise use values from previous fit
-                                self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                                self.fit(**kwargs)
-                                i += 1
-                                pbar.update(1)
+        if self._linear_ndfit:
+            # Perform linear fitting on entire dataset simultaneously,
+            # not iterating through the axes manager
+            try:
+                self.fit(**kwargs)
+            finally:
+                self._linear_ndfit = False
 
-                            if autosave and i % autosave_every == 0:
-                                self.save_parameters2file(autosave_fn)
-            # Trigger the indices_changed event to update to current indices,
-            # since the callback was suppressed
-            self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+        else:
+            i = 0
+            with self.axes_manager.events.indices_changed.suppress_callback(
+                self.fetch_stored_values
+            ):
+                if interactive_plot:
+                    outer = dummy_context_manager
+                    inner = self.suspend_update
+                else:
+                    outer = self.suspend_update
+                    inner = dummy_context_manager
+
+                with outer(update_on_resume=True):
+                    with progressbar(
+                        total=maxval, disable=not show_progressbar, leave=True
+                    ) as pbar:
+                        for index in self.axes_manager:
+                            with inner(update_on_resume=True):
+                                if mask is None or not mask[index[::-1]]:
+                                    # first check if model has set initial values in
+                                    # parameters.map['values'][indices],
+                                    # otherwise use values from previous fit
+                                    self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                                    self.fit(**kwargs)
+                                    i += 1
+                                    pbar.update(1)
+
+                                if autosave and i % autosave_every == 0:
+                                    self.save_parameters2file(autosave_fn)
+                # Trigger the indices_changed event to update to current indices,
+                # since the callback was suppressed
+                self.axes_manager.events.indices_changed.trigger(self.axes_manager)
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
             os.remove(autosave_fn + ".npz")
-
+    
     multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):
@@ -1805,7 +2169,7 @@ class BaseModel(list):
                 component_list=component_list))
 
     def set_parameters_not_free(self, component_list=None,
-                                parameter_name_list=None):
+                                parameter_name_list=None, only_linear=False, only_nonlinear=False):
         """
         Sets the parameters in a component in a model to not free.
 
@@ -1820,6 +2184,10 @@ class BaseModel(list):
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
+        only_linear : bool
+            If True, will only set parameters that are linear to free.
+        only_nonlinear : bool
+            If True, will only set parameters that are nonlinear to free.
 
         Examples
         --------
@@ -1829,6 +2197,8 @@ class BaseModel(list):
 
         >>> m.set_parameters_not_free(component_list=[v1],
                                       parameter_name_list=['area','centre'])
+        >>> m.set_parameters_not_free(linear=True)
+
 
         See also
         --------
@@ -1845,10 +2215,10 @@ class BaseModel(list):
             component_list = [self._get_component(x) for x in component_list]
 
         for _component in component_list:
-            _component.set_parameters_not_free(parameter_name_list)
+            _component.set_parameters_not_free(parameter_name_list, only_linear=only_linear, only_nonlinear=only_nonlinear)
 
     def set_parameters_free(self, component_list=None,
-                            parameter_name_list=None):
+                            parameter_name_list=None, only_linear=False, only_nonlinear=False):
         """
         Sets the parameters in a component in a model to free.
 
@@ -1865,6 +2235,10 @@ class BaseModel(list):
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
 
+        only_linear : Bool
+            If True, will only set parameters that are linear to not free.
+        only_nonlinear : Bool
+            If True, will only set parameters that are nonlinear to not free.
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()
@@ -1872,6 +2246,7 @@ class BaseModel(list):
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(component_list=[v1],
                                   parameter_name_list=['area','centre'])
+        >>> m.set_parameters_free(linear=True)
 
         See also
         --------
@@ -1888,7 +2263,7 @@ class BaseModel(list):
             component_list = [self._get_component(x) for x in component_list]
 
         for _component in component_list:
-            _component.set_parameters_free(parameter_name_list)
+            _component.set_parameters_free(parameter_name_list, only_linear=only_linear, only_nonlinear=only_nonlinear)
 
     def set_parameters_value(
             self,
