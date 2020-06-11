@@ -132,6 +132,9 @@ class EELSCLEdge(Component):
         self.intensity.bmin = 0.
         self.intensity.bmax = None
 
+        # Linearity
+        self.intensity._is_linear = True
+
         self._whitelist['GOS'] = ('init', GOS)
         if GOS == 'Hartree-Slater':
             self._whitelist['element_subshell'] = (
