@@ -18,6 +18,7 @@
 
 from distutils.version import LooseVersion
 from tqdm import __version__ as tqdm_version
+from dask.callbacks import Callback
 
 if LooseVersion(tqdm_version) >= LooseVersion("4.36.0"):
     # API change for 5.0 https://github.com/tqdm/tqdm/pull/800
