@@ -27,6 +27,7 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.models.model1d import Model1D
+from hyperspy._components.expression import extract_constant_part_of_expression
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
@@ -473,6 +474,32 @@ def test_expression_substitution():
     assert ''.join(p.name for p in comp.parameters) == 'c'
     assert comp.function(1) == -3
 
+
+def test_expression_extract():
+    const, not_const = extract_constant_part_of_expression("a*x+b",)
+    assert str(const) == 'a*x + b'
+    assert str(not_const) == '0'
+
+def test_expression_extract():
+    const, not_const = extract_constant_part_of_expression("a*x+b",)
+    assert str(const) == 'a*x + b'
+    assert str(not_const) == '0'
+
+    const, not_const = extract_constant_part_of_expression("a*x+b-3", "a", "b")
+    assert str(const) == '-3'
+    assert str(not_const) == 'a*x + b'
+
+def test_separate_pseudocomponents():
+    A = hs.model.components1D.Expression("a*b*x+c**2*x", "test")
+    free, fixed = A._separate_pseudocomponents()
+    assert list(free.keys()) == ['a', 'b', 'c']
+    assert list(fixed.keys()) == ['function', 'parameters']
+
+    A.a.free = False
+    A.b.free = False
+
+    free, fixed = A._separate_pseudocomponents()
+    assert list(free.keys()) == ['c']
 
 class TestScalableFixedPattern:
 

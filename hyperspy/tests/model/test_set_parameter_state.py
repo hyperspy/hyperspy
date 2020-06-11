@@ -131,3 +131,48 @@ class TestSetParameterInModel:
         assert not g3.A.free
         assert not g3.sigma.free
         assert not g3.centre.free
+
+    def test_set_parameter_in_model_linearity(self):
+        m = self.model
+        g1 = self.g1
+        g2 = self.g2
+        g3 = self.g3
+
+        m.set_parameters_not_free(only_linear=True)
+        assert not g1.A.free
+        assert not g2.A.free
+        assert not g3.A.free
+        assert g1.sigma.free
+        assert g1.centre.free
+
+        m.set_parameters_not_free(only_nonlinear=True)
+        assert not g1.A.free
+        assert not g2.A.free
+        assert not g3.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+
+        m.set_parameters_free([g1], only_linear=True)
+        assert g1.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+        assert not g2.A.free
+        assert not g2.sigma.free
+        assert not g2.centre.free
+
+        m.set_parameters_free(only_linear=True)
+        assert g1.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+        assert g2.A.free
+        assert not g2.sigma.free
+        assert not g2.centre.free
+
+        m.set_parameters_not_free(only_linear=True)
+        m.set_parameters_free(only_nonlinear=True)
+        assert not g2.A.free
+        assert g2.sigma.free
+        assert g2.centre.free
+        assert not g3.A.free
+        assert g3.sigma.free
+        assert g3.centre.free

@@ -22,9 +22,10 @@ import pytest
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.components1d import Gaussian
+from hyperspy.components1d import Gaussian, Offset
 from hyperspy.models.model1d import ComponentFit
 from hyperspy.exceptions import SignalDimensionError
+from hyperspy.decorators import lazifyTestClass
 
 
 class TestFitOneComponent:
@@ -192,3 +193,44 @@ class TestFitSI:
         m.axes_manager.indices = (1, 1)
         B = G.A.value
         assert not A == B
+
+
+@lazifyTestClass
+class TestStdWithMultipleFitters:
+    'Test that error estimation is approximately the same for all fitters, with both positive and negative components'
+
+    def setup_method(self, method):
+        np.random.seed(1)
+        c1, c2 = 10, 12
+        A1, A2 = -50, 20
+        G1 = Gaussian(centre=c1, A=A1, sigma=1)
+        G2 = Gaussian(centre=c2, A=A2, sigma=1)
+
+        x = np.linspace(0, 20, 1000)
+        y = G1.function(x) + G2.function(x) + 5
+        error = np.random.normal(size=y.shape)
+        y = y + error
+
+        s = Signal1D(y)
+        s.axes_manager[-1].scale = x[1] - x[0]
+
+        self.m = s.create_model()
+        g1 = Gaussian(centre=c1, A=1, sigma=1)
+        g2 = Gaussian(centre=c2, A=1, sigma=1)
+        offset = Offset()
+        self.m.extend([g1, g2, offset])
+
+        g1.centre.free = False
+        g1.sigma.free = False
+        g2.centre.free = False
+        g2.sigma.free = False
+
+        self.g1, self.g2 = g1, g2
+
+    @pytest.mark.parametrize("optimizer", ['lm', 'lstsq', 'ridge_regression'])
+    def test_fitters(self, optimizer):
+        if optimizer == "ridge_regression":
+            pytest.importorskip("sklearn")
+        self.m.fit(optimizer=optimizer)
+        np.testing.assert_almost_equal(self.g1.A.std, 0.29659216)
+        np.testing.assert_almost_equal(self.g1.A.std, self.g2.A.std)

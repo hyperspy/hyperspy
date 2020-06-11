@@ -28,6 +28,7 @@ from functools import partial
 
 import dill
 import numpy as np
+import dask
 import dask.array as da
 import scipy
 import scipy.odr as odr
