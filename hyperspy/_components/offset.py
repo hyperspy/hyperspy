@@ -55,6 +55,9 @@ class Offset(Component):
         # Gradients
         self.offset.grad = self.grad_offset
 
+        # Linearity
+        self.offset._is_linear = True
+
     def function(self, x):
         return self._function(x, self.offset.value)
 
@@ -133,3 +136,12 @@ class Offset(Component):
         return self._function(x, o)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
+
+    @property
+    def _constant_term(self):
+        "Get value of constant term of component"
+        # First get currently constant parameters
+        if self.offset.free:
+            return 0
+        else:
+            return self.offset.value
