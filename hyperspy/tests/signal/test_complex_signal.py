@@ -91,8 +91,7 @@ def test_get_unwrapped_phase_1D(parallel, lazy):
     if lazy:
         s = s.as_lazy()
     s.axes_manager.set_signal_dimension(1)
-    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
-                                        parallel=parallel)
+    phase_unwrapped = s.unwrapped_phase(seed=42, parallel=parallel)
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
@@ -107,8 +106,7 @@ def test_get_unwrapped_phase_2D(parallel, lazy):
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
-    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
-                                        parallel=parallel)
+    phase_unwrapped = s.unwrapped_phase(seed=42, parallel=parallel)
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
@@ -123,8 +121,7 @@ def test_get_unwrapped_phase_3D(parallel, lazy):
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
-    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
-                                        parallel=parallel)
+    phase_unwrapped = s.unwrapped_phase(seed=42, parallel=parallel)
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
