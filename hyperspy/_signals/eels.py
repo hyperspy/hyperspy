@@ -24,10 +24,10 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 from prettytable import PrettyTable
-import ipywidgets as widgets
 
 from hyperspy.signal import BaseSetMetadataItems
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
+from hyperspy.signal_tools import EdgesRange
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
@@ -39,6 +39,7 @@ from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovsk
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+
 
 
 _logger = logging.getLogger(__name__)
@@ -158,9 +159,39 @@ class EELSSpectrum_mixin:
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
 
+    def edges_at_energy(self, energy='interactive', width=10, only_major=False, 
+                        display=True, toolkit=None):
+        """Show EELS edges according to an energy range selected from the 
+        spectrum or within a provided energy window
+        
+        Parameters
+        ----------
+        energy : 'interactive' or float
+            If it is 'interactive', a table with edges are shown and it depends
+            on the energy range selected in the spectrum. If it is a float, a
+            table with edges are shown and it depends on the energy window 
+            defined by energy +/- (width/2). The default is 'interactive'.
+        width : float
+            Width of window, in eV, around energy in which to find nearby 
+            energies, i.e. a value of 10 eV (the default) means to 
+            search +/- 5 eV. The default is 10.
+        only_major : bool
+            Whether to show only the major edges. The default is False.
+            
+        Returns
+        -------
+        An interactive widget if energy is 'interactive', or a html-format 
+        table or ASCII table, depends on the environment.
+        """
+        
+        if energy == 'interactive':
+            er = EdgesRange(self)
+            return er.gui(display=display, toolkit=toolkit)
+        else:
+            return self.print_edges_near_energy(energy, width, only_major)
+            
     @staticmethod
-    def print_edges_near_energy(energy, width=10, only_major=False, 
-                                interactive=False):
+    def print_edges_near_energy(energy, width=10, only_major=False):
         """Find and print a table of edges near a given energy that are within 
         the given energy window.
         
@@ -170,25 +201,16 @@ class EELSSpectrum_mixin:
             Energy to search, in eV
         width : float
             Width of window, in eV, around energy in which to find nearby 
-            energies, i.e. a value of 1 eV (the default) means to 
-            search +/- 0.5 eV. The default is 10.
+            energies, i.e. a value of 10 eV (the default) means to 
+            search +/- 5 eV. The default is 10.
         only_major : bool
             Whether to show only the major edges. The default is False.
-        interactive : bool
-            Whether to use interactive mode, where energy, width and 
-            only_major can be controlled and the table is updated. This works
-            in Jupyter notebook only. The default is False.
         
         Returns
         -------
         A PrettyText object where its representation is ASCII in terminal and 
         html-formatted in Jupyter notebook 
         """ 
-        
-        if interactive:
-            wtable = EELSSpectrum_mixin.interactive_edges_energy(energy, width, 
-                                                                 only_major)
-            return wtable
         
         edges = get_edges_near_energy(energy, width=width)
         
@@ -218,53 +240,9 @@ class EELSSpectrum_mixin:
 
         # this ensures the html version try its best to mimick the ASCII one
         table.format = True
-
+        
         return print_html(f_text=table.get_string,
                           f_html=table.get_html_string)
-
-    @staticmethod
-    def interactive_edges_energy(energy, width=10, only_major=False):
-        """Interactively print a table of edges near a given energy that are 
-        within the given energy window. This works in Jupyter notebook only.
-
-        Parameters
-        ----------
-        energy, width, only_major
-            See print_edges_near_energy().
-
-        Returns
-        -------
-        wtable : widgets.VBox
-            A widget contains the all other widgets for printing edges in a 
-            table interactively.
-        """
-        
-        energy_slider = widgets.IntSlider(value=energy, min=0, max=3000, step=1,
-                                          description='Energy (eV):',
-                                          continuous_update=False,
-                                          style={'description_width': 'initial'},
-                                          layout={'width': 'initial'})
-        width_slider = widgets.IntSlider(value=width, min=0, max=100, step=1,
-                                         description='Energy width (eV):',
-                                         continuous_update=False,
-                                         style={'description_width': 'initial'},
-                                         layout={'width': 'initial'})
-        major_checkbox = widgets.Checkbox(value=only_major, indent=False, 
-                                          description='Only major')
-        
-        def func(energy, width, only_major):
-            display(EELSSpectrum_mixin.print_edges_near_energy(energy, 
-                                                               width, 
-                                                               only_major))    
-        out_table = widgets.interactive_output(func, 
-                                               {'energy': energy_slider, 
-                                                'width': width_slider, 
-                                                'only_major': major_checkbox})
-        
-        wtable = widgets.VBox([energy_slider, width_slider,
-                               widgets.HBox([out_table, major_checkbox])])
-
-        return wtable
     
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.

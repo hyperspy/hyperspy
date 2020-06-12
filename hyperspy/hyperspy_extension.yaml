@@ -242,6 +242,7 @@ GUI:
     - hyperspy.Parameter
     - hyperspy.Component
     - hyperspy.EELSCLEdge_Component
+    - hyperspy.EELSSpectrum.print_edges_table
     - hyperspy.ScalableFixedPattern_Component
     - hyperspy.Signal1D.calibrate
     - hyperspy.Signal1D.smooth_savitzky_golay

@@ -238,6 +238,37 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         self.span_selector_switch(on=True)
         self.last_calibration_stored = True
 
+@add_gui_method(toolkey="hyperspy.EELSSpectrum.print_edges_table")
+class EdgesRange(SpanSelectorInSignal1D):
+    left_value = t.Float(t.Undefined, label='New left value')
+    right_value = t.Float(t.Undefined, label='New right value')
+    units = t.Unicode()
+
+    def __init__(self, signal):
+        super(EdgesRange, self).__init__(signal)
+        if signal.axes_manager.signal_dimension != 1:
+            raise SignalDimensionError(
+                signal.axes_manager.signal_dimension, 1)
+        self.units = self.axis.units
+        self.signal = signal
+        self.last_mid_energy = 0
+        self.last_rng = 0
+        self.last_only_major = True
+        
+    def show_edges_table(self, x0, x1, only_major, update):
+        if update:
+            mid_energy = (x0 + x1) / 2
+            rng = self.span_selector.rect.get_width()
+            
+            display(self.signal.print_edges_near_energy(mid_energy, 
+                                                        rng, only_major))
+            self.last_mid_energy = mid_energy
+            self.last_rng = rng
+            self.last_only_major = only_major          
+        else:
+            display(self.signal.print_edges_near_energy(self.last_mid_energy, 
+                                                        self.last_rng, 
+                                                        self.last_only_major))
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
