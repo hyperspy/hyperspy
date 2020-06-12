@@ -212,7 +212,8 @@ class EELSSpectrum_mixin:
         html-formatted in Jupyter notebook 
         """ 
         
-        edges = get_edges_near_energy(energy, width=width)
+        edges = get_edges_near_energy(energy=energy, width=width,
+                                      only_major=only_major)
         
         table = PrettyTable()
         table.field_names = [
@@ -232,11 +233,7 @@ class EELSSpectrum_mixin:
             edge_ = shell_dict['edge']            
             description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
 
-            if only_major:
-                if relevance == 'Major':
-                    table.add_row([edge, onset, relevance, description])
-            else:
-                table.add_row([edge, onset, relevance, description])
+            table.add_row([edge, onset, relevance, description])
 
         # this ensures the html version try its best to mimick the ASCII one
         table.format = True

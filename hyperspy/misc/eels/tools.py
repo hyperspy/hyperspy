@@ -327,7 +327,7 @@ def eels_constant(s, zlp, t):
     k.metadata.General.title = "EELS proportionality constant K"
     return k
 
-def get_edges_near_energy(energy, width=10):
+def get_edges_near_energy(energy, width=10, only_major=False, order='closest'):
     """Find edges near a given energy that are within the given energy 
     window.
     
@@ -337,9 +337,14 @@ def get_edges_near_energy(energy, width=10):
         Energy to search, in eV
     width : float
         Width of window, in eV, around energy in which to find nearby 
-        energies, i.e. a value of 1 eV (the default) means to 
-        search +/- 0.5 eV. The default is 10.
-    
+        energies, i.e. a value of 10 eV (the default) means to 
+        search +/- 5 eV. The default is 10.
+    only_major : bool
+        Whether to show only the major edges. The default is False.
+    order : str
+        Sort the edges, if 'closest', return in the order of energy difference,
+        if 'ascending', return in ascending order, similarly for 'descending'
+
     Returns
     -------
     edges : list
@@ -349,6 +354,9 @@ def get_edges_near_energy(energy, width=10):
     
     if width < 0:
         raise ValueError("Provided width needs to be >= 0.")
+    if order not in ('closest', 'ascending', 'descending'):
+        raise ValueError("order needs to be 'closest', 'ascending' or "
+                         "'descending'")
     
     Emin, Emax = energy - width/2, energy + width/2            
 
@@ -358,15 +366,26 @@ def get_edges_near_energy(energy, width=10):
         try:
             for shell, shell_info in element_info[
                 'Atomic_properties']['Binding_energies'].items():
+                if only_major:
+                    if shell_info['relevance'] != 'Major':
+                        continue
                 if shell[-1] != 'a' and \
                     Emin <= shell_info['onset_energy (eV)'] <= Emax:
                     subshell = '{}_{}'.format(element, shell)
                     Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
-                    valid_edges.append((subshell, Ediff))           
+                    valid_edges.append((subshell, 
+                                        shell_info['onset_energy (eV)'], 
+                                        Ediff))           
         except KeyError:
             continue 
         
-    # Sort by energy difference and return only the edges
-    edges = [edge for edge, _ in sorted(valid_edges, key=lambda x: x[1])]
-    
+    # Sort according to 'order' and return only the edges
+    if order == 'closest':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[2])]
+    elif order == 'ascending':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[1])]
+    elif order == 'descending':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[1], 
+                                               reverse=True)]
+        
     return edges
