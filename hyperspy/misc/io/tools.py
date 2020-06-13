@@ -19,7 +19,6 @@
 
 import os
 import logging
-import fnmatch
 
 _logger = logging.getLogger(__name__)
 

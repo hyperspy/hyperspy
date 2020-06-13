@@ -1154,34 +1154,6 @@ restored when a signal is loaded from a previously saved Nexus file.
     using ``attrs`` or ``value`` keywords is not recommended 
     
 
-Inspecting
-^^^^^^^^^^
-Looking in a Nexus or HDF file for specific metadatda is often useful - .e.g to find
-what position a specific stage was at: 
-
-    >>> from hyperspy.io_plugins.nexus import read_metadata_from_file
-    >>> read_metadata_from_file("sample.hdf5",search_keys=["stage1_z"])
-    {'entry': {'instrument': {'scannables': {'stage1': {'stage1_z': {'value': -9.871700000000002,
-    'attrs': {'gda_field_name': 'stage1_z',
-    'local_name': 'stage1.stage1_z',
-    'target': '/entry/instrument/scannables/stage1/stage1_z',
-    'units': 'mm'}}}}}}} 
-    
-You can also inspect the file to see what datasets are stored in the file
-    
-    >>> from hyperspy.io_plugins.nexus import read_datasets_from_file
-    >>> read_datasets_from_file("sample.nxs")
-    NXdata found
-    /entry/xsp3_addetector
-    /entry/xsp3_addetector_total
-    HDF datasets found
-    /entry/solstice_scan/keys/uniqueKeys
-    /entry/solstice_scan/scan_shape
-    Out[3]:
-    (['/entry/xsp3_addetector', '/entry/xsp3_addetector_total'],
-     ['/entry/solstice_scan/keys/uniqueKeys', '/entry/solstice_scan/scan_shape'])    
-    
-
 Reading
 ^^^^^^^
 Nexus files can contain multiple datasets within the same file but the
@@ -1195,11 +1167,18 @@ some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dataset_keys`` : ``all``, ``hardlinks``, ``str`` or ``list`` of strings - Absolute path(s) or string(s) to search for in the path to find one or more datasets. (default is ``all`` all Nexus Datasets will be read)
-- ``metadata_keys`` : ``all``, ``str`` or ``list`` of strings - Absolute path(s) or string(s) to search for in the path to find metadata. (default is ``all`` all Nexus Metadata will be read)
-- ``nxdata_only`` : ``bool`` - Only convert NXdata formatted data to signals
-- ``small_metadata_only`` : ``bool`` - Only load items of size<2 into the metadata to avoid linking to large datasets
+- ``dataset_keys`` : ``all``, ``hardlinks``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets. (default is ``all`` all Nexus Datasets will be read)
+- ``metadata_keys`` : ``all``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find metadata. (default is ``all`` all Nexus Metadata will be read)
+- ``nxdata_only`` : ``bool`` - Default is False. Only convert NXdata formatted data to signals
    
+.. note::
+
+    Given that HDF5 files can accommodate very large datasets, setting ``lazy=True``
+    is strongly recommended if the contents of the HDF5 file are not known apriori.
+    This prevents issues with regard to loading datasets far larger than memory.
+
+    Also note that setting ``lazy=True`` leaves the file handle to the HDF5 file open.
+    If it is important that the files be closed after reading, set ``lazy=False``.
  
  
 Reading a Nexus file a single Nexus dataset:
@@ -1267,8 +1246,8 @@ indices.
 Nexus and HDF can result in large metadata structures with large datasets within the loaded 
 original_metadata. If lazy loading is used this may not be a concern but care must be taken
 when saving the data. 
-To control whether large datasets are loaded or saved  the ``small_metadata_only`` 
-keyword can be used or use the ``metadata_keys`` to load only the most relevant information.
+To control whether large datasets are loaded or saved  the 
+use the ``metadata_keys`` to load only the most relevant information.
 
 
 Writing
@@ -1278,7 +1257,7 @@ function.
 
 Extra saving arguments
 ++++++++++++++++++++++
-- ``small_metadata_only`` : ``bool`` - Default is True, Option to ignore large datasets contained in the original_metadata when storing to file.
+- ``save_original_metadata`` : ``bool`` - Default is True, Option to save the original_metadata when storing to file.
 
 .. code-block:: python
 
@@ -1298,11 +1277,11 @@ Using the save method will store the nexus file with the following structure:
     │   │   ├── signal (NXdata format)
 
 The original_metadata can include hdf datasets which you may not wish to store.
-Large datasets can be stripped from the metadata using ``small_metadata_only``.
+The original_metadata can be omitted using ``save_original_metadata``.
 
 .. code-block:: python
 
-    >>> sig.save("output.nxs", small_metadata_only=True)
+    >>> sig.save("output.nxs", save_original_metadata=False)
 
 To save multiple signals the file_writer method can be called directly.
 
@@ -1336,6 +1315,41 @@ The output will be arranged by signal name.
     Signals saved as nxs by this plugin can be loaded normally and the
     original_metadata, signal data, axes, metadata and learning_results 
     will be restored. Model information is not currently stored. 
+    Nexus does not store how the data should be displayed. 
+    To preserve the signal details an additional navigation attribute
+    is added to each axis to indicate if is a navigation axis.
+    
+
+Inspecting
+^^^^^^^^^^
+Looking in a Nexus or HDF file for specific metadatda is often useful - .e.g to find
+what position a specific stage was at: 
+
+    >>> from hyperspy.io_plugins.nexus import read_metadata_from_file
+    >>> read_metadata_from_file("sample.hdf5",metadata_keys=["stage1_z"])
+    {'entry': {'instrument': {'scannables': {'stage1': {'stage1_z': {'value': -9.871700000000002,
+    'attrs': {'gda_field_name': 'stage1_z',
+    'local_name': 'stage1.stage1_z',
+    'target': '/entry/instrument/scannables/stage1/stage1_z',
+    'units': 'mm'}}}}}}} 
+    
+The inspection methods use the same ``metadata_keys`` or ``dataset_keys`` as when loading.
+You can also inspect the file to see what datasets are stored in the file
+    
+    >>> from hyperspy.io_plugins.nexus import read_datasets_from_file
+    >>> list_datasets_in_file("sample.nxs")
+    NXdata found
+    /entry/xsp3_addetector
+    /entry/xsp3_addetector_total
+    HDF datasets found
+    /entry/solstice_scan/keys/uniqueKeys
+    /entry/solstice_scan/scan_shape
+    Out[3]:
+    (['/entry/xsp3_addetector', '/entry/xsp3_addetector_total'],
+     ['/entry/solstice_scan/keys/uniqueKeys', '/entry/solstice_scan/scan_shape'])    
+    
+
+
 
 Reading data generated by HyperSpy using other software packages
 ================================================================
