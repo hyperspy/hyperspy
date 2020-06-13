@@ -22,9 +22,13 @@ from hyperspy.misc.eels.eelsdb import eelsdb
 from requests.exceptions import SSLError
 import warnings
 
+
 def eelsdb_down():
     try:
-        request = requests.get('http://api.eelsdb.eu', verify=False)
+        _ = requests.get('http://api.eelsdb.eu', verify=True)
+        return False
+    except SSLError:
+        _ = requests.get('http://api.eelsdb.eu', verify=False)
         return False
     except requests.exceptions.ConnectionError:
         return True
