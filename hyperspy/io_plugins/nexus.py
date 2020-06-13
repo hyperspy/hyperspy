@@ -239,8 +239,6 @@ def _extract_hdf_dataset(group,dataset,lazy=False):
         
     """
     data = group[dataset]
-    if data.dtype.type is np.string_ or data.dtype.type is np.object_:
-        return None
     if(lazy):
         if "chunks" in data.attrs.keys():
              chunks = data.attrs["chunks"]
@@ -653,9 +651,11 @@ def _find_data(group,search_keys="hardlinks"):
                 if isinstance(value,h5py.Dataset):  
                     if value.size >= 2:
                         target = _getlink(group,rootkey,key)
-                        all_hdf_datasets.append(rootkey)
-                        if target is None:
-                            unique_hdf_datasets.append(rootkey)
+                        if not(value.dtype.type is np.string_ or 
+                                value.dtype.type is np.object_):    
+                            all_hdf_datasets.append(rootkey)
+                            if target is None:
+                                unique_hdf_datasets.append(rootkey)
 
     find_data_in_tree(group,rootname)
 
