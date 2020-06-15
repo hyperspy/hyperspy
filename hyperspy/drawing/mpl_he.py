@@ -197,7 +197,6 @@ class MPL_HyperExplorer(object):
         if "ipympl" in mpl.get_backend():
             # Then we can use the widget backend for two figures horizontally
             if not self.navigator_plot:
-                # this is equivalent of s.plot() in interactive mode
                 display(self.signal_plot.figure.canvas)
             else:
                 nav = self.navigator_plot.figure
