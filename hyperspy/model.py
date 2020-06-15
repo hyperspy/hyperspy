@@ -1146,7 +1146,7 @@ class BaseModel(list):
                     pcov = np.zeros((len(self.p0), len(self.p0)), dtype=float)
                     pcov.fill(np.inf)
                     warn_cov = True
-                elif pcov.min() < 0:
+                elif pcov.diagonal().min() < 0:
                     # Usually indicative of numerical overflow
                     # (covariance should be positive)
                     pcov.fill(np.inf)

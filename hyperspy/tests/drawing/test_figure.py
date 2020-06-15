@@ -72,7 +72,7 @@ class TestCloseFigure():
         if sig_dim == 1:
             Signal = Signal1D
         elif sig_dim == 2:
-            Signal = Signal2D            
+            Signal = Signal2D
         s = Signal(np.arange(pow(10, total_dim)).reshape([10]*total_dim))
         s.plot(navigator=navigator)
         s._plot.close()
