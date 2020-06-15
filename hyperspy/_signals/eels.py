@@ -159,8 +159,8 @@ class EELSSpectrum_mixin:
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
 
-    def edges_at_energy(self, energy='interactive', width=10, only_major=False, 
-                        display=True, toolkit=None):
+    def edges_at_energy(self, energy='interactive', width=10, only_major=False,
+                        order='closest', display=True, toolkit=None):
         """Show EELS edges according to an energy range selected from the 
         spectrum or within a provided energy window
         
@@ -177,6 +177,10 @@ class EELSSpectrum_mixin:
             search +/- 5 eV. The default is 10.
         only_major : bool
             Whether to show only the major edges. The default is False.
+        order : str
+            Sort the edges, if 'closest', return in the order of energy 
+            difference, if 'ascending', return in ascending order, similarly 
+            for 'descending'. The default is 'closest'.
             
         Returns
         -------
@@ -188,10 +192,12 @@ class EELSSpectrum_mixin:
             er = EdgesRange(self)
             return er.gui(display=display, toolkit=toolkit)
         else:
-            return self.print_edges_near_energy(energy, width, only_major)
+            return self.print_edges_near_energy(energy, width, only_major, 
+                                                order)
             
     @staticmethod
-    def print_edges_near_energy(energy, width=10, only_major=False):
+    def print_edges_near_energy(energy, width=10, only_major=False, 
+                                order='closest'):
         """Find and print a table of edges near a given energy that are within 
         the given energy window.
         
@@ -205,6 +211,10 @@ class EELSSpectrum_mixin:
             search +/- 5 eV. The default is 10.
         only_major : bool
             Whether to show only the major edges. The default is False.
+        order : str
+            Sort the edges, if 'closest', return in the order of energy 
+            difference, if 'ascending', return in ascending order, similarly 
+            for 'descending'. The default is 'closest'.
         
         Returns
         -------
@@ -213,7 +223,7 @@ class EELSSpectrum_mixin:
         """ 
         
         edges = get_edges_near_energy(energy=energy, width=width,
-                                      only_major=only_major)
+                                      only_major=only_major, order=order)
         
         table = PrettyTable()
         table.field_names = [

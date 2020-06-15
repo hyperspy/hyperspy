@@ -254,21 +254,25 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.last_mid_energy = 0
         self.last_rng = 0
         self.last_only_major = True
+        self.last_order = 'closest'
         
-    def show_edges_table(self, x0, x1, only_major, update):
+    def show_edges_table(self, x0, x1, only_major, update, order):
         if update:
             mid_energy = (x0 + x1) / 2
             rng = self.span_selector.rect.get_width()
             
             display(self.signal.print_edges_near_energy(mid_energy, 
-                                                        rng, only_major))
+                                                        rng, only_major, 
+                                                        order))
             self.last_mid_energy = mid_energy
             self.last_rng = rng
-            self.last_only_major = only_major          
+            self.last_only_major = only_major
+            self.last_order = order
         else:
             display(self.signal.print_edges_near_energy(self.last_mid_energy, 
                                                         self.last_rng, 
-                                                        self.last_only_major))
+                                                        self.last_only_major,
+                                                        self.last_order))
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
