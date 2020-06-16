@@ -19,16 +19,17 @@
 import copy
 
 import numpy as np
+from scipy.special import huber
 
-from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
 from hyperspy.axes import generate_axis
-from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
+from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
+from hyperspy.exceptions import SignalDimensionError, WrongObjectError
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
-from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
@@ -622,6 +623,17 @@ class Model1D(BaseModel):
         gls = (2 * self._errfunc(param, y, weights) *
                self._jacobian(param, y)).sum(1)
         return gls
+
+    def _huber_loss_function(self, param, y, weights=None):
+        if weights is None:
+            weights = 1.0
+        return huber(1.0, weights * self._errfunc(param, y)).sum()
+
+    def _gradient_huber(self, param, y, weights=None):
+        return (
+            self._jacobian(param, y)
+            * np.clip(self._errfunc(param, y, weights), -1.0, 1.0,)
+        ).sum(axis=1)
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None

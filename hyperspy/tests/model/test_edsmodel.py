@@ -17,13 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
-from hyperspy.decorators import lazifyTestClass
-from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.misc.test_utils import assert_warns
 
 
 @lazifyTestClass
@@ -138,8 +140,14 @@ class TestlineFit:
         m = s.create_model()
         m.fit()
         m['Fe_Ka'].centre.value = 6.39
-        m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
-                               bound=100)
+
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match="has been deprecated and will be removed",
+        ):
+            m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
+                                   bound=100)
+
         np.testing.assert_allclose(
             m['Fe_Ka'].centre.value, elements_db['Fe']['Atomic_properties'][
                 'Xray_lines']['Ka']['energy (keV)'], atol=1e-6)
@@ -155,13 +163,20 @@ class TestlineFit:
         s = (s + s1 / 50)
         m = s.create_model()
         m.fit()
-        with assert_warns(message='The X-ray line expected to be in the model '
-                          'was not found'):
+
+        with pytest.warns(None) as record:
             m.calibrate_xray_lines(calibrate='sub_weight',
                                    xray_lines=['Fe_Ka'], bound=100)
 
-        np.testing.assert_allclose(0.0347, m['Fe_Kb'].A.value,
-                                   atol=1e-3)
+        assert len(record) == 2
+
+        assert issubclass(record[0].category, VisibleDeprecationWarning)
+        assert issubclass(record[1].category, UserWarning)
+
+        assert "has been deprecated and will be removed" in record[0].message.args[0]
+        assert "X-ray line expected to be in the model was not found" in record[1].message.args[0]
+
+        np.testing.assert_allclose(0.0347, m['Fe_Kb'].A.value, atol=1e-3)
 
     def test_calibrate_xray_width(self):
         s = self.s
@@ -169,8 +184,14 @@ class TestlineFit:
         m.fit()
         sigma = m['Fe_Ka'].sigma.value
         m['Fe_Ka'].sigma.value = 0.065
-        m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
-                               bound=10)
+
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match="has been deprecated and will be removed",
+        ):
+            m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
+                                   bound=10)
+
         np.testing.assert_allclose(sigma, m['Fe_Ka'].sigma.value,
                                    atol=1e-2)
 

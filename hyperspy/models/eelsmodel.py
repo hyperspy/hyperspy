@@ -17,14 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import warnings
 import logging
+import warnings
 
-from hyperspy.models.model1d import Model1D
-from hyperspy.components1d import EELSCLEdge
-from hyperspy.components1d import PowerLaw
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
+from hyperspy.components1d import EELSCLEdge, PowerLaw
+from hyperspy.models.model1d import Model1D
 
 _logger = logging.getLogger(__name__)
 
@@ -287,49 +286,125 @@ class EELSModel(Model1D):
         else:
             return
 
-    def fit(self, fitter=None, method='ls', grad=False,
-            bounded=False, ext_bounding=False, update_plot=False,
-            kind='std', **kwargs):
-        """Fits the model to the experimental data
+    def fit(
+        self,
+        fitter="leastsq",
+        method="ls",
+        grad=False,
+        bounded=False,
+        ext_bounding=False,
+        update_plot=False,
+        weights="inverse_variance",
+        print_info=False,
+        kind="std",
+        **kwargs,
+    ):
+        """Fits the model to the experimental data.
+
+        Read more in the :ref:`User Guide <model.fitting>`.
 
         Parameters
         ----------
-        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
-            The optimizer to perform the fitting. If None the fitter
-            defined in the Preferences is used. leastsq is the most
-            stable but it does not support bounding. mpfit supports
-            bounding. fmin is the only one that supports
-            maximum likelihood estimation, but it is less robust than
-            the Levenberg–Marquardt based leastsq and mpfit, and it is
-            better to use it after one of them to refine the estimation.
-        method : {'ls', 'ml'}
-            Choose 'ls' (default) for least squares and 'ml' for
-            maximum-likelihood estimation. The latter only works with
-            fitter = 'fmin'.
-        grad : bool
-            If True, the analytical gradient is used if defined to
-            speed up the estimation.
-        ext_bounding : bool
+        fitter : str, default "leastsq"
+            The optimization algorithm used to perform the fitting.
+
+                * "leastsq" performs least-squares optimization, and
+                  supports bounds on parameters.
+                * "odr" performs the optimization using the orthogonal
+                  distance regression (ODR) algorithm. It does not support
+                  bounds on parameters. See :py:mod:`scipy.odr` for more details.
+                * All of the available methods for :py:func:`scipy.optimize.minimize`
+                  can be used here:
+
+                    - "Powell"
+                    - "CG"
+                    - "BFGS"
+                    - "Newton-CG"
+                    - "L-BFGS-B"
+                    - "TNC"
+                    - "COBYLA"
+                    - "SLSQP"
+                    - "trust-constr"
+                    - "dogleg"
+                    - "trust-ncg"
+                    - "trust-exact"
+                    - "trust-krylov"
+
+                  See the :ref:`User Guide <model.fitting>` documentation for more details.
+                * "Differential Evolution" is a global optimization method.
+                  It does support bounds on parameters. See
+                  :py:func:`scipy.optimize.differential_evolution` for more
+                  details on available options.
+                * "Dual Annealing" is a global optimization method.
+                  It does support bounds on parameters. See
+                  :py:func:`scipy.optimize.dual_annealing` for more
+                  details on available options. Requires ``scipy >= 1.2.0``.
+                * "SHGO" (simplicial homology global optimization" is a global
+                  optimization method. It does support bounds on parameters. See
+                  :py:func:`scipy.optimize.shgo` for more details on available
+                  options. Requires ``scipy >= 1.2.0``.
+
+        method : {"ls", "ml", "huber", "custom"}, default "ls"
+            The loss function to use for minimization.
+
+                * "ls" minimizes the least-squares loss function.
+                * "ml" minimizes the negative log-likelihood for Poisson-distributed
+                  data. Also known as Poisson maximum likelihood estimation
+                  (MLE). Not available if ``fitter`` is ``"leastsq"``
+                  or ``"odr"``.
+                * "huber" minimize the Huber loss function. Not available
+                  if ``fitter`` is ``"leastsq"`` or ``"odr"``.
+                * "custom" allows passing your own minimisation function as a
+                  keyword argument ``min_function``, with an optional
+                  gradient argument ``min_function_grad``. Not available
+                  if ``fitter`` is ``"leastsq"`` or ``"odr"``.
+
+        grad : bool or ["2-point", "3-point", "cs"] or callable, default False
+            If True, the analytical gradient is used (if defined) to
+            speed up the optimization. The keywords ``['2-point', '3-point', 'cs']``
+            can be used to select a finite difference scheme for numerical
+            estimation of the gradient with a relative step size. If it is a
+            callable, it should be a function that returns the gradient vector.
+            See :py:func:`scipy.optimize.minimize` for more details.
+        bounded : bool, default False
+            If True, performs bounded parameter optimization if
+            supported by ``fitter``.
+        ext_bounding : bool, default False
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
-        bounded : bool
-            If True performs bounded optimization if the fitter
-            supports it. Currently only mpfit support bounding.
-        update_plot : bool
+        update_plot : bool, default False
             If True, the plot is updated during the optimization
-            process. It slows down the optimization but it permits
-            to visualize the optimization evolution.
-        kind : {'std', 'smart'}
-            If 'std' (default) performs standard fit. If 'smart'
-            performs smart_fit
-
-        **kwargs : key word arguments
-            Any extra key word argument will be passed to the chosen
-            fitter
+            process. It slows down the optimization, but it enables
+            visualization of the optimization progress.
+        weights : {None, "inverse_variance", np.ndarray}, default "inverse_variance"
+            If None:
+                No weighting is applied to the data.
+            If "inverse_variance":
+                If the attribute ``metada.Signal.Noise_properties.variance``
+                is defined as a ``Signal`` instance of the same
+                ``navigation_dimension`` as the signal, and ``method="ls"``,
+                then weighted least-squares fit is performed, using
+                the inverse of the noise variance as the weights.
+            If np.ndarray:
+                If the array has the same dimensions as the signal,
+                and ``method="ls"``, then weighted least squares
+                is performed using the array values as the weights.
+        print_info : bool, default False
+            If True, print information about the fitting results.
+        kind : {"std", "smart"}, default "std"
+            If "std", performs standard fit. If "smart",
+            performs a smart_fit - for more details see
+            :py:meth:`~hyperspy.model.EELSModel.smart_fit`.
+        **kwargs : keyword arguments
+            Any extra keyword argument will be passed to the chosen
+            fitter. For more information, read the docstring of the
+            optimizer of your choice in :py:mod:`scipy.optimize`.
 
         See Also
         --------
-        multifit, smart_fit
+        * :py:meth:`~hyperspy.model.BaseModel.fit`
+        * :py:meth:`~hyperspy.model.BaseModel.multifit`
+        * :py:meth:`~hyperspy.model.EELSModel.smart_fit`
 
         """
         if kind == 'smart':
@@ -339,6 +414,8 @@ class EELSModel(Model1D):
                            bounded=bounded,
                            ext_bounding=ext_bounding,
                            update_plot=update_plot,
+                           weights=weights,
+                           print_info=print_info,
                            **kwargs)
         elif kind == 'std':
             Model1D.fit(self,
@@ -348,6 +425,8 @@ class EELSModel(Model1D):
                         bounded=bounded,
                         ext_bounding=ext_bounding,
                         update_plot=update_plot,
+                        weights=weights,
+                        print_info=print_info,
                         **kwargs)
         else:
             raise ValueError('kind must be either \'std\' or \'smart\'.'
@@ -376,7 +455,9 @@ class EELSModel(Model1D):
 
         See Also
         --------
-        fit, multifit
+        * :py:meth:`~hyperspy.model.BaseModel.fit`
+        * :py:meth:`~hyperspy.model.BaseModel.multifit`
+        * :py:meth:`~hyperspy.model.EELSModel.fit`
 
         """
 

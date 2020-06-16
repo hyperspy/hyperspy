@@ -18,10 +18,10 @@
 
 import numpy as np
 
-from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
+from hyperspy.exceptions import WrongObjectError
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 
 
 class Model2D(BaseModel):
@@ -209,6 +209,12 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def _gradient_ls(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _huber_loss_function(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _gradient_huber(self, param, y, weights=None):
         raise NotImplementedError
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
