@@ -50,9 +50,10 @@ class ImagePlot(BlittedFigure):
 
     Attributes
     ----------
-    data_fuction : function or method
+    data_function : function or method
         A function that returns a 2D array when called without any
         arguments.
+    widget: ipywidgets output widget to place the figure in
     %s
     pixel_units : {None, string}
         The pixel units for the scale bar.
@@ -62,8 +63,13 @@ class ImagePlot(BlittedFigure):
 
     """ % PLOT2D_DOCSTRING
 
+<<<<<<< HEAD
     def __init__(self, title=""):
         super(ImagePlot, self).__init__()
+=======
+    def __init__(self, widget=None):
+        super(ImagePlot, self).__init__(widget=widget)
+>>>>>>> 270d5a349 (changed to be able to take signal_widget and navigation_widget as arguments to s.plot)
         self.data_function = None
         self.data_function_kwargs = {}
 
@@ -275,7 +281,7 @@ class ImagePlot(BlittedFigure):
 
         return vmin, vmax
 
-    def create_figure(self, max_size=None, min_size=2, **kwargs):
+    def create_figure(self, max_size=None, min_size=2, widget=None, **kwargs):
         """Create matplotlib figure
 
         The figure size is automatically computed by default, taking into
@@ -307,7 +313,7 @@ class ImagePlot(BlittedFigure):
             kwargs["figsize"] = figsize.clip(min_size, max_size)
         if "disable_xyscale_keys" not in kwargs:
             kwargs["disable_xyscale_keys"] = True
-        super().create_figure(**kwargs)
+        super().create_figure(widget=widget, **kwargs)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -321,11 +327,16 @@ class ImagePlot(BlittedFigure):
         if self.axes_off:
             self.ax.axis('off')
 
-    def plot(self, data_function_kwargs={}, **kwargs):
+    def plot(self, widget=None, data_function_kwargs={}, **kwargs):
+        """Plot the figure
+
+        Arguments:
+        widget: ipywidgets output widget to place the figure in
+        """
         self.data_function_kwargs = data_function_kwargs
         self.configure()
         if self.figure is None:
-            self.create_figure()
+            self.create_figure(widget=widget)
             self.create_axis()
 
         if (not self.axes_manager or self.axes_manager.navigation_size == 0):

@@ -23,16 +23,45 @@ from hyperspy.defaults_parser import preferences
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
+<<<<<<< HEAD
     def plot_signal(self, **kwargs):
         """
         Parameters
         ----------
         **kwargs : dict
             The kwargs are passed to plot method of the image figure.
+=======
+    def plot_signal(self,
+                    colorbar=True,
+                    scalebar=True,
+                    scalebar_color="white",
+                    axes_ticks=None,
+                    axes_off=False,
+                    saturated_pixels=None,
+                    vmin=None,
+                    vmax=None,
+                    no_nans=False,
+                    centre_colormap="auto",
+                    norm="auto",
+                    min_aspect=0.1,
+                    gamma=1.0,
+                    linthresh=0.01,
+                    linscale=0.1,
+                    signal_widget=None,
+                    **kwargs
+                    ):
+        """Plot image.
+
+        Parameters
+        ----------
+        %s
+        %s
+        widget: ipywidgets output widget to place the figure in
+>>>>>>> 270d5a349 (changed to be able to take signal_widget and navigation_widget as arguments to s.plot)
 
         """
         super().plot_signal()
-        imf = image.ImagePlot()
+        imf = image.ImagePlot(widget = signal_widget)
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"

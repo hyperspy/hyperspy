@@ -40,7 +40,7 @@ class Signal1DFigure(BlittedFigure):
     """
     """
 
-    def __init__(self, title=""):
+    def __init__(self, title="", widget=None):
         super(Signal1DFigure, self).__init__()
         self.figure = None
         self.ax = None
@@ -54,7 +54,7 @@ class Signal1DFigure(BlittedFigure):
         self.xlabel = ''
         self.ylabel = ''
         self.title = title
-        self.create_figure()
+        self.create_figure(widget=widget)
         self.create_axis()
 
         # Color cycles

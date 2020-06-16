@@ -28,8 +28,11 @@ from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
 import logging
+<<<<<<< HEAD
 from functools import partial
 import ipywidgets
+=======
+>>>>>>> 270d5a349 (changed to be able to take signal_widget and navigation_widget as arguments to s.plot)
 
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
@@ -131,6 +134,7 @@ def centre_colormap_values(vmin, vmax):
 def create_figure(window_title=None,
                   _on_figure_window_close=None,
                   disable_xyscale_keys=False,
+                  widget=None,
                   **kwargs):
     """Create a matplotlib figure.
 
@@ -145,16 +149,18 @@ def create_figure(window_title=None,
     disable_xyscale_keys : bool, optional
         Disable the `k`, `l` and `L` shortcuts which toggle the x or y axis
         between linear and log scale. Default False.
+    widget : ipywidgets output widget to place the figure in
 
     Returns
     -------
     fig : plt.figure
 
     """
-    if "ipympl" in mpl.get_backend() and preferences.Plot.enable_ipympl_plotting:
+    if "ipympl" in mpl.get_backend() and preferences.Plot.enable_widget_plotting:
         # this output is currently not used, just used for hiding.
         # instead we get at the figure canvas widgets themselves later
-        output_widget = ipywidgets.widgets.Output()
+        from ipywidgets.widgets import Output
+        output_widget = widget if widget else Output()
         with output_widget:
             fig = plt.figure(**kwargs)
     else:

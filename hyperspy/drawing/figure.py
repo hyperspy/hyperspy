@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 class BlittedFigure(object):
 
-    def __init__(self):
+    def __init__(self, widget=None):
         self._draw_event_cid = None
         self._background = None
         self.events = Events()
@@ -43,18 +43,20 @@ class BlittedFigure(object):
         self.title = ""
         self.ax_markers = list()
 
-    def create_figure(self, **kwargs):
+    def create_figure(self, widget=None, **kwargs):
         """Create matplotlib figure
 
         Parameters
         ----------
+        widget: ipywidgets output widget to place the figure in
         **kwargs
             All keyword arguments are passed to ``plt.figure``.
 
         """
         self.figure = utils.create_figure(
-            window_title="Figure " + self.title if self.title
-            else None, **kwargs)
+            window_title="Figure " + self.title if self.title else None, 
+            widget=widget,
+            **kwargs)
         utils.on_figure_window_close(self.figure, self._on_close)
         if self.figure.canvas.supports_blit:
             self._draw_event_cid = self.figure.canvas.mpl_connect(

@@ -73,12 +73,14 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self, **kwargs):
+    def plot_signal(self, signal_widget=None, **kwargs):
         super().plot_signal()
         # Create the figure
         self.axis = self.axes_manager.signal_axes[0]
-        sf = signal1d.Signal1DFigure(title=self.signal_title +
-                                     " Signal")
+        sf = signal1d.Signal1DFigure(
+            title=self.signal_title + " Signal",
+            widget=signal_widget
+            )
         sf.axis = self.axis
         if sf.ax is None:
             sf.create_axis()
