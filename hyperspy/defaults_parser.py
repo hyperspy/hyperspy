@@ -141,7 +141,7 @@ class GUIs(t.HasTraits):
 
 class PlotConfig(t.HasTraits):
     enable_ipympl_plotting = t.CBool(
-        True,
+        False,
         desc='Use the widget-based ipympl plotting instead of the classic plot. Allows for horizontal plotting. Requires ipywidget_gui.')
     ipympl_plot_style = t.Str(
         'horizontal',
