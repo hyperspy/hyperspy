@@ -205,11 +205,14 @@ class MPL_HyperExplorer(object):
                     nav = self.navigator_plot.figure
                     sig = self.signal_plot.figure
                     # auto vertical margins makes the figures align to their "middles"
-                    nav.canvas.layout.margin = "auto 0px auto 0px"
-                    sig.canvas.layout.margin = "auto 0px auto 0px"
+
                     if plot_style == "horizontal":
+                        nav.canvas.layout.margin = "auto 0px auto 0px"
+                        sig.canvas.layout.margin = "auto 0px auto 0px"
                         box = HBox([nav.canvas, sig.canvas])
                     else:
+                        nav.canvas.layout.margin = "0px auto 0px auto"
+                        sig.canvas.layout.margin = "0px auto 0px auto"
                         box = VBox([nav.canvas, sig.canvas])
                     display(box)
 
