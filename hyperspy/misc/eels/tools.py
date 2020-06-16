@@ -389,3 +389,26 @@ def get_edges_near_energy(energy, width=10, only_major=False, order='closest'):
                                                reverse=True)]
         
     return edges
+
+def get_info_from_edges(edges):
+    """Return the information of a sequence of edges as a list of dictionaries
+
+    Parameters
+    ----------
+    edges : iterable
+        the sequence of edges, each entry in the format of 'element_subshell'.
+
+    Returns
+    -------
+    info : list
+        a list of dictionaries with information corresponding to the provided 
+        edges.
+    """
+
+    info = []
+    for edge in edges:
+        element, subshell = edge.split('_')
+        d = elements_db[element]['Atomic_properties']['Binding_energies'][subshell]
+        info.append(d)
+
+    return info

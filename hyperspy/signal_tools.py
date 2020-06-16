@@ -35,6 +35,8 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
+from hyperspy.drawing.marker import markers
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
 from hyperspy.defaults_parser import preferences
@@ -243,6 +245,7 @@ class EdgesRange(SpanSelectorInSignal1D):
     left_value = t.Float(t.Undefined, label='New left value')
     right_value = t.Float(t.Undefined, label='New right value')
     units = t.Unicode()
+    edges_list = t.Tuple()
 
     def __init__(self, signal):
         super(EdgesRange, self).__init__(signal)
@@ -251,12 +254,17 @@ class EdgesRange(SpanSelectorInSignal1D):
                 signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
         self.signal = signal
+        self.smax = self.signal.data.max()
+        self.smin = self.signal.data.min()
         self.last_mid_energy = 0
         self.last_rng = 0
         self.last_only_major = True
         self.last_order = 'closest'
-        
-    def show_edges_table(self, x0, x1, only_major, update, order):
+        self.active_edges = []
+        self._edge_vline = []
+        self._edge_text = []
+
+    def show_edges_table(self, x0, x1, only_major, update, order, active_edges):
         if update:
             mid_energy = (x0 + x1) / 2
             rng = self.span_selector.rect.get_width()
@@ -268,11 +276,71 @@ class EdgesRange(SpanSelectorInSignal1D):
             self.last_rng = rng
             self.last_only_major = only_major
             self.last_order = order
+            
+            self.edges_list = get_edges_near_energy(mid_energy, rng, 
+                                                    only_major, order)
+            
         else:
             display(self.signal.print_edges_near_energy(self.last_mid_energy, 
                                                         self.last_rng, 
                                                         self.last_only_major,
                                                         self.last_order))
+
+        if self.active_edges != active_edges:
+            self._clear_all_markers()
+            self.active_edges = active_edges
+            self._label_edge(active_edges)
+
+    def _label_edge(self, active_edges):
+
+        energy = [d['onset_energy (eV)'] for d in 
+                  get_info_from_edges(active_edges)]
+        
+        for k, e in enumerate(energy):
+            vl = markers.vertical_line.VerticalLine(x=e)
+            tx = markers.text.Text(x=e, y=self._text_y_position(e),
+                                   text=self._text_parser(active_edges[k]),
+                                   ha='center', va='center',
+                                   bbox=dict(facecolor='white', alpha=0.2))
+            
+            self.signal.add_marker(vl)
+            self.signal.add_marker(tx)
+            
+            self._edge_vline.append(vl)
+            self._edge_text.append(tx)
+            
+    def _clear_all_markers(self):
+        # close all the existing markers and reset it
+        for k in range(len(self._edge_vline)):
+            self._edge_vline[k].close()
+            self._edge_text[k].close()
+            
+        self._edge_vline = []
+        self._edge_text = []    
+        
+    def _text_y_position(self, x):
+        spv = self.signal.isig[float(x)].data
+        
+        mid = (self.smax + self.smin) / 2
+        
+        if spv <= mid:
+            ypos = (spv + self.smax) / 2
+        else:
+            ypos = (self.smin + spv) / 2
+            
+        return ypos
+    
+    def _text_parser(self, text_edge):
+        # format the edge labels for LaTeX
+        element, subshell = text_edge.split('_')
+        
+        if subshell[-1].isdigit():
+            formatted = element+' '+'$\mathregular{'+subshell[0]+'_'+\
+                subshell[-1]+'}$'
+        else:
+            formatted = element+' '+'$\mathregular{'+subshell[0]+'}$'
+
+        return formatted
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
