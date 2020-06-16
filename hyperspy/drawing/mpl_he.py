@@ -197,8 +197,8 @@ class MPL_HyperExplorer(object):
         if "ipympl" in mpl.get_backend() and preferences.Plot.enable_ipympl_plotting:
             # Then we can use the widget backend for two figures horizontally
             plot_style = preferences.Plot.ipympl_plot_style
-            if plot_style != "dontshow":
-                # if "dontshow", user will display figures themselves later in custom manner
+            if plot_style != "hidden":
+                # if "hidden", user will display figures themselves later in custom manner
                 if not self.navigator_plot:
                     display(self.signal_plot.figure.canvas)
                 else:

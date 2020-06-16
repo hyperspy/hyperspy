@@ -142,11 +142,10 @@ class GUIs(t.HasTraits):
 class PlotConfig(t.HasTraits):
     enable_ipympl_plotting = t.CBool(
         False,
-        desc='Use the widget-based ipympl plotting instead of the classic plot. Allows for horizontal plotting. Requires ipywidget_gui.')
-    ipympl_plot_style = t.Str(
-        'horizontal',
-        label='ipympl plot style (horizontal", "vertical" or "dontshow")',
-        desc = 'Set the orientation of ipympl plotting or dont show at all for custom plotting')
+        label='Enable ipympl plotting: Use the widget-based ipympl plotting for horizontal plotting. Requires ipywidget_gui_hyperspy.')
+    ipympl_plot_style = t.Enum(
+        ['horizontal', 'vertical', 'hidden'],
+        label='ipympl plot style: (Use "hidden" for custom plot layouts)')
     saturated_pixels = t.CFloat(0.,
                                 label='Saturated pixels (deprecated)',
                                 desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
