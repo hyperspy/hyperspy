@@ -21,7 +21,7 @@ import logging
 
 from traits.api import Undefined
 import matplotlib as mpl
-from ipywidgets.widgets import HBox
+from ipywidgets.widgets import HBox, VBox
 from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.defaults_parser import preferences
 from IPython.display import display
@@ -194,18 +194,24 @@ class MPL_HyperExplorer(object):
                     self.pointer.disconnect, [])
         self.plot_signal(**kwargs)
 
-        if "ipympl" in mpl.get_backend():
+        if "ipympl" in mpl.get_backend() and preferences.Plot.enable_ipympl_plotting:
             # Then we can use the widget backend for two figures horizontally
-            if not self.navigator_plot:
-                display(self.signal_plot.figure.canvas)
-            else:
-                nav = self.navigator_plot.figure
-                sig = self.signal_plot.figure
-                # auto vertical margins makes the figures align to their "middles"
-                nav.canvas.layout.margin = "auto 0px auto 0px"
-                sig.canvas.layout.margin = "auto 0px auto 0px"
-                box = HBox([nav.canvas, sig.canvas])
-                display(box)
+            plot_style = preferences.Plot.ipympl_plot_style
+            if plot_style != "dontshow":
+                # if "dontshow", user will display figures themselves later in custom manner
+                if not self.navigator_plot:
+                    display(self.signal_plot.figure.canvas)
+                else:
+                    nav = self.navigator_plot.figure
+                    sig = self.signal_plot.figure
+                    # auto vertical margins makes the figures align to their "middles"
+                    nav.canvas.layout.margin = "auto 0px auto 0px"
+                    sig.canvas.layout.margin = "auto 0px auto 0px"
+                    if plot_style == "horizontal":
+                        box = HBox([nav.canvas, sig.canvas])
+                    else:
+                        box = VBox([nav.canvas, sig.canvas])
+                    display(box)
 
 
     def assign_pointer(self):

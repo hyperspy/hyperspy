@@ -151,8 +151,9 @@ def create_figure(window_title=None,
     fig : plt.figure
 
     """
-    if "ipympl" in mpl.get_backend():
-        # this output is currently not used, instead we get at the figure canvas widgets themselves later
+    if "ipympl" in mpl.get_backend() and preferences.Plot.enable_ipympl_plotting:
+        # this output is currently not used, just used for hiding.
+        # instead we get at the figure canvas widgets themselves later
         output_widget = ipywidgets.widgets.Output()
         with output_widget:
             fig = plt.figure(**kwargs)
