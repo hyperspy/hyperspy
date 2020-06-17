@@ -19,6 +19,7 @@
 import logging
 import functools
 import copy
+import itertools
 
 import numpy as np
 import scipy as sp
@@ -246,16 +247,15 @@ class EdgesRange(SpanSelectorInSignal1D):
     right_value = t.Float(t.Undefined, label='New right value')
     units = t.Unicode()
     edges_list = t.Tuple()
-
+    edge_label_style = {'ha' : 'center', 'va' : 'center', 
+                        'bbox' : dict(facecolor='white', alpha=0.2)}
+  
     def __init__(self, signal):
         super(EdgesRange, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
-        self.signal = signal
-        self.smax = self.signal.data.max()
-        self.smin = self.signal.data.min()
         self.last_mid_energy = 0
         self.last_rng = 0
         self.last_only_major = True
@@ -263,8 +263,34 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.active_edges = []
         self._edge_vline = []
         self._edge_text = []
+        self._ele_col_dict = dict()
+        self._set_active_figure_properties()
+        
+    def _set_active_figure_properties(self):
+
+        figs = list(map(plt.figure, plt.get_fignums()))
+        for fig in figs:
+            if len(fig.get_axes()) == 1:
+                self.smin, self.smax = fig.get_axes()[0].get_ylim()
+        
+        self.sig_index = self._get_current_signal_index()        
+        self.text_width, self.text_height = self._estimate_textbox_dimension()
+
+    def _get_current_signal_index(self):
+        if self.signal._plot.pointer is not None:
+            sig_index = self.signal._plot.pointer.indices[0]
+        else:
+            sig_index = 0
+
+        return sig_index
 
     def show_edges_table(self, x0, x1, only_major, update, order, active_edges):
+
+        # check if the spectrum is changed
+        current_sig_index = self._get_current_signal_index()
+        if current_sig_index != self.sig_index:
+            self._set_active_figure_properties()
+
         if update:
             mid_energy = (x0 + x1) / 2
             rng = self.span_selector.rect.get_width()
@@ -280,6 +306,7 @@ class EdgesRange(SpanSelectorInSignal1D):
             self.edges_list = get_edges_near_energy(mid_energy, rng, 
                                                     only_major, order)
             
+            
         else:
             display(self.signal.print_edges_near_energy(self.last_mid_energy, 
                                                         self.last_rng, 
@@ -288,21 +315,21 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         if self.active_edges != active_edges:
             self._clear_all_markers()
+            self._put_edge_labels(active_edges)
             self.active_edges = active_edges
-            self._label_edge(active_edges)
 
-    def _label_edge(self, active_edges):
+    def _put_edge_labels(self, active_edges):
+        # add the markers for labelling edges
+        xytext = self._get_textbox_pos(active_edges)
+        for xyt in xytext:
+            vl = markers.vertical_line_segment.VerticalLineSegment(x=xyt[0],
+                                                                   y1=xyt[1],
+                                                                   y2=xyt[2],
+                                                                   color=xyt[4])
+            tx = markers.text.Text(x=xyt[0], y=xyt[1],
+                                   text=self._text_parser(xyt[3]), color=xyt[4],
+                                   **self.edge_label_style)
 
-        energy = [d['onset_energy (eV)'] for d in 
-                  get_info_from_edges(active_edges)]
-        
-        for k, e in enumerate(energy):
-            vl = markers.vertical_line.VerticalLine(x=e)
-            tx = markers.text.Text(x=e, y=self._text_y_position(e),
-                                   text=self._text_parser(active_edges[k]),
-                                   ha='center', va='center',
-                                   bbox=dict(facecolor='white', alpha=0.2))
-            
             self.signal.add_marker(vl)
             self.signal.add_marker(tx)
             
@@ -317,19 +344,65 @@ class EdgesRange(SpanSelectorInSignal1D):
             
         self._edge_vline = []
         self._edge_text = []    
-        
-    def _text_y_position(self, x):
-        spv = self.signal.isig[float(x)].data
-        
+
+    def _get_textbox_pos(self, active_edges, offset=None, step=None, lb=None, 
+                         ub=None):
+        # get the information on placing the textbox and its properties
+        if offset is None:
+            offset = self.text_height
+        if step is None:
+            step = self.text_height
+        if lb is None:
+            lb = self.smin + offset
+        if ub is None:
+            ub = self.smax - offset
+
+        self._ele_col_dict = self._element_colour_dict(active_edges)
         mid = (self.smax + self.smin) / 2
-        
-        if spv <= mid:
-            ypos = (spv + self.smax) / 2
-        else:
-            ypos = (self.smin + spv) / 2
+        itop = 1
+        ibtm = 1
+
+        xytext = []
+        for edge in active_edges:
+            energy = get_info_from_edges(edge)[0]['onset_energy (eV)']
             
-        return ypos
-    
+            yval = self.signal.isig[float(energy)].data[self.sig_index] 
+            if yval <= mid: # from top
+                y = ub - itop*step
+                if y <= lb:
+                    itop = 1
+                    y = ub - itop*step
+                itop += 1
+            else: # from bottom
+                y = lb + ibtm*step
+                if y >= ub:
+                    ibtm = 1
+                    y = lb + ibtm*step            
+                ibtm += 1
+            
+            c = self._ele_col_dict[edge.split('_')[0]]
+            xytext.append((energy, y, yval, edge, c))
+
+        return xytext
+
+    def _element_colour_dict(self, edges):
+
+        color_cycle = itertools.cycle(['black', 'darkblue', 'darkgreen', 
+                                       'darkcyan', 'darkmagenta', 'dimgray',
+                                       'brown', 'deeppink', 'olive',
+                                       'crimson'])
+        
+        elements = set()
+        for edge in edges:
+            element, _ = edge.split('_')
+            elements.update([element])
+        
+        d = dict()
+        for element in elements:
+            d[element] = next(color_cycle)
+
+        return d
+
     def _text_parser(self, text_edge):
         # format the edge labels for LaTeX
         element, subshell = text_edge.split('_')
@@ -341,6 +414,34 @@ class EdgesRange(SpanSelectorInSignal1D):
             formatted = element+' '+'$\mathregular{'+subshell[0]+'}$'
 
         return formatted
+
+    def _get_bbox_from_textbox_patch(self, fig, textbox):
+        # get the bbox object of the textbox
+        ax = fig.axes[0]
+        r = fig.canvas.get_renderer()    
+        fig.draw(r)
+        extent = textbox.get_bbox_patch().get_window_extent()
+        bbox_patch = extent.transformed(ax.transData.inverted()) 
+    
+        return bbox_patch
+    
+    def _estimate_textbox_dimension(self, dummy_text='My_M8'):
+        # get the dimension of a typical textbox in the current figure
+        tx = markers.text.Text(x=(self.axis.low_value+self.axis.high_value)/2, 
+                               y=(self.smin+self.smax)/2,
+                               text=self._text_parser(dummy_text),
+                               **self.edge_label_style)        
+        self.signal.add_marker(tx)
+
+        fig = tx.marker.get_figure() 
+        dummybb = self._get_bbox_from_textbox_patch(fig, tx.marker)
+        tx.close()
+    
+        text_width = dummybb.width
+        text_height = dummybb.height
+    
+        return text_width, text_height
+
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()

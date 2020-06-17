@@ -395,7 +395,7 @@ def get_info_from_edges(edges):
 
     Parameters
     ----------
-    edges : iterable
+    edges : str or iterable
         the sequence of edges, each entry in the format of 'element_subshell'.
 
     Returns
@@ -404,7 +404,8 @@ def get_info_from_edges(edges):
         a list of dictionaries with information corresponding to the provided 
         edges.
     """
-
+    
+    edges = np.atleast_1d(edges)
     info = []
     for edge in edges:
         element, subshell = edge.split('_')
