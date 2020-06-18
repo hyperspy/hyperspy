@@ -37,6 +37,7 @@ from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
+from hyperspy.misc.elements import elements as elements_db
 from hyperspy.drawing.marker import markers
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
@@ -247,6 +248,8 @@ class EdgesRange(SpanSelectorInSignal1D):
     right_value = t.Float(t.Undefined, label='New right value')
     units = t.Unicode()
     edges_list = t.Tuple()
+    comp_edges_list = t.Tuple()
+    active_compl_edges = t.Tuple()
     edge_label_style = {'ha' : 'center', 'va' : 'center', 
                         'bbox' : dict(facecolor='white', alpha=0.2)}
   
@@ -260,7 +263,7 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.last_rng = 0
         self.last_only_major = True
         self.last_order = 'closest'
-        self.active_edges = []
+        self.active_edges = ()
         self._edge_vline = []
         self._edge_text = []
         self._ele_col_dict = dict()
@@ -284,7 +287,8 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         return sig_index
 
-    def show_edges_table(self, x0, x1, only_major, update, order, active_edges):
+    def show_edges_table(self, x0, x1, only_major, update, order,
+                         active_edges, show_complmt):
 
         # check if the spectrum is changed
         current_sig_index = self._get_current_signal_index()
@@ -312,11 +316,32 @@ class EdgesRange(SpanSelectorInSignal1D):
                                                         self.last_rng, 
                                                         self.last_only_major,
                                                         self.last_order))
+        
+        if show_complmt:
+            self.comp_edges_list = self._get_complementary_edges(active_edges, 
+                                                                   only_major)
+            self.active_compl_edges = self.comp_edges_list
+        else:
+            self.comp_edges_list = tuple()
+            self.active_compl_edges = tuple()
 
-        if self.active_edges != active_edges:
-            self._clear_all_markers()
-            self._put_edge_labels(active_edges)
+        if self.active_edges != active_edges or update:
             self.active_edges = active_edges
+            self._plot_labels(active=active_edges, 
+                              complementary=self.active_compl_edges)
+
+
+    def _plot_labels(self, active=None, complementary=None):
+        if active is None:
+            active = []
+        if complementary is None:
+            complementary = []
+        
+        self._clear_all_markers()
+        self._ele_col_dict = None
+        
+        edges_to_show = list(active) + list(complementary)
+        self._put_edge_labels(edges_to_show)       
 
     def _put_edge_labels(self, active_edges):
         # add the markers for labelling edges
@@ -357,7 +382,9 @@ class EdgesRange(SpanSelectorInSignal1D):
         if ub is None:
             ub = self.smax - offset
 
-        self._ele_col_dict = self._element_colour_dict(active_edges)
+        if self._ele_col_dict is None:
+            self._ele_col_dict = self._element_colour_dict(active_edges)
+
         mid = (self.smax + self.smin) / 2
         itop = 1
         ibtm = 1
@@ -385,23 +412,54 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         return xytext
 
-    def _element_colour_dict(self, edges):
+    def _get_complementary_edges(self, active_edges, only_major):
+        # get other edges of the same element present in active edges within
+        # the energy range of the axis
+        elements = self._unique_element_of_edges(active_edges)
+        emin, emax = self.axis.low_value, self.axis.high_value
+        complmt_edges = []
+        
+        for element in elements:
+            ss_info = elements_db[element]['Atomic_properties']['Binding_energies']
+        
+            for subshell in ss_info:
+                sse = ss_info[subshell]['onset_energy (eV)']
+                ssr = ss_info[subshell]['relevance']
+                
+                if only_major:
+                    if ssr != 'Major':
+                        continue
+                
+                edge = element + '_' + subshell
+                if (emin <= sse <= emax) and (subshell[-1] != 'a') and \
+                    (edge not in active_edges):
+                    complmt_edges.append(edge)
+        
+        return complmt_edges
 
+    def _element_colour_dict(self, edges):
+        # assign a colour to each element of the edges
         color_cycle = itertools.cycle(['black', 'darkblue', 'darkgreen', 
                                        'darkcyan', 'darkmagenta', 'dimgray',
                                        'brown', 'deeppink', 'olive',
                                        'crimson'])
         
-        elements = set()
-        for edge in edges:
-            element, _ = edge.split('_')
-            elements.update([element])
+        elements = self._unique_element_of_edges(edges)
         
         d = dict()
         for element in elements:
             d[element] = next(color_cycle)
 
         return d
+
+    def _unique_element_of_edges(self, edges):
+        # get the unique elements present in a sequence of edges
+        elements = set()
+        for edge in edges:
+            element, _ = edge.split('_')
+            elements.update([element])
+
+        return elements
 
     def _text_parser(self, text_edge):
         # format the edge labels for LaTeX
@@ -425,7 +483,7 @@ class EdgesRange(SpanSelectorInSignal1D):
     
         return bbox_patch
     
-    def _estimate_textbox_dimension(self, dummy_text='My_M8'):
+    def _estimate_textbox_dimension(self, dummy_text='My_g8'):
         # get the dimension of a typical textbox in the current figure
         tx = markers.text.Text(x=(self.axis.low_value+self.axis.high_value)/2, 
                                y=(self.smin+self.smax)/2,
@@ -441,7 +499,6 @@ class EdgesRange(SpanSelectorInSignal1D):
         text_height = dummybb.height
     
         return text_width, text_height
-
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
