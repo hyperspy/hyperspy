@@ -259,10 +259,7 @@ class EdgesRange(SpanSelectorInSignal1D):
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
-        self.last_mid_energy = 0
-        self.last_rng = 0
-        self.last_only_major = True
-        self.last_order = 'closest'
+        self.table_state = [0, 0, True, 'closest']
         self.active_edges = ()
         self._edge_vline = []
         self._edge_text = []
@@ -270,7 +267,7 @@ class EdgesRange(SpanSelectorInSignal1D):
         self._set_active_figure_properties()
         
     def _set_active_figure_properties(self):
-        
+        # set the properties which depend on the figure
         self.signal_figure = self.signal._plot.signal_plot.figure
         self.figsize = self.signal_figure.get_size_inches()
         self.smin, self.smax = self.signal_figure.get_axes()[0].get_ylim()
@@ -279,6 +276,7 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.text_width, self.text_height = self._estimate_textbox_dimension()
 
     def _get_current_signal_index(self):
+        # if it is a hyperspectrum, get the correct active figure
         if self.signal._plot.pointer is not None:
             sig_index = self.signal._plot.pointer.indices[0]
         else:
@@ -287,40 +285,42 @@ class EdgesRange(SpanSelectorInSignal1D):
         return sig_index
 
     def show_edges_table(self, x0, x1, only_major, update, order,
-                         active_edges, show_complmt):
+                         active_edges, complementary):
+        ''' Print the edge table, show selected edges on the signal
 
-        # check if the spectrum is changed
-        current_sig_index = self._get_current_signal_index()
-        current_figsize = self.signal_figure.get_size_inches()
-        if (current_sig_index != self.sig_index) or \
-            not np.isclose(current_figsize, self.figsize).all():
-            self._set_active_figure_properties()
-
+        Parameters
+        ----------
+        x0, x1 : float
+            the left and right value of selected range
+        only_major : bool
+            whether to show only major edges.
+        update : bool
+            whether to update the edge table.
+        order : str
+            the way to sort the edge table, 'closest', 'ascending' or 
+            'descending'
+        active_edges : iterable
+            the selected edges to plot
+        complementary : bool
+            whether to show a list of complementary edges from the edge table
+        '''
+        
+        self._check_signal_figure_changed()
+        
         if update:
             mid_energy = (x0 + x1) / 2
             rng = self.span_selector.rect.get_width()
+           
+            self.table_state = [mid_energy, rng, only_major, order]
             
-            display(self.signal.print_edges_near_energy(mid_energy, 
-                                                        rng, only_major, 
-                                                        order))
-            self.last_mid_energy = mid_energy
-            self.last_rng = rng
-            self.last_only_major = only_major
-            self.last_order = order
-            
-            self.edges_list = get_edges_near_energy(mid_energy, rng, 
-                                                    only_major, order)
-            
-            
+            display(self.signal.print_edges_near_energy(*self.table_state))
+            self.edges_list = get_edges_near_energy(*self.table_state)
         else:
-            display(self.signal.print_edges_near_energy(self.last_mid_energy, 
-                                                        self.last_rng, 
-                                                        self.last_only_major,
-                                                        self.last_order))
+            display(self.signal.print_edges_near_energy(*self.table_state))
         
-        if show_complmt:
+        if complementary:
             self.comp_edges_list = self._get_complementary_edges(active_edges, 
-                                                                   only_major)
+                                                                 only_major)
             self.active_compl_edges = self.comp_edges_list
         else:
             self.comp_edges_list = tuple()
@@ -331,8 +331,17 @@ class EdgesRange(SpanSelectorInSignal1D):
             self._plot_labels(active=active_edges, 
                               complementary=self.active_compl_edges)
 
+    def _check_signal_figure_changed(self):
+        # check if the spectrum is changed
+        # reset its properties if changed
+        current_sig_index = self._get_current_signal_index()
+        current_figsize = self.signal_figure.get_size_inches()
+        if (current_sig_index != self.sig_index) or \
+            not np.isclose(current_figsize, self.figsize).all():
+            self._set_active_figure_properties()
 
     def _plot_labels(self, active=None, complementary=None):
+        # plot selected and/or complementary edges
         if active is None:
             active = []
         if complementary is None:
@@ -342,9 +351,9 @@ class EdgesRange(SpanSelectorInSignal1D):
         self._ele_col_dict = None
         
         edges_to_show = list(active) + list(complementary)
-        self._put_edge_labels(edges_to_show)       
+        self._put_edge_marker(edges_to_show)       
 
-    def _put_edge_labels(self, active_edges):
+    def _put_edge_marker(self, active_edges):
         # add the markers for labelling edges
         xytext = self._get_textbox_pos(active_edges)
         for xyt in xytext:
