@@ -270,11 +270,10 @@ class EdgesRange(SpanSelectorInSignal1D):
         self._set_active_figure_properties()
         
     def _set_active_figure_properties(self):
-
-        figs = list(map(plt.figure, plt.get_fignums()))
-        for fig in figs:
-            if len(fig.get_axes()) == 1:
-                self.smin, self.smax = fig.get_axes()[0].get_ylim()
+        
+        self.signal_figure = self.signal._plot.signal_plot.figure
+        self.figsize = self.signal_figure.get_size_inches()
+        self.smin, self.smax = self.signal_figure.get_axes()[0].get_ylim()
         
         self.sig_index = self._get_current_signal_index()        
         self.text_width, self.text_height = self._estimate_textbox_dimension()
@@ -292,7 +291,9 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         # check if the spectrum is changed
         current_sig_index = self._get_current_signal_index()
-        if current_sig_index != self.sig_index:
+        current_figsize = self.signal_figure.get_size_inches()
+        if (current_sig_index != self.sig_index) or \
+            not np.isclose(current_figsize, self.figsize).all():
             self._set_active_figure_properties()
 
         if update:
