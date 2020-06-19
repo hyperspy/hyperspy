@@ -85,6 +85,14 @@ class TestSubPixelAlign:
         s = self.signal
         s.estimate_shift2D(sub_pixel_factor=200, plot=plot)
 
+    def test_align_crop_error(self):
+        s = self.signal
+        shifts = self.shifts
+        s_size = np.array(s.axes_manager.signal_shape)
+        shifts[0] = s_size + 1
+        with pytest.raises(ValueError, match="Cannot crop signal"):
+            s.align2D(shifts=shifts, crop=True)
+
 
 @lazifyTestClass
 class TestAlignTools:

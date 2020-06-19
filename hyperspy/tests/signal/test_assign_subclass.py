@@ -18,7 +18,9 @@
 
 from collections import namedtuple
 
+import pytest
 import numpy as np
+import logging
 
 import hyperspy.api as hs
 from hyperspy.io import assign_signal_subclass
@@ -46,24 +48,30 @@ subclass_cases = (testcase('float', 1000, '', 'BaseSignal'),
                   )
 
 
-def test_assignment_class():
+def test_assignment_class(caplog):
     for case in subclass_cases:
-        assert (
-            assign_signal_subclass(
-                dtype=np.dtype(case.dtype),
-                signal_dimension=case.sig_dim,
-                signal_type=case.sig_type,
-                lazy=False) is
-            getattr(hs.signals, case.cls))
-        lazyclass = 'Lazy' + case.cls if case.cls != 'BaseSignal' \
-            else 'LazySignal'
-        assert (
-            assign_signal_subclass(
-                dtype=np.dtype(case.dtype),
-                signal_dimension=case.sig_dim,
-                signal_type=case.sig_type,
-                lazy=True) is
-            getattr(_lazy_signals, lazyclass))
+        with caplog.at_level(logging.WARNING):
+            new_subclass = assign_signal_subclass(
+                 dtype=np.dtype(case.dtype),
+                 signal_dimension=case.sig_dim,
+                 signal_type=case.sig_type,
+                 lazy=False,
+            )
+
+        assert new_subclass is getattr(hs.signals, case.cls)
+
+        if case.sig_type == "weird":
+            assert "not understood. Setting signal type to" in caplog.text
+
+        lazyclass = 'Lazy' + case.cls if case.cls != 'BaseSignal' else 'LazySignal'
+        new_subclass = assign_signal_subclass(
+            dtype=np.dtype(case.dtype),
+            signal_dimension=case.sig_dim,
+            signal_type=case.sig_type,
+            lazy=True,
+        )
+
+        assert new_subclass is getattr(_lazy_signals, lazyclass)
 
 
 class TestConvertBaseSignal:

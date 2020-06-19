@@ -20,8 +20,10 @@ import os
 import hashlib
 import numpy as np
 import pytest
-from unittest.mock import patch
+import tempfile
+import hyperspy.api as hs
 
+from unittest.mock import patch
 from hyperspy.signals import Signal1D
 
 
@@ -85,3 +87,58 @@ class TestIOOverwriting:
 
     def teardown_method(self, method):
         self._clean_file()
+
+
+def test_glob_wildcards():
+    s = Signal1D(np.arange(10))
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        fnames = [os.path.join(dirpath, f"temp[1x{x}].hspy")
+                  for x in range(2)]
+
+        for f in fnames:
+            s.save(f)
+
+        with pytest.raises(
+            ValueError,
+            match="No filename matches this pattern"
+        ):
+            _ = hs.load(fnames[0])
+
+        t = hs.load([fnames[0]])
+        assert len(t) == 1
+
+        t = hs.load(fnames)
+        assert len(t) == 2
+
+        t = hs.load(os.path.join(dirpath, "temp*.hspy"))
+        assert len(t) == 2
+
+        t = hs.load(
+            os.path.join(dirpath, "temp[*].hspy"),
+            escape_square_brackets=True,
+        )
+        assert len(t) == 2
+
+        with pytest.raises(
+            ValueError,
+            match="No filename matches this pattern"
+        ):
+            _ = hs.load(os.path.join(dirpath, "temp[*].hspy"))
+
+
+def test_file_not_found_error():
+    with tempfile.TemporaryDirectory() as dirpath:
+        temp_fname = os.path.join(dirpath, "temp.hspy")
+
+        if os.path.exists(temp_fname):
+            os.remove(temp_fname)
+
+        with pytest.raises(
+            ValueError,
+            match="No filename matches this pattern"
+        ):
+            _ = hs.load(temp_fname)
+
+        with pytest.raises(FileNotFoundError):
+            _ = hs.load([temp_fname])

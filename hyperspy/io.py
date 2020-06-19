@@ -45,6 +45,39 @@ f_error_fmt = (
     "\t\tPath: %s")
 
 
+def _escape_square_brackets(text):
+    """Escapes pairs of square brackets in strings for glob.glob().
+
+    Parameters
+    ----------
+    text : str
+        The text to escape
+
+    Returns
+    -------
+    str
+        The escaped string
+
+    Example
+    -------
+    >>> # Say there are two files like this:
+    >>> # /home/data/afile[1x1].txt
+    >>> # /home/data/afile[1x2].txt
+    >>>
+    >>> path = "/home/data/afile[*].txt"
+    >>> glob.glob(path)
+    []
+    >>> glob.glob(_escape_square_brackets(path))
+    ['/home/data/afile[1x2].txt', '/home/data/afile[1x1].txt']
+
+    """
+    import re
+
+    rep = dict((re.escape(k), v) for k, v in {"[": "[[]", "]": "[]]"}.items())
+    pattern = re.compile("|".join(rep.keys()))
+    return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
+
+
 def load(filenames=None,
          signal_type=None,
          stack=False,
@@ -52,6 +85,7 @@ def load(filenames=None,
          new_axis_name="stack_element",
          lazy=False,
          convert_units=False,
+         escape_square_brackets=False,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure.
@@ -116,6 +150,11 @@ def load(filenames=None,
     convert_units : {bool}
         If True, convert the units using the `convert_to_units` method of
         the `axes_manager`. If False, does nothing. The default is False.
+    escape_square_brackets : bool, default False
+        If True, and ``filenames`` is a str containing square brackets,
+        then square brackets are escaped before wildcard matching with
+        ``glob.glob()``. If False, square brackets are used to represent
+        character classes (e.g. ``[a-z]`` matches lowercase letters.
     print_info: bool
         For SEMPER unf- and EMD (Berkeley)-files, if True (default is False)
         additional information read during loading is printed for a quick
@@ -169,7 +208,6 @@ def load(filenames=None,
         data. If False, fill empty data with zeros. Default is False and this
         default value will change to True in version 2.0.
 
-
     Returns
     -------
     Signal instance or list of signal instances
@@ -187,6 +225,10 @@ def load(filenames=None,
     Loading multiple files matching the pattern:
 
     >>> d = hs.load('file*.dm3')
+
+    Loading multiple files containing square brackets:
+
+    >>> d = hs.load('file[*].dm3', escape_square_brackets=True)
 
     Loading (potentially larger than the available memory) files lazily and
     stacking:
@@ -214,10 +256,15 @@ def load(filenames=None,
             raise ValueError("No file provided to reader")
 
     if isinstance(filenames, str):
+        if escape_square_brackets:
+            filenames = _escape_square_brackets(filenames)
+
         filenames = natsorted([f for f in glob.glob(filenames)
                                if os.path.isfile(f)])
+
         if not filenames:
-            raise ValueError('No file name matches this pattern')
+            raise ValueError('No filename matches this pattern')
+
     elif not isinstance(filenames, (list, tuple)):
         raise ValueError(
             'The filenames parameter must be a list, tuple, string or None')
@@ -301,6 +348,9 @@ def load_single_file(filename, **kwds):
         File name (including the extension)
 
     """
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"File: {filename} not found!")
+
     extension = os.path.splitext(filename)[1][1:]
 
     i = 0
@@ -409,14 +459,23 @@ def assign_signal_subclass(dtype,
     # Sanity check
     if len(signal_dict) > 1:
         _logger.warning(
-            "There is more than one kind of signal that match the current specifications, "
-            "which is not expected."
-            "Please report this issue to the HyperSpy developers.")
+            "There is more than one kind of signal that matches "
+            "the current specifications. This is unexpected behaviour. "
+            "Please report this issue to the HyperSpy developers."
+        )
+
     # Regardless of the number of signals in the dict we assign one.
     # The following should only raise an error if the base classes
     # are not correctly registered.
     for key, value in signal_dict.items():
         signal_class = getattr(importlib.import_module(value["module"]), key)
+
+        if value["signal_type"] == "":
+            _logger.warning(
+                f"`signal_type='{signal_type}'` not understood. "
+                f"Setting signal type to `{key}`"
+            )
+
         return signal_class
 
 
