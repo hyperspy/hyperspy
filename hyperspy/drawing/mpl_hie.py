@@ -23,45 +23,21 @@ from hyperspy.defaults_parser import preferences
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
-<<<<<<< HEAD
-    def plot_signal(self, **kwargs):
+    def plot_signal(self, signal_widget=None, **kwargs):
         """
         Parameters
         ----------
+        signal_widget : widget or None
+            ipywidgets output widget to place the figure in (optional)
         **kwargs : dict
             The kwargs are passed to plot method of the image figure.
-=======
-    def plot_signal(self,
-                    colorbar=True,
-                    scalebar=True,
-                    scalebar_color="white",
-                    axes_ticks=None,
-                    axes_off=False,
-                    saturated_pixels=None,
-                    vmin=None,
-                    vmax=None,
-                    no_nans=False,
-                    centre_colormap="auto",
-                    norm="auto",
-                    min_aspect=0.1,
-                    gamma=1.0,
-                    linthresh=0.01,
-                    linscale=0.1,
-                    signal_widget=None,
-                    **kwargs
-                    ):
-        """Plot image.
-
-        Parameters
-        ----------
-        %s
-        %s
-        widget: ipywidgets output widget to place the figure in
->>>>>>> 270d5a349 (changed to be able to take signal_widget and navigation_widget as arguments to s.plot)
 
         """
+        if self.signal_plot is not None:
+            self.signal_plot.plot(widget=signal_widget, **kwargs)
+            return
         super().plot_signal()
-        imf = image.ImagePlot(widget = signal_widget)
+        imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
@@ -78,7 +54,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
             kwargs["cmap"] = preferences.Plot.cmap_signal
-        imf.plot(**kwargs)
+        imf.plot(widget=signal_widget, **kwargs)
         self.signal_plot = imf
 
         if imf.figure is not None:

@@ -28,12 +28,8 @@ from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
 import logging
-<<<<<<< HEAD
 from functools import partial
-import ipywidgets
 =======
->>>>>>> 270d5a349 (changed to be able to take signal_widget and navigation_widget as arguments to s.plot)
-
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
 

@@ -63,13 +63,8 @@ class ImagePlot(BlittedFigure):
 
     """ % PLOT2D_DOCSTRING
 
-<<<<<<< HEAD
     def __init__(self, title=""):
         super(ImagePlot, self).__init__()
-=======
-    def __init__(self, widget=None):
-        super(ImagePlot, self).__init__(widget=widget)
->>>>>>> 270d5a349 (changed to be able to take signal_widget and navigation_widget as arguments to s.plot)
         self.data_function = None
         self.data_function_kwargs = {}
 

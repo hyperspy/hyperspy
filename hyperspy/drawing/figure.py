@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 class BlittedFigure(object):
 
-    def __init__(self, widget=None):
+    def __init__(self):
         self._draw_event_cid = None
         self._background = None
         self.events = Events()
