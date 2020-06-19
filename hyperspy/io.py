@@ -217,7 +217,7 @@ def load(filenames=None,
         filenames = natsorted([f for f in glob.glob(filenames)
                                if os.path.isfile(f)])
         if not filenames:
-            raise ValueError('No file name matches this pattern')
+            raise ValueError('No filename matches this pattern')
     elif not isinstance(filenames, (list, tuple)):
         raise ValueError(
             'The filenames parameter must be a list, tuple, string or None')
@@ -301,6 +301,9 @@ def load_single_file(filename, **kwds):
         File name (including the extension)
 
     """
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"File: {filename} not found!")
+
     extension = os.path.splitext(filename)[1][1:]
 
     i = 0

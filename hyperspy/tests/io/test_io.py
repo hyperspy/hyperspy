@@ -20,6 +20,7 @@ import os
 import hashlib
 import numpy as np
 import pytest
+
 from unittest.mock import patch
 
 from hyperspy.signals import Signal1D
@@ -85,3 +86,23 @@ class TestIOOverwriting:
 
     def teardown_method(self, method):
         self._clean_file()
+
+
+def test_file_not_found_error():
+    import tempfile
+    import hyperspy.api as hs
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        temp_fname = os.path.join(dirpath, "temp.hspy")
+
+        if os.path.exists(temp_fname):
+            os.remove(temp_fname)
+
+        with pytest.raises(
+            ValueError,
+            match="No filename matches this pattern"
+        ):
+            _ = hs.load(temp_fname)
+
+        with pytest.raises(FileNotFoundError):
+            _ = hs.load([temp_fname])
