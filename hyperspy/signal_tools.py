@@ -309,10 +309,13 @@ class EdgesRange(SpanSelectorInSignal1D):
         
         if update:
             mid_energy = (x0 + x1) / 2
-            rng = self.span_selector.rect.get_width()
-           
-            self.table_state = [mid_energy, rng, only_major, order]
-            
+            if self.span_selector is not None:
+                rng = self.span_selector.rect.get_width()
+                self.table_state = [mid_energy, rng, only_major, order]
+            else:
+                rng = 0
+                self.table_state = [0, 0, True, 'closest']
+
             display(self.signal.print_edges_near_energy(*self.table_state))
             self.edges_list = get_edges_near_energy(*self.table_state)
         else:
