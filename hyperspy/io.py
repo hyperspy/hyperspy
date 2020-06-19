@@ -409,14 +409,23 @@ def assign_signal_subclass(dtype,
     # Sanity check
     if len(signal_dict) > 1:
         _logger.warning(
-            "There is more than one kind of signal that match the current specifications, "
-            "which is not expected."
-            "Please report this issue to the HyperSpy developers.")
+            "There is more than one kind of signal that matches "
+            "the current specifications. This is unexpected behaviour. "
+            "Please report this issue to the HyperSpy developers."
+        )
+
     # Regardless of the number of signals in the dict we assign one.
     # The following should only raise an error if the base classes
     # are not correctly registered.
     for key, value in signal_dict.items():
         signal_class = getattr(importlib.import_module(value["module"]), key)
+
+        if value["signal_type"] == "":
+            _logger.warning(
+                f"`signal_type='{signal_type}'` not understood. "
+                f"Setting signal type to `{key}`"
+            )
+
         return signal_class
 
 
