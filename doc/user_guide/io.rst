@@ -103,10 +103,25 @@ functions, e.g.:
 
     >>> s = hs.load(["file1.hspy", "file2.hspy"])
 
-or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
+or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_:
 
-.. versionadded:: 1.2.0
-   stack multi-signal files
+.. code-block:: python
+
+    >>> s = hs.load("file*.hspy")
+
+.. note::
+
+    Wildcards are implemented using ``glob.glob()``, which treats ``*``, ``[``
+    and ``]`` as special characters for pattern matching. If your filename or
+    path contains square brackets, you may want to escape these characters first.
+
+    .. code-block:: python
+
+        >>> # Say there are two files like this:
+        >>> # /home/data/afile[1x1].hspy
+        >>> # /home/data/afile[1x2].hspy
+
+        >>> s = hs.load("/home/data/afile[*].hspy", escape_square_brackets=True)
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same

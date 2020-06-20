@@ -9,11 +9,6 @@ Bounds and weights are supported. The syntax for creating both kinds of model
 is essentially the same, as in this documentation any method referred to in
 the :py:class:`~.model.BaseModel` class is available for both kinds.
 
-.. _2D_model-label:
-
-   2D models. Note that this first implementation lacks many of the
-   features of 1D models e.g. plotting. Those will be added in future releases.
-
 Models can be created and fit to experimental data in both one and two
 dimensions i.e. spectra and images respectively. Most of the syntax is
 identical in either case. A one-dimensional model is created when a model
@@ -62,7 +57,7 @@ Similarly A :py:class:`~.models.model2d.Model2D` can be created for data in the
 The syntax for creating both one-dimensional and two-dimensional models is thus
 identical for the user in practice. When a model is created  you may be
 prompted to provide important information not already included in the
-datafile, e.g.if s is EELS data, you may be asked for the accelerating
+datafile, `e.g.` if s is EELS data, you may be asked for the accelerating
 voltage, convergence and collection semi-angles etc.
 
 
@@ -74,7 +69,7 @@ Creating components for the model
 .. _model_components-label:
 
 In HyperSpy a model consists of a linear combination of components
-and various components are available in one (:py:mod:`~.components1d`)and
+and various components are available in one (:py:mod:`~.components1d`) and
 two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
@@ -94,11 +89,10 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~._components.offset.Offset`
 * :py:class:`~._components.polynomial.Polynomial`
 * :py:class:`~._components.power_law.PowerLaw`
-* :py:class:`~._components.rc.RC`
+* :py:class:`~._components.pes_see.SEE`
 * :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~._components.skew_normal.SkewNormal`
 * :py:class:`~._components.voigt.Voigt`
-* :py:class:`~._components.split_pvoigt.SplitVoigt`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
 The following components developed with specific signal types in mind are currently available for one-dimensional models:
@@ -112,19 +106,32 @@ The following components developed with specific signal types in mind are curren
 
 The following components are currently available for two-dimensional models:
 
-* :py:class:`~._components.gaussian2d.Gaussian2D`
 * :py:class:`~._components.expression.Expression`
+* :py:class:`~._components.gaussian2d.Gaussian2D`
 
 However, this doesn't mean that you have to limit yourself to this meagre list
 of functions. A new function can easily be written as specified as below.
 
-Specifying custom components
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Define components from a pattern
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To turn a Signal1D into a component, pass a Signal1D that does not have any navigation 
+axes to :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`.
+ScaleableFixedPatterns can be scaled in the x and y directions using the
+``xscale`` and ``yscale`` parameters. The position of the pattern can also be adjusted
+the ``xshift``. By default the ``free`` attribute of ``xscale`` and ``xshift`` is set to ``False``.
 
 .. _expression_component-label:
 
+Define components from a mathematical expression
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component
                   can create 2D components.
+
+In addition to the above specific components, Hyperspy can take any Signal1D as 
+well as most mathematical expressions as components, as detailed below.
+
 
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the

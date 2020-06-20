@@ -29,7 +29,7 @@ class Offset(Component):
 
     .. math::
     
-        f(x) = k + x
+        f(x) = k
 
     ============ =============
     Variable      Parameter 
