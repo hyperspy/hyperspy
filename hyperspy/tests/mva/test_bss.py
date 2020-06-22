@@ -113,7 +113,6 @@ def test_bss_pipeline():
 def test_orthomax(whiten_method):
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 500))
-    S -= 2 * S.min()  # Required to give us a positive dataset
     A = rng.random((3, 3))
     s = Signal1D(A @ S)
     s.decomposition()

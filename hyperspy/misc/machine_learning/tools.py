@@ -59,11 +59,3 @@ def amari(W, A):
     P_sr_1 = np.sum(P_sq_sum_1 / P_sq_max_1 - 1)
 
     return (P_sr_0 + P_sr_1) / (2 * m)
-
-
-def _ntu(C):
-    m, n = C.shape
-    CN = C.copy() * 0
-    for t in range(n):
-        CN[:, t] = C[:, t] / np.max(np.abs(C[:, t]))
-    return CN
