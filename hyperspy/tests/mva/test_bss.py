@@ -24,6 +24,7 @@ from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets import artificial_data
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+from hyperspy.misc.machine_learning.tools import amari
 from hyperspy.signals import BaseSignal
 
 
@@ -53,6 +54,19 @@ def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
             ):
                 matches += 1
     return matches == len(c1_list)
+
+
+def test_amari_distance(n=16, tol=1e-6):
+    """Amari distance between matrix and its inverse should be 0."""
+    rng = np.random.RandomState(123)
+
+    A = rng.randn(n, n)
+    W = np.linalg.inv(A)
+    X = np.linalg.pinv(A)
+
+    np.testing.assert_allclose(amari(W, A), 0.0, rtol=tol)
+    np.testing.assert_allclose(amari(A, A), 2.912362, rtol=tol)
+    np.testing.assert_allclose(amari(X, A), 0.0, rtol=tol)
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
@@ -97,16 +111,15 @@ def test_bss_pipeline():
 
 @pytest.mark.parametrize("whiten_method", ["pca", "zca"])
 def test_orthomax(whiten_method):
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    rng = np.random.RandomState(123)
+    S = rng.laplace(size=(3, 500))
+    A = rng.random((3, 3))
+    s = Signal1D(A @ S)
     s.decomposition()
-    s.blind_source_separation(2, algorithm="orthomax", whiten_method=whiten_method)
+    s.blind_source_separation(3, algorithm="orthomax", whiten_method=whiten_method)
 
-    s.learning_results.bss_factors[:, 0] *= -1
-    s._auto_reverse_bss_component("loadings")
-    np.testing.assert_array_less(s.learning_results.bss_factors[:, 0], 0)
-    np.testing.assert_array_less(0, s.learning_results.bss_factors[:, 1])
-    s._auto_reverse_bss_component("factors")
-    np.testing.assert_array_less(0, s.learning_results.bss_factors)
+    W = s.learning_results.unmixing_matrix
+    assert amari(W, A) < 0.5
 
     # Verify that we can change gamma for orthomax method
     s = artificial_data.get_core_loss_eels_line_scan_signal()
@@ -226,7 +239,11 @@ def test_fastica_whiten_method(whiten_method):
 @lazifyTestClass
 class TestReverseBSS:
     def setup_method(self, method):
-        s = artificial_data.get_core_loss_eels_line_scan_signal()
+        rng = np.random.RandomState(123)
+        S = rng.laplace(size=(3, 500))
+        S -= 2 * S.min()  # Required to give us a positive dataset
+        A = rng.random((3, 3))
+        s = Signal1D(A @ S)
         s.decomposition()
         s.blind_source_separation(2)
         self.s = s
@@ -276,7 +293,6 @@ class TestBSS1D:
         assert are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings()
         )
-
 
     @pytest.mark.filterwarnings("ignore:FastICA did not converge")
     @pytest.mark.parametrize("on_loadings", [True, False])
