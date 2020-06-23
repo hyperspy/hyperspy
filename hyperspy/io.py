@@ -401,18 +401,21 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
     return objects
 
 
-def assign_signal_subclass(dtype,
-                           signal_dimension,
-                           signal_type="",
-                           lazy=False):
-    """Given record_by and signal_type return the matching Signal subclass.
+def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
+    """Given record_by and signal_type, return the matching Signal subclass.
+
+    See `hs.print_known_signal_types()` for a list of known signal_types.
 
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
-    signal_dimension: int
-    signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
-    lazy: bool
+        Signal dtype
+    signal_dimension : int
+        Signal dimension
+    signal_type : str, default ""
+        Signal type. Optional. Will log a warning if it is unknown to HyperSpy.
+    lazy : bool, default False
+        If True, returns the matching LazySignal subclass.
 
     Returns
     -------
