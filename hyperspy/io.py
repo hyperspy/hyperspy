@@ -402,7 +402,7 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
 
 
 def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
-    """Given record_by and signal_type, return the matching Signal subclass.
+    """Given dtype, signal_dimension and signal_type, return the matching Signal subclass.
 
     See `hs.print_known_signal_types()` for a list of known signal_types.
 

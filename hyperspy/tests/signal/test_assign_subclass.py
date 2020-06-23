@@ -25,6 +25,7 @@ import logging
 import hyperspy.api as hs
 from hyperspy.io import assign_signal_subclass
 from hyperspy import _lazy_signals
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 testcase = namedtuple('testcase', ['dtype', 'sig_dim', 'sig_type', 'cls'])
@@ -137,6 +138,13 @@ class TestConvertSignal1D:
         assert isinstance(self.s, hs.signals.EDSSEMSpectrum)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.Signal1D)
+
+    def test_deprecated(self):
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match=r"is deprecated. Use ",
+        ):
+            self.s.set_signal_type(None)
 
 
 class TestConvertComplexSignal:

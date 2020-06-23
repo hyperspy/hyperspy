@@ -4705,7 +4705,7 @@ class BaseSignal(FancySlicing,
         if self._lazy:
             self._make_lazy()
 
-    def set_signal_type(self, signal_type=None):
+    def set_signal_type(self, signal_type=""):
         """Set the signal type and convert the current signal accordingly.
 
         The ``signal_type`` attribute specifies the type of data that the signal
@@ -4782,6 +4782,13 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (|4)>
 
         """
+        if signal_type is None:
+            warnings.warn(
+                "`s.set_signal_type(signal_type=None)` is deprecated. "
+                "Use `s.set_signal_type(signal_type='')` instead.",
+                VisibleDeprecationWarning
+            )
+
         self.metadata.Signal.signal_type = signal_type
         # _assign_subclass takes care of matching aliases with their
         # corresponding signal class
