@@ -29,6 +29,7 @@ from hyperspy.signal import BaseSetMetadataItems
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.signal_tools import EdgesRange
 from hyperspy.misc.elements import elements as elements_db
+from hyperspy.misc.label_position import SpectrumLabelPosition
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
@@ -78,6 +79,7 @@ class EELSSpectrum_mixin:
                 hasattr(self.metadata.Sample, 'elements'):
             self.add_elements(self.metadata.Sample.elements)
         self.metadata.Signal.binned = True
+        self._edge_markers = {}
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
@@ -158,6 +160,8 @@ class EELSSpectrum_mixin:
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
+                            
+        return e_shells
 
     def edges_at_energy(self, energy='interactive', width=10, only_major=False,
                         order='closest', display=True, toolkit=None):
@@ -1478,6 +1482,166 @@ class EELSSpectrum_mixin:
                           GOS=GOS,
                           dictionary=dictionary)
         return model
+
+    def plot(self, include_edges=False, only_edges=('Major', 'Minor'), 
+             **kwargs):
+        """Plot the EELS spectrum. Markers indicating the position of the 
+        EELS edges can be added.
+        
+        Parameters
+        ----------
+        include_edges : {False, True, list of string or string}
+            If True, draws on s.metadata.Sample.elements for edges.
+            Alternatively, provide a string of a single edge, or an iterable 
+            containing a list of valid elements, EELS families or edges. For
+            example, an element should be 'Zr', an element edge family should 
+            be 'Zr_L' or an EELS edge 'Zr_L3'.
+        only_edges : tuple of string
+            Either 'Major' or 'Minor'. Defaults to both.
+        kwargs
+            The extra keyword arguments for plot()
+        """
+        
+        super().plot(**kwargs)
+
+        if include_edges is not False:
+            edges = self._get_edges_to_plot(include_edges, only_edges)
+            self.put_label_on_signal(edges)
+
+    def put_label_on_signal(self, edges, vertical_line_marker=None, 
+                            text_marker=None):
+        """Put the EELS edge label (vertical line segment and text box) on 
+        the signal 
+
+        Parameters
+        ----------
+        edges : iterable
+            A sequence of strings contains edges in the format of 
+            element_subshell for EELS. Could be a dictionary specifying the 
+            energy value or just strings. For example, ['Fe_L2', 'O_K'] or 
+            {'Fe_L2': 721.0, 'O_K': 532.0}
+        vertical_line_marker :  list
+            A list contains HyperSpy's vertical line segment marker, if None,
+            determine from the given edges
+        text_marker :  list
+            A list contains HyperSpy's text box marker, if None,
+            determine from the given edges
+
+        Raises
+        ------
+        ValueError
+            If the size of edges, vertical_line_marker and text_marker do not
+            match.
+        """
+        
+        if vertical_line_marker is None or text_marker is None:
+            # get position of markers for edges if no marker is provided
+            slp = SpectrumLabelPosition(self)
+            vertical_line_marker, text_marker = slp.get_markers(edges)
+        if len(vertical_line_marker) != len(text_marker) or \
+            len(edges) != len(vertical_line_marker):
+            raise ValueError('The size of edges, vertical_line_marker and '
+                             'text_marker needs to be the same.')
+        
+        # add the markers to the signal and store them
+        self.add_marker(vertical_line_marker + text_marker)
+        info = dict(zip(edges, zip(vertical_line_marker, text_marker)))
+        self._edge_markers = {k:list(v) for k, v in info.items()}
+
+    def _get_edges_to_plot(self, include_edges, only_edges):
+        # get the dictionary of the edge to be shown
+        extra_element_edge_family = []
+        if include_edges is True:
+            try:
+                elements = self.metadata.Sample.elements
+            except AttributeError:
+                raise Warning("No elements defined. Add them with "
+                              "s.add_elements, or specify elements, edge "
+                              "families or edges directly")
+        else:
+            extra_element_edge_family.extend(np.atleast_1d(include_edges))
+            try:
+                elements = self.metadata.Sample.elements
+            except:
+                elements = []        
+
+        element_edge_family = elements + extra_element_edge_family
+        edges_dict = self._get_edges(element_edge_family, only_edges)
+
+        return edges_dict
+
+    def _get_edges(self, element_edge_family, only_edges):
+        # get corresponding information depending on whether it is an element
+        # a particular edge or a family of edge
+        axis_min = self.axes_manager[-1].low_value
+        axis_max = self.axes_manager[-1].high_value
+        
+        names_and_energies = {}
+        shells = ["K", "L", "M", "N", "O"]
+        
+        errmsg = ("Edge family '{}' is not supported. Supported edge family "
+                  "is {}.")
+        for member in element_edge_family:
+            try:
+                element, ss = member.split("_")
+                
+                if len(ss) == 1:
+                    memtype = 'family'
+                    if ss not in shells:
+                        raise AttributeError(errmsg.format(ss, shells))            
+                if len(ss) == 2:
+                    memtype = 'edge'
+                    if ss[0] not in shells:
+                        raise AttributeError(errmsg.format(ss[0], shells))                           
+            except ValueError:
+                element = member
+                ss = ''
+                memtype = 'element'
+
+            try:
+                Binding_energies = elements_db[element]["Atomic_properties"]["Binding_energies"]
+            except KeyError as err:
+                raise ValueError("'{}' is not a valid element".format(element)) from err
+                
+            for edge in Binding_energies.keys(): 
+                relevance = Binding_energies[edge]["relevance"]
+                energy = Binding_energies[edge]["onset_energy (eV)"]
+                
+                isInRel = relevance in only_edges
+                isInRng = axis_min < energy < axis_max 
+                isSameFamily = ss in edge
+                
+                if memtype == 'element': 
+                    flag = isInRel & isInRng
+                    edge_key = element + "_" + edge
+                elif memtype == 'edge':
+                    flag = isInRng & (edge == ss)
+                    edge_key = member
+                elif memtype == 'family':
+                    flag = isInRel & isInRng & isSameFamily
+                    edge_key = element + "_" + edge
+                
+                if flag:
+                    names_and_energies[edge_key] = energy
+                    
+        return names_and_energies
+
+    def _edge_marker_closed(self, obj):
+        marker = obj
+        for EELS_edge, line_markers in reversed(list(
+                self._edge_markers.items())):
+            if marker in line_markers:
+                line_markers.remove(marker)
+            if not line_markers:
+                self._edge_markers.pop(EELS_edge)
+
+    def remove_EELS_edges_markers(self, EELS_edges):
+        for EELS_edge in EELS_edges:
+            if EELS_edge in self._edge_markers:
+                line_markers = self._edge_markers[EELS_edge]
+                while line_markers:
+                    m = line_markers.pop()
+                    m.close()    
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         factors = self._validate_rebin_args_and_get_factors(
