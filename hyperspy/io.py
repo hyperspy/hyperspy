@@ -441,6 +441,22 @@ def assign_signal_subclass(dtype,
                               if signal_type == value["signal_type"] or
                               "signal_type_aliases" in value and
                               signal_type in value["signal_type_aliases"]}
+
+    valid_signal_types = [v["signal_type"] for v in signals.values()]
+    valid_signal_aliases = [
+        v["signal_type_aliases"]
+        for v in signals.values()
+        if "signal_type_aliases" in v
+    ]
+    valid_signal_aliases = [i for j in valid_signal_aliases for i in j]
+    valid_signal_types.extend(valid_signal_aliases)
+
+    if signal_type not in set(valid_signal_types):
+        _logger.warning(
+            f"`signal_type='{signal_type}'` not understood. "
+            f"See `hs.print_known_signal_types()` for a list of known signal types."
+        )
+
     if dtype_dim_type_matches:
         # Perfect match found
         signal_dict = dtype_dim_type_matches
@@ -470,14 +486,7 @@ def assign_signal_subclass(dtype,
     for key, value in signal_dict.items():
         signal_class = getattr(importlib.import_module(value["module"]), key)
 
-        if value["signal_type"] == "":
-            _logger.warning(
-                f"`signal_type='{signal_type}'` not understood. "
-                f"Setting signal type to `{key}`"
-            )
-
         return signal_class
-
 
 def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary
