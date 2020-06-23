@@ -102,7 +102,7 @@ class ComplexSignal_mixin:
         # original plot
         self._plot_kwargs = {}
         if not np.issubdtype(self.data.dtype, np.complexfloating):
-            self.data = self.data.astype(np.complexfloating)
+            self.data = self.data.astype(np.complex128)
 
     def change_dtype(self, dtype):
         """Change the data type.
