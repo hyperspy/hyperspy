@@ -1342,8 +1342,10 @@ class AxesManager(t.HasTraits):
         return tuple(cslice)
 
     def create_axes(self, axes_list):
-        """Given a list of dictionaries defining the axes properties,
-        create the DataAxis instances and add them to the AxesManager.
+        """Given a list of either axes dictionaries or axes objects, these are
+        added to the AxesManager. In case dictionaries defining the axes 
+        properties are passed, the DataAxis/UniformDataAxis/FunctionalDataAxis 
+        instances are first created.
 
         The index of the axis in the array and in the `_axes` lists
         can be defined by the index_in_array keyword if given
