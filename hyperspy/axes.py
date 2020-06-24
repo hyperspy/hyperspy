@@ -263,7 +263,7 @@ class BaseDataAxis(t.HasTraits):
             if kwargs.get('_type') != self.__class__.__name__:
                 raise ValueError('The passed `_type` of axis is inconsistent '
                                 'with the given attributes')
-        self._type = self.__class__.__name__
+        _name = self.__class__.__name__
         self.events.index_changed = Event("""
             Event that triggers when the index of the `{}` changes
 
@@ -274,7 +274,7 @@ class BaseDataAxis(t.HasTraits):
             ---------
             obj : The {} that the event belongs to.
             index : The new index
-            """.format(self._type, self._type, self._type), arguments=["obj", 'index'])
+            """.format(_name, _name, _name), arguments=["obj", 'index'])
         self.events.value_changed = Event("""
             Event that triggers when the value of the `{}` changes
 
@@ -285,7 +285,7 @@ class BaseDataAxis(t.HasTraits):
             ---------
             obj : The {} that the event belongs to.
             value : The new value
-            """.format(self._type, self._type, self._type), arguments=["obj", 'value'])
+            """.format(_name, _name, _name), arguments=["obj", 'value'])
 
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
@@ -486,7 +486,7 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        return {'_type': self._type,
+        return {'_type': self.__class__.__name__,
                 'name': self.name,
                 'units': self.units,
                 'navigate': self.navigate
@@ -596,8 +596,8 @@ class BaseDataAxis(t.HasTraits):
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
-        self.__class__ = UniformDataAxis
         d["_type"] = 'UniformDataAxis'
+        self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
@@ -610,13 +610,8 @@ class DataAxis(BaseDataAxis):
                  navigate=t.Undefined,
                  axis=[1],
                  **kwargs):
-        super().__init__(index_in_array, name, units, navigate)
+        super().__init__(index_in_array, name, units, navigate, **kwargs)
         self.axis = axis
-        if '_type' in kwargs:
-            if kwargs.get('_type') != self.__class__.__name__:
-                raise ValueError('The passed `_type` of axis is inconsistent '
-                                'with the given attributes')
-        self._type = self.__class__.__name__
         self.update_axis()
 
     def _slice_me(self, slice_):
@@ -716,7 +711,7 @@ class FunctionalDataAxis(BaseDataAxis):
                  navigate=t.Undefined,
                  size=t.Undefined,
                  **parameters):
-        super().__init__(index_in_array, name, units, navigate)
+        super().__init__(index_in_array, name, units, navigate, **parameters)
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
@@ -729,11 +724,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 self.size = self.x.size
         self._expression = expression
         if '_type' in parameters:
-            if parameters.get('_type') != self.__class__.__name__:
-                raise ValueError('The passed `_type` of axis is inconsistent '
-                                'with the given attributes')
             del parameters['_type']
-        self._type = self.__class__.__name__
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
@@ -791,8 +782,8 @@ class FunctionalDataAxis(BaseDataAxis):
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
-        self.__class__ = DataAxis
         d["_type"] = 'DataAxis'
+        self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
 
     def crop(self, start=None, end=None):
@@ -861,17 +852,13 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             name=name,
             units=units,
             navigate=navigate,
+            **kwargs
             )
         self.scale = scale
         self.offset = offset
         self.size = size
         self.update_axis()
         self._is_uniform = True
-        if '_type' in kwargs:
-            if kwargs.get('_type') != self.__class__.__name__:
-                raise ValueError('The passed `_type` of axis is inconsistent '
-                                'with the given attributes')
-        self._type = self.__class__.__name__
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
     def _slice_me(self, slice_):
