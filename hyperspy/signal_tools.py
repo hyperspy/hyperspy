@@ -258,9 +258,18 @@ class EdgesRange(SpanSelectorInSignal1D):
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
-        self.table_state = [0, 0, True, 'closest']
         self.active_edges = ()
         self.slp = SpectrumLabelPosition(self.signal)
+
+        self._get_edges_info_within_energy_axis()
+
+    def _get_edges_info_within_energy_axis(self):
+        mid_energy = (self.axis.low_value + self.axis.high_value) / 2
+        rng = self.axis.high_value - self.axis.low_value 
+        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng))
+        info = get_info_from_edges(self.edge_all)
+        self.energy_all = np.array([d['onset_energy (eV)'] for d in info])
+        self.relevance_all = np.array([d['relevance'] for d in info])
 
     def show_edges_table(self, x0, x1, only_major, update, order,
                          active_edges, complementary):
@@ -284,20 +293,23 @@ class EdgesRange(SpanSelectorInSignal1D):
         '''
         
         self.slp._check_signal_figure_changed()
-        
-        if update:
-            mid_energy = (x0 + x1) / 2
-            if self.span_selector is not None:
-                rng = self.span_selector.rect.get_width()
-                self.table_state = [mid_energy, rng, only_major, order]
-            else:
-                rng = 0
-                self.table_state = [0, 0, True, 'closest']
 
-            display(self.signal.print_edges_near_energy(*self.table_state))
-            self.edges_list = get_edges_near_energy(*self.table_state)
+        if update:            
+            if self.span_selector is not None:
+                energy_mask = (x0 <= self.energy_all) &  (self.energy_all <= x1)
+                if only_major:             
+                    relevance_mask = self.relevance_all == 'Major'
+                else:
+                    relevance_mask = np.ones(len(self.edge_all), bool)
+                
+                mask = energy_mask & relevance_mask
+                self.edges_list = tuple(self.edge_all[mask])
+            else:
+                self.edges_list = ()
+
+            display(self.signal.print_edges_near_energy(edges=self.edges_list))
         else:
-            display(self.signal.print_edges_near_energy(*self.table_state))
+            display(self.signal.print_edges_near_energy(edges=self.edges_list))
         
         if complementary:
             self.comp_edges_list = self._get_complementary_edges(active_edges, 

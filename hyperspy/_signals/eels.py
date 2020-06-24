@@ -160,8 +160,6 @@ class EELSSpectrum_mixin:
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
-                            
-        return e_shells
 
     def edges_at_energy(self, energy='interactive', width=10, only_major=False,
                         order='closest', display=True, toolkit=None):
@@ -200,8 +198,8 @@ class EELSSpectrum_mixin:
                                                 order)
             
     @staticmethod
-    def print_edges_near_energy(energy, width=10, only_major=False, 
-                                order='closest'):
+    def print_edges_near_energy(energy=None, width=10, only_major=False, 
+                                order='closest', edges=None):
         """Find and print a table of edges near a given energy that are within 
         the given energy window.
         
@@ -219,6 +217,9 @@ class EELSSpectrum_mixin:
             Sort the edges, if 'closest', return in the order of energy 
             difference, if 'ascending', return in ascending order, similarly 
             for 'descending'. The default is 'closest'.
+        edges : iterable
+            A sequence of edges, if provided, it overrides energy, width,
+            only_major and order.
         
         Returns
         -------
@@ -226,8 +227,11 @@ class EELSSpectrum_mixin:
         html-formatted in Jupyter notebook 
         """ 
         
-        edges = get_edges_near_energy(energy=energy, width=width,
-                                      only_major=only_major, order=order)
+        if edges is None and energy is not None:
+            edges = get_edges_near_energy(energy=energy, width=width,
+                                          only_major=only_major, order=order)
+        elif edges is None and energy is None:
+            raise ValueError('Either energy or edges should be provided.')
         
         table = PrettyTable()
         table.field_names = [
