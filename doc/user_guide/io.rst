@@ -1054,8 +1054,8 @@ HDF5 file. All other keyword arguments will be passed to
 Note that the model and other secondary data artifacts linked to the signal are not
 written to the file but these can be implemented at a later stage.
 
-Nexus and general HDF
----------------------
+Nexus 
+-----
 
 Background
 ^^^^^^^^^^
@@ -1072,6 +1072,24 @@ Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this io plugin.
 Using the ``.nxs`` extension will default to the Nexus loader 
+
+The loader will follow version 3 of the 
+`Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
+The signal type, Signal1D or Signal2D, will be inferred by the ``interpretation`` attribute.
+if set to ``spectrum`` or ``image``, in the ``NXdata`` description. If the 
+`interpretation <https://manual.nexusformat.org/design.html#design-attributes>`_ 
+attribute is not set the loader will return a ``BaseSignal`` which must then be 
+converted to the appropriate signal type.
+If the Nexus file ``default`` atrribute is not defined the loader will load all NXdata
+and all HDF datasets by default (see ``nxdata_only`` keyword in reader).
+This decision was due to the varuations in Nexus implementations. A number of 
+the `Nexus examples <https://github.com/nexusformat/exampledata>`_ from large facilties 
+don't use NXdata which would normally be required. 
+Older verions of the Nexus data rules are nit supported.
+The data will be loaded but some information, such as axes, may not be correctly 
+associated with the data. This missing information can however be recovered from 
+within the  ``original_metadata`` which contain the overall file structure and contents.
+
 
 As the Nexus format uses HDF5 and needs to read data and metadata structured
 in different ways the loader is written to quite flexible and can also be used 
@@ -1225,7 +1243,8 @@ the single dataset to be loaded.
     >>> hs.load("sample.nxs", dataset_keys='/entry/experiment/EDS/data')
 
 We can also choose to load datasets based on a search key using the
-``dataset_keys`` keyword argument. Instead of providing an absolute path
+``dataset_keys`` keyword argument. This can also be used to load NXdata not
+outside of the ``default`` version 3 rules. Instead of providing an absolute path
 a strings to can be provided and datasets with this key will be returned.
 The previous example could also be written as:
 
@@ -1282,14 +1301,15 @@ Using the save method will store the nexus file with the following structure:
 
 ::
 
-    ├── auxiliary
+    ├── entry1
     │   ├── signal_name
+    │   ├── auxiliary
     │   │   ├── original_metadata
-    │   │   ├── hyperspy_metadata
-    │   │   ├── learning_results
-    ├── signals 
-    │   ├── signal_name
-    │   │   ├── signal (NXdata format)
+    │   │   │   ├── hyperspy_metadata
+    │   │   │   ├── learning_results
+    │   │   ├── signal_name
+    │   │   │   ├── data and axes (NXdata format)
+    
 
 The original_metadata can include hdf datasets which you may not wish to store.
 The original_metadata can be omitted using ``save_original_metadata``.
@@ -1309,20 +1329,22 @@ The output will be arranged by signal name.
 
 ::
     
-    ├── auxiliary
-    │   ├── signal_name1
+    ├── entry1
+    │   ├── signal_name
+    │   ├── auxiliary
     │   │   ├── original_metadata
-    │   │   ├── hyperspy_metadata
-    │   │   ├── learning_results
-    │   ├── signal_name2
+    │   │   │   ├── hyperspy_metadata
+    │   │   │   ├── learning_results
+    │   │   ├── signal_name (NXdata format)
+    │   │   │   ├── data and axes  
+    ├── entry2
+    │   ├── signal_name
+    │   ├── auxiliary
     │   │   ├── original_metadata
-    │   │   ├── hyperspy_metadata
-    │   │   ├── learning_results
-    ├── signals 
-    │   ├── signal_name1
-    │   │   ├── signal (NXdata format)
-    │   ├── signal_name2
-    │   │   ├── signal (NXdata format)
+    │   │   │   ├── hyperspy_metadata
+    │   │   │   ├── learning_results
+    │   │   ├── signal_name (NXdata format)
+    │   │   │   ├── data and axes 
 
 
 .. note::
@@ -1337,8 +1359,11 @@ The output will be arranged by signal name.
 
 Inspecting
 ^^^^^^^^^^
-Looking in a Nexus or HDF file for specific metadatda is often useful - .e.g to find
-what position a specific stage was at: 
+Looking in a Nexus or HDF file for specific metadata is often useful - .e.g to find
+what position a specific stage was at. The methods ``read_metadata_from_file`` 
+and ``list_datasets_in_file`` can be used to load the file contents or
+list the hdf datasets contained in a file. The inspection methods use the same ``metadata_keys`` or ``dataset_keys`` as when loading.
+For example to search for metadata in a file:
 
     >>> from hyperspy.io_plugins.nexus import read_metadata_from_file
     >>> read_metadata_from_file("sample.hdf5",metadata_keys=["stage1_z"])
@@ -1348,8 +1373,7 @@ what position a specific stage was at:
     'target': '/entry/instrument/scannables/stage1/stage1_z',
     'units': 'mm'}}}}}}} 
     
-The inspection methods use the same ``metadata_keys`` or ``dataset_keys`` as when loading.
-You can also inspect the file to see what datasets are stored in the file
+To list the datasets stored in the file:
     
     >>> from hyperspy.io_plugins.nexus import read_datasets_from_file
     >>> list_datasets_in_file("sample.nxs")

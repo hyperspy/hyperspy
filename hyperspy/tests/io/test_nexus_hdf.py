@@ -27,6 +27,8 @@ from hyperspy.io_plugins.nexus import read_metadata_from_file,\
         _fix_exclusion_keys,_byte_to_string
 import hyperspy.api as hs
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 import traits.api as t
 
 
@@ -332,6 +334,8 @@ class TestSavingMultiSignals:
         assert l[0].axes_manager[0].name == "stage_y_axis"
         assert l[1].original_metadata.stage_x.value == 8.0
         assert l[1].original_metadata.stage_x.attrs.units == "mm"
+        assert isinstance(l[0],Signal2D)==True
+        assert isinstance(l[1],Signal1D)==True        
         # test the metadata haven't merged..
         with pytest.raises(AttributeError):
             l[1].original_metadata.stage_y.value
@@ -360,7 +364,7 @@ def test_read_file2_meta():
 
 @pytest.mark.parametrize("verbose", [True,False])
 @pytest.mark.parametrize("dataset_keys", ["testdata","nexustest"])
-def test_read_datasets(verbose,dataset_keys):
+def test_list_datasets(verbose,dataset_keys):
       s = list_datasets_in_file(file3,verbose=verbose,\
                                   dataset_keys=dataset_keys)
       if dataset_keys == "testdata":

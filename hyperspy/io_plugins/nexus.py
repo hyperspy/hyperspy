@@ -50,7 +50,7 @@ import pprint
 import traits.api as t
 from hyperspy.io_plugins.hspy import overwrite_dataset,get_signal_chunks
 from hyperspy.misc.utils import DictionaryTreeBrowser
-
+from functools import reduce
 _logger = logging.getLogger(__name__)
 # Plugin characteristics
 
@@ -289,6 +289,7 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=False):
         
     """
     detector_index = 0
+    interpretation=None
     dataentry = group[nexus_dataset_path]
     if "signal" in dataentry.attrs.keys():
         if _is_int(dataentry.attrs["signal"]):
@@ -303,16 +304,23 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=False):
                              attempt to find a default \"data\" key failed")
         else:            
             data_key  = "data"
+    
+    if "interpretation" in dataentry.attrs.keys():
+        interpretation =  _parse_from_file(dataentry.attrs["interpretation"])       
+        
     data = dataentry[data_key] 
     nav_list = []
     # list indices...
     axis_index_list=[]
     if "axes" in dataentry.attrs.keys():           
         axes_key  = dataentry.attrs["axes"]
+        axes_list = ["."]*data.ndim
         if isinstance(axes_key,np.ndarray):
-            axes_list=[_parse_from_file(num) for num in axes_key] 
+            for i,num in enumerate(axes_key):
+                axes_list[i]=_parse_from_file(num)
         else:
-            axes_list = [_parse_from_file(axes_key)]
+            axes_list[0] = _parse_from_file(axes_key)
+        
         named_axes=list(range(len(axes_list)))
         for i,ax in enumerate(axes_list):
             if ax != ".":
@@ -326,11 +334,8 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=False):
                     units= _parse_from_file(dataentry[ax].attrs["units"])
                 else:
                     units=""
-                if "navigation" in dataentry[ax].attrs:
-                    navigation = bool(dataentry[ax].attrs["navigation"])
-                else:
-                    navigation = True
-
+                
+                navigation=True
                 named_axes.remove(ind_in_array)
 
                 if _is_numeric_data(dataentry[ax]):
@@ -362,7 +367,7 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=False):
     #                            'name': axname,
     #                            'axis' : dataentry[ax],
     #                            'units': units,
-    #                            'navigate': True,
+    #                            'navigate': navigation,
     #                            })
                     else:
                         nav_list.append({   
@@ -374,9 +379,7 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=False):
                             'units': units,
                             'navigate': True
                             })
-                        
-        for i,ax in enumerate(axes_list):
-            if ax == ".": 
+            else:                            
                 if(len(data.shape)==len(axes_list)):
                     nav_list.append({   
                             'size': data.shape[named_axes[detector_index]],
@@ -407,13 +410,49 @@ def _nexus_dataset_to_signal(group,nexus_dataset_path,lazy=False):
                     'units': '',
                     'navigate': True
                    })
-        
     title = _text_split(nexus_dataset_path, '/')[-1]
     metadata = {'General': {'title': title}} 
+
+    #
+    # if interpreation - reset the nav axes
+    # assume the last dimensions are the signal
+    #
+    if interpretation:
+        for x in nav_list:
+            x["navigate"]=True        
+        if interpretation == "spectrum":
+            nav_list[-1]["navigate"]=False
+        elif interpretation == "image":
+            nav_list[-1]["navigate"]=False        
+            nav_list[-2]["navigate"]=False        
+    
     dictionary = {'data': data_lazy,
                   'axes': nav_list,
                   'metadata':metadata}
     return dictionary
+
+def dict_get(dictionary, keys, default=None):
+    """
+
+
+    Parameters
+    ----------
+    dictionary : TYPE
+        DESCRIPTION.
+    keys : TYPE
+        DESCRIPTION.
+    default : TYPE, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
+    return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, keys.split("/"), dictionary)
+
+
 
 
 def file_reader(filename,lazy=False, dataset_keys="all",
@@ -480,28 +519,46 @@ def file_reader(filename,lazy=False, dataset_keys="all",
     dataset_keys = _check_search_keys(dataset_keys)
     metadata_keys = _check_search_keys(metadata_keys)
     original_metadata = _load_metadata(fin,search_keys=metadata_keys)
-
+    
     nexus_data_paths, hdf_data_paths = _find_data(fin,
                                                   search_keys=dataset_keys)
-
+    # filter default NXdata if it exists 
+    nxentry = None
+    nxdata  = None
+    if "default" in original_metadata["attrs"]:
+        nxentry = original_metadata["attrs"]["default"]
+    else:
+        rootlist = list(original_metadata.keys()).remove("attrs")
+        if rootlist and len(rootlist) == 1:
+            nxentry == rootlist[0]
+    if nxentry:
+        if "default" in original_metadata[nxentry]["attrs"]:
+            nxdata = original_metadata[nxentry]["attrs"]["default"]        
+    if nxentry and nxdata:
+        nxdata = os.path.join(nxentry,nxdata)
+    if nxdata:
+        hdf_data_paths=[]
+        nexus_data_paths=[nxpath for nxpath in nexus_data_paths if nxdata in nxpath ]
+        
     for data_path in nexus_data_paths:        
         dictionary = _nexus_dataset_to_signal(fin,data_path,lazy=lazy)
+        entryname = data_path.split("/")[1]
         dictionary["mapping"] = mapping 
         title = dictionary["metadata"]["General"]["title"]
-        if "auxiliary" in original_metadata:
-            if "learning_results" in original_metadata["auxiliary"][title]:
-                learning = original_metadata["auxiliary"][title]["learning_results"]
+        orig_metadata=original_metadata[entryname][title]
+        if "auxiliary" in orig_metadata:
+            if "learning_results" in orig_metadata["auxiliary"]:
+                learning = orig_metadata["auxiliary"]["learning_results"]
                 dictionary["attributes"]={}
                 dictionary["attributes"]["learning_results"] = learning
-            if "original_metadata" in original_metadata["auxiliary"][title]:
-                orig_metadata = original_metadata["auxiliary"][title]["original_metadata"]
-                dictionary["original_metadata"] = orig_metadata
-            if "hyperspy_metadata" in original_metadata["auxiliary"][title]:
-                hyper_metadata = original_metadata["auxiliary"][title]["hyperspy_metadata"]
+            if "original_metadata" in orig_metadata["auxiliary"]:
+                dictionary["original_metadata"] = orig_metadata["auxiliary"]["original_metadata"]
+            if "hyperspy_metadata" in orig_metadata["auxiliary"]:
+                hyper_metadata = orig_metadata["auxiliary"]["hyperspy_metadata"]
                 hyper_metadata.update(dictionary["metadata"])
                 dictionary["metadata"] = hyper_metadata
         else:
-            dictionary["original_metadata"] = original_metadata              
+            dictionary["original_metadata"] = orig_metadata              
 
         signal_dict_list.append(dictionary)
         
@@ -1015,6 +1072,8 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
     nxdata = nxgroup.require_group(signal_name)
     nxdata.attrs["NX_class"] =_parse_to_file("NXdata")  
     nxdata.attrs["signal"] = _parse_to_file("data")
+    if smd.record_by:
+        nxdata.attrs["interpretation"] = _parse_to_file(smd.record_by)
     datastr = _parse_to_file("data")
     overwrite_dataset(nxdata, signal.data, datastr, chunks=None, **kwds)
     axis_names=[_parse_to_file(".")]*len(signal.axes_manager.shape)
@@ -1024,11 +1083,8 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
             axindex = [axis.index_in_array]
             indices = _parse_to_file(axis.name + "_indices")
             nxdata.attrs[indices] = _parse_to_file(axindex)
-            #navigate = _parse_to_file(axis.name + "_navigation")
-            #nxdata.attrs[navigate] = _parse_to_file(axis.navigate)
-            dset = nxdata.require_dataset(axname,data=axis.axis,shape=axis.axis.shape,
+            nxdata.require_dataset(axname,data=axis.axis,shape=axis.axis.shape,
                                    dtype=axis.axis.dtype)
-            dset.attrs["navigation"] = _parse_to_file(axis.navigate)
             axis_names[axis.index_in_array]=axname
 
     nxdata.attrs["axes"] = _parse_to_file(axis_names)
@@ -1048,8 +1104,9 @@ def file_writer(filename,
     filename : str    
         Path of the file to write
     signals : signal or list of signals
-    store_original_metadata : bool , default : False
-          Option to store hyperspy.original_metadata with the signal
+        Signal(s) to be written
+    save_original_metadata : bool , default : False
+          Option to save hyperspy.original_metadata with the signal
           A loaded Nexus file may have a large amount of data
           when loaded which you may wish to omit on saving
           
@@ -1066,10 +1123,6 @@ def file_writer(filename,
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "nexus_like"
         f.attrs['file_writer'] = "hyperspy_nexus"        
-        nxaux = f.create_group("auxiliary")
-        nxaux.attrs["NX_class"] = _parse_to_file("NXentry")                
-        nxexpt = f.create_group('signals')
-        nxexpt.attrs["NX_class"] = _parse_to_file("NXentry")               
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
 
@@ -1078,23 +1131,26 @@ def file_writer(filename,
         #
 
         for i,sig in enumerate(signals):
+            nxentry = f.create_group("entry%d"%i+1)
+            nxentry.attrs["NX_class"] = _parse_to_file("NXentry")                
+
+
             signal_name = sig.metadata.General.title if \
             sig.metadata.General.title else 'unnamed__%d'% i
             if "/" in signal_name:
                 signal_name = signal_name.replace("/", "_")
             if signal_name.startswith("__"):
                 signal_name = signal_name[2:]
-            # store type of signal
-            if hasattr(sig,"_signal_type"):
-                sig.metadata.Signal.signal_type = sig._signal_type
-            
-            _write_signal(sig, nxexpt,signal_name,**kwds)
+
+            nxentry = nxentry.create_group(signal_name)
+            nxentry.attrs["NX_class"] = _parse_to_file("NXentry")                
+
+            nxaux = nxentry.create_group("auxiliary")
+            nxaux.attrs["NX_class"] = _parse_to_file("NXentry")                
+            _write_signal(sig, nxentry,signal_name,**kwds)
 
             if sig.learning_results:
-                nxauxsig = nxaux.create_group(signal_name)
-                nxauxsig.attrs["NX_class"] = _parse_to_file("NXentry")  
-
-                nxlearn = nxauxsig.create_group('learning_results')
+                nxlearn = nxaux.create_group('learning_results')
                 nxlearn.attrs["NX_class"] = _parse_to_file("NXcollection")    
                 learn = sig.learning_results.__dict__
                 _write_nexus_groups(learn,nxlearn,**kwds)
@@ -1109,7 +1165,7 @@ def file_writer(filename,
                     else:
                         ometa = sig.original_metadata
     
-                    nxometa = nxauxsig.create_group('original_metadata')
+                    nxometa = nxaux.create_group('original_metadata')
                     nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")  
                     # write the groups and structure
                     _write_nexus_groups(ometa,nxometa,**kwds)
@@ -1121,7 +1177,7 @@ def file_writer(filename,
                 else:
                     meta = sig.metadata
 
-                nxometa = nxauxsig.create_group('hyperspy_metadata')
+                nxometa = nxaux.create_group('hyperspy_metadata')
                 nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")  
                 # write the groups and structure
                 _write_nexus_groups(meta,nxometa,**kwds)
