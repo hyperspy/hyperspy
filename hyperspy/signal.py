@@ -4722,7 +4722,8 @@ class BaseSignal(FancySlicing,
         HyperSpy ships with a minimal set of known signal types. External
         packages can register extra signal types. To print a list of
         registered signal types in the current installation, call
-        :py:meth:`hyperspy.utils.print_known_signal_types()`.
+        :py:meth:`hyperspy.utils.print_known_signal_types()`, and see
+        the developer guide for details on how to add new signal_types.
 
         Parameters
         ----------
