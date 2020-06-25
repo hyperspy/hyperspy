@@ -454,16 +454,16 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
     valid_signal_aliases = [i for j in valid_signal_aliases for i in j]
     valid_signal_types.extend(valid_signal_aliases)
 
-    if signal_type not in set(valid_signal_types):
-        _logger.warning(
-            f"`signal_type='{signal_type}'` not understood. "
-            f"See `hs.print_known_signal_types()` for a list of known signal types."
-        )
-
     if dtype_dim_type_matches:
         # Perfect match found
         signal_dict = dtype_dim_type_matches
     else:
+        if signal_type not in set(valid_signal_types):
+            _logger.warning(
+                f"`signal_type='{signal_type}'` not understood. "
+                f"See `hs.print_known_signal_types()` for a list of known signal types."
+            )
+
         # If the following dict is not empty, only signal_dimension and dtype match.
         # The dict should contain a general class for the given signal
         # dimension.
