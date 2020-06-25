@@ -4724,6 +4724,8 @@ class BaseSignal(FancySlicing,
         registered signal types in the current installation, call
         :py:meth:`hyperspy.utils.print_known_signal_types`, and see
         the developer guide for details on how to add new signal_types.
+        A non-exhaustive list of HyperSpy extensions is also maintained
+        here: https://github.com/hyperspy/hyperspy-extensions-list.
 
         Parameters
         ----------
