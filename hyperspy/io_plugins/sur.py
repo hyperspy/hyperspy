@@ -36,6 +36,7 @@ import sys
 import zlib
 import os
 import warnings
+import re
 
 #Maybe later we can implement reading the class with the io utils tools instead
 #of re-defining read functions in the class
@@ -517,54 +518,45 @@ class DigitalSurfHandler(object):
         self._N_data_object = 1
         self._N_data_channels = 1
 
-        #Boolean that sets to true once a .sur file was correctly initialised
-        self._initialized = True
-
     ### Read methods
     def _read_sur_file(self):
         """Read the binary, possibly compressed, content of the surface
         file. Surface files can be encoded as single or a succession
-        of objects. Accordingly the  """
+        of objects. The file is thus read iteratively and from metadata of the
+        first file """
 
+        with open(self.filename,'rb') as f:
+            #We read the first object
+            self._read_single_sur_object(f)
+            #We append the first object to the content list
+            self._append_work_dict_to_content()
+            #Lookup how many objects are stored in the file and save
+            self._N_data_object = self._get_work_dict_key_value("_03_Number_of_Objects")
+            self._N_data_channels = self._get_work_dict_key_value('_08_P_Size')
 
-        if self.filename is not None:
-            with open(self.filename,'rb') as f:
-                #We read the first object
-                self._read_single_sur_object(f)
-                #We append the first object to the content list
-                self._append_work_dict_to_content()
-                #Lookup how many objects are stored in the file and save
-                self._N_data_object = self._get_work_dict_key_value("_03_Number_of_Objects")
-                self._N_data_channels = self._get_work_dict_key_value('_08_P_Size')
+            #Determine how many objects we need to read
+            if self._N_data_channels>0 and self._N_data_object>0:
+                N_objects_to_read = self._N_data_channels*self._N_data_object
+            elif self._N_data_channels>0:
+                N_objects_to_read = self._N_data_channels
+            elif self._N_data_object>0:
+                N_objects_to_read = self._N_data_object
+            else:
+                N_objects_to_read = 1
 
-                #Determine how many objects we need to read
-                if self._N_data_channels>0 and self._N_data_object>0:
-                    N_objects_to_read = self._N_data_channels*self._N_data_object
-                elif self._N_data_channels>0:
-                    N_objects_to_read = self._N_data_channels
-                elif self._N_data_object>0:
-                    N_objects_to_read = self._N_data_object
-                else:
-                    N_objects_to_read = 1
+            #Lookup what object type we are dealing with and save
+            self._Object_type = \
+                DigitalSurfHandler._mountains_object_types[ \
+                    self._get_work_dict_key_value("_05_Object_Type")]
 
-                #Lookup what object type we are dealing with and save
-                self._Object_type = \
-                    DigitalSurfHandler._mountains_object_types[ \
-                        self._get_work_dict_key_value("_05_Object_Type")]
-
-                #if more than 1
-                if N_objects_to_read > 1:
-                    #continue reading until everything is done
-                    for i in range(1,N_objects_to_read):
-                        #We read an object
-                        self._read_single_sur_object(f)
-                        #We append it to content list
-                        self._append_work_dict_to_content()
-
-                self._initialized = True
-
-        else:
-            raise FileExistsError
+            #if more than 1
+            if N_objects_to_read > 1:
+                #continue reading until everything is done
+                for i in range(1,N_objects_to_read):
+                    #We read an object
+                    self._read_single_sur_object(f)
+                    #We append it to content list
+                    self._append_work_dict_to_content()
 
     def _read_single_sur_object(self,file):
         for key,val in self._work_dict.items():
@@ -716,31 +708,33 @@ class DigitalSurfHandler(object):
         #We reshape the data in the correct format
         self.signal_dict['data'] = hypdic['_62_points']
 
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
-
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
+        #Build the metadata
+        self._set_metadata_and_original_metadata(hypdic)
 
     def _build_spectrum(self,):
-        """Build spectra objects"""
+        """Build spectra objects. Spectra and 1D series of spectra are
+        saved in the same object."""
 
         #We get the dictionary with all the data
         hypdic = self._list_sur_file_content[0]
 
-        #Add the axe to the signal dict
-        self.signal_dict['axes'].append(\
-            self._build_Yax(hypdic,ind=0,nav=True))
+        #Add the signal axis_src to the signal dict
         self.signal_dict['axes'].append(\
             self._build_Xax(hypdic,ind=1,nav=False))
 
-        #We reshape the data in the correct format
-        self.signal_dict['data'] = hypdic['_62_points'].reshape(\
+        #If there is more than 1 spectrum also add the navigation axis
+        if hypdic['_19_Number_of_Lines'] != 1:
+            self.signal_dict['axes'].append(\
+                self._build_Yax(hypdic,ind=0,nav=True))
+
+        #We reshape the data in the correct format.
+        #Edit: the data is now squeezed for unneeded dimensions
+        self.signal_dict['data'] = np.squeeze(hypdic['_62_points'].reshape(\
             hypdic['_19_Number_of_Lines'],
             hypdic['_18_Number_of_Points'],
-            )
+            ))
 
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
-
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
+        self._set_metadata_and_original_metadata(hypdic)
 
     def _build_1D_series(self,):
         """Build a series of 1D objects. The T axis is navigation and set from
@@ -750,7 +744,7 @@ class DigitalSurfHandler(object):
         hypdic = self._list_sur_file_content[0]
 
         #Metadata are set from first dictionary
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
+        self._set_metadata_and_original_metadata(hypdic)
 
         #Add the series-axis to the signal dict
         self.signal_dict['axes'].append(\
@@ -766,8 +760,6 @@ class DigitalSurfHandler(object):
             data.append(obj['_62_points'])
 
         self.signal_dict['data'] = np.stack(data)
-
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
 
     def _build_surface(self,):
         """Build a surface"""
@@ -792,9 +784,7 @@ class DigitalSurfHandler(object):
         shape = (hypdic['_19_Number_of_Lines'],hypdic['_18_Number_of_Points'])
         self.signal_dict['data'] = hypdic['_62_points'].reshape(shape)
 
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
-
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
+        self._set_metadata_and_original_metadata(hypdic)
 
     def _build_surface_series(self,):
         """Build a series of surfaces. The T axis is navigation and set from
@@ -804,7 +794,7 @@ class DigitalSurfHandler(object):
         hypdic = self._list_sur_file_content[0]
 
         #Metadata are set from first dictionary
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
+        self._set_metadata_and_original_metadata(hypdic)
 
         #Add the series-axis to the signal dict
         self.signal_dict['axes'].append(\
@@ -825,8 +815,6 @@ class DigitalSurfHandler(object):
 
         self.signal_dict['data'] = np.stack(data)
 
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
-
     def _build_RGB_surface(self,):
         """Build a series of surfaces. The T axis is navigation and set from
         P Size"""
@@ -835,8 +823,7 @@ class DigitalSurfHandler(object):
         hypdic = self._list_sur_file_content[0]
 
         #Metadata are set from first dictionary
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
+        self._set_metadata_and_original_metadata(hypdic)
 
         #Add the series-axis to the signal dict
         self.signal_dict['axes'].append(\
@@ -866,8 +853,7 @@ class DigitalSurfHandler(object):
         hypdic = self._list_sur_file_content[0]
 
         #Metadata are set from first dictionary
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
+        self._set_metadata_and_original_metadata(hypdic)
 
         #Add the series-axis to the signal dict
         self.signal_dict['axes'].append(\
@@ -907,21 +893,36 @@ class DigitalSurfHandler(object):
 
         """
 
-        #Formatting for complicated strings
+        #Formatting for complicated strings. We add parentheses to units
+        qty_unit = unpacked_dict['_29_Z_Step_Unit']
+        #We strip unit from any character that might pre-format it
+        qty_unit = qty_unit.strip(' \t\n()[]')
+        #If unit string is still truthy after strip we add parentheses
+        if qty_unit:
+            qty_unit = "({:s})".format(qty_unit)
+
+
         quantity_str = " ".join([
-            unpacked_dict['_26_Name_of_Z_Axis'],
-            unpacked_dict['_29_Z_Step_Unit'],
-            ]).strip()
+            unpacked_dict['_26_Name_of_Z_Axis'],qty_unit]).strip()
 
-        date_str =  "{:4d}-{:2d}-{:2d}".format( \
-            unpacked_dict['_45_Year'],
-            unpacked_dict['_44_Month'],
-            unpacked_dict['_43_Day'])
+        #Date and time are set in metadata only if all values are not set to 0
 
-        time_str = "{:2d}:{:2d}:{:2d}".format( \
-            unpacked_dict['_42_Hours'],
-            unpacked_dict['_41_Minutes'],
-            unpacked_dict['_40_Seconds'])
+        date = [unpacked_dict['_45_Year'],
+                unpacked_dict['_44_Month'],
+                unpacked_dict['_43_Day']]
+        if not all(v == 0 for v in date):
+            date_str =  "{:4d}-{:2d}-{:2d}".format(date[0],date[1],date[2])
+        else:
+            date_str = ""
+
+        time = [unpacked_dict['_42_Hours'],
+                unpacked_dict['_41_Minutes'],
+                unpacked_dict['_40_Seconds']]
+
+        if not all(v == 0 for v in time):
+            time_str = "{:d}:{:d}:{:d}".format(time[0],time[1],time[2])
+        else:
+            time_str = ""
 
         #Metadata dictionary initialization
         metadict = {
@@ -976,6 +977,13 @@ class DigitalSurfHandler(object):
                     original_metadata_dict[key].update({"Parsed" : parsedict})
 
         return original_metadata_dict
+
+    def _set_metadata_and_original_metadata(self,unpacked_dict):
+        """Run successively _build_metadata and _build_original_metadata
+        and set signal dictionary with results"""
+
+        self.signal_dict['metadata'] = self._build_metadata(unpacked_dict)
+        self.signal_dict['original_metadata'] = self._build_original_metadata()
 
     def _check_comments(self,commentsstr,prefix,delimiter):
         """Check if comment string is parsable into metadata dictionary.
@@ -1295,4 +1303,3 @@ def file_reader(filename,**kwds):
     surdict = ds._build_sur_dict()
 
     return [surdict,]
-    file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

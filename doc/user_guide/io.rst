@@ -1050,10 +1050,6 @@ are supported for spectra and spectral maps. Metadata parsing is supported, incl
 user-customised metadata, as well as the loading of files containing multiple objects
 packed together.
 
-Lazy loading planned but not implemented.
-
-Write support not planned but would be considered if requested.
-
 The plugin was developed based on the MountainsMap software documentation which
 contains a description of the binary format.
 

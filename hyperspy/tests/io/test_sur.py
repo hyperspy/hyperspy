@@ -26,6 +26,114 @@ from hyperspy.io import load
 
 MY_PATH = os.path.dirname(__file__)
 
+header_keys = ['H01_Signature',
+                 'H02_Format',
+                 'H03_Number_of_Objects',
+                 'H04_Version',
+                 'H05_Object_Type',
+                 'H06_Object_Name',
+                 'H07_Operator_Name',
+                 'H08_P_Size',
+                 'H09_Acquisition_Type',
+                 'H10_Range_Type',
+                 'H11_Special_Points',
+                 'H12_Absolute',
+                 'H13_Gauge_Resolution',
+                 'H14_W_Size',
+                 'H15_Size_of_Points',
+                 'H16_Zmin',
+                 'H17_Zmax',
+                 'H18_Number_of_Points',
+                 'H19_Number_of_Lines',
+                 'H20_Total_Nb_of_Pts',
+                 'H21_X_Spacing',
+                 'H22_Y_Spacing',
+                 'H23_Z_Spacing',
+                 'H24_Name_of_X_Axis',
+                 'H25_Name_of_Y_Axis',
+                 'H26_Name_of_Z_Axis',
+                 'H27_X_Step_Unit',
+                 'H28_Y_Step_Unit',
+                 'H29_Z_Step_Unit',
+                 'H30_X_Length_Unit',
+                 'H31_Y_Length_Unit',
+                 'H32_Z_Length_Unit',
+                 'H33_X_Unit_Ratio',
+                 'H34_Y_Unit_Ratio',
+                 'H35_Z_Unit_Ratio',
+                 'H36_Imprint',
+                 'H37_Inverted',
+                 'H38_Levelled',
+                 'H39_Obsolete',
+                 'H40_Seconds',
+                 'H41_Minutes',
+                 'H42_Hours',
+                 'H43_Day',
+                 'H44_Month',
+                 'H45_Year',
+                 'H46_Day_of_week',
+                 'H47_Measurement_duration',
+                 'H48_Compressed_data_size',
+                 'H49_Obsolete',
+                 'H50_Comment_size',
+                 'H51_Private_size',
+                 'H52_Client_zone',
+                 'H53_X_Offset',
+                 'H54_Y_Offset',
+                 'H55_Z_Offset',
+                 'H56_T_Spacing',
+                 'H57_T_Offset',
+                 'H58_T_Axis_Name',
+                 'H59_T_Step_Unit',
+                 'H60_Comment',
+                 ]
+
+atto_head_keys = ['WAFER',
+                            'SITE IMAGE',
+                            'SEM',
+                            'CHANNELS',
+                            'SPECTROMETER',
+                            'SCAN',
+                            ]
+
+atto_wafer_keys = ['Lot Number',
+                     'ID',
+                     'Type',
+                     'Center Position X',
+                     'Center Position X_units',
+                     'Center Position Y',
+                     'Center Position Y_units',
+                     'Orientation',
+                     'Orientation_units',
+                     'Diameter',
+                     'Diameter_units',
+                     'Flat Length',
+                     'Flat Length_units',
+                     'Edge Exclusion',
+                     'Edge Exclusion_units',
+                     ]
+
+atto_scan_keys = ['Mode',
+                 'HYP Dwelltime',
+                 'HYP Dwelltime_units',
+                 'Resolution_X',
+                 'Resolution_X_units',
+                 'Resolution_Y',
+                 'Resolution_Y_units',
+                 'Reference_Size_X',
+                 'Reference_Size_Y',
+                 'Voltage Calibration Range_X',
+                 'Voltage Calibration Range_X_units',
+                 'Voltage Calibration Range_Y',
+                 'Voltage Calibration Range_Y_units',
+                 'Start_X',
+                 'Size_X',
+                 'Start_Y',
+                 'Size_Y',
+                 'Rotate',
+                 'Rotate_units',
+                 ]
+
 def test_load_profile():
     #Signal loading
     fname = os.path.join(MY_PATH, "sur_data",
@@ -44,75 +152,15 @@ def test_load_profile():
 
     #Metadata verification
     md = s.metadata
-    assert md.Signal.quantity == 'CL Intensity a.u.'
+    assert md.Signal.quantity == 'CL Intensity (a.u.)'
 
     #Original metadata. We verify that the correct structure is given
     #and the right headers but not the values
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0']
     assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) \
+                                                            == header_keys
 
 def test_load_RGB():
     fname = os.path.join(MY_PATH, "sur_data",
@@ -142,68 +190,7 @@ def test_load_RGB():
                                                 'Object_0_Channel_1',
                                                 'Object_0_Channel_2']
     assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == header_keys
 
 def test_load_spectra():
     fname = os.path.join(MY_PATH, "sur_data",
@@ -214,7 +201,7 @@ def test_load_spectra():
     assert s.data.dtype == dtype('float64')
 
     md = s.metadata
-    assert md.Signal.quantity == 'CL Intensity a.u.'
+    assert md.Signal.quantity == 'CL Intensity (a.u.)'
     assert_allclose(s.axes_manager[0].scale,0.00011458775406936184)
     assert_allclose(s.axes_manager[0].offset,0.0)
     assert_allclose(s.axes_manager[1].scale,1.084000246009964e-06)
@@ -231,68 +218,8 @@ def test_load_spectra():
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0',]
     assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) \
+                                                                == header_keys
 
 def test_load_spectral_map_compressed():
     fname = os.path.join(MY_PATH, "sur_data",
@@ -303,7 +230,7 @@ def test_load_spectral_map_compressed():
     assert s.data.dtype == dtype('float64')
 
     md = s.metadata
-    assert md.Signal.quantity == 'CL Intensity a.u.'
+    assert md.Signal.quantity == 'CL Intensity (a.u.)'
     assert_allclose(s.axes_manager[0].scale,8.252198e-05)
     assert_allclose(s.axes_manager[0].offset,0.005694016348570585)
     assert_allclose(s.axes_manager[1].scale,8.252198e-05)
@@ -325,108 +252,19 @@ def test_load_spectral_map_compressed():
 
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0',]
-    assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header','Parsed']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
-    assert list(omd.Object_0_Channel_0.Parsed.as_dictionary().keys()) == \
-        ['WAFER', 'SITE IMAGE', 'SEM', 'CHANNELS', 'SPECTROMETER', 'SCAN']
-    assert list(omd.Object_0_Channel_0.Parsed.WAFER.as_dictionary().keys()) == \
-        ['Lot Number',
-         'ID',
-         'Type',
-         'Center Position X',
-         'Center Position X_units',
-         'Center Position Y',
-         'Center Position Y_units',
-         'Orientation',
-         'Orientation_units',
-         'Diameter',
-         'Diameter_units',
-         'Flat Length',
-         'Flat Length_units',
-         'Edge Exclusion',
-         'Edge Exclusion_units',
-         ]
-    assert list(omd.Object_0_Channel_0.Parsed.SCAN.as_dictionary().keys()) == \
-        ['Mode',
-         'HYP Dwelltime',
-         'HYP Dwelltime_units',
-         'Resolution_X',
-         'Resolution_X_units',
-         'Resolution_Y',
-         'Resolution_Y_units',
-         'Reference_Size_X',
-         'Reference_Size_Y',
-         'Voltage Calibration Range_X',
-         'Voltage Calibration Range_X_units',
-         'Voltage Calibration Range_Y',
-         'Voltage Calibration Range_Y_units',
-         'Start_X',
-         'Size_X',
-         'Start_Y',
-         'Size_Y',
-         'Rotate',
-         'Rotate_units']
+    assert list(omd.Object_0_Channel_0.as_dictionary().keys()) \
+                                                            == ['Header','Parsed']
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) \
+                                                            == header_keys
+
+    assert list(omd.Object_0_Channel_0.Parsed.as_dictionary().keys()) \
+                                                            == atto_head_keys
+
+    assert list(omd.Object_0_Channel_0.Parsed.WAFER.as_dictionary().keys()) \
+                                                            == atto_wafer_keys
+
+    assert list(omd.Object_0_Channel_0.Parsed.SCAN.as_dictionary().keys()) \
+                                                            == atto_scan_keys
 
 def test_load_spectral_map():
     fname = os.path.join(MY_PATH, "sur_data",
@@ -437,7 +275,7 @@ def test_load_spectral_map():
     assert s.data.dtype == dtype('float64')
 
     md = s.metadata
-    assert md.Signal.quantity == 'CL Intensity a.u.'
+    assert md.Signal.quantity == 'CL Intensity (a.u.)'
     assert_allclose(s.axes_manager[0].scale,8.252197585534304e-05)
     assert_allclose(s.axes_manager[0].offset,0.00701436772942543)
     assert_allclose(s.axes_manager[1].scale,8.252197585534304e-05)
@@ -461,289 +299,79 @@ def test_load_spectral_map():
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0',]
     assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header','Parsed']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
-    assert list(omd.Object_0_Channel_0.Parsed.as_dictionary().keys()) == \
-        ['WAFER', 'SITE IMAGE', 'SEM', 'CHANNELS', 'SPECTROMETER', 'SCAN']
-    assert list(omd.Object_0_Channel_0.Parsed.WAFER.as_dictionary().keys()) == \
-        ['Lot Number',
-         'ID',
-         'Type',
-         'Center Position X',
-         'Center Position X_units',
-         'Center Position Y',
-         'Center Position Y_units',
-         'Orientation',
-         'Orientation_units',
-         'Diameter',
-         'Diameter_units',
-         'Flat Length',
-         'Flat Length_units',
-         'Edge Exclusion',
-         'Edge Exclusion_units',
-         ]
-    assert list(omd.Object_0_Channel_0.Parsed.SCAN.as_dictionary().keys()) == \
-        ['Mode',
-         'HYP Dwelltime',
-         'HYP Dwelltime_units',
-         'Resolution_X',
-         'Resolution_X_units',
-         'Resolution_Y',
-         'Resolution_Y_units',
-         'Reference_Size_X',
-         'Reference_Size_Y',
-         'Voltage Calibration Range_X',
-         'Voltage Calibration Range_X_units',
-         'Voltage Calibration Range_Y',
-         'Voltage Calibration Range_Y_units',
-         'Start_X',
-         'Size_X',
-         'Start_Y',
-         'Size_Y',
-         'Rotate',
-         'Rotate_units']
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) \
+                                                               == header_keys
+
+    assert list(omd.Object_0_Channel_0.Parsed.as_dictionary().keys()) \
+                                                            == atto_head_keys
+
+    assert list(omd.Object_0_Channel_0.Parsed.WAFER.as_dictionary().keys()) \
+                                                            == atto_wafer_keys
+
+    assert list(omd.Object_0_Channel_0.Parsed.SCAN.as_dictionary().keys())  \
+                                                            == atto_scan_keys
 
 def test_load_spectrum_compressed():
     fname = os.path.join(MY_PATH, "sur_data",
                          "test_spectrum_compressed.pro")
     s = load(fname)
     md = s.metadata
-    assert md.Signal.quantity == 'CL Intensity a.u.'
-    assert s.data.shape == (1,512)
-    assert_allclose(s.axes_manager[0].scale,1.0)
-    assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[1].scale,1.084000246009964e-6)
-    assert_allclose(s.axes_manager[1].offset,172.84281784668565e-6)
+    assert md.Signal.quantity == 'CL Intensity (a.u.)'
+    assert s.data.shape == (512,)
+    #assert_allclose(s.axes_manager[0].scale,1.0)
+    #assert_allclose(s.axes_manager[0].offset,0.0)
+    assert_allclose(s.axes_manager[0].scale,1.084000246009964e-6)
+    assert_allclose(s.axes_manager[0].offset,172.84281784668565e-6)
 
-    assert s.axes_manager[0].name == 'T'
-    assert s.axes_manager[0].units == ''
-    assert s.axes_manager[1].name == 'Wavelength'
-    assert s.axes_manager[1].units == 'mm'
-    assert s.axes_manager[0].size == 1
-    assert s.axes_manager[0].navigate == True
-    assert s.axes_manager[1].size == 512
-    assert s.axes_manager[1].navigate == False
+    #assert s.axes_manager[0].name == 'T'
+    #assert s.axes_manager[0].units == ''
+    assert s.axes_manager[0].name == 'Wavelength'
+    assert s.axes_manager[0].units == 'mm'
+    #assert s.axes_manager[0].size == 1
+    #assert s.axes_manager[0].navigate == True
+    assert s.axes_manager[0].size == 512
+    assert s.axes_manager[0].navigate == False
 
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0']
     assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) \
+                                                                == header_keys
 
 def test_load_spectrum():
     fname = os.path.join(MY_PATH, "sur_data",
                          "test_spectrum.pro")
     s = load(fname)
-    assert s.data.shape == (1,512)
+    assert s.data.shape == (512,)
 
     md = s.metadata
-    assert md.Signal.quantity == 'CL Intensity a.u.'
-    assert_allclose(s.axes_manager[0].scale,1.0)
-    assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[1].scale,1.084000246009964e-6)
-    assert_allclose(s.axes_manager[1].offset,172.84281784668565e-6)
+    assert md.Signal.quantity == 'CL Intensity (a.u.)'
+    #assert_allclose(s.axes_manager[0].scale,1.0)
+    #assert_allclose(s.axes_manager[0].offset,0.0)
+    assert_allclose(s.axes_manager[0].scale,1.084000246009964e-6)
+    assert_allclose(s.axes_manager[0].offset,172.84281784668565e-6)
 
-    assert s.axes_manager[0].name == 'T'
-    assert s.axes_manager[0].units == ''
-    assert s.axes_manager[1].name == 'Wavelength'
-    assert s.axes_manager[1].units == 'mm'
-    assert s.axes_manager[0].size == 1
-    assert s.axes_manager[0].navigate == True
-    assert s.axes_manager[1].size == 512
-    assert s.axes_manager[1].navigate == False
+    #assert s.axes_manager[0].name == 'T'
+    #assert s.axes_manager[0].units == ''
+    assert s.axes_manager[0].name == 'Wavelength'
+    assert s.axes_manager[0].units == 'mm'
+    #assert s.axes_manager[0].size == 1
+    #assert s.axes_manager[0].navigate == True
+    assert s.axes_manager[0].size == 512
+    assert s.axes_manager[0].navigate == False
 
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0']
     assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) \
+                                                                == header_keys
 
 def test_load_surface():
     fname = os.path.join(MY_PATH, "sur_data",
                          "test_surface.sur")
     s = load(fname)
     md = s.metadata
-    assert md.Signal.quantity == 'CL Intensity a.u.'
+    assert md.Signal.quantity == 'CL Intensity (a.u.)'
     assert s.data.shape == (128,128)
     assert_allclose(s.axes_manager[0].scale,8.252198e-05)
     assert_allclose(s.axes_manager[0].offset,0.0)
@@ -762,65 +390,5 @@ def test_load_surface():
     omd = s.original_metadata
     assert list(omd.as_dictionary().keys()) == ['Object_0_Channel_0']
     assert list(omd.Object_0_Channel_0.as_dictionary().keys()) == ['Header']
-    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) == \
-        ['H01_Signature',
-         'H02_Format',
-         'H03_Number_of_Objects',
-         'H04_Version',
-         'H05_Object_Type',
-         'H06_Object_Name',
-         'H07_Operator_Name',
-         'H08_P_Size',
-         'H09_Acquisition_Type',
-         'H10_Range_Type',
-         'H11_Special_Points',
-         'H12_Absolute',
-         'H13_Gauge_Resolution',
-         'H14_W_Size',
-         'H15_Size_of_Points',
-         'H16_Zmin',
-         'H17_Zmax',
-         'H18_Number_of_Points',
-         'H19_Number_of_Lines',
-         'H20_Total_Nb_of_Pts',
-         'H21_X_Spacing',
-         'H22_Y_Spacing',
-         'H23_Z_Spacing',
-         'H24_Name_of_X_Axis',
-         'H25_Name_of_Y_Axis',
-         'H26_Name_of_Z_Axis',
-         'H27_X_Step_Unit',
-         'H28_Y_Step_Unit',
-         'H29_Z_Step_Unit',
-         'H30_X_Length_Unit',
-         'H31_Y_Length_Unit',
-         'H32_Z_Length_Unit',
-         'H33_X_Unit_Ratio',
-         'H34_Y_Unit_Ratio',
-         'H35_Z_Unit_Ratio',
-         'H36_Imprint',
-         'H37_Inverted',
-         'H38_Levelled',
-         'H39_Obsolete',
-         'H40_Seconds',
-         'H41_Minutes',
-         'H42_Hours',
-         'H43_Day',
-         'H44_Month',
-         'H45_Year',
-         'H46_Day_of_week',
-         'H47_Measurement_duration',
-         'H48_Compressed_data_size',
-         'H49_Obsolete',
-         'H50_Comment_size',
-         'H51_Private_size',
-         'H52_Client_zone',
-         'H53_X_Offset',
-         'H54_Y_Offset',
-         'H55_Z_Offset',
-         'H56_T_Spacing',
-         'H57_T_Offset',
-         'H58_T_Axis_Name',
-         'H59_T_Step_Unit',
-         'H60_Comment',
-         ]
+    assert list(omd.Object_0_Channel_0.Header.as_dictionary().keys()) \
+                                                            == header_keys
