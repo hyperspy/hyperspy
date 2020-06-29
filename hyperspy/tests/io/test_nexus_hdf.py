@@ -219,7 +219,7 @@ class TestSavedMultiSignalLoad():
         assert self.s[0].axes_manager[0].name == "xaxis"
         assert self.s[0].axes_manager[1].name == "yaxis"
 
-    def test_signal2_string(self):
+    def test_signal2_float(self):
         assert (
             self.s[1].original_metadata.instrument.processing.window_size
             == 20.0)
@@ -229,7 +229,7 @@ class TestSavedMultiSignalLoad():
             self.s[1].original_metadata.instrument.processing.lines,
             np.array([b"Fe_Ka", b"Cu_Ka", b"Compton"]))
 
-    def test_signal2_class(self):
+    def test_signal2_string(self):
         assert self.s[1].original_metadata.instrument.scantype\
               == "XRF"
 
@@ -312,7 +312,7 @@ def test_read_file2_signal1():
     assert s.metadata.General.title == "rocks"
 
 
-def test_read_file2_signal2():
+def test_read_file2_default():
     s = hs.load(file2, use_default=False, nxdata_only=True,
                 hardlinks_only=True, dataset_keys=["unnamed__1"])
     assert s.metadata.General.title == "unnamed__1"
@@ -321,7 +321,7 @@ def test_read_file2_signal2():
     assert s.metadata.General.title == "rocks"
 
 
-def test_read_file2_meta():
+def test_read_file2_metadata_keys():
     s = hs.load(file2, nxdata_only=True,
                 dataset_keys=["rocks"], metadata_keys=["energy"])
     assert s.original_metadata.instrument.energy.value == 12.0
