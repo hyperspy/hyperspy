@@ -1645,7 +1645,38 @@ class EELSSpectrum_mixin:
                 line_markers = self._edge_markers[EELS_edge]
                 while line_markers:
                     m = line_markers.pop()
-                    m.close()    
+                    m.close()
+                    
+    def get_complementary_edges(self, edges, only_major=False):
+        # get other edges of the same element present in active edges within
+        # the energy range of the axis
+        emin = self.axes_manager[-1].low_value
+        emax = self.axes_manager[-1].high_value
+        complmt_edges = []
+        
+        elements = set()
+        for edge in edges:
+            element, _ = edge.split('_')
+            elements.update([element])        
+        
+        for element in elements:
+            ss_info = elements_db[element]['Atomic_properties'][
+                        'Binding_energies']
+        
+            for subshell in ss_info:
+                sse = ss_info[subshell]['onset_energy (eV)']
+                ssr = ss_info[subshell]['relevance']
+                
+                if only_major:
+                    if ssr != 'Major':
+                        continue
+                
+                edge = element + '_' + subshell
+                if (emin <= sse <= emax) and (subshell[-1] != 'a') and \
+                    (edge not in edges):
+                    complmt_edges.append(edge)
+        
+        return complmt_edges
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         factors = self._validate_rebin_args_and_get_factors(

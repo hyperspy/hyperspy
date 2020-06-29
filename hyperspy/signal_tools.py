@@ -245,90 +245,142 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
 
 @add_gui_method(toolkey="hyperspy.EELSSpectrum.print_edges_table")
 class EdgesRange(SpanSelectorInSignal1D):
-    left_value = t.Float(t.Undefined, label='New left value')
-    right_value = t.Float(t.Undefined, label='New right value')
     units = t.Unicode()
     edges_list = t.Tuple()
-    comp_edges_list = t.Tuple()
-    active_compl_edges = t.Tuple()
-  
+    only_major = t.Bool()
+    order = t.Unicode('closest')
+    complementary = t.Bool(True)
+    
     def __init__(self, signal):
         super(EdgesRange, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
-        self.active_edges = ()
+        self.active_edges = []
+        self.active_complementary_edges = []
         self.slp = SpectrumLabelPosition(self.signal)
+        self.btns = []
 
         self._get_edges_info_within_energy_axis()
 
     def _get_edges_info_within_energy_axis(self):
         mid_energy = (self.axis.low_value + self.axis.high_value) / 2
         rng = self.axis.high_value - self.axis.low_value 
-        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng))
+        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng, 
+                                                         order=self.order))
         info = get_info_from_edges(self.edge_all)
-        self.energy_all = np.array([d['onset_energy (eV)'] for d in info])
-        self.relevance_all = np.array([d['relevance'] for d in info])
-
-    def show_edges_table(self, x0, x1, only_major, update, order,
-                         active_edges, complementary):
-        ''' Print the edge table, show selected edges on the signal
-
-        Parameters
-        ----------
-        x0, x1 : float
-            the left and right value of selected range
-        only_major : bool
-            whether to show only major edges.
-        update : bool
-            whether to update the edge table.
-        order : str
-            the way to sort the edge table, 'closest', 'ascending' or 
-            'descending'
-        active_edges : iterable
-            the selected edges to plot
-        complementary : bool
-            whether to show a list of complementary edges from the edge table
-        '''
         
-        self.slp._check_signal_figure_changed()
+        energy_all = []
+        relevance_all = []
+        description_all = []
+        for d in info:
+            onset = d['onset_energy (eV)']
+            relevance = d['relevance']
+            threshold = d['threshold']
+            edge_ = d['edge']            
+            description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
+        
+            energy_all.append(onset)
+            relevance_all.append(relevance)
+            description_all.append(description)
+        
+        self.energy_all = np.asarray(energy_all)
+        self.relevance_all = np.asarray(relevance_all)
+        self.description_all = np.asarray(description_all)
 
-        if update:            
-            if self.span_selector is not None:
-                energy_mask = (x0 <= self.energy_all) &  (self.energy_all <= x1)
-                if only_major:             
-                    relevance_mask = self.relevance_all == 'Major'
-                else:
-                    relevance_mask = np.ones(len(self.edge_all), bool)
-                
-                mask = energy_mask & relevance_mask
-                self.edges_list = tuple(self.edge_all[mask])
+    def update_table(self):
+        figure_changed = self.slp._check_signal_figure_changed()
+        if figure_changed:
+            self._clear_all_markers()
+
+        if self.span_selector is not None:
+            energy_mask = (self.ss_left_value <= self.energy_all) & \
+                (self.energy_all <= self.ss_right_value)
+            if self.only_major:             
+                relevance_mask = self.relevance_all == 'Major'
             else:
-                self.edges_list = ()
+                relevance_mask = np.ones(len(self.edge_all), bool)
 
-            display(self.signal.print_edges_near_energy(edges=self.edges_list))
+            mask = energy_mask & relevance_mask
+            self.edges_list = tuple(self.edge_all[mask])
+            energy = tuple(self.energy_all[mask])
+            relevance = tuple(self.relevance_all[mask])
+            description = tuple(self.description_all[mask])
         else:
-            display(self.signal.print_edges_near_energy(edges=self.edges_list))
+            self.edges_list = ()
+            energy, relevance, description = (), (), ()
+
+        self._keep_valid_edges()
+
+        return self.edges_list, energy, relevance, description
+
+    def _keep_valid_edges(self):
+        edge_all = list(self.signal._edge_markers.keys())
+        for edge in edge_all:
+            if (edge not in self.edges_list):
+                if edge in self.active_edges:
+                    self.active_edges.remove(edge)
+                elif edge in self.active_complementary_edges:
+                    self.active_complementary_edges.remove(edge)
+                self.signal.remove_EELS_edges_markers([edge])
+            elif (edge not in self.active_edges):
+                self.active_edges.append(edge)
         
-        if complementary:
-            self.comp_edges_list = self._get_complementary_edges(active_edges, 
-                                                                 only_major)
-            self.active_compl_edges = self.comp_edges_list
-        else:
-            self.comp_edges_list = tuple()
-            self.active_compl_edges = tuple()
+        self.on_complementary()
+        self._plot_labels()
 
-        if self.active_edges != active_edges or update:
-            self._plot_labels(active=active_edges, 
-                              complementary=self.active_compl_edges)
+    def update_active_edge(self, change):
+        state = change['new']
+        edge = change['owner'].description
+
+        if state:
+            self.active_edges.append(edge)
+        else:
+            if edge in self.active_edges:
+                self.active_edges.remove(edge)
+            if edge in self.active_complementary_edges:
+                self.active_complementary_edges.remove(edge)
+            self.signal.remove_EELS_edges_markers([edge])
+            
+        self.on_complementary()
+        self._plot_labels()
+
+    def on_complementary(self):
+        
+        if self.complementary:
+            self.active_complementary_edges = \
+                self.signal.get_complementary_edges(self.active_edges, 
+                                                    self.only_major)
+        else:
+            self.active_complementary_edges = []
+
+    def check_btn_state(self):
+        
+        edges = [btn.description for btn in self.btns]
+        for btn in self.btns:
+            edge = btn.description
+            if btn.value is False:
+                if edge in self.active_edges:
+                    self.active_edges.remove(edge)
+                    self.signal.remove_EELS_edges_markers([edge])                
+                if edge in self.active_complementary_edges:
+                    btn.value = True
+                    
+            if btn.value is True and self.complementary:
+                comp = self.signal.get_complementary_edges(self.active_edges, 
+                                                           self.only_major)
+                for cedge in comp:
+                    if cedge in edges:
+                        pos = edges.index(cedge)
+                        self.btns[pos].value = True
 
     def _plot_labels(self, active=None, complementary=None):
         # plot selected and/or complementary edges
         if active is None:
-            active = []
+            active = self.active_edges
         if complementary is None:
-            complementary = []
+            complementary = self.active_complementary_edges
             
         self._clear_all_markers()
             
@@ -337,38 +389,15 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.signal.put_label_on_signal(edges_to_show, 
                                         vertical_line_marker=vm, 
                                         text_marker=tm)
-        self.active_edges = active        
-
-    def _get_complementary_edges(self, active_edges, only_major):
-        # get other edges of the same element present in active edges within
-        # the energy range of the axis
-        elements = self.slp._unique_element_of_edges(active_edges)
-        emin, emax = self.axis.low_value, self.axis.high_value
-        complmt_edges = []
-        
-        for element in elements:
-            ss_info = elements_db[element]['Atomic_properties']['Binding_energies']
-        
-            for subshell in ss_info:
-                sse = ss_info[subshell]['onset_energy (eV)']
-                ssr = ss_info[subshell]['relevance']
-                
-                if only_major:
-                    if ssr != 'Major':
-                        continue
-                
-                edge = element + '_' + subshell
-                if (emin <= sse <= emax) and (subshell[-1] != 'a') and \
-                    (edge not in active_edges):
-                    complmt_edges.append(edge)
-        
-        return complmt_edges
+        self.active_edges = active 
+        self.active_complementary_edges = complementary
 
     def _clear_all_markers(self):
         edge_all = list(self.signal._edge_markers.keys())
         self.signal.remove_EELS_edges_markers(edge_all)
         self.slp._ele_col_dict = {}
-        self.active_edges = ()
+        self.active_edges = []
+        self.active_complementary_edges = []
         
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()

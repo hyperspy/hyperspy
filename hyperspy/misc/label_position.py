@@ -63,6 +63,9 @@ class SpectrumLabelPosition():
         if (current_sig_index != self.sig_index) or \
             not np.isclose(current_figsize, self.figsize).all():
             self._set_active_figure_properties()
+            return True
+        else:
+            return False
     
     def _get_bbox_from_textbox_patch(self, fig, textbox):
         # get the bbox object of the textbox
