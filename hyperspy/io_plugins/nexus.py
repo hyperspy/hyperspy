@@ -1,3 +1,4 @@
+"""Nexus file reading, writing and inspection."""
 # -*- coding: utf-8 -*-
 # Copyright 2007-2020 The HyperSpy developers
 #
