@@ -49,6 +49,7 @@ def tmpfilepath():
         yield os.path.join(tmp, "test.nxs")
         gc.collect()        # Make sure any memmaps are closed first!
 
+
 @pytest.fixture()
 def tmphspyfilepath():
     with tempfile.TemporaryDirectory() as tmp:
@@ -110,6 +111,7 @@ class TestDLSNexus():
             self.s.save(tmphspyfilepath)
         except:
             pytest.fail("unexpected error saving hdf5")
+
 
 class TestDLSNexusNoAxes():
 
@@ -270,6 +272,16 @@ class TestSavingMetadataContainers:
                                       np.array([1, 2, 3, 4, 5]))
         np.testing.assert_array_equal(lin.original_metadata.testarray3,
                                       np.array([1, 2, 3, 4, 5]))
+
+    def test_save_original_metadata(self, tmpfilepath):
+        s = self.s
+        s.original_metadata.set_item("testarray1", ["a", 2, "b", 4, 5])
+        s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
+        s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
+        s.save(tmpfilepath, save_original_metadata=False)
+        lin = load(tmpfilepath, nxdata_only=True)
+        with pytest.raises(AttributeError):
+            lin.original_metadata.testarray1
 
 
 class TestSavingMultiSignals:

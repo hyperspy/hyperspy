@@ -1076,20 +1076,17 @@ Using the ``.nxs`` extension will default to the Nexus loader
 The loader will follow version 3 of the 
 `Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
 The signal type, Signal1D or Signal2D, will be inferred by the ``interpretation`` attribute,
- if this set to ``spectrum`` or ``image``, in the ``NXdata`` description. If the 
+if this set to ``spectrum`` or ``image``, in the ``NXdata`` description. If the 
 `interpretation <https://manual.nexusformat.org/design.html#design-attributes>`_ 
 attribute is not set the loader will return a ``BaseSignal`` which must then be 
 converted to the appropriate signal type.
-Following the Nexus data rules if a  ``default`` dataset is not defined the loader will load all NXdata
-and all HDF datasets by default (see ``nxdata_only`` keyword in reader to control if only NXdata structures are loaded ).
-This decision to load both NXdata and HDF datasets was due to variations in Nexus implementations using NXdata.
+Following the Nexus data rules if a  ``default`` dataset is not defined the loader will load NXdata
+and HDF datasets according to the keyword options in the reader.
 A number of the `Nexus examples <https://github.com/nexusformat/exampledata>`_ from large facilties 
-don't use NXdata which would normally be required and to provide some support for older verions of the 
-Nexus data rules. 
-Data can be loaded from older versions of Nexus but some information, such as axes, may not be correctly 
-associated with the data. This missing information can however be recovered from 
-within the  ``original_metadata`` which contain the overall file structure and contents.
-
+don't use NXdata or use older versions of the Nexus implementation.
+Data can still be loaded from these files but information or associations may be missing.
+This missing information can however be recovered from 
+within the ``original_metadata`` which contains the overall structure of the entry.
 
 As the Nexus format uses HDF5 and needs to read data and metadata structured
 in different ways the loader is written to quite flexible and can also be used 
@@ -1131,7 +1128,7 @@ To access the axis information:
 
     >>> original_metadata.axis_x.value
     >>> original_metadata.axis_x.attrs.units
-    
+
 To modify the axis information:
 
 .. code-block:: python
@@ -1139,12 +1136,11 @@ To modify the axis information:
     >>> original_metadata.axis_x.value = [2.0,3.0,4.0,5.0,6.0]
     >>> original_metadata.axis_x.attrs.units = "um"
 
-   
-To store data in a Nexus monochromator format the `value`` and ``attrs``
- can define additional attributes.
+To store data in a Nexus monochromator format the ``value`` 
+and ``attrs``  can define additional attributes.
 
 ::
-    
+
     ├── monochromator
     │   ├── energy    
     │   │   ├── value : 12.0
@@ -1173,7 +1169,7 @@ structures and relationships between data.
 The use of ``attrs`` or ``value`` to set values within the metadata is optional 
 and metadata values can also be set, read or modified in the normal way. 
 
- 
+
 .. code-block:: python
 
     >>> original_metadata.monochromator.energy = 12.5
@@ -1184,8 +1180,7 @@ restored when a signal is loaded from a previously saved Nexus file.
 .. note::
 
     Altering the standard metadata structure of a signal  
-    using ``attrs`` or ``value`` keywords is not recommended 
-    
+    using ``attrs`` or ``value`` keywords is not recommended.
 
 Reading
 ^^^^^^^
@@ -1200,9 +1195,11 @@ some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dataset_keys`` : ``all``, ``hardlinks``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets. 
-- ``metadata_keys`` : ``all``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find metadata. 
-- ``nxdata_only`` : ``bool`` - Default is False. Option to only convert NXdata formatted data to signals
+- ``dataset_keys`` : ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets. 
+- ``metadata_keys`` : ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata. 
+- ``nxdata_only`` : ``bool`` - Default is False. Option to only convert NXdata formatted data to signals.
+- ``hardlinks_only`` : ``bool`` - Default is False. Option to ignore soft or External links in the file.
+- ``use_default`` : ``bool`` - Default is False. Only load the ``default`` dataset, if defined, from the file. Otherwise load according to the other keyword options.
    
 .. note::
 
@@ -1292,6 +1289,7 @@ function.
 Extra saving arguments
 ++++++++++++++++++++++
 - ``save_original_metadata`` : ``bool`` - Default is True, Option to save the original_metadata when storing to file.
+- ``use_default`` : ``bool`` - Default is False. Set the ``default`` attribute for the Nexus file.
 
 .. code-block:: python
 
@@ -1324,7 +1322,19 @@ To save multiple signals the file_writer method can be called directly.
 
     >>> from hyperspy.io_plugins.nexus import file_writer
     >>> file_writer("test.nxs",[signal1,signal2])
-    
+
+When saving multiple signals a default signal can be defined. This can be used when storing
+associated data or processing steps along with a final result. All signals can be saved but 
+a single signal can be marked as the default for easier loading in hyperspy or plotting with Nexus tools.
+The default signal is selected as the first signal in the list.
+
+.. code-block:: python
+
+    >>> from hyperspy.io_plugins.nexus import file_writer
+    >>> import hyperspy.api as hs
+    >>> file_writer("test.nxs",[signal1,signal2], use_default = True)
+    >>> hs.load("test.nxs", use_default = True)
+
 The output will be arranged by signal name.
 
 ::

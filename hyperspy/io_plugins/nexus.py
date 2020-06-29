@@ -78,7 +78,8 @@ def _parse_from_file(value, lazy=False):
 
     Returns
     -------
-    parsed value.
+    str,int, float, ndarray dask Array
+        parsed value.
 
     """
     toreturn = value
@@ -249,11 +250,7 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
     Returns
     -------
     dict
-        A signal dictionary which can be used to instantiate a signal class.
-        signal_dictionary = {'data': data,
-                             'axes': axes information,
-                             'metadata': metadata dictionary}
-        See Hyperspy axes and signal documentation
+        A signal dictionary which can be used to instantiate a signal.
 
     """
     detector_index = 0
@@ -412,26 +409,27 @@ def file_reader(filename, lazy=False, dataset_keys=None,
 
     Parameters
     ----------
-    myDict : dict or h5py.File object
+    filename : str
+        Input filename
     dataset_keys  : None, str, list of strings, default : None
-        If None - all datasets are returned.
-        If a string or list of strings is provided only return items
-        whose path contain the string(s).For example
-        dataset_keys = ["instrument","Fe"] will return
+        If None all datasets are returned.
+        If a string or list of strings is provided only items
+        whose path contain the string(s) are returned. For example
+        dataset_keys = ["instrument", "Fe"] will return
         data entries with instrument or Fe in their hdf path.
     metadata_keys: : None, str, list of strings, default : None
         Only return items from the original metadata whose path contain the
-        strings .e.g metadata_keys = ["instrument","Fe"] will return
-        all metadata entries with instrument or Fe in their hdf path.
+        strings .e.g metadata_keys = ["instrument", "Fe"] will return
+        all metadata entries with "instrument" or "Fe" in their hdf path.
     nxdata_only : bool, default : False
-        If true only NXdata will be converted into a signal
-        if false NXdata and any hdf datasets will be loaded as signals
+        If True only NXdata will be converted into a signal
+        if False NXdata and any hdf datasets will be loaded as signals
     hardlinks_only : bool, default : False
-        If true any links (soft or External) will be ignored when loading.
+        If True any links (soft or External) will be ignored when loading.
     use_default : bool, default : False
         If True and a default NXdata is defined in the file load this as a
         signal. This will ignore the other keyword options. If True and no
-        default is defined in the file the file will be loaded according to
+        default is defined the file will be loaded according to
         the keyword options.
 
     Returns
@@ -925,10 +923,10 @@ def read_metadata_from_file(filename, metadata_keys=None,
                             lazy=False, verbose=False):
     """Read the metadata from a nexus or hdf file.
 
-    The method iterates through the group and returns a dictionary of
+    This method iterates through the file and returns a dictionary of
     the entries.
     This is a convenience method to inspect a file for a value
-    rather than loading the file as a signal
+    rather than loading the file as a signal.
 
     Parameters
     ----------
@@ -939,7 +937,7 @@ def read_metadata_from_file(filename, metadata_keys=None,
         Providing a string or list of strings will only return items
         which contain the string(s).
         For example, search_keys = ["instrument","Fe"] will return
-        hdf entries with instrument or Fe in their hdf path.
+        hdf entries with "instrument" or "Fe" in their hdf path.
     verbose: bool, default : False
         Pretty Print the results to screen
 
@@ -976,9 +974,9 @@ def list_datasets_in_file(filename, dataset_keys=None,
     This method is used to inspect the contents of a Nexus file.
     The method iterates through group attributes and returns NXdata or
     hdf datasets of size >=2 if they're not already NXdata blocks
-    and returns a list of the entries
-    This is a convenience method to inspect a file to see what datasets
-    are present rather than loading all the sets in the file as signals
+    and returns a list of the entries.
+    This is a convenience method to inspect a file to list datasets
+    present rather than loading all the datasets in the file as signals.
 
     Parameters
     ----------
@@ -1093,13 +1091,13 @@ def file_writer(filename,
     signals : signal or list of signals
         Signal(s) to be written
     save_original_metadata : bool , default : False
-          Option to save hyperspy.original_metadata with the signal
+          Option to save hyperspy.original_metadata with the signal.
           A loaded Nexus file may have a large amount of data
           when loaded which you may wish to omit on saving
     use_default : bool , default : False
-          Option to only the default dataset, if defined in the file.
-          If set to true the signal or first signal in the list of signals
-          will be defined as the default. For easy plotting or loading later.
+          Option to define the default dataset in the file.
+          If set to True the signal or first signal in the list of signals
+          will be defined as the default (following Nexus v3 data rules).
 
     See Also
     --------
