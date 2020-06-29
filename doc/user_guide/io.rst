@@ -1075,18 +1075,18 @@ Using the ``.nxs`` extension will default to the Nexus loader
 
 The loader will follow version 3 of the 
 `Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
-The signal type, Signal1D or Signal2D, will be inferred by the ``interpretation`` attribute.
-if set to ``spectrum`` or ``image``, in the ``NXdata`` description. If the 
+The signal type, Signal1D or Signal2D, will be inferred by the ``interpretation`` attribute,
+ if this set to ``spectrum`` or ``image``, in the ``NXdata`` description. If the 
 `interpretation <https://manual.nexusformat.org/design.html#design-attributes>`_ 
 attribute is not set the loader will return a ``BaseSignal`` which must then be 
 converted to the appropriate signal type.
-If the Nexus file ``default`` atrribute is not defined the loader will load all NXdata
-and all HDF datasets by default (see ``nxdata_only`` keyword in reader).
-This decision was due to the varuations in Nexus implementations. A number of 
-the `Nexus examples <https://github.com/nexusformat/exampledata>`_ from large facilties 
-don't use NXdata which would normally be required. 
-Older verions of the Nexus data rules are nit supported.
-The data will be loaded but some information, such as axes, may not be correctly 
+Following the Nexus data rules if a  ``default`` dataset is not defined the loader will load all NXdata
+and all HDF datasets by default (see ``nxdata_only`` keyword in reader to control if only NXdata structures are loaded ).
+This decision to load both NXdata and HDF datasets was due to variations in Nexus implementations using NXdata.
+A number of the `Nexus examples <https://github.com/nexusformat/exampledata>`_ from large facilties 
+don't use NXdata which would normally be required and to provide some support for older verions of the 
+Nexus data rules. 
+Data can be loaded from older versions of Nexus but some information, such as axes, may not be correctly 
 associated with the data. This missing information can however be recovered from 
 within the  ``original_metadata`` which contain the overall file structure and contents.
 
@@ -1200,9 +1200,9 @@ some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dataset_keys`` : ``all``, ``hardlinks``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets. (default is ``all`` all Nexus Datasets will be read)
-- ``metadata_keys`` : ``all``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find metadata. (default is ``all`` all Nexus Metadata will be read)
-- ``nxdata_only`` : ``bool`` - Default is False. Only convert NXdata formatted data to signals
+- ``dataset_keys`` : ``all``, ``hardlinks``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets. 
+- ``metadata_keys`` : ``all``, ``str`` or ``list`` of strings - Default is ``all`` . Absolute path(s) or string(s) to search for in the path to find metadata. 
+- ``nxdata_only`` : ``bool`` - Default is False. Option to only convert NXdata formatted data to signals
    
 .. note::
 
@@ -1303,11 +1303,11 @@ Using the save method will store the nexus file with the following structure:
 
     ├── entry1
     │   ├── signal_name
-    │   ├── auxiliary
-    │   │   ├── original_metadata
+    │   │   ├── auxiliary
+    │   │   │   ├── original_metadata
     │   │   │   ├── hyperspy_metadata
     │   │   │   ├── learning_results
-    │   │   ├── signal_name
+    │   │   ├── signal_data
     │   │   │   ├── data and axes (NXdata format)
     
 
@@ -1329,21 +1329,21 @@ The output will be arranged by signal name.
 
 ::
     
-    ├── entry1
-    │   ├── signal_name
-    │   ├── auxiliary
-    │   │   ├── original_metadata
-    │   │   │   ├── hyperspy_metadata
-    │   │   │   ├── learning_results
-    │   │   ├── signal_name (NXdata format)
+    ├── entry1 (NXentry)
+    │   ├── signal_name (NXentry)
+    │   │   ├── auxiliary (NXentry)
+    │   │   │   ├── original_metadata (NXcollection)
+    │   │   │   ├── hyperspy_metadata (NXcollection)
+    │   │   │   ├── learning_results  (NXcollection)
+    │   │   ├── signal_data (NXdata format)
     │   │   │   ├── data and axes  
-    ├── entry2
-    │   ├── signal_name
-    │   ├── auxiliary
-    │   │   ├── original_metadata
-    │   │   │   ├── hyperspy_metadata
-    │   │   │   ├── learning_results
-    │   │   ├── signal_name (NXdata format)
+    ├── entry2 (NXentry)
+    │   ├── signal_name (NXentry)
+    │   │   ├── auxiliary (NXentry)
+    │   │   │   ├── original_metadata (NXcollection)
+    │   │   │   ├── hyperspy_metadata (NXcollection)
+    │   │   │   ├── learning_results (NXcollection)
+    │   │   ├── signal_data (NXdata)
     │   │   │   ├── data and axes 
 
 
