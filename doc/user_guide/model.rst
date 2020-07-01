@@ -97,6 +97,7 @@ The following general components are currently available for one-dimensional mod
 
 The following components developed with specific signal types in mind are currently available for one-dimensional models:
 
+* :py:class:`~._components.eels_arctan.EELSArctan`
 * :py:class:`~._components.eels_double_power_law.DoublePowerLaw`
 * :py:class:`~._components.eels_cl_edge.EELSCLEdge`
 * :py:class:`~._components.pes_core_line_shape.PESCoreLineShape`
