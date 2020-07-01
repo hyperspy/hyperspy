@@ -279,7 +279,8 @@ def load(filenames=None,
             # files are required to contain the same number of signals. We
             # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
-                obj = load_single_file(filename, lazy=lazy,
+                obj = load_single_file(filename, 
+                                        lazy=lazy,
                                        **kwds)
                 if i == 0:
                     # First iteration, determine number of signals, if several:
@@ -346,17 +347,19 @@ def load_single_file(filename, **kwds):
 
     filename : string
         File name (including the extension)
+        
 
     """
     if not os.path.isfile(filename):
         raise FileNotFoundError(f"File: {filename} not found!")
 
     extension = os.path.splitext(filename)[1][1:]
-
     i = 0
+    
     while extension.lower() not in io_plugins[i].file_extensions and \
             i < len(io_plugins) - 1:
         i += 1
+
     if i == len(io_plugins):
         # Try to load it with the python imaging library
         try:
@@ -558,6 +561,29 @@ def dict2signal(signal_dict, lazy=False):
 
 
 def save(filename, signal, overwrite=None, **kwds):
+    """
+    Save hyperspy signal to a file.
+
+    A list of plugins supporting file saving can be found here: 
+    http://hyperspy.org/hyperspy-doc/current/user_guide/io.html#supported-formats
+
+    Any extra keyword is passed to the corresponding save method in the
+    io_plugin. 
+    For available options see their individual documentation.
+
+    Parameters
+    ----------
+    filename :  None or str
+        The filename to save the signal to. 
+    signal :  Hyperspy signal
+        The signal to be saved to file     
+    overwrite : None or Bool (default, None)
+        If None and a file exists the user will be prompted to on whether to 
+        overwrite. If False and a file exists the file will not be written.
+        If True and a file exists the file will be overwritten without 
+        prompting
+    
+    """
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
         extension = "hspy"
