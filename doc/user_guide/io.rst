@@ -1044,7 +1044,7 @@ In order to prevent accidental misinterpretation of information downstream, the 
 
 Writing
 ^^^^^^^
-Signals can be written to new h5USID files using the standard ``.save()`` function.
+Signals can be written to new h5USID files using the standard :py:meth:`~.signal.BaseSignal.save` function.
 Setting the ``overwrite`` keyword argument to ``True`` will append to the specified
 HDF5 file. All other keyword arguments will be passed to
 `pyUSID.hdf_utils.write_main_dataset() <https://pycroscopy.github.io/pyUSID/_autosummary/_autosummary/pyUSID.io.hdf_utils.html#pyUSID.io.hdf_utils.write_main_dataset>`_
@@ -1104,7 +1104,7 @@ Nexus formats typcial use hdf datasets attributes to store additional
 information such as an indication of the units for an axis or the NX_class which
 the dataset structure follows. The metadata, hyperspy  or original_metadata, 
 therefore needs to be able to indicate the values and attributes of a dataset. 
-To implment this structure the ``value`` and ``attrs`` of a dataset can also be
+To implement this structure the ``value`` and ``attrs`` of a dataset can also be
 defined. The value of a dataset is set using a ``value`` key. 
 The attributes of a dataset are defined by an ``attrs`` key. 
 
@@ -1190,19 +1190,19 @@ Reading
 Nexus files can contain multiple datasets within the same file but the
 ordering of datasets can vary depending on the setup of an experiment or
 processing step when the data was collected.
-For example in one experiment Fe,Ca,P,Pb were collected but in the next experiment
-Ca,P,K,Fe,Pb were collected. HyperSpy supports reading in one or more datasets 
+For example in one experiment Fe, Ca, P, Pb were collected but in the next experiment
+Ca, P, K, Fe, Pb were collected. HyperSpy supports reading in one or more datasets 
 and returns a list of signals but in this example case the indexing is different.
 To control which data or metadata is loaded and in what order
 some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dataset_keys`` : ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets. 
-- ``metadata_keys`` : ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata. 
-- ``nxdata_only`` : ``bool`` - Default is False. Option to only convert NXdata formatted data to signals.
-- ``hardlinks_only`` : ``bool`` - Default is False. Option to ignore soft or External links in the file.
-- ``use_default`` : ``bool`` - Default is False. Only load the ``default`` dataset, if defined, from the file. Otherwise load according to the other keyword options.
+- ``dataset_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets. 
+- ``metadata_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata. 
+- ``nxdata_only``: ``bool`` - Default is False. Option to only convert NXdata formatted data to signals.
+- ``hardlinks_only``: ``bool`` - Default is False. Option to ignore soft or External links in the file.
+- ``use_default``: ``bool`` - Default is False. Only load the ``default`` dataset, if defined, from the file. Otherwise load according to the other keyword options.
    
 .. note::
 
@@ -1210,8 +1210,9 @@ Extra loading arguments
     is strongly recommended if the contents of the HDF5 file are not known apriori.
     This prevents issues with regard to loading datasets far larger than memory.
 
-    Also note that setting ``lazy=True`` leaves the file handle to the HDF5 file open.
-    If it is important that the files be closed after reading, set ``lazy=False``.
+    Also note that setting ``lazy=True`` leaves the file handle to the HDF5 file open
+    and it can be closed with :py:meth:`~._signals.lazy.LazySignal.close_file`
+    or when using :py:meth:`~._signals.lazy.LazySignal.compute` with ``close_file=True``.
  
  
 Reading a Nexus file a single Nexus dataset:
@@ -1222,16 +1223,12 @@ Reading a Nexus file a single Nexus dataset:
 
 By default the loader will look for stored NXdata objects.
 If there are hdf datasets which are not stored as NXdata but which
-should be loaded as signals set the `nxdata_only`` keyword to False and all
+should be loaded as signals set the ``nxdata_only`` keyword to False and all
 hdf datasets will be returned as signals.
 
 .. code-block:: python
 
     >>> sig = hs.load("sample.nxs",nxdata_only=False)
-
-Given that HDF5 files can accommodate very large datasets ``lazy=True`` is 
-set by default. This prevents issues with regard to loading datasets
-far larger than memory.
 
 We can load a specific datasets using the ``dataset_keys`` keyword argument. 
 Setting it to the absolute path of the desired dataset will cause 
@@ -1258,7 +1255,7 @@ Multiple datasets can be loaded by providing a number of keys:
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys=["EDS","Fe","Ca"])
+    >>> hs.load("sample.nxs", dataset_keys=["EDS", "Fe", "Ca"])
 
 Metadata can also be filtered in the same way using ``metadata_keys``
 
@@ -1286,13 +1283,13 @@ use the ``metadata_keys`` to load only the most relevant information.
 
 Writing
 ^^^^^^^
-Signals can be written to new Nexus files using the standard ``.save()`` 
+Signals can be written to new Nexus files using the standard :py:meth:`~.signal.BaseSignal.save` 
 function.
 
 Extra saving arguments
 ++++++++++++++++++++++
-- ``save_original_metadata`` : ``bool`` - Default is True, Option to save the original_metadata when storing to file.
-- ``use_default`` : ``bool`` - Default is False. Set the ``default`` attribute for the Nexus file.
+- ``save_original_metadata``: ``bool`` - Default is True, Option to save the original_metadata when storing to file.
+- ``use_default``: ``bool`` - Default is False. Set the ``default`` attribute for the Nexus file.
 
 .. code-block:: python
 
@@ -1335,7 +1332,7 @@ The default signal is selected as the first signal in the list.
 
     >>> from hyperspy.io_plugins.nexus import file_writer
     >>> import hyperspy.api as hs
-    >>> file_writer("test.nxs",[signal1,signal2], use_default = True)
+    >>> file_writer("test.nxs", [signal1,signal2], use_default = True)
     >>> hs.load("test.nxs", use_default = True)
 
 The output will be arranged by signal name.
