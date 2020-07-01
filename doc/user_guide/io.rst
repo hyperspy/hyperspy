@@ -188,53 +188,55 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
 
 .. table:: Supported file formats
 
-    +--------------------+--------+--------+--------+
-    | Format             | Read   | Write  | lazy   |
-    +====================+========+========+========+
-    | Gatan's dm3        |    Yes |    No  |    Yes |
-    +--------------------+--------+--------+--------+
-    | Gatan's dm4        |    Yes |    No  |    Yes |
-    +--------------------+--------+--------+--------+
-    | FEI's emi and ser  |    Yes |    No  |    Yes |
-    +--------------------+--------+--------+--------+
-    | hspy               |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | Image: jpg         |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | TIFF               |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | MRC                |    Yes |    No  |    Yes |
-    +--------------------+--------+--------+--------+
-    | MRCZ               |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | EMSA/MSA           |    Yes |    Yes |    No  |
-    +--------------------+--------+--------+--------+
-    | NetCDF             |    Yes |    No  |    No  |
-    +--------------------+--------+--------+--------+
-    | Ripple             |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | SEMPER unf         |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | Blockfile          |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | DENS heater log    |    Yes |    No  |    No  |
-    +--------------------+--------+--------+--------+
-    | Bruker's bcf       |    Yes |    No  |    Yes |
-    +--------------------+--------+--------+--------+
-    | Bruker's spx       |    Yes |    No  |    No  |
-    +--------------------+--------+--------+--------+
-    | EMD (NCEM)         |    Yes |    Yes |    Yes |
-    +--------------------+--------+--------+--------+
-    | EMD (Velox)        |    Yes |    No  |    Yes |
-    +--------------------+--------+--------+--------+
-    | Protochips log     |    Yes |    No  |    No  |
-    +--------------------+--------+--------+--------+
-    | EDAX .spc and .spd |    Yes |    No  |    Yes |
-    +--------------------+--------+--------+--------+
-    | h5USID .h5         |    Yes |   Yes  |   Yes  |
-    +--------------------+--------+--------+--------+
-    | Phenom .elid       |    Yes |    No  |    No  |
-    +--------------------+--------+--------+--------+
+    +-----------------------------------+--------+--------+--------+
+    | Format                            | Read   | Write  | lazy   |
+    +===================================+========+========+========+
+    | Gatan's dm3                       |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | Gatan's dm4                       |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | FEI's emi and ser                 |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | hspy                              |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | Image: jpg                        |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | TIFF                              |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | MRC                               |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | MRCZ                              |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | EMSA/MSA                          |    Yes |    Yes |    No  |
+    +-----------------------------------+--------+--------+--------+
+    | NetCDF                            |    Yes |    No  |    No  |
+    +-----------------------------------+--------+--------+--------+
+    | Ripple                            |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | SEMPER unf                        |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | Blockfile                         |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | DENS heater log                   |    Yes |    No  |    No  |
+    +-----------------------------------+--------+--------+--------+
+    | Bruker's bcf                      |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | Bruker's spx                      |    Yes |    No  |    No  |
+    +-----------------------------------+--------+--------+--------+
+    | EMD (NCEM)                        |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | EMD (Velox)                       |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | Protochips log                    |    Yes |    No  |    No  |
+    +-----------------------------------+--------+--------+--------+
+    | EDAX .spc and .spd                |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
+    | h5USID .h5                        |    Yes |   Yes  |   Yes  |
+    +-----------------------------------+--------+--------+--------+
+    | Phenom .elid                      |    Yes |    No  |    No  |
+    +-----------------------------------+--------+--------+--------+
+    | DigitalSurf's .sur and .pro       |    Yes |    No  |    No  |
+    +-----------------------------------+--------+--------+--------+
 
 .. _hspy-format:
 
@@ -1051,6 +1053,20 @@ HDF5 file. All other keyword arguments will be passed to
 Note that the model and other secondary data artifacts linked to the signal are not
 written to the file but these can be implemented at a later stage.
 
+.. _sur-format:
+
+SUR and PRO format
+------------------
+
+This is a format developed by the digitalsurf company to handle various types of
+scientific measurements data such as profilometer,SEM,AFM,RGB(A) images, multilayer
+surfaces and profiles. Even though it is essentially a surfaces format, 1D signals
+are supported for spectra and spectral maps. Metadata parsing is supported, including
+user-customised metadata, as well as the loading of files containing multiple objects
+packed together.
+
+The plugin was developed based on the MountainsMap software documentation which
+contains a description of the binary format.
 
 Reading data generated by HyperSpy using other software packages
 ================================================================
