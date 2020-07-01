@@ -104,8 +104,7 @@ def get_core_loss_eels_signal(add_powerlaw=False):
     from hyperspy import components1d
 
     x = np.arange(400, 800, 1)
-    arctan = components1d.Arctan(A=1, k=0.2, x0=688)
-    arctan.minimum_at_zero = True
+    arctan = components1d.EELSArctan(A=1, k=0.2, x0=688)
     mn_l3_g = components1d.Gaussian(A=100, centre=695, sigma=4)
     mn_l2_g = components1d.Gaussian(A=20, centre=720, sigma=4)
 
@@ -203,10 +202,8 @@ def get_core_loss_eels_line_scan_signal():
     from hyperspy import components1d
 
     x = np.arange(400, 800, 1)
-    arctan_mn = components1d.Arctan(A=1, k=0.2, x0=688)
-    arctan_mn.minimum_at_zero = True
-    arctan_fe = components1d.Arctan(A=1, k=0.2, x0=612)
-    arctan_fe.minimum_at_zero = True
+    arctan_mn = components1d.EELSArctan(A=1, k=0.2, x0=688)
+    arctan_fe = components1d.EELSArctan(A=1, k=0.2, x0=612)
     mn_l3_g = components1d.Gaussian(A=100, centre=695, sigma=4)
     mn_l2_g = components1d.Gaussian(A=20, centre=720, sigma=4)
     fe_l3_g = components1d.Gaussian(A=100, centre=605, sigma=4)
@@ -288,7 +285,7 @@ def get_atomic_resolution_tem_signal2d():
     """
     from hyperspy.signals import Signal2D
     from hyperspy import components2d
-    
+
     sX, sY = 2, 2
     x_array, y_array = np.mgrid[0:200, 0:200]
     image = np.zeros_like(x_array, dtype=np.float32)
@@ -298,6 +295,6 @@ def get_atomic_resolution_tem_signal2d():
             gaussian2d.centre_x.value = x
             gaussian2d.centre_y.value = y
             image += gaussian2d.function(x_array, y_array)
-    
+
     s = Signal2D(image)
     return s

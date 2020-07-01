@@ -210,7 +210,7 @@ def _extract_hdf_dataset(group, dataset, lazy=False):
 
     """
     data = group[dataset]
-    if(lazy):
+    if lazy:
         if "chunks" in data.attrs.keys():
             chunks = data.attrs["chunks"]
         else:
@@ -337,7 +337,7 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
                             'navigate': True
                             })
             else:
-                if(len(data.shape) == len(axes_list)):
+                if len(data.shape) == len(axes_list):
                     nav_list.append({
                             'size': data.shape[named_axes[detector_index]],
                             'index_in_array': named_axes[detector_index],
@@ -348,7 +348,7 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
                            })
                     detector_index = detector_index+1
 
-    if(lazy):
+    if lazy:
         if "chunks" in data.attrs.keys():
             chunks = data.attrs["chunks"]
         else:
