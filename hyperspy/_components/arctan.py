@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import math
-
-import numpy as np
 
 from hyperspy._components.expression import Expression
 
@@ -28,26 +25,26 @@ class Arctan(Expression):
     r"""Arctan function component.
 
     .. math::
-    
+
         f(x) = A \cdot \arctan \left[ k \left( x-x_0 \right) \right]
 
 
     ============ =============
-    Variable      Parameter 
+    Variable      Parameter
     ============ =============
-    :math:`A`     A 
-    :math:`k`     k 
-    :math:`x_0`   x0 
+    :math:`A`     A
+    :math:`k`     k
+    :math:`x_0`   x0
     ============ =============
 
 
     Parameters
     -----------
     A : float
-        Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=-A` and 
+        Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=-A` and
         :math:`\lim_{x\to\infty}f(x)=A`
     k : float
-        Slope (steepness of the step). The larger :math:`k`, the sharper the 
+        Slope (steepness of the step). The larger :math:`k`, the sharper the
         step.
     x0 : float
         Center parameter (position of zero crossing :math:`f(x_0)=0`).
@@ -69,6 +66,3 @@ class Arctan(Expression):
             autodoc=False,
             **kwargs,
         )
-
-        self.isbackground = False
-        self.convolved = True
