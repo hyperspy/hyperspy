@@ -66,7 +66,7 @@ install_req = ['scipy>=0.15',
                'imageio',
                'pyyaml',
                'PTable',
-               'tifffile>=2018.10.18',
+               'tifffile[all]>=2018.10.18',
                ]
 
 extras_require = {
@@ -352,7 +352,8 @@ with update_version_when_dev() as version:
                 'tests/io/emd_files/fei_emd_files.zip',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
-                'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+                'tests/signal/data/test_find_peaks1D_ohaver.hdf5',
+                'tests/signal/data/*.hspy',
                 'hyperspy_extension.yaml',
             ],
         },

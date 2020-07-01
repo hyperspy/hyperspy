@@ -85,6 +85,14 @@ class TestSubPixelAlign:
         s = self.signal
         s.estimate_shift2D(sub_pixel_factor=200, plot=plot)
 
+    def test_align_crop_error(self):
+        s = self.signal
+        shifts = self.shifts
+        s_size = np.array(s.axes_manager.signal_shape)
+        shifts[0] = s_size + 1
+        with pytest.raises(ValueError, match="Cannot crop signal"):
+            s.align2D(shifts=shifts, crop=True)
+
 
 @lazifyTestClass
 class TestAlignTools:
@@ -126,6 +134,21 @@ class TestAlignTools:
         print(shifts)
         print(self.ishifts)
         assert np.allclose(shifts, self.ishifts)
+
+    def test_align_no_shift(self):
+        s = self.signal
+        shifts = s.estimate_shift2D()
+        shifts.fill(0)
+        with pytest.warns(UserWarning, match="provided shifts are all zero"):
+            shifts = s.align2D(shifts=shifts)
+            assert shifts is None
+
+    def test_align_twice(self):
+        s = self.signal
+        s.align2D()
+        with pytest.warns(UserWarning, match="the images are already aligned"):
+            shifts = s.align2D()
+            assert shifts.sum() == 0
 
     def test_align(self):
         # Align signal

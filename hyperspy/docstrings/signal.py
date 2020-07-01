@@ -68,11 +68,11 @@ SHOW_PROGRESSBAR_ARG = \
 
 PARALLEL_ARG = \
     """parallel : None or bool
-           If ``True``, perform computation in parallel using multiple cores. If
-           ``None``, the default from the preferences settings is used."""
+           If ``True``, perform computation in parallel using multithreading. If
+           ``None``, the default from the preferences settings is used. The number
+           of threads is controlled by the ``max_workers`` argument."""
 
-PARALLEL_INT_ARG = \
-    """parallel : None, bool, or int
-           If True, perform computation in parallel using multiple cores. If
-           int, use as many cores as specified. If None the default from
-           the preferences settings is used."""
+MAX_WORKERS_ARG = \
+    """max_workers : None or int
+           Maximum number of threads used when ``parallel=True``. If None, defaults
+           to ``min(32, os.cpu_count())``."""

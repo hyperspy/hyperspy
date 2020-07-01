@@ -26,17 +26,28 @@
 import logging
 
 import numpy as np
-import scipy.linalg
 
-from hyperspy.misc.machine_learning.import_sklearn import fast_svd, sklearn_installed
+from hyperspy.learn.svd_pca import svd_solve
 
 _logger = logging.getLogger(__name__)
 
 
-def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
-    """Performs maximum likelihood PCA with missing data.
+def mlpca(
+    X, varX, output_dimension, svd_solver="auto", tol=1e-10, max_iter=50000, **kwargs
+):
+    """Performs maximum likelihood PCA with missing data and/or heteroskedastic noise.
 
-    This function is a transcription of a MATLAB code obtained from [1]_.
+    Standard PCA based on a singular value decomposition (SVD) approach assumes
+    that the data is corrupted with Gaussian, or homoskedastic noise. For many
+    applications, this assumption does not hold. For example, count data from
+    EDS-TEM experiments is corrupted by Poisson noise, where the noise variance
+    depends on the underlying pixel value. Rather than scaling or transforming
+    the data to approximately "normalize" the noise, MLPCA instead uses estimates
+    of the data variance to perform the decomposition.
+
+    This function is a transcription of a MATLAB code obtained from [Andrews1997]_.
+
+    Read more in the :ref:`User Guide <mva.mlpca>`.
 
     Parameters
     ----------
@@ -47,13 +58,28 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
         (zeros for missing measurements).
     output_dimension : int
         The model dimensionality.
+    svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
+        If auto:
+            The solver is selected by a default policy based on `data.shape` and
+            `output_dimension`: if the input data is larger than 500x500 and the
+            number of components to extract is lower than 80% of the smallest
+            dimension of the data, then the more efficient "randomized"
+            method is enabled. Otherwise the exact full SVD is computed and
+            optionally truncated afterwards.
+        If full:
+            run exact SVD, calling the standard LAPACK solver via
+            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+        If arpack:
+            use truncated SVD, calling ARPACK solver via
+            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+            `0 < output_dimension < min(data.shape)`
+        If randomized:
+            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            to estimate a limited number of components
     tol : float
         Tolerance of the stopping condition.
     max_iter : int
         Maximum number of iterations before exiting without convergence.
-    fast : bool, default False
-        Whether to use randomized SVD from sklearn to estimate
-        a limited number of components given by output_dimension.
 
     Returns
     -------
@@ -64,27 +90,17 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
 
     References
     ----------
-    .. [1] Darren T. Andrews and Peter D. Wentzell, "Applications of
-           maximum likelihood principal component analysis: incomplete
-           data sets and calibration transfer", Analytica Chimica Acta 350,
-           no. 3 (September 19, 1997): 341-352.
+    .. [Andrews1997] Darren T. Andrews and Peter D. Wentzell, "Applications
+        of maximum likelihood principal component analysis: incomplete
+        data sets and calibration transfer", Analytica Chimica Acta 350,
+        no. 3 (September 19, 1997): 341-352.
 
     """
-    if fast is True and sklearn_installed is True:
-
-        def svd(X):
-            return fast_svd(X, output_dimension)
-
-    else:
-
-        def svd(X):
-            return scipy.linalg.svd(X, full_matrices=False)
-
     m, n = X.shape
 
     with np.errstate(divide="ignore"):
         # Shouldn't really have zero variance anywhere,
-        # but handle it here.
+        # except for missing data but handle it here.
         inv_v = 1.0 / varX
         inv_v[~np.isfinite(inv_v)] = 1.0
 
@@ -92,7 +108,7 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
 
     # Generate initial estimates
     _logger.info("Generating initial estimates")
-    U, _, _ = svd(np.cov(X))
+    U, _, _ = svd_solve(np.cov(X), svd_solver=svd_solver, **kwargs)
     U = U[:, :output_dimension]
     s_old = 0.0
 
@@ -114,18 +130,16 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
             s_obj += (dx * inv_v[:, i]) @ dx.T
 
         # Every second iteration, check the stop criterion
-        if itr % 2 == 0:
+        if itr > 0 and itr % 2 == 0:
             stop_criterion = np.abs(s_old - s_obj) / s_obj
-            _logger.info(
-                "Iteration: {}, convergence: {}".format(itr // 2, stop_criterion)
-            )
+            _logger.info(f"Iteration: {itr // 2}, convergence: {stop_criterion}")
 
             if stop_criterion < tol:
                 break
 
         # Transpose for next iteration
         s_old = s_obj
-        _, _, V = svd(M)
+        _, _, V = svd_solve(M, svd_solver=svd_solver, **kwargs)
 
         X = X.T
         inv_v = inv_v.T
@@ -135,6 +149,7 @@ def mlpca(X, varX, output_dimension, tol=1e-10, max_iter=50000, fast=False):
         m, n = X.shape
         U = V[:output_dimension].T
 
-    U, S, V = svd(M)
+    U, S, V = svd_solve(M, svd_solver=svd_solver, **kwargs)
     V = V.T
+
     return U, S, V, s_obj

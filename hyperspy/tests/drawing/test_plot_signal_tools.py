@@ -42,8 +42,7 @@ def test_plot_BackgroundRemoval():
                            background_type='Power Law',
                            polynomial_order=2,
                            fast=True,
-                           plot_remainder=True,
-                           show_progressbar=None)
+                           plot_remainder=True)
 
     br.span_selector.set_initial((105, 115))
     br.span_selector.onmove_callback()

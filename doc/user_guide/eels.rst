@@ -33,12 +33,59 @@ information is stored in the :py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). This information is saved to file
 when saving in the hspy format (HyperSpy's HDF5 specification).
 
+An utility function :py:meth:`~.misc.eels.tools.get_edges_near_energy` can be
+helpful to identify possible elements in the sample.
+:py:meth:`~.misc.eels.tools.get_edges_near_energy` returns a list of edges
+arranged in the order closest to the specified energy within a window, both
+measured in eV. The size of the window can be controlled by the argument
+`width` (default as 10)--- If the specified energy is 849 eV and the width is
+6 eV, it returns a list of edges with onset energy between 846 eV to 852 eV and
+they are arranged in the order closest to 849 eV.
+
+.. code-block:: python
+
+    >>> from hyperspy.misc.eels.tools import get_edges_near_energy
+    >>> get_edges_near_energy(532)
+    ['O_K', 'Pd_M3', 'Sb_M5', 'Sb_M4']
+    >>> get_edges_near_energy(849, width=6)
+    ['La_M4', 'Fe_L1']
+
+The static method :py:meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` 
+in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing 
+more information about the edges.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.print_edges_near_energy(401, width=20)
+    +-------+-------------------+-----------+-----------------------------+
+    |  edge | onset energy (eV) | relevance |         description         |
+    +-------+-------------------+-----------+-----------------------------+
+    |  N_K  |       401.0       |   Major   |         Abrupt onset        |
+    | Sc_L3 |       402.0       |   Major   | Sharp peak. Delayed maximum |
+    | Cd_M5 |       404.0       |   Major   |       Delayed maximum       |
+    | Sc_L2 |       407.0       |   Major   | Sharp peak. Delayed maximum |
+    | Mo_M2 |       410.0       |   Minor   |          Sharp peak         |
+    | Mo_M3 |       392.0       |   Minor   |          Sharp peak         |
+    | Cd_M4 |       411.0       |   Major   |       Delayed maximum       |
+    +-------+-------------------+-----------+-----------------------------+
+
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can
-estimate the thickness from a low-loss EELS spectrum using the Log-Ratio
-method.
+.. versionadded:: 1.6
+    Option to compute the absolute thickness, including the angular corrections
+    and mean free path estimation.
+
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method can
+estimate the thickness from a low-loss EELS spectrum using the log-ratio
+method. If the beam energy, collection angle, convergence angle and sample
+density are known, the absolute thickness is computed using the method in
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`. This includes the estimation of
+the inelastic mean free path (iMFP). For more accurate results, it is possible
+to input the iMFP of the material if known.  If the density and/or the iMFP are
+not known, the output is the thickness relative to the (unknown) iMFP without
+any angular corrections.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -201,9 +248,9 @@ image
 
 .. NOTE::
 
-    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.         
+    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.
     The fitting procedure acts in iterative manner along the energy-loss-axis.
-    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit. 
+    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit.
     Then it only activates the the first two, fits, and repeats this until all edges are fitted simultanously.
 
     Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.

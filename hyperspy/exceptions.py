@@ -18,6 +18,13 @@
 
 # custom exceptions
 
+class MountainsMapFileError(Exception):
+
+    def __init__(self, msg = "Corrupt Mountainsmap file"):
+        self.error =  msg
+
+    def __str__(self):
+        return repr(self.error)
 
 class ByteOrderError(Exception):
 
