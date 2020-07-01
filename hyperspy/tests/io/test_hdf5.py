@@ -663,7 +663,7 @@ def test_strings_from_py2():
 def test_save_ragged_array(tmpfilepath):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
-    s = BaseSignal(np.array([a, b])).T
+    s = BaseSignal(np.array([a, b], dtype=object)).T
     filename = os.path.join(tmpfilepath, "test_save_ragged_array.hspy")
     s.save(filename)
     s1 = load(filename)
