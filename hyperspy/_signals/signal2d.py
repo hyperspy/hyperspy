@@ -714,6 +714,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
         )
 
         if crop and not expand:
+            max_shift = np.max(shifts, axis=0) - np.min(shifts, axis=0)
+
+            if np.any(max_shift >= np.array(self.axes_manager.signal_shape)):
+                raise ValueError("Shift outside range of signal axes. Cannot crop signal.")
+
             # Crop the image to the valid size
             shifts = -shifts
             bottom, top = (

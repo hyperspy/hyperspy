@@ -28,8 +28,7 @@ import numpy as np
 import dill
 import scipy
 import scipy.odr as odr
-from scipy.optimize import (leastsq, least_squares,
-                            minimize, differential_evolution)
+from scipy.optimize import leastsq, least_squares, minimize, differential_evolution
 from scipy.linalg import svd
 from contextlib import contextmanager
 
@@ -1115,16 +1114,16 @@ class BaseModel(list):
                     ls_b = self.free_parameters_boundaries
                     ls_b = ([a if a is not None else -np.inf for a, b in ls_b],
                             [b if b is not None else np.inf for a, b in ls_b])
-                    output = \
-                        least_squares(self._errfunc, self.p0[:],
-                                      args=args, bounds=ls_b, **kwargs)
+                    output = least_squares(self._errfunc, self.p0[:],
+                                           args=args, bounds=ls_b, **kwargs)
                     self.p0 = output.x
+                    ysize = len(output.fun)
+                    cost = 2 * output.cost  # res.cost is half sum of squares
 
                     # Do Moore-Penrose inverse, discarding zero singular values
                     # to get pcov (as per scipy.optimize.curve_fit())
                     _, s, VT = svd(output.jac, full_matrices=False)
-                    threshold = np.finfo(float).eps * \
-                        max(output.jac.shape) * s[0]
+                    threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
                     s = s[s > threshold]
                     VT = VT[:s.size]
                     pcov = np.dot(VT.T / s**2, VT)
@@ -1133,19 +1132,42 @@ class BaseModel(list):
                     # This replicates the original "leastsq"
                     # behaviour in earlier versions of HyperSpy
                     # using the Levenberg-Marquardt algorithm
-                    output = \
-                        leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
-                                col_deriv=1, args=args, full_output=True,
-                                **kwargs)
-                    self.p0, pcov = output[0:2]
+                    output = leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
+                                     col_deriv=1, args=args, full_output=True,
+                                     **kwargs)
+                    self.p0, pcov, infodict, errmsg, ier = output
+                    ysize = len(infodict['fvec'])
+                    cost = np.sum(infodict['fvec'] ** 2)
 
-                signal_len = sum([axis.size
-                                  for axis in self.axes_manager.signal_axes])
-                if (signal_len > len(self.p0)) and pcov is not None:
-                    pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
-                             (len(args[0]) - len(self.p0)))
+                warn_cov = False
 
-                    self.p_std = np.sqrt(np.diag(pcov))
+                if pcov is None:
+                    # Indeterminate covariance
+                    pcov = np.zeros((len(self.p0), len(self.p0)), dtype=float)
+                    pcov.fill(np.inf)
+                    warn_cov = True
+                elif pcov.diagonal().min() < 0:
+                    # Usually indicative of numerical overflow
+                    # (covariance should be positive)
+                    pcov.fill(np.inf)
+                    warn_cov = True
+                elif (ysize > self.p0.size):
+                    pcov *= cost / (ysize - self.p0.size)
+                else:
+                    pcov.fill(np.inf)
+                    warn_cov = True
+
+                if warn_cov:
+                    _logger.warning(
+                        "Covariance of the parameters could not be estimated. "
+                        "Estimated parameter standard deviations will be np.inf. "
+                        "This could indicate that the model is a poor description "
+                        "of the data."
+                    )
+
+                # Calculate standard deviation
+                self.p_std = np.sqrt(np.diag(pcov))
+
                 self.fit_output = output
 
             elif fitter == "odr":

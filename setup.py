@@ -66,7 +66,7 @@ install_req = ['scipy>=0.15',
                'imageio',
                'pyyaml',
                'PTable',
-               'tifffile>=2018.10.18',
+               'tifffile[all]>=2018.10.18',
                ]
 
 extras_require = {

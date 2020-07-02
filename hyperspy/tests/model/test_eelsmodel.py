@@ -25,6 +25,14 @@ import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
 
+# Dask does not always work nicely with np.errstate,
+# see: https://github.com/dask/dask/issues/3245, so
+# filter out divide-by-zero warnings that only appear
+# when the test is lazy. When the test is not lazy,
+# internal use of np.errstate means the warnings never
+# appear in the first place.
+@pytest.mark.filterwarnings("ignore:invalid value encountered in subtract:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered in log:RuntimeWarning")
 @lazifyTestClass
 class TestCreateEELSModel:
 
