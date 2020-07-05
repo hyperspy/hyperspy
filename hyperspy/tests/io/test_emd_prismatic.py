@@ -32,13 +32,13 @@ def test_all_but_4D():
 
     assert len(s) == 4
     # DPC: navigation dimension are DPC and depth
-    assert s[0].data.shape == (2, 22, 22, 2)
+    assert s[0].data.shape == (2, 2, 22, 22)
     # annular detectors: navigation dimension is depth
     assert s[1].data.shape == (2, 22, 22)
     # virtual detectors: navigation dimension are depth and scattering angle
-    assert s[2].data.shape == (16, 16, 4)
+    assert s[2].data.shape == (4, 16, 16)
     # projected potential: navigation dimension is number of slices
-    assert s[3].data.shape == (2, 22, 22, 18)
+    assert s[3].data.shape == (2, 18, 22, 22)
 
     def check_depth_axis(axis):
         assert "depth" in axis.name
@@ -48,8 +48,8 @@ def test_all_but_4D():
         np.testing.assert_allclose(axis.size, 2)
 
     def check_signal_axes(signal_axes):
-        assert signal_axes[0].name == 'R_y'
-        assert signal_axes[1].name == 'R_x'
+        assert signal_axes[0].name == 'R_x'
+        assert signal_axes[1].name == 'R_y'
         for axis in signal_axes:
             assert axis.units == "nm"
             np.testing.assert_allclose(axis.scale, 0.25)
@@ -79,8 +79,8 @@ def test_all_but_4D():
 
     # signal axes
     signal_axes = s[2].axes_manager.signal_axes
-    assert signal_axes[0].name == 'R_y'
-    assert signal_axes[1].name == 'R_x'
+    assert signal_axes[0].name == 'R_x'
+    assert signal_axes[1].name == 'R_y'
     for axis in signal_axes:
         assert axis.units == "nm"
         np.testing.assert_allclose(axis.scale, 0.339375)
@@ -150,7 +150,7 @@ def test_3D_only(lazy):
     if lazy:
         s.compute(close_file=True)
 
-    assert s.data.shape == (22, 22, 37)
+    assert s.data.shape == (37, 22, 22)
 
     # scattering angle axis
     axis = s.axes_manager[0]
@@ -162,8 +162,8 @@ def test_3D_only(lazy):
 
     # signal axes
     signal_axes = s.axes_manager.signal_axes
-    assert signal_axes[0].name == 'R_y'
-    assert signal_axes[1].name == 'R_x'
+    assert signal_axes[0].name == 'R_x'
+    assert signal_axes[1].name == 'R_y'
     for axis in signal_axes:
         assert axis.units == "nm"
         np.testing.assert_allclose(axis.scale, 0.25)
@@ -175,14 +175,14 @@ def test_non_square_3D():
     filename = os.path.join(FILES_PATH, 'Si100_2x1x1_3D.emd')
     s = hs.load(filename)
 
-    assert s.data.shape == (44, 22)
+    assert s.data.shape == (22, 44)
 
     # signal axes
     signal_axes = s.axes_manager.signal_axes
-    assert signal_axes[0].name == 'R_y'
-    assert signal_axes[1].name == 'R_x'
-    assert signal_axes[0].size == 22
-    assert signal_axes[1].size == 44
+    assert signal_axes[0].name == 'R_x'
+    assert signal_axes[1].name == 'R_y'
+    assert signal_axes[0].size == 44
+    assert signal_axes[1].size == 22
     for axis in signal_axes:
         assert axis.units == "nm"
         np.testing.assert_allclose(axis.scale, 0.25)
@@ -195,12 +195,12 @@ def test_4D(lazy):
     s = hs.load(filename, lazy=lazy)
     if lazy:
         s.compute(close_file=True)
-    assert s.data.shape == (2, 11, 11, 8, 8)
+    assert s.data.shape == (2, 8, 8, 11, 11)
 
     # navigation x, y axes
     navigation_axes = s.axes_manager.navigation_axes
-    assert navigation_axes[0].name == 'R_y'
-    assert navigation_axes[1].name == 'R_x'
+    assert navigation_axes[0].name == 'R_x'
+    assert navigation_axes[1].name == 'R_y'
     for axis in navigation_axes[:2]:
         assert axis.units == "nm"
         np.testing.assert_allclose(axis.scale, 0.5)
@@ -217,8 +217,8 @@ def test_4D(lazy):
 
     # signal axes
     signal_axes = s.axes_manager.signal_axes
-    assert signal_axes[0].name == 'Q_y'
-    assert signal_axes[1].name == 'Q_x'
+    assert signal_axes[0].name == 'Q_x'
+    assert signal_axes[1].name == 'Q_y'
     assert signal_axes[0].size == 8
     assert signal_axes[1].size == 8
     for axis in signal_axes:

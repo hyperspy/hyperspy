@@ -42,9 +42,9 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 my_path = os.path.dirname(__file__)
 
 # Reference data:
-data_signal = np.arange(27).reshape((3, 3, 3))
-data_image = np.arange(9).reshape((3, 3))
-data_spectrum = np.arange(3)
+data_signal = np.arange(27).reshape((3, 3, 3)).T
+data_image = np.arange(9).reshape((3, 3)).T
+data_spectrum = np.arange(3).T
 data_save = np.arange(24).reshape((2, 3, 4))
 sig_metadata = {'a': 1, 'b': 2}
 user = {'name': 'John Doe', 'institution': 'TestUniversity',
@@ -108,7 +108,7 @@ def test_data_numpy_object_dtype():
         my_path, 'emd_files', 'example_object_dtype_data.emd')
     signal = load(filename)
     np.testing.assert_equal(signal.data,
-                            np.array([['a, 2, test1'], ['a, 2, test1']]))
+                            np.array([['a, 2, test1', 'a, 2, test1']]))
 
 
 def test_data_axis_length_1():
@@ -158,7 +158,7 @@ class TestDatasetName:
             s = load(self.hdf5_dataset_path, dataset_path=dataset_path)
             title = os.path.basename(os.path.dirname(dataset_path))
             assert s.metadata.General.title == title
-            assert s.data.shape == data_size
+            assert s.data.shape == data_size[::-1]
 
     def test_load_with_dataset_path_several(self):
         dataset_path = self.dataset_path_list[0:2]
@@ -180,12 +180,10 @@ class TestDatasetName:
             load(self.hdf5_dataset_path, dataset_name=dataset_name)
 
 
-class TestMinimalSave():
-
-    def test_minimal_save(self):
-        signal = Signal1D([0, 1])
-        with tempfile.TemporaryDirectory() as tmp:
-            signal.save(os.path.join(tmp, 'testfile.emd'))
+def test_minimal_save():
+    signal = Signal1D([0, 1])
+    with tempfile.TemporaryDirectory() as tmp:
+        signal.save(os.path.join(tmp, 'testfile.emd'))
 
 
 class TestReadSeveralDatasets:
