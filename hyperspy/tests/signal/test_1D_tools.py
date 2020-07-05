@@ -48,7 +48,7 @@ class TestAlignTools:
 
     def test_estimate_shift(self):
         s = self.signal
-        eshifts = -1 * s.estimate_shift1D(show_progressbar=None)
+        eshifts = -1 * s.estimate_shift1D()
         np.testing.assert_allclose(
             eshifts, self.ishifts * self.scale, atol=1e-3)
 
@@ -59,7 +59,7 @@ class TestAlignTools:
         s.shift1D(-
                   1 *
                   self.ishifts[:, np.newaxis] *
-                  self.scale, show_progressbar=None)
+                  self.scale)
         assert m.data_changed.called
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         assert np.allclose(s.data[:, i_zlp], 12)
@@ -74,7 +74,7 @@ class TestAlignTools:
 
     def test_align(self):
         s = self.signal
-        s.align1D(show_progressbar=None)
+        s.align1D()
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         assert np.allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
@@ -112,7 +112,7 @@ class TestShift1D:
 
     def test_crop_left(self):
         s = self.s
-        s.shift1D(np.array((0.01)), crop=True, show_progressbar=None)
+        s.shift1D(np.array((0.01)), crop=True)
         assert (
             tuple(
                 s.axes_manager[0].axis) == tuple(
@@ -121,7 +121,7 @@ class TestShift1D:
 
     def test_crop_right(self):
         s = self.s
-        s.shift1D(np.array((-0.01)), crop=True, show_progressbar=None)
+        s.shift1D(np.array((-0.01)), crop=True)
         assert (
             tuple(
                 s.axes_manager[0].axis) == tuple(
@@ -194,18 +194,18 @@ class TestInterpolateInBetween:
         s = self.s.inav[0]
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.interpolate_in_between(8, 12, show_progressbar=None)
+        s.interpolate_in_between(8, 12)
         np.testing.assert_array_equal(s.data, np.arange(20))
         assert m.data_changed.called
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
-        s.interpolate_in_between(0.8, 1.2, show_progressbar=None)
+        s.interpolate_in_between(0.8, 1.2)
         np.testing.assert_array_equal(s.data, np.arange(20))
 
     def test_two_spectra(self):
         s = self.s
-        s.interpolate_in_between(8, 12, show_progressbar=None)
+        s.interpolate_in_between(8, 12)
         np.testing.assert_array_equal(s.data, np.arange(40).reshape(2, 20))
 
     def test_delta_int(self):
@@ -255,8 +255,7 @@ class TestEstimatePeakWidth:
     def test_full_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=None,
-            return_interval=True,
-            show_progressbar=None)
+            return_interval=True)
         np.testing.assert_allclose(width.data, 0.7065102,
                                    rtol=self.rtol, atol=self.atol)
         np.testing.assert_allclose(left.data, 1.6467449,
@@ -270,20 +269,18 @@ class TestEstimatePeakWidth:
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=0.5,
-            return_interval=True,
-            show_progressbar=None)
+            return_interval=True)
         assert np.isnan(width.data).all()
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
 
     def test_two_peaks(self):
         s = self.s.deepcopy()
-        s.shift1D(np.array([1.0]), show_progressbar=None)
+        s.shift1D(np.array([1.0]))
         self.s = self.s.isig[10:] + s
         width, left, right = self.s.estimate_peak_width(
             window=None,
-            return_interval=True,
-            show_progressbar=None)
+            return_interval=True)
         assert np.isnan(width.data).all()
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
@@ -323,7 +320,6 @@ class TestSmoothing:
                 return_sorted=False,)
         self.s.smooth_lowess(smoothing_parameter=frac,
                              number_of_iterations=it,
-                             show_progressbar=None,
                              parallel=parallel)
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
@@ -338,7 +334,6 @@ class TestSmoothing:
                 im=data[i, :],
                 weight=weight,)
         self.s.smooth_tv(smoothing_parameter=weight,
-                         show_progressbar=None,
                          parallel=parallel)
         np.testing.assert_allclose(data, self.s.data,
                                    rtol=self.rtol, atol=self.atol)

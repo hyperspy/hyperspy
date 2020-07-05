@@ -28,9 +28,18 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
+def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):
+    """Generate a low-rank matrix with specified size and rank for testing."""
+    rng = np.random.RandomState(random_seed)
+    U = rng.randn(m, rank)
+    V = rng.randn(n, rank)
+    X = np.abs(U @ V.T)
+    X /= np.linalg.norm(X)
+    return X
+
+
 def test_error_axes():
-    rng = np.random.RandomState(123)
-    s = signals.BaseSignal(rng.random((20, 100)))
+    s = signals.BaseSignal(generate_low_rank_matrix())
 
     with pytest.raises(AttributeError, match="not possible to decompose a dataset"):
         s.decomposition()
@@ -202,12 +211,12 @@ class TestEstimateElbowPosition:
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_store_number_significant_components(self):
-        rng = np.random.RandomState(123)
-        s = signals.Signal1D(rng.random((20, 100)))
+        s = signals.Signal1D(generate_low_rank_matrix())
         s.decomposition()
         assert s.learning_results.number_significant_components == 2
+
         # Check that number_significant_components is reset properly
-        s.decomposition(algorithm="nmf", output_dimension=2)
+        s.decomposition(algorithm="nmf")
         assert s.learning_results.number_significant_components is None
 
 
@@ -315,8 +324,7 @@ class TestNormalizeComponents:
 
 class TestDecompositionAlgorithm:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
-        self.s = signals.Signal1D(rng.random((20, 100)))
+        self.s = signals.Signal1D(generate_low_rank_matrix())
 
     @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
     def test_decomposition(self, algorithm):
@@ -355,8 +363,7 @@ class TestDecompositionAlgorithm:
 
 class TestPrintInfo:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
-        self.s = signals.Signal1D(rng.random((20, 100)))
+        self.s = signals.Signal1D(generate_low_rank_matrix())
 
     @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
     def test_decomposition(self, algorithm, capfd):
@@ -372,7 +379,7 @@ class TestPrintInfo:
         "algorithm", ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca"]
     )
     def test_decomposition_sklearn(self, capfd, algorithm):
-        self.s.decomposition(algorithm=algorithm, output_dimension=2)
+        self.s.decomposition(algorithm=algorithm, output_dimension=5)
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
         assert "scikit-learn estimator:" in captured.out
@@ -386,8 +393,7 @@ class TestPrintInfo:
 
 class TestReturnInfo:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
-        self.s = signals.Signal1D(rng.random((20, 100)))
+        self.s = signals.Signal1D(generate_low_rank_matrix())
 
     @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
     def test_decomposition_not_supported(self, algorithm):
@@ -449,9 +455,9 @@ class TestReturnInfo:
 
 class TestNonFloatTypeError:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
-        self.s_int = signals.Signal1D((rng.random((20, 100)) * 20).astype("int"))
-        self.s_float = signals.Signal1D(rng.random((20, 100)))
+        mat = generate_low_rank_matrix()
+        self.s_int = signals.Signal1D((mat * 20).astype("int"))
+        self.s_float = signals.Signal1D(mat)
 
     def test_decomposition_error(self):
         self.s_float.decomposition()
@@ -518,16 +524,14 @@ class TestComplexSignalDecomposition:
 
 @pytest.mark.parametrize("reproject", [None, "navigation", "signal", "both"])
 def test_decomposition_reproject(reproject):
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
     s.decomposition(reproject=reproject)
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 @pytest.mark.parametrize("reproject", ["signal", "both"])
 def test_decomposition_reproject_warning(reproject):
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
     with pytest.warns(
         UserWarning, match="Reprojecting the signal is not yet supported"
     ):
@@ -537,8 +541,7 @@ def test_decomposition_reproject_warning(reproject):
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 def test_decomposition_pipeline():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
 
     from sklearn.decomposition import PCA
     from sklearn.pipeline import Pipeline
@@ -554,8 +557,7 @@ def test_decomposition_pipeline():
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 def test_decomposition_gridsearchcv():
     """Tests that a simple sklearn GridSearchCV is an acceptable algorithm."""
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
 
     from sklearn.decomposition import PCA
     from sklearn.model_selection import GridSearchCV
@@ -565,18 +567,16 @@ def test_decomposition_gridsearchcv():
 
     assert hasattr(out, "best_estimator_")
     assert hasattr(out, "cv_results_")
-    np.testing.assert_allclose(out.best_score_, -63.5394493654988)
+    np.testing.assert_allclose(out.best_score_, 268.700158)
 
 
 def test_decomposition_mlpca_var_func():
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
     s.decomposition(output_dimension=2, algorithm="mlpca", var_func=lambda x: x)
 
 
 def test_decomposition_mlpca_warnings_errors():
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
 
     with pytest.warns(
         VisibleDeprecationWarning, match="`polyfit` argument has been deprecated"
@@ -612,8 +612,7 @@ def test_decomposition_mlpca_warnings_errors():
 
 
 def test_negative_values_error():
-    rng = np.random.RandomState(123)
-    x = rng.random((20, 100))
+    x = generate_low_rank_matrix()
     x[0, 0] = -1.0
     s = signals.Signal1D(x)
     with pytest.raises(ValueError, match="Negative values found in data!"):
@@ -621,8 +620,7 @@ def test_negative_values_error():
 
 
 def test_undo_treatments_error():
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
     s.decomposition(output_dimension=2, copy=False)
 
     with pytest.raises(AttributeError, match="Unable to undo data pre-treatments!"):
@@ -630,8 +628,7 @@ def test_undo_treatments_error():
 
 
 def test_normalize_components_errors():
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
 
     with pytest.raises(ValueError, match="can only be called after s.decomposition"):
         s.normalize_decomposition_components(target="loadings")
@@ -643,8 +640,7 @@ def test_normalize_components_errors():
 
 
 def test_centering_error():
-    rng = np.random.RandomState(123)
-    s = signals.Signal1D(rng.random((20, 100)))
+    s = signals.Signal1D(generate_low_rank_matrix())
 
     with pytest.raises(
         ValueError, match="normalize_poissonian_noise=True is only compatible"

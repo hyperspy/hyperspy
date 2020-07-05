@@ -103,7 +103,11 @@ def _validate_metadata_from_h5dset(sig, h5_dset, compound_comp_name=None):
         if 'Measurement' in h5_meas_grp.name.split('/')[-1]:
             temp = usid.hdf_utils.get_attributes(h5_meas_grp)
             usid_grp_parms.update(temp)
-    assert sig.original_metadata.parameters.as_dictionary() == usid_grp_parms
+    # Remove timestamp key since there is 1s difference occasionally
+    usid_grp_parms.pop('timestamp', None)
+    om_dict = sig.original_metadata.parameters.as_dictionary()
+    om_dict.pop('timestamp', None)
+    assert om_dict == usid_grp_parms
 
 
 def compare_usid_from_signal(sig, h5_path, empty_pos=False, empty_spec=False,
@@ -225,6 +229,7 @@ def gen_2dim(all_pos=False, s2f_aux=True):
 # ################ HyperSpy Signal to h5USID ##################################
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestHS2USIDallKnown:
 
     def test_n_pos_0_spec(self):
@@ -318,6 +323,7 @@ class TestHS2USIDallKnown:
                                  empty_spec=False, dataset_path=new_dataset_path)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestHS2USIDlazy:
 
     def test_base_nd(self):
@@ -332,6 +338,7 @@ class TestHS2USIDlazy:
                                  empty_spec=False, axes_defined=False)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestHS2USIDedgeAxes:
 
     def test_no_axes(self):
@@ -393,7 +400,7 @@ class TestHS2USIDedgeAxes:
 
 # ################## h5USID to HyperSpy Signal(s)  ############################
 
-
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestUSID2HSbase:
 
     def test_n_pos_0_spec(self):
@@ -453,6 +460,7 @@ class TestUSID2HSbase:
         self.base_n_pos_m_spec(True)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestUSID2HSdtype:
 
     def test_complex(self):
@@ -523,6 +531,7 @@ class TestUSID2HSdtype:
                                  invalid_axes=True)
 
 
+@pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
 class TestUSID2HSmultiDsets:
 
     def test_pick_specific(self):

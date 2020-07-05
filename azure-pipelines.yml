@@ -56,7 +56,7 @@ steps:
 
 - bash: |
     source activate $ENV_NAME
-    pip install --no-deps .
+    pip install --no-deps -e .
     conda list
   displayName: Install package
 

@@ -19,12 +19,14 @@
 import math
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm, SymLogNorm, PowerNorm
 from traits.api import Undefined
 import logging
 import inspect
 import copy
+from distutils.version import LooseVersion
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -414,9 +416,13 @@ class ImagePlot(BlittedFigure):
 
                 norm = LogNorm(vmin=vmin, vmax=vmax)
             elif norm == 'symlog':
+                sym_log_kwargs = {}
+                if LooseVersion(matplotlib.__version__) >= LooseVersion("3.2"):
+                    sym_log_kwargs['base'] = 10
                 norm = SymLogNorm(linthresh=self.linthresh,
-                                linscale=self.linscale,
-                                vmin=vmin, vmax=vmax)
+                                  linscale=self.linscale,
+                                  vmin=vmin, vmax=vmax,
+                                  **sym_log_kwargs)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
             elif norm not in ['auto', 'linear']:
@@ -468,7 +474,7 @@ class ImagePlot(BlittedFigure):
                         'vmax': vmax,
                         'norm': norm}
 
-                    
+
                 )
             new_args.update(kwargs)
             self.ax.imshow(data,

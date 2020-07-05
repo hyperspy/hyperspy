@@ -377,7 +377,7 @@ class TestPassingArgs:
         BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
 
     def test_compression_opts(self):
-        f = h5py.File(self.filename)
+        f = h5py.File(self.filename, mode='r+')
         d = f['Experiments/__unnamed__/data']
         assert d.compression_opts == 8
         assert d.compression == 'gzip'
@@ -660,23 +660,10 @@ def test_strings_from_py2():
     assert s.metadata.Sample.elements.dtype.char == "U"
 
 
-@pytest.mark.skipif(LooseVersion(dask.__version__) >= LooseVersion('0.14.1'),
-                    reason='Fixed in later dask versions')
-def test_lazy_metadata_arrays(tmpfilepath):
-    s = BaseSignal([1, 2, 3])
-    s.metadata.array = np.arange(10.)
-    s.save(tmpfilepath)
-    l = load(tmpfilepath + ".hspy", lazy=True)
-    # Can't deepcopy open hdf5 file handles
-    with pytest.raises(TypeError):
-        l.deepcopy()
-    del l
-
-
 def test_save_ragged_array(tmpfilepath):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
-    s = BaseSignal(np.array([a, b])).T
+    s = BaseSignal(np.array([a, b], dtype=object)).T
     filename = os.path.join(tmpfilepath, "test_save_ragged_array.hspy")
     s.save(filename)
     s1 = load(filename)
@@ -689,4 +676,4 @@ def test_load_missing_extension(caplog):
     s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
-       m = s.models.restore("a") 
+       _ = s.models.restore("a")
