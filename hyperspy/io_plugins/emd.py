@@ -580,8 +580,8 @@ class EMD_NCEM:
                  }
             self.dictionaries.append(d)
 
-    @staticmethod
-    def find_dataset_paths(file):
+    @classmethod
+    def find_dataset_paths(cls, file):
         """
         Find the paths of all groups containing valid EMD data.
 
@@ -594,7 +594,9 @@ class EMD_NCEM:
         def print_dataset_only(item_name, item):
             if not os.path.basename(item_name).startswith(('dim', 'index_coords')):
                 if isinstance(item, h5py.Dataset):
-                    dataset_path.append(item_name)
+                    grp = file.get(os.path.dirname(item_name))
+                    if cls._get_emd_group_type(grp):
+                        dataset_path.append(item_name)
 
         dataset_path = []
         file.visititems(print_dataset_only)
