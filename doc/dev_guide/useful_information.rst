@@ -34,3 +34,8 @@ in the test matrix and have binary artifacts built for the release.
 Minimum Python and NumPy version support should be adjusted upward on every
 major and minor release, but never on a patch release.
 
+Conda-forge packaging
+---------------------
+
+The feedstock for the conda package lives in the conda-forge organisation on
+github: `conda-forge/hyperspy-feedstock <https://github.com/conda-forge/hyperspy-feedstock>`_.
