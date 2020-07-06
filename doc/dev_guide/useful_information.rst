@@ -7,8 +7,8 @@ Useful information
 NEP 29 — Recommend Python and Numpy version support
 ---------------------------------------------------
 
-Abstact
-^^^^^^^
+Abstract
+^^^^^^^^
 
 `NEP 29 <https://numpy.org/neps/nep-0029-deprecation_policy.html>`_ 
 (NumPy Enhancement Proposals) recommends that all projects across the
