@@ -100,6 +100,17 @@ class TestDataAxis:
                                   rounding=math.floor).tolist() ==
             [1, 1])
 
+    def test_calibrated_value2index_list_in(self):
+        assert (
+            self.axis.value2index(['0.01um', '0.0101um', '0.0103um']).tolist() == [0, 1, 3])
+        with pytest.raises(ValueError):
+            self.axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
+
+    def test_relative_value2index_list_in(self):
+        assert (
+            self.axis.value2index(["rel0.0", "rel0.5", "rel1.0"]).tolist() == [0, 4, 9])
+        with pytest.raises(ValueError):
+            self.axis.value2index(["rela0.0", "rela0.5", "rela1.0"])
     def test_value2index_array_out(self):
         with pytest.raises(ValueError):
             self.axis.value2index(np.array([10, 11]))
@@ -167,22 +178,17 @@ class TestDataAxis:
 
     def test_get_index_from_relative_string(self):
         ax = self.axis
-        assert ax._get_index_from_relative_string('rel0.5') == 4
+        assert ax._get_value_from_relative_string('rel0.5') == 10.45
         with pytest.raises(AssertionError):
-            ax._get_index_from_relative_string('r0.5') == 4
+            ax._get_value_from_relative_string('r0.5') == 10.45
         with pytest.raises(ValueError):
-            ax._get_index_from_relative_string('relative0.5') == 4
+            ax._get_value_from_relative_string('relative0.5') == 10.45
         with pytest.raises(AssertionError):
-            ax._get_index_from_relative_string('abcd') == 4
-
-    def test_get_index_from_relative_value(self):
-        ax = self.axis
-        assert ax.get_index_from_relative_value(0.5) == 4
+            ax._get_value_from_relative_string('abcd') == 10.45
 
     def test_get_value_from_relative_value(self):
         ax = self.axis
-        assert ax.get_value_from_relative_value(0.5) == 10.45
-        assert ax.get_value_from_relative_value(0.5, nearest_axis_value=True) == 10.4
+        assert ax._get_value_from_relative_value(0.5) == 10.45
 
     def test_get_index_from_value_with_units(self):
         ax = self.axis
