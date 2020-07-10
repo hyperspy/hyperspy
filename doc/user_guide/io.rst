@@ -167,7 +167,7 @@ default :ref:`hspy-format` format:
 
     >>> s.save('spectrum')
 
-If instead you want to save in the :ref:`ripple format <ripple-format>` write
+If you want to save in the :ref:`ripple format <ripple-format>` write
 instead:
 
 .. code-block:: python
@@ -1435,9 +1435,9 @@ use the ``xml`` file:
     >>> sig = hs.load("file.xml")
 
 
-which read the raw data from the ``raw`` file too. The filename of the ``raw``
-file is defined in the ``xml`` file, which implies changing the file name of
-the ``raw`` file will break reading the file.
+which will automatically read the raw data from the ``raw`` file too. The
+filename of the ``raw`` file is defined in the ``xml`` file, which implies
+changing the file name of the ``raw`` file will break reading the file.
 
 
 .. _elid-format:
