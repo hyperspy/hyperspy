@@ -30,9 +30,10 @@ except ImportError:
 DIRPATH = os.path.dirname(__file__)
 ELID2VERSION0 = os.path.join(DIRPATH, 'phenom_data', 'Elid2Version0.elid')
 ELID2VERSION1 = os.path.join(DIRPATH, 'phenom_data', 'Elid2Version1.elid')
+ELID2VERSION2 = os.path.join(DIRPATH, 'phenom_data', 'Elid2Version2.elid')
 
 
-@pytest.mark.parametrize(('pathname'), [ELID2VERSION0, ELID2VERSION1])
+@pytest.mark.parametrize(('pathname'), [ELID2VERSION0, ELID2VERSION1, ELID2VERSION2])
 def test_elid(pathname):
     s = hs.load(pathname)
     assert len(s) == 11
