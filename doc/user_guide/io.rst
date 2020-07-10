@@ -344,15 +344,16 @@ This feature is particularly useful when using
     ``chunks`` keyword argument
 
 Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory, 
-allowing lazy loading.
-This chunking has to be performed when saving the data. For more comprehensible documentation on chunking,
+allowing lazy loading. Chunk size can dramatically affect the speed of various HyperSpy algorithms, so chunk size is
+worth careful consideration when saving a signal. HyperSpy's default chunking sizes are probably not optimal
+for a given data analysis technique. For more comprehensible documentation on chunking,
 see the dask `array chunks
 <https://docs.dask.org/en/latest/array-chunks.html>`_ and `best practices
 <https://docs.dask.org/en/latest/array-best-practices.html>`_ docs. The chunks saved into HDF5 will
 match the dask array chunks in ``s.data.chunks`` when lazy loading.
 Chunk shape should follow the axes order of the numpy shape (``s.data.shape``), not the hyperspy shape.
 
-By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
+By default, the data is saved in chunks that are optimised to contain at least one full signal shape. It is
 possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
 ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
 
