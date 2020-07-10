@@ -374,13 +374,18 @@ passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 `compression`:
-  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
+  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
+  Optionally, if ``pytables`` is available by ``import tables``, the blosc compressor
+  can be used by ``compression=32001``. This can significantly improve the speed of saving with very
+  good compression.
 
 .. note::
     Compression can significantly increase the saving speed. If storage space 
     is not an issue, it can be disabled by setting ``compression = None``.
     Only ``compression = None/'gzip'`` is guaranteed to be compatible for reading with
     other HDF5 readers.
+
+
 
 .. _netcdf-format:
 
