@@ -324,8 +324,7 @@ The change of type is done using numpy "safe" rules, so no information is lost,
 as numbers are represented to full machine precision.
 
 This feature is particularly useful when using
-:py:meth:`~._signals.EDSSEMSpectrum.get_lines_intensity` (see :ref:`get lines
-intensity<get_lines_intensity>`):
+:py:meth:`~hyperspy._signals.eds.EDS_mixin.get_lines_intensity`:
 
 .. code-block:: python
 
@@ -344,7 +343,15 @@ intensity<get_lines_intensity>`):
 .. versionadded:: 1.3.1
     ``chunks`` keyword argument
 
+Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory, 
+allowing lazy loading.
+This chunking has to be performed when saving the data. For more comprehensible documentation on chunking,
+see the dask `array chunks
+<https://docs.dask.org/en/latest/array-chunks.html>`_ and `best practices
+<https://docs.dask.org/en/latest/array-best-practices.html>`_ docs. The chunks saved into HDF5 will
+match the dask array chunks in ``s.data.chunks`` when lazy loading.
 Chunk shape should follow the axes order of the numpy shape (``s.data.shape``), not the hyperspy shape.
+
 By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
 possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
 ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
@@ -365,12 +372,14 @@ passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-- ``compression`` : One of None, 'gzip', 'szip', 'lzf' (default is 'gzip').
+`compression`:
+  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
 
 .. note::
-
     Compression can significantly increase the saving speed. If storage space 
     is not an issue, it can be disabled by setting ``compression = None``.
+    Only ``compression = None/'gzip'`` is guaranteed to be compatible for reading with
+    other HDF5 readers.
 
 .. _netcdf-format:
 
