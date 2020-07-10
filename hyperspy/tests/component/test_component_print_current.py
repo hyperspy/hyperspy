@@ -18,7 +18,7 @@
 import pytest
 
 from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
-from hyperspy.misc.model_tools import current_component_values, current_model_values
+from hyperspy.misc.model_tools import current_component_values, current_model_values, _is_iter, _iter_join, _non_iter
 
 class TestSetParameters:
 
@@ -106,3 +106,16 @@ class TestSetParameters:
     def test_zero_in_normal_print(self):
         "Ensure parameters with value=0 are printed too"
         assert "            a0 |  True |          0 |" in str(current_component_values(self.model[0]).__repr__)
+
+    def test_related_tools(self):
+        assert _is_iter([1,2,3])
+        assert _is_iter((1,2,3))
+        assert not _is_iter(1)
+
+        assert _iter_join([1.2345678, 5.67890]) == '(1.23457, 5.6789)'
+        assert _iter_join([1.2345678, 5.67890]) == '(1.23457, 5.6789)'
+        assert _iter_join([1, 5]) == '(     1,      5)'
+
+        assert _non_iter(None) == ""
+        assert _non_iter(5) == '     5'
+        assert _non_iter(5.123456789) == '5.12346'
