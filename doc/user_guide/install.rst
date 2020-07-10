@@ -78,19 +78,19 @@ Further information
 ^^^^^^^^^^^^^^^^^^^
 
 When installing packages, ``conda`` will verify that all requirements of `all`
-packages installed in an environment are met; this can lead to situations where
-a solution for dependencies resolution can't be found or an expected solution
-is found, such as not installing the lastest version of libraries or installing
-undesired version. Usually, it highly depends on what libraries are already
-present in the current environment, which can make resolving the dependencies
-satisfiability problematic. In such situation, possible solutions are:
+packages installed in an environment are met. This can lead to situations where
+a solution for dependencies resolution cannot be resolved or the solution may
+include installing old or undesired versions of libraries. The requirements
+depend on which libraries are already present in the environment as satisfying
+their respective dependencies may be problematic. In such situation, possible
+solutions are:
 
-- use Miniconda instead of Anaconda, in case you are installing a python
-  distribution from scratch: Miniconda has very few packages installed, the
-  dependencies satisfiability resolution will be simple.
-- install hyperspy in a `new environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_;
-  the following example create a new environment named ``hspy_environment``,
-  activate it and install hyperspy in this environment.
+- use Miniconda instead of Anaconda, if you are installing a python
+  distribution from scratch: Miniconda installs very few packages so satisfying
+  all dependencies is relatively simple.
+- install hyperspy in a `new environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
+  The following example illustrates creating a new environment named ``hspy_environment``,
+  activating it and installing hyperspy in the new environment.
 
   .. code-block:: bash
 
