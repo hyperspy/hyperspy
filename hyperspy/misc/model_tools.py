@@ -24,13 +24,12 @@ def _is_iter(val):
 
 def _iter_join(val):
     "Joins values of iterable parameters for the fancy view, unless it equals None, then blank"
-    return "(" + ", ".join(["{:6g}".format(v)
-                            for v in val]) + ")" if val != None else ""
+    return "(" + ", ".join(["{:6g}".format(v) for v in val]) + ")" if val is not None else ""
 
 
 def _non_iter(val):
     "Returns formatted string for a value unless it equals None, then blank"
-    return "{:6g}".format(val) if val != None else ""
+    return "{:6g}".format(val) if val is not None else ""
 
 
 class current_component_values():
@@ -40,9 +39,9 @@ class current_component_values():
     Parameters
     ----------
     component : hyperspy component instance
-    only_free : True or False, default False
+    only_free : bool, default False
         If True: Only include the free parameters in the view
-    only_active : True or False, default False
+    only_active : bool, default False
         If True: Helper for current_model_values. Only include active components in the view.
         Always shows values if used on an individual component.
      """
@@ -145,9 +144,9 @@ class current_model_values():
     Parameters
     ----------
     component : hyperspy component instance
-    only_free : True or False, default False
+    only_free : bool, default False
         If True: Only include the free parameters in the view
-    only_active : True or False, default False
+    only_active : bool, default False
         If True: Only include active parameters in the view
     """
 

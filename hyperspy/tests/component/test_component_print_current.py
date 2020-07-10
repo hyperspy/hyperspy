@@ -99,3 +99,10 @@ class TestSetParameters:
     def test_model_print_current_values(self, fancy):
         self.model.print_current_values(fancy=fancy)
 
+    def test_zero_in_fancy_print(self):
+        "Ensure parameters with value=0 are printed too"
+        assert "<td>a1</td><td>True</td><td>     0</td>" in current_component_values(self.model[0])._repr_html_()
+
+    def test_zero_in_normal_print(self):
+        "Ensure parameters with value=0 are printed too"
+        assert "            a0 |  True |          0 |" in str(current_component_values(self.model[0]).__repr__)
