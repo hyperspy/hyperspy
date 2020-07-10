@@ -556,13 +556,16 @@ class DataAxis(t.HasTraits, UnitConversion):
         if value is None:
             return None
 
-        if isinstance(value, (np.ndarray, da.Array)):
+        if isinstance(value, (np.ndarray, da.Array, list)):
             if rounding is round:
                 rounding = np.round
             elif rounding is math.ceil:
                 rounding = np.ceil
             elif rounding is math.floor:
                 rounding = np.floor
+        
+        if isinstance(value, list):
+            value = np.asarray(value)
 
         index = rounding((value - self.offset) / self.scale)
 
