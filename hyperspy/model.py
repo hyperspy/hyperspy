@@ -1230,7 +1230,8 @@ class BaseModel(list):
                 f"'2-point', '3-point', 'cs'], not '{grad}'"
             )
 
-        jacobian = kwargs.pop("jac", grad)
+        # If the user passes "jac" kwarg, take this
+        grad = kwargs.pop("jac", grad)
         min_function = kwargs.pop("min_function", None)
         min_function_grad = kwargs.pop("min_function_grad", None)
 

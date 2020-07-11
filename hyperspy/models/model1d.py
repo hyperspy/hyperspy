@@ -555,12 +555,24 @@ class Model1D(BaseModel):
                         onlyfree=True)
                     if component.convolved:
                         for parameter in component.free_parameters:
+                            if not callable(parameter.grad):
+                                raise ValueError(
+                                    f"Analytical gradient not available for {parameter}. "
+                                    "Consider using a numerical approximation for the gradient "
+                                    "instead by calling `m.fit(grad='2-point')`."
+                                )
                             par_grad = np.convolve(
                                 parameter.grad(self.convolution_axis),
                                 self.low_loss(self.axes_manager),
                                 mode="valid")
                             if parameter._twins:
                                 for par in parameter._twins:
+                                    if not callable(par.grad):
+                                        raise ValueError(
+                                            f"Analytical gradient not available for {par}. "
+                                            "Consider using a numerical approximation for the gradient "
+                                            "instead by calling `m.fit(grad='2-point')`."
+                                        )
                                     np.add(par_grad, np.convolve(
                                         par.grad(
                                             self.convolution_axis),
@@ -569,9 +581,21 @@ class Model1D(BaseModel):
                             grad = np.vstack((grad, par_grad))
                     else:
                         for parameter in component.free_parameters:
+                            if not callable(parameter.grad):
+                                raise ValueError(
+                                    f"Analytical gradient not available for {parameter}. "
+                                    "Consider using a numerical approximation for the gradient "
+                                    "instead by calling `m.fit(grad='2-point')`."
+                                )
                             par_grad = parameter.grad(self.axis.axis)
                             if parameter._twins:
                                 for par in parameter._twins:
+                                    if not callable(par.grad):
+                                        raise ValueError(
+                                            f"Analytical gradient not available for {par}. "
+                                            "Consider using a numerical approximation for the gradient "
+                                            "instead by calling `m.fit(grad='2-point')`."
+                                        )
                                     np.add(par_grad, par.grad(
                                         self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
@@ -589,9 +613,21 @@ class Model1D(BaseModel):
                             component._nfree_param],
                         onlyfree=True)
                     for parameter in component.free_parameters:
+                        if not callable(parameter.grad):
+                            raise ValueError(
+                                f"Analytical gradient not available for {parameter}. "
+                                "Consider using a numerical approximation for the gradient "
+                                "instead by calling `m.fit(grad='2-point')`."
+                            )
                         par_grad = parameter.grad(axis)
                         if parameter._twins:
                             for par in parameter._twins:
+                                if not callable(par.grad):
+                                    raise ValueError(
+                                        f"Analytical gradient not available for {par}. "
+                                        "Consider using a numerical approximation for the gradient "
+                                        "instead by calling `m.fit(grad='2-point')`."
+                                    )
                                 np.add(par_grad, par.grad(
                                     axis), par_grad)
                         grad = np.vstack((grad, par_grad))
