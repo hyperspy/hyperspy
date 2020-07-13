@@ -202,20 +202,20 @@ class TestModelFitBinnedLocal:
                 (2.277013e-1, 3.343837e-5, 2.401194e-5),
             ),
             (
-                {"ftol": 1e-6},
+                {"ftol": 1e-8},
                 (9976.145193, -0.110611, 1.983807),
-                (3.721769, 2.424844e-3, 1.540289e-3),
+                (4.832206e-1, 7.096186e-5, 5.095739e-5),
             ),
         ],
     )
     def test_fit_lbfgs_std(self, options, expected, expected_std):
         self.m.fit(fitter="L-BFGS-B", options=options)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
         assert self.m.p_std is not None
         assert len(self.m.p_std) == 3
         assert np.all(~np.isinf(self.m.p_std))
-        np.testing.assert_allclose(self.m.p_std, expected_std, rtol=5e-6)
+        np.testing.assert_allclose(self.m.p_std, expected_std, rtol=1e-5)
 
     @pytest.mark.parametrize(
         "fitter, expected",
@@ -289,7 +289,7 @@ class TestModelFitBinnedGlobal:
         self.m[0].sigma.bmax = 2.5
 
         self.m.fit(fitter="Differential Evolution", method=method, bounded=True, seed=1)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.parametrize(
@@ -310,7 +310,7 @@ class TestModelFitBinnedGlobal:
         self.m[0].sigma.bmax = 2.5
 
         self.m.fit(fitter="Dual Annealing", method=method, bounded=True, seed=1)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.parametrize(
@@ -331,7 +331,7 @@ class TestModelFitBinnedGlobal:
         self.m[0].sigma.bmax = 2.5
 
         self.m.fit(fitter="SHGO", method=method, bounded=True)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
 
