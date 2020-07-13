@@ -747,8 +747,8 @@ estimated standard deviation are stored in the following line attributes:
 
     When the noise is heteroscedastic, only if the
     ``metadata.Signal.Noise_properties.variance`` attribute of the
-    :class:`~._signals.signal1d.Signal1D` instance is defined can the errors be
-    estimated accurately.
+    :class:`~._signals.signal1d.Signal1D` instance is defined can
+    the errors be estimated accurately.
 
     If the variance is not defined, the standard deviation of
     the parameters are still computed and stored in the
@@ -807,6 +807,23 @@ in most cases.
    (1.0004224896604759, -0.46982916592391377)
    >>> line.coefficients.std
    (0.0055752036447948173, 0.46950832982673557)
+
+Instead of using the inverse variance, you can also provide your own
+weights as a ``np.ndarray``:
+
+.. code-block:: python
+
+   >>> weights = np.ones_like(s.data)
+   >>> m.fit(weights=weights)
+
+.. warning::
+
+    When the attribute ``metadata.Signal.Noise_properties.variance``
+    is defined, the default behaviour is to perform a weighted least-squares
+    fit using the inverse variance.
+
+    In this scenario, to explicitly disable weighting, pass ``m.fit(weights=None)``.
+
 
 Maximum likelihood estimation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
