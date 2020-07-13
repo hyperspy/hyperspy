@@ -59,7 +59,7 @@ class TestModelFitBinned:
             self.m[0].centre.bmin = 0.5
 
         self.m.fit(fitter="leastsq", grad=grad, bounded=bounded)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
 
         if bounded:
             assert isinstance(self.m.fit_output, OptimizeResult)
@@ -79,7 +79,7 @@ class TestModelFitBinned:
     )
     def test_fit_odr(self, grad, expected):
         self.m.fit(fitter="odr", grad=grad)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, odr.Output)
 
         assert self.m.p_std is not None
@@ -105,7 +105,7 @@ class TestModelFitBinned:
         ):
             self.m.fit(fitter="mpfit", grad=grad, bounded=bounded)
 
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, mpfit)
 
         assert self.m.p_std is not None
@@ -119,7 +119,7 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         self.m.fit(fitter=fitter, bounded=True)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
 
     @pytest.mark.parametrize(
         "fitter, expected", [("leastsq", (9950.0, 0.5, 2.078154))],
@@ -132,7 +132,7 @@ class TestModelFitBinned:
         self.m[0].sigma.bmin = 0.5
         self.m[0].sigma.bmax = 2.5
         self.m.fit(fitter=fitter, ext_bounding=True)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
 
 
 class TestModelFitBinnedLocal:
@@ -175,7 +175,7 @@ class TestModelFitBinnedLocal:
             self.m[0].centre.bmin = 0.5
 
         self.m.fit(fitter=fitter, method=method, grad=grad, bounded=bounded)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
@@ -190,32 +190,23 @@ class TestModelFitBinnedLocal:
     )
     def test_fit_scipy_minimize_gradients(self, grad, expected):
         self.m.fit(fitter="L-BFGS-B", method="ls", grad=grad)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.parametrize(
-        "options, expected, expected_std",
+        "options, expected",
         [
-            (
-                {},
-                (9976.145193, -0.110611, 1.983807),
-                (2.277013e-1, 3.343837e-5, 2.401194e-5),
-            ),
-            (
-                {"ftol": 1e-8},
-                (9976.145193, -0.110611, 1.983807),
-                (4.832206e-1, 7.096186e-5, 5.095739e-5),
-            ),
+            ({}, (9976.145193, -0.110611, 1.983807),),
+            ({"ftol": 1e-8}, (9976.145193, -0.110611, 1.983807),),
         ],
     )
-    def test_fit_lbfgs_std(self, options, expected, expected_std):
+    def test_fit_lbfgs_std(self, options, expected):
         self.m.fit(fitter="L-BFGS-B", options=options)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
         assert self.m.p_std is not None
         assert len(self.m.p_std) == 3
         assert np.all(~np.isinf(self.m.p_std))
-        np.testing.assert_allclose(self.m.p_std, expected_std, rtol=1e-5)
 
     @pytest.mark.parametrize(
         "fitter, expected",
@@ -228,7 +219,7 @@ class TestModelFitBinnedLocal:
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         self.m.fit(fitter=fitter, bounded=True)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
 
     @pytest.mark.parametrize(
         "fitter, expected",
@@ -242,7 +233,7 @@ class TestModelFitBinnedLocal:
         self.m[0].sigma.bmin = 0.5
         self.m[0].sigma.bmax = 2.5
         self.m.fit(fitter=fitter, ext_bounding=True)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
 
     @pytest.mark.parametrize(
         "fitter, expected", [("SLSQP", (988.401164, -177.122887, -10.100562))]
@@ -252,7 +243,7 @@ class TestModelFitBinnedLocal:
         # even though the end result is a bad fit
         cons = {"type": "ineq", "fun": lambda x: x[0] - x[1]}
         self.m.fit(fitter=fitter, constraints=cons)
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
 
 
 class TestModelFitBinnedGlobal:
@@ -377,7 +368,7 @@ class TestModelWeighted:
     def test_fit(self, fitter, binned, expected):
         self.m.signal.metadata.Signal.binned = binned
         self.m.fit(fitter=fitter, method="ls")
-        self._check_model_values(self.m[0], expected, rtol=5e-6)
+        self._check_model_values(self.m[0], expected, rtol=1e-5)
 
 
 @lazifyTestClass
@@ -397,21 +388,21 @@ class TestModelWeightedOptions:
 
     def test_red_chisq_default(self):
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_allclose(self.m.red_chisq.data, 3.377001, rtol=5e-6)
+        np.testing.assert_allclose(self.m.red_chisq.data, 3.377001, rtol=1e-5)
 
     def test_red_chisq_inv_var(self):
         self.m.fit(fitter="leastsq", method="ls", weights="inverse_variance")
-        np.testing.assert_allclose(self.m.red_chisq.data, 3.377001, rtol=5e-6)
+        np.testing.assert_allclose(self.m.red_chisq.data, 3.377001, rtol=1e-5)
 
     def test_red_chisq_unweighted(self):
         self.m.fit(fitter="leastsq", method="ls", weights=None)
-        np.testing.assert_allclose(self.m.red_chisq.data, 3.377004, rtol=5e-6)
+        np.testing.assert_allclose(self.m.red_chisq.data, 3.377004, rtol=1e-5)
 
     def test_red_chisq_ndarray_weights(self):
         np.random.seed(1)
         rand_weights = np.random.uniform(low=1.0, high=2.0, size=self.s.data.shape)
         self.m.fit(fitter="leastsq", method="ls", weights=rand_weights)
-        np.testing.assert_allclose(self.m.red_chisq.data, 3.378721, rtol=5e-6)
+        np.testing.assert_allclose(self.m.red_chisq.data, 3.378721, rtol=1e-5)
 
 
 class TestModelScalarVariance:
@@ -709,8 +700,8 @@ class TestMultifit:
         m[0].A.bmin = 3.0
         # HyperSpy 2.0: remove setting iterpath='serpentine'
         m.multifit(fitter=fitter, bounded=True, iterpath="serpentine")
-        np.testing.assert_allclose(self.m[0].r.map["values"], [3.0, 3.0], rtol=5e-6)
-        np.testing.assert_allclose(self.m[0].A.map["values"], [4.0, 4.0], rtol=5e-6)
+        np.testing.assert_allclose(self.m[0].r.map["values"], [3.0, 3.0], rtol=1e-5)
+        np.testing.assert_allclose(self.m[0].A.map["values"], [4.0, 4.0], rtol=1e-5)
 
     @pytest.mark.parametrize("iterpath", ["flyback", "serpentine"])
     def test_iterpaths(self, iterpath):
