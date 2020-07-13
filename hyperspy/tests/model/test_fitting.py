@@ -163,11 +163,7 @@ class TestModelFitBinnedLocal:
             ("L-BFGS-B", "ml", True, False, (10001.396139, -0.104148, 2.000536)),
             ("L-BFGS-B", "huber", True, False, (10032.953495, -0.110309, 1.987885)),
             ("L-BFGS-B", "ls", False, True, (9991.627563, 0.5, 2.083987)),
-            ("L-BFGS-B", "ml", False, True, (3735.219566, 0.5, 4.384168)),
-            ("L-BFGS-B", "huber", False, True, (8483.299929, 0.5, 2.184809)),
             ("L-BFGS-B", "ls", True, True, (9991.627563, 0.5, 2.083987)),
-            ("L-BFGS-B", "ml", True, True, (3737.215052, 0.5, 4.383700)),
-            ("L-BFGS-B", "huber", True, True, (9725.455410, 0.5, 2.078238)),
         ],
     )
     def test_fit_scipy_minimize(self, fitter, method, grad, bounded, expected):
