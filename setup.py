@@ -295,6 +295,7 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.weights',
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
+        python_requires='~=3.6',
         install_requires=install_req,
         tests_require=["pytest>=3.0.2"],
         extras_require=extras_require,
