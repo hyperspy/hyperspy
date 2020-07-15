@@ -631,30 +631,38 @@ class EMD_NCEM:
     def _read_data_from_groups(self, group_path, dataset_name, stack_key=None,
                                original_metadata={}):
         axes = []
+        transpose_required = True if dataset_name != 'datacube' else False
 
         array_list = [self.file.get(f'{key}/{dataset_name}') for key in group_path]
+
         if None in array_list:
             raise IOError("Dataset can't be found.")
+
         if self.lazy:
             chunks = array_list[0].chunks
             if chunks is None:
                 chunks = calculate_chunks(array_list[0].shape, array_list[0].dtype)
+
         if len(array_list) > 1:
             # Squeeze the data only when
             if self.lazy:
-                data_list = [da.from_array(d, chunks=chunks).transpose()
-                             for d in array_list]
+                data_list = [da.from_array(d, chunks=chunks) for d in array_list]
+                if transpose_required:
+                    data_list = [da.transpose(d) for d in data_list]
                 data = da.stack(data_list)
                 data = da.squeeze(data)
             else:
-                data_list = [np.asanyarray(d).transpose() for d in array_list]
+                data_list = [np.asanyarray(d) for d in array_list]
+                if transpose_required:
+                    data_list = [np.transpose(d) for d in data_list]
                 data = np.stack(data_list).squeeze()
         else:
             if self.lazy:
                 data = da.from_array(array_list[0], chunks=chunks)
             else:
                 data = np.asanyarray(array_list[0])
-            data = data.transpose()
+            if transpose_required:
+                data = data.transpose()
 
         shape = data.shape
 
@@ -690,20 +698,27 @@ class EMD_NCEM:
                          'navigate': True})
 
             array_indices = np.arange(1, len(shape))
-            # data array are transposed and dim indices start form 1
-            dim_indices = array_indices[::-1]
+            dim_indices = array_indices
         else:
             array_indices = np.arange(0, len(shape))
-            dim_indices = (array_indices + 1)[::-1]
+            # dim indices start form 1
+            dim_indices = array_indices + 1
+
+        if transpose_required:
+            dim_indices = dim_indices[::-1]
 
         for arr_index, dim_index in zip(array_indices, dim_indices):
             dim = self.file.get(f'{group_path[0]}/dim{dim_index}')
             offset, scale = self._parse_axis(dim)
             if self._is_prismatic_file:
-                navigate = dim.name.split('/')[-1] not in ['dim1', 'dim2']
                 if dataset_name == 'datacube':
                     # For datacube (4D STEM), the signal is detector coordinate
-                    navigate = not navigate
+                    sig_dim = ['dim3', 'dim4']
+                else:
+                    sig_dim = ['dim1', 'dim2']
+
+                navigate = dim.name.split('/')[-1] not in sig_dim
+
             else:
                 navigate = False
             axes.append({'index_in_array': arr_index,

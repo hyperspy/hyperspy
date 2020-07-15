@@ -195,12 +195,12 @@ def test_4D(lazy):
     s = hs.load(filename, lazy=lazy)
     if lazy:
         s.compute(close_file=True)
-    assert s.data.shape == (2, 8, 8, 11, 11)
+    assert s.data.shape == (2, 11, 11, 8, 8)
 
     # navigation x, y axes
     navigation_axes = s.axes_manager.navigation_axes
-    assert navigation_axes[0].name == 'R_x'
-    assert navigation_axes[1].name == 'R_y'
+    assert navigation_axes[0].name == 'R_y'
+    assert navigation_axes[1].name == 'R_x'
     for axis in navigation_axes[:2]:
         assert axis.units == "nm"
         np.testing.assert_allclose(axis.scale, 0.5)
@@ -217,8 +217,8 @@ def test_4D(lazy):
 
     # signal axes
     signal_axes = s.axes_manager.signal_axes
-    assert signal_axes[0].name == 'Q_x'
-    assert signal_axes[1].name == 'Q_y'
+    assert signal_axes[0].name == 'Q_y'
+    assert signal_axes[1].name == 'Q_x'
     assert signal_axes[0].size == 8
     assert signal_axes[1].size == 8
     for axis in signal_axes:
