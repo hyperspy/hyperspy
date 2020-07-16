@@ -106,7 +106,7 @@ def file_reader(filename, lazy=False, **kwds):
         'General': {'original_filename': fname,
                     'title': os.path.splitext(fname)[0],
                     },
-        "Signal": {'signal_type': '',
+        "Signal": {'signal_type': 'electron_diffraction',
                    'record_by': 'image'},
     }
 

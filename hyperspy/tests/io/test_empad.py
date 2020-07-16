@@ -53,6 +53,7 @@ def test_read_stack(lazy):
 
     assert s.metadata.General.date == '2019-06-07'
     assert s.metadata.General.time == '13:17:22.590279'
+    assert s.metadata.Signal.signal_type == 'electron_diffraction'
 
 
 @pytest.mark.skipif(8 * struct.calcsize("P") == 32,
@@ -80,3 +81,4 @@ def test_read_map(lazy):
 
     assert s.metadata.General.date == '2019-06-06'
     assert s.metadata.General.time == '13:30:00.164675'
+    assert s.metadata.Signal.signal_type == 'electron_diffraction'
