@@ -65,6 +65,17 @@ class TestDataAxis:
         ac.offset = 100
         assert ac.axis[0] == ac.offset
 
+    def test_value2index_None(self):
+        assert self.axis.value2index(None) is None
+
+    def test_value2index_fail_string_in(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index("10.15")
+
+    def test_value2index_fail_empty_string_in(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index("")
+        
     def test_value2index_float_in(self):
         assert self.axis.value2index(10.15) == 2
 
@@ -106,11 +117,20 @@ class TestDataAxis:
         with pytest.raises(ValueError):
             self.axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
 
+    def test_calibrated_value2index_in(self):
+        assert self.axis.value2index("0.0101um") == 1
+
+    def test_relative_value2index_in(self):
+        assert self.axis.value2index("rel0.5") == 4
+
     def test_relative_value2index_list_in(self):
         assert (
             self.axis.value2index(["rel0.0", "rel0.5", "rel1.0"]).tolist() == [0, 4, 9])
+
+    def test_relative_value2index_fail_list_in(self):
         with pytest.raises(ValueError):
             self.axis.value2index(["rela0.0", "rela0.5", "rela1.0"])
+
     def test_value2index_array_out(self):
         with pytest.raises(ValueError):
             self.axis.value2index(np.array([10, 11]))

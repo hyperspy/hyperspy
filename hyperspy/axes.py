@@ -119,7 +119,7 @@ class UnitConversion:
         else:
             value = _ureg.parse_expression(value)
             if not hasattr(value, 'units'):
-                raise ValueError('"{}" should contains an units.'.format(value))
+                raise ValueError('"{}" should contain a unit.'.format(value))
             value = value.to(self.units).magnitude
         return value
 
@@ -536,11 +536,13 @@ class DataAxis(t.HasTraits, UnitConversion):
         return cp
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value if between the axis limits.
 
         Parameters
         ----------
-        value : number or numpy array
+        value : number or string, or numpy array of number or string
+                if string, should either be a calibrated unit like "20nm"
+                or a relative slicing like "rel0.2".
 
         Returns
         -------
@@ -550,12 +552,15 @@ class DataAxis(t.HasTraits, UnitConversion):
         ------
         ValueError
             If any value is out of the axis limits.
+            If the value is incorrectly formatted.
 
         """
         if value is None:
             return None
 
         if isinstance(value, str):
+            if value == "":
+                raise ValueError("Cannot slice with an empty string")
             # if first character is a digit, try unit conversion
             # otherwise try relative (fractional) indexing
             if value[0].isdigit():
