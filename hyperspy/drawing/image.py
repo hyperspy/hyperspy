@@ -415,8 +415,9 @@ class ImagePlot(BlittedFigure):
                 norm = LogNorm(vmin=vmin, vmax=vmax)
             elif norm == 'symlog':
                 norm = SymLogNorm(linthresh=self.linthresh,
-                                linscale=self.linscale,
-                                vmin=vmin, vmax=vmax)
+                                  linscale=self.linscale,
+                                  base=10,
+                                  vmin=vmin, vmax=vmax)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
             elif norm not in ['auto', 'linear']:
@@ -468,7 +469,7 @@ class ImagePlot(BlittedFigure):
                         'vmax': vmax,
                         'norm': norm}
 
-                    
+
                 )
             new_args.update(kwargs)
             self.ax.imshow(data,
