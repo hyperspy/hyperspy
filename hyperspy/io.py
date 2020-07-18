@@ -21,6 +21,7 @@ import glob
 import warnings
 import logging
 import importlib
+import copy
 
 import numpy as np
 from natsort import natsorted
@@ -279,7 +280,7 @@ def load(filenames=None,
             # files are required to contain the same number of signals. We
             # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
-                obj = load_single_file(filename, 
+                obj = load_single_file(filename,
                                         lazy=lazy,
                                        **kwds)
                 if i == 0:
@@ -347,7 +348,7 @@ def load_single_file(filename, **kwds):
 
     filename : string
         File name (including the extension)
-        
+
 
     """
     if not os.path.isfile(filename):
@@ -355,7 +356,7 @@ def load_single_file(filename, **kwds):
 
     extension = os.path.splitext(filename)[1][1:]
     i = 0
-    
+
     while extension.lower() not in io_plugins[i].file_extensions and \
             i < len(io_plugins) - 1:
         i += 1
@@ -422,6 +423,7 @@ def assign_signal_subclass(dtype,
     Signal or subclass
 
     """
+    dtype_backup = copy.copy(dtype)
     # Check if parameter values are allowed:
     if np.issubdtype(dtype, np.complexfloating):
         dtype = 'complex'
@@ -463,9 +465,14 @@ def assign_signal_subclass(dtype,
     if len(signal_dict) > 1:
         _logger.warning(
             "There is more than one kind of signal that matches "
-            "the current specifications. This is unexpected behaviour. "
-            "Please report this issue to the HyperSpy developers."
+            "the current specifications. This is unexpected behaviour and the "
+            "signal type hasn't been set. Please report this issue to the "
+            "HyperSpy developers."
         )
+
+        # return the generic signal class
+        return assign_signal_subclass(dtype_backup, signal_dimension,
+                                      signal_type="", lazy=lazy)
 
     # Regardless of the number of signals in the dict we assign one.
     # The following should only raise an error if the base classes
@@ -564,25 +571,25 @@ def save(filename, signal, overwrite=None, **kwds):
     """
     Save hyperspy signal to a file.
 
-    A list of plugins supporting file saving can be found here: 
+    A list of plugins supporting file saving can be found here:
     http://hyperspy.org/hyperspy-doc/current/user_guide/io.html#supported-formats
 
     Any extra keyword is passed to the corresponding save method in the
-    io_plugin. 
+    io_plugin.
     For available options see their individual documentation.
 
     Parameters
     ----------
     filename :  None or str
-        The filename to save the signal to. 
+        The filename to save the signal to.
     signal :  Hyperspy signal
-        The signal to be saved to file     
+        The signal to be saved to file
     overwrite : None or Bool (default, None)
-        If None and a file exists the user will be prompted to on whether to 
+        If None and a file exists the user will be prompted to on whether to
         overwrite. If False and a file exists the file will not be written.
-        If True and a file exists the file will be overwritten without 
+        If True and a file exists the file will be overwritten without
         prompting
-    
+
     """
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
