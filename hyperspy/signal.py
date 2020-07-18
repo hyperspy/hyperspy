@@ -4394,12 +4394,12 @@ class BaseSignal(FancySlicing,
         variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
                                                             gain_offset,
                                                             correlation_factor)
+
         variance = BaseSignal(variance, attributes={'_lazy': self._lazy})
         variance.axes_manager = self.axes_manager
-        variance.metadata.General.title = ("Variance of " +
-                                           self.metadata.General.title)
-        self.metadata.set_item(
-            "Signal.Noise_properties.variance", variance)
+        variance.metadata.General.title = ("Variance of " + self.metadata.General.title)
+
+        self.set_noise_variance(variance)
 
     @staticmethod
     def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
@@ -4407,6 +4407,71 @@ class BaseSignal(FancySlicing,
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
+
+    def set_noise_variance(self, variance):
+        """Set the noise variance of the signal.
+
+        Equivalent to ``self.metadata.set_item("Signal.Noise_properties.variance", variance)``.
+
+        Parameters
+        ----------
+        variance : float or np.ndarray or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+            Value or values of the noise variance.
+
+        Returns
+        -------
+        None
+
+        """
+
+        if isinstance(variance, BaseSignal):
+            if (
+                variance.axes_manager.navigation_shape
+                != self.axes_manager.navigation_shape
+            ):
+                raise ValueError(
+                    "The navigation shape of the `variance` is "
+                    "not equal to the navigation shape of the signal"
+                )
+
+        elif isinstance(variance, np.ndarray):
+            if variance.shape != self.data.shape:
+                raise ValueError(
+                    f"`variance` shape {variance.shape} does "
+                    f"not match signal shape {self.data.shape}"
+                )
+
+        elif isinstance(variance, numbers.Number):
+            pass
+
+        else:
+            raise ValueError(
+                "`variance` must be one of [float, np.ndarray, ",
+                "hyperspy.signal.BaseSignal], not {type(variance)}."
+            )
+
+        self.metadata.set_item("Signal.Noise_properties.variance", variance)
+
+    def get_noise_variance(self):
+        """Get the noise variance of the signal, if set.
+
+        Equivalent to ``self.metadata.Signal.Noise_properties.variance``.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        variance : float or np.ndarray or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+            Noise variance of the signal, if set.
+            Otherwise returns None.
+
+        """
+        if "Signal.Noise_properties.variance" in self.metadata:
+            return self.metadata.Signal.Noise_properties.variance
+
+        return None
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a
@@ -5259,13 +5324,14 @@ class BaseSignal(FancySlicing,
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
         res._assign_subclass()
-        if res.metadata.has_item("Signal.Noise_properties.variance"):
-            var = res.metadata.Signal.Noise_properties.variance
-            if isinstance(var, BaseSignal):
-                var = var.transpose(signal_axes=idx_sig,
-                                    navigation_axes=idx_nav,
-                                    optimize=optimize)
-                res.metadata.set_item('Signal.Noise_properties.variance', var)
+
+        var = res.get_noise_variance()
+        if isinstance(var, BaseSignal):
+            var = var.transpose(signal_axes=idx_sig,
+                                navigation_axes=idx_nav,
+                                optimize=optimize)
+            res.set_noise_variance(var)
+
         if optimize:
             res._make_sure_data_is_contiguous()
         if res.metadata.has_item('Markers'):

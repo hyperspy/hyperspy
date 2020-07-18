@@ -19,7 +19,6 @@
 import copy
 import importlib
 import logging
-import numbers
 import os
 import tempfile
 import warnings
@@ -971,15 +970,15 @@ class BaseModel(list):
             return [0, self._jacobian(p, y).T]
 
     def _calculate_chisq(self):
-        if self.signal.metadata.has_item('Signal.Noise_properties.variance'):
-
-            variance = self.signal.metadata.Signal.Noise_properties.variance
+        variance = self.signal.get_noise_variance()
+        if variance is not None:
             if isinstance(variance, BaseSignal):
                 variance = variance.data.__getitem__(
                     self.axes_manager._getitem_tuple)[np.where(
                                                       self.channel_switches)]
         else:
             variance = 1.0
+
         d = self(onlyactive=True).ravel() - self.signal()[np.where(
             self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
@@ -1028,29 +1027,14 @@ class BaseModel(list):
         return np.sqrt(p_var)
 
     def _convert_variance_to_weights(self):
-        metadata = self.signal.metadata
         weights = None
+        variance = self.signal.get_noise_variance()
 
-        if "Signal.Noise_properties.variance" in metadata:
-            variance = metadata.Signal.Noise_properties.variance
+        if variance is not None:
             if isinstance(variance, BaseSignal):
-                if (
-                    variance.axes_manager.navigation_shape
-                    == self.signal.axes_manager.navigation_shape
-                ):
-                    variance = variance.data.__getitem__(
-                        self.axes_manager._getitem_tuple
-                    )[np.where(self.channel_switches)]
-                else:
-                    raise AttributeError(
-                        "The 'navigation_shape' of the variance "
-                        "signals is not equal to the variance shape "
-                        "of the signal"
-                    )
-            elif not isinstance(variance, numbers.Number):
-                raise TypeError(
-                    f"Variance must be a number or a `Signal` instance, not {type(variance)}"
-                )
+                variance = variance.data.__getitem__(
+                    self.axes_manager._getitem_tuple
+                )[np.where(self.channel_switches)]
 
             _logger.info("Setting weights to 1/variance of signal noise")
 

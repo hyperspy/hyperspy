@@ -323,9 +323,7 @@ class TestModelWeighted:
         np.random.seed(1)
         s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
         self.s_var = hs.signals.Signal1D(np.arange(10, 100, 0.01))
-        s.metadata.set_item(
-            "Signal.Noise_properties.variance", self.s_var,
-        )
+        s.set_noise_variance(self.s_var)
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
@@ -367,10 +365,7 @@ class TestModelWeightedOptions:
     def setup_method(self, method):
         np.random.seed(1)
         self.s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
-        self.s.metadata.set_item(
-            "Signal.Noise_properties.variance",
-            hs.signals.Signal1D(np.arange(10, 100, 0.01)),
-        )
+        self.s.set_noise_variance(hs.signals.Signal1D(np.arange(10, 100, 0.01)))
         self.s.axes_manager[0].scale = 0.1
         self.s.axes_manager[0].offset = 10
         self.s.add_poissonian_noise()
@@ -400,7 +395,7 @@ class TestModelScalarVariance:
     def test_std1_chisq(self, std, expected):
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
+        self.s.set_noise_variance(std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_allclose(self.m.chisq.data, expected)
 
@@ -408,7 +403,7 @@ class TestModelScalarVariance:
     def test_std1_red_chisq(self, std, expected):
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
+        self.s.set_noise_variance(std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
@@ -417,7 +412,7 @@ class TestModelScalarVariance:
         self.m.set_signal_range(10, 50)
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
+        self.s.set_noise_variance(std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
@@ -436,7 +431,7 @@ class TestModelSignalVariance:
         s.add_gaussian_noise(std)
         np.random.seed(1)
         s.add_poissonian_noise()
-        s.metadata.set_item("Signal.Noise_properties.variance", variance + std ** 2)
+        s.set_noise_variance(variance + std ** 2)
         m = s.create_model()
         m.append(hs.model.components1D.Polynomial(order=1))
         self.s = s
@@ -554,35 +549,6 @@ class TestFitErrorsAndWarnings:
         ):
             self.m.fit(fitter=fitter, bounded=True)
 
-    def test_variance_shape_error(self):
-        np.random.seed(1)
-        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
-        s.metadata.set_item(
-            "Signal.Noise_properties.variance",
-            hs.signals.Signal2D(np.random.randn(900, 2, 2)),
-        )
-        s.axes_manager[0].scale = 0.1
-        s.axes_manager[0].offset = 10
-        s.add_poissonian_noise()
-        m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(1, legacy=False))
-
-        with pytest.raises(AttributeError, match="is not equal to the variance shape"):
-            m.fit(fitter="leastsq", method="ls")
-
-    def test_variance_type_error(self):
-        np.random.seed(1)
-        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
-        s.metadata.set_item("Signal.Noise_properties.variance", None)
-        s.axes_manager[0].scale = 0.1
-        s.axes_manager[0].offset = 10
-        s.add_poissonian_noise()
-        m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(1, legacy=False))
-
-        with pytest.raises(TypeError, match="Variance must be a number"):
-            m.fit(fitter="leastsq", method="ls")
-
 
 class TestCustomOptimization:
     def setup_method(self, method):
@@ -661,14 +627,12 @@ class TestMultifit:
         # There are more as_signal tests in test_parameters.py
         rs = self.m[0].r.as_signal(field="values")
         np.testing.assert_allclose(rs.data, np.array([2.0, 100.0]))
-        assert "Signal.Noise_properties.variance" not in rs.metadata
+        assert rs.get_noise_variance() is None
         # HyperSpy 2.0: remove setting iterpath='serpentine'
         self.m.multifit(fetch_only_fixed=True, iterpath="serpentine")
         rs = self.m[0].r.as_signal(field="values")
-        assert "Signal.Noise_properties.variance" in rs.metadata
-        assert isinstance(
-            rs.metadata.Signal.Noise_properties.variance, hs.signals.Signal1D
-        )
+        assert rs.get_noise_variance() is not None
+        assert isinstance(rs.get_noise_variance(), hs.signals.Signal1D)
 
     @pytest.mark.parametrize("fitter", ["leastsq", "L-BFGS-B"])
     def test_bounded_snapping(self, fitter):
