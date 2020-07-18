@@ -20,6 +20,7 @@ import numpy as np
 import matplotlib.transforms as transforms
 
 from hyperspy.drawing.widgets import Widget1DBase
+from hyperspy.drawing.utils import picker_kwargs
 
 
 class LabelWidget(Widget1DBase):
@@ -93,17 +94,18 @@ class LabelWidget(Widget1DBase):
         ax = self.ax
         trans = transforms.blended_transform_factory(
             ax.transData, ax.transAxes)
+        kwargs = picker_kwargs(5)
         self.patch = [ax.text(
             self._pos[0],
             self._pos[1],
             self.string,
             color=self.color,
             alpha=self.alpha,
-            picker=5,
             transform=trans,
             horizontalalignment='left',
             bbox=self.bbox,
-            animated=self.blit)]
+            animated=self.blit,
+            **kwargs)]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""
