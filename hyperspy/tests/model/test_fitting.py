@@ -131,7 +131,12 @@ class TestModelFitBinned:
         self.m[0].centre.bmax = 5.0
         self.m[0].sigma.bmin = 0.5
         self.m[0].sigma.bmax = 2.5
-        self.m.fit(fitter=fitter, ext_bounding=True)
+
+        with pytest.warns(
+            VisibleDeprecationWarning, match="`ext_bounding=True` has been deprecated",
+        ):
+            self.m.fit(fitter=fitter, ext_bounding=True)
+
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
 
@@ -190,21 +195,6 @@ class TestModelFitBinnedLocal:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.parametrize(
-        "options, expected",
-        [
-            ({}, (9976.145193, -0.110611, 1.983807),),
-            ({"ftol": 1e-8}, (9976.145193, -0.110611, 1.983807),),
-        ],
-    )
-    def test_fit_lbfgs_std(self, options, expected):
-        self.m.fit(fitter="L-BFGS-B", options=options)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
-        assert isinstance(self.m.fit_output, OptimizeResult)
-        assert self.m.p_std is not None
-        assert len(self.m.p_std) == 3
-        assert np.all(~np.isinf(self.m.p_std))
-
-    @pytest.mark.parametrize(
         "fitter, expected",
         [
             ("Powell", (9991.464524, 0.500064, 2.083900)),
@@ -228,7 +218,12 @@ class TestModelFitBinnedLocal:
         self.m[0].centre.bmax = 5.0
         self.m[0].sigma.bmin = 0.5
         self.m[0].sigma.bmax = 2.5
-        self.m.fit(fitter=fitter, ext_bounding=True)
+
+        with pytest.warns(
+            VisibleDeprecationWarning, match="`ext_bounding=True` has been deprecated",
+        ):
+            self.m.fit(fitter=fitter, ext_bounding=True)
+
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
     @pytest.mark.parametrize(
@@ -394,12 +389,6 @@ class TestModelWeightedOptions:
         self.m.fit(fitter="leastsq", method="ls", weights=None)
         np.testing.assert_allclose(self.m.red_chisq.data, 3.377004, rtol=1e-5)
 
-    def test_red_chisq_ndarray_weights(self):
-        np.random.seed(1)
-        rand_weights = np.random.uniform(low=1.0, high=2.0, size=self.s.data.shape)
-        self.m.fit(fitter="leastsq", method="ls", weights=rand_weights)
-        np.testing.assert_allclose(self.m.red_chisq.data, 3.378721, rtol=1e-5)
-
 
 class TestModelScalarVariance:
     def setup_method(self, method):
@@ -542,12 +531,6 @@ class TestFitErrorsAndWarnings:
     def test_wrong_grad(self):
         with pytest.raises(ValueError, match="grad must be one of"):
             self.m.fit(grad="random")
-
-    def test_weights_size_error(self):
-        with pytest.raises(
-            ValueError, match="weights must have the same shape as the signal."
-        ):
-            self.m.fit(weights=np.array([1, 2, 3]))
 
     @pytest.mark.parametrize(
         "fitter", ["Differential Evolution", "Dual Annealing", "SHGO"]

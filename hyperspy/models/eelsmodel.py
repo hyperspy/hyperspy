@@ -314,23 +314,8 @@ class EELSModel(Model1D):
                   distance regression (ODR) algorithm. It does not support
                   bounds on parameters. See :py:mod:`scipy.odr` for more details.
                 * All of the available methods for :py:func:`scipy.optimize.minimize`
-                  can be used here:
-
-                    - "Powell"
-                    - "CG"
-                    - "BFGS"
-                    - "Newton-CG"
-                    - "L-BFGS-B"
-                    - "TNC"
-                    - "COBYLA"
-                    - "SLSQP"
-                    - "trust-constr"
-                    - "dogleg"
-                    - "trust-ncg"
-                    - "trust-exact"
-                    - "trust-krylov"
-
-                  See the :ref:`User Guide <model.fitting>` documentation for more details.
+                  can be used here. See the :ref:`User Guide <model.fitting>`
+                  documentation for more details.
                 * "Differential Evolution" is a global optimization method.
                   It does support bounds on parameters. See
                   :py:func:`scipy.optimize.differential_evolution` for more

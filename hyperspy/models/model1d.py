@@ -543,6 +543,30 @@ class Model1D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         if weights is None:
             weights = 1.
+
+        # Check all components have analytical gradients
+        missing_gradients = []
+        for component in self:
+            if component.active:
+                for parameter in component.free_parameters:
+                    if not callable(parameter.grad):
+                        missing_gradients.append(parameter)
+
+                    if parameter._twins:
+                        for par in parameter._twins:
+                            if not callable(par.grad):
+                                missing_gradients.append(par)
+
+        if len(missing_gradients) > 0:
+            pars = ", ".join(str(x) for x in missing_gradients)
+
+            raise ValueError(
+                f"Analytical gradient not available for {pars}. "
+                "Consider using a numerical approximation for the gradient "
+                "instead by calling e.g. `m.fit(grad=False)`."
+            )
+
+
         if self.convolved is True:
             counter = 0
             grad = np.zeros(len(self.axis.axis))
@@ -553,54 +577,38 @@ class Model1D(BaseModel):
                             counter:counter +
                             component._nfree_param],
                         onlyfree=True)
+
                     if component.convolved:
                         for parameter in component.free_parameters:
-                            if not callable(parameter.grad):
-                                raise ValueError(
-                                    f"Analytical gradient not available for {parameter}. "
-                                    "Consider using a numerical approximation for the gradient "
-                                    "instead by calling `m.fit(grad='2-point')`."
-                                )
                             par_grad = np.convolve(
                                 parameter.grad(self.convolution_axis),
                                 self.low_loss(self.axes_manager),
                                 mode="valid")
+
                             if parameter._twins:
                                 for par in parameter._twins:
-                                    if not callable(par.grad):
-                                        raise ValueError(
-                                            f"Analytical gradient not available for {par}. "
-                                            "Consider using a numerical approximation for the gradient "
-                                            "instead by calling `m.fit(grad='2-point')`."
-                                        )
                                     np.add(par_grad, np.convolve(
                                         par.grad(
                                             self.convolution_axis),
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
+
                             grad = np.vstack((grad, par_grad))
+
                     else:
                         for parameter in component.free_parameters:
-                            if not callable(parameter.grad):
-                                raise ValueError(
-                                    f"Analytical gradient not available for {parameter}. "
-                                    "Consider using a numerical approximation for the gradient "
-                                    "instead by calling `m.fit(grad='2-point')`."
-                                )
                             par_grad = parameter.grad(self.axis.axis)
+
                             if parameter._twins:
                                 for par in parameter._twins:
-                                    if not callable(par.grad):
-                                        raise ValueError(
-                                            f"Analytical gradient not available for {par}. "
-                                            "Consider using a numerical approximation for the gradient "
-                                            "instead by calling `m.fit(grad='2-point')`."
-                                        )
-                                    np.add(par_grad, par.grad(
-                                        self.axis.axis), par_grad)
+                                    np.add(par_grad, par.grad(self.axis.axis), par_grad)
+
                             grad = np.vstack((grad, par_grad))
+
                     counter += component._nfree_param
+
             to_return = grad[1:, self.channel_switches] * weights
+
         else:
             axis = self.axis.axis[self.channel_switches]
             counter = 0
@@ -612,29 +620,22 @@ class Model1D(BaseModel):
                             counter:counter +
                             component._nfree_param],
                         onlyfree=True)
+
                     for parameter in component.free_parameters:
-                        if not callable(parameter.grad):
-                            raise ValueError(
-                                f"Analytical gradient not available for {parameter}. "
-                                "Consider using a numerical approximation for the gradient "
-                                "instead by calling `m.fit(grad='2-point')`."
-                            )
                         par_grad = parameter.grad(axis)
                         if parameter._twins:
                             for par in parameter._twins:
-                                if not callable(par.grad):
-                                    raise ValueError(
-                                        f"Analytical gradient not available for {par}. "
-                                        "Consider using a numerical approximation for the gradient "
-                                        "instead by calling `m.fit(grad='2-point')`."
-                                    )
-                                np.add(par_grad, par.grad(
-                                    axis), par_grad)
+                                np.add(par_grad, par.grad(axis), par_grad)
+
                         grad = np.vstack((grad, par_grad))
+
                     counter += component._nfree_param
+
             to_return = grad[1:, :] * weights
+
         if self.signal.metadata.Signal.binned is True:
             to_return *= self.signal.axes_manager[-1].scale
+
         return to_return
 
     def _function4odr(self, param, x):

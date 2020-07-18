@@ -17,7 +17,7 @@ dimensional model is created for a :py:class:`~._signals.signal2d.Signal2D`.
 
 .. note::
 
-    Plotting and analytic gradient-based fitting methods for are not yet
+    Plotting and analytic gradient-based fitting methods are not yet
     implemented for the :py:class:`~.models.model2d.Model2D` class.
 
 
@@ -681,21 +681,19 @@ gradients and parameter error estimation.
 
 .. table:: Features of supported curve-fitting optimizers.
 
-    +------------------------------+--------+-----------+--------+----------------+--------+
-    | Optimizer                    | Bounds | Gradients | Errors | Method         | Type   |
-    +==============================+========+===========+========+================+========+
-    | ``"leastsq"``                |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
-    +------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"mpfit"`` *                |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
-    +------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"odr"``                    |  No    | Yes       | Yes    | Only ``"ls"``  | local  |
-    +------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"Nelder-Mead"``            |  No    | No        | No     | All            | local  |
-    +------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"L-BFGS-B"``               |  Yes   | Yes       | Yes    | All            | local  |
-    +------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"Differential Evolution"`` |  Yes   | No        | No     | All            | global |
-    +------------------------------+--------+-----------+--------+----------------+--------+
+    +------------------------------------+--------+-----------+--------+----------------+--------+
+    | Optimizer                          | Bounds | Gradients | Errors | Method         | Type   |
+    +====================================+========+===========+========+================+========+
+    | ``"leastsq"``                      |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"mpfit"`` *                      |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"odr"``                          |  No    | Yes       | Yes    | Only ``"ls"``  | local  |
+    +------------------------------------+--------+-----------+--------+----------------+--------+
+    | :py:func:`scipy.optimize.minimize` |  No    | No        | No     | All            | local  |
+    +------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"Differential Evolution"``       |  Yes   | No        | No     | All            | global |
+    +------------------------------------+--------+-----------+--------+----------------+--------+
 
 \* ``mpfit`` is deprecated since HyperSpy 1.6. Use ``"leastsq"`` instead.
 
@@ -807,14 +805,6 @@ in most cases.
    (1.0004224896604759, -0.46982916592391377)
    >>> line.coefficients.std
    (0.0055752036447948173, 0.46950832982673557)
-
-Instead of using the inverse variance, you can also provide your own
-weights as a ``np.ndarray``:
-
-.. code-block:: python
-
-   >>> weights = np.ones_like(s.data)
-   >>> m.fit(weights=weights)
 
 .. warning::
 

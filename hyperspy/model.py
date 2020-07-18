@@ -756,9 +756,29 @@ class BaseModel(list):
                                else self.p0 + parameter.value)
 
     def set_boundaries(self, bounded=True):
+        warnings.warn(
+            "`set_boundaries()` has been deprecated and "
+            "will be made private in HyperSpy 2.0.",
+            VisibleDeprecationWarning,
+        )
+        self._set_boundaries(bounded=bounded)
+
+
+    def _set_boundaries(self, bounded=True):
         """Generate the boundary list.
 
         Necessary before fitting with a boundary aware optimizer.
+
+        Parameters
+        ----------
+        bounded : bool, default True
+            If True, loops through the model components and
+            populates the free parameter boundaries.
+
+        Returns
+        -------
+        None
+
         """
         if not bounded:
             self.free_parameters_boundaries = None
@@ -773,6 +793,27 @@ class BaseModel(list):
                             self.free_parameters_boundaries.extend((param._bounds))
 
     def set_mpfit_parameters_info(self, bounded=True):
+        warnings.warn(
+            "`set_mpfit_parameters_info()` has been deprecated and "
+            "will be made private in HyperSpy 2.0.",
+            VisibleDeprecationWarning,
+        )
+        self._set_mpfit_parameters_info(bounded=bounded)
+
+    def _set_mpfit_parameters_info(self, bounded=True):
+        """Generate the boundary list for mpfit.
+
+        Parameters
+        ----------
+        bounded : bool, default True
+            If True, loops through the model components and
+            populates the free parameter boundaries.
+
+        Returns
+        -------
+        None
+
+        """
         if not bounded:
             self.mpfit_parinfo = None
         else:
@@ -981,9 +1022,7 @@ class BaseModel(list):
         if warn_cov:
             _logger.warning(
                 "Covariance of the parameters could not be estimated. "
-                "Estimated parameter standard deviations will be np.inf. "
-                "This could indicate that the model is a poor description "
-                "of the data."
+                "Estimated parameter standard deviations will be np.inf."
             )
 
         return np.sqrt(p_var)
@@ -1026,9 +1065,9 @@ class BaseModel(list):
         method="ls",
         grad=False,
         bounded=False,
-        ext_bounding=False,
         update_plot=False,
         weights="inverse_variance",
+        return_info=False,
         print_info=False,
         **kwargs,
     ):
@@ -1047,23 +1086,8 @@ class BaseModel(list):
                   distance regression (ODR) algorithm. It does not support
                   bounds on parameters. See :py:mod:`scipy.odr` for more details.
                 * All of the available methods for :py:func:`scipy.optimize.minimize`
-                  can be used here:
-
-                    - "Powell"
-                    - "CG"
-                    - "BFGS"
-                    - "Newton-CG"
-                    - "L-BFGS-B"
-                    - "TNC"
-                    - "COBYLA"
-                    - "SLSQP"
-                    - "trust-constr"
-                    - "dogleg"
-                    - "trust-ncg"
-                    - "trust-exact"
-                    - "trust-krylov"
-
-                  See the :ref:`User Guide <model.fitting>` documentation for more details.
+                  can be used here. See the :ref:`User Guide <model.fitting>`
+                  documentation for more details.
                 * "Differential Evolution" is a global optimization method.
                   It does support bounds on parameters. See
                   :py:func:`scipy.optimize.differential_evolution` for more
@@ -1102,9 +1126,6 @@ class BaseModel(list):
         bounded : bool, default False
             If True, performs bounded parameter optimization if
             supported by ``fitter``.
-        ext_bounding : bool, default False
-            If True, enforce bounding by keeping the value of the
-            parameters constant out of the defined bounding area.
         update_plot : bool, default False
             If True, the plot is updated during the optimization
             process. It slows down the optimization, but it enables
@@ -1118,10 +1139,9 @@ class BaseModel(list):
                 ``navigation_dimension`` as the signal, and ``method="ls"``,
                 then weighted least-squares fit is performed, using
                 the inverse of the noise variance as the weights.
-            If np.ndarray:
-                If the array has the same dimensions as the signal,
-                and ``method="ls"``, then weighted least squares
-                is performed using the array values as the weights.
+        return_info : bool, default False
+            If True, returns the result of the fit, in the form of
+            a :py:class:`scipy.optimize.OptimizeResult` object.
         print_info : bool, default False
             If True, print information about the fitting results.
         **kwargs : keyword arguments
@@ -1136,8 +1156,9 @@ class BaseModel(list):
         Notes
         -----
         The chi-squared and reduced chi-squared statistics, and the
-        degrees of freedom, are computed automatically when fitting.
-        They are stored as signals: ``chisq``, ``red_chisq`` and ``dof``.
+        degrees of freedom, are computed automatically when fitting,
+        only when `method="ls"`. They are stored as signals: ``chisq``,
+        ``red_chisq`` and ``dof``.
 
         Note that for both homoscedastic and heteroscedastic noise, if
         ``metadata.Signal.Noise_properties.variance`` does not contain
@@ -1157,7 +1178,7 @@ class BaseModel(list):
             cm = dummy_context_manager
 
         # Check for deprecated minimizers
-        optimizer_dict = {
+        deprecated_optimizer_dict = {
             "fmin": "Nelder-Mead",
             "fmin_cg": "CG",
             "fmin_ncg": "Newton-CG",
@@ -1167,7 +1188,7 @@ class BaseModel(list):
             "fmin_powell": "Powell",
             "mpfit": "leastsq",
         }
-        check_optimizer = optimizer_dict.get(fitter, None)
+        check_optimizer = deprecated_optimizer_dict.get(fitter, None)
 
         if check_optimizer:
             warnings.warn(
@@ -1230,6 +1251,15 @@ class BaseModel(list):
                 f"'2-point', '3-point', 'cs'], not '{grad}'"
             )
 
+        ext_bounding = kwargs.pop("ext_bounding", False)
+
+        if ext_bounding:
+            warnings.warn(
+                f"`ext_bounding=True` has been deprecated and will be removed "
+                f"in HyperSpy 2.0. Please use `bounded=True` instead.",
+                VisibleDeprecationWarning,
+            )
+
         # If the user passes "jac" kwarg, take this
         grad = kwargs.pop("jac", grad)
         min_function = kwargs.pop("min_function", None)
@@ -1270,21 +1300,14 @@ class BaseModel(list):
             if ext_bounding:
                 self._enable_ext_bounding()
 
-            signal_shape = self.signal.data.shape
-            if isinstance(weights, np.ndarray):
-                if weights.shape != signal_shape:
-                    raise ValueError(
-                        "weights must have the same shape as the signal. "
-                        f"Got {weights.shape}, expected {signal_shape}"
-                    )
-            elif weights == "inverse_variance":
+            if weights == "inverse_variance":
                 weights = self._convert_variance_to_weights()
 
             args = (self.signal()[np.where(self.channel_switches)], weights)
 
             if fitter == "leastsq":
                 if bounded:
-                    self.set_boundaries(bounded=bounded)
+                    self._set_boundaries(bounded=bounded)
 
                     ls_b = self.free_parameters_boundaries
                     ls_b = (
@@ -1383,7 +1406,7 @@ class BaseModel(list):
                 to_print.extend(["Fit result:", output_print])
 
             elif fitter == "mpfit":
-                self.set_mpfit_parameters_info(bounded=bounded)
+                self._set_mpfit_parameters_info(bounded=bounded)
 
                 self.fit_output = mpfit(
                     self._errfunc4mpfit,
@@ -1435,7 +1458,7 @@ class BaseModel(list):
                     f_min = min_function
                     f_der = min_function_grad if grad is True else grad
 
-                self.set_boundaries(bounded=bounded)
+                self._set_boundaries(bounded=bounded)
 
                 if fitter in ["Differential Evolution", "Dual Annealing", "SHGO"]:
                     global_fs = {
@@ -1491,21 +1514,6 @@ class BaseModel(list):
                 self.p0 = self.fit_output.x
                 to_print.extend(["Fit result:", self.fit_output])
 
-                if fitter == "L-BFGS-B" and hasattr(self.fit_output, "hess_inv"):
-                    # For L-BFGS-B, we can place an upper bound on
-                    # parameter precision using the inverse Hessian,
-                    # since the optimization stops when (see docs):
-                    # (f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= ftol
-
-                    # Default value of ftol for L-BFGS-B
-                    ftol = 2.220446049250313e-9
-                    if "options" in kwargs:
-                        ftol = kwargs["options"].get("ftol", ftol)
-
-                    cost = self.fit_output.fun
-                    hess = np.diag(self.fit_output.hess_inv.todense())
-                    self.p_std = np.sqrt(max(1.0, np.abs(cost)) * ftol * hess)
-
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
 
@@ -1523,6 +1531,9 @@ class BaseModel(list):
         # Print details about the fit we just performed
         if print_info:
             print("\n".join([str(pr) for pr in to_print]))
+
+        if return_info:
+            return self.fit_output
 
     def multifit(
         self,

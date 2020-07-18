@@ -23,6 +23,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.utils import slugify
 
@@ -120,7 +121,7 @@ class TestModelCallMethod:
         m[0].convolved = True
         m[1].convolved = False
         m[2].convolved = False
-        m.convolution_axis = np.array([0.0,])
+        m.convolution_axis = np.array([0.0])
 
         r1 = m()
         r2 = m(onlyactive=True)
@@ -216,7 +217,13 @@ class TestModelSettingPZero:
         m = self.model
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
-        m.set_boundaries()
+
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match=r".* has been deprecated and will be made private",
+        ):
+            m.set_boundaries()
+
         assert m.free_parameters_boundaries == [(0.1, 0.11), (0.2, 0.21), (0.3, 0.31)]
 
     def test_setting_mpfit_parameters_info(self):
@@ -226,7 +233,13 @@ class TestModelSettingPZero:
         m[0].centre.bmax = 0.31
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
-        m.set_mpfit_parameters_info()
+
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match=r".* has been deprecated and will be made private",
+        ):
+            m.set_mpfit_parameters_info()
+
         assert m.mpfit_parinfo == [
             {"limited": [True, False], "limits": [0.1, 0]},
             {"limited": [False, True], "limits": [0, 0.31]},
@@ -481,6 +494,7 @@ class TestModel1D:
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         g1.name = "test"
+
         with pytest.raises(AttributeError, match="object has no attribute 'Gaussian'"):
             getattr(m.components, "Gaussian")
 
@@ -647,7 +661,7 @@ class TestStoreCurrentValues:
         self.o.offset.std = 3
         self.m.store_current_values()
         assert self.o.offset.map["values"][0] == 2
-        assert self.o.offset.map["is_set"][0] == True
+        assert self.o.offset.map["is_set"][0]
 
     def test_not_active(self):
         self.o.active = False
@@ -781,8 +795,8 @@ def test_as_signal_parallel():
 @lazifyTestClass
 class TestCreateModel:
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D(np.asarray([0,]))
-        self.im = hs.signals.Signal2D(np.ones([1, 1,]))
+        self.s = hs.signals.Signal1D(np.asarray([0]))
+        self.im = hs.signals.Signal2D(np.ones([1, 1]))
 
     def test_create_model(self):
         from hyperspy.models.model1d import Model1D
@@ -833,3 +847,57 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
+
+
+def test_missing_analytical_gradient():
+    """Tests the error in gh-1388.
+
+    In particular:
+
+    > "The issue is that EELSCLEdge doesn't provide an analytical gradient for
+       onset_energy. That's because it's not trivial since shifting the
+       energy requires recomputing the XS."
+
+    This creates an arbitrary dataset that closely mimics the one
+    referenced in that issue.
+
+    """
+    metadata_dict = {
+        "Acquisition_instrument": {
+            "TEM": {
+                "Detector": {"EELS": {"aperture_size": 2.5, "collection_angle": 41.0}},
+                "beam_current": 0.0,
+                "beam_energy": 200,
+                "camera_length": 20.0,
+                "convergence_angle": 31.48,
+                "magnification": 400000.0,
+            }
+        }
+    }
+
+    np.random.seed(1)
+    s = hs.signals.Signal1D(np.arange(1000).astype(float), metadata=metadata_dict)
+    s.set_signal_type("EELS")
+    s.add_gaussian_noise(10)
+    m = s.create_model(auto_add_edges=False)
+
+    e1 = hs.model.components1D.EELSCLEdge("Zr_L3")
+    e1.intensity.bmin = 0
+    e1.intensity.bmax = 0.1
+
+    m.append(e1)
+
+    e2 = hs.model.components1D.Gaussian()
+    e2.centre.value = 2230.0
+    e2.centre.bmin = 2218.0
+    e2.centre.bmax = 2240.0
+    e2.sigma.bmin = 0
+    e2.sigma.bmax = 3
+    e2.A.bmin = 0
+    e2.A.bmax = 1e10
+    m.append(e2)
+
+    e1.onset_energy.twin = e2.centre
+
+    with pytest.raises(ValueError, match=r"Analytical gradient not available for .*"):
+        m.fit(grad=True, fitter="L-BFGS-B", bounded=True)
