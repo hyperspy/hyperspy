@@ -21,7 +21,7 @@ import glob
 import warnings
 import logging
 import importlib
-import copy
+import pprint
 
 import numpy as np
 from natsort import natsorted
@@ -420,12 +420,54 @@ def assign_signal_subclass(dtype,
 
     Returns
     -------
-    Signal or subclass
+    Signal subclass
 
     """
-    dtype_backup = copy.copy(dtype)
+    signal_dict = _find_matching_subclass(dtype,
+                                          signal_dimension,
+                                          signal_type,
+                                          lazy)
+
+    # Sanity check
+    if len(signal_dict) > 1:
+        _logger.warning(
+            "There is more than one kind of signal that matches "
+            "the current specifications. This is unexpected behaviour and the "
+            "signal type hasn't been set. Please report this issue to the "
+            "HyperSpy developers."
+        )
+
+        # return the generic signal class
+        return assign_signal_subclass(dtype, signal_dimension,
+                                      signal_type="", lazy=lazy)
+
+    # The following should only raise an error if the base classes
+    # are not correctly registered.
+    for key, value in signal_dict.items():
+        signal_class = getattr(importlib.import_module(value["module"]), key)
+
+        if value["signal_type"] == "":
+            _logger.warning(
+                f"`signal_type='{signal_type}'` not understood. "
+                f"Setting signal type to `{key}`"
+            )
+
+        return signal_class
+
+
+def _find_matching_subclass(dtype,
+                            signal_dimension,
+                            signal_type="",
+                            lazy=False):
+    """
+    Returns dictionary of matching subclass.
+    See the `assign_signal_subclass` function for arguments description.
+
+    """
+    if isinstance(dtype, str) and dtype in ['complex', 'real']:
+        pass
     # Check if parameter values are allowed:
-    if np.issubdtype(dtype, np.complexfloating):
+    elif np.issubdtype(dtype, np.complexfloating):
         dtype = 'complex'
     elif ('float' in dtype.name or 'int' in dtype.name or
           'void' in dtype.name or 'bool' in dtype.name or
@@ -433,8 +475,9 @@ def assign_signal_subclass(dtype,
         dtype = 'real'
     else:
         raise ValueError('Data type "{}" not understood!'.format(dtype.name))
-    if not isinstance(signal_dimension, int) or signal_dimension < 0:
-        raise ValueError("signal_dimension must be a positive interger")
+
+    if not isinstance(signal_dimension, int):
+        raise ValueError("signal_dimension must be an interger")
 
     signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
                if value["lazy"] == lazy}
@@ -461,32 +504,20 @@ def assign_signal_subclass(dtype,
             signal_dict = {key: value for key, value in dtype_matches.items()
                            if value["signal_dimension"] == -1
                            and value["signal_type"] == ""}
-    # Sanity check
-    if len(signal_dict) > 1:
-        _logger.warning(
-            "There is more than one kind of signal that matches "
-            "the current specifications. This is unexpected behaviour and the "
-            "signal type hasn't been set. Please report this issue to the "
-            "HyperSpy developers."
-        )
 
-        # return the generic signal class
-        return assign_signal_subclass(dtype_backup, signal_dimension,
-                                      signal_type="", lazy=lazy)
+    return signal_dict
 
-    # Regardless of the number of signals in the dict we assign one.
-    # The following should only raise an error if the base classes
-    # are not correctly registered.
-    for key, value in signal_dict.items():
-        signal_class = getattr(importlib.import_module(value["module"]), key)
 
-        if value["signal_type"] == "":
-            _logger.warning(
-                f"`signal_type='{signal_type}'` not understood. "
-                f"Setting signal type to `{key}`"
-            )
-
-        return signal_class
+def check_signal_specification_unicity():
+    for sclass, sdict in ALL_EXTENSIONS["signals"].items():
+        signal_dict = _find_matching_subclass(sdict['dtype'],
+                                              sdict['signal_dimension'],
+                                              sdict['signal_type'],
+                                              sdict['lazy'])
+        if len(signal_dict) > 1:
+            message = "Conflicting signals specification:\n"
+            message += pprint.pformat(signal_dict)
+            raise BaseException(message)
 
 
 def dict2signal(signal_dict, lazy=False):

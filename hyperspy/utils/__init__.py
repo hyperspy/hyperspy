@@ -68,7 +68,7 @@ def print_known_signal_types():
     +--------------------+---------------------+--------------------+----------+
 
     """
-    from hyperspy.ui_registry import ALL_EXTENSIONS
+    from hyperspy.extensions import ALL_EXTENSIONS
     from prettytable import PrettyTable
     from hyperspy.misc.utils import print_html
     table = PrettyTable()
