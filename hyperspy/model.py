@@ -31,26 +31,34 @@ import scipy
 import scipy.odr as odr
 from IPython.display import display, display_pretty
 from scipy.linalg import svd
-from scipy.optimize import (differential_evolution, least_squares, leastsq,
-                            minimize)
+from scipy.optimize import differential_evolution, least_squares, leastsq, minimize
 
 from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import (MAX_WORKERS_ARG, PARALLEL_ARG,
-                                        SHOW_PROGRESSBAR_ARG)
+from hyperspy.docstrings.signal import (
+    MAX_WORKERS_ARG,
+    PARALLEL_ARG,
+    SHOW_PROGRESSBAR_ARG,
+)
 from hyperspy.events import Event, Events, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.export_dictionary import (export_to_dictionary,
-                                             load_from_dictionary,
-                                             parse_flag_string,
-                                             reconstruct_object)
+from hyperspy.misc.export_dictionary import (
+    export_to_dictionary,
+    load_from_dictionary,
+    parse_flag_string,
+    reconstruct_object,
+)
 from hyperspy.misc.model_tools import current_model_values
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.misc.utils import (dummy_context_manager, shorten_name, slugify,
-                                 stash_active_state)
+from hyperspy.misc.utils import (
+    dummy_context_manager,
+    shorten_name,
+    slugify,
+    stash_active_state,
+)
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
 
@@ -61,21 +69,23 @@ _COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
 
 def reconstruct_component(comp_dictionary, **init_args):
-    _id = comp_dictionary['_id_name']
+    _id = comp_dictionary["_id_name"]
     if _id in _COMPONENTS:
         _class = getattr(
-            importlib.import_module(
-                _COMPONENTS[_id]["module"]), _COMPONENTS[_id]["class"])
+            importlib.import_module(_COMPONENTS[_id]["module"]),
+            _COMPONENTS[_id]["class"],
+        )
     elif "_class_dump" in comp_dictionary:
         # When a component is not registered using the extension mechanism,
         # it is serialized using dill.
-        _class = dill.loads(comp_dictionary['_class_dump'])
+        _class = dill.loads(comp_dictionary["_class_dump"])
     else:
         raise ImportError(
-            f'Loading the {comp_dictionary["class"]} component ' +
-            'failed because the component is provided by the ' +
-            f'{comp_dictionary["package"]} Python package, but ' +
-            f'{comp_dictionary["package"]} is not installed.')
+            f'Loading the {comp_dictionary["class"]} component '
+            + "failed because the component is provided by the "
+            + f'{comp_dictionary["package"]} Python package, but '
+            + f'{comp_dictionary["package"]} is not installed.'
+        )
     return _class(**init_args)
 
 
@@ -118,12 +128,9 @@ class ModelComponents(object):
 
     def __repr__(self):
         signature = "%4s | %19s | %19s | %19s"
-        ans = signature % ('#',
-                           'Attribute Name',
-                           'Component Name',
-                           'Component Type')
+        ans = signature % ("#", "Attribute Name", "Component Name", "Component Type")
         ans += "\n"
-        ans += signature % ('-' * 4, '-' * 19, '-' * 19, '-' * 19)
+        ans += signature % ("-" * 4, "-" * 19, "-" * 19, "-" * 19)
         if self._model:
             for i, c in enumerate(self._model):
                 ans += "\n"
@@ -135,10 +142,7 @@ class ModelComponents(object):
                 name_string = shorten_name(name_string, 19)
                 component_type = shorten_name(component_type, 19)
 
-                ans += signature % (i,
-                                    variable_name,
-                                    name_string,
-                                    component_type)
+                ans += signature % (i, variable_name, name_string, component_type)
         return ans
 
 
@@ -249,7 +253,8 @@ class BaseModel(list):
     def __init__(self):
 
         self.events = Events()
-        self.events.fitted = Event("""
+        self.events.fitted = Event(
+            """
             Event that triggers after fitting changed at least one parameter.
 
             The event triggers after the fitting step was finished, and only of
@@ -259,7 +264,9 @@ class BaseModel(list):
             ---------
             obj : Model
                 The Model that the event belongs to
-            """, arguments=['obj'])
+            """,
+            arguments=["obj"],
+        )
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -309,43 +316,42 @@ class BaseModel(list):
               attributes, for more information, see
               :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
-              the model (see 
+              the model (see
               :py:meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
         """
 
-        if 'components' in dic:
+        if "components" in dic:
             while len(self) != 0:
                 self.remove(self[0])
             id_dict = {}
 
-            for comp in dic['components']:
+            for comp in dic["components"]:
                 init_args = {}
-                for k, flags_str in comp['_whitelist'].items():
+                for k, flags_str in comp["_whitelist"].items():
                     if not len(flags_str):
                         continue
-                    if 'init' in parse_flag_string(flags_str):
+                    if "init" in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
                 self.append(reconstruct_component(comp, **init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
-            for comp in dic['components']:
-                for par in comp['parameters']:
-                    for tw in par['_twins']:
-                        id_dict[tw].twin = id_dict[par['self']]
+            for comp in dic["components"]:
+                for par in comp["parameters"]:
+                    for tw in par["_twins"]:
+                        id_dict[tw].twin = id_dict[par["self"]]
 
-        if '_whitelist' in dic:
+        if "_whitelist" in dic:
             load_from_dictionary(self, dic)
 
     def __repr__(self):
         title = self.signal.metadata.General.title
-        class_name = str(self.__class__).split("'")[1].split('.')[-1]
+        class_name = str(self.__class__).split("'")[1].split(".")[-1]
 
         if len(title):
-            return "<%s, title: %s>" % (
-                class_name, self.signal.metadata.General.title)
+            return "<%s, title: %s>" % (class_name, self.signal.metadata.General.title)
         else:
             return "<%s>" % class_name
 
@@ -373,8 +379,7 @@ class BaseModel(list):
         thing: `Component` instance.
         """
         if not isinstance(thing, Component):
-            raise ValueError(
-                "Only `Component` instances can be added to a model")
+            raise ValueError("Only `Component` instances can be added to a model")
         # Check if any of the other components in the model has the same name
         if thing in self:
             raise ValueError("Component already in model")
@@ -397,8 +402,7 @@ class BaseModel(list):
         thing._create_arrays()
         list.append(self, thing)
         thing.model = self
-        setattr(self.components, slugify(name_string,
-                                         valid_variable_name=True), thing)
+        setattr(self.components, slugify(name_string, valid_variable_name=True), thing)
         if self._plot_active is True:
             self._connect_parameters2update_plot(components=[thing])
         self.update_plot()
@@ -437,7 +441,9 @@ class BaseModel(list):
         """
         thing = self._get_component(thing)
         if not np.iterable(thing):
-            thing = [thing, ]
+            thing = [
+                thing,
+            ]
         for athing in thing:
             for parameter in athing.parameters:
                 # Remove the parameter from its twin _twins
@@ -450,8 +456,15 @@ class BaseModel(list):
         if self._plot_active:
             self.update_plot()
 
-    def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None, out=None, parallel=None, max_workers=None):
+    def as_signal(
+        self,
+        component_list=None,
+        out_of_range_to_nan=True,
+        show_progressbar=None,
+        out=None,
+        parallel=None,
+        max_workers=None,
+    ):
         """Returns a recreation of the dataset using the model.
         The spectral range that is not fitted is filled with nans.
 
@@ -503,13 +516,14 @@ class BaseModel(list):
             parallel = True
 
         if out is None:
-            data = np.empty(self.signal.data.shape, dtype='float')
+            data = np.empty(self.signal.data.shape, dtype="float")
             data.fill(np.nan)
             signal = self.signal.__class__(
-                data,
-                axes=self.signal.axes_manager._get_axes_dicts())
+                data, axes=self.signal.axes_manager._get_axes_dicts()
+            )
             signal.metadata.General.title = (
-                self.signal.metadata.General.title + " from fitted model")
+                self.signal.metadata.General.title + " from fitted model"
+            )
             signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
         else:
             signal = out
@@ -530,8 +544,11 @@ class BaseModel(list):
             parallel = False
 
         if not parallel:
-            self._as_signal_iter(component_list=component_list,
-                                 show_progressbar=show_progressbar, data=data)
+            self._as_signal_iter(
+                component_list=component_list,
+                show_progressbar=show_progressbar,
+                data=data,
+            )
         else:
             am = self.axes_manager
             nav_shape = am.navigation_shape
@@ -540,30 +557,34 @@ class BaseModel(list):
                 size = nav_shape[ind]
             if not len(nav_shape) or size < 4:
                 # no or not enough navigation, just run without threads
-                return self.as_signal(component_list=component_list,
-                                      show_progressbar=show_progressbar,
-                                      out=signal, parallel=False)
+                return self.as_signal(
+                    component_list=component_list,
+                    show_progressbar=show_progressbar,
+                    out=signal,
+                    parallel=False,
+                )
             max_workers = min(max_workers, size / 2)
-            splits = [len(sp) for sp in np.array_split(np.arange(size),
-                                                       max_workers)]
+            splits = [len(sp) for sp in np.array_split(np.arange(size), max_workers)]
             models = []
             data_slices = []
-            slices = [slice(None), ] * len(nav_shape)
+            slices = [slice(None),] * len(nav_shape)
             for sp, csm in zip(splits, np.cumsum(splits)):
                 slices[ind] = slice(csm - sp, csm)
                 models.append(self.inav[tuple(slices)])
-                array_slices = self.signal._get_array_slices(tuple(slices),
-                                                             True)
+                array_slices = self.signal._get_array_slices(tuple(slices), True)
                 data_slices.append(data[array_slices])
 
             from concurrent.futures import ThreadPoolExecutor
+
             with ThreadPoolExecutor(max_workers=max_workers) as exe:
                 _map = exe.map(
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],
                         component_list=component_list,
-                        show_progressbar=thing[2] + 1 if show_progressbar else False),
-                    zip(models, data_slices, range(int(max_workers))))
+                        show_progressbar=thing[2] + 1 if show_progressbar else False,
+                    ),
+                    zip(models, data_slices, range(int(max_workers))),
+                )
 
             _ = next(_map)
 
@@ -574,36 +595,37 @@ class BaseModel(list):
 
     as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def _as_signal_iter(self, component_list=None, show_progressbar=None,
-                        data=None):
+    def _as_signal_iter(self, component_list=None, show_progressbar=None, data=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
         if data is None:
-            raise ValueError('No data supplied')
+            raise ValueError("No data supplied")
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
         with stash_active_state(self if component_list else []):
             if component_list:
-                component_list = [self._get_component(x)
-                                  for x in component_list]
+                component_list = [self._get_component(x) for x in component_list]
                 for component_ in self:
                     active = component_ in component_list
                     if component_.active_is_multidimensional:
                         if active:
-                            continue    # Keep active_map
+                            continue  # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
             maxval = self.axes_manager.navigation_size
             enabled = show_progressbar and (maxval > 0)
-            pbar = progressbar(total=maxval, disable=not enabled,
-                               position=show_progressbar, leave=True)
+            pbar = progressbar(
+                total=maxval, disable=not enabled, position=show_progressbar, leave=True
+            )
             for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
-                    np.where(self.channel_switches)] = self.__call__(
-                    non_convolved=not self.convolved, onlyactive=True).ravel()
+                    np.where(self.channel_switches)
+                ] = self.__call__(
+                    non_convolved=not self.convolved, onlyactive=True
+                ).ravel()
                 pbar.update(1)
 
     @property
@@ -618,20 +640,24 @@ class BaseModel(list):
             return
         for i, component in enumerate(components):
             component.events.active_changed.connect(
-                self._model_line._auto_update_line, [])
+                self._model_line._auto_update_line, []
+            )
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
-                    self._model_line._auto_update_line, [])
+                    self._model_line._auto_update_line, []
+                )
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
             return
         for component in components:
             component.events.active_changed.disconnect(
-                self._model_line._auto_update_line)
+                self._model_line._auto_update_line
+            )
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
-                    self._model_line._auto_update_line)
+                    self._model_line._auto_update_line
+                )
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -647,8 +673,9 @@ class BaseModel(list):
             try:
                 if self._model_line is not None:
                     self._model_line.update()
-                for component in [component for component in self if
-                                  component.active is True]:
+                for component in [
+                    component for component in self if component.active is True
+                ]:
                     self._update_component_line(component)
             except BaseException:
                 self._disconnect_parameters2update_plot(components=self)
@@ -671,7 +698,7 @@ class BaseModel(list):
                 for p in c.parameters:
                     es.add(p.events, f)
         for c in self:
-            if hasattr(c, '_model_plot_line'):
+            if hasattr(c, "_model_plot_line"):
                 f = c._model_plot_line._auto_update_line
                 es.add(c.events, f)
                 for p in c.parameters:
@@ -734,8 +761,7 @@ class BaseModel(list):
         if self._plot is None or self._plot_components:
             return
         self._plot_components = True
-        for component in [component for component in self if
-                          component.active]:
+        for component in [component for component in self if component.active]:
             self._plot_component(component)
 
     def disable_plot_components(self):
@@ -750,9 +776,11 @@ class BaseModel(list):
         for component in self:
             if component.active:
                 for parameter in component.free_parameters:
-                    self.p0 = (self.p0 + (parameter.value,)
-                               if parameter._number_of_elements == 1
-                               else self.p0 + parameter.value)
+                    self.p0 = (
+                        self.p0 + (parameter.value,)
+                        if parameter._number_of_elements == 1
+                        else self.p0 + parameter.value
+                    )
 
     def set_boundaries(self, bounded=True):
         warnings.warn(
@@ -761,7 +789,6 @@ class BaseModel(list):
             VisibleDeprecationWarning,
         )
         self._set_boundaries(bounded=bounded)
-
 
     def _set_boundaries(self, bounded=True):
         """Generate the boundary list.
@@ -889,8 +916,7 @@ class BaseModel(list):
         store_current_values
 
         """
-        cm = (self.suspend_update if self._plot_active
-              else dummy_context_manager)
+        cm = self.suspend_update if self._plot_active else dummy_context_manager
         with cm(update_on_resume=True):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
@@ -923,12 +949,12 @@ class BaseModel(list):
         for component in self:  # Cut the parameters list
             if component.active is True:
                 if p_std is not None:
-                    comp_p_std = p_std[
-                        counter: counter +
-                        component._nfree_param]
+                    comp_p_std = p_std[counter : counter + component._nfree_param]
                 component.fetch_values_from_array(
-                    self.p0[counter: counter + component._nfree_param],
-                    comp_p_std, onlyfree=True)
+                    self.p0[counter : counter + component._nfree_param],
+                    comp_p_std,
+                    onlyfree=True,
+                )
                 counter += component._nfree_param
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
@@ -956,7 +982,7 @@ class BaseModel(list):
 
     def _errfunc_sq(self, param, y, weights=None):
         if weights is None:
-            weights = 1.
+            weights = 1.0
         return ((weights * self._errfunc(param, y)) ** 2).sum()
 
     def _errfunc4mpfit(self, p, fjac=None, x=None, y=None, weights=None):
@@ -973,15 +999,17 @@ class BaseModel(list):
         variance = self.signal.get_noise_variance()
         if variance is not None:
             if isinstance(variance, BaseSignal):
-                variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple)[np.where(
-                                                      self.channel_switches)]
+                variance = variance.data.__getitem__(self.axes_manager._getitem_tuple)[
+                    np.where(self.channel_switches)
+                ]
         else:
             variance = 1.0
 
-        d = self(onlyactive=True).ravel() - self.signal()[np.where(
-            self.channel_switches)]
-        d *= d / (1. * variance)  # d = difference^2 / variance.
+        d = (
+            self(onlyactive=True).ravel()
+            - self.signal()[np.where(self.channel_switches)]
+        )
+        d *= d / (1.0 * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
     def _set_current_degrees_of_freedom(self):
@@ -991,9 +1019,10 @@ class BaseModel(list):
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
-        tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
-        tmp.metadata.General.title = self.signal.metadata.General.title + \
-            ' reduced chi-squared'
+        tmp = self.chisq / (-self.dof + self.channel_switches.sum() - 1)
+        tmp.metadata.General.title = (
+            self.signal.metadata.General.title + " reduced chi-squared"
+        )
         return tmp
 
     def _calculate_parameter_std(self, pcov, cost, ysize):
@@ -1032,9 +1061,9 @@ class BaseModel(list):
 
         if variance is not None:
             if isinstance(variance, BaseSignal):
-                variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple
-                )[np.where(self.channel_switches)]
+                variance = variance.data.__getitem__(self.axes_manager._getitem_tuple)[
+                    np.where(self.channel_switches)
+                ]
 
             _logger.info("Setting weights to 1/variance of signal noise")
 
@@ -1045,7 +1074,7 @@ class BaseModel(list):
 
     def fit(
         self,
-        fitter="leastsq",
+        optimizer="leastsq",
         method="ls",
         grad=False,
         bounded=False,
@@ -1061,7 +1090,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : str, default "leastsq"
+        optimizer : str, default "leastsq"
             The optimization algorithm used to perform the fitting.
 
                 * "leastsq" performs least-squares optimization, and
@@ -1091,14 +1120,14 @@ class BaseModel(list):
                 * "ls" minimizes the least-squares loss function.
                 * "ml" minimizes the negative log-likelihood for Poisson-distributed
                   data. Also known as Poisson maximum likelihood estimation
-                  (MLE). Not available if ``fitter`` is ``"leastsq"``
+                  (MLE). Not available if ``optimizer`` is ``"leastsq"``
                   or ``"odr"``.
                 * "huber" minimize the Huber loss function. Not available
-                  if ``fitter`` is ``"leastsq"`` or ``"odr"``.
+                  if ``optimizer`` is ``"leastsq"`` or ``"odr"``.
                 * "custom" allows passing your own minimisation function as a
                   keyword argument ``min_function``, with an optional
                   gradient argument ``min_function_grad``. Not available
-                  if ``fitter`` is ``"leastsq"`` or ``"odr"``.
+                  if ``optimizer`` is ``"leastsq"`` or ``"odr"``.
 
         grad : bool or ["2-point", "3-point", "cs"] or callable, default False
             If True, the analytical gradient is used (if defined) to
@@ -1109,7 +1138,7 @@ class BaseModel(list):
             See :py:func:`scipy.optimize.minimize` for more details.
         bounded : bool, default False
             If True, performs bounded parameter optimization if
-            supported by ``fitter``.
+            supported by ``optimizer``.
         update_plot : bool, default False
             If True, the plot is updated during the optimization
             process. It slows down the optimization, but it enables
@@ -1130,7 +1159,7 @@ class BaseModel(list):
             If True, print information about the fitting results.
         **kwargs : keyword arguments
             Any extra keyword argument will be passed to the chosen
-            fitter. For more information, read the docstring of the
+            optimizer. For more information, read the docstring of the
             optimizer of your choice in :py:mod:`scipy.optimize`.
 
         Returns
@@ -1161,6 +1190,14 @@ class BaseModel(list):
         else:
             cm = dummy_context_manager
 
+        check_fitter = kwargs.pop("fitter", None)
+        if check_fitter:
+            warnings.warn(
+                f"`fitter='{check_fitter}'` has been deprecated and will be removed "
+                f"in HyperSpy 2.0. Please use `optimizer='{check_fitter}'` instead.",
+                VisibleDeprecationWarning,
+            )
+
         # Check for deprecated minimizers
         deprecated_optimizer_dict = {
             "fmin": "Nelder-Mead",
@@ -1172,20 +1209,20 @@ class BaseModel(list):
             "fmin_powell": "Powell",
             "mpfit": "leastsq",
         }
-        check_optimizer = deprecated_optimizer_dict.get(fitter, None)
+        check_optimizer = deprecated_optimizer_dict.get(optimizer, None)
 
         if check_optimizer:
             warnings.warn(
-                f"The method `{fitter}` has been deprecated and will be removed "
+                f"The method `{optimizer}` has been deprecated and will be removed "
                 f"in HyperSpy 2.0. Please use `{check_optimizer}` instead.",
                 VisibleDeprecationWarning,
             )
 
-            # Replace fitter with new names
+            # Replace optimizer with new names
             # - Don't do this for mpfit, since its proposed replacement (leastsq)
             #   is not exactly equivalent, so just raise the deprecation warning
-            if fitter != "mpfit":
-                fitter = check_optimizer
+            if optimizer != "mpfit":
+                optimizer = check_optimizer
 
         _supported_methods = ["ls", "ml", "huber", "custom"]
         _supported_bounds = [
@@ -1202,10 +1239,10 @@ class BaseModel(list):
         ]
 
         if bounded:
-            if fitter not in _supported_bounds:
+            if optimizer not in _supported_bounds:
                 raise ValueError(
                     f"Bounded optimization is only supported "
-                    f"by {_supported_bounds}, not {fitter}."
+                    f"by {_supported_bounds}, not {optimizer}."
                 )
 
             # This has to be done before setting p0
@@ -1215,7 +1252,7 @@ class BaseModel(list):
             raise ValueError(
                 f"method must be one of {_supported_methods}, not '{method}'"
             )
-        elif method in ["ml", "huber", "custom"] and fitter in [
+        elif method in ["ml", "huber", "custom"] and optimizer in [
             "leastsq",
             "odr",
             "mpfit",
@@ -1270,7 +1307,7 @@ class BaseModel(list):
         # Initialize return_info and print_info
         to_print = [
             "Fit info:",
-            f"  fitter={fitter}",
+            f"  optimizer={optimizer}",
             f"  method={method}",
             f"  grad={grad}",
             f"  bounded={bounded}",
@@ -1289,7 +1326,7 @@ class BaseModel(list):
 
             args = (self.signal()[np.where(self.channel_switches)], weights)
 
-            if fitter == "leastsq":
+            if optimizer == "leastsq":
                 if bounded:
                     self._set_boundaries(bounded=bounded)
 
@@ -1370,7 +1407,7 @@ class BaseModel(list):
                 self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
                 to_print.extend(["Fit result:", output_print])
 
-            elif fitter == "odr":
+            elif optimizer == "odr":
                 odr_jacobian = self._jacobian4odr if grad is True else None
 
                 modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
@@ -1389,7 +1426,7 @@ class BaseModel(list):
                 output_print = _pprint_like_optimize_result(output_print)
                 to_print.extend(["Fit result:", output_print])
 
-            elif fitter == "mpfit":
+            elif optimizer == "mpfit":
                 self._set_mpfit_parameters_info(bounded=bounded)
 
                 self.fit_output = mpfit(
@@ -1444,15 +1481,15 @@ class BaseModel(list):
 
                 self._set_boundaries(bounded=bounded)
 
-                if fitter in ["Differential Evolution", "Dual Annealing", "SHGO"]:
+                if optimizer in ["Differential Evolution", "Dual Annealing", "SHGO"]:
                     global_fs = {
                         "Differential Evolution": differential_evolution,
                     }
 
-                    if fitter in ["Dual Annealing", "SHGO"]:
+                    if optimizer in ["Dual Annealing", "SHGO"]:
                         if LooseVersion(scipy.__version__) < LooseVersion("1.2.0"):
                             raise ValueError(
-                                f"fitter='{fitter}' requires scipy >= 1.2.0"
+                                f"optimizer='{optimizer}' requires scipy >= 1.2.0"
                             )
 
                         from scipy.optimize import dual_annealing, shgo
@@ -1463,7 +1500,7 @@ class BaseModel(list):
 
                     if self.free_parameters_boundaries is None:
                         raise ValueError(
-                            f"Bounds must be specified for fitter='{fitter}'"
+                            f"Bounds must be specified for optimizer='{optimizer}'"
                         )
 
                     de_b = tuple(
@@ -1480,7 +1517,7 @@ class BaseModel(list):
                             "specified for every free parameter"
                         )
 
-                    self.fit_output = global_fs[fitter](
+                    self.fit_output = global_fs[optimizer](
                         f_min, de_b, args=args, **kwargs
                     )
 
@@ -1490,7 +1527,7 @@ class BaseModel(list):
                         self.p0,
                         jac=f_der,
                         args=args,
-                        method=fitter,
+                        method=optimizer,
                         bounds=self.free_parameters_boundaries,
                         **kwargs,
                     )
@@ -1644,7 +1681,7 @@ class BaseModel(list):
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
             os.remove(autosave_fn + ".npz")
 
-    multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
+    multifit.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.
@@ -1672,10 +1709,10 @@ class BaseModel(list):
         kwds = {}
         i = 0
         for component in self:
-            cname = component.name.lower().replace(' ', '_')
+            cname = component.name.lower().replace(" ", "_")
             for param in component.parameters:
-                pname = param.name.lower().replace(' ', '_')
-                kwds['%s_%s.%s' % (i, cname, pname)] = param.map
+                pname = param.name.lower().replace(" ", "_")
+                kwds["%s_%s.%s" % (i, cname, pname)] = param.map
             i += 1
         np.savez(filename, **kwds)
 
@@ -1702,10 +1739,10 @@ class BaseModel(list):
         f = np.load(filename)
         i = 0
         for component in self:  # Cut the parameters list
-            cname = component.name.lower().replace(' ', '_')
+            cname = component.name.lower().replace(" ", "_")
             for param in component.parameters:
-                pname = param.name.lower().replace(' ', '_')
-                param.map = f['%s_%s.%s' % (i, cname, pname)]
+                pname = param.name.lower().replace(" ", "_")
+                param.map = f["%s_%s.%s" % (i, cname, pname)]
             i += 1
 
         self.fetch_stored_values()
@@ -1753,8 +1790,14 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.ext_bounded = False
 
-    def export_results(self, folder=None, format="hspy", save_std=False,
-                       only_free=True, only_active=True):
+    def export_results(
+        self,
+        folder=None,
+        format="hspy",
+        save_std=False,
+        only_free=True,
+        only_active=True,
+    ):
         """Export the results of the parameters of the model to the desired
         folder.
 
@@ -1783,8 +1826,9 @@ class BaseModel(list):
         """
         for component in self:
             if only_active is False or component.active:
-                component.export(folder=folder, format=format,
-                                 save_std=save_std, only_free=only_free)
+                component.export(
+                    folder=folder, format=format, save_std=save_std, only_free=only_free
+                )
 
     def plot_results(self, only_free=True, only_active=True):
         """Plot the value of the parameters of the model
@@ -1809,8 +1853,9 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=False, only_active=False,
-                             component_list=None, fancy=True):
+    def print_current_values(
+        self, only_free=False, only_active=False, component_list=None, fancy=True
+    ):
         """Prints the current values of the parameters of all components.
 
         Parameters
@@ -1826,16 +1871,25 @@ class BaseModel(list):
             If True, attempts to print using html rather than text in the notebook.
         """
         if fancy:
-            display(current_model_values(
-                model=self, only_free=only_free, only_active=only_active,
-                component_list=component_list))
+            display(
+                current_model_values(
+                    model=self,
+                    only_free=only_free,
+                    only_active=only_active,
+                    component_list=component_list,
+                )
+            )
         else:
-            display_pretty(current_model_values(
-                model=self, only_free=only_free, only_active=only_active,
-                component_list=component_list))
+            display_pretty(
+                current_model_values(
+                    model=self,
+                    only_free=only_free,
+                    only_active=only_active,
+                    component_list=component_list,
+                )
+            )
 
-    def set_parameters_not_free(self, component_list=None,
-                                parameter_name_list=None):
+    def set_parameters_not_free(self, component_list=None, parameter_name_list=None):
         """
         Sets the parameters in a component in a model to not free.
 
@@ -1877,8 +1931,7 @@ class BaseModel(list):
         for _component in component_list:
             _component.set_parameters_not_free(parameter_name_list)
 
-    def set_parameters_free(self, component_list=None,
-                            parameter_name_list=None):
+    def set_parameters_free(self, component_list=None, parameter_name_list=None):
         """
         Sets the parameters in a component in a model to free.
 
@@ -1921,11 +1974,8 @@ class BaseModel(list):
             _component.set_parameters_free(parameter_name_list)
 
     def set_parameters_value(
-            self,
-            parameter_name,
-            value,
-            component_list=None,
-            only_current=False):
+        self, parameter_name, value, component_list=None, only_current=False
+    ):
         """
         Sets the value of a parameter in components in a model to a specified
         value
@@ -1985,13 +2035,13 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : dict 
+        dictionary : dict
             A dictionary including at least the following fields:
 
-            * components: a list of dictionaries of components, one per 
+            * components: a list of dictionaries of components, one per
               component
             * _whitelist: a dictionary with keys used as references for saved
-              attributes, for more information, see 
+              attributes, for more information, see
               :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
@@ -2007,7 +2057,7 @@ class BaseModel(list):
         >>> m2 = s.create_model(dictionary=d)
 
         """
-        dic = {'components': [c.as_dictionary(fullcopy) for c in self]}
+        dic = {"components": [c.as_dictionary(fullcopy) for c in self]}
 
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
 
@@ -2020,16 +2070,18 @@ class BaseModel(list):
                         if isinstance(vv, dict):
                             remove_empty_numpy_strings(vv)
                         elif isinstance(vv, np.string_) and len(vv) == 0:
-                            vv = ''
+                            vv = ""
                 elif isinstance(v, np.string_) and len(v) == 0:
                     del dic[k]
-                    dic[k] = ''
+                    dic[k] = ""
+
         remove_empty_numpy_strings(dic)
 
         return dic
 
     def set_component_active_value(
-            self, value, component_list=None, only_current=False):
+        self, value, component_list=None, only_current=False
+    ):
         """
         Sets the component 'active' parameter to a specified value
 
@@ -2069,8 +2121,7 @@ class BaseModel(list):
             _component.active = value
             if _component.active_is_multidimensional:
                 if only_current:
-                    _component._active_array[
-                        self.axes_manager.indices[::-1]] = value
+                    _component._active_array[self.axes_manager.indices[::-1]] = value
                 else:
                     _component._active_array.fill(value)
 
@@ -2090,11 +2141,12 @@ class BaseModel(list):
                 else:
                     raise ValueError(
                         "There are several components with "
-                        "the name \"" + str(value) + "\"")
+                        'the name "' + str(value) + '"'
+                    )
             else:
                 raise ValueError(
-                    "Component name \"" + str(value) +
-                    "\" not found in model")
+                    'Component name "' + str(value) + '" not found in model'
+                )
         else:
             return list.__getitem__(self, value)
 
@@ -2114,38 +2166,37 @@ class BaseModel(list):
             Any that will be passed to the _setup and in turn SamfirePool.
         """
         from hyperspy.samfire import Samfire
-        return Samfire(self, workers=workers,
-                       setup=setup, **kwargs)
+
+        return Samfire(self, workers=workers, setup=setup, **kwargs)
 
 
 class ModelSpecialSlicers(object):
-
     def __init__(self, model, isNavigation):
         self.isNavigation = isNavigation
         self.model = model
 
     def __getitem__(self, slices):
-        array_slices = self.model.signal._get_array_slices(
-            slices,
-            self.isNavigation)
+        array_slices = self.model.signal._get_array_slices(slices, self.isNavigation)
         _signal = self.model.signal._slicer(slices, self.isNavigation)
         # TODO: for next major release, change model creation defaults to not
         # automate anything. For now we explicitly look for "auto_" kwargs and
         # disable them:
         import inspect
+
         pars = inspect.signature(_signal.create_model).parameters
-        kwargs = {key: False for key in pars.keys() if key.startswith('auto_')}
+        kwargs = {key: False for key in pars.keys() if key.startswith("auto_")}
         _model = _signal.create_model(**kwargs)
 
-        dims = (self.model.axes_manager.navigation_dimension,
-                self.model.axes_manager.signal_dimension)
+        dims = (
+            self.model.axes_manager.navigation_dimension,
+            self.model.axes_manager.signal_dimension,
+        )
         if self.isNavigation:
             _model.channel_switches[:] = self.model.channel_switches
         else:
-            _model.channel_switches[:] = \
-                np.atleast_1d(
-                    self.model.channel_switches[
-                        tuple(array_slices[-dims[1]:])])
+            _model.channel_switches[:] = np.atleast_1d(
+                self.model.channel_switches[tuple(array_slices[-dims[1] :])]
+            )
 
         twin_dict = {}
         for comp in self.model:
@@ -2154,30 +2205,23 @@ class ModelSpecialSlicers(object):
                 if v is None:
                     continue
                 flags_str, value = v
-                if 'init' in parse_flag_string(flags_str):
+                if "init" in parse_flag_string(flags_str):
                     init_args[k] = value
             _model.append(comp.__class__(**init_args))
-        copy_slice_from_whitelist(self.model,
-                                  _model,
-                                  dims,
-                                  (slices, array_slices),
-                                  self.isNavigation,
-                                  )
+        copy_slice_from_whitelist(
+            self.model, _model, dims, (slices, array_slices), self.isNavigation,
+        )
         for co, cn in zip(self.model, _model):
-            copy_slice_from_whitelist(co,
-                                      cn,
-                                      dims,
-                                      (slices, array_slices),
-                                      self.isNavigation)
+            copy_slice_from_whitelist(
+                co, cn, dims, (slices, array_slices), self.isNavigation
+            )
             if _model.axes_manager.navigation_size < 2:
                 if co.active_is_multidimensional:
-                    cn.active = co._active_array[array_slices[:dims[0]]]
+                    cn.active = co._active_array[array_slices[: dims[0]]]
             for po, pn in zip(co.parameters, cn.parameters):
-                copy_slice_from_whitelist(po,
-                                          pn,
-                                          dims,
-                                          (slices, array_slices),
-                                          self.isNavigation)
+                copy_slice_from_whitelist(
+                    po, pn, dims, (slices, array_slices), self.isNavigation
+                )
                 twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
 
         for k in twin_dict.keys():
@@ -2192,5 +2236,6 @@ class ModelSpecialSlicers(object):
                 _model._calculate_chisq()
 
         return _model
+
 
 # vim: textwidth=80

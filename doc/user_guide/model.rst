@@ -826,12 +826,12 @@ such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
 
-   >>> m.fit(fitter="Nelder-Mead", method="ml")
+   >>> m.fit(optimizer="Nelder-Mead", method="ml")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
    >>> # Gradient information is also supported
-   >>> m.fit(fitter="L-BFGS-B", method="ml", grad=True)
+   >>> m.fit(optimizer="L-BFGS-B", method="ml", grad=True)
 
 Huber loss function
 ^^^^^^^^^^^^^^^^^^^
@@ -844,10 +844,10 @@ non-linear optimization algorithms:
 
 .. code-block:: python
 
-   >>> m.fit(fitter="Nelder-Mead", method="huber")
+   >>> m.fit(optimizer="Nelder-Mead", method="huber")
 
    >>> # Gradient information is also supported
-   >>> m.fit(fitter="L-BFGS-B", method="huber", grad=True)
+   >>> m.fit(optimizer="L-BFGS-B", method="huber", grad=True)
 
 
 Custom optimizations
@@ -893,7 +893,7 @@ a custom minimization function can be passed to the model:
     ...    # Return squared and summed weighted difference
     ...    return (difference**2).sum()
     >>> # We must use a general non-linear optimizer again
-    >>> m.fit(fitter='Nelder-Mead',
+    >>> m.fit(optimizer='Nelder-Mead',
     ...       method="custom",
     ...       min_function=my_custom_function)
 
@@ -931,7 +931,7 @@ passed, using the following signature:
     ...
     ...    return -(jac * (data / cur_value - 1)).sum(1)
     >>> # We must use a general non-linear optimizer again
-    >>> m.fit(fitter='L-BFGS-B',
+    >>> m.fit(optimizer='L-BFGS-B',
     ...       method="custom",
     ...       grad=True,
     ...       min_function=my_custom_function,
@@ -964,7 +964,7 @@ component using mpfit and bounds on the ``centre`` parameter.
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
     >>> g1.centre.bounded = True
-    >>> m.fit(fitter="mpfit", bounded=True)
+    >>> m.fit(optimizer="mpfit", bounded=True)
     >>> m.print_current_values(fancy=False)
     Model1D:  histogram
     Gaussian: Gaussian
@@ -1423,4 +1423,4 @@ the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
 
 .. code-block:: python
 
-    >>> samf.start(fitter='mpfit', bounded=True)
+    >>> samf.start(optimizer='mpfit', bounded=True)

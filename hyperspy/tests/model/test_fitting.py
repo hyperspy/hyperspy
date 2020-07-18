@@ -58,7 +58,7 @@ class TestModelFitBinned:
         if bounded:
             self.m[0].centre.bmin = 0.5
 
-        self.m.fit(fitter="leastsq", grad=grad, bounded=bounded)
+        self.m.fit(optimizer="leastsq", grad=grad, bounded=bounded)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
         if bounded:
@@ -78,7 +78,7 @@ class TestModelFitBinned:
         ],
     )
     def test_fit_odr(self, grad, expected):
-        self.m.fit(fitter="odr", grad=grad)
+        self.m.fit(optimizer="odr", grad=grad)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, odr.Output)
 
@@ -103,7 +103,7 @@ class TestModelFitBinned:
             VisibleDeprecationWarning,
             match=r"The method .* has been deprecated and will be removed",
         ):
-            self.m.fit(fitter="mpfit", grad=grad, bounded=bounded)
+            self.m.fit(optimizer="mpfit", grad=grad, bounded=bounded)
 
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, mpfit)
@@ -113,18 +113,18 @@ class TestModelFitBinned:
         assert np.all(~np.isinf(self.m.p_std))
 
     @pytest.mark.parametrize(
-        "fitter, expected", [("leastsq", (9991.654220, 0.5, 2.083982))],
+        "optimizer, expected", [("leastsq", (9991.654220, 0.5, 2.083982))],
     )
-    def test_fit_bounded_bad_starting_values(self, fitter, expected):
+    def test_fit_bounded_bad_starting_values(self, optimizer, expected):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
-        self.m.fit(fitter=fitter, bounded=True)
+        self.m.fit(optimizer=optimizer, bounded=True)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
     @pytest.mark.parametrize(
-        "fitter, expected", [("leastsq", (9950.0, 0.5, 2.078154))],
+        "optimizer, expected", [("leastsq", (9950.0, 0.5, 2.078154))],
     )
-    def test_fit_ext_bounding(self, fitter, expected):
+    def test_fit_ext_bounding(self, optimizer, expected):
         self.m[0].A.bmin = 9950.0
         self.m[0].A.bmax = 10050.0
         self.m[0].centre.bmin = 0.5
@@ -135,7 +135,7 @@ class TestModelFitBinned:
         with pytest.warns(
             VisibleDeprecationWarning, match="`ext_bounding=True` has been deprecated",
         ):
-            self.m.fit(fitter=fitter, ext_bounding=True)
+            self.m.fit(optimizer=optimizer, ext_bounding=True)
 
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
@@ -159,7 +159,7 @@ class TestModelFitBinnedLocal:
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
     @pytest.mark.parametrize(
-        "fitter, method, grad, bounded, expected",
+        "optimizer, method, grad, bounded, expected",
         [
             ("Nelder-Mead", "ls", False, False, (9976.145193, -0.110611, 1.983807)),
             ("Nelder-Mead", "ml", False, False, (10001.396139, -0.104151, 2.000536)),
@@ -171,11 +171,11 @@ class TestModelFitBinnedLocal:
             ("L-BFGS-B", "ls", True, True, (9991.627563, 0.5, 2.083987)),
         ],
     )
-    def test_fit_scipy_minimize(self, fitter, method, grad, bounded, expected):
+    def test_fit_scipy_minimize(self, optimizer, method, grad, bounded, expected):
         if bounded:
             self.m[0].centre.bmin = 0.5
 
-        self.m.fit(fitter=fitter, method=method, grad=grad, bounded=bounded)
+        self.m.fit(optimizer=optimizer, method=method, grad=grad, bounded=bounded)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
@@ -190,28 +190,28 @@ class TestModelFitBinnedLocal:
         ],
     )
     def test_fit_scipy_minimize_gradients(self, grad, expected):
-        self.m.fit(fitter="L-BFGS-B", method="ls", grad=grad)
+        self.m.fit(optimizer="L-BFGS-B", method="ls", grad=grad)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.parametrize(
-        "fitter, expected",
+        "optimizer, expected",
         [
             ("Powell", (9991.464524, 0.500064, 2.083900)),
             ("L-BFGS-B", (9991.654220, 0.5, 2.083982)),
         ],
     )
-    def test_fit_bounded_bad_starting_values(self, fitter, expected):
+    def test_fit_bounded_bad_starting_values(self, optimizer, expected):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
-        self.m.fit(fitter=fitter, bounded=True)
+        self.m.fit(optimizer=optimizer, bounded=True)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
     @pytest.mark.parametrize(
-        "fitter, expected",
+        "optimizer, expected",
         [("Powell", (9950.0, 0.5, 2.078154)), ("L-BFGS-B", (9950.0, 0.5, 2.078154))],
     )
-    def test_fit_ext_bounding(self, fitter, expected):
+    def test_fit_ext_bounding(self, optimizer, expected):
         self.m[0].A.bmin = 9950.0
         self.m[0].A.bmax = 10050.0
         self.m[0].centre.bmin = 0.5
@@ -222,18 +222,18 @@ class TestModelFitBinnedLocal:
         with pytest.warns(
             VisibleDeprecationWarning, match="`ext_bounding=True` has been deprecated",
         ):
-            self.m.fit(fitter=fitter, ext_bounding=True)
+            self.m.fit(optimizer=optimizer, ext_bounding=True)
 
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
     @pytest.mark.parametrize(
-        "fitter, expected", [("SLSQP", (988.401164, -177.122887, -10.100562))]
+        "optimizer, expected", [("SLSQP", (988.401164, -177.122887, -10.100562))]
     )
-    def test_constraints(self, fitter, expected):
+    def test_constraints(self, optimizer, expected):
         # Primarily checks that constraints are passed correctly,
         # even though the end result is a bad fit
         cons = {"type": "ineq", "fun": lambda x: x[0] - x[1]}
-        self.m.fit(fitter=fitter, constraints=cons)
+        self.m.fit(optimizer=optimizer, constraints=cons)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
 
@@ -270,7 +270,9 @@ class TestModelFitBinnedGlobal:
         self.m[0].sigma.bmin = 0.5
         self.m[0].sigma.bmax = 2.5
 
-        self.m.fit(fitter="Differential Evolution", method=method, bounded=True, seed=1)
+        self.m.fit(
+            optimizer="Differential Evolution", method=method, bounded=True, seed=1
+        )
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
@@ -291,7 +293,7 @@ class TestModelFitBinnedGlobal:
         self.m[0].sigma.bmin = 0.5
         self.m[0].sigma.bmax = 2.5
 
-        self.m.fit(fitter="Dual Annealing", method=method, bounded=True, seed=1)
+        self.m.fit(optimizer="Dual Annealing", method=method, bounded=True, seed=1)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
@@ -312,7 +314,7 @@ class TestModelFitBinnedGlobal:
         self.m[0].sigma.bmin = 0.5
         self.m[0].sigma.bmax = 2.5
 
-        self.m.fit(fitter="SHGO", method=method, bounded=True)
+        self.m.fit(optimizer="SHGO", method=method, bounded=True)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
@@ -336,15 +338,15 @@ class TestModelWeighted:
 
     def test_chisq(self):
         self.m.signal.metadata.Signal.binned = True
-        self.m.fit(fitter="leastsq", method="ls")
+        self.m.fit(optimizer="leastsq", method="ls")
         np.testing.assert_allclose(self.m.chisq.data, 3029.16949561)
 
     def test_red_chisq(self):
-        self.m.fit(fitter="leastsq", method="ls")
+        self.m.fit(optimizer="leastsq", method="ls")
         np.testing.assert_allclose(self.m.red_chisq.data, 3.37700055)
 
     @pytest.mark.parametrize(
-        "fitter, binned, expected",
+        "optimizer, binned, expected",
         [
             ("leastsq", True, [9.916560, 1.662824]),
             ("odr", True, [9.916560, 1.662825]),
@@ -354,9 +356,9 @@ class TestModelWeighted:
             ("Nelder-Mead", False, [0.991362, 0.184831]),
         ],
     )
-    def test_fit(self, fitter, binned, expected):
+    def test_fit(self, optimizer, binned, expected):
         self.m.signal.metadata.Signal.binned = binned
-        self.m.fit(fitter=fitter, method="ls")
+        self.m.fit(optimizer=optimizer, method="ls")
         self._check_model_values(self.m[0], expected, rtol=1e-5)
 
 
@@ -373,15 +375,15 @@ class TestModelWeightedOptions:
         self.m.append(hs.model.components1D.Polynomial(1, legacy=False))
 
     def test_red_chisq_default(self):
-        self.m.fit(fitter="leastsq", method="ls")
+        self.m.fit(optimizer="leastsq", method="ls")
         np.testing.assert_allclose(self.m.red_chisq.data, 3.377001, rtol=1e-5)
 
     def test_red_chisq_inv_var(self):
-        self.m.fit(fitter="leastsq", method="ls", weights="inverse_variance")
+        self.m.fit(optimizer="leastsq", method="ls", weights="inverse_variance")
         np.testing.assert_allclose(self.m.red_chisq.data, 3.377001, rtol=1e-5)
 
     def test_red_chisq_unweighted(self):
-        self.m.fit(fitter="leastsq", method="ls", weights=None)
+        self.m.fit(optimizer="leastsq", method="ls", weights=None)
         np.testing.assert_allclose(self.m.red_chisq.data, 3.377004, rtol=1e-5)
 
 
@@ -396,7 +398,7 @@ class TestModelScalarVariance:
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
         self.s.set_noise_variance(std ** 2)
-        self.m.fit(fitter="leastsq", method="ls")
+        self.m.fit(optimizer="leastsq", method="ls")
         np.testing.assert_allclose(self.m.chisq.data, expected)
 
     @pytest.mark.parametrize("std, expected", [(1, 0.79949135), (10, 0.79949135)])
@@ -404,7 +406,7 @@ class TestModelScalarVariance:
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
         self.s.set_noise_variance(std ** 2)
-        self.m.fit(fitter="leastsq", method="ls")
+        self.m.fit(optimizer="leastsq", method="ls")
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
     @pytest.mark.parametrize("std, expected", [(1, 0.86206965), (10, 0.86206965)])
@@ -413,7 +415,7 @@ class TestModelScalarVariance:
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
         self.s.set_noise_variance(std ** 2)
-        self.m.fit(fitter="leastsq", method="ls")
+        self.m.fit(optimizer="leastsq", method="ls")
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
 
@@ -440,7 +442,7 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(fitter="leastsq", method="ls", iterpath="serpentine")
+        self.m.multifit(optimizer="leastsq", method="ls", iterpath="serpentine")
         np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, atol=1e-5)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, atol=1e-5)
 
@@ -457,9 +459,9 @@ class TestFitPrintInfo:
         g.centre.value = 0.5
         g.A.value = 1000
 
-    @pytest.mark.parametrize("fitter", ["odr", "Nelder-Mead", "L-BFGS-B"])
-    def test_print_info(self, fitter, capfd):
-        self.m.fit(fitter=fitter, print_info=True)
+    @pytest.mark.parametrize("optimizer", ["odr", "Nelder-Mead", "L-BFGS-B"])
+    def test_print_info(self, optimizer, capfd):
+        self.m.fit(optimizer=optimizer, print_info=True)
         captured = capfd.readouterr()
         assert "Fit info:" in captured.out
 
@@ -468,7 +470,7 @@ class TestFitPrintInfo:
         if bounded:
             self.m[0].centre.bmin = 0.5
 
-        self.m.fit(fitter="leastsq", bounded=bounded, print_info=True)
+        self.m.fit(optimizer="leastsq", bounded=bounded, print_info=True)
         captured = capfd.readouterr()
         assert "Fit info:" in captured.out
 
@@ -477,13 +479,13 @@ class TestFitPrintInfo:
             VisibleDeprecationWarning,
             match=r"The method .* has been deprecated and will be removed",
         ):
-            self.m.fit(fitter="mpfit", print_info=True)
+            self.m.fit(optimizer="mpfit", print_info=True)
 
         captured = capfd.readouterr()
         assert "Fit info:" in captured.out
 
     def test_no_print_info(self, capfd):
-        self.m.fit(fitter="leastsq")  # Default is print_info=False
+        self.m.fit(optimizer="leastsq")  # Default is print_info=False
         captured = capfd.readouterr()
         assert "Fit info:" not in captured.out
 
@@ -501,13 +503,20 @@ class TestFitErrorsAndWarnings:
         g.A.value = 1000
         self.m = m
 
-    @pytest.mark.parametrize("fitter", ["fmin", "mpfit"])
-    def test_deprecated_fitters(self, fitter):
+    @pytest.mark.parametrize("optimizer", ["fmin", "mpfit"])
+    def test_deprecated_optimizers(self, optimizer):
         with pytest.warns(
             VisibleDeprecationWarning,
             match=r"The method .* has been deprecated and will be removed",
         ):
-            self.m.fit(fitter=fitter)
+            self.m.fit(optimizer=optimizer)
+
+    def test_deprecated_fitter(self):
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match=r"fitter=.* has been deprecated and will be removed",
+        ):
+            self.m.fit(fitter="leastsq")
 
     def test_wrong_method(self):
         with pytest.raises(ValueError, match="method must be one of"):
@@ -517,29 +526,29 @@ class TestFitErrorsAndWarnings:
         with pytest.raises(
             NotImplementedError, match="optimizers only support least-squares fitting"
         ):
-            self.m.fit(method="ml", fitter="leastsq")
+            self.m.fit(method="ml", optimizer="leastsq")
 
     def test_not_support_bounds(self):
         with pytest.raises(ValueError, match="Bounded optimization is only supported"):
-            self.m.fit(fitter="odr", bounded=True)
+            self.m.fit(optimizer="odr", bounded=True)
 
     def test_wrong_grad(self):
         with pytest.raises(ValueError, match="grad must be one of"):
             self.m.fit(grad="random")
 
     @pytest.mark.parametrize(
-        "fitter", ["Differential Evolution", "Dual Annealing", "SHGO"]
+        "optimizer", ["Differential Evolution", "Dual Annealing", "SHGO"]
     )
-    def test_global_optimizer_no_bounds(self, fitter):
+    def test_global_optimizer_no_bounds(self, optimizer):
         with pytest.raises(
-            ValueError, match=r"Bounds must be specified for fitter=.*",
+            ValueError, match=r"Bounds must be specified for optimizer=.*",
         ):
-            self.m.fit(fitter=fitter, bounded=False)
+            self.m.fit(optimizer=optimizer, bounded=False)
 
     @pytest.mark.parametrize(
-        "fitter", ["Differential Evolution", "Dual Annealing", "SHGO"]
+        "optimizer", ["Differential Evolution", "Dual Annealing", "SHGO"]
     )
-    def test_global_optimizer_wrong_bounds(self, fitter):
+    def test_global_optimizer_wrong_bounds(self, optimizer):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.bmax = np.inf
 
@@ -547,7 +556,7 @@ class TestFitErrorsAndWarnings:
             ValueError,
             match="Finite upper and lower bounds must be specified for every free parameter",
         ):
-            self.m.fit(fitter=fitter, bounded=True)
+            self.m.fit(optimizer=optimizer, bounded=True)
 
 
 class TestCustomOptimization:
@@ -563,17 +572,20 @@ class TestCustomOptimization:
         self.fmin = sets_second_parameter_to_two
 
     def test_custom_function(self):
-        self.m.fit(method="custom", min_function=self.fmin, fitter="TNC")
+        self.m.fit(method="custom", min_function=self.fmin, optimizer="TNC")
         assert self.m[0].centre.value == 2.0
 
     def test_no_function(self):
         with pytest.raises(ValueError, match="Custom minimization requires"):
-            self.m.fit(method="custom", fitter="TNC")
+            self.m.fit(method="custom", optimizer="TNC")
 
     def test_no_gradient(self):
         with pytest.raises(ValueError, match="Custom minimization with gradients"):
             self.m.fit(
-                method="custom", min_function=lambda *args: 1, grad=True, fitter="BFGS"
+                method="custom",
+                min_function=lambda *args: 1,
+                grad=True,
+                optimizer="BFGS",
             )
 
     def test_custom_gradient_function(self):
@@ -582,7 +594,7 @@ class TestCustomOptimization:
         gradf = mock.Mock(return_value=[10, 1, 10])
         self.m.fit(
             method="custom",
-            fitter="BFGS",
+            optimizer="BFGS",
             min_function=self.fmin,
             grad=True,
             min_function_grad=gradf,
@@ -634,15 +646,15 @@ class TestMultifit:
         assert rs.get_noise_variance() is not None
         assert isinstance(rs.get_noise_variance(), hs.signals.Signal1D)
 
-    @pytest.mark.parametrize("fitter", ["leastsq", "L-BFGS-B"])
-    def test_bounded_snapping(self, fitter):
+    @pytest.mark.parametrize("optimizer", ["leastsq", "L-BFGS-B"])
+    def test_bounded_snapping(self, optimizer):
         m = self.m
         m[0].A.free = True
         m.signal.data *= 2.0
         m[0].A.value = 2.0
         m[0].A.bmin = 3.0
         # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.multifit(fitter=fitter, bounded=True, iterpath="serpentine")
+        m.multifit(optimizer=optimizer, bounded=True, iterpath="serpentine")
         np.testing.assert_allclose(self.m[0].r.map["values"], [3.0, 3.0], rtol=1e-5)
         np.testing.assert_allclose(self.m[0].A.map["values"], [4.0, 4.0], rtol=1e-5)
 
