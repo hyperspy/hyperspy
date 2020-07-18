@@ -667,8 +667,8 @@ A good approach to choosing an optimization approach is to ask yourself
 "Do you want to...":
 
 * Apply bounds to your model parameter values?
-* Use of gradient information to try and improve the fit result?
-* Estimate the errors of the parameter values found by the fit?
+* Are gradient-based fitting algorithms appropriate for your model?
+* Estimate the standard deviations of the parameter values found by the fit?
 * Fit your data in the least-squares sense, or is your data corrupted
   with Poisson noise?
 * Find the global optima for your parameters, or is a local optima acceptable?
@@ -793,7 +793,7 @@ Because the noise is heteroscedastic, the least squares optimizer estimation is
 biased. A more accurate result can be obtained with weighted least squares,
 where the weights are proportional to the inverse of the noise variance.
 Although this is still biased for Poisson noise, it is a good approximation
-in most cases.
+in most cases where there are a sufficient number of counts per pixel.
 
 .. code-block:: python
 
@@ -815,11 +815,11 @@ in most cases.
     In this scenario, to explicitly disable weighting, pass ``m.fit(weights=None)``.
 
 
-Maximum likelihood estimation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Poisson maximum likelihood estimation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To avoid biased estimation in the case of data corrupted by Poisson noise,
-we can use Poisson maximum likelihood estimation (MLE) instead.
+To avoid biased estimation in the case of data corrupted by Poisson noise
+with very few counts, we can use Poisson maximum likelihood estimation (MLE) instead.
 This is an unbiased estimator for Poisson noise. To perform MLE, we must
 use a general, non-linear optimizer from the ref:`table above <optimizers-table>`,
 such as Nelder-Mead or L-BFGS-B:
