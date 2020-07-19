@@ -94,7 +94,6 @@ class LabelWidget(Widget1DBase):
         ax = self.ax
         trans = transforms.blended_transform_factory(
             ax.transData, ax.transAxes)
-        kwargs = picker_kwargs(5)
         self.patch = [ax.text(
             self._pos[0],
             self._pos[1],
@@ -105,7 +104,7 @@ class LabelWidget(Widget1DBase):
             horizontalalignment='left',
             bbox=self.bbox,
             animated=self.blit,
-            **kwargs)]
+            picker=True)]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""
