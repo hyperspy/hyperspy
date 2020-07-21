@@ -199,6 +199,14 @@ class Model2D(BaseModel):
     def reset_the_signal_range(self):
         raise NotImplementedError
 
+    def _check_analytical_jacobian(self):
+        """Check all components have analytical gradients.
+
+        If they do, return True and an empty string.
+        If they do not, return False and an error message.
+        """
+        return False, f"Analytical gradients not implemented for Model2D"
+
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 

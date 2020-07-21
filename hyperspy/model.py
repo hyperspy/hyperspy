@@ -24,6 +24,7 @@ import tempfile
 import warnings
 from contextlib import contextmanager
 from distutils.version import LooseVersion
+from functools import partial
 
 import dill
 import numpy as np
@@ -31,34 +32,32 @@ import scipy
 import scipy.odr as odr
 from IPython.display import display, display_pretty
 from scipy.linalg import svd
-from scipy.optimize import differential_evolution, least_squares, leastsq, minimize
+from scipy.optimize import (
+    differential_evolution,
+    leastsq,
+    least_squares,
+    minimize,
+    OptimizeResult
+)
 
 from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import (
-    MAX_WORKERS_ARG,
-    PARALLEL_ARG,
-    SHOW_PROGRESSBAR_ARG,
-)
+from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
+from hyperspy.docstrings.signal import (MAX_WORKERS_ARG, PARALLEL_ARG,
+                                        SHOW_PROGRESSBAR_ARG)
 from hyperspy.events import Event, Events, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.export_dictionary import (
-    export_to_dictionary,
-    load_from_dictionary,
-    parse_flag_string,
-    reconstruct_object,
-)
+from hyperspy.misc.export_dictionary import (export_to_dictionary,
+                                             load_from_dictionary,
+                                             parse_flag_string,
+                                             reconstruct_object)
 from hyperspy.misc.model_tools import current_model_values
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.misc.utils import (
-    dummy_context_manager,
-    shorten_name,
-    slugify,
-    stash_active_state,
-)
+from hyperspy.misc.utils import (dummy_context_manager, shorten_name, slugify,
+                                 stash_active_state)
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
 
@@ -68,51 +67,48 @@ _COMPONENTS = ALL_EXTENSIONS["components1D"]
 _COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
 
+def _check_deprecated_optimizer(optimizer):
+    """Can be removed in HyperSpy 2.0"""
+    deprecated_optimizer_dict = {
+        "fmin": "Nelder-Mead",
+        "fmin_cg": "CG",
+        "fmin_ncg": "Newton-CG",
+        "fmin_bfgs": "BFGS",
+        "fmin_l_bfgs_b": "L-BFGS-B",
+        "fmin_tnc": "TNC",
+        "fmin_powell": "Powell",
+        "mpfit": "lm",
+        "leastsq": "lm",
+    }
+    check_optimizer = deprecated_optimizer_dict.get(optimizer, None)
+
+    if check_optimizer:
+        warnings.warn(
+            f"`{optimizer}` has been deprecated and will be removed "
+            f"in HyperSpy 2.0. Please use `{check_optimizer}` instead.",
+            VisibleDeprecationWarning,
+        )
+        optimizer = check_optimizer
+
+    return optimizer
+
 def reconstruct_component(comp_dictionary, **init_args):
-    _id = comp_dictionary["_id_name"]
+    _id = comp_dictionary['_id_name']
     if _id in _COMPONENTS:
         _class = getattr(
-            importlib.import_module(_COMPONENTS[_id]["module"]),
-            _COMPONENTS[_id]["class"],
-        )
+            importlib.import_module(
+                _COMPONENTS[_id]["module"]), _COMPONENTS[_id]["class"])
     elif "_class_dump" in comp_dictionary:
         # When a component is not registered using the extension mechanism,
         # it is serialized using dill.
-        _class = dill.loads(comp_dictionary["_class_dump"])
+        _class = dill.loads(comp_dictionary['_class_dump'])
     else:
         raise ImportError(
-            f'Loading the {comp_dictionary["class"]} component '
-            + "failed because the component is provided by the "
-            + f'{comp_dictionary["package"]} Python package, but '
-            + f'{comp_dictionary["package"]} is not installed.'
-        )
+            f'Loading the {comp_dictionary["class"]} component ' +
+            'failed because the component is provided by the ' +
+            f'{comp_dictionary["package"]} Python package, but ' +
+            f'{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
-
-
-def _pprint_like_optimize_result(d):
-    """Prints a dictionary in the same way as scipy.optimize.OptimizeResult"""
-    m = max(map(len, list(d.keys()))) + 1
-    return "\n".join([k.rjust(m) + ": " + repr(v) for k, v in sorted(d.items())])
-
-
-def _odr_output_to_dict(x):
-    """Converts a scipy.odr.Output object to a dict"""
-    dd = {
-        "beta": x.beta,
-        "beta_std": x.sd_beta,
-        "beta_cov": x.cov_beta,
-    }
-
-    if hasattr(x, "info"):
-        dd.update(
-            {
-                "res_var": x.res_var,
-                "inv_condnum": x.inv_condnum,
-                "stop_msg": ", ".join(x.stopreason),
-            }
-        )
-
-    return dd
 
 
 class ModelComponents(object):
@@ -128,9 +124,12 @@ class ModelComponents(object):
 
     def __repr__(self):
         signature = "%4s | %19s | %19s | %19s"
-        ans = signature % ("#", "Attribute Name", "Component Name", "Component Type")
+        ans = signature % ('#',
+                           'Attribute Name',
+                           'Component Name',
+                           'Component Type')
         ans += "\n"
-        ans += signature % ("-" * 4, "-" * 19, "-" * 19, "-" * 19)
+        ans += signature % ('-' * 4, '-' * 19, '-' * 19, '-' * 19)
         if self._model:
             for i, c in enumerate(self._model):
                 ans += "\n"
@@ -142,7 +141,10 @@ class ModelComponents(object):
                 name_string = shorten_name(name_string, 19)
                 component_type = shorten_name(component_type, 19)
 
-                ans += signature % (i, variable_name, name_string, component_type)
+                ans += signature % (i,
+                                    variable_name,
+                                    name_string,
+                                    component_type)
         return ans
 
 
@@ -253,8 +255,7 @@ class BaseModel(list):
     def __init__(self):
 
         self.events = Events()
-        self.events.fitted = Event(
-            """
+        self.events.fitted = Event("""
             Event that triggers after fitting changed at least one parameter.
 
             The event triggers after the fitting step was finished, and only of
@@ -264,9 +265,7 @@ class BaseModel(list):
             ---------
             obj : Model
                 The Model that the event belongs to
-            """,
-            arguments=["obj"],
-        )
+            """, arguments=['obj'])
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -316,42 +315,43 @@ class BaseModel(list):
               attributes, for more information, see
               :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
-              the model (see
+              the model (see 
               :py:meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
         """
 
-        if "components" in dic:
+        if 'components' in dic:
             while len(self) != 0:
                 self.remove(self[0])
             id_dict = {}
 
-            for comp in dic["components"]:
+            for comp in dic['components']:
                 init_args = {}
-                for k, flags_str in comp["_whitelist"].items():
+                for k, flags_str in comp['_whitelist'].items():
                     if not len(flags_str):
                         continue
-                    if "init" in parse_flag_string(flags_str):
+                    if 'init' in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
                 self.append(reconstruct_component(comp, **init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
-            for comp in dic["components"]:
-                for par in comp["parameters"]:
-                    for tw in par["_twins"]:
-                        id_dict[tw].twin = id_dict[par["self"]]
+            for comp in dic['components']:
+                for par in comp['parameters']:
+                    for tw in par['_twins']:
+                        id_dict[tw].twin = id_dict[par['self']]
 
-        if "_whitelist" in dic:
+        if '_whitelist' in dic:
             load_from_dictionary(self, dic)
 
     def __repr__(self):
         title = self.signal.metadata.General.title
-        class_name = str(self.__class__).split("'")[1].split(".")[-1]
+        class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>" % (class_name, self.signal.metadata.General.title)
+            return "<%s, title: %s>" % (
+                class_name, self.signal.metadata.General.title)
         else:
             return "<%s>" % class_name
 
@@ -379,7 +379,8 @@ class BaseModel(list):
         thing: `Component` instance.
         """
         if not isinstance(thing, Component):
-            raise ValueError("Only `Component` instances can be added to a model")
+            raise ValueError(
+                "Only `Component` instances can be added to a model")
         # Check if any of the other components in the model has the same name
         if thing in self:
             raise ValueError("Component already in model")
@@ -402,7 +403,8 @@ class BaseModel(list):
         thing._create_arrays()
         list.append(self, thing)
         thing.model = self
-        setattr(self.components, slugify(name_string, valid_variable_name=True), thing)
+        setattr(self.components, slugify(name_string,
+                                         valid_variable_name=True), thing)
         if self._plot_active is True:
             self._connect_parameters2update_plot(components=[thing])
         self.update_plot()
@@ -441,9 +443,7 @@ class BaseModel(list):
         """
         thing = self._get_component(thing)
         if not np.iterable(thing):
-            thing = [
-                thing,
-            ]
+            thing = [thing, ]
         for athing in thing:
             for parameter in athing.parameters:
                 # Remove the parameter from its twin _twins
@@ -456,15 +456,8 @@ class BaseModel(list):
         if self._plot_active:
             self.update_plot()
 
-    def as_signal(
-        self,
-        component_list=None,
-        out_of_range_to_nan=True,
-        show_progressbar=None,
-        out=None,
-        parallel=None,
-        max_workers=None,
-    ):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True,
+                  show_progressbar=None, out=None, parallel=None, max_workers=None):
         """Returns a recreation of the dataset using the model.
         The spectral range that is not fitted is filled with nans.
 
@@ -516,14 +509,13 @@ class BaseModel(list):
             parallel = True
 
         if out is None:
-            data = np.empty(self.signal.data.shape, dtype="float")
+            data = np.empty(self.signal.data.shape, dtype='float')
             data.fill(np.nan)
             signal = self.signal.__class__(
-                data, axes=self.signal.axes_manager._get_axes_dicts()
-            )
+                data,
+                axes=self.signal.axes_manager._get_axes_dicts())
             signal.metadata.General.title = (
-                self.signal.metadata.General.title + " from fitted model"
-            )
+                self.signal.metadata.General.title + " from fitted model")
             signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
         else:
             signal = out
@@ -544,11 +536,8 @@ class BaseModel(list):
             parallel = False
 
         if not parallel:
-            self._as_signal_iter(
-                component_list=component_list,
-                show_progressbar=show_progressbar,
-                data=data,
-            )
+            self._as_signal_iter(component_list=component_list,
+                                 show_progressbar=show_progressbar, data=data)
         else:
             am = self.axes_manager
             nav_shape = am.navigation_shape
@@ -557,34 +546,30 @@ class BaseModel(list):
                 size = nav_shape[ind]
             if not len(nav_shape) or size < 4:
                 # no or not enough navigation, just run without threads
-                return self.as_signal(
-                    component_list=component_list,
-                    show_progressbar=show_progressbar,
-                    out=signal,
-                    parallel=False,
-                )
+                return self.as_signal(component_list=component_list,
+                                      show_progressbar=show_progressbar,
+                                      out=signal, parallel=False)
             max_workers = min(max_workers, size / 2)
-            splits = [len(sp) for sp in np.array_split(np.arange(size), max_workers)]
+            splits = [len(sp) for sp in np.array_split(np.arange(size),
+                                                       max_workers)]
             models = []
             data_slices = []
-            slices = [slice(None),] * len(nav_shape)
+            slices = [slice(None), ] * len(nav_shape)
             for sp, csm in zip(splits, np.cumsum(splits)):
                 slices[ind] = slice(csm - sp, csm)
                 models.append(self.inav[tuple(slices)])
-                array_slices = self.signal._get_array_slices(tuple(slices), True)
+                array_slices = self.signal._get_array_slices(tuple(slices),
+                                                             True)
                 data_slices.append(data[array_slices])
 
             from concurrent.futures import ThreadPoolExecutor
-
             with ThreadPoolExecutor(max_workers=max_workers) as exe:
                 _map = exe.map(
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],
                         component_list=component_list,
-                        show_progressbar=thing[2] + 1 if show_progressbar else False,
-                    ),
-                    zip(models, data_slices, range(int(max_workers))),
-                )
+                        show_progressbar=thing[2] + 1 if show_progressbar else False),
+                    zip(models, data_slices, range(int(max_workers))))
 
             _ = next(_map)
 
@@ -595,37 +580,36 @@ class BaseModel(list):
 
     as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def _as_signal_iter(self, component_list=None, show_progressbar=None, data=None):
+    def _as_signal_iter(self, component_list=None, show_progressbar=None,
+                        data=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
         if data is None:
-            raise ValueError("No data supplied")
+            raise ValueError('No data supplied')
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
         with stash_active_state(self if component_list else []):
             if component_list:
-                component_list = [self._get_component(x) for x in component_list]
+                component_list = [self._get_component(x)
+                                  for x in component_list]
                 for component_ in self:
                     active = component_ in component_list
                     if component_.active_is_multidimensional:
                         if active:
-                            continue  # Keep active_map
+                            continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
             maxval = self.axes_manager.navigation_size
             enabled = show_progressbar and (maxval > 0)
-            pbar = progressbar(
-                total=maxval, disable=not enabled, position=show_progressbar, leave=True
-            )
+            pbar = progressbar(total=maxval, disable=not enabled,
+                               position=show_progressbar, leave=True)
             for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
-                    np.where(self.channel_switches)
-                ] = self.__call__(
-                    non_convolved=not self.convolved, onlyactive=True
-                ).ravel()
+                    np.where(self.channel_switches)] = self.__call__(
+                    non_convolved=not self.convolved, onlyactive=True).ravel()
                 pbar.update(1)
 
     @property
@@ -640,24 +624,20 @@ class BaseModel(list):
             return
         for i, component in enumerate(components):
             component.events.active_changed.connect(
-                self._model_line._auto_update_line, []
-            )
+                self._model_line._auto_update_line, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
-                    self._model_line._auto_update_line, []
-                )
+                    self._model_line._auto_update_line, [])
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
             return
         for component in components:
             component.events.active_changed.disconnect(
-                self._model_line._auto_update_line
-            )
+                self._model_line._auto_update_line)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
-                    self._model_line._auto_update_line
-                )
+                    self._model_line._auto_update_line)
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -673,9 +653,8 @@ class BaseModel(list):
             try:
                 if self._model_line is not None:
                     self._model_line.update()
-                for component in [
-                    component for component in self if component.active is True
-                ]:
+                for component in [component for component in self if
+                                  component.active is True]:
                     self._update_component_line(component)
             except BaseException:
                 self._disconnect_parameters2update_plot(components=self)
@@ -698,7 +677,7 @@ class BaseModel(list):
                 for p in c.parameters:
                     es.add(p.events, f)
         for c in self:
-            if hasattr(c, "_model_plot_line"):
+            if hasattr(c, '_model_plot_line'):
                 f = c._model_plot_line._auto_update_line
                 es.add(c.events, f)
                 for p in c.parameters:
@@ -761,7 +740,8 @@ class BaseModel(list):
         if self._plot is None or self._plot_components:
             return
         self._plot_components = True
-        for component in [component for component in self if component.active]:
+        for component in [component for component in self if
+                          component.active]:
             self._plot_component(component)
 
     def disable_plot_components(self):
@@ -776,11 +756,9 @@ class BaseModel(list):
         for component in self:
             if component.active:
                 for parameter in component.free_parameters:
-                    self.p0 = (
-                        self.p0 + (parameter.value,)
-                        if parameter._number_of_elements == 1
-                        else self.p0 + parameter.value
-                    )
+                    self.p0 = (self.p0 + (parameter.value,)
+                               if parameter._number_of_elements == 1
+                               else self.p0 + parameter.value)
 
     def set_boundaries(self, bounded=True):
         warnings.warn(
@@ -817,6 +795,16 @@ class BaseModel(list):
                             self.free_parameters_boundaries.append((param._bounds))
                         else:
                             self.free_parameters_boundaries.extend((param._bounds))
+
+    def _bounds_as_tuple(self):
+        """Converts parameter bounds to tuples for least_squares()"""
+        if self.free_parameters_boundaries is None:
+            return (-np.inf, np.inf)
+
+        return tuple(
+            (a if a is not None else -np.inf, b if b is not None else np.inf)
+            for a, b in self.free_parameters_boundaries
+        )
 
     def set_mpfit_parameters_info(self, bounded=True):
         warnings.warn(
@@ -949,12 +937,12 @@ class BaseModel(list):
         for component in self:  # Cut the parameters list
             if component.active is True:
                 if p_std is not None:
-                    comp_p_std = p_std[counter : counter + component._nfree_param]
+                    comp_p_std = p_std[
+                        counter: counter +
+                        component._nfree_param]
                 component.fetch_values_from_array(
-                    self.p0[counter : counter + component._nfree_param],
-                    comp_p_std,
-                    onlyfree=True,
-                )
+                    self.p0[counter: counter + component._nfree_param],
+                    comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
@@ -999,17 +987,15 @@ class BaseModel(list):
         variance = self.signal.get_noise_variance()
         if variance is not None:
             if isinstance(variance, BaseSignal):
-                variance = variance.data.__getitem__(self.axes_manager._getitem_tuple)[
-                    np.where(self.channel_switches)
-                ]
+                variance = variance.data.__getitem__(
+                    self.axes_manager._getitem_tuple)[np.where(
+                                                      self.channel_switches)]
         else:
             variance = 1.0
 
-        d = (
-            self(onlyactive=True).ravel()
-            - self.signal()[np.where(self.channel_switches)]
-        )
-        d *= d / (1.0 * variance)  # d = difference^2 / variance.
+        d = self(onlyactive=True).ravel() - self.signal()[np.where(
+            self.channel_switches)]
+        d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
     def _set_current_degrees_of_freedom(self):
@@ -1019,10 +1005,9 @@ class BaseModel(list):
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
-        tmp = self.chisq / (-self.dof + self.channel_switches.sum() - 1)
-        tmp.metadata.General.title = (
-            self.signal.metadata.General.title + " reduced chi-squared"
-        )
+        tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
+        tmp.metadata.General.title = self.signal.metadata.General.title + \
+            ' reduced chi-squared'
         return tmp
 
     def _calculate_parameter_std(self, pcov, cost, ysize):
@@ -1030,19 +1015,20 @@ class BaseModel(list):
 
         if pcov is None:  # Indeterminate covariance
             p_var = np.zeros(len(self.p0), dtype=float)
-            p_var.fill(np.inf)
+            p_var.fill(np.nan)
             warn_cov = True
         elif isinstance(pcov, np.ndarray):
             p_var = np.diag(pcov).astype(float) if pcov.ndim > 1 else pcov.astype(float)
 
             if p_var.min() < 0 or np.any(np.isnan(p_var)) or np.any(np.isinf(p_var)):
                 # Numerical overflow on diagonal
-                p_var.fill(np.inf)
+                p_var.fill(np.nan)
                 warn_cov = True
             elif ysize > self.p0.size:
                 p_var *= cost / (ysize - self.p0.size)
+                p_var = np.sqrt(p_var)
             else:
-                p_var.fill(np.inf)
+                p_var.fill(np.nan)
                 warn_cov = True
         else:
             raise ValueError(f"pcov should be None or np.ndarray, got {type(pcov)}")
@@ -1050,10 +1036,10 @@ class BaseModel(list):
         if warn_cov:
             _logger.warning(
                 "Covariance of the parameters could not be estimated. "
-                "Estimated parameter standard deviations will be np.inf."
+                "Estimated parameter standard deviations will be np.nan."
             )
 
-        return np.sqrt(p_var)
+        return p_var
 
     def _convert_variance_to_weights(self):
         weights = None
@@ -1074,14 +1060,14 @@ class BaseModel(list):
 
     def fit(
         self,
-        optimizer="leastsq",
-        method="ls",
-        grad=False,
+        optimizer="lm",
+        loss_function="ls",
+        grad="auto",
         bounded=False,
         update_plot=False,
-        weights="inverse_variance",
         return_info=False,
         print_info=False,
+        fd_scheme="2-point",
         **kwargs,
     ):
         """Fits the model to the experimental data.
@@ -1090,77 +1076,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        optimizer : str, default "leastsq"
-            The optimization algorithm used to perform the fitting.
-
-                * "leastsq" performs least-squares optimization, and
-                  supports bounds on parameters.
-                * "odr" performs the optimization using the orthogonal
-                  distance regression (ODR) algorithm. It does not support
-                  bounds on parameters. See :py:mod:`scipy.odr` for more details.
-                * All of the available methods for :py:func:`scipy.optimize.minimize`
-                  can be used here. See the :ref:`User Guide <model.fitting>`
-                  documentation for more details.
-                * "Differential Evolution" is a global optimization method.
-                  It does support bounds on parameters. See
-                  :py:func:`scipy.optimize.differential_evolution` for more
-                  details on available options.
-                * "Dual Annealing" is a global optimization method.
-                  It does support bounds on parameters. See
-                  :py:func:`scipy.optimize.dual_annealing` for more
-                  details on available options. Requires ``scipy >= 1.2.0``.
-                * "SHGO" (simplicial homology global optimization" is a global
-                  optimization method. It does support bounds on parameters. See
-                  :py:func:`scipy.optimize.shgo` for more details on available
-                  options. Requires ``scipy >= 1.2.0``.
-
-        method : {"ls", "ml", "huber", "custom"}, default "ls"
-            The loss function to use for minimization.
-
-                * "ls" minimizes the least-squares loss function.
-                * "ml" minimizes the negative log-likelihood for Poisson-distributed
-                  data. Also known as Poisson maximum likelihood estimation
-                  (MLE). Not available if ``optimizer`` is ``"leastsq"``
-                  or ``"odr"``.
-                * "huber" minimize the Huber loss function. Not available
-                  if ``optimizer`` is ``"leastsq"`` or ``"odr"``.
-                * "custom" allows passing your own minimisation function as a
-                  keyword argument ``min_function``, with an optional
-                  gradient argument ``min_function_grad``. Not available
-                  if ``optimizer`` is ``"leastsq"`` or ``"odr"``.
-
-        grad : bool or ["2-point", "3-point", "cs"] or callable, default False
-            If True, the analytical gradient is used (if defined) to
-            speed up the optimization. The keywords ``['2-point', '3-point', 'cs']``
-            can be used to select a finite difference scheme for numerical
-            estimation of the gradient with a relative step size. If it is a
-            callable, it should be a function that returns the gradient vector.
-            See :py:func:`scipy.optimize.minimize` for more details.
-        bounded : bool, default False
-            If True, performs bounded parameter optimization if
-            supported by ``optimizer``.
-        update_plot : bool, default False
-            If True, the plot is updated during the optimization
-            process. It slows down the optimization, but it enables
-            visualization of the optimization progress.
-        weights : {None, "inverse_variance", np.ndarray}, default "inverse_variance"
-            If None:
-                No weighting is applied to the data.
-            If "inverse_variance":
-                If the attribute ``metada.Signal.Noise_properties.variance``
-                is defined as a ``Signal`` instance of the same
-                ``navigation_dimension`` as the signal, and ``method="ls"``,
-                then weighted least-squares fit is performed, using
-                the inverse of the noise variance as the weights.
-        return_info : bool, default False
-            If True, returns the result of the fit, in the form of
-            a :py:class:`scipy.optimize.OptimizeResult` object.
-        print_info : bool, default False
-            If True, print information about the fitting results.
-        **kwargs : keyword arguments
-            Any extra keyword argument will be passed to the chosen
-            optimizer. For more information, read the docstring of the
-            optimizer of your choice in :py:mod:`scipy.optimize`.
+        %s
 
         Returns
         -------
@@ -1170,8 +1086,16 @@ class BaseModel(list):
         -----
         The chi-squared and reduced chi-squared statistics, and the
         degrees of freedom, are computed automatically when fitting,
-        only when `method="ls"`. They are stored as signals: ``chisq``,
-        ``red_chisq`` and ``dof``.
+        only when `loss_function="ls"`. They are stored as signals:
+        ``chisq``, ``red_chisq`` and ``dof``.
+
+        If the attribute ``metada.Signal.Noise_properties.variance``
+        is defined as a ``Signal`` instance with the same
+        ``navigation_dimension`` as the signal, and ``loss_function``
+        is ``"ls"`` or ``"huber"``, then a weighted fit is performed,
+        using the inverse of the noise variance as the weights.
+        If the attribute is set and ``loss_function`` is
+        ``"ml-poisson"``, an error is raised.
 
         Note that for both homoscedastic and heteroscedastic noise, if
         ``metadata.Signal.Noise_properties.variance`` does not contain
@@ -1183,13 +1107,20 @@ class BaseModel(list):
         See Also
         --------
         * :py:meth:`~hyperspy.model.BaseModel.multifit`
+        * :py:meth:`~hyperspy.model.EELSModel.fit`
 
         """
-        if (update_plot != self._plot_active) and not update_plot:
-            cm = self.suspend_update
-        else:
-            cm = dummy_context_manager
+        cm = (
+            self.suspend_update
+            if (update_plot != self._plot_active) and not update_plot
+            else dummy_context_manager
+        )
 
+        # ---------------------------------------------
+        # Deprecated arguments (remove in HyperSpy 2.0)
+        # ---------------------------------------------
+
+        # Deprecate "fitter" argument
         check_fitter = kwargs.pop("fitter", None)
         if check_fitter:
             warnings.warn(
@@ -1197,37 +1128,82 @@ class BaseModel(list):
                 f"in HyperSpy 2.0. Please use `optimizer='{check_fitter}'` instead.",
                 VisibleDeprecationWarning,
             )
+            optimizer = check_fitter
 
-        # Check for deprecated minimizers
-        deprecated_optimizer_dict = {
-            "fmin": "Nelder-Mead",
-            "fmin_cg": "CG",
-            "fmin_ncg": "Newton-CG",
-            "fmin_bfgs": "BFGS",
-            "fmin_l_bfgs_b": "L-BFGS-B",
-            "fmin_tnc": "TNC",
-            "fmin_powell": "Powell",
-            "mpfit": "leastsq",
-        }
-        check_optimizer = deprecated_optimizer_dict.get(optimizer, None)
+        # Deprecated optimization algorithms
+        optimizer = _check_deprecated_optimizer(optimizer)
 
-        if check_optimizer:
+        # Deprecate loss_function
+        if loss_function == "ml":
             warnings.warn(
-                f"The method `{optimizer}` has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use `{check_optimizer}` instead.",
+                "`loss_function='ml'` has been deprecated and will be removed in "
+                "HyperSpy 2.0. Please use `loss_function='ml-poisson'` instead.",
+                VisibleDeprecationWarning,
+            )
+            loss_function = "ml-poisson"
+
+        # Deprecate grad=True/False
+        if isinstance(grad, bool):
+            alt_grad = "analytical" if grad else None
+            warnings.warn(
+                f"`grad={grad}` has been deprecated and will be removed in "
+                f"HyperSpy 2.0. Please use `grad={alt_grad}` instead.",
+                VisibleDeprecationWarning,
+            )
+            grad = alt_grad
+
+        # Deprecate ext_bounding
+        ext_bounding = kwargs.pop("ext_bounding", False)
+        if ext_bounding:
+            warnings.warn(
+                "`ext_bounding=True` has been deprecated and will be removed "
+                "in HyperSpy 2.0. Please use `bounded=True` instead.",
                 VisibleDeprecationWarning,
             )
 
-            # Replace optimizer with new names
-            # - Don't do this for mpfit, since its proposed replacement (leastsq)
-            #   is not exactly equivalent, so just raise the deprecation warning
-            if optimizer != "mpfit":
-                optimizer = check_optimizer
+        # Deprecate custom min_function
+        min_function = kwargs.pop("min_function", None)
+        if min_function:
+            warnings.warn(
+                "`min_function` has been deprecated and will be removed "
+                "in HyperSpy 2.0. Please use `loss_function` instead.",
+                VisibleDeprecationWarning,
+            )
+            loss_function = min_function
 
-        _supported_methods = ["ls", "ml", "huber", "custom"]
+        # Deprecate custom min_function
+        min_function_grad = kwargs.pop("min_function_grad", None)
+        if min_function_grad:
+            warnings.warn(
+                "`min_function_grad` has been deprecated and will be removed "
+                "in HyperSpy 2.0. Please use `grad` instead.",
+                VisibleDeprecationWarning,
+            )
+            grad = min_function_grad
+
+        # ---------------------------
+        # End of deprecated arguments
+        # ---------------------------
+
+        # Supported losses and optimizers
+        _supported_global = {
+            "Differential Evolution": differential_evolution,
+        }
+
+        if optimizer in ["Dual Annealing", "SHGO"]:
+            if LooseVersion(scipy.__version__) < LooseVersion("1.2.0"):
+                raise ValueError(f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
+
+            from scipy.optimize import dual_annealing, shgo
+
+            _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
+
+        _supported_fd_schemes = ["2-point", "3-point", "cs"]
+        _supported_losses = ["ls", "ml-poisson", "huber"]
         _supported_bounds = [
-            "leastsq",
-            "mpfit",
+            "lm",
+            "trf",
+            "dogbox",
             "Powell",
             "TNC",
             "L-BFGS-B",
@@ -1237,81 +1213,98 @@ class BaseModel(list):
             "Dual Annealing",
             "SHGO",
         ]
+        _supported_deriv_free = [
+            "Powell",
+            "COBYLA",
+            "Nelder-Mead",
+            "SLSQP",
+            "trust-constr",
+        ]
 
+        # Validate arguments
         if bounded:
             if optimizer not in _supported_bounds:
                 raise ValueError(
-                    f"Bounded optimization is only supported "
-                    f"by {_supported_bounds}, not {optimizer}."
+                    f"Bounded optimization is only supported by "
+                    f"'{_supported_bounds}', not '{optimizer}'."
                 )
 
             # This has to be done before setting p0
             self.ensure_parameters_in_bounds()
 
-        if method not in _supported_methods:
+        # Check validity of loss_function argument
+        if callable(loss_function):
+            loss_function = partial(loss_function, self)
+        elif loss_function not in _supported_losses:
             raise ValueError(
-                f"method must be one of {_supported_methods}, not '{method}'"
+                f"loss_function must be one of {_supported_losses} "
+                f"or callable, not '{loss_function}'"
             )
-        elif method in ["ml", "huber", "custom"] and optimizer in [
-            "leastsq",
-            "odr",
-            "mpfit",
-        ]:
+        elif loss_function != "ls" and optimizer in ["lm", "trf", "dogbox", "odr"]:
             raise NotImplementedError(
-                "'leastsq', 'mpfit' and 'odr' optimizers only "
-                "support least-squares fitting (method='ls')"
+                f"`optimizer='{optimizer}'` only supports "
+                "least-squares fitting (`loss_function='ls'`)"
             )
 
-        if (
-            not isinstance(grad, bool)
-            and not callable(grad)
-            and grad not in ["2-point", "3-point", "cs"]
-        ):
+        # Don't let user pass "jac" kwarg since
+        # it will clash with "grad" argument
+        jac = kwargs.pop("jac", None)
+        if jac:
+            _logger.warning(
+                f"`jac={jac}` keyword argument is not supported. "
+                f"Please use `grad={jac}` instead."
+            )
+            grad = jac
+
+        # Check validity of grad and fd_scheme arguments
+        if grad == "analytical":
+            _has_gradient, _jac_err_msg = self._check_analytical_jacobian()
+            if not _has_gradient:
+                # Alert the user that analytical gradients
+                # are not supported (and the reason why)
+                raise ValueError(f"`grad='analytical' is not supported: {_jac_err_msg}")
+        elif callable(grad):
+            grad = partial(grad, self)
+        elif grad == "auto":
+            if optimizer in ["lm", "odr"]:
+                grad = None
+            elif optimizer in _supported_deriv_free:
+                # Setting it to None here avoids unnecessary warnings
+                # from `scipy.optimize.minimize`
+                grad = None
+            else:
+                if fd_scheme not in _supported_fd_schemes:
+                    raise ValueError(
+                        "`fd_scheme` must be one of "
+                        f"{_supported_fd_schemes}, not '{fd_scheme}'"
+                    )
+                grad = fd_scheme
+        elif grad is None:
+            if optimizer in ["lm", "trf", "dogbox"]:
+                # `scipy.optimize.least_squares` does not accept None as
+                # an argument. `scipy.optimize.leastsq` will ALWAYS estimate
+                # the Jacobian even if Dfun=None. `mpfit` can support no
+                # differentiation, but for consistency across all three
+                # we enforce estimation below, and raise an error here.
+                raise ValueError(
+                    f"`optimizer='{optimizer}'` does not support `grad=None`. "
+                    f"Please use `grad='auto'` instead."
+                )
+        else:
             raise ValueError(
-                "grad must be one of [bool, callable, "
-                f"'2-point', '3-point', 'cs'], not '{grad}'"
+                "`grad` must be one of ['auto', 'analytical', "
+                f"callable, None], not '{grad}'"
             )
 
-        ext_bounding = kwargs.pop("ext_bounding", False)
-
-        if ext_bounding:
-            warnings.warn(
-                f"`ext_bounding=True` has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use `bounded=True` instead.",
-                VisibleDeprecationWarning,
-            )
-
-        # If the user passes "jac" kwarg, take this
-        grad = kwargs.pop("jac", grad)
-        min_function = kwargs.pop("min_function", None)
-        min_function_grad = kwargs.pop("min_function_grad", None)
-
-        if method == "custom":
-            if not callable(min_function):
-                raise ValueError(
-                    "Custom minimization requires the 'min_function' keyword "
-                    f"argument to be callable, not {min_function}"
-                )
-            if grad and min_function_grad is None:
-                raise ValueError(
-                    "Custom minimization with gradients requires "
-                    "the 'min_function_grad' keyword argument"
-                )
-            from functools import partial
-
-            min_function = partial(min_function, self)
-
-            if callable(min_function_grad):
-                min_function_grad = partial(min_function_grad, self)
-
-        # Initialize return_info and print_info
-        to_print = [
-            "Fit info:",
-            f"  optimizer={optimizer}",
-            f"  method={method}",
-            f"  grad={grad}",
-            f"  bounded={bounded}",
-        ]
+        # Initialize print_info
+        if print_info:
+            to_print = [
+                "Fit info:",
+                f"  optimizer={optimizer}",
+                f"  loss_function={loss_function}",
+                f"  bounded={bounded}",
+                f"  grad={grad}",
+            ]
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -1321,94 +1314,137 @@ class BaseModel(list):
             if ext_bounding:
                 self._enable_ext_bounding()
 
-            if weights == "inverse_variance":
-                weights = self._convert_variance_to_weights()
+            # Get weights if metadata.Signal.Noise_properties.variance
+            # has been set, otherwise this returns None
+            weights = self._convert_variance_to_weights()
+
+            if weights is not None and loss_function == "ml-poisson":
+                raise ValueError(
+                    "Weighted fitting is not supported for `loss_function='ml_poisson'`. "
+                    "You must unset ``metadata.Signal.Noise_properties.variance`` to use "
+                    "this loss function."
+                )
 
             args = (self.signal()[np.where(self.channel_switches)], weights)
 
-            if optimizer == "leastsq":
+            if optimizer == "lm":
                 if bounded:
-                    self._set_boundaries(bounded=bounded)
+                    # Bounded Levenberg-Marquardt algorithm is supported
+                    # using the `mpfit` function (bundled with HyperSpy)
+                    self._set_mpfit_parameters_info(bounded=bounded)
 
-                    ls_b = self.free_parameters_boundaries
-                    ls_b = (
-                        [a if a is not None else -np.inf for a, b in ls_b],
-                        [b if b is not None else np.inf for a, b in ls_b],
-                    )
+                    # We enforce estimation of the Jacobian if no
+                    # analytical gradients available for consistency
+                    # with `scipy.optimize.leastsq`
+                    auto_deriv = 0 if grad == "analytical" else 1
 
-                    if grad is True:
-
-                        def _wrap_jac(*args, **kwargs):
-                            # Jacobian function computes derivatives along
-                            # columns, so we need the transpose instead
-                            return self._jacobian(*args, **kwargs).T
-
-                        jacobian = _wrap_jac
-
-                    elif grad is False or grad is None:
-                        jacobian = "2-point"
-
-                    else:
-                        jacobian = grad
-
-                    self.fit_output = least_squares(
-                        self._errfunc,
+                    res = mpfit(
+                        self._errfunc4mpfit,
                         self.p0[:],
-                        args=args,
-                        bounds=ls_b,
-                        jac=jacobian,
+                        parinfo=self.mpfit_parinfo,
+                        functkw={
+                            "y": self.signal()[self.channel_switches],
+                            "weights": weights,
+                        },
+                        autoderivative=auto_deriv,
+                        quiet=1,
                         **kwargs,
                     )
 
+                    self.fit_output = OptimizeResult(
+                        x=res.params,
+                        covar=res.covar,
+                        perror=res.perror,
+                        nit=res.niter,
+                        nfev=res.nfev,
+                        success=(res.status > 0) and (res.status != 5),
+                        status=res.status,
+                        message=res.errmsg,
+                        debug=res.debug,
+                        dof=res.dof,
+                        fnorm=res.fnorm,
+                    )
+
                     self.p0 = self.fit_output.x
-                    ysize = len(self.fit_output.fun)
-                    jac = self.fit_output.jac
-                    cost = 2 * self.fit_output.cost  # res.cost is half sum of squares
+                    ysize = len(self.fit_output.x) + self.fit_output.dof
+                    cost = self.fit_output.fnorm
+                    pcov = self.fit_output.perror ** 2
 
-                    # Do Moore-Penrose inverse, discarding zero singular values
-                    # to get pcov (as per scipy.optimize.curve_fit())
-                    _, s, VT = svd(jac, full_matrices=False)
-                    threshold = np.finfo(float).eps * max(jac.shape) * s[0]
-                    s = s[s > threshold]
-                    VT = VT[: s.size]
-                    pcov = np.dot(VT.T / s ** 2, VT)
-
-                    output_print = copy.copy(self.fit_output)
-                    # Drop these as they can be large (== size of data array)
-                    output_print.pop("fun", None)
-                    output_print.pop("jac", None)
+                    # Calculate estimated parameter standard deviation
+                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
                 else:
-                    # This replicates the original "leastsq"
-                    # behaviour in earlier versions of HyperSpy
-                    # using the Levenberg-Marquardt algorithm
-                    jacobian = self._jacobian if grad is True else None
+                    # Unbounded Levenberg-Marquardt algorithm is supported
+                    # using the `scipy.optimize.leastsq` function. Note that
+                    # Dfun=None means the gradient is always estimated here.
+                    grad = self._jacobian if grad == "analytical" else None
 
-                    self.fit_output = leastsq(
+                    res = leastsq(
                         self._errfunc,
                         self.p0[:],
-                        Dfun=jacobian,
+                        Dfun=grad,
                         col_deriv=1,
                         args=args,
                         full_output=True,
                         **kwargs,
                     )
-                    self.p0, pcov, infodict, errmsg, ier = self.fit_output
-                    ysize = len(infodict["fvec"])
-                    cost = np.sum(infodict["fvec"] ** 2)
 
-                    output_print = {"errmsg": " ".join(errmsg.split()), "ier": ier}
-                    output_print.update(infodict)
-                    # Drop these as they can be large (== size of data array)
-                    output_print.pop("fvec", None)
-                    output_print.pop("fjac", None)
-                    output_print = _pprint_like_optimize_result(output_print)
+                    self.fit_output = OptimizeResult(
+                        x=res[0],
+                        covar=res[1],
+                        fun=res[2]["fvec"],
+                        nfev=res[2]["nfev"],
+                        success=res[4] in [1, 2, 3, 4],
+                        status=res[4],
+                        message=res[3],
+                    )
 
+                    self.p0 = self.fit_output.x
+                    ysize = len(self.fit_output.fun)
+                    cost = np.sum(self.fit_output.fun ** 2)
+                    pcov = self.fit_output.covar
+
+                    # Calculate estimated parameter standard deviation
+                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+
+            elif optimizer in ["trf", "dogbox"]:
+                self._set_boundaries(bounded=bounded)
+
+                def _wrap_jac(*args, **kwargs):
+                    # Our Jacobian function computes derivatives along
+                    # columns, so we need the transpose instead here
+                    return self._jacobian(*args, **kwargs).T
+
+                grad = _wrap_jac if grad == "analytical" else grad
+
+                self.fit_output = least_squares(
+                    self._errfunc,
+                    self.p0[:],
+                    args=args,
+                    bounds=self._bounds_as_tuple(),
+                    jac=grad,
+                    method=optimizer,
+                    **kwargs,
+                )
+
+                self.p0 = self.fit_output.x
+                ysize = len(self.fit_output.fun)
+                jac = self.fit_output.jac
+                cost = 2 * self.fit_output.cost
+
+                # Do Moore-Penrose inverse, discarding zero singular values
+                # to get pcov (as per scipy.optimize.curve_fit())
+                _, s, VT = svd(jac, full_matrices=False)
+                threshold = np.finfo(float).eps * max(jac.shape) * s[0]
+                s = s[s > threshold]
+                VT = VT[: s.size]
+                pcov = np.dot(VT.T / s ** 2, VT)
+
+                # Calculate estimated parameter standard deviation
                 self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
-                to_print.extend(["Fit result:", output_print])
 
             elif optimizer == "odr":
-                odr_jacobian = self._jacobian4odr if grad is True else None
+                odr_jacobian = self._jacobian4odr if grad == "analytical" else None
 
                 modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
                 mydata = odr.RealData(
@@ -1418,106 +1454,48 @@ class BaseModel(list):
                     sy=(1.0 / weights if weights is not None else None),
                 )
                 myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
-                self.fit_output = myodr.run()
-                self.p0 = self.fit_output.beta
-                self.p_std = self.fit_output.sd_beta
+                res = myodr.run()
 
-                output_print = _odr_output_to_dict(self.fit_output)
-                output_print = _pprint_like_optimize_result(output_print)
-                to_print.extend(["Fit result:", output_print])
-
-            elif optimizer == "mpfit":
-                self._set_mpfit_parameters_info(bounded=bounded)
-
-                self.fit_output = mpfit(
-                    self._errfunc4mpfit,
-                    self.p0[:],
-                    parinfo=self.mpfit_parinfo,
-                    functkw={
-                        "y": self.signal()[self.channel_switches],
-                        "weights": weights,
-                    },
-                    autoderivative=0 if grad is True else 1,
-                    quiet=1,
-                    **kwargs,
-                )
-                self.p0 = self.fit_output.params
-
-                if hasattr(self, "axis"):
-                    cost = (self._errfunc(self.p0, *args) ** 2).sum()
-                    ysize = len(args[0])
-                    self.p_std = self._calculate_parameter_std(
-                        self.fit_output.perror, cost, ysize
-                    )
-
-                output_print = {
-                    "niter": self.fit_output.niter,
-                    "params": self.fit_output.params,
-                    "covar": self.fit_output.covar,
-                    "perror": self.fit_output.perror,
-                    "status": self.fit_output.status,
-                    "debug": self.fit_output.debug,
-                    "errmsg": self.fit_output.errmsg,
-                    "nfev": self.fit_output.nfev,
-                    "damp": self.fit_output.damp,
+                dd = {
+                    "x": res.beta,
+                    "perror": res.sd_beta,
+                    "covar": res.cov_beta,
                 }
-                output_print = _pprint_like_optimize_result(output_print)
-                to_print.extend(["Fit result:", output_print])
+                if hasattr(res, "info"):
+                    dd["info"] = res.info
+
+                self.fit_output = OptimizeResult(**dd)
+                self.p0 = self.fit_output.x
+                self.p_std = self.fit_output.perror
 
             else:
                 # scipy.optimize.* functions
-                if method == "ls":
+                if loss_function == "ls":
                     f_min = self._errfunc_sq
-                    f_der = self._gradient_ls if grad is True else grad
-                elif method == "ml":
+                    f_der = self._gradient_ls if grad == "analytical" else grad
+                elif loss_function == "ml-poisson":
                     f_min = self._poisson_likelihood_function
-                    f_der = self._gradient_ml if grad is True else grad
-                elif method == "huber":
+                    f_der = self._gradient_ml if grad == "analytical" else grad
+                elif loss_function == "huber":
                     f_min = self._huber_loss_function
-                    f_der = self._gradient_huber if grad is True else grad
-                elif method == "custom":
-                    f_min = min_function
-                    f_der = min_function_grad if grad is True else grad
+                    f_der = self._gradient_huber if grad == "analytical" else grad
+                elif callable(loss_function):
+                    f_min = loss_function
+                    f_der = grad
 
                 self._set_boundaries(bounded=bounded)
 
-                if optimizer in ["Differential Evolution", "Dual Annealing", "SHGO"]:
-                    global_fs = {
-                        "Differential Evolution": differential_evolution,
-                    }
-
-                    if optimizer in ["Dual Annealing", "SHGO"]:
-                        if LooseVersion(scipy.__version__) < LooseVersion("1.2.0"):
-                            raise ValueError(
-                                f"optimizer='{optimizer}' requires scipy >= 1.2.0"
-                            )
-
-                        from scipy.optimize import dual_annealing, shgo
-
-                        global_fs.update(
-                            {"Dual Annealing": dual_annealing, "SHGO": shgo}
-                        )
-
-                    if self.free_parameters_boundaries is None:
-                        raise ValueError(
-                            f"Bounds must be specified for optimizer='{optimizer}'"
-                        )
-
-                    de_b = tuple(
-                        (
-                            a if a is not None else -np.inf,
-                            b if b is not None else np.inf,
-                        )
-                        for a, b in self.free_parameters_boundaries
-                    )
+                if optimizer in _supported_global:
+                    de_b = self._bounds_as_tuple()
 
                     if np.any(~np.isfinite(de_b)):
                         raise ValueError(
                             "Finite upper and lower bounds must be "
-                            "specified for every free parameter"
+                            "specified for every free parameter when "
+                            f"`optimizer='{optimizer}'`"
                         )
 
-                    self.fit_output = global_fs[optimizer](
+                    self.fit_output = _supported_global[optimizer](
                         f_min, de_b, args=args, **kwargs
                     )
 
@@ -1533,7 +1511,6 @@ class BaseModel(list):
                     )
 
                 self.p0 = self.fit_output.x
-                to_print.extend(["Fit result:", self.fit_output])
 
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
@@ -1551,10 +1528,17 @@ class BaseModel(list):
 
         # Print details about the fit we just performed
         if print_info:
+            output_print = copy.copy(self.fit_output)
+            # Drop these as they can be large (== size of data array)
+            output_print.pop("fun", None)
+            output_print.pop("jac", None)
+            to_print.extend(["Fit result:", output_print])
             print("\n".join([str(pr) for pr in to_print]))
 
         if return_info:
             return self.fit_output
+
+    fit.__doc__ %= FIT_PARAMETERS_ARG
 
     def multifit(
         self,
@@ -1681,7 +1665,7 @@ class BaseModel(list):
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
             os.remove(autosave_fn + ".npz")
 
-    multifit.__doc__ %= SHOW_PROGRESSBAR_ARG
+    multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.
@@ -1709,10 +1693,10 @@ class BaseModel(list):
         kwds = {}
         i = 0
         for component in self:
-            cname = component.name.lower().replace(" ", "_")
+            cname = component.name.lower().replace(' ', '_')
             for param in component.parameters:
-                pname = param.name.lower().replace(" ", "_")
-                kwds["%s_%s.%s" % (i, cname, pname)] = param.map
+                pname = param.name.lower().replace(' ', '_')
+                kwds['%s_%s.%s' % (i, cname, pname)] = param.map
             i += 1
         np.savez(filename, **kwds)
 
@@ -1739,10 +1723,10 @@ class BaseModel(list):
         f = np.load(filename)
         i = 0
         for component in self:  # Cut the parameters list
-            cname = component.name.lower().replace(" ", "_")
+            cname = component.name.lower().replace(' ', '_')
             for param in component.parameters:
-                pname = param.name.lower().replace(" ", "_")
-                param.map = f["%s_%s.%s" % (i, cname, pname)]
+                pname = param.name.lower().replace(' ', '_')
+                param.map = f['%s_%s.%s' % (i, cname, pname)]
             i += 1
 
         self.fetch_stored_values()
@@ -1790,14 +1774,8 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.ext_bounded = False
 
-    def export_results(
-        self,
-        folder=None,
-        format="hspy",
-        save_std=False,
-        only_free=True,
-        only_active=True,
-    ):
+    def export_results(self, folder=None, format="hspy", save_std=False,
+                       only_free=True, only_active=True):
         """Export the results of the parameters of the model to the desired
         folder.
 
@@ -1826,9 +1804,8 @@ class BaseModel(list):
         """
         for component in self:
             if only_active is False or component.active:
-                component.export(
-                    folder=folder, format=format, save_std=save_std, only_free=only_free
-                )
+                component.export(folder=folder, format=format,
+                                 save_std=save_std, only_free=only_free)
 
     def plot_results(self, only_free=True, only_active=True):
         """Plot the value of the parameters of the model
@@ -1853,9 +1830,8 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(
-        self, only_free=False, only_active=False, component_list=None, fancy=True
-    ):
+    def print_current_values(self, only_free=False, only_active=False,
+                             component_list=None, fancy=True):
         """Prints the current values of the parameters of all components.
 
         Parameters
@@ -1871,25 +1847,16 @@ class BaseModel(list):
             If True, attempts to print using html rather than text in the notebook.
         """
         if fancy:
-            display(
-                current_model_values(
-                    model=self,
-                    only_free=only_free,
-                    only_active=only_active,
-                    component_list=component_list,
-                )
-            )
+            display(current_model_values(
+                model=self, only_free=only_free, only_active=only_active,
+                component_list=component_list))
         else:
-            display_pretty(
-                current_model_values(
-                    model=self,
-                    only_free=only_free,
-                    only_active=only_active,
-                    component_list=component_list,
-                )
-            )
+            display_pretty(current_model_values(
+                model=self, only_free=only_free, only_active=only_active,
+                component_list=component_list))
 
-    def set_parameters_not_free(self, component_list=None, parameter_name_list=None):
+    def set_parameters_not_free(self, component_list=None,
+                                parameter_name_list=None):
         """
         Sets the parameters in a component in a model to not free.
 
@@ -1931,7 +1898,8 @@ class BaseModel(list):
         for _component in component_list:
             _component.set_parameters_not_free(parameter_name_list)
 
-    def set_parameters_free(self, component_list=None, parameter_name_list=None):
+    def set_parameters_free(self, component_list=None,
+                            parameter_name_list=None):
         """
         Sets the parameters in a component in a model to free.
 
@@ -1974,8 +1942,11 @@ class BaseModel(list):
             _component.set_parameters_free(parameter_name_list)
 
     def set_parameters_value(
-        self, parameter_name, value, component_list=None, only_current=False
-    ):
+            self,
+            parameter_name,
+            value,
+            component_list=None,
+            only_current=False):
         """
         Sets the value of a parameter in components in a model to a specified
         value
@@ -2035,13 +2006,13 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : dict
+        dictionary : dict 
             A dictionary including at least the following fields:
 
-            * components: a list of dictionaries of components, one per
+            * components: a list of dictionaries of components, one per 
               component
             * _whitelist: a dictionary with keys used as references for saved
-              attributes, for more information, see
+              attributes, for more information, see 
               :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
@@ -2057,7 +2028,7 @@ class BaseModel(list):
         >>> m2 = s.create_model(dictionary=d)
 
         """
-        dic = {"components": [c.as_dictionary(fullcopy) for c in self]}
+        dic = {'components': [c.as_dictionary(fullcopy) for c in self]}
 
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
 
@@ -2070,18 +2041,16 @@ class BaseModel(list):
                         if isinstance(vv, dict):
                             remove_empty_numpy_strings(vv)
                         elif isinstance(vv, np.string_) and len(vv) == 0:
-                            vv = ""
+                            vv = ''
                 elif isinstance(v, np.string_) and len(v) == 0:
                     del dic[k]
-                    dic[k] = ""
-
+                    dic[k] = ''
         remove_empty_numpy_strings(dic)
 
         return dic
 
     def set_component_active_value(
-        self, value, component_list=None, only_current=False
-    ):
+            self, value, component_list=None, only_current=False):
         """
         Sets the component 'active' parameter to a specified value
 
@@ -2121,7 +2090,8 @@ class BaseModel(list):
             _component.active = value
             if _component.active_is_multidimensional:
                 if only_current:
-                    _component._active_array[self.axes_manager.indices[::-1]] = value
+                    _component._active_array[
+                        self.axes_manager.indices[::-1]] = value
                 else:
                     _component._active_array.fill(value)
 
@@ -2141,12 +2111,11 @@ class BaseModel(list):
                 else:
                     raise ValueError(
                         "There are several components with "
-                        'the name "' + str(value) + '"'
-                    )
+                        "the name \"" + str(value) + "\"")
             else:
                 raise ValueError(
-                    'Component name "' + str(value) + '" not found in model'
-                )
+                    "Component name \"" + str(value) +
+                    "\" not found in model")
         else:
             return list.__getitem__(self, value)
 
@@ -2166,37 +2135,38 @@ class BaseModel(list):
             Any that will be passed to the _setup and in turn SamfirePool.
         """
         from hyperspy.samfire import Samfire
-
-        return Samfire(self, workers=workers, setup=setup, **kwargs)
+        return Samfire(self, workers=workers,
+                       setup=setup, **kwargs)
 
 
 class ModelSpecialSlicers(object):
+
     def __init__(self, model, isNavigation):
         self.isNavigation = isNavigation
         self.model = model
 
     def __getitem__(self, slices):
-        array_slices = self.model.signal._get_array_slices(slices, self.isNavigation)
+        array_slices = self.model.signal._get_array_slices(
+            slices,
+            self.isNavigation)
         _signal = self.model.signal._slicer(slices, self.isNavigation)
         # TODO: for next major release, change model creation defaults to not
         # automate anything. For now we explicitly look for "auto_" kwargs and
         # disable them:
         import inspect
-
         pars = inspect.signature(_signal.create_model).parameters
-        kwargs = {key: False for key in pars.keys() if key.startswith("auto_")}
+        kwargs = {key: False for key in pars.keys() if key.startswith('auto_')}
         _model = _signal.create_model(**kwargs)
 
-        dims = (
-            self.model.axes_manager.navigation_dimension,
-            self.model.axes_manager.signal_dimension,
-        )
+        dims = (self.model.axes_manager.navigation_dimension,
+                self.model.axes_manager.signal_dimension)
         if self.isNavigation:
             _model.channel_switches[:] = self.model.channel_switches
         else:
-            _model.channel_switches[:] = np.atleast_1d(
-                self.model.channel_switches[tuple(array_slices[-dims[1] :])]
-            )
+            _model.channel_switches[:] = \
+                np.atleast_1d(
+                    self.model.channel_switches[
+                        tuple(array_slices[-dims[1]:])])
 
         twin_dict = {}
         for comp in self.model:
@@ -2205,23 +2175,30 @@ class ModelSpecialSlicers(object):
                 if v is None:
                     continue
                 flags_str, value = v
-                if "init" in parse_flag_string(flags_str):
+                if 'init' in parse_flag_string(flags_str):
                     init_args[k] = value
             _model.append(comp.__class__(**init_args))
-        copy_slice_from_whitelist(
-            self.model, _model, dims, (slices, array_slices), self.isNavigation,
-        )
+        copy_slice_from_whitelist(self.model,
+                                  _model,
+                                  dims,
+                                  (slices, array_slices),
+                                  self.isNavigation,
+                                  )
         for co, cn in zip(self.model, _model):
-            copy_slice_from_whitelist(
-                co, cn, dims, (slices, array_slices), self.isNavigation
-            )
+            copy_slice_from_whitelist(co,
+                                      cn,
+                                      dims,
+                                      (slices, array_slices),
+                                      self.isNavigation)
             if _model.axes_manager.navigation_size < 2:
                 if co.active_is_multidimensional:
-                    cn.active = co._active_array[array_slices[: dims[0]]]
+                    cn.active = co._active_array[array_slices[:dims[0]]]
             for po, pn in zip(co.parameters, cn.parameters):
-                copy_slice_from_whitelist(
-                    po, pn, dims, (slices, array_slices), self.isNavigation
-                )
+                copy_slice_from_whitelist(po,
+                                          pn,
+                                          dims,
+                                          (slices, array_slices),
+                                          self.isNavigation)
                 twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
 
         for k in twin_dict.keys():
@@ -2236,6 +2213,5 @@ class ModelSpecialSlicers(object):
                 _model._calculate_chisq()
 
         return _model
-
 
 # vim: textwidth=80

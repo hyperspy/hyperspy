@@ -900,4 +900,4 @@ def test_missing_analytical_gradient():
     e1.onset_energy.twin = e2.centre
 
     with pytest.raises(ValueError, match=r"Analytical gradient not available for .*"):
-        m.fit(grad=True, optimizer="L-BFGS-B", bounded=True)
+        m.fit(grad="analytical", optimizer="L-BFGS-B", bounded=True)

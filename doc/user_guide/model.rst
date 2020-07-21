@@ -675,34 +675,40 @@ A good approach to choosing an optimization approach is to ask yourself
 
 The following table summarizes the features of some of the optimizers
 currently available in HyperSpy, including whether they support parameter bounds,
-gradients and parameter error estimation.
+gradients and parameter error estimation. The "Type" column indicates whether
+the optimizers find a local or global optima.
 
 .. _optimizers-table:
 
 .. table:: Features of supported curve-fitting optimizers.
 
-    +------------------------------------+--------+-----------+--------+----------------+--------+
-    | Optimizer                          | Bounds | Gradients | Errors | Method         | Type   |
-    +====================================+========+===========+========+================+========+
-    | ``"leastsq"``                      |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
-    +------------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"mpfit"`` *                      |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
-    +------------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"odr"``                          |  No    | Yes       | Yes    | Only ``"ls"``  | local  |
-    +------------------------------------+--------+-----------+--------+----------------+--------+
-    | :py:func:`scipy.optimize.minimize` |  No    | No        | No     | All            | local  |
-    +------------------------------------+--------+-----------+--------+----------------+--------+
-    | ``"Differential Evolution"``       |  Yes   | No        | No     | All            | global |
-    +------------------------------------+--------+-----------+--------+----------------+--------+
-
-\* ``mpfit`` is deprecated since HyperSpy 1.6. Use ``"leastsq"`` instead.
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | Optimizer                            | Bounds | Gradients | Errors | Loss function  | Type   |
+    +======================================+========+===========+========+================+========+
+    | ``"lm"``                             |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"trf"``                            |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"dogbox"``                         |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"odr"``                            |  No    | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | :py:func:`scipy.optimize.minimize`   |  Yes * | Yes *     | No     | All            | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"Differential Evolution"``         |  Yes   | No        | No     | All            | global |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"Dual Annealing"`` **              |  Yes   | No        | No     | All            | global |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"SHGO"`` **                        |  Yes   | No        | No     | All            | global |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
 
 .. note::
 
-    **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
-    supported by HyperSpy. The options listed above are generally sufficient for most applications,
-    but for more information on the other supported local and global optimization algorithms,
+    \* **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
+    supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
     please see the `SciPy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
+
+    \*\* Requires ``scipy >= 1.2.0``.
 
 Least squares with error estimation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -826,12 +832,12 @@ such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", method="ml")
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="ml")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
    >>> # Gradient information is also supported
-   >>> m.fit(optimizer="L-BFGS-B", method="ml", grad=True)
+   >>> m.fit(optimizer="L-BFGS-B", loss_function="ml", grad=True)
 
 Huber loss function
 ^^^^^^^^^^^^^^^^^^^
@@ -844,10 +850,10 @@ non-linear optimization algorithms:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", method="huber")
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="huber")
 
    >>> # Gradient information is also supported
-   >>> m.fit(optimizer="L-BFGS-B", method="huber", grad=True)
+   >>> m.fit(optimizer="L-BFGS-B", loss_function="huber", grad=True)
 
 
 Custom optimizations
@@ -894,7 +900,7 @@ a custom minimization function can be passed to the model:
     ...    return (difference**2).sum()
     >>> # We must use a general non-linear optimizer again
     >>> m.fit(optimizer='Nelder-Mead',
-    ...       method="custom",
+    ...       loss_function="custom",
     ...       min_function=my_custom_function)
 
 If the optimizer requires a gradient estimation function, it can be similarly
@@ -932,7 +938,7 @@ passed, using the following signature:
     ...    return -(jac * (data / cur_value - 1)).sum(1)
     >>> # We must use a general non-linear optimizer again
     >>> m.fit(optimizer='L-BFGS-B',
-    ...       method="custom",
+    ...       loss_function="custom",
     ...       grad=True,
     ...       min_function=my_custom_function,
     ...       min_function_grad=my_custom_gradient_function)
@@ -1423,4 +1429,4 @@ the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
 
 .. code-block:: python
 
-    >>> samf.start(optimizer='mpfit', bounded=True)
+    >>> samf.start(optimizer='lm', bounded=True)

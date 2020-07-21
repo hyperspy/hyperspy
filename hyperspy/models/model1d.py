@@ -540,11 +540,12 @@ class Model1D(BaseModel):
         self.channel_switches[:] = True
         self.update_plot()
 
-    def _jacobian(self, param, y, weights=None):
-        if weights is None:
-            weights = 1.
+    def _check_analytical_jacobian(self):
+        """Check all components have analytical gradients.
 
-        # Check all components have analytical gradients
+        If they do, return True and an empty string.
+        If they do not, return False and an error message.
+        """
         missing_gradients = []
         for component in self:
             if component.active:
@@ -559,13 +560,13 @@ class Model1D(BaseModel):
 
         if len(missing_gradients) > 0:
             pars = ", ".join(str(x) for x in missing_gradients)
+            return False, f"Analytical gradient not available for {pars}"
+        else:
+            return True, ""
 
-            raise ValueError(
-                f"Analytical gradient not available for {pars}. "
-                "Consider using a numerical approximation for the gradient "
-                "instead by calling e.g. `m.fit(grad=False)`."
-            )
-
+    def _jacobian(self, param, y, weights=None):
+        if weights is None:
+            weights = 1.
 
         if self.convolved is True:
             counter = 0

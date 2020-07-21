@@ -23,6 +23,7 @@ import warnings
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.components1d import EELSCLEdge, PowerLaw
+from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.models.model1d import Model1D
 
 _logger = logging.getLogger(__name__)
@@ -307,104 +308,22 @@ class EELSModel(Model1D):
         else:
             return
 
-    def fit(
-        self,
-        optimizer="leastsq",
-        method="ls",
-        grad=False,
-        bounded=False,
-        ext_bounding=False,
-        update_plot=False,
-        weights="inverse_variance",
-        print_info=False,
-        kind="std",
-        **kwargs,
-    ):
+    def fit(self, kind="std", **kwargs):
         """Fits the model to the experimental data.
 
         Read more in the :ref:`User Guide <model.fitting>`.
 
         Parameters
         ----------
-        optimizer : str, default "leastsq"
-            The optimization algorithm used to perform the fitting.
-
-                * "leastsq" performs least-squares optimization, and
-                  supports bounds on parameters.
-                * "odr" performs the optimization using the orthogonal
-                  distance regression (ODR) algorithm. It does not support
-                  bounds on parameters. See :py:mod:`scipy.odr` for more details.
-                * All of the available methods for :py:func:`scipy.optimize.minimize`
-                  can be used here. See the :ref:`User Guide <model.fitting>`
-                  documentation for more details.
-                * "Differential Evolution" is a global optimization method.
-                  It does support bounds on parameters. See
-                  :py:func:`scipy.optimize.differential_evolution` for more
-                  details on available options.
-                * "Dual Annealing" is a global optimization method.
-                  It does support bounds on parameters. See
-                  :py:func:`scipy.optimize.dual_annealing` for more
-                  details on available options. Requires ``scipy >= 1.2.0``.
-                * "SHGO" (simplicial homology global optimization" is a global
-                  optimization method. It does support bounds on parameters. See
-                  :py:func:`scipy.optimize.shgo` for more details on available
-                  options. Requires ``scipy >= 1.2.0``.
-
-        method : {"ls", "ml", "huber", "custom"}, default "ls"
-            The loss function to use for minimization.
-
-                * "ls" minimizes the least-squares loss function.
-                * "ml" minimizes the negative log-likelihood for Poisson-distributed
-                  data. Also known as Poisson maximum likelihood estimation
-                  (MLE). Not available if ``optimizer`` is ``"leastsq"``
-                  or ``"odr"``.
-                * "huber" minimize the Huber loss function. Not available
-                  if ``optimizer`` is ``"leastsq"`` or ``"odr"``.
-                * "custom" allows passing your own minimisation function as a
-                  keyword argument ``min_function``, with an optional
-                  gradient argument ``min_function_grad``. Not available
-                  if ``optimizer`` is ``"leastsq"`` or ``"odr"``.
-
-        grad : bool or ["2-point", "3-point", "cs"] or callable, default False
-            If True, the analytical gradient is used (if defined) to
-            speed up the optimization. The keywords ``['2-point', '3-point', 'cs']``
-            can be used to select a finite difference scheme for numerical
-            estimation of the gradient with a relative step size. If it is a
-            callable, it should be a function that returns the gradient vector.
-            See :py:func:`scipy.optimize.minimize` for more details.
-        bounded : bool, default False
-            If True, performs bounded parameter optimization if
-            supported by ``optimizer``.
-        ext_bounding : bool, default False
-            If True, enforce bounding by keeping the value of the
-            parameters constant out of the defined bounding area.
-        update_plot : bool, default False
-            If True, the plot is updated during the optimization
-            process. It slows down the optimization, but it enables
-            visualization of the optimization progress.
-        weights : {None, "inverse_variance", np.ndarray}, default "inverse_variance"
-            If None:
-                No weighting is applied to the data.
-            If "inverse_variance":
-                If the attribute ``metada.Signal.Noise_properties.variance``
-                is defined as a ``Signal`` instance of the same
-                ``navigation_dimension`` as the signal, and ``method="ls"``,
-                then weighted least-squares fit is performed, using
-                the inverse of the noise variance as the weights.
-            If np.ndarray:
-                If the array has the same dimensions as the signal,
-                and ``method="ls"``, then weighted least squares
-                is performed using the array values as the weights.
-        print_info : bool, default False
-            If True, print information about the fitting results.
         kind : {"std", "smart"}, default "std"
             If "std", performs standard fit. If "smart",
             performs a smart_fit - for more details see
-            :py:meth:`~hyperspy.model.EELSModel.smart_fit`.
-        **kwargs : keyword arguments
-            Any extra keyword argument will be passed to the chosen
-            optimizer. For more information, read the docstring of the
-            optimizer of your choice in :py:mod:`scipy.optimize`.
+            the :ref:`User Guide <eels.fitting>`.
+        %s
+
+        Returns
+        -------
+        None
 
         See Also
         --------
@@ -413,56 +332,36 @@ class EELSModel(Model1D):
         * :py:meth:`~hyperspy.model.EELSModel.smart_fit`
 
         """
-        if kind == "smart":
-            self.smart_fit(
-                optimizer=optimizer,
-                method=method,
-                grad=grad,
-                bounded=bounded,
-                ext_bounding=ext_bounding,
-                update_plot=update_plot,
-                weights=weights,
-                print_info=print_info,
-                **kwargs,
-            )
-        elif kind == "std":
-            Model1D.fit(
-                self,
-                optimizer=optimizer,
-                method=method,
-                grad=grad,
-                bounded=bounded,
-                ext_bounding=ext_bounding,
-                update_plot=update_plot,
-                weights=weights,
-                print_info=print_info,
-                **kwargs,
-            )
-        else:
+        if kind not in ["smart", "std"]:
             raise ValueError(
-                "kind must be either 'std' or 'smart'." "'%s' provided." % kind
+                f"kind must be either 'std' or 'smart', not '{kind}'"
             )
+        elif kind == "smart":
+            self.smart_fit(**kwargs)
+        elif kind == "std":
+            Model1D.fit(self, **kwargs)
+
+    fit.__doc__ %= FIT_PARAMETERS_ARG
 
     def smart_fit(self, start_energy=None, **kwargs):
-        """ Fits EELS edges in a cascade style.
-        The fitting procedure acts in iterative manner along the energy-loss-axis.
-        First it fits only the background up to the first edge.
-        It continues by deactivating all edges except the first one, then performs the fit.
-        Then it only activates the the first two, fits, and repeats this until all
-        edges are fitted simultanously.
+        """Fits EELS edges in a cascade style.
 
-        Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
+        The fitting procedure acts in iterative manner along
+        the energy-loss-axis. First it fits only the background
+        up to the first edge. It continues by deactivating all
+        edges except the first one, then performs the fit. Then
+        it only activates the the first two, fits, and repeats
+        this until all edges are fitted simultanously.
+
+        Other, non-EELSCLEdge components, are never deactivated,
+        and fitted on every iteration.
 
         Parameters
         ----------
-
         start_energy : {float, None}
             If float, limit the range of energies from the left to the
             given value.
-        **kwargs : key word arguments
-            Any extra key word argument will be passed to
-            the fit method. See the fit method documentation for
-            a list of valid arguments.
+        %s
 
         See Also
         --------
@@ -471,13 +370,14 @@ class EELSModel(Model1D):
         * :py:meth:`~hyperspy.model.EELSModel.fit`
 
         """
-
         # Fit background
         self.fit_background(start_energy, **kwargs)
 
         # Fit the edges
         for i in range(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
+
+    smart_fit.__doc__ %= FIT_PARAMETERS_ARG
 
     def _get_first_ionization_edge_energy(self, start_energy=None):
         """Calculate the first ionization edge energy.
