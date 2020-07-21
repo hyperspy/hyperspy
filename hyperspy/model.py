@@ -1461,7 +1461,10 @@ class BaseModel(list):
                     "covar": res.cov_beta,
                 }
                 if hasattr(res, "info"):
-                    dd["info"] = res.info
+                    dd["status"] = res.info
+                    dd["message"] = ", ".join(res.stopreason)
+                    # Note that a value of 5 means maximum iterations reached
+                    dd["success"] = (res.info >= 0) and (res.info < 4)
 
                 self.fit_output = OptimizeResult(**dd)
                 self.p0 = self.fit_output.x
@@ -1533,6 +1536,14 @@ class BaseModel(list):
             output_print.pop("jac", None)
             to_print.extend(["Fit result:", output_print])
             print("\n".join([str(pr) for pr in to_print]))
+
+        # Check if the optimization actually succeeded
+        success = self.fit_output.get("success", None)
+        if success is False:
+            message = self.fit_output.get("message", "Unknown reason")
+            _logger.warning(
+                "`m.fit() did not exit successfully. Reason: {message}"
+            )
 
     fit.__doc__ %= FIT_PARAMETERS_ARG
 
