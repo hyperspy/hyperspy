@@ -30,8 +30,7 @@ description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
 authors = {
-    'all': ('The HyperSpy developers',
-            'hyperspy-devel@googlegroups.com'), }
+    'all': ('The HyperSpy developers',), }
 
 url = 'http://hyperspy.org'
 
