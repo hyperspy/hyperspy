@@ -38,6 +38,13 @@ url = 'http://hyperspy.org'
 download_url = 'http://www.hyperspy.org'
 documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
 
+PROJECT_URLS = {
+    'Bug Tracker': 'https://github.com/hyperspy/hyperspy/issues',
+    'Documentation': 'http://hyperspy.org/hyperspy-doc/current/index.html',
+    'Source Code': 'https://github.com/hyperspy/hyperspy'
+    'Support' : 'https://gitter.im/hyperspy/hyperspy'
+}
+
 platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME']
 
 keywords = ['EDX',

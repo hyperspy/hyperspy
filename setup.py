@@ -364,6 +364,7 @@ with update_version_when_dev() as version:
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,
+        project_urls=Release.PROJECT_URLS,
         keywords=Release.keywords,
         cmdclass={
             'recythonize': Recythonize,
