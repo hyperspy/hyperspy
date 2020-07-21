@@ -39,7 +39,7 @@ documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
 
 PROJECT_URLS = {
     'Bug Tracker': 'https://github.com/hyperspy/hyperspy/issues',
-    'Documentation': 'http://hyperspy.org/hyperspy-doc/current/index.html',
+    'Documentation': 'https://hyperspy.org/hyperspy-doc/current/index.html',
     'Source Code': 'https://github.com/hyperspy/hyperspy',
     'Support' : 'https://gitter.im/hyperspy/hyperspy'
 }
