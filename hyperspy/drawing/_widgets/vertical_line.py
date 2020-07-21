@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.drawing.widgets import Widget1DBase
+from hyperspy.drawing.utils import picker_kwargs
 
 
 class VerticalLineWidget(Widget1DBase):
@@ -31,10 +32,11 @@ class VerticalLineWidget(Widget1DBase):
 
     def _set_patch(self):
         ax = self.ax
+        kwargs = picker_kwargs(5)
         self.patch = [ax.axvline(self._pos[0],
                                  color=self.color,
                                  alpha=self.alpha,
-                                 picker=5)]
+                                 **kwargs)]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""
