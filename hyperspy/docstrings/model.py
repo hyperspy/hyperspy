@@ -83,11 +83,10 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             If True, the plot is updated during the optimization
             process. It slows down the optimization, but it enables
             visualization of the optimization progress.
-        return_info : bool, default False
-            If True, returns the result of the fit, in the form of
-            a :py:class:`scipy.optimize.OptimizeResult` object.
         print_info : bool, default False
-            If True, print information about the fitting results.
+            If True, print information about the fitting results, which
+            are also stored in ``model.fit_output`` in the form of
+            a :py:class:`scipy.optimize.OptimizeResult` object.
         fd_scheme : str {"2-point", "3-point", "cs"}, default "2-point"
             If ``grad='auto'``, selects the finite difference scheme to use.
             See :py:func:`scipy.optimize.minimize` for details. Ignored if

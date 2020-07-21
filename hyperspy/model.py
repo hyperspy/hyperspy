@@ -1065,7 +1065,6 @@ class BaseModel(list):
         grad="auto",
         bounded=False,
         update_plot=False,
-        return_info=False,
         print_info=False,
         fd_scheme="2-point",
         **kwargs,
@@ -1534,9 +1533,6 @@ class BaseModel(list):
             output_print.pop("jac", None)
             to_print.extend(["Fit result:", output_print])
             print("\n".join([str(pr) for pr in to_print]))
-
-        if return_info:
-            return self.fit_output
 
     fit.__doc__ %= FIT_PARAMETERS_ARG
 
