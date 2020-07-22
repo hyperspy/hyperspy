@@ -405,18 +405,22 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
     return objects
 
 
-def assign_signal_subclass(dtype,
-                           signal_dimension,
-                           signal_type="",
-                           lazy=False):
-    """Given record_by and signal_type return the matching Signal subclass.
+def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
+    """Given dtype, signal_dimension and signal_type, return the matching Signal subclass.
+
+    See `hs.print_known_signal_types()` for a list of known signal_types,
+    and the developer guide for details on how to add new signal_types.
 
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
-    signal_dimension: int
-    signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
-    lazy: bool
+        Signal dtype
+    signal_dimension : int
+        Signal dimension
+    signal_type : str, default ""
+        Signal type. Optional. Will log a warning if it is unknown to HyperSpy.
+    lazy : bool, default False
+        If True, returns the matching LazySignal subclass.
 
     Returns
     -------
@@ -474,9 +478,8 @@ def _find_matching_subclass(dtype,
           'object' in dtype.name):
         dtype = 'real'
     else:
-        raise ValueError('Data type "{}" not understood!'.format(dtype.name))
-
-    if not isinstance(signal_dimension, int):
+        raise ValueError(f'Data type "{dtype.name}" not understood!')
+    if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be an interger")
 
     signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
@@ -489,10 +492,27 @@ def _find_matching_subclass(dtype,
                               if signal_type == value["signal_type"] or
                               "signal_type_aliases" in value and
                               signal_type in value["signal_type_aliases"]}
+
+    valid_signal_types = [v["signal_type"] for v in signals.values()]
+    valid_signal_aliases = [
+        v["signal_type_aliases"]
+        for v in signals.values()
+        if "signal_type_aliases" in v
+    ]
+    valid_signal_aliases = [i for j in valid_signal_aliases for i in j]
+    valid_signal_types.extend(valid_signal_aliases)
+
     if dtype_dim_type_matches:
         # Perfect match found
         signal_dict = dtype_dim_type_matches
     else:
+        if signal_type not in set(valid_signal_types):
+            _logger.warning(
+                f"`signal_type='{signal_type}'` not understood. "
+                f"See `hs.print_known_signal_types()` for a list of known signal types, "
+                f"and the developer guide for details on how to add new signal_types."
+            )
+
         # If the following dict is not empty, only signal_dimension and dtype match.
         # The dict should contain a general class for the given signal
         # dimension.
