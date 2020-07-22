@@ -219,10 +219,10 @@ class Model2D(BaseModel):
     def _gradient_ls(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _huber_loss_function(self, param, y, weights=None):
+    def _huber_loss_function(self, param, y, weights=None, huber_delta=None):
         raise NotImplementedError
 
-    def _gradient_huber(self, param, y, weights=None):
+    def _gradient_huber(self, param, y, weights=None, huber_delta=None):
         raise NotImplementedError
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):

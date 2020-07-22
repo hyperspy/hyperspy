@@ -662,15 +662,19 @@ class Model1D(BaseModel):
                self._jacobian(param, y)).sum(1)
         return gls
 
-    def _huber_loss_function(self, param, y, weights=None):
+    def _huber_loss_function(self, param, y, weights=None, huber_delta=None):
         if weights is None:
             weights = 1.0
-        return huber(1.0, weights * self._errfunc(param, y)).sum()
+        if huber_delta is None:
+            huber_delta = 1.0
+        return huber(huber_delta, weights * self._errfunc(param, y)).sum()
 
-    def _gradient_huber(self, param, y, weights=None):
+    def _gradient_huber(self, param, y, weights=None, huber_delta=None):
+        if huber_delta is None:
+            huber_delta = 1.0
         return (
             self._jacobian(param, y)
-            * np.clip(self._errfunc(param, y, weights), -1.0, 1.0,)
+            * np.clip(self._errfunc(param, y, weights), -huber_delta, huber_delta)
         ).sum(axis=1)
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):

@@ -26,7 +26,7 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
-TOL = 5e-6
+TOL = 1e-5
 
 
 def _create_toy_1d_gaussian_model(binned=True, weights=False, noise=False):
@@ -199,6 +199,27 @@ class TestModelFitBinnedScipyMinimize:
             grad=grad,
             bounded=bounded,
         )
+        self._check_model_values(self.m[0], expected, rtol=TOL)
+        assert isinstance(self.m.fit_output, OptimizeResult)
+
+    @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
+    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize(
+        "delta, expected",
+        [
+            (None, (250.6628443, 49.9999987, 4.9999999)),
+            (1.0, (250.6628443, 49.9999987, 4.9999999)),
+            (10.0, (250.6628702, 50.0000011, 5.0000002)),
+        ],
+    )
+    def test_fit_huber_delta(self, grad, delta, expected):
+        self.m.fit(
+            optimizer="L-BFGS-B",
+            loss_function="huber",
+            grad=grad,
+            huber_delta=delta,
+        )
+        print(self.m.p0)
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 

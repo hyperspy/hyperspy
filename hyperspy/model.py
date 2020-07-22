@@ -1481,6 +1481,8 @@ class BaseModel(list):
                 elif loss_function == "huber":
                     f_min = self._huber_loss_function
                     f_der = self._gradient_huber if grad == "analytical" else grad
+                    huber_delta = kwargs.pop("huber_delta", 1.0)
+                    args = args + (huber_delta,)
                 elif callable(loss_function):
                     f_min = loss_function
                     f_der = grad
