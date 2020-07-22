@@ -26,6 +26,9 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
+TOL = 5e-6
+
+
 def _create_toy_1d_gaussian_model(binned=True, weights=False, noise=False):
     """Toy dataset for 1D fitting
 
@@ -88,7 +91,7 @@ class TestModelFitBinnedLeastSquares:
             self.m[0].centre.bmin = 55.0
 
         self.m.fit(optimizer="lm", bounded=bounded, grad=grad)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
 
         assert isinstance(self.m.fit_output, OptimizeResult)
         assert self.m.p_std is not None
@@ -104,7 +107,7 @@ class TestModelFitBinnedLeastSquares:
     )
     def test_fit_trf(self, grad, expected):
         self.m.fit(optimizer="trf", grad=grad)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
 
         assert isinstance(self.m.fit_output, OptimizeResult)
         assert self.m.p_std is not None
@@ -121,7 +124,7 @@ class TestModelFitBinnedLeastSquares:
     )
     def test_fit_odr(self, grad, expected):
         self.m.fit(optimizer="odr", grad=grad)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
         assert self.m.p_std is not None
@@ -133,7 +136,7 @@ class TestModelFitBinnedLeastSquares:
         self.m[0].centre.value = -1
         self.m.fit(optimizer="lm", bounded=True)
         expected = (0.0, 0.5, 4.90000050)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
 
     def test_fit_ext_bounding(self):
         self.m[0].A.bmin = 200.0
@@ -149,7 +152,7 @@ class TestModelFitBinnedLeastSquares:
             self.m.fit(optimizer="lm", ext_bounding=True)
 
         expected = (200.0, 51.0, 4.9)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
 
 
 class TestModelFitBinnedScipyMinimize:
@@ -172,7 +175,7 @@ class TestModelFitBinnedScipyMinimize:
     )
     def test_fit_scipy_minimize_gradient_free(self, loss_function, expected):
         self.m.fit(optimizer="Nelder-Mead", loss_function=loss_function)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
@@ -196,7 +199,7 @@ class TestModelFitBinnedScipyMinimize:
             grad=grad,
             bounded=bounded,
         )
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     def test_constraints(self):
@@ -205,7 +208,7 @@ class TestModelFitBinnedScipyMinimize:
         cons = {"type": "ineq", "fun": lambda x: x[0] - x[1]}
         self.m.fit(optimizer="SLSQP", constraints=cons)
         expected = (250.69857440, 49.99996610, 5.00034370)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
 
     def test_fit_scipy_minimize_no_success(self, caplog):
         # Set bad starting values, no bounds,
@@ -217,7 +220,7 @@ class TestModelFitBinnedScipyMinimize:
             self.m.fit(optimizer="Nelder-Mead", options={"maxiter": 1})
 
         expected = (0.00025, -50.0, 1000.0)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
         assert "Maximum number of iterations has been exceeded" in caplog.text
         assert not self.m.fit_output.success
@@ -257,21 +260,21 @@ class TestModelFitBinnedGlobal:
             bounded=True,
             seed=1,
         )
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     def test_fit_dual_annealing(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="Dual Annealing", loss_function="ls", bounded=True, seed=1)
         expected = (250.66282750, 50.0, 5.0)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     def test_fit_shgo(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="SHGO", loss_function="ls", bounded=True)
         expected = (250.66282750, 50.0, 5.0)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
 
@@ -308,7 +311,7 @@ class TestModelWeighted:
     def test_fit(self, optimizer, binned, expected):
         self.m.signal.metadata.Signal.binned = binned
         self.m.fit(optimizer=optimizer)
-        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
 
 
 class TestModelScalarVariance:
@@ -518,8 +521,8 @@ class TestMultifit:
         m[0].A.bmin = 3.0
         # HyperSpy 2.0: remove setting iterpath='serpentine'
         m.multifit(optimizer=optimizer, bounded=True, iterpath="serpentine")
-        np.testing.assert_allclose(self.m[0].r.map["values"], [3.0, 3.0], rtol=1e-5)
-        np.testing.assert_allclose(self.m[0].A.map["values"], [4.0, 4.0], rtol=1e-5)
+        np.testing.assert_allclose(self.m[0].r.map["values"], [3.0, 3.0], rtol=TOL)
+        np.testing.assert_allclose(self.m[0].A.map["values"], [4.0, 4.0], rtol=TOL)
 
     @pytest.mark.parametrize("iterpath", ["flyback", "serpentine"])
     def test_iterpaths(self, iterpath):
@@ -562,5 +565,5 @@ class TestMultiFitSignalVariance:
     def test_std1_red_chisq(self):
         # HyperSpy 2.0: remove setting iterpath='serpentine'
         self.m.multifit(iterpath="serpentine")
-        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, atol=1e-5)
-        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, atol=1e-5)
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, rtol=TOL)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, rtol=TOL)
