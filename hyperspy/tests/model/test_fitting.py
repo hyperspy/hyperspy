@@ -18,6 +18,7 @@
 
 import numpy as np
 import pytest
+import logging
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
@@ -120,7 +121,7 @@ class TestModelFitBinnedLeastSquares:
     )
     def test_fit_odr(self, grad, expected):
         self.m.fit(optimizer="odr", grad=grad)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
         assert self.m.p_std is not None
@@ -206,6 +207,22 @@ class TestModelFitBinnedScipyMinimize:
         expected = (250.69857440, 49.99996610, 5.00034370)
         self._check_model_values(self.m[0], expected, rtol=1e-7)
 
+    def test_fit_scipy_minimize_no_success(self, caplog):
+        # Set bad starting values, no bounds,
+        # max iteration of 1 to deliberately fail
+        self.m[0].A.value = 0.0
+        self.m[0].centre.value = -50.0
+        self.m[0].sigma.value = 1000.0
+        with caplog.at_level(logging.WARNING):
+            self.m.fit(optimizer="Nelder-Mead", options={"maxiter": 1})
+
+        expected = (0.00025, -50.0, 1000.0)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
+        assert isinstance(self.m.fit_output, OptimizeResult)
+        assert "Maximum number of iterations has been exceeded" in caplog.text
+        assert not self.m.fit_output.success
+        assert self.m.fit_output.nit == 1
+
 
 class TestModelFitBinnedGlobal:
     def setup_method(self, method):
@@ -264,7 +281,6 @@ class TestModelWeighted:
         self.m = _create_toy_1d_gaussian_model(binned=True, weights=True, noise=True)
 
     def _check_model_values(self, model, expected, **kwargs):
-        print(f"({self.m.p0[0]:.7f}, {self.m.p0[1]:.7f}, {self.m.p0[2]:.7f})")
         np.testing.assert_allclose(model.A.value, expected[0], **kwargs)
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
