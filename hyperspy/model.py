@@ -1245,6 +1245,16 @@ class BaseModel(list):
                 "least-squares fitting (`loss_function='ls'`)"
             )
 
+        # Initialize print_info
+        if print_info:
+            to_print = [
+                "Fit info:",
+                f"  optimizer={optimizer}",
+                f"  loss_function={loss_function}",
+                f"  bounded={bounded}",
+                f"  grad={grad}",
+            ]
+
         # Don't let user pass "jac" kwarg since
         # it will clash with "grad" argument
         jac = kwargs.pop("jac", None)
@@ -1294,16 +1304,6 @@ class BaseModel(list):
                 "`grad` must be one of ['auto', 'analytical', "
                 f"callable, None], not '{grad}'"
             )
-
-        # Initialize print_info
-        if print_info:
-            to_print = [
-                "Fit info:",
-                f"  optimizer={optimizer}",
-                f"  loss_function={loss_function}",
-                f"  bounded={bounded}",
-                f"  grad={grad}",
-            ]
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -1443,6 +1443,11 @@ class BaseModel(list):
                 self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
             elif optimizer == "odr":
+                if not hasattr(self, "axis"):
+                    raise NotImplementedError(
+                        "`optimizer='odr'` is not implemented for Model2D"
+                    )
+
                 odr_jacobian = self._jacobian4odr if grad == "analytical" else None
 
                 modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)

@@ -19,9 +19,13 @@
 
 import numpy as np
 import pytest
+from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+
+
+TOL = 1e-5
 
 
 @lazifyTestClass
@@ -30,7 +34,7 @@ class TestModel2D:
         g = hs.model.components2D.Gaussian2D(
             centre_x=-5.0, centre_y=-5.0, sigma_x=1.0, sigma_y=2.0
         )
-        scale = 0.05
+        scale = 0.1
         x = np.arange(-10, 10, scale)
         y = np.arange(-10, 10, scale)
         X, Y = np.meshgrid(x, y)
@@ -39,20 +43,65 @@ class TestModel2D:
         im.axes_manager[0].offset = -10
         im.axes_manager[1].scale = scale
         im.axes_manager[1].offset = -10
-        self.im = im
 
-    def test_fitting(self):
-        im = self.im
-        m = im.create_model()
+        self.m = im.create_model()
         gt = hs.model.components2D.Gaussian2D(
             centre_x=-4.5, centre_y=-4.5, sigma_x=0.5, sigma_y=1.5
         )
-        m.append(gt)
-        m.fit()
-        np.testing.assert_allclose(gt.centre_x.value, -5.0)
-        np.testing.assert_allclose(gt.centre_y.value, -5.0)
-        np.testing.assert_allclose(gt.sigma_x.value, 1.0)
-        np.testing.assert_allclose(gt.sigma_y.value, 2.0)
+        self.m.append(gt)
+
+    def _check_model_values(self, model, expected, **kwargs):
+        print(
+            f"({self.m.p0[0]:.7f}, {self.m.p0[1]:.7f}, {self.m.p0[2]:.7f}, {self.m.p0[3]:.7f}, {self.m.p0[4]:.7f})"
+        )
+        np.testing.assert_allclose(model.A.value, expected[0], **kwargs)
+        np.testing.assert_allclose(model.centre_x.value, expected[1], **kwargs)
+        np.testing.assert_allclose(model.centre_y.value, expected[2], **kwargs)
+        np.testing.assert_allclose(model.sigma_x.value, expected[3], **kwargs)
+        np.testing.assert_allclose(model.sigma_y.value, expected[4], **kwargs)
+
+    @pytest.mark.parametrize(
+        "bounded, expected",
+        [
+            (False, (1.0, -5.0, -5.0, 1.0, 2.0)),
+            (True, (1.0002339, -4.75, -5.0, 1.0317225, 2.0)),
+        ],
+    )
+    def test_fit_lm(self, bounded, expected):
+        if bounded:
+            self.m[0].centre_x.bmin = -4.75
+
+        self.m.fit(optimizer="lm", bounded=bounded)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
+
+        assert isinstance(self.m.fit_output, OptimizeResult)
+        assert self.m.p_std is not None
+        assert len(self.m.p_std) == 5
+        assert np.all(~np.isnan(self.m.p_std))
+
+    @pytest.mark.parametrize(
+        "grad, expected",
+        [
+            (None, (0.9999993, -5.0000023, -4.9999982, 0.9999994, 1.9999986)),
+            ("auto", (0.9999993, -5.0000023, -4.9999982, 0.9999994, 1.9999986)),
+        ],
+    )
+    def test_fit_scipy_minimize(self, grad, expected):
+        self.m.fit(optimizer="L-BFGS-B", grad=grad)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
+
+        assert isinstance(self.m.fit_output, OptimizeResult)
+        assert self.m.p_std is None
+
+    def test_fit_no_analytical_gradient_error(self):
+        with pytest.raises(
+            ValueError, match="Analytical gradients not implemented for Model2D"
+        ):
+            self.m.fit(optimizer="L-BFGS-B", grad="analytical")
+
+    def test_fit_no_odr_error(self):
+        with pytest.raises(NotImplementedError, match="is not implemented for Model2D"):
+            self.m.fit(optimizer="odr")
 
 
 def test_Model2D_NotImplementedError_range():
@@ -84,6 +133,8 @@ def test_Model2D_NotImplementedError_fitting():
 
     for member_f in [
         "_jacobian",
+        "_function4odr",
+        "_jacobian4odr",
         "_poisson_likelihood_function",
         "_gradient_ml",
         "_gradient_ls",

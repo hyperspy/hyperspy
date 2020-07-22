@@ -819,55 +819,12 @@ class TestAdjustPosition:
         assert len(self.m._position_widgets) == 0
 
 
-def test_missing_analytical_gradient():
-    """Tests the error in gh-1388.
+def test_deprecated_private_functions():
+    s = hs.signals.Signal1D(np.zeros(1))
+    m = s.create_model()
 
-    In particular:
+    with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
+        m.set_boundaries()
 
-    > "The issue is that EELSCLEdge doesn't provide an analytical gradient for
-       onset_energy. That's because it's not trivial since shifting the
-       energy requires recomputing the XS."
-
-    This creates an arbitrary dataset that closely mimics the one
-    referenced in that issue.
-
-    """
-    metadata_dict = {
-        "Acquisition_instrument": {
-            "TEM": {
-                "Detector": {"EELS": {"aperture_size": 2.5, "collection_angle": 41.0}},
-                "beam_current": 0.0,
-                "beam_energy": 200,
-                "camera_length": 20.0,
-                "convergence_angle": 31.48,
-                "magnification": 400000.0,
-            }
-        }
-    }
-
-    np.random.seed(1)
-    s = hs.signals.Signal1D(np.arange(1000).astype(float), metadata=metadata_dict)
-    s.set_signal_type("EELS")
-    s.add_gaussian_noise(10)
-    m = s.create_model(auto_add_edges=False)
-
-    e1 = hs.model.components1D.EELSCLEdge("Zr_L3")
-    e1.intensity.bmin = 0
-    e1.intensity.bmax = 0.1
-
-    m.append(e1)
-
-    e2 = hs.model.components1D.Gaussian()
-    e2.centre.value = 2230.0
-    e2.centre.bmin = 2218.0
-    e2.centre.bmax = 2240.0
-    e2.sigma.bmin = 0
-    e2.sigma.bmax = 3
-    e2.A.bmin = 0
-    e2.A.bmax = 1e10
-    m.append(e2)
-
-    e1.onset_energy.twin = e2.centre
-
-    with pytest.raises(ValueError, match=r"Analytical gradient not available for .*"):
-        m.fit(grad="analytical", optimizer="L-BFGS-B", bounded=True)
+    with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
+        m.set_mpfit_parameters_info()

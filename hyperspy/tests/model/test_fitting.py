@@ -125,8 +125,8 @@ class TestModelFitBinnedLeastSquares:
     def test_fit_odr(self, grad, expected):
         self.m.fit(optimizer="odr", grad=grad)
         self._check_model_values(self.m[0], expected, rtol=TOL)
-        assert isinstance(self.m.fit_output, OptimizeResult)
 
+        assert isinstance(self.m.fit_output, OptimizeResult)
         assert self.m.p_std is not None
         assert len(self.m.p_std) == 3
         assert np.all(~np.isnan(self.m.p_std))
@@ -214,10 +214,7 @@ class TestModelFitBinnedScipyMinimize:
     )
     def test_fit_huber_delta(self, grad, delta, expected):
         self.m.fit(
-            optimizer="L-BFGS-B",
-            loss_function="huber",
-            grad=grad,
-            huber_delta=delta,
+            optimizer="L-BFGS-B", loss_function="huber", grad=grad, huber_delta=delta,
         )
         print(self.m.p0)
         self._check_model_values(self.m[0], expected, rtol=TOL)
@@ -588,3 +585,57 @@ class TestMultiFitSignalVariance:
         self.m.multifit(iterpath="serpentine")
         np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, rtol=TOL)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, rtol=TOL)
+
+
+def test_missing_analytical_gradient():
+    """Tests the error in gh-1388.
+
+    In particular:
+
+    > "The issue is that EELSCLEdge doesn't provide an analytical gradient for
+       onset_energy. That's because it's not trivial since shifting the
+       energy requires recomputing the XS."
+
+    This creates an arbitrary dataset that closely mimics the one
+    referenced in that issue.
+
+    """
+    metadata_dict = {
+        "Acquisition_instrument": {
+            "TEM": {
+                "Detector": {"EELS": {"aperture_size": 2.5, "collection_angle": 41.0}},
+                "beam_current": 0.0,
+                "beam_energy": 200,
+                "camera_length": 20.0,
+                "convergence_angle": 31.48,
+                "magnification": 400000.0,
+            }
+        }
+    }
+
+    np.random.seed(1)
+    s = hs.signals.Signal1D(np.arange(1000).astype(float), metadata=metadata_dict)
+    s.set_signal_type("EELS")
+    s.add_gaussian_noise(10)
+    m = s.create_model(auto_add_edges=False)
+
+    e1 = hs.model.components1D.EELSCLEdge("Zr_L3")
+    e1.intensity.bmin = 0
+    e1.intensity.bmax = 0.1
+
+    m.append(e1)
+
+    e2 = hs.model.components1D.Gaussian()
+    e2.centre.value = 2230.0
+    e2.centre.bmin = 2218.0
+    e2.centre.bmax = 2240.0
+    e2.sigma.bmin = 0
+    e2.sigma.bmax = 3
+    e2.A.bmin = 0
+    e2.A.bmax = 1e10
+    m.append(e2)
+
+    e1.onset_energy.twin = e2.centre
+
+    with pytest.raises(ValueError, match=r"Analytical gradient not available for .*"):
+        m.fit(grad="analytical", optimizer="L-BFGS-B", bounded=True)

@@ -59,7 +59,9 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
                 * "ml-poisson" minimizes the negative log-likelihood for
                   Poisson-distributed data. Also known as Poisson maximum
                   likelihood estimation (MLE).
-                * "huber" minimize the Huber loss function.
+                * "huber" minimize the Huber loss function. The delta value
+                  of the Huber function is controlled by the ``huber_delta``
+                  keyword argument (the default value is 1.0).
                 * callable supports passing your own minimization function.
 
         grad : {"auto", "analytical", callable, None}, default "auto"
