@@ -598,36 +598,6 @@ class TestModel1D:
         np.testing.assert_almost_equal(p.a3.value, 3)
 
 
-class TestModel2D:
-    def setup_method(self, method):
-        g = hs.model.components2D.Gaussian2D(
-            centre_x=-5.0, centre_y=-5.0, sigma_x=1.0, sigma_y=2.0
-        )
-        scale = 0.05
-        x = np.arange(-10, 10, scale)
-        y = np.arange(-10, 10, scale)
-        X, Y = np.meshgrid(x, y)
-        im = hs.signals.Signal2D(g.function(X, Y))
-        im.axes_manager[0].scale = scale
-        im.axes_manager[0].offset = -10
-        im.axes_manager[1].scale = scale
-        im.axes_manager[1].offset = -10
-        self.im = im
-
-    def test_fitting(self):
-        im = self.im
-        m = im.create_model()
-        gt = hs.model.components2D.Gaussian2D(
-            centre_x=-4.5, centre_y=-4.5, sigma_x=0.5, sigma_y=1.5
-        )
-        m.append(gt)
-        m.fit()
-        np.testing.assert_allclose(gt.centre_x.value, -5.0)
-        np.testing.assert_allclose(gt.centre_y.value, -5.0)
-        np.testing.assert_allclose(gt.sigma_x.value, 1.0)
-        np.testing.assert_allclose(gt.sigma_y.value, 2.0)
-
-
 class TestModelPrintCurrentValues:
     def setup_method(self, method):
         np.random.seed(1)

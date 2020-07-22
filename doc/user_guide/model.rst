@@ -17,7 +17,7 @@ dimensional model is created for a :py:class:`~._signals.signal2d.Signal2D`.
 
 .. note::
 
-    Plotting and analytic gradient-based fitting methods are not yet
+    Plotting and analytical gradient-based fitting methods are not yet
     implemented for the :py:class:`~.models.model2d.Model2D` class.
 
 
@@ -49,8 +49,8 @@ A :py:class:`~.models.model1d.Model1D` can be created for data in the
     >>> s = hs.signals.Signal1D(np.arange(300).reshape(30, 10))
     >>> m = s.create_model() # Creates the 1D-Model and assign it to m
 
-Similarly, a :py:class:`~.models.model2d.Model2D` can be created for data in the
-:py:class:`~._signals.signal2d.Signal2D` class using the
+Similarly, a :py:class:`~.models.model2d.Model2D` can be created for data
+in the :py:class:`~._signals.signal2d.Signal2D` class using the
 :py:meth:`~._signals.signal2d.Signal2D.create_model` method:
 
 .. code-block:: python
@@ -63,8 +63,6 @@ identical for the user in practice. When a model is created  you may be
 prompted to provide important information not already included in the
 datafile, `e.g.` if ``s`` is EELS data, you may be asked for the accelerating
 voltage, convergence and collection semi-angles etc.
-
-
 
 
 Creating components for the model
@@ -131,12 +129,8 @@ the ``xshift``. By default the ``free`` attribute of ``xscale`` and ``xshift`` i
 Define components from a mathematical expression
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component
-                  can create 2D components.
-
 In addition to the above specific components, Hyperspy can take any Signal1D as
 well as most mathematical expressions as components, as detailed below.
-
 
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the
@@ -669,14 +663,13 @@ A good approach to choosing an optimization approach is to ask yourself
 * Apply bounds to your model parameter values?
 * Are gradient-based fitting algorithms appropriate for your model?
 * Estimate the standard deviations of the parameter values found by the fit?
-* Fit your data in the least-squares sense, or is your data corrupted
-  with Poisson noise?
+* Fit your data in the least-squares sense, or use another loss function?
 * Find the global optima for your parameters, or is a local optima acceptable?
 
 The following table summarizes the features of some of the optimizers
-currently available in HyperSpy, including whether they support parameter bounds,
-gradients and parameter error estimation. The "Type" column indicates whether
-the optimizers find a local or global optima.
+currently available in HyperSpy, including whether they support parameter
+bounds, gradients and parameter error estimation. The "Type" column indicates
+whether the optimizers find a local or global optima.
 
 .. _optimizers-table:
 
@@ -752,29 +745,14 @@ estimated standard deviation are stored in the following line attributes:
     When the noise is heteroscedastic, only if the
     ``metadata.Signal.Noise_properties.variance`` attribute of the
     :class:`~._signals.signal1d.Signal1D` instance is defined can
-    the errors be estimated accurately.
+    the parameter standard deviations be estimated accurately.
 
-    If the variance is not defined, the standard deviation of
-    the parameters are still computed and stored in the
-    :attr:`~.component.Parameter.std` attribute by setting variance equal to 1.
-    However, the value won't be correct unless an accurate value of the variance is
-    provided. See :ref:`signal.noise_properties` for more information.
+    If the variance is not defined, the standard deviations are still
+    computed and stored in the :attr:`~.component.Parameter.std` attribute
+    by setting variance equal to 1. However, the value won't be correct
+    unless an accurate value of the variance is provided.
+    See :ref:`signal.noise_properties` for more information.
 
-Using gradient information
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Optimization algorithms that take into account the gradient of the minimization function
-often out-perform so-called "derivative-free" optimization algorithms in terms of how rapidly
-they converge to a solution. HyperSpy can use analytical gradients for model-fitting, as well
-as numerical estimates of the gradient based on finite differences. Following the above example:
-
-.. code-block:: python
-
-    >>> m = s.create_model()
-    >>> line = hs.model.components1D.Polynomial(order=1)
-    >>> m.append(line)
-    >>> # Use the analytical gradient
-    >>> m.fit(grad=True)
 
 Weighted least squares with error estimation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -806,7 +784,7 @@ in most cases where there are a sufficient number of counts per pixel.
    >>> s.estimate_poissonian_noise_variance(
    ...     expected_value=hs.signals.Signal1D(np.arange(300))
    ... )
-   >>> m.fit(weights="inverse_variance")
+   >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
    >>> line.coefficients.std
@@ -815,10 +793,12 @@ in most cases where there are a sufficient number of counts per pixel.
 .. warning::
 
     When the attribute ``metadata.Signal.Noise_properties.variance``
-    is defined, the default behaviour is to perform a weighted least-squares
-    fit using the inverse variance.
+    is defined, the behaviour is to perform a weighted least-squares
+    fit using the inverse of the noise variance as the weights.
 
-    In this scenario, to explicitly disable weighting, pass ``m.fit(weights=None)``.
+    In this scenario, to disable weighting, you will need to unset
+    the attribute ``metadata.Signal.Noise_properties.variance``,
+    for example by calling ``s.set_variance(None)``.
 
 
 Poisson maximum likelihood estimation
@@ -836,9 +816,6 @@ such as Nelder-Mead or L-BFGS-B:
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
-   >>> # Gradient information is also supported
-   >>> m.fit(optimizer="L-BFGS-B", loss_function="ml", grad=True)
-
 Huber loss function
 ^^^^^^^^^^^^^^^^^^^
 
@@ -852,15 +829,31 @@ non-linear optimization algorithms:
 
    >>> m.fit(optimizer="Nelder-Mead", loss_function="huber")
 
-   >>> # Gradient information is also supported
-   >>> m.fit(optimizer="L-BFGS-B", loss_function="huber", grad=True)
+Using gradient information
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Optimization algorithms that take into account the gradient of the minimization function
+often out-perform so-called "derivative-free" optimization algorithms in terms of how rapidly
+they converge to a solution. HyperSpy can use analytical gradients for model-fitting, as well
+as numerical estimates of the gradient based on finite differences. Following the above example:
 
-Custom optimizations
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> line = hs.model.components1D.Polynomial(order=1)
+    >>> m.append(line)
+
+    >>> # Use the analytical gradient
+    >>> m.fit(grad="analytical")
+
+    >>> # Use a finite-difference scheme to estimate the gradient
+    >>> m.fit(grad="auto")
+
+Custom loss function
 ^^^^^^^^^^^^^^^^^^^^
 
 As well as the built-in ``ls``, ``ml`` and ``huber`` optimization functions,
-a custom minimization function can be passed to the model:
+a custom loss function can be passed to the model:
 
 .. code-block:: python
 
@@ -898,10 +891,9 @@ a custom minimization function can be passed to the model:
     ...
     ...    # Return squared and summed weighted difference
     ...    return (difference**2).sum()
-    >>> # We must use a general non-linear optimizer again
-    >>> m.fit(optimizer='Nelder-Mead',
-    ...       loss_function="custom",
-    ...       min_function=my_custom_function)
+
+    >>> # We must use a general non-linear optimizer
+    >>> m.fit(optimizer='Nelder-Mead', loss_function=my_custom_function)
 
 If the optimizer requires a gradient estimation function, it can be similarly
 passed, using the following signature:
@@ -936,12 +928,11 @@ passed, using the following signature:
     ...    jac = model._jacobian(values, data)
     ...
     ...    return -(jac * (data / cur_value - 1)).sum(1)
+
     >>> # We must use a general non-linear optimizer again
     >>> m.fit(optimizer='L-BFGS-B',
-    ...       loss_function="custom",
-    ...       grad=True,
-    ...       min_function=my_custom_function,
-    ...       min_function_grad=my_custom_gradient_function)
+    ...       loss_function=my_custom_function,
+    ...       grad=my_custom_gradient_function)
 
 
 Bounded optimization
@@ -956,7 +947,8 @@ these attributes set the minimum and maximum values allowed for ``parameter.valu
 Currently, not all optimizers support bounds - see the
 :ref:`table above <optimizers-table>`. In the following example a Gaussian
 histogram is fitted using a :class:`~._components.gaussian.Gaussian`
-component using mpfit and bounds on the ``centre`` parameter.
+component using the Levenberg-Marquardt ("lm") optimizer and bounds
+on the ``centre`` parameter.
 
 .. code-block:: python
 
@@ -970,7 +962,7 @@ component using mpfit and bounds on the ``centre`` parameter.
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
     >>> g1.centre.bounded = True
-    >>> m.fit(optimizer="mpfit", bounded=True)
+    >>> m.fit(optimizer="lm", bounded=True)
     >>> m.print_current_values(fancy=False)
     Model1D:  histogram
     Gaussian: Gaussian
@@ -981,17 +973,34 @@ component using mpfit and bounds on the ``centre`` parameter.
              sigma |  True | 0.00999184 | 2.68064163 |       None |       None
             centre |  True | 9.99980788 | 2.68064070 |        7.0 |       14.0
 
+
+Fit results
+^^^^^^^^^^^
+
+.. code-block:: python
+
+    >>> m.fit()
+    >>> m.fit_output
+    <scipy.optimize.OptimizeResult object>
+
+    # You can also print the info
+    >>> m.fit(print_info=True)
+
+.. _model.goodness_of_fit:
+
 Goodness of fit
 ^^^^^^^^^^^^^^^
 
 The chi-squared, reduced chi-squared and the degrees of freedom are
-computed automatically when fitting. They are stored as signals, in the
-:attr:`~.model.BaseModel.chisq`, :attr:`~.model.BaseModel.red_chisq`  and
-:attr:`~.model.BaseModel.dof` attributes of the model respectively. Note that,
-unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
-estimation of the variance of the data, the chi-squared and reduced
-chi-squared cannot be computed correctly. This is also true for
-homocedastic noise.
+computed automatically when fitting a (weighted) least-squares model
+(i.e. when ``loss_function="ls"``. They are stored as signals, in the
+:attr:`~.model.BaseModel.chisq`, :attr:`~.model.BaseModel.red_chisq` and
+:attr:`~.model.BaseModel.dof` attributes of the model respectively.
+
+Note that, unless ``metadata.Signal.Noise_properties.variance`` contains
+an accurate estimation of the variance of the data, the chi-squared and
+reduced chi-squared cannot be computed correctly. This is true for both
+homocedastic and heteroscedastic noise.
 
 .. _model.visualization:
 

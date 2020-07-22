@@ -205,7 +205,7 @@ class Model2D(BaseModel):
         If they do, return True and an empty string.
         If they do not, return False and an error message.
         """
-        return False, f"Analytical gradients not implemented for Model2D"
+        return False, "Analytical gradients not implemented for Model2D"
 
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError

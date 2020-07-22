@@ -276,62 +276,47 @@ class TestModelFitBinnedGlobal:
 class TestModelWeighted:
     def setup_method(self, method):
         np.random.seed(1)
-        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
-        self.s_var = hs.signals.Signal1D(np.arange(10, 100, 0.01))
-        s.set_noise_variance(self.s_var)
+        v = 2.0 * np.exp(-((np.arange(10, 100, 0.1) - 50) ** 2) / (2 * 5.0 ** 2))
+        s = hs.signals.Signal1D(v)
+        s_var = hs.signals.Signal1D(np.arange(10, 100, 0.01))
+        s.set_noise_variance(s_var)
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
+        g = hs.model.components1D.Gaussian()
+        g.centre.value = 50.0
         self.m = s.create_model()
-        self.m.append(hs.model.components1D.Polynomial(1, legacy=False))
+        self.m.append(g)
 
     def _check_model_values(self, model, expected, **kwargs):
-        np.testing.assert_allclose(model.a1.value, expected[0], **kwargs)
-        np.testing.assert_allclose(model.a0.value, expected[1], **kwargs)
+        np.testing.assert_allclose(model.A.value, expected[0], **kwargs)
+        np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
+        np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
-    def test_chisq(self):
+    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    def test_chisq(self, grad):
         self.m.signal.metadata.Signal.binned = True
-        self.m.fit()
-        np.testing.assert_allclose(self.m.chisq.data, 3029.16949561)
+        self.m.fit(grad=grad)
+        np.testing.assert_allclose(self.m.chisq.data, 18.81652763)
 
-    def test_red_chisq(self):
-        self.m.fit()
-        np.testing.assert_allclose(self.m.red_chisq.data, 3.37700055)
+    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    def test_red_chisq(self, grad):
+        self.m.fit(grad=grad)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.02100059)
 
     @pytest.mark.parametrize(
         "optimizer, binned, expected",
         [
-            ("lm", True, [9.916560, 1.662824]),
-            ("odr", True, [9.916560, 1.662825]),
-            ("lm", False, [0.991656, 0.166282]),
-            ("odr", False, [0.991656, 0.166282]),
+            ("lm", True, [256.77519733, 49.97707093, 5.30083786]),
+            ("odr", True, [102.84625027, 51.91686817, 64.89788172]),
+            ("lm", False, [25.67755222, 49.97705725, 5.30085179]),
+            ("odr", False, [25.67758724, 49.97705032, 5.30086644]),
         ],
     )
     def test_fit(self, optimizer, binned, expected):
         self.m.signal.metadata.Signal.binned = binned
         self.m.fit(optimizer=optimizer)
         self._check_model_values(self.m[0], expected, rtol=1e-5)
-
-
-@lazifyTestClass
-class TestModelWeightedOptions:
-    def setup_method(self, method):
-        np.random.seed(1)
-        self.s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
-        self.s.set_noise_variance(hs.signals.Signal1D(np.arange(10, 100, 0.01)))
-        self.s.axes_manager[0].scale = 0.1
-        self.s.axes_manager[0].offset = 10
-        self.s.add_poissonian_noise()
-        self.m = self.s.create_model()
-        self.m.append(hs.model.components1D.Polynomial(1, legacy=False))
-
-    def test_red_chisq_default(self):
-        self.m.fit()
-        np.testing.assert_allclose(self.m.red_chisq.data, 3.377001, rtol=1e-5)
-
-    def test_error_for_ml_poisson(self):
-        with pytest.raises(ValueError, match="Weighted fitting is not supported"):
-            self.m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
 
 
 class TestModelScalarVariance:
@@ -366,7 +351,6 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
 
-@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @lazifyTestClass
 class TestModelSignalVariance:
     def setup_method(self, method):
@@ -382,16 +366,14 @@ class TestModelSignalVariance:
         s.add_poissonian_noise()
         s.set_noise_variance(variance + std ** 2)
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(order=1))
+        m.append(hs.model.components1D.Polynomial(order=1, legacy=False))
         self.s = s
         self.m = m
         self.var = (variance + std ** 2).data
 
     def test_std1_red_chisq(self):
         # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(
-            optimizer="lm", loss_function="ls", iterpath="serpentine", grad="auto"
-        )
+        self.m.multifit(iterpath="serpentine")
         np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, atol=1e-5)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, atol=1e-5)
 
@@ -487,6 +469,11 @@ class TestFitErrorsAndWarnings:
 
         with pytest.raises(ValueError, match="Finite upper and lower bounds"):
             self.m.fit(optimizer="Differential Evolution", bounded=True)
+
+    def test_error_for_ml_poisson(self):
+        self.m.signal.set_noise_variance(2.0)
+        with pytest.raises(ValueError, match="Weighted fitting is not supported"):
+            self.m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
 
 
 class TestCustomOptimization:
