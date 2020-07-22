@@ -25,37 +25,69 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
+def _create_toy_1d_gaussian_model(binned=True, weights=False, noise=False):
+    """Toy dataset for 1D fitting
+
+    Parameters
+    ----------
+    binned : bool, default True
+        Is the signal binned?
+    weights : bool, default False
+        If True, set an arbitrary noise variance for weighted fitting
+    noise : bool, default False
+        If True, add Poisson noise to the signal
+
+    Returns
+    -------
+    m
+        Model1D for fitting
+
+    """
+    np.random.seed(1)
+    v = 2.0 * np.exp(-((np.arange(10, 100, 0.1) - 50) ** 2) / (2 * 5.0 ** 2))
+    s = hs.signals.Signal1D(v)
+    s.axes_manager[0].scale = 0.1
+    s.axes_manager[0].offset = 10
+    s.metadata.Signal.binned = binned
+
+    if weights:
+        s_var = hs.signals.Signal1D(np.arange(10, 100, 0.01))
+        s.set_noise_variance(s_var)
+
+    if noise:
+        s.add_poissonian_noise()
+
+    g = hs.model.components1D.Gaussian()
+    g.centre.value = 56.0
+    g.A.value = 250.0
+    g.sigma.value = 4.9
+    m = s.create_model()
+    m.append(g)
+
+    return m
+
+
 @lazifyTestClass
 class TestModelFitBinnedLeastSquares:
     def setup_method(self, method):
-        np.random.seed(1)
-        s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
-        s.metadata.Signal.binned = True
-        g = hs.model.components1D.Gaussian()
-        self.m = s.create_model()
-        self.m.append(g)
-        g.sigma.value = 1
-        g.centre.value = 0.5
-        g.A.value = 1000
+        self.m = _create_toy_1d_gaussian_model()
 
     def _check_model_values(self, model, expected, **kwargs):
         np.testing.assert_allclose(model.A.value, expected[0], **kwargs)
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
+    @pytest.mark.parametrize("grad", ["auto", "analytical"])
     @pytest.mark.parametrize(
         "bounded, expected",
-        [
-            (False, (9976.145261, -0.110611, 1.983807)),
-            (True, (9991.654220, 0.5, 2.083982)),
-        ],
+        [(False, (250.66282746, 50.0, 5.0)), (True, (257.48162397, 55.0, 7.76886132))],
     )
-    def test_fit_lm(self, bounded, expected):
+    def test_fit_lm(self, grad, bounded, expected):
         if bounded:
-            self.m[0].centre.bmin = 0.5
+            self.m[0].centre.bmin = 55.0
 
-        self.m.fit(optimizer="lm", bounded=bounded)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self.m.fit(optimizer="lm", bounded=bounded, grad=grad)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
 
         assert isinstance(self.m.fit_output, OptimizeResult)
         assert self.m.p_std is not None
@@ -65,8 +97,25 @@ class TestModelFitBinnedLeastSquares:
     @pytest.mark.parametrize(
         "grad, expected",
         [
-            (None, (9976.145320, -0.110611, 1.983807)),
-            ("analytical", (9976.145320, -0.110611, 1.983807)),
+            ("auto", (250.66282746, 50.0, 5.0)),
+            ("analytical", (250.66282746, 50.0, 5.0)),
+        ],
+    )
+    def test_fit_trf(self, grad, expected):
+        self.m.fit(optimizer="trf", grad=grad)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
+
+        assert isinstance(self.m.fit_output, OptimizeResult)
+        assert self.m.p_std is not None
+        assert len(self.m.p_std) == 3
+        assert np.all(~np.isnan(self.m.p_std))
+
+    @pytest.mark.parametrize(
+        "grad, expected",
+        [
+            (None, (250.66282746, 50.0, 5.0)),
+            ("auto", (250.66282746, 50.0, 5.0)),
+            ("analytical", (250.66282746, 50.0, 5.0)),
         ],
     )
     def test_fit_odr(self, grad, expected):
@@ -78,45 +127,33 @@ class TestModelFitBinnedLeastSquares:
         assert len(self.m.p_std) == 3
         assert np.all(~np.isnan(self.m.p_std))
 
-    @pytest.mark.parametrize(
-        "optimizer, expected", [("lm", (9991.654220, 0.5, 2.083982))],
-    )
-    def test_fit_bounded_bad_starting_values(self, optimizer, expected):
+    def test_fit_bounded_bad_starting_values(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
-        self.m.fit(optimizer=optimizer, bounded=True)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self.m.fit(optimizer="lm", bounded=True)
+        expected = (0.0, 0.5, 4.90000050)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
 
-    @pytest.mark.parametrize(
-        "optimizer, expected", [("lm", (9950.0, 0.5, 2.078154))],
-    )
-    def test_fit_ext_bounding(self, optimizer, expected):
-        self.m[0].A.bmin = 9950.0
-        self.m[0].A.bmax = 10050.0
-        self.m[0].centre.bmin = 0.5
-        self.m[0].centre.bmax = 5.0
-        self.m[0].sigma.bmin = 0.5
-        self.m[0].sigma.bmax = 2.5
+    def test_fit_ext_bounding(self):
+        self.m[0].A.bmin = 200.0
+        self.m[0].A.bmax = 300.0
+        self.m[0].centre.bmin = 51.0
+        self.m[0].centre.bmax = 60.0
+        self.m[0].sigma.bmin = 3.5
+        self.m[0].sigma.bmax = 4.9
 
         with pytest.warns(
             VisibleDeprecationWarning, match="`ext_bounding=True` has been deprecated",
         ):
-            self.m.fit(optimizer=optimizer, ext_bounding=True)
+            self.m.fit(optimizer="lm", ext_bounding=True)
 
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        expected = (200.0, 51.0, 4.9)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
 
 
 class TestModelFitBinnedScipyMinimize:
     def setup_method(self, method):
-        np.random.seed(1)
-        s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
-        s.metadata.Signal.binned = True
-        g = hs.model.components1D.Gaussian()
-        self.m = s.create_model()
-        self.m.append(g)
-        g.sigma.value = 1
-        g.centre.value = 0.5
-        g.A.value = 1000
+        self.m = _create_toy_1d_gaussian_model()
 
     def _check_model_values(self, model, expected, **kwargs):
         np.testing.assert_allclose(model.A.value, expected[0], **kwargs)
@@ -125,74 +162,63 @@ class TestModelFitBinnedScipyMinimize:
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
     @pytest.mark.parametrize(
-        "optimizer, loss_function, bounded, expected",
+        "loss_function, expected",
         [
-            ("Nelder-Mead", "ls", False, (9976.145193, -0.110611, 1.983807)),
-            ("Nelder-Mead", "ml-poisson", False, (10001.396139, -0.104151, 2.000536)),
-            ("Nelder-Mead", "huber", False, (10032.953495, -0.110309, 1.987885)),
-            ("L-BFGS-B", "ls", False, (9976.145193, -0.110611, 1.983807)),
-            ("L-BFGS-B", "ml-poisson", False, (10001.390498, -0.104152, 2.000534)),
-            ("L-BFGS-B", "huber", False, (10032.953495, -0.110309, 1.987885)),
-            ("L-BFGS-B", "ls", True, (9991.627563, 0.5, 2.083987)),
+            ("ls", (250.66280759, 49.99999971, 5.00000122)),
+            ("ml-poisson", (250.66282637, 49.99999927, 4.99999881)),
+            ("huber", (250.66280759, 49.99999971, 5.00000122)),
         ],
     )
-    def test_fit_scipy_minimize(self, optimizer, loss_function, bounded, expected):
-        if bounded:
-            self.m[0].centre.bmin = 0.5
-
-        self.m.fit(optimizer=optimizer, loss_function=loss_function, bounded=bounded)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+    def test_fit_scipy_minimize_gradient_free(self, loss_function, expected):
+        self.m.fit(optimizer="Nelder-Mead", loss_function=loss_function)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
+    @pytest.mark.parametrize("grad", ["auto", "analytical"])
     @pytest.mark.parametrize(
-        "grad, expected",
+        "loss_function, bounded, expected",
         [
-            (None, (9976.145193, -0.110611, 1.983807)),
-            ("analytical", (9976.145193, -0.110611, 1.983807)),
-            ("auto", (9976.145193, -0.110611, 1.983807)),
+            ("ls", False, (250.66284342, 50.00000045, 4.99999983)),
+            ("ls", True, (257.48175956, 55.0, 7.76887330)),
+            ("ml-poisson", True, (250.66296821, 55.0, 7.07106541)),
+            ("huber", True, (257.48175678, 55.0, 7.76886929)),
         ],
     )
-    def test_fit_scipy_minimize_gradients(self, grad, expected):
-        self.m.fit(optimizer="L-BFGS-B", loss_function="ls", grad=grad)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+    def test_fit_scipy_minimize_gradients(self, grad, loss_function, bounded, expected):
+        if bounded:
+            self.m[0].centre.bmin = 55.0
+
+        self.m.fit(
+            optimizer="L-BFGS-B",
+            loss_function=loss_function,
+            grad=grad,
+            bounded=bounded,
+        )
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
-    @pytest.mark.parametrize(
-        "optimizer, expected",
-        [
-            ("Powell", (9991.464524, 0.500064, 2.083900)),
-            ("L-BFGS-B", (9991.654220, 0.5, 2.083982)),
-        ],
-    )
-    def test_fit_bounded_bad_starting_values(self, optimizer, expected):
-        self.m[0].centre.bmin = 0.5
-        self.m[0].centre.value = -1
-        self.m.fit(optimizer=optimizer, bounded=True)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
-
-    @pytest.mark.parametrize(
-        "optimizer, expected", [("SLSQP", (988.401164, -177.122887, -10.100562))]
-    )
-    def test_constraints(self, optimizer, expected):
+    def test_constraints(self):
         # Primarily checks that constraints are passed correctly,
         # even though the end result is a bad fit
         cons = {"type": "ineq", "fun": lambda x: x[0] - x[1]}
-        self.m.fit(optimizer=optimizer, constraints=cons)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self.m.fit(optimizer="SLSQP", constraints=cons)
+        expected = (250.69857440, 49.99996610, 5.00034370)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
 
 
 class TestModelFitBinnedGlobal:
     def setup_method(self, method):
-        np.random.seed(1)
-        s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
-        s.metadata.Signal.binned = True
-        g = hs.model.components1D.Gaussian()
-        self.m = s.create_model()
-        self.m.append(g)
-        g.sigma.value = 1
-        g.centre.value = 0.5
-        g.A.value = 1000
+        self.m = _create_toy_1d_gaussian_model()
+
+        # Add bounds for all free parameters
+        # (needed for global optimization)
+        self.m[0].A.bmin = 200.0
+        self.m[0].A.bmax = 300.0
+        self.m[0].centre.bmin = 40.0
+        self.m[0].centre.bmax = 60.0
+        self.m[0].sigma.bmin = 4.5
+        self.m[0].sigma.bmax = 5.5
 
     def _check_model_values(self, model, expected, **kwargs):
         np.testing.assert_allclose(model.A.value, expected[0], **kwargs)
@@ -202,93 +228,43 @@ class TestModelFitBinnedGlobal:
     @pytest.mark.parametrize(
         "loss_function, expected",
         [
-            ("ls", (9972.351479, -0.110612, 1.983298)),
-            ("ml-poisson", (10046.513541, -0.104155, 2.000547)),
-            ("huber", (10032.952811, -0.110309, 1.987885)),
+            ("ls", (250.66282746, 50.0, 5.0)),
+            ("ml-poisson", (250.66337106, 50.00001755, 4.99997114)),
+            ("huber", (250.66282746, 50.0, 5.0)),
         ],
     )
     def test_fit_differential_evolution(self, loss_function, expected):
-        self.m[0].A.bmin = 9950.0
-        self.m[0].A.bmax = 10050.0
-        self.m[0].centre.bmin = -5.0
-        self.m[0].centre.bmax = 5.0
-        self.m[0].sigma.bmin = 0.5
-        self.m[0].sigma.bmax = 2.5
-
         self.m.fit(
             optimizer="Differential Evolution",
             loss_function=loss_function,
             bounded=True,
             seed=1,
         )
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
-    @pytest.mark.parametrize(
-        "loss_function, expected",
-        [
-            ("ls", (9976.145304, -0.110611, 1.983807)),
-            ("ml-poisson", (10001.395614, -0.104151, 2.000536)),
-            ("huber", (10032.952811, -0.110309, 1.987885)),
-        ],
-    )
-    def test_fit_dual_annealing(self, loss_function, expected):
+    def test_fit_dual_annealing(self):
         pytest.importorskip("scipy", minversion="1.2.0")
-        self.m[0].A.bmin = 9950.0
-        self.m[0].A.bmax = 10050.0
-        self.m[0].centre.bmin = -5.0
-        self.m[0].centre.bmax = 5.0
-        self.m[0].sigma.bmin = 0.5
-        self.m[0].sigma.bmax = 2.5
-
-        self.m.fit(
-            optimizer="Dual Annealing",
-            loss_function=loss_function,
-            bounded=True,
-            seed=1,
-        )
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self.m.fit(optimizer="Dual Annealing", loss_function="ls", bounded=True, seed=1)
+        expected = (250.66282750, 50.0, 5.0)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
-    @pytest.mark.parametrize(
-        "loss_function, expected",
-        [
-            ("ls", (9997.107685, -0.289231, 1.557846)),
-            ("ml-poisson", (9999.999922, -0.104151, 2.000536)),
-            ("huber", (10032.952811, -0.110309, 1.987885)),
-        ],
-    )
-    def test_fit_shgo(self, loss_function, expected):
+    def test_fit_shgo(self):
         pytest.importorskip("scipy", minversion="1.2.0")
-        self.m[0].A.bmin = 9950.0
-        self.m[0].A.bmax = 10050.0
-        self.m[0].centre.bmin = -5.0
-        self.m[0].centre.bmax = 5.0
-        self.m[0].sigma.bmin = 0.5
-        self.m[0].sigma.bmax = 2.5
-
-        self.m.fit(optimizer="SHGO", loss_function=loss_function, bounded=True)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self.m.fit(optimizer="SHGO", loss_function="ls", bounded=True)
+        expected = (250.66282750, 50.0, 5.0)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
 
 @lazifyTestClass
 class TestModelWeighted:
     def setup_method(self, method):
-        np.random.seed(1)
-        v = 2.0 * np.exp(-((np.arange(10, 100, 0.1) - 50) ** 2) / (2 * 5.0 ** 2))
-        s = hs.signals.Signal1D(v)
-        s_var = hs.signals.Signal1D(np.arange(10, 100, 0.01))
-        s.set_noise_variance(s_var)
-        s.axes_manager[0].scale = 0.1
-        s.axes_manager[0].offset = 10
-        s.add_poissonian_noise()
-        g = hs.model.components1D.Gaussian()
-        g.centre.value = 50.0
-        self.m = s.create_model()
-        self.m.append(g)
+        self.m = _create_toy_1d_gaussian_model(binned=True, weights=True, noise=True)
 
     def _check_model_values(self, model, expected, **kwargs):
+        print(f"({self.m.p0[0]:.7f}, {self.m.p0[1]:.7f}, {self.m.p0[2]:.7f})")
         np.testing.assert_allclose(model.A.value, expected[0], **kwargs)
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
@@ -307,16 +283,16 @@ class TestModelWeighted:
     @pytest.mark.parametrize(
         "optimizer, binned, expected",
         [
-            ("lm", True, [256.77519733, 49.97707093, 5.30083786]),
-            ("odr", True, [102.84625027, 51.91686817, 64.89788172]),
-            ("lm", False, [25.67755222, 49.97705725, 5.30085179]),
-            ("odr", False, [25.67758724, 49.97705032, 5.30086644]),
+            ("lm", True, (256.7752411, 49.9770694, 5.3008397)),
+            ("odr", True, (256.7752604, 49.9770693, 5.3008397)),
+            ("lm", False, (25.6775426, 49.9770509, 5.3008481)),
+            ("odr", False, (25.6775411, 49.9770507, 5.3008476)),
         ],
     )
     def test_fit(self, optimizer, binned, expected):
         self.m.signal.metadata.Signal.binned = binned
         self.m.fit(optimizer=optimizer)
-        self._check_model_values(self.m[0], expected, rtol=1e-5)
+        self._check_model_values(self.m[0], expected, rtol=1e-7)
 
 
 class TestModelScalarVariance:
@@ -349,33 +325,6 @@ class TestModelScalarVariance:
         self.s.set_noise_variance(std ** 2)
         self.m.fit()
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
-
-
-@lazifyTestClass
-class TestModelSignalVariance:
-    def setup_method(self, method):
-        variance = hs.signals.Signal1D(
-            np.arange(100, 300, dtype="float64").reshape((2, 100))
-        )
-        s = variance.deepcopy()
-        np.random.seed(1)
-        std = 10
-        np.random.seed(1)
-        s.add_gaussian_noise(std)
-        np.random.seed(1)
-        s.add_poissonian_noise()
-        s.set_noise_variance(variance + std ** 2)
-        m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(order=1, legacy=False))
-        self.s = s
-        self.m = m
-        self.var = (variance + std ** 2).data
-
-    def test_std1_red_chisq(self):
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(iterpath="serpentine")
-        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, atol=1e-5)
-        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, atol=1e-5)
 
 
 class TestFitPrintInfo:
@@ -572,3 +521,30 @@ class TestMultifit:
             match="'iterpath' default will change from 'flyback' to 'serpentine'",
         ):
             self.m.multifit(iterpath=None)
+
+
+@lazifyTestClass
+class TestMultiFitSignalVariance:
+    def setup_method(self, method):
+        variance = hs.signals.Signal1D(
+            np.arange(100, 300, dtype="float64").reshape((2, 100))
+        )
+        s = variance.deepcopy()
+        np.random.seed(1)
+        std = 10
+        np.random.seed(1)
+        s.add_gaussian_noise(std)
+        np.random.seed(1)
+        s.add_poissonian_noise()
+        s.set_noise_variance(variance + std ** 2)
+        m = s.create_model()
+        m.append(hs.model.components1D.Polynomial(order=1, legacy=False))
+        self.s = s
+        self.m = m
+        self.var = (variance + std ** 2).data
+
+    def test_std1_red_chisq(self):
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(iterpath="serpentine")
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, atol=1e-5)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, atol=1e-5)

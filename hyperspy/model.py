@@ -1541,9 +1541,7 @@ class BaseModel(list):
         success = self.fit_output.get("success", None)
         if success is False:
             message = self.fit_output.get("message", "Unknown reason")
-            _logger.warning(
-                "`m.fit() did not exit successfully. Reason: {message}"
-            )
+            _logger.warning(f"`m.fit() did not exit successfully. Reason: {message}")
 
     fit.__doc__ %= FIT_PARAMETERS_ARG
 
