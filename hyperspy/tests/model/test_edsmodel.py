@@ -21,7 +21,6 @@ import pytest
 
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
@@ -141,12 +140,8 @@ class TestlineFit:
         m.fit()
         m['Fe_Ka'].centre.value = 6.39
 
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="has been deprecated and will be removed",
-        ):
-            m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
-                                   bound=100)
+        m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
+                               bound=100)
 
         np.testing.assert_allclose(
             m['Fe_Ka'].centre.value, elements_db['Fe']['Atomic_properties'][
@@ -164,17 +159,12 @@ class TestlineFit:
         m = s.create_model()
         m.fit()
 
-        with pytest.warns(None) as record:
+        with pytest.warns(
+            UserWarning,
+            match="X-ray line expected to be in the model was not found"
+        ):
             m.calibrate_xray_lines(calibrate='sub_weight',
                                    xray_lines=['Fe_Ka'], bound=100)
-
-        assert len(record) == 2
-
-        assert issubclass(record[0].category, VisibleDeprecationWarning)
-        assert issubclass(record[1].category, UserWarning)
-
-        assert "has been deprecated and will be removed" in record[0].message.args[0]
-        assert "X-ray line expected to be in the model was not found" in record[1].message.args[0]
 
         np.testing.assert_allclose(0.0347, m['Fe_Kb'].A.value, atol=1e-3)
 
@@ -185,12 +175,8 @@ class TestlineFit:
         sigma = m['Fe_Ka'].sigma.value
         m['Fe_Ka'].sigma.value = 0.065
 
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="has been deprecated and will be removed",
-        ):
-            m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
-                                   bound=10)
+        m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
+                               bound=10)
 
         np.testing.assert_allclose(sigma, m['Fe_Ka'].sigma.value,
                                    atol=1e-2)
