@@ -1224,7 +1224,7 @@ class DigitalSurfHandler(object):
             #set to 0 instead of 1 in non-spectral data to compute the
             #space occupied by data in the file
             readsize = Npts_tot*Psize
-            if Wsize is not 0:
+            if Wsize != 0:
                 readsize*=Wsize
             #if Npts_channel is not 0:
             #    readsize*=Npts_channel
