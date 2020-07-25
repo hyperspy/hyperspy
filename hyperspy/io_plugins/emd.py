@@ -42,6 +42,8 @@ import pint
 
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
+from hyperspy.exceptions import VisibleDeprecationWarning
+
 
 # Plugin characteristics
 # ----------------------
@@ -130,9 +132,11 @@ class EMD(object):
 
     def __init__(self, signals=None, user=None,
                  microscope=None, sample=None, comments=None):
-        warnings.warns("Direct instantiation of the EMD class is deprecated "
-                       "and will be removed in HyperSpy v2.0. Please use the "
-                       "`hs.load` function instead.")
+        msg = (
+            "Direct instantiation of the EMD class is deprecated and will be "
+            "removed in HyperSpy v2.0. Please use the `hs.load` function "
+            "instead.")
+        warnings.warn(msg, VisibleDeprecationWarning)
         self._log.debug('Calling __init__')
         # Create dictionaries if not present:
         if signals is None:
@@ -1698,9 +1702,10 @@ def file_reader(filename, lazy=False, **kwds):
             _logger.debug('EMD file is a Bekerley variant.')
             dataset_name = kwds.pop('dataset_name', None)
             if dataset_name is not None:
-                warnings.warn("Using 'dataset_name' is deprecated and will "
-                              "be removed in HyperSpy 2.0, use "
-                              "'dataset_path' instead.", UserWarning)
+                msg = (
+                    "Using 'dataset_name' is deprecated and will be removed "
+                    "in HyperSpy 2.0, use 'dataset_path' instead.")
+                warnings.warn(msg, VisibleDeprecationWarning)
                 dataset_path = f"{dataset_name}/data"
             dataset_path = kwds.pop('dataset_path', None)
             stack_group = kwds.pop('stack_group', None)
