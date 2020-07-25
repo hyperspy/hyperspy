@@ -621,7 +621,7 @@ class EDS_mixin:
         """
         if xray_lines is not None and \
             (not isinstance(xray_lines, Iterable) or \
-            isinstance(xray_lines, str) or isinstance(xray_lines, dict)):
+            isinstance(xray_lines, (str, dict))):
 
             raise TypeError(
                 "xray_lines must be a compatible iterable, but was "
