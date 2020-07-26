@@ -42,9 +42,9 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 my_path = os.path.dirname(__file__)
 
 # Reference data:
-data_signal = np.arange(27).reshape((3, 3, 3))
-data_image = np.arange(9).reshape((3, 3))
-data_spectrum = np.arange(3)
+data_signal = np.arange(27).reshape((3, 3, 3)).T
+data_image = np.arange(9).reshape((3, 3)).T
+data_spectrum = np.arange(3).T
 data_save = np.arange(24).reshape((2, 3, 4))
 sig_metadata = {'a': 1, 'b': 2}
 user = {'name': 'John Doe', 'institution': 'TestUniversity',
@@ -52,11 +52,15 @@ user = {'name': 'John Doe', 'institution': 'TestUniversity',
 microscope = {'name': 'Titan', 'voltage': '300kV'}
 sample = {'material': 'TiO2', 'preparation': 'FIB'}
 comments = {'comment': 'Test'}
-test_title = '/signals/This is a test!'
+test_title = 'This is a test!'
 
 
-def test_signal_3d_loading():
-    signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'))
+@pytest.mark.parametrize("lazy", (True, False))
+def test_signal_3d_loading(lazy):
+    signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'),
+                  lazy=lazy)
+    if lazy:
+        signal.compute(close_file=True)
     np.testing.assert_equal(signal.data, data_signal)
     assert isinstance(signal, BaseSignal)
 
@@ -75,20 +79,13 @@ def test_spectrum_1d_loading():
 
 def test_metadata():
     signal = load(os.path.join(my_path, 'emd_files', 'example_metadata.emd'))
+    om = signal.original_metadata
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.metadata.General.title, test_title)
-    np.testing.assert_equal(signal.metadata.General.user.as_dictionary(), user)
-    np.testing.assert_equal(
-        signal.metadata.General.microscope.as_dictionary(),
-        microscope)
-    np.testing.assert_equal(
-        signal.metadata.General.sample.as_dictionary(), sample)
-    np.testing.assert_equal(
-        signal.metadata.General.comments.as_dictionary(),
-        comments)
-    for key, ref_value in sig_metadata.items():
-        np.testing.assert_equal(
-            signal.metadata.Signal.as_dictionary().get(key), ref_value)
+    np.testing.assert_equal(om.user.as_dictionary(), user)
+    np.testing.assert_equal(om.microscope.as_dictionary(), microscope)
+    np.testing.assert_equal(om.sample.as_dictionary(), sample)
+    np.testing.assert_equal(om.comments.as_dictionary(), comments)
     assert isinstance(signal, Signal2D)
 
 
@@ -103,14 +100,15 @@ def test_metadata_with_bytes_string():
     f.close()
     assert isinstance(dim1_name, np.bytes_)
     assert isinstance(dim1_units, np.bytes_)
-    signal = load(os.path.join(my_path, 'emd_files', filename))
+    _ = load(os.path.join(my_path, 'emd_files', filename))
 
 
 def test_data_numpy_object_dtype():
     filename = os.path.join(
         my_path, 'emd_files', 'example_object_dtype_data.emd')
     signal = load(filename)
-    assert len(signal) == 0
+    np.testing.assert_equal(signal.data,
+                            np.array([['a, 2, test1', 'a, 2, test1']]))
 
 
 def test_data_axis_length_1():
@@ -129,14 +127,14 @@ class TestDatasetName:
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
 
-        dataset_name_list = [
-            '/experimental/science_data_0',
-            '/experimental/science_data_1',
-            '/processed/science_data_0']
+        dataset_path_list = [
+            '/experimental/science_data_0/data',
+            '/experimental/science_data_1/data',
+            '/processed/science_data_0/data']
         data_size_list = [(50, 50), (20, 10), (16, 32)]
 
-        for dataset_name, data_size in zip(dataset_name_list, data_size_list):
-            group = f.create_group(dataset_name)
+        for dataset_path, data_size in zip(dataset_path_list, data_size_list):
+            group = f.create_group(os.path.dirname(dataset_path))
             group.attrs.create('emd_group_type', 1)
             group.create_dataset(name='data', data=np.random.random(data_size))
             group.create_dataset(name='dim1', data=range(data_size[0]))
@@ -146,42 +144,46 @@ class TestDatasetName:
 
         self.hdf5_dataset_path = hdf5_dataset_path
         self.tmpdir = tmpdir
-        self.dataset_name_list = dataset_name_list
+        self.dataset_path_list = dataset_path_list
         self.data_size_list = data_size_list
 
     def teardown_method(self):
         self.tmpdir.cleanup()
 
-    def test_load_with_dataset_name(self):
+    def test_load_with_dataset_path(self):
         s = load(self.hdf5_dataset_path)
-        assert len(s) == len(self.dataset_name_list)
-        for dataset_name, data_size in zip(
-                self.dataset_name_list, self.data_size_list):
-            s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
-            assert s.metadata.General.title == dataset_name
-            assert s.data.shape == data_size
+        assert len(s) == len(self.dataset_path_list)
+        for dataset_path, data_size in zip(
+                self.dataset_path_list, self.data_size_list):
+            s = load(self.hdf5_dataset_path, dataset_path=dataset_path)
+            title = os.path.basename(os.path.dirname(dataset_path))
+            assert s.metadata.General.title == title
+            assert s.data.shape == data_size[::-1]
 
-    def test_load_with_dataset_name_several(self):
-        dataset_name = self.dataset_name_list[0:2]
-        s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
-        assert len(s) == len(dataset_name)
-        assert s[0].metadata.General.title in dataset_name
-        assert s[1].metadata.General.title in dataset_name
+    def test_load_with_dataset_path_several(self):
+        dataset_path = self.dataset_path_list[0:2]
+        s = load(self.hdf5_dataset_path, dataset_path=dataset_path)
+        assert len(s) == len(dataset_path)
+        assert s[0].metadata.General.title in dataset_path[0]
+        assert s[1].metadata.General.title in dataset_path[1]
 
-    def test_wrong_dataset_name(self):
+    def test_wrong_dataset_path(self):
         with pytest.raises(IOError):
-            load(self.hdf5_dataset_path, dataset_name='a_wrong_name')
+            load(self.hdf5_dataset_path, dataset_path='a_wrong_name')
         with pytest.raises(IOError):
             load(self.hdf5_dataset_path,
-                 dataset_name=[self.dataset_name_list[0], 'a_wrong_name'])
+                 dataset_path=[self.dataset_path_list[0], 'a_wrong_name'])
+
+    def test_deprecated_dataset_name(self):
+        with pytest.warns(UserWarning):
+            dataset_name = os.path.dirname(self.dataset_path_list[0])
+            load(self.hdf5_dataset_path, dataset_name=dataset_name)
 
 
-class TestMinimalSave():
-
-    def test_minimal_save(self):
-        self.signal = Signal1D([0, 1])
-        with tempfile.TemporaryDirectory() as tmp:
-            self.signal.save(os.path.join(tmp, 'testfile.emd'))
+def test_minimal_save():
+    signal = Signal1D([0, 1])
+    with tempfile.TemporaryDirectory() as tmp:
+        signal.save(os.path.join(tmp, 'testfile.emd'))
 
 
 class TestReadSeveralDatasets:
@@ -193,7 +195,9 @@ class TestReadSeveralDatasets:
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
 
-        group_path_list = ['/exp/data_0', '/exp/data_1', '/calc/data_0']
+        group_path_list = ['/exp/data_0/data',
+                           '/exp/data_1/data',
+                           '/calc/data_0/data']
 
         for group_path in group_path_list:
             group = f.create_group(group_path)
@@ -216,12 +220,14 @@ class TestReadSeveralDatasets:
         s = load(self.hdf5_dataset_path)
         assert len(s) == len(self.group_path_list)
         title_list = [s_temp.metadata.General.title for s_temp in s]
-        assert sorted(self.group_path_list) == sorted(title_list)
+        for _s, path in zip(s, self.group_path_list):
+            assert _s.metadata.General.title in path
 
 
 class TestCaseSaveAndRead():
 
-    def test_save_and_read(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_save_and_read(self, lazy):
         signal_ref = BaseSignal(data_save)
         signal_ref.metadata.General.title = test_title
         signal_ref.axes_manager[0].name = 'x'
@@ -236,11 +242,18 @@ class TestCaseSaveAndRead():
         signal_ref.axes_manager[0].units = 'nm'
         signal_ref.axes_manager[1].units = 'µm'
         signal_ref.axes_manager[2].units = 'mm'
+        signal_ref.original_metadata.add_dictionary({'user':user})
+        signal_ref.original_metadata.add_dictionary({'microscope':microscope})
+        signal_ref.original_metadata.add_dictionary({'sample':sample})
+        signal_ref.original_metadata.add_dictionary({'comments':comments})
+
         signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
-                        overwrite=True, signal_metadata=sig_metadata,
-                        user=user, microscope=microscope, sample=sample,
-                        comments=comments)
-        signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+                        overwrite=True)
+        signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
+                      lazy=lazy)
+        if lazy:
+            signal.compute(close_file=True)
+        om = signal.original_metadata
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.axes_manager[0].name, 'x')
         np.testing.assert_equal(signal.axes_manager[1].name, 'y')
@@ -255,18 +268,11 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.axes_manager[1].units, 'µm')
         np.testing.assert_equal(signal.axes_manager[2].units, 'mm')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        np.testing.assert_equal(
-            signal.metadata.General.user.as_dictionary(), user)
-        np.testing.assert_equal(
-            signal.metadata.General.microscope.as_dictionary(),
-            microscope)
-        np.testing.assert_equal(
-            signal.metadata.General.sample.as_dictionary(), sample)
-        np.testing.assert_equal(
-            signal.metadata.General.comments.as_dictionary(), comments)
-        for key, ref_value in sig_metadata.items():
-            np.testing.assert_equal(
-                signal.metadata.Signal.as_dictionary().get(key), ref_value)
+        np.testing.assert_equal(om.user.as_dictionary(), user)
+        np.testing.assert_equal(om.microscope.as_dictionary(), microscope)
+        np.testing.assert_equal(om.sample.as_dictionary(), sample)
+        np.testing.assert_equal(om.comments.as_dictionary(), comments)
+
         assert isinstance(signal, BaseSignal)
 
     def teardown_method(self, method):

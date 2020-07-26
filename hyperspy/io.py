@@ -198,10 +198,19 @@ def load(filenames=None,
     load_SI_image_stack : bool (default False)
         Only for Velox emd files: if True, load the stack of STEM images
         acquired simultaneously as the EDS spectrum image.
-    dataset_name : string or list, optional
+    dataset_path : None, str or list of str, optional
         For filetypes which support several datasets in the same file, this
         will only load the specified dataset. Several datasets can be loaded
-        by using a list of strings. Only for EMD (NCEM) files.
+        by using a list of strings. Only for EMD (NCEM) and hdf5 (USID) files.
+    stack_group : bool, optional
+        Only for EMD NCEM. Stack datasets of groups with common name. Relevant
+        for emd file version >= 0.5 where groups can be named 'group0000',
+        'group0001', etc.
+    ignore_non_linear_dims : bool, default is True
+        Only for HDF5 USID. If True, parameters that were varied non-linearly
+        in the desired dataset will result in Exceptions.
+        Else, all such non-linearly varied parameters will be treated as
+        linearly varied parameters and a Signal object will be generated.
     only_valid_data : bool, optional
         Only for FEI emi/ser file in case of series or linescan with the
         acquisition stopped before the end: if True, load only the acquired
