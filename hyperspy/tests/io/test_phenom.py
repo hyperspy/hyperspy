@@ -23,11 +23,7 @@ import pytest
 
 import hyperspy.api as hs
 
-try:
-    import imagecodecs
-except ImportError:
-    pytest.skip("skipping test_phenom tests, failed to import imagecodecs", allow_module_level=True)
-
+imagecodecs = pytest.importorskip("imagecodecs", reason="skipping test_phenom tests, requires imagecodecs")
 
 DIRPATH = os.path.dirname(__file__)
 ELID2VERSION0 = os.path.join(DIRPATH, 'phenom_data', 'Elid2Version0.elid')
