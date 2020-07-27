@@ -62,13 +62,19 @@ datafile, `e.g.` if ``s`` is EELS data, you may be asked for the accelerating
 voltage, convergence and collection semi-angles etc.
 
 
-Creating components for the model
----------------------------------
+Model components
+----------------
+
+In HyperSpy a model consists of a sum of individual components. For convenience,
+HyperSpy provides a number of pre-defined model components as well as mechanisms
+to create your own components.
 
 .. _model_components-label:
 
-In HyperSpy a model consists of a linear combination of components
-and various components are available in one (:py:mod:`~.components1d`) and
+Pre-defined model components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Various components are available in one (:py:mod:`~.components1d`) and
 two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
@@ -94,7 +100,8 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~._components.voigt.Voigt`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
-The following components developed with specific signal types in mind are currently available for one-dimensional models:
+The following components developed with specific signal types in mind are
+currently available for one-dimensional models:
 
 * :py:class:`~._components.eels_arctan.EELSArctan`
 * :py:class:`~._components.eels_double_power_law.DoublePowerLaw`
@@ -109,25 +116,15 @@ The following components are currently available for two-dimensional models:
 * :py:class:`~._components.expression.Expression`
 * :py:class:`~._components.gaussian2d.Gaussian2D`
 
-However, this doesn't mean that you have to limit yourself to this meagre list
-of functions. A new function can easily be written as specified as below.
-
-Define components from a pattern
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To turn a Signal1D into a component, pass a Signal1D that does not have any navigation
-axes to :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`.
-ScaleableFixedPatterns can be scaled in the x and y directions using the
-``xscale`` and ``yscale`` parameters. The position of the pattern can also be adjusted
-the ``xshift``. By default the ``free`` attribute of ``xscale`` and ``xshift`` is set to ``False``.
+However, this doesn't mean that you have to limit yourself to this meagre
+list of functions. As discussed below, it is very easy to turn a
+mathematical, fixed-pattern or Python function into a component.
 
 .. _expression_component-label:
 
 Define components from a mathematical expression
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In addition to the above specific components, Hyperspy can take any Signal1D as
-well as most mathematical expressions as components, as detailed below.
 
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the
@@ -175,12 +172,12 @@ example we create a 2D Gaussian that rotates around its center:
     ... "Gaussian2d", add_rotation=True, position=("x0", "y0"),
     ... module="numpy", )
 
+Define new components from a Python function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Of course :py:class:`~._components.expression.Expression` is only useful for
-analytical functions. For more general components you need to create the
-component "by hand". The good news is that, if you know how to write the
-function with Python, turning it into a component is very easy, just modify
-the following template to suit your needs:
+analytical functions. You can define more general components modifying the
+following template to suit your needs:
 
 
 .. code-block:: python
@@ -237,6 +234,24 @@ the following template to suit your needs:
             Returns d(function)/d(parameter_2)
             """
             return x
+
+Define components from a fixed-pattern
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+component enables fitting a pattern (in the form of a
+:py:class:`~._signals.signal1d.Signal1D` instance) to data by shifting 
+(:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xshift`)
+and
+scaling it in the x and y directions using the
+:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale`
+and
+:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.yscale`
+parameters respectively.
+
+``xscale`` and ``yscale`` parameters. The position of the pattern can also be adjusted
+the ``xshift``. By default the ``free`` attribute of ``xscale`` and ``xshift`` is set to ``False``.
+
 
 
 
