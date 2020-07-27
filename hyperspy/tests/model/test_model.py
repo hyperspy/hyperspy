@@ -1,13 +1,31 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from unittest import mock
 
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import ignore_warning
-
+from hyperspy.misc.utils import slugify
 
 RTOL = 1E-6
 
@@ -918,7 +936,8 @@ class TestModelSignalVariance:
         self.m = m
 
     def test_std1_red_chisq(self):
-        self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fitter="leastsq", method="ls", iterpath='serpentine')
         np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109,
                                    atol=1e-5)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
@@ -947,14 +966,16 @@ class TestMultifit:
         m[0].A.value = 100
 
     def test_fetch_only_fixed_false(self):
-        self.m.multifit(fetch_only_fixed=False, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fetch_only_fixed=False, iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 100.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
 
     def test_fetch_only_fixed_true(self):
-        self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fetch_only_fixed=True, iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
@@ -965,7 +986,8 @@ class TestMultifit:
         rs = self.m[0].r.as_signal(field="values")
         np.testing.assert_allclose(rs.data, np.array([2., 100.]))
         assert not "Signal.Noise_properties.variance" in rs.metadata
-        self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        self.m.multifit(fetch_only_fixed=True, iterpath='serpentine')
         rs = self.m[0].r.as_signal(field="values")
         assert "Signal.Noise_properties.variance" in rs.metadata
         assert isinstance(rs.metadata.Signal.Noise_properties.variance,
@@ -977,7 +999,8 @@ class TestMultifit:
         m.signal.data *= 2.
         m[0].A.value = 2.
         m[0].A.bmin = 3.
-        m.multifit(fitter='mpfit', bounded=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(fitter='mpfit', bounded=True, iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
@@ -989,11 +1012,23 @@ class TestMultifit:
         m.signal.data *= 2.
         m[0].A.value = 2.
         m[0].A.bmin = 3.
-        m.multifit(fitter='leastsq', bounded=True, show_progressbar=None)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.multifit(fitter='leastsq', bounded=True, iterpath='serpentine')
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
+
+    def test_None_iterpath(self):
+        'To be removed with hyperspy 2.0, where serpentine is default.'
+        with pytest.warns(VisibleDeprecationWarning):
+            self.m.multifit() # iterpath = None by default
+
+    def test_flyback_iterpath(self):
+        self.m.multifit(iterpath='flyback')
+
+    def test_serpentine_iterpath(self):
+        self.m.multifit(iterpath='serpentine')
 
 
 class TestStoreCurrentValues:
@@ -1113,31 +1148,28 @@ class TestAsSignal:
     @pytest.mark.parallel
     def test_threaded_identical(self):
         # all components
-        s = self.m.as_signal(show_progressbar=False, parallel=True)
-        s1 = self.m.as_signal(show_progressbar=False, parallel=False)
+        s = self.m.as_signal(parallel=True)
+        s1 = self.m.as_signal(parallel=False)
         np.testing.assert_allclose(s1.data, s.data)
 
         # more complicated
         self.m[0].active_is_multidimensional = True
         self.m[0]._active_array[0] = False
         for component in [0, 1]:
-            s = self.m.as_signal(component_list=[component],
-                                 show_progressbar=False, parallel=True)
-            s1 = self.m.as_signal(component_list=[component],
-                                  show_progressbar=False, parallel=False)
+            s = self.m.as_signal(component_list=[component], parallel=True)
+            s1 = self.m.as_signal(component_list=[component], parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
     @pytest.mark.parametrize('parallel',
                              [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_simple(self, parallel):
-        s = self.m.as_signal(show_progressbar=False, parallel=parallel)
+        s = self.m.as_signal(parallel=parallel)
         assert np.all(s.data == 4.)
 
     @pytest.mark.parametrize('parallel',
                              [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_simple(self, parallel):
-        s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                             parallel=parallel)
+        s = self.m.as_signal(component_list=[0], parallel=parallel)
         assert np.all(s.data == 2.)
         assert self.m[1].active
 
@@ -1146,11 +1178,11 @@ class TestAsSignal:
     def test_all_components_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(show_progressbar=False, parallel=parallel)
+        s = self.m.as_signal(parallel=parallel)
         assert np.all(s.data == 4.)
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(show_progressbar=False, parallel=parallel)
+        s = self.m.as_signal(parallel=parallel)
         np.testing.assert_array_equal(
             s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
         assert self.m[0].active_is_multidimensional
@@ -1160,24 +1192,20 @@ class TestAsSignal:
     def test_one_component_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                             parallel=parallel)
+        s = self.m.as_signal(component_list=[0], parallel=parallel)
         assert np.all(s.data == 2.)
         assert self.m[1].active
         assert not self.m[1].active_is_multidimensional
 
-        s = self.m.as_signal(component_list=[1], show_progressbar=False,
-                             parallel=parallel)
+        s = self.m.as_signal(component_list=[1], parallel=parallel)
         np.testing.assert_equal(s.data, 2.)
         assert self.m[0].active_is_multidimensional
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(component_list=[1], show_progressbar=False,
-                             parallel=parallel)
+        s = self.m.as_signal(component_list=[1], parallel=parallel)
         assert np.all(s.data == 2.)
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                             parallel=parallel)
+        s = self.m.as_signal(component_list=[0], parallel=parallel)
         np.testing.assert_array_equal(s.data, np.array([np.zeros((2, 5)),
                                                         np.ones((2, 5)) * 2]))
 
@@ -1250,11 +1278,10 @@ def test_as_signal_parallel():
     m = s.create_model()
     m.append(hs.model.components1D.PowerLaw())
     m.set_signal_range(2, 5)
-    m.multifit(show_progressbar=False)
+    # HyperSpy 2.0: remove setting iterpath='serpentine'
+    m.multifit(iterpath='serpentine')
 
-    s1 = m.as_signal(out_of_range_to_nan=True, parallel=True,
-                     show_progressbar=False)
-    s2 = m.as_signal(out_of_range_to_nan=True, parallel=True,
-                     show_progressbar=False)
+    s1 = m.as_signal(out_of_range_to_nan=True, parallel=True)
+    s2 = m.as_signal(out_of_range_to_nan=True, parallel=True)
 
     np.testing.assert_allclose(s1, s2)

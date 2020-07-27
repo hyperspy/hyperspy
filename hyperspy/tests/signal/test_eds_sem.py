@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,15 +18,14 @@
 import sys
 
 import numpy as np
+from numpy.testing import assert_allclose, assert_raises
 
-from numpy.testing import assert_allclose
-
-from hyperspy.signals import EDSSEMSpectrum
-from hyperspy.defaults_parser import preferences
-from hyperspy.components1d import Gaussian
 from hyperspy import utils
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
+from hyperspy.misc.test_utils import assert_warns
+from hyperspy.signals import EDSSEMSpectrum
 
 
 @lazifyTestClass
@@ -192,7 +191,7 @@ class Test_metadata:
 
 
 @lazifyTestClass
-class Test_get_lines_intentisity:
+class Test_get_lines_intensity:
 
     def setup_method(self, method):
         # Create an empty spectrum
@@ -211,6 +210,26 @@ class Test_get_lines_intentisity:
 
     def test(self):
         s = self.signal
+
+        # get_lines_intensity() should raise TypeError when
+        # xray_lines is a string or a dictionary
+        for bad_iter in ["Al_Kb", {"A" : "Al_Kb", "B" : "Ca_Ka"}]:
+                assert_raises(TypeError,
+                        s.get_lines_intensity,
+                        xray_lines=bad_iter,
+                        plot_result=False)
+
+        # get_lines_intensity() should succeed and return a list
+        # when xray_lines is an iterable (other than a str or dict)
+        good_iter = {"tuple" : ("Al_Kb", "Ca_Ka"),
+                      "list" : ["Al_Kb", "Ca_Ka"],
+                      "set" : set(["Al_Kb", "Ca_Ka"])}
+        for itr in good_iter:
+                assert isinstance(s.get_lines_intensity(
+                                xray_lines=good_iter[itr],
+                                plot_result=False), list), \
+                                "get_lines_intensity() trouble with {}".format( itr )
+
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_windows=5)[0]

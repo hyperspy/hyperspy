@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,12 +20,10 @@
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
-
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
-
 
 dirpath = os.path.dirname(__file__)
 

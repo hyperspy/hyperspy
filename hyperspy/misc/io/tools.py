@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,6 +19,10 @@
 
 import os
 import logging
+import xml.etree.ElementTree as ET
+
+from hyperspy.misc.utils import DictionaryTreeBrowser
+
 
 _logger = logging.getLogger(__name__)
 
@@ -103,3 +107,23 @@ def overwrite(fname):
             return False
     else:
         return True
+
+
+def xml2dtb(et, dictree):
+    if et.text:
+        dictree[et.tag] = et.text
+        return  
+    else:
+        dictree.add_node(et.tag)
+        if et.attrib:
+            dictree[et.tag].add_dictionary(et.attrib)   
+        for child in et:
+            xml2dtb(child, dictree[et.tag])
+
+
+def convert_xml_to_dict(xml_object):
+    if isinstance(xml_object, str):
+        xml_object = ET.fromstring(xml_object)
+    op = DictionaryTreeBrowser()
+    xml2dtb(xml_object, op)
+    return op

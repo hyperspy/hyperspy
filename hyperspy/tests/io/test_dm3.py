@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,18 +17,19 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import json
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 
+from hyperspy.io import load
+from hyperspy.io_plugins.digital_micrograph import (DigitalMicrographReader,
+                                                    ImageObject)
+from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.tests.io.generate_dm_testing_files import (dm3_data_types,
                                                          dm4_data_types)
-from hyperspy.io import load
-from hyperspy.io_plugins.digital_micrograph import DigitalMicrographReader, ImageObject
-from hyperspy.signals import Signal1D, Signal2D
-import json
 
 MY_PATH = os.path.dirname(__file__)
 
@@ -68,7 +69,7 @@ class TestImageObject():
 
     def test_parse_string(self):
         assert self.imageobject._parse_string("") is None
-        assert self.imageobject._parse_string("string") is "string"
+        assert self.imageobject._parse_string("string") == "string"
 
 
 def test_missing_tag():

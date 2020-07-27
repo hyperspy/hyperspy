@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -13,14 +14,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
 import numpy as np
+import pytest
 
 from hyperspy.misc.array_tools import dict2sarray
-
 
 dt = [('x', np.uint8), ('y', np.uint16), ('text', (bytes, 6))]
 

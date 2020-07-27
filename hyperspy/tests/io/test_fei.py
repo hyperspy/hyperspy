@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,11 +18,10 @@
 
 import os
 
-import pytest
 import numpy as np
-from numpy.testing import assert_allclose
+import pytest
 import traits.api as t
-
+from numpy.testing import assert_allclose
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file

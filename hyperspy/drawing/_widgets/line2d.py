@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +21,7 @@ import numpy as np
 import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
+from hyperspy.drawing.utils import picker_kwargs
 
 
 _logger = logging.getLogger(__name__)
@@ -258,6 +259,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         xy = np.array(self._pos)
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
+        kwargs = picker_kwargs(max_r)
         self.patch = self.ax.plot(
             xy[:, 0], xy[:, 1],
             linestyle='-',
@@ -269,10 +271,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             markersize=self.radius_resize,
             mew=0.1,
             mfc='lime',
-            picker=max_r,)[0:1]
+            **kwargs,)[0:1]
 
     def _set_size_patch(self):
         wc = self._get_width_indicator_coords()
+        kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
             wi, = self.ax.plot(
                 wc[i][0], wc[i][1],
@@ -280,7 +283,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 animated=self.blit,
                 lw=self.linewidth,
                 c=self.color,
-                picker=self.radius_move)
+                **kwargs)
             self.patch.append(wi)
             self._width_indicator_patches.append(wi)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,30 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
-from os import remove
-import sys
 import gc
-import time
+import os.path
+import sys
 import tempfile
+import time
+from os import remove
 
+import dask.array as da
 import h5py
 import numpy as np
-import dask
-import dask.array as da
 import pytest
-from distutils.version import LooseVersion
 
-from hyperspy.io import load
-from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-from hyperspy.utils import markers
-from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-
+from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.roi import Point2DROI
+from hyperspy.signal import BaseSignal
+from hyperspy.utils import markers
 
 my_path = os.path.dirname(__file__)
 
@@ -377,7 +374,7 @@ class TestPassingArgs:
         BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
 
     def test_compression_opts(self):
-        f = h5py.File(self.filename)
+        f = h5py.File(self.filename, mode='r+')
         d = f['Experiments/__unnamed__/data']
         assert d.compression_opts == 8
         assert d.compression == 'gzip'
@@ -660,23 +657,10 @@ def test_strings_from_py2():
     assert s.metadata.Sample.elements.dtype.char == "U"
 
 
-@pytest.mark.skipif(LooseVersion(dask.__version__) >= LooseVersion('0.14.1'),
-                    reason='Fixed in later dask versions')
-def test_lazy_metadata_arrays(tmpfilepath):
-    s = BaseSignal([1, 2, 3])
-    s.metadata.array = np.arange(10.)
-    s.save(tmpfilepath)
-    l = load(tmpfilepath + ".hspy", lazy=True)
-    # Can't deepcopy open hdf5 file handles
-    with pytest.raises(TypeError):
-        l.deepcopy()
-    del l
-
-
 def test_save_ragged_array(tmpfilepath):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
-    s = BaseSignal(np.array([a, b])).T
+    s = BaseSignal(np.array([a, b], dtype=object)).T
     filename = os.path.join(tmpfilepath, "test_save_ragged_array.hspy")
     s.save(filename)
     s1 = load(filename)
@@ -689,4 +673,4 @@ def test_load_missing_extension(caplog):
     s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
-       m = s.models.restore("a") 
+       _ = s.models.restore("a")

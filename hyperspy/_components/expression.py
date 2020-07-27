@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -287,7 +287,7 @@ class Expression(Component):
                                 self,
                                 Expression)
                             )
-            except SyntaxError:
+            except (SyntaxError, AttributeError):
                 warnings.warn("The gradients can not be computed with sympy.",
                               UserWarning)
 

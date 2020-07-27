@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,7 +20,6 @@ import numpy as np
 import pytest
 
 from hyperspy import signals
-
 
 baseline_dir = 'plot_mva'
 default_tol = 2.0
@@ -59,6 +58,12 @@ class TestPlotExplainedVarianceRatio:
         ax = self.s.plot_explained_variance_ratio(n, threshold=threshold,
                                                   xaxis_type=xaxis_type,
                                                   xaxis_labeling=xaxis_labeling)
+        return ax.get_figure()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cumulative_explained_variance_ratio(self):
+        ax = self.s.plot_cumulative_explained_variance_ratio()
         return ax.get_figure()
 
     @pytest.mark.parametrize("n", [3, [3, 4]])

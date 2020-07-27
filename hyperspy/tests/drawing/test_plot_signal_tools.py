@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,14 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-import matplotlib.pyplot as plt
 
-from hyperspy import signals, components1d
+from hyperspy import components1d, signals
 from hyperspy._signals.signal1d import BackgroundRemoval
 from hyperspy.signal_tools import ImageContrastEditor
-
 
 BASELINE_DIR = "plot_signal_tools"
 DEFAULT_TOL = 2.0
@@ -42,8 +41,7 @@ def test_plot_BackgroundRemoval():
                            background_type='Power Law',
                            polynomial_order=2,
                            fast=True,
-                           plot_remainder=True,
-                           show_progressbar=None)
+                           plot_remainder=True)
 
     br.span_selector.set_initial((105, 115))
     br.span_selector.onmove_callback()
@@ -81,4 +79,3 @@ def test_plot_contrast_editor_norm(norm):
         s2.plot(norm=norm)
         ceditor2 = ImageContrastEditor(s._plot.signal_plot)
     assert ceditor.norm == norm.capitalize()
-

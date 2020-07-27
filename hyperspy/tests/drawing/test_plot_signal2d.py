@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,16 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 import scipy.ndimage
 import traits.api as t
-import pytest
-import matplotlib.pyplot as plt
 
 import hyperspy.api as hs
-from hyperspy.drawing.utils import plot_RGB_map
+from hyperspy.drawing.utils import make_cmap, plot_RGB_map
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
-from hyperspy.drawing.utils import make_cmap
 
 scalebar_color = 'blue'
 default_tol = 2.0
@@ -430,15 +429,20 @@ def test_plot_images_saturated_pixels(saturated_pixels):
     return ax[0].figure
 
 
+@pytest.mark.parametrize("vmin_vmax", [(50, 150),
+                                       ([0, 10], [120, None])])
 @pytest.mark.parametrize("colorbar", ['single', 'multi', None])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_colorbar(colorbar):
+def test_plot_images_colorbar(colorbar, vmin_vmax):
+    print("vmin_vmax:", vmin_vmax)
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    ax = hs.plot.plot_images([image0, image0], colorbar=colorbar,
-                             vmin=[0, 10], vmax=[120, None],
+    ax = hs.plot.plot_images([image0, image0],
+                             colorbar=colorbar,
+                             vmin=vmin_vmax[0],
+                             vmax=vmin_vmax[1],
                              axes_decor='ticks')
     return ax[0].figure
 
@@ -500,3 +504,15 @@ def test_plot_log_negative_value(cmap):
     else:
         s.plot(norm='log')
     return plt.gcf()
+
+
+@pytest.mark.parametrize("cmap", ['gray', None, 'preference'])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_navigator_colormap(cmap):
+    if cmap == 'preference':
+        hs.preferences.Plot.cmap_navigator = 'hot'
+        cmap = None
+    s = hs.signals.Signal1D(np.arange(10*10*10).reshape(10, 10, 10))
+    s.plot(navigator_kwds={'cmap':cmap})
+    return s._plot.navigator_plot.figure

@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,12 +19,12 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import EDSTEMSpectrum
-from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
-from hyperspy.decorators import lazifyTestClass
+from hyperspy.signals import EDSTEMSpectrum
 
 
 @lazifyTestClass

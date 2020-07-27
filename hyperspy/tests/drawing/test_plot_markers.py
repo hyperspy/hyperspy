@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,12 +18,11 @@
 import numpy as np
 import pytest
 
-from hyperspy.misc.test_utils import update_close_figure, sanitize_dict
-from hyperspy.signals import Signal2D, Signal1D, BaseSignal
-from hyperspy.utils import markers, stack
-from hyperspy.drawing.marker import dict2marker
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-
+from hyperspy.drawing.marker import dict2marker
+from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
+from hyperspy.utils import markers, stack
 
 default_tol = 2.0
 baseline_dir = 'plot_markers'

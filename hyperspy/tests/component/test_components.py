@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,18 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import itertools
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 import inspect
+import itertools
+
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
-from hyperspy.models.model1d import Model1D
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy import components1d
 from hyperspy.component import Component
-
+from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.models.model1d import Model1D
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
@@ -45,7 +45,10 @@ def get_components1d_name_list():
     return components1d_name_list
 
 
-@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in true_divide:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered in true_divide:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in cos:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:The API of the")
 @pytest.mark.parametrize('component_name', get_components1d_name_list())
 def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
@@ -81,7 +84,7 @@ class TestPowerLaw:
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s, None, None, only_current=only_current)
@@ -100,7 +103,7 @@ class TestPowerLaw:
 
     def test_EDS_missing_data(self):
         g = hs.model.components1D.PowerLaw()
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         s2 = hs.signals.EDSTEMSpectrum(s.data)
         g.estimate_parameters(s2, None, None)
 
@@ -137,7 +140,7 @@ class TestDoublePowerLaw:
     @pytest.mark.parametrize(("binned"), (True, False))
     def test_fit(self, binned):
         self.m.signal.metadata.Signal.binned = binned
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.DoublePowerLaw()
         # Fix the ratio parameter to test the fit
@@ -163,14 +166,14 @@ class TestOffset:
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         assert s.metadata.Signal.binned == binned
         o = hs.model.components1D.Offset()
         o.estimate_parameters(s, None, None, only_current=only_current)
         assert_allclose(o.offset.value, 10)
 
     def test_function_nd(self):
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         s = hs.stack([s] * 2)
         o = hs.model.components1D.Offset()
         o.estimate_parameters(s, None, None, only_current=False)
@@ -209,7 +212,7 @@ class TestDeprecatedPolynomial:
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.Polynomial(order=2)
         g.estimate_parameters(s, None, None, only_current=only_current)
@@ -219,7 +222,7 @@ class TestDeprecatedPolynomial:
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_2d.as_signal(show_progressbar=None, parallel=False)
+        s = self.m_2d.as_signal(parallel=False)
         model = Model1D(s)
         p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
@@ -230,7 +233,7 @@ class TestDeprecatedPolynomial:
     @pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
+        s = self.m_3d.as_signal(parallel=False)
         model = Model1D(s)
         p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
@@ -297,7 +300,7 @@ class TestPolynomial:
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self,  only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         s.metadata.Signal.binned = binned
         p = hs.model.components1D.Polynomial(order=2, legacy=False)
         p.estimate_parameters(s, None, None, only_current=only_current)
@@ -312,7 +315,7 @@ class TestPolynomial:
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_2d.as_signal(show_progressbar=None, parallel=False)
+        s = self.m_2d.as_signal(parallel=False)
         model = Model1D(s)
         p = hs.model.components1D.Polynomial(order=2, legacy=False)
         model.append(p)
@@ -323,7 +326,7 @@ class TestPolynomial:
 
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
+        s = self.m_3d.as_signal(parallel=False)
         model = Model1D(s)
         p = hs.model.components1D.Polynomial(order=2, legacy=False)
         model.append(p)
@@ -333,7 +336,7 @@ class TestPolynomial:
         np.testing.assert_allclose(p.a0.map['values'], 3)
 
     def test_function_nd(self):
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         s = hs.stack([s]*2)
         p = hs.model.components1D.Polynomial(order=2, legacy=False)
         p.estimate_parameters(s, None, None, only_current=False)
@@ -357,7 +360,7 @@ class TestGaussian:
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters_binned(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s, None, None, only_current=only_current)
@@ -368,7 +371,7 @@ class TestGaussian:
     @pytest.mark.parametrize("binned", (True, False))
     def test_function_nd(self, binned):
         self.m.signal.metadata.Signal.binned = binned
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = self.m.as_signal(parallel=False)
         s2 = hs.stack([s] * 2)
         g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s2, None, None, only_current=False)
@@ -424,7 +427,7 @@ def test_expression_symbols():
     with pytest.raises(ValueError):
         hs.model.components1D.Expression(expression="10", name="offset")
     with pytest.raises(ValueError):
-        hs.model.components1D.Expression(expression="10*offset", name="Offset")    
+        hs.model.components1D.Expression(expression="10*offset", name="Offset")
 
 
 def test_expression_substitution():
@@ -506,7 +509,7 @@ class TestHeavisideStep:
     def test_integer_values(self):
         c = self.c
         np.testing.assert_array_almost_equal(c.function([-1, 0, 2]),
-                                             [0, 0.5, 1])
+                                             [0, 1, 1])
 
     def test_float_values(self):
         c = self.c
@@ -516,11 +519,11 @@ class TestHeavisideStep:
     def test_not_sorted(self):
         c = self.c
         np.testing.assert_array_almost_equal(c.function([3, -0.1, 0]),
-                                             [1, 0, 0.5])
+                                             [1, 0, 1])
 
     def test_gradients(self):
         c = self.c
         np.testing.assert_array_almost_equal(c.A.grad([3, -0.1, 0]),
                                              [1, 1, 1])
         np.testing.assert_array_almost_equal(c.n.grad([3, -0.1, 0]),
-                                             [1, 0, 0.5])
+                                             [1, 0, 1])

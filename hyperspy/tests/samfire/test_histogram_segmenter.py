@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,10 +17,8 @@
 
 import numpy as np
 
-
-from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
-from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.external.astroML.histtools import histogram
+from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
 
 
 def compare_two_value_dicts(ans_r, ans):

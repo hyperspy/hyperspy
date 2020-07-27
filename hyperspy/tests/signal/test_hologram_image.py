@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#  Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,14 +19,12 @@
 import gc
 
 import numpy as np
-import numpy.testing as nt
-from numpy.testing import assert_allclose
 import pytest
 import scipy.constants as constants
+from numpy.testing import assert_allclose
+from scipy.interpolate import interp2d
 
 import hyperspy.api as hs
-from hyperspy.decorators import lazifyTestClass
-from scipy.interpolate import interp2d
 from hyperspy.datasets.example_signals import reference_hologram
 
 
@@ -435,9 +433,3 @@ def test_statistics(parallel, lazy, single_values, fringe_contrast_algorithm):
                 1,
                 1),
             fringe_contrast_algorithm='pure_guess')
-
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)

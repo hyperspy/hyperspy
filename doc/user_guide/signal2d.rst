@@ -3,24 +3,63 @@ Signal2D Tools
 **************
 
 The methods described in this section are only available for two-dimensional
-signals in the Signal2D class.
-
+signals in the :py:class:`~._signals.signal2d.Signal2D`. class.
 
 .. _signal2D.align:
 
-Two dimensional signal registration (alignment)
------------------------------------------------
+Signal registration and alignment
+---------------------------------
 
-.. versionadded:: 1.4
-   ``sub_pixel_factor`` keyword.
-
-The :py:meth:`~._signals.signal2d.Signal2D.align2D` and 
+The :py:meth:`~._signals.signal2d.Signal2D.align2D` and
 :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` methods provide
-advanced image alignment functionality. Sub-pixel accuracy can be achieved
-by using skimage's upsampled matrix-multiplication DFT method
-:ref:`[Guizar2008] <Guizar2008>`—by setting the ``sub_pixel_factor`` keyword argument—
-and/or, for multi-dimensional datasets only, using the statistical method
-:ref:`[Schaffer2004] <Schaffer2004>`—by setting the ``reference`` keyword argument to ``"stat"``.
+advanced image alignment functionality.
+
+.. code-block:: python
+
+    # Estimate shifts, then align the images
+    >>> shifts = s.estimate_shift2D()
+    >>> s.align2D(shifts=shifts)
+
+    # Estimate and align in a single step
+    >>> s.align2D()
+
+.. warning::
+
+    ``s.align2D()`` will modify the data **in-place**. If you don't want
+    to modify your original data, first take a copy before aligning.
+
+Sub-pixel accuracy can be achieved in two ways:
+
+* `scikit-image's <https://scikit-image.org/>`_ upsampled matrix-multiplication DFT method
+  :ref:`[Guizar2008] <Guizar2008>`, by setting the ``sub_pixel_factor``
+  keyword argument
+* for multi-dimensional datasets only, using the statistical
+  method :ref:`[Schaffer2004] <Schaffer2004>`, by setting the ``reference``
+  keyword argument to ``"stat"``
+
+.. code-block:: python
+
+    # skimage upsampling method
+    >>> shifts = s.estimate_shift2D(sub_pixel_factor=20)
+
+    # stat method
+    >>> shifts = s.estimate_shift2D(reference="stat")
+
+    # combined upsampling and statistical method
+    >>> shifts = s.estimate_shift2D(reference="stat", sub_pixel_factor=20)
+
+If you have a large stack of images, you can perform the image alignment step in
+parallel by passing ``parallel=True``. You can control the number of threads used
+with the ``max_workers`` argument. See the :ref:`map documentation <parallel-map-label>`
+for more information.
+
+.. code-block:: python
+
+    # Estimate shifts
+    >>> shifts = s.estimate_shift2D()
+
+    # Align images in parallel using 4 threads
+    >>> s.align2D(shifts=shifts, parallel=True, max_workers=4)
 
 .. _signal2D.crop:
 

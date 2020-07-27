@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,14 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import traits.api as t
-import pytest
 import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+import traits.api as t
 
-from hyperspy.misc.test_utils import update_close_figure
 import hyperspy.api as hs
-
+from hyperspy.misc.test_utils import update_close_figure
 
 scalebar_color = 'blue'
 default_tol = 2.0

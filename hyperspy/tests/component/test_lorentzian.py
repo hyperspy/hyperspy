@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -11,19 +11,19 @@
 #  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.from hyperspy.utils import stack
-
+# GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 
-from hyperspy.signals import Signal1D
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose
+
 from hyperspy.components1d import Lorentzian
+from hyperspy.signals import Signal1D
 from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]

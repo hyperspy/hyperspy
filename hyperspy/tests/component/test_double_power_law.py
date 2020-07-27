@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -40,5 +40,3 @@ def test_function():
     assert g.grad_origin(2)  == -6
     assert g.grad_shift(2)  == -12
     assert g.grad_ratio(2)  == 3
-    
-    

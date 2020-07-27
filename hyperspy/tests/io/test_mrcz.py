@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,12 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import numpy.testing as npt
 import os
 import tempfile
-import pytest
 from time import perf_counter, sleep
+
+import numpy as np
+import numpy.testing as npt
+import pytest
+
+from hyperspy import signals
+from hyperspy.io import load, save
+from hyperspy.misc.test_utils import assert_deep_almost_equal
+
 try:
     import blosc
     blosc_installed = True
@@ -33,9 +39,6 @@ try:
 except BaseException:
     mrcz_installed = False
 
-from hyperspy.io import load, save
-from hyperspy import signals
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 pytestmark = pytest.mark.skipif(
@@ -123,7 +126,7 @@ class TestPythonMrcz:
                     sleep(0.001)
             print("Time to save file: {} s".format(
                 perf_counter() - (t_stop - MAX_ASYNC_TIME)))
-            sleep(0.005)
+            sleep(0.1)
 
         reSignal = load(mrcName)
         try:
@@ -185,11 +188,3 @@ class TestPythonMrcz:
                              clevel=1, do_async=True)
         print("MRCZ Asychronous test finished in {} s".format(
             perf_counter() - t_start))
-
-
-if __name__ == '__main__':
-    theSuite = TestPythonMrcz()
-    parameters = _generate_parameters()
-    for parameter in parameters:
-        theSuite.test_MRC(*parameter)
-    theSuite.test_Async(parameter[0])

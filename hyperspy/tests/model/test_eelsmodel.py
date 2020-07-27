@@ -1,5 +1,22 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
@@ -7,6 +24,14 @@ import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
 
+# Dask does not always work nicely with np.errstate,
+# see: https://github.com/dask/dask/issues/3245, so
+# filter out divide-by-zero warnings that only appear
+# when the test is lazy. When the test is not lazy,
+# internal use of np.errstate means the warnings never
+# appear in the first place.
+@pytest.mark.filterwarnings("ignore:invalid value encountered in subtract:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered in log:RuntimeWarning")
 @lazifyTestClass
 class TestCreateEELSModel:
 

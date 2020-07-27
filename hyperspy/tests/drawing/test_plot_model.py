@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2018 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,14 +17,14 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 import numpy as np
-import pytest
 import numpy.testing as nt
+import pytest
 
 import hyperspy.api as hs
-from hyperspy.signals import Signal1D, EELSSpectrum
 from hyperspy.components1d import Gaussian
-
+from hyperspy.signals import EELSSpectrum, Signal1D
 
 my_path = os.path.dirname(__file__)
 baseline_dir = 'plot_model'

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -341,7 +341,7 @@ class Samfire:
         Parameters
         ----------
         filename: {str, None}
-            the filename. If None, a default value of "backup\_"+signal_title
+            the filename. If None, a default value of "backup_"+signal_title
             is used.
         on_count: bool
             if True (default), only saves on the required count of steps
@@ -629,3 +629,7 @@ class Samfire:
         ans += self.model.signal.metadata.General.title
         ans += u"'>"
         return ans
+
+    def stop(self):
+        if hasattr(self, "pool") and self.pool is not None:
+            self.pool.stop()

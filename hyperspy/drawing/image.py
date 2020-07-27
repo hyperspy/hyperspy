@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,14 +17,17 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
+from distutils.version import LooseVersion
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm, SymLogNorm, PowerNorm
 from traits.api import Undefined
 import logging
 import inspect
 import copy
+from distutils.version import LooseVersion
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -414,9 +417,12 @@ class ImagePlot(BlittedFigure):
 
                 norm = LogNorm(vmin=vmin, vmax=vmax)
             elif norm == 'symlog':
-                norm = SymLogNorm(linthresh=self.linthresh,
-                                linscale=self.linscale,
-                                vmin=vmin, vmax=vmax)
+                sym_log_kwargs = {'linthresh':self.linthresh,
+                                  'linscale':self.linscale,
+                                  'vmin':vmin, 'vmax':vmax}
+                if LooseVersion(matplotlib.__version__) >= LooseVersion("3.2"):
+                    sym_log_kwargs['base'] = 10
+                norm = SymLogNorm(**sym_log_kwargs)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
             elif norm not in ['auto', 'linear']:
@@ -462,17 +468,12 @@ class ImagePlot(BlittedFigure):
                         'animated': self.figure.canvas.supports_blit,
                         }
             if not self._is_rgb:
-                new_args.update(
-                    {
-                        'vmin': vmin,
-                        'vmax': vmax,
-                        'norm': norm}
-
-                    
-                )
+                if norm is None:
+                    new_args.update({'vmin': vmin, 'vmax':vmax})
+                else:
+                    new_args['norm'] = norm
             new_args.update(kwargs)
-            self.ax.imshow(data,
-                           **new_args)
+            self.ax.imshow(data, **new_args)
             self.figure.canvas.draw_idle()
 
         if self.axes_ticks == 'off':

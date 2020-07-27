@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,12 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import gc
+
 import numpy as np
 import pytest
 
-from hyperspy import signals
-from hyperspy import components1d
+from hyperspy import components1d, signals
 from hyperspy.decorators import lazifyTestClass
+
+
+def teardown_module(module):
+    """ Run a garbage collection cycle at the end of the test of this module
+    to avoid any memory issue when continuing running the test suite.
+    """
+    gc.collect()
 
 
 @lazifyTestClass
@@ -34,15 +42,14 @@ class TestRemoveBackground1DGaussian:
         gaussian.centre.value = 10
         gaussian.sigma.value = 1
         self.signal = signals.Signal1D(
-            gaussian.function(np.arange(0, 20, 0.01)))
+            gaussian.function(np.arange(0, 20, 0.02)))
         self.signal.axes_manager[0].scale = 0.01
 
     def test_background_remove_gaussian(self, binning):
         self.signal.metadata.Signal.binned = binning
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='Gaussian',
-            show_progressbar=None)
+            background_type='Gaussian')
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
     def test_background_remove_gaussian_full_fit(self, binning):
@@ -50,6 +57,34 @@ class TestRemoveBackground1DGaussian:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+
+@lazifyTestClass
+class TestRemoveBackground1DLorentzian:
+
+    def setup_method(self, method):
+        lorentzian = components1d.Lorentzian()
+        lorentzian.A.value = 10
+        lorentzian.centre.value = 10
+        lorentzian.gamma.value = 1
+        self.signal = signals.Signal1D(
+            lorentzian.function(np.arange(0, 20, 0.03)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+
+    def test_background_remove_lorentzian(self):
+        # Fast is not accurate
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Lorentzian')
+        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
+
+    def test_background_remove_lorentzian_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Lorentzian',
             fast=False)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
@@ -75,8 +110,7 @@ class TestRemoveBackground1DPowerLaw:
     def test_background_remove_pl(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='PowerLaw',
-            show_progressbar=None)
+            background_type='PowerLaw')
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=self.atol)
         assert s1.axes_manager.navigation_dimension == 0
@@ -85,8 +119,7 @@ class TestRemoveBackground1DPowerLaw:
         s1 = self.signal_noisy.remove_background(
             signal_range=(110.0, 190.0),
             background_type='PowerLaw',
-            zero_fill=True,
-            show_progressbar=None)
+            zero_fill=True)
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
                            atol=self.atol_zero_fill)
@@ -96,8 +129,7 @@ class TestRemoveBackground1DPowerLaw:
         self.signal.change_dtype("int")
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='PowerLaw',
-            show_progressbar=None)
+            background_type='PowerLaw')
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=self.atol)
 
@@ -106,41 +138,12 @@ class TestRemoveBackground1DPowerLaw:
         s1 = self.signal_noisy.remove_background(
             signal_range=(110.0, 190.0),
             background_type='PowerLaw',
-            zero_fill=True,
-            show_progressbar=None)
+            zero_fill=True)
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
                            atol=self.atol_zero_fill)
         assert np.allclose(s1.data[:10], np.zeros(10))
 
-
-@lazifyTestClass
-class TestRemoveBackground1DLorentzian:
-
-    def setup_method(self, method):
-        lorentzian = components1d.Lorentzian()
-        lorentzian.A.value = 10
-        lorentzian.centre.value = 10
-        lorentzian.gamma.value = 1
-        self.signal = signals.Signal1D(
-            lorentzian.function(np.arange(0, 20, 0.01)))
-        self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
-
-    def test_background_remove_lorentzian(self):
-        # Fast is not accurate
-        s1 = self.signal.remove_background(
-            signal_range=(None, None),
-            background_type='Lorentzian',
-            show_progressbar=None)
-        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
-
-    def test_background_remove_lorentzian_full_fit(self):
-        s1 = self.signal.remove_background(
-            signal_range=(None, None),
-            background_type='Lorentzian',
-            fast=False)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
 @lazifyTestClass
 class TestRemoveBackground1DSkewNormal:
@@ -160,14 +163,71 @@ class TestRemoveBackground1DSkewNormal:
         # Fast is not accurate
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='SkewNormal',
-            show_progressbar=None)
+            background_type='SkewNormal')
         assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
 
     def test_background_remove_skewnormal_full_fit(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='SkewNormal',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+
+@lazifyTestClass
+class TestRemoveBackground1DVoigt:
+
+    def setup_method(self, method):
+        voigt = components1d.Voigt(legacy=False)
+        voigt.area.value = 5
+        voigt.centre.value = 10
+        voigt.gamma.value = 0.2
+        voigt.sigma.value = 0.5
+        self.signal = signals.Signal1D(
+            voigt.function(np.arange(0, 20, 0.03)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+
+    def test_background_remove_voigt(self):
+        # resort to fast=False as estimator guesses only Gaussian width
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Voigt',
+            fast=False)
+        assert np.allclose(np.zeros(len(s1.data)), s1.data)
+
+    def test_background_remove_voigt_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Voigt',
+            fast=False)
+        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+
+
+@lazifyTestClass
+class TestRemoveBackground1DExponential:
+
+    def setup_method(self, method):
+        exponential = components1d.Exponential()
+        exponential.A.value = 12500.
+        exponential.tau.value = 168.
+        self.signal = signals.Signal1D(
+            exponential.function(np.arange(100, 200, 0.02)))
+        self.signal.axes_manager[0].scale = 0.01
+        self.signal.metadata.Signal.binned = False
+        self.atol = 0.04 * abs(self.signal.data).max()
+
+    def test_background_remove_exponential(self):
+        # Fast is not accurate
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Exponential')
+        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=self.atol)
+
+    def test_background_remove_exponential_full_fit(self):
+        s1 = self.signal.remove_background(
+            signal_range=(None, None),
+            background_type='Exponential',
             fast=False)
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
@@ -190,8 +250,8 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
 @pytest.mark.parametrize('background_type',
-                          ['Power Law', 'Polynomial', 'Offset',
-                          'Gaussian', 'Lorentzian', 'SkewNormal'])
+                         ['Gaussian', 'Lorentzian', 'Polynomial', 'Power Law',
+                          'Offset', 'SkewNormal', 'Voigt'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,
@@ -199,9 +259,17 @@ def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       plot_remainder,
                                                       background_type):
     if nav_dim == 0:
-        s = signals.Signal1D(np.arange(10, 100)[::-1])
+        if background_type == ('Voigt'):  # speeds up the test
+            s = signals.Signal1D(np.hstack((np.arange(10, 50),
+                                            np.arange(10, 50)[::-1])))
+        else:
+            s = signals.Signal1D(np.arange(10, 100)[::-1])
     else:
-        s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
+        if background_type == ('Voigt'):  # avoids warning
+            s = signals.Signal1D(
+                np.tile(np.exp(np.arange(0, 100)[::-1]), (2, 1)))
+        else:
+            s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
     s.axes_manager[0].name = 'axis0'
     s.axes_manager[0].units = 'units0'
     s.axes_manager[0].scale = 0.9

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,9 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 
 from hyperspy.components1d import GaussianHF
 from hyperspy.signals import Signal1D
@@ -50,7 +51,8 @@ def test_integral_as_signal():
     g2 = GaussianHF()
     m.append(g2)
     g2.estimate_parameters(s, 0, 100, True)
-    m.multifit()
+    # HyperSpy 2.0: remove setting iterpath='serpentine'
+    m.multifit(iterpath='serpentine')
     s_out = g2.integral_as_signal()
     ref = (h_ref * 3.33 * sqrt2pi / sigma2fwhm).reshape(s_out.data.shape)
     assert_allclose(s_out.data, ref)
