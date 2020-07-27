@@ -193,8 +193,8 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     References
     ----------
-    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner. 
-       “Automated Spatial Drift Correction for EFTEM Image Series.” 
+    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
+       “Automated Spatial Drift Correction for EFTEM Image Series.”
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
@@ -800,31 +800,39 @@ class Signal2D(BaseSignal, CommonSignal2D):
         method : str
              Select peak finding algorithm to implement. Available methods
              are:
-                 'local_max' - simple local maximum search using the
-                 :py:func:`skimage.feature.peak_local_max` function
 
-                 'max' - simple local maximum search - call the peak finder
-                 implemented in `scikit-image` which uses a maximum filter
+             * 'local_max' - simple local maximum search using the
+               :py:func:`skimage.feature.peak_local_max` function
+             * 'max' - simple local maximum search using the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_max`.
+             * 'minmax' - finds peaks by comparing maximum filter results
+               with minimum filter, calculates centers of mass. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax`
+               function.
+             * 'zaefferer' - based on gradient thresholding and refinement
+               by local region of interest optimisation. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_zaefferer`
+               function.
+             * 'stat' - based on statistical refinement and difference with
+               respect to mean intensity. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_stat`
+               function.
+             * 'laplacian_of_gaussian' - a blob finder using the laplacian of
+               Gaussian matrices approach. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               function.
+             * 'difference_of_gaussian' - a blob finder using the difference
+               of Gaussian matrices approach. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               function.
+             * 'template_matching' - A cross correlation peakfinder. This
+               method requires providing a template with the ``template``
+               parameter, which is used as reference pattern to perform the
+               template matching to the signal. It uses the
+               :py:func:`skimage.feature.match_template` function and the peaks
+               position are obtained by using `minmax` method on the
+               template matching result.
 
-                 'minmax' - finds peaks by comparing maximum filter results
-                 with minimum filter, calculates centers of mass
-
-                 'zaefferer' - based on gradient thresholding and refinement
-                 by local region of interest optimisation
-
-                 'stat' - statistical approach requiring no free params.
-                 'massiel' - finds peaks in each direction and compares the
-                 positions where these coincide.
-
-                 'laplacian_of_gaussian' - a blob finder implemented in
-                 `scikit-image` which uses the laplacian of Gaussian
-                 matrices approach.
-
-                 'difference_of_gaussian' - a blob finder implemented in
-                 `scikit-image` which uses the difference of Gaussian
-                 matrices approach.
-
-                 'template_matching' - A cross correlation peakfinder
         interactive : bool
             If True, the method parameter can be adjusted interactively.
             If False, the results will be returned.
@@ -835,11 +843,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
         %s
         %s
 
-        **kwargs : associated with above methods.
+        **kwargs : dict
+            Keywords parameters associated with above methods, see the
+            documentation of each method for more details.
 
         Notes
         -----
-        As a convenience, the 'local_max' method accepts the 'distance' and 
+        As a convenience, the 'local_max' method accepts the 'distance' and
         'threshold' argument, which will be map to the 'min_distance' and
         'threshold_abs' of the :py:func:`skimage.feature.peak_local_max`
         function.
@@ -862,7 +872,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             'template_matching' : find_peaks_xc,
         }
         # As a convenience, we map 'distance' to 'min_distance' and
-        # 'threshold' to 'threshold_abs' when using the 'local_max' method to 
+        # 'threshold' to 'threshold_abs' when using the 'local_max' method to
         # match with the arguments of skimage.feature.peak_local_max.
         if method == 'local_max':
             if 'distance' in kwargs.keys():
@@ -876,7 +886,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                       "implemented. See documentation for "
                                       "available implementations.")
         if interactive:
-            # Create a peaks signal with the same navigation shape as a 
+            # Create a peaks signal with the same navigation shape as a
             # placeholder for the output
             axes_dict = self.axes_manager._get_axes_dicts(
                 self.axes_manager.navigation_axes)

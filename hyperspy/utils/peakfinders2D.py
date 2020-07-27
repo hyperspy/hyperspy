@@ -261,7 +261,10 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
     """
     from scipy.ndimage.filters import generic_filter
     from scipy.ndimage.filters import uniform_filter
-    from sklearn.cluster import DBSCAN
+    try:
+        from sklearn.cluster import DBSCAN
+    except ImportError:
+        raise ImportError("This method requires scikit-learn.")
 
     def normalize(image):
         """Scales the image to intensities between 0 and 1."""
@@ -430,9 +433,9 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
 
 def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
     """Find peaks in the cross correlation between the image and a template by
-    using the :py:func:`hyperspy.utils.peakfinder2D.find_peaks_minmax` function
-    to find the peaks on the cross correlation obtained using the
-    :py:func:`sklearn.feature.template.match_template` function.
+    using the :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax` function
+    to find the peaks on the cross correlation result obtained using the
+    :py:func:`skimage.feature.match_template` function.
 
     Parameters
     ----------
@@ -446,7 +449,7 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
         Minimum difference between maximum and minimum filtered images.
     **kwargs : dict
         Keyword arguments to be passed to the
-        :py:func:`sklearn.feature.template.match_template` function.
+        :py:func:`skimage.feature.match_template` function.
 
     Returns
     -------
@@ -454,7 +457,7 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
         (n_peaks, 2)
         Array of peak coordinates.
     """
-    pad_input = kwargs.pop('pad_input', True)   
+    pad_input = kwargs.pop('pad_input', True)
     response_image = match_template(z, template, pad_input=pad_input, **kwargs)
     peaks = find_peaks_minmax(response_image,
                               distance=distance,
