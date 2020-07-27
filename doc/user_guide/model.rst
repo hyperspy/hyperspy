@@ -6,7 +6,9 @@ two-dimensional signals (images) in `n`-dimensional data sets.
 Models are defined by adding individual functions (components in HyperSpy's
 terminology) to a :py:class:`~.model.BaseModel` instance. Those individual
 components are then summed to create the final model function that can be
-fitted to the data, optionally using bounds and weights.
+fitted to the data, by adjusting the free parameters of the individual
+components.
+
 
 Models can be created and fit to experimental data in both one and two
 dimensions i.e. spectra and images respectively. Most of the syntax is
@@ -271,16 +273,20 @@ attribute name, component name and component type will be printed:
     ---- | -------------------- | -------------------- | ---------------------
 
 
-In fact, components may be created automatically in some cases. For example, if
-the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
-power-law background component will automatically be placed in the model. To
-add a component, first we have to create an instance of the component. Once
-the instance has been created we can add the component to the model using
-the :py:meth:`~.model.BaseModel.append` and :py:meth:`~.model.BaseModel.extend`
-methods for one or more components respectively.
+.. note:: Sometimes components may be created automatically. For example, if
+   the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
+   power-law background component may automatically be added to the model.
+   Therefore, the table above may not all may empty on model creation.
 
-As an example for a type of data that can be modelled using Gaussians,
-we might proceed as follows:
+To add a component to the model, first we have to create an instance of the
+component.
+Once the instance has been created we can add the component to the model
+using the :py:meth:`~.model.BaseModel.append` and
+:py:meth:`~.model.BaseModel.extend` methods for one or more components
+respectively.
+
+As an example, let's add several :py:class:`~._components.gaussian.Gaussian`
+components to the model:
 
 .. code-block:: python
 
@@ -325,7 +331,7 @@ We can customise the name of the components.
        2 |              Nitrogen |              Nitrogen |            Gaussian
 
 
-Two components cannot have the same name.
+Notice that two components cannot have the same name:
 
 .. code-block:: python
 
@@ -375,34 +381,9 @@ enables tab completion.
 It is possible to "switch off" a component by setting its
 ``active`` attribute to ``False``. When a component is
 switched off, to all effects it is as if it was not part of the model. To
-switch it on simply set the ``active`` attribute back to ``True``.
+switch it back on simply set the ``active`` attribute back to ``True``.
 
-
-.. _Component.print_current_values:
-
-The current values of a component can be visualised using the
-:py:attr:`~.component.Component.print_current_values()` method. The
-IPython display function elegantly presents it using HTML
-and allows for correct copying and pasting into Excel spreadsheets.
-Alternatively, a simpler form can be shown by setting the
-``fancy`` argument to ``False``
-
-.. code-block:: python
-
-    >>> m = s.create_model()
-    >>> m.fit()
-    >>> G = m[1]
-    >>> G.print_current_values(fancy=False)
-    Gaussian: Al_Ka
-    Active: True
-    Parameter Name |  Free |      Value |        Std |        Min
-    ============== | ===== | ========== | ========== | ==========
-                 A |  True | 62894.6824 | 1039.40944 |        0.0
-             sigma | False | 0.03253440 |       None |       None
-            centre | False |     1.4865 |       None |       None
-
-
-In multidimensional signals it is possible to store the value of the
+In multi-dimensional signals it is possible to store the value of the
 ``active`` attribute at each navigation index.
 To enable this feature for a given component set the
 :py:attr:`~.component.Component.active_is_multidimensional` attribute to
@@ -429,6 +410,7 @@ To enable this feature for a given component set the
     >>> g1.active_is_multidimensional = False
     >>> g1._active_array is None
     True
+
 
 .. _model_indexing-label:
 
@@ -464,8 +446,32 @@ terminal view with the argument ``fancy=False``. One can also filter for only ac
 components and only showing component with free parameters with the arguments
 ``only_active`` and ``only_free``, respectively.
 
-The current coordinates can be either set by navigating the :py:meth:`~.model.BaseModel.plot`, or specified by
-pixel indices in ``m.axes_manager.indices`` or as calibrated coordinates in
+.. _Component.print_current_values:
+
+The current values of a particular component can be printed using the
+:py:attr:`~.component.Component.print_current_values()` method. The
+IPython display function elegantly presents it using HTML
+and allows for correct copying and pasting into Excel spreadsheets.
+Alternatively, a simpler form can be shown by setting the
+``fancy`` argument to ``False``
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> m.fit()
+    >>> G = m[1]
+    >>> G.print_current_values(fancy=False)
+    Gaussian: Al_Ka
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min
+    ============== | ===== | ========== | ========== | ==========
+                 A |  True | 62894.6824 | 1039.40944 |        0.0
+             sigma | False | 0.03253440 |       None |       None
+            centre | False |     1.4865 |       None |       None
+
+The current coordinates can be either set by navigating the
+:py:meth:`~.model.BaseModel.plot`, or specified by pixel indices in
+``m.axes_manager.indices`` or as calibrated coordinates in
 ``m.axes_manager.coordinates``.
 
 :py:attr:`~.component.Component.parameters` contains a list of the parameters
@@ -474,12 +480,13 @@ the free parameters.
 
 The value of a particular parameter in the current coordinates can be
 accessed by :py:attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
-To access an array of the value of the parameter across all
-navigation pixels, :py:attr:`component.Parameter.map['values']` (e.g. ``Gaussian.A.map["values"]``) can be used.
-On its own, :py:attr:`component.Parameter.map` returns a NumPy array with three elements:
-``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and standard error for
-each index. The last element shows whether the value has been set in a given index, either
-by a fitting procedure or manually.
+To access an array of the value of the parameter across all navigation
+pixels, :py:attr:`component.Parameter.map['values']` (e.g.
+``Gaussian.A.map["values"]``) can be used. On its own,
+:py:attr:`component.Parameter.map` returns a NumPy array with three elements:
+``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and
+standard error for each index. The last element shows whether the value has
+been set in a given index, either by a fitting procedure or manually.
 
 If a model contains several components with the same parameters, it is possible
 to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`.
