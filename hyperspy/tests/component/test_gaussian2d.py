@@ -17,10 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+
 import numpy as np
 from numpy.testing import assert_allclose
 
 from hyperspy.components2d import Gaussian2D
+
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
 
 

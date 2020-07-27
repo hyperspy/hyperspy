@@ -20,7 +20,6 @@ import os
 
 from numpy import dtype
 from numpy.testing import assert_allclose
-import pytest
 
 from hyperspy.io import load
 

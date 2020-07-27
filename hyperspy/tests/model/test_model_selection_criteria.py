@@ -18,9 +18,9 @@
 
 import numpy as np
 
-from hyperspy.utils.model_selection import AIC, AICc, BIC
-from hyperspy.signals import Signal1D
 from hyperspy.components1d import Gaussian, Lorentzian
+from hyperspy.signals import Signal1D
+from hyperspy.utils.model_selection import AIC, BIC, AICc
 
 
 class TestModelSelection:

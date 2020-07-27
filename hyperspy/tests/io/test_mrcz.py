@@ -16,13 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import tempfile
+from time import perf_counter, sleep
+
 import numpy as np
 import numpy.testing as npt
-import os
-import sys
-import tempfile
 import pytest
-from time import perf_counter, sleep
+
+from hyperspy import signals
+from hyperspy.io import load, save
+from hyperspy.misc.test_utils import assert_deep_almost_equal
+
 try:
     import blosc
     blosc_installed = True
@@ -34,9 +39,6 @@ try:
 except BaseException:
     mrcz_installed = False
 
-from hyperspy.io import load, save
-from hyperspy import signals
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 pytestmark = pytest.mark.skipif(
@@ -186,11 +188,3 @@ class TestPythonMrcz:
                              clevel=1, do_async=True)
         print("MRCZ Asychronous test finished in {} s".format(
             perf_counter() - t_start))
-
-
-if __name__ == '__main__':
-    theSuite = TestPythonMrcz()
-    parameters = _generate_parameters()
-    for parameter in parameters:
-        theSuite.test_MRC(*parameter)
-    theSuite.test_Async(parameter[0])

@@ -18,11 +18,10 @@
 
 
 import numpy as np
-
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D
-from hyperspy.component import Parameter, Component
+from hyperspy.component import Component, Parameter
 from hyperspy.components1d import Gaussian, Lorentzian, ScalableFixedPattern
 
 

@@ -37,8 +37,3 @@ def test_lazy_add_phase_ramp():
         np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4))).as_lazy()
     s.add_phase_ramp(-1, -1, -4)
     nt.assert_almost_equal(s.phase.data.compute(), 0)
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)

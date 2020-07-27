@@ -17,11 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import gc
+
 import numpy as np
 import pytest
 
-from hyperspy import signals
-from hyperspy import components1d
+from hyperspy import components1d, signals
 from hyperspy.decorators import lazifyTestClass
 
 

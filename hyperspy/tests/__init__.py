@@ -20,6 +20,7 @@ import os
 import warnings
 
 from hyperspy.defaults_parser import preferences
+
 preferences.General.show_progressbar = True
 
 # Check if we should fail on external deprecation messages

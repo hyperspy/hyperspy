@@ -18,15 +18,14 @@
 import sys
 
 import numpy as np
-
 from numpy.testing import assert_allclose, assert_raises
 
-from hyperspy.signals import EDSSEMSpectrum
-from hyperspy.defaults_parser import preferences
-from hyperspy.components1d import Gaussian
 from hyperspy import utils
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
+from hyperspy.misc.test_utils import assert_warns
+from hyperspy.signals import EDSSEMSpectrum
 
 
 @lazifyTestClass

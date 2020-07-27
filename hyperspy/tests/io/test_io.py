@@ -16,16 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import hashlib
+import os
+import tempfile
+from unittest.mock import patch
+
 import numpy as np
 import pytest
-import tempfile
+
 import hyperspy.api as hs
-
-from unittest.mock import patch
 from hyperspy.signals import Signal1D
-
 
 DIRPATH = os.path.dirname(__file__)
 FILENAME = 'test_io_overwriting.hspy'
