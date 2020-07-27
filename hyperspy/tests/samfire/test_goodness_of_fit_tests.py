@@ -17,9 +17,9 @@
 
 import numpy as np
 
+from hyperspy.components1d import Lorentzian
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Signal1D
-from hyperspy.components1d import Lorentzian
 
 
 class TestRedChisq:

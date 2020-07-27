@@ -20,7 +20,7 @@ import os
 import numpy as np
 import pytest
 
-from hyperspy import signals, model
+from hyperspy import signals
 from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.io import load

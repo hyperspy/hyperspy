@@ -1,9 +1,12 @@
 import tempfile
-import pytest
-import numpy as np
+
 import dask.array as da
 import h5py
+import numpy as np
+import pytest
+
 from hyperspy import api as hs
+
 try:
     import pyUSID as usid
     pyusid_installed = True

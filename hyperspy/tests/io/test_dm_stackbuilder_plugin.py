@@ -19,9 +19,9 @@
 
 import os
 
-from hyperspy.io import load
 from numpy.testing import assert_allclose
 
+from hyperspy.io import load
 
 my_path = os.path.dirname(__file__)
 

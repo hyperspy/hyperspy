@@ -18,8 +18,8 @@
 
 import numpy as np
 
-from hyperspy.signal import BaseSignal
 from hyperspy import utils
+from hyperspy.signal import BaseSignal
 
 
 class TestUtilsStack:

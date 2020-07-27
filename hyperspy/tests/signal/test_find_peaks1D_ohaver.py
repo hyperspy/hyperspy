@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 from hyperspy.api import load
 from hyperspy.decorators import lazifyTestClass
 

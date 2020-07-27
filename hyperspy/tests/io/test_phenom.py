@@ -18,7 +18,9 @@
 
 
 import os
+
 import pytest
+
 import hyperspy.api as hs
 
 try:

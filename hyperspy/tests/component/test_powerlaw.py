@@ -17,9 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 
 from hyperspy.components1d import PowerLaw
 from hyperspy.signals import Signal1D

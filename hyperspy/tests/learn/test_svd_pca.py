@@ -19,8 +19,8 @@
 import numpy as np
 import pytest
 
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.learn.svd_pca import svd_pca
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
 class TestSVDPCA:

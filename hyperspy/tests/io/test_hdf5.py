@@ -16,30 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
-from os import remove
-import sys
 import gc
-import time
+import os.path
+import sys
 import tempfile
+import time
+from os import remove
 
+import dask.array as da
 import h5py
 import numpy as np
-import dask
-import dask.array as da
 import pytest
-from distutils.version import LooseVersion
 
-from hyperspy.io import load
-from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-from hyperspy.utils import markers
-from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-
+from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.roi import Point2DROI
+from hyperspy.signal import BaseSignal
+from hyperspy.utils import markers
 
 my_path = os.path.dirname(__file__)
 
