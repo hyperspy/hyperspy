@@ -2,12 +2,11 @@ Model fitting
 *************
 
 HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
-two-dimensional signals (images) in `n`-dimensional data sets. Models can be
-created as a linear combination of predefined components and multiple
-optimization algorithms can be used to fit the model to experimental data.
-Bounds and weights are supported. The syntax for creating both kinds of model
-is essentially the same, as in this documentation any method referred to in
-the :py:class:`~.model.BaseModel` class is available for both kinds.
+two-dimensional signals (images) in `n`-dimensional data sets.
+Models are defined by adding individual functions (components in HyperSpy's
+terminology) to a :py:class:`~.model.BaseModel` instance. Those individual
+components are then summed to create the final model function that can be fitted
+to the data, optionally using bounds and weights.
 
 Models can be created and fit to experimental data in both one and two
 dimensions i.e. spectra and images respectively. Most of the syntax is
