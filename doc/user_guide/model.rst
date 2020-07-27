@@ -661,7 +661,7 @@ A good approach to choosing an optimization approach is to ask yourself
 the question "Do you want to...":
 
 * Apply bounds to your model parameter values?
-* Are gradient-based fitting algorithms appropriate for your model?
+* Use gradient-based fitting algorithms to accelerate your fit?
 * Estimate the standard deviations of the parameter values found by the fit?
 * Fit your data in the least-squares sense, or use another loss function?
 * Find the global optima for your parameters, or is a local optima acceptable?
@@ -714,7 +714,7 @@ Loss functions
 ^^^^^^^^^^^^^^
 
 HyperSpy supports a number of loss functions. The default is ``"ls"``,
-or the least-squares loss. For the vast majority of cases, this loss
+i.e. the least-squares loss. For the vast majority of cases, this loss
 function is appropriate, and has the additional benefit of supporting
 parameter error estimation and :ref:`goodness-of-fit <model.goodness_of_fit>`
 testing. However, if your data contains very low counts per pixel, or
