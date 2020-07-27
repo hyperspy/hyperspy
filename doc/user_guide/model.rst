@@ -5,8 +5,8 @@ HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
 two-dimensional signals (images) in `n`-dimensional data sets.
 Models are defined by adding individual functions (components in HyperSpy's
 terminology) to a :py:class:`~.model.BaseModel` instance. Those individual
-components are then summed to create the final model function that can be fitted
-to the data, optionally using bounds and weights.
+components are then summed to create the final model function that can be
+fitted to the data, optionally using bounds and weights.
 
 Models can be created and fit to experimental data in both one and two
 dimensions i.e. spectra and images respectively. Most of the syntax is
@@ -20,21 +20,19 @@ dimensional model is created for a :py:class:`~._signals.signal2d.Signal2D`.
     implemented for the :py:class:`~.models.model2d.Model2D` class.
 
 
-Binned/unbinned signals
------------------------
+Caveats
+-------
 
-Before creating a model verify that the ``Signal.binned`` metadata
-attribute of the signal is set to the correct value because the resulting
-model depends on this parameter. See :ref:`signal.binned` for more details.
-
-.. Warning::
-
-   When importing data that have been binned using other software, in
-   particular Gatan's DM, the stored values may be the averages of the
-   binned channels or pixels, instead of their sum, as would be required
-   for proper statistical analysis. We therefore cannot guarantee that
-   the statistics will be valid. We therefore strongly recommend that all
-   pre-fitting binning should be done using Hyperspy.
+* Before creating a model verify that the
+  :py:attr:`~.signal.BaseSignal.metadata.Signal.binned` metadata
+  attribute of the signal is set to the correct value because the resulting
+  model depends on this parameter. See :ref:`signal.binned` for more details.
+* When importing data that have been binned using other software, in
+  particular Gatan's DM, the stored values may be the averages of the
+  binned channels or pixels, instead of their sum, as would be required
+  for proper statistical analysis. We therefore cannot guarantee that
+  the statistics will be valid. We therefore strongly recommend that all
+  pre-fitting binning should be done using Hyperspy.
 
 Creating a model
 ----------------
