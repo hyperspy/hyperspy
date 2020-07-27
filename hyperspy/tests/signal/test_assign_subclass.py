@@ -16,17 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from collections import namedtuple
 
-import pytest
 import numpy as np
-import logging
+import pytest
 
 import hyperspy.api as hs
-from hyperspy.io import assign_signal_subclass
 from hyperspy import _lazy_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
-
+from hyperspy.io import assign_signal_subclass
 
 testcase = namedtuple('testcase', ['dtype', 'sig_dim', 'sig_type', 'cls'])
 
@@ -173,9 +172,3 @@ class TestConvertComplexSignal1D:
         assert isinstance(self.s, hs.signals.DielectricFunction)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
-
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)

@@ -1,13 +1,13 @@
 
 import os
-import traits.api as t
+import struct
+
 import numpy as np
 import numpy.testing as nt
 import pytest
-import struct
+import traits.api as t
 
 import hyperspy.api as hs
-
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'empad_data')
 FILENAME_STACK_RAW = os.path.join(DATA_DIR, 'series_x10.raw')

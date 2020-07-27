@@ -1,18 +1,17 @@
-import os.path
-import os
-import tempfile
 import gc
-import zipfile
 import hashlib
+import os
+import os.path
+import tempfile
+import zipfile
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 import pytest
 import requests
+from numpy.testing import assert_allclose, assert_equal
 
-from hyperspy.io import load
 from hyperspy import signals
-
+from hyperspy.io import load
 
 MY_PATH = os.path.dirname(__file__)
 ZIPF = os.path.join(MY_PATH, "edax_files.zip")

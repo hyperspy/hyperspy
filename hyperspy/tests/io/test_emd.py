@@ -21,23 +21,22 @@
 # NOT to be confused with the FEI EMD format which was developed later.
 
 
+import gc
 import os.path
-from os import remove
 import shutil
 import tempfile
-import gc
-
-from numpy.testing import assert_allclose
-import numpy as np
-import h5py
-from dateutil import tz
 from datetime import datetime
+from os import remove
+
+import h5py
+import numpy as np
 import pytest
+from dateutil import tz
+from numpy.testing import assert_allclose
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-
+from hyperspy.signals import BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D
 
 my_path = os.path.dirname(__file__)
 

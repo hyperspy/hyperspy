@@ -17,11 +17,11 @@
 
 from unittest import mock
 
-import numpy.testing as npt
 import numpy as np
-from scipy.misc import face, ascent
-from scipy.ndimage import fourier_shift
+import numpy.testing as npt
 import pytest
+from scipy.misc import ascent, face
+from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -187,8 +187,3 @@ def test_add_ramp_lazy():
     s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4).as_lazy()
     s.add_ramp(-1, -1, -4)
     npt.assert_almost_equal(s.data.compute(), 0)
-
-
-if __name__ == '__main__':
-    import pytest
-    pytest.main(__name__)

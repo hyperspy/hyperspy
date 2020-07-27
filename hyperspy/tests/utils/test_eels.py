@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 import pytest
 
 from hyperspy.misc.eels.tools import get_edges_near_energy
+
 
 def test_single_edge():
     edges = get_edges_near_energy(532, width=0)
@@ -34,4 +34,3 @@ def test_multiple_edges():
 def test_negative_energy_width():
     with pytest.raises(Exception):
         get_edges_near_energy(849, width=-5)
-        

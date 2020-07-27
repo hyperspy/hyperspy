@@ -18,10 +18,11 @@
 
 from unittest import mock
 
-from hyperspy.axes import AxesManager, serpentine_iter
-from hyperspy.signals import BaseSignal, Signal1D, Signal2D
-from hyperspy.defaults_parser import preferences
 from numpy import arange, zeros
+
+from hyperspy.axes import AxesManager
+from hyperspy.defaults_parser import preferences
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
 
 class TestAxesManager:

@@ -17,13 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from dateutil import tz, parser
-
+from dateutil import parser, tz
 from numpy.testing import assert_allclose
 
 import hyperspy.misc.date_time_tools as dtt
-from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
 def _get_example(date, time, time_zone=None):

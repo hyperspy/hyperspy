@@ -16,18 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import itertools
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 import inspect
+import itertools
+
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
-from hyperspy.models.model1d import Model1D
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy import components1d
 from hyperspy.component import Component
-
+from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.models.model1d import Model1D
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 

@@ -16,11 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import warnings
+
 import pytest
 import requests
-from hyperspy.misc.eels.eelsdb import eelsdb
 from requests.exceptions import SSLError
-import warnings
+
+from hyperspy.misc.eels.eelsdb import eelsdb
 
 
 def eelsdb_down():

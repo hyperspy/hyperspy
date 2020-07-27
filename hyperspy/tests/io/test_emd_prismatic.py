@@ -17,9 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 import numpy as np
-import traits.api as t
 import pytest
+import traits.api as t
 
 import hyperspy.api as hs
 
