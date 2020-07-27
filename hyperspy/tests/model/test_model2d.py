@@ -24,7 +24,6 @@ from scipy.optimize import OptimizeResult
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
-
 TOL = 1e-5
 
 

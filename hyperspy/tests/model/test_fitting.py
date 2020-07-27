@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import pytest
-import logging
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
-
 
 TOL = 1e-5
 
