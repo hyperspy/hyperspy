@@ -458,7 +458,7 @@ class TestFitErrorsAndWarnings:
         with caplog.at_level(logging.WARNING):
             self.m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
 
-        assert "weighted fitting not supported" in caplog.text
+        assert "weighted fitting is not supported" in caplog.text
 
 
 class TestCustomOptimization:
