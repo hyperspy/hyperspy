@@ -49,7 +49,7 @@ FACTOR_DOCSTRING = \
 class ndindex_nat(np.ndindex):
 
     def __next__(self):
-        return super(ndindex_nat, self).next()[::-1]
+        return super(ndindex_nat, self).__next__()[::-1]
 
 
 def generate_axis(offset, scale, size, offset_index=0):

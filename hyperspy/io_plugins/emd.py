@@ -512,7 +512,7 @@ def _get_keys_from_group(group):
 
 def _parse_sub_data_group_metadata(sub_data_group):
     metadata_array = sub_data_group['Metadata'][:, 0].T
-    mdata_string = metadata_array.tostring().decode("utf-8")
+    mdata_string = metadata_array.tobytes().decode("utf-8")
     return json.loads(mdata_string.rstrip('\x00'))
 
 

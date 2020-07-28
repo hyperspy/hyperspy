@@ -279,6 +279,25 @@ class Test2D:
         assert len(result) == 5
         nt.assert_array_almost_equal(result[0].data, self.data[0])
 
+    def test_split_step_size_list(self):
+        result = self.signal.split(step_sizes=[1, 2])
+        assert len(result) == 2
+        nt.assert_array_almost_equal(result[0].data, self.data[:1, :10])
+        nt.assert_array_almost_equal(result[1].data, self.data[1:3, :10])
+
+    def test_split_error(self):
+        with pytest.raises(
+            ValueError,
+            match="You can define step_sizes or number_of_parts but not both",
+        ):
+            _ = self.signal.split(number_of_parts=2, step_sizes=2)
+
+        with pytest.raises(
+            ValueError,
+            match="The number of parts is greater than the axis size.",
+        ):
+            _ = self.signal.split(number_of_parts=1e9)
+
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         assert isinstance(result, signals.Signal1D)

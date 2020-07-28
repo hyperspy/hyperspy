@@ -18,6 +18,7 @@
 
 import copy
 import itertools
+from distutils.version import LooseVersion
 import textwrap
 import traits.api as t
 import matplotlib.pyplot as plt
@@ -1273,9 +1274,9 @@ def plot_spectra(
         elif hasattr(line_style, "__iter__"):
             line_style = itertools.cycle(line_style)
         else:
-            raise ValueError("line_style must be None, a valid matplotlib"
-                             " line_style string or a list of valid matplotlib"
-                             " line_style.")
+            raise ValueError("line_style must be None, a valid matplotlib "
+                             "line_style string or a list of valid matplotlib "
+                             "line_style.")
     else:
         line_style = ['-'] * len(spectra)
 
@@ -1284,11 +1285,8 @@ def plot_spectra(
             if legend == 'auto':
                 legend = [spec.metadata.General.title for spec in spectra]
             else:
-                raise ValueError("legend must be None, 'auto' or a list of"
-                                 " string")
-
-        elif hasattr(legend, "__iter__"):
-            legend = itertools.cycle(legend)
+                raise ValueError("legend must be None, 'auto' or a list of "
+                                 "string")
 
     if style == 'overlap':
         if fig is None:
@@ -1378,7 +1376,8 @@ def animate_legend(fig=None, ax=None):
     lined = dict()
     leg = ax.get_legend()
     for legline, origline in zip(leg.get_lines(), lines):
-        legline.set_picker(5)  # 5 pts tolerance
+        legline.set_pickradius(5)  # 5 pts tolerance
+        legline.set_picker(True)
         lined[legline] = origline
 
     def onpick(event):
@@ -1471,3 +1470,14 @@ def plot_histograms(signal_list,
         line_style = 'steps'
     return plot_spectra(hists, style='overlap', color=color,
                         line_style=line_style, legend=legend, fig=fig)
+
+
+def picker_kwargs(value, kwargs={}):
+    # picker is deprecated in favor of pickradius
+    if LooseVersion(mpl.__version__) >= LooseVersion("3.3.0"):
+        kwargs.update({'pickradius': value, 'picker':True})
+    else:
+        kwargs['picker'] = value
+
+    return kwargs
+

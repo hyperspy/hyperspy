@@ -2577,6 +2577,10 @@ class BaseSignal(FancySlicing,
             A list of the split signals
 
         """
+        if number_of_parts != 'auto' and step_sizes != 'auto':
+            raise ValueError(
+                "You can define step_sizes or number_of_parts but not both."
+            )
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
@@ -2600,18 +2604,13 @@ class BaseSignal(FancySlicing,
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
             number_of_parts = len_axis
-        elif number_of_parts != 'auto' and step_sizes != 'auto':
-            raise ValueError(
-                "You can define step_sizes or number_of_parts "
-                "but not both.")
         elif step_sizes == 'auto':
             if number_of_parts > shape[axis]:
                 raise ValueError(
-                    "The number of parts is greater than "
-                    "the axis size.")
-            else:
-                step_sizes = ([shape[axis] // number_of_parts, ] *
-                              number_of_parts)
+                    "The number of parts is greater than the axis size."
+                )
+
+            step_sizes = ([shape[axis] // number_of_parts, ] * number_of_parts)
 
         if isinstance(step_sizes, numbers.Integral):
             step_sizes = [step_sizes] * int(len_axis / step_sizes)
