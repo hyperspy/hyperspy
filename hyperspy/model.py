@@ -1066,6 +1066,7 @@ class BaseModel(list):
         bounded=False,
         update_plot=False,
         print_info=False,
+        return_info=True,
         fd_scheme="2-point",
         **kwargs,
     ):
@@ -1546,6 +1547,12 @@ class BaseModel(list):
         if success is False:
             message = self.fit_output.get("message", "Unknown reason")
             _logger.warning(f"`m.fit()` did not exit successfully. Reason: {message}")
+
+        # Return info
+        if return_info:
+            return self.fit_output
+        else:
+            return None
 
     fit.__doc__ %= FIT_PARAMETERS_ARG
 

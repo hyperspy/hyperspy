@@ -89,6 +89,9 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             If True, print information about the fitting results, which
             are also stored in ``model.fit_output`` in the form of
             a :py:class:`scipy.optimize.OptimizeResult` object.
+        return_info : bool, default True
+            If True, returns the fitting results in the form of
+            a :py:class:`scipy.optimize.OptimizeResult` object.
         fd_scheme : str {"2-point", "3-point", "cs"}, default "2-point"
             If ``grad='fd'``, selects the finite difference scheme to use.
             See :py:func:`scipy.optimize.minimize` for details. Ignored if

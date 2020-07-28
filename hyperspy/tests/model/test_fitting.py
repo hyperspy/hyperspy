@@ -361,7 +361,7 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
 
-class TestFitPrintInfo:
+class TestFitPrintReturnInfo:
     def setup_method(self, method):
         np.random.seed(1)
         s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
@@ -389,9 +389,21 @@ class TestFitPrintInfo:
         assert "Fit info:" in captured.out
 
     def test_no_print_info(self, capfd):
-        self.m.fit(optimizer="lm")  # Default is print_info=False
+        # Default is print_info=False
+        self.m.fit(optimizer="lm")
         captured = capfd.readouterr()
         assert "Fit info:" not in captured.out
+
+    @pytest.mark.parametrize("optimizer", ["odr", "Nelder-Mead", "L-BFGS-B"])
+    def test_return_info(self, optimizer):
+        # Default is return_info=True
+        res = self.m.fit(optimizer=optimizer)
+        assert isinstance(res, OptimizeResult)
+
+    def test_no_return_info(self):
+        # Default is return_info=True
+        res = self.m.fit(optimizer="lm", return_info=False)
+        assert res is None
 
 
 class TestFitErrorsAndWarnings:

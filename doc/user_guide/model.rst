@@ -1028,18 +1028,24 @@ Optimization results
 
 After fitting the model, details about the optimization
 procedure, including whether it finished successfully,
-are stored in the attribute ``fit_output`` as a
-:py:class:`scipy.optimize.OptimizeResult` object. These
-details are often useful for diagnosing problems such
+are returned as :py:class:`scipy.optimize.OptimizeResult` object,
+according to the keyword argument ``return_info=True``.
+These details are often useful for diagnosing problems such
 as a poorly-fitted model or a convergence failure.
-You can also print this information using the
-``print_info`` keyword argument:
+You can also access the object as the ``fit_output`` attribute:
 
 .. code-block:: python
 
     >>> m.fit()
+    <scipy.optimize.OptimizeResult object>
+
     >>> type(m.fit_output)
     <scipy.optimize.OptimizeResult object>
+
+You can also print this information using the
+``print_info`` keyword argument:
+
+.. code-block:: python
 
     # Print the info to stdout
     >>> m.fit(optimizer="L-BFGS-B", print_info=True)
