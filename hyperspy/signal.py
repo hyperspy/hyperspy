@@ -2570,6 +2570,10 @@ class BaseSignal(FancySlicing,
             A list of the split signals
 
         """
+        if number_of_parts != 'auto' and step_sizes != 'auto':
+            raise ValueError(
+                "You can define step_sizes or number_of_parts but not both."
+            )
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
@@ -2593,18 +2597,13 @@ class BaseSignal(FancySlicing,
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
             number_of_parts = len_axis
-        elif number_of_parts != 'auto' and step_sizes != 'auto':
-            raise ValueError(
-                "You can define step_sizes or number_of_parts "
-                "but not both.")
         elif step_sizes == 'auto':
             if number_of_parts > shape[axis]:
                 raise ValueError(
-                    "The number of parts is greater than "
-                    "the axis size.")
-            else:
-                step_sizes = ([shape[axis] // number_of_parts, ] *
-                              number_of_parts)
+                    "The number of parts is greater than the axis size."
+                )
+
+            step_sizes = ([shape[axis] // number_of_parts, ] * number_of_parts)
 
         if isinstance(step_sizes, numbers.Integral):
             step_sizes = [step_sizes] * int(len_axis / step_sizes)
@@ -4703,7 +4702,7 @@ class BaseSignal(FancySlicing,
         if self._lazy:
             self._make_lazy()
 
-    def set_signal_type(self, signal_type=None):
+    def set_signal_type(self, signal_type=""):
         """Set the signal type and convert the current signal accordingly.
 
         The ``signal_type`` attribute specifies the type of data that the signal
@@ -4719,9 +4718,11 @@ class BaseSignal(FancySlicing,
 
         HyperSpy ships with a minimal set of known signal types. External
         packages can register extra signal types. To print a list of
-        registered signal types in the current installation run this method
-        without arguments. Note that
-
+        registered signal types in the current installation, call
+        :py:meth:`hyperspy.utils.print_known_signal_types`, and see
+        the developer guide for details on how to add new signal_types.
+        A non-exhaustive list of HyperSpy extensions is also maintained
+        here: https://github.com/hyperspy/hyperspy-extensions-list.
 
         Parameters
         ----------
@@ -4737,7 +4738,7 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        print_known_signal_types
+        * :py:meth:`hyperspy.utils.print_known_signal_types`
 
         Examples
         --------
@@ -4781,6 +4782,13 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (|4)>
 
         """
+        if signal_type is None:
+            warnings.warn(
+                "`s.set_signal_type(signal_type=None)` is deprecated. "
+                "Use `s.set_signal_type(signal_type='')` instead.",
+                VisibleDeprecationWarning
+            )
+
         self.metadata.Signal.signal_type = signal_type
         # _assign_subclass takes care of matching aliases with their
         # corresponding signal class

@@ -1,13 +1,12 @@
-import os
-
 import json
+import os
 
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from hyperspy.io import load
 from hyperspy import signals
+from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 test_files = ['30x30_instructively_packed_16bit_compressed.bcf',

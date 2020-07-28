@@ -22,7 +22,6 @@ import pytest
 from hyperspy.signals import Signal2D
 from hyperspy.utils import roi
 
-
 BASELINE_DIR = 'plot_roi'
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = 'default'

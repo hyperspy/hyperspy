@@ -36,15 +36,15 @@ Subpackages:
 
 
 """
-import hyperspy.utils.material
-import hyperspy.utils.eds
-import hyperspy.utils.plot
 import hyperspy.datasets.example_signals
+import hyperspy.utils.eds
+import hyperspy.utils.material
 import hyperspy.utils.model
-from hyperspy.misc.utils import (stack, transpose)
-from hyperspy.interactive import interactive
+import hyperspy.utils.plot
 import hyperspy.utils.roi
 import hyperspy.utils.samfire
+from hyperspy.interactive import interactive
+from hyperspy.misc.utils import stack, transpose
 
 
 def print_known_signal_types():

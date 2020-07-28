@@ -20,13 +20,12 @@ from unittest import mock
 
 import numpy as np
 import pytest
-import logging
 
 import hyperspy.api as hs
-from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.misc.utils import slugify
 
 RTOL = 1E-6
 

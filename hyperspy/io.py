@@ -198,10 +198,19 @@ def load(filenames=None,
     load_SI_image_stack : bool (default False)
         Only for Velox emd files: if True, load the stack of STEM images
         acquired simultaneously as the EDS spectrum image.
-    dataset_name : string or list, optional
+    dataset_path : None, str or list of str, optional
         For filetypes which support several datasets in the same file, this
         will only load the specified dataset. Several datasets can be loaded
-        by using a list of strings. Only for EMD (NCEM) files.
+        by using a list of strings. Only for EMD (NCEM) and hdf5 (USID) files.
+    stack_group : bool, optional
+        Only for EMD NCEM. Stack datasets of groups with common name. Relevant
+        for emd file version >= 0.5 where groups can be named 'group0000',
+        'group0001', etc.
+    ignore_non_linear_dims : bool, default is True
+        Only for HDF5 USID. If True, parameters that were varied non-linearly
+        in the desired dataset will result in Exceptions.
+        Else, all such non-linearly varied parameters will be treated as
+        linearly varied parameters and a Signal object will be generated.
     only_valid_data : bool, optional
         Only for FEI emi/ser file in case of series or linescan with the
         acquisition stopped before the end: if True, load only the acquired
@@ -404,18 +413,22 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
     return objects
 
 
-def assign_signal_subclass(dtype,
-                           signal_dimension,
-                           signal_type="",
-                           lazy=False):
-    """Given record_by and signal_type return the matching Signal subclass.
+def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
+    """Given dtype, signal_dimension and signal_type, return the matching Signal subclass.
+
+    See `hs.print_known_signal_types()` for a list of known signal_types,
+    and the developer guide for details on how to add new signal_types.
 
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
-    signal_dimension: int
-    signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
-    lazy: bool
+        Signal dtype
+    signal_dimension : int
+        Signal dimension
+    signal_type : str, default ""
+        Signal type. Optional. Will log a warning if it is unknown to HyperSpy.
+    lazy : bool, default False
+        If True, returns the matching LazySignal subclass.
 
     Returns
     -------
@@ -430,7 +443,7 @@ def assign_signal_subclass(dtype,
           'object' in dtype.name):
         dtype = 'real'
     else:
-        raise ValueError('Data type "{}" not understood!'.format(dtype.name))
+        raise ValueError(f'Data type "{dtype.name}" not understood!')
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
 
@@ -444,10 +457,27 @@ def assign_signal_subclass(dtype,
                               if signal_type == value["signal_type"] or
                               "signal_type_aliases" in value and
                               signal_type in value["signal_type_aliases"]}
+
+    valid_signal_types = [v["signal_type"] for v in signals.values()]
+    valid_signal_aliases = [
+        v["signal_type_aliases"]
+        for v in signals.values()
+        if "signal_type_aliases" in v
+    ]
+    valid_signal_aliases = [i for j in valid_signal_aliases for i in j]
+    valid_signal_types.extend(valid_signal_aliases)
+
     if dtype_dim_type_matches:
         # Perfect match found
         signal_dict = dtype_dim_type_matches
     else:
+        if signal_type not in set(valid_signal_types):
+            _logger.warning(
+                f"`signal_type='{signal_type}'` not understood. "
+                f"See `hs.print_known_signal_types()` for a list of known signal types, "
+                f"and the developer guide for details on how to add new signal_types."
+            )
+
         # If the following dict is not empty, only signal_dimension and dtype match.
         # The dict should contain a general class for the given signal
         # dimension.
@@ -473,14 +503,7 @@ def assign_signal_subclass(dtype,
     for key, value in signal_dict.items():
         signal_class = getattr(importlib.import_module(value["module"]), key)
 
-        if value["signal_type"] == "":
-            _logger.warning(
-                f"`signal_type='{signal_type}'` not understood. "
-                f"Setting signal type to `{key}`"
-            )
-
         return signal_class
-
 
 def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary

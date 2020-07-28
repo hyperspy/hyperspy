@@ -17,16 +17,16 @@
 
 import os
 from shutil import copyfile
-import numpy as np
-import scipy.misc
-import pytest
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+import scipy.misc
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.signals import Signal1D
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
-
 
 scalebar_color = 'blue'
 default_tol = 2.0

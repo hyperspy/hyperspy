@@ -17,21 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import warnings
-import os
 import gc
+import os
 import tempfile
+import warnings
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 
+import hyperspy.api as hs
 from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
-import hyperspy.api as hs
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
-
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 try:
     WindowsError

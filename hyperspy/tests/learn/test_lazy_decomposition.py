@@ -19,9 +19,9 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import Signal1D
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+from hyperspy.signals import Signal1D
 
 
 class TestLazyDecomposition:

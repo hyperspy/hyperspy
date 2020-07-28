@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-
 import pytest
 from numpy.testing import assert_allclose
 

@@ -18,10 +18,8 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
-import pytest
 
 from hyperspy.components1d import Arctan
-from hyperspy.signals import Signal1D
 
 
 def test_function():

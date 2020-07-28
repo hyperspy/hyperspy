@@ -18,9 +18,8 @@
 
 
 import numpy as np
-import numpy.testing as nt
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -173,9 +172,3 @@ def test_argand_diagram():
     with pytest.raises(NotImplementedError):
         s1d = s1d.as_lazy()
         s1d.argand_diagram()
-
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)

@@ -16,21 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
 import gc
+import os.path
 import tempfile
+
 import numpy as np
 import pytest
-from hyperspy.io import load
-from hyperspy.io_plugins.nexus import read_metadata_from_file,\
-    list_datasets_in_file, file_writer, _is_int, _is_numeric_data,\
-    _fix_exclusion_keys, _byte_to_string
-import hyperspy.api as hs
-from hyperspy.signal import BaseSignal
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
 import traits.api as t
 
+import hyperspy.api as hs
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
+from hyperspy.io import load
+from hyperspy.io_plugins.nexus import (_byte_to_string, _fix_exclusion_keys,
+                                       _is_int, _is_numeric_data, file_writer,
+                                       list_datasets_in_file,
+                                       read_metadata_from_file)
+from hyperspy.signal import BaseSignal
 
 dirpath = os.path.dirname(__file__)
 

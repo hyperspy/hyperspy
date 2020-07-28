@@ -1,5 +1,6 @@
-import numpy as N
 import copy
+
+import numpy as N
 
 from hyperspy.external.mpfit.mpfit import mpfit
 
@@ -75,6 +76,3 @@ def test_rosenbrock():
     assert N.allclose(m.params, pactual)
     assert N.allclose(m.fnorm, 0)
     return
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -36,7 +36,6 @@ import sys
 import zlib
 import os
 import warnings
-import re
 
 #Maybe later we can implement reading the class with the io utils tools instead
 #of re-defining read functions in the class
@@ -47,7 +46,6 @@ import re
 
 #DictionaryTreeBrowser class handles the fancy metadata dictionnaries
 #from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.docstrings.signal import OPTIMIZE_ARG
 from hyperspy.exceptions import MountainsMapFileError
 
 _logger = logging.getLogger(__name__)
@@ -1224,7 +1222,7 @@ class DigitalSurfHandler(object):
             #set to 0 instead of 1 in non-spectral data to compute the
             #space occupied by data in the file
             readsize = Npts_tot*Psize
-            if Wsize is not 0:
+            if Wsize != 0:
                 readsize*=Wsize
             #if Npts_channel is not 0:
             #    readsize*=Npts_channel

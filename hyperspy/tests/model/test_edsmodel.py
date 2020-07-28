@@ -18,12 +18,12 @@
 
 import numpy as np
 
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
-from hyperspy.decorators import lazifyTestClass
-from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.misc.test_utils import assert_warns
 
 
 @lazifyTestClass

@@ -17,11 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
 import numpy as np
+import pytest
 
 from hyperspy.misc.array_tools import dict2sarray
-
 
 dt = [('x', np.uint8), ('y', np.uint16), ('text', (bytes, 6))]
 
