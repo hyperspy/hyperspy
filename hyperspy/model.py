@@ -1062,7 +1062,7 @@ class BaseModel(list):
         self,
         optimizer="lm",
         loss_function="ls",
-        grad="auto",
+        grad="fd",
         bounded=False,
         update_plot=False,
         print_info=False,
@@ -1274,7 +1274,7 @@ class BaseModel(list):
                 raise ValueError(f"`grad='analytical' is not supported: {_jac_err_msg}")
         elif callable(grad):
             grad = partial(grad, self)
-        elif grad == "auto":
+        elif grad == "fd":
             if optimizer in ["lm", "odr"]:
                 grad = None
             elif optimizer in _supported_deriv_free:

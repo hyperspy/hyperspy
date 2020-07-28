@@ -81,7 +81,7 @@ class TestModelFitBinnedLeastSquares:
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     @pytest.mark.parametrize(
         "bounded, expected",
         [(False, (250.66282746, 50.0, 5.0)), (True, (257.48162397, 55.0, 7.76886132))],
@@ -100,10 +100,7 @@ class TestModelFitBinnedLeastSquares:
 
     @pytest.mark.parametrize(
         "grad, expected",
-        [
-            ("auto", (250.66282746, 50.0, 5.0)),
-            ("analytical", (250.66282746, 50.0, 5.0)),
-        ],
+        [("fd", (250.66282746, 50.0, 5.0)), ("analytical", (250.66282746, 50.0, 5.0)),],
     )
     def test_fit_trf(self, grad, expected):
         self.m.fit(optimizer="trf", grad=grad)
@@ -118,7 +115,7 @@ class TestModelFitBinnedLeastSquares:
         "grad, expected",
         [
             (None, (250.66282746, 50.0, 5.0)),
-            ("auto", (250.66282746, 50.0, 5.0)),
+            ("fd", (250.66282746, 50.0, 5.0)),
             ("analytical", (250.66282746, 50.0, 5.0)),
         ],
     )
@@ -179,7 +176,7 @@ class TestModelFitBinnedScipyMinimize:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     @pytest.mark.parametrize(
         "loss_function, bounded, expected",
         [
@@ -203,7 +200,7 @@ class TestModelFitBinnedScipyMinimize:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     @pytest.mark.parametrize(
         "delta, expected",
         [
@@ -306,13 +303,13 @@ class TestModelWeighted:
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     def test_chisq(self, grad):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(grad=grad)
         np.testing.assert_allclose(self.m.chisq.data, 18.81652763)
 
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     def test_red_chisq(self, grad):
         self.m.fit(grad=grad)
         np.testing.assert_allclose(self.m.red_chisq.data, 0.02100059)
@@ -445,7 +442,7 @@ class TestFitErrorsAndWarnings:
 
     def test_wrong_fd_scheme(self):
         with pytest.raises(ValueError, match="`fd_scheme` must be one of"):
-            self.m.fit(optimizer="L-BFGS-B", grad="auto", fd_scheme="random")
+            self.m.fit(optimizer="L-BFGS-B", grad="fd", fd_scheme="random")
 
     @pytest.mark.parametrize("some_bounds", [True, False])
     def test_global_optimizer_wrong_bounds(self, some_bounds):

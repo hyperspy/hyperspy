@@ -64,12 +64,12 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
                   keyword argument (the default value is 1.0).
                 * callable supports passing your own minimization function.
 
-        grad : {"auto", "analytical", callable, None}, default "auto"
+        grad : {"fd", "analytical", callable, None}, default "fd"
             Whether to use information about the gradient of the loss function
             as part of the optimization. This parameter has no effect if
             ``optimizer`` is a derivative-free or global optimization method.
 
-                * "auto" uses a finite difference scheme (if available) for numerical
+                * "fd" uses a finite difference scheme (if available) for numerical
                   estimation of the gradient. The scheme can be further controlled
                   with the ``fd_scheme`` keyword argument.
                 * "analytical" uses the analytical gradient (if available) to speed
@@ -90,7 +90,7 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             are also stored in ``model.fit_output`` in the form of
             a :py:class:`scipy.optimize.OptimizeResult` object.
         fd_scheme : str {"2-point", "3-point", "cs"}, default "2-point"
-            If ``grad='auto'``, selects the finite difference scheme to use.
+            If ``grad='fd'``, selects the finite difference scheme to use.
             See :py:func:`scipy.optimize.minimize` for details. Ignored if
             ``optimizer`` is ``"lm"``, ``"trf"`` or ``"dogbox"``.
         **kwargs : keyword arguments

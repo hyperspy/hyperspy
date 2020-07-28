@@ -828,7 +828,7 @@ Poisson maximum likelihood estimation
 To avoid biased estimation in the case of data corrupted by Poisson noise
 with very few counts, we can use Poisson maximum likelihood estimation (MLE) instead.
 This is an unbiased estimator for Poisson noise. To perform MLE, we must
-use a general, non-linear optimizer from the ref:`table above <optimizers-table>`,
+use a general, non-linear optimizer from the :ref:`table above <optimizers-table>`,
 such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
@@ -944,6 +944,8 @@ passed, using the following signature:
 Using gradient information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 1.6 ``grad="analytical"`` and ``grad="fd"`` keyword arguments
+
 Optimization algorithms that take into account the gradient of
 the loss function will often out-perform so-called "derivative-free"
 optimization algorithms in terms of how rapidly they converge to a
@@ -965,7 +967,7 @@ Following the above examples:
     >>> m.append(line)
 
     >>> # Use a 2-point finite-difference scheme to estimate the gradient
-    >>> m.fit(grad="auto", fd_scheme="2-point")
+    >>> m.fit(grad="fd", fd_scheme="2-point")
 
     >>> # Use the analytical gradient
     >>> m.fit(grad="analytical")
@@ -1009,7 +1011,6 @@ on the ``centre`` parameter.
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
-    >>> g1.centre.bounded = True
     >>> m.fit(optimizer="lm", bounded=True)
     >>> m.print_current_values(fancy=False)
     Model1D:  histogram
@@ -1046,7 +1047,7 @@ You can also print this information using the
       optimizer=L-BFGS-B
       loss_function=ls
       bounded=False
-      grad="auto"
+      grad="fd"
     Fit result:
       hess_inv: <3x3 LbfgsInvHessProduct with dtype=float64>
        message: b'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'
