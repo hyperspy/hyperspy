@@ -18,13 +18,13 @@
 
 
 import itertools
+
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 
 from hyperspy.components1d import SplitVoigt
 from hyperspy.signals import Signal1D
-from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
@@ -59,4 +59,3 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert abs(g2.centre.value - g1.centre.value) <= 0.1
     assert abs(g2.sigma1.value - g1.sigma1.value) <= 0.1
     assert abs(g2.sigma2.value - g1.sigma2.value) <= 0.1
-

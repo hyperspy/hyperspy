@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 from hyperspy.api import load
 from hyperspy.decorators import lazifyTestClass
 
@@ -29,7 +30,7 @@ class TestFindPeaks1DOhaver():
     def setup_method(self, method):
         self.signal = load(
             my_path +
-            "/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5")
+            "/data/test_find_peaks1D_ohaver.hdf5")
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal

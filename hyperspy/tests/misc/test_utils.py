@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.utils import slugify, parse_quantity
-from hyperspy import roi
+from hyperspy.misc.utils import parse_quantity, slugify
 
 
 def test_slugify():

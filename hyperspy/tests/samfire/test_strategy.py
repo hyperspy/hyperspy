@@ -18,13 +18,12 @@
 
 
 import numpy as np
-
 from numpy.testing import assert_allclose
-from hyperspy.samfire_utils.strategy import (LocalStrategy,
-                                             GlobalStrategy)
-from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.signals import Signal1D
+
 from hyperspy.components1d import Gaussian
+from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.samfire_utils.strategy import GlobalStrategy, LocalStrategy
+from hyperspy.signals import Signal1D
 
 
 class someweight(object):

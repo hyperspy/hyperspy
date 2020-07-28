@@ -20,12 +20,10 @@
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
-
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
-
 
 dirpath = os.path.dirname(__file__)
 

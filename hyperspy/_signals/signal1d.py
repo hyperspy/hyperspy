@@ -53,7 +53,7 @@ from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 from hyperspy.misc.test_utils import ignore_warning
 
 
@@ -388,14 +388,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
         model = Model1D(self, dictionary=dictionary)
         return model
 
-    def shift1D(self,
-                shift_array,
-                interpolation_method='linear',
-                crop=True,
-                expand=False,
-                fill_value=np.nan,
-                parallel=None,
-                show_progressbar=None):
+    def shift1D(
+        self,
+        shift_array,
+        interpolation_method='linear',
+        crop=True,
+        expand=False,
+        fill_value=np.nan,
+        parallel=None,
+        show_progressbar=None,
+        max_workers=None,
+    ):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
 
@@ -416,6 +419,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
+        %s
         %s
         %s
 
@@ -494,6 +498,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                           size=axis.size,
                           show_progressbar=show_progressbar,
                           parallel=parallel,
+                          max_workers=max_workers,
                           ragged=False)
 
         if crop and not expand:
@@ -504,10 +509,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
                       ihigh)
 
         self.events.data_changed.trigger(obj=self)
-    shift1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    shift1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def interpolate_in_between(self, start, end, delta=3, parallel=None,
-                               show_progressbar=None, **kwargs):
+    def interpolate_in_between(
+        self, 
+        start,
+        end,
+        delta=3,        
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        **kwargs,
+    ):
         """Replace the data in a given range by interpolation.
         The operation is performed in place.
 
@@ -520,9 +533,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
             The windows around the (start, end) to use for interpolation
         %s
         %s
-        All extra keyword arguments are passed to
-        `scipy.interpolate.interp1d`. See the function documentation
-        for details.
+        %s
+        **kwargs :
+            All extra keyword arguments are passed to
+            :py:func:`scipy.interpolate.interp1d`. See the function documentation
+            for details.
 
         Raises
         ------
@@ -548,10 +563,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             return dat
         self._map_iterate(interpolating_function, ragged=False,
-                          parallel=parallel, show_progressbar=show_progressbar)
+                          parallel=parallel, show_progressbar=show_progressbar, max_workers=max_workers)
         self.events.data_changed.trigger(obj=self)
 
-    interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def _check_navigation_mask(self, mask):
         if mask is not None:
@@ -565,16 +580,19 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 raise ValueError("mask must be a BaseSignal with the same "
                                  "navigation_dimension as the current signal.")
 
-    def estimate_shift1D(self,
-                         start=None,
-                         end=None,
-                         reference_indices=None,
-                         max_shift=None,
-                         interpolate=True,
-                         number_of_interpolation_points=5,
-                         mask=None,
-                         show_progressbar=None,
-                         parallel=None):
+    def estimate_shift1D(
+        self,
+        start=None,
+        end=None,
+        reference_indices=None,
+        max_shift=None,
+        interpolate=True,
+        number_of_interpolation_points=5,
+        mask=None,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+    ):
         """Estimate the shifts in the current signal axis using
         cross-correlation.
         This method can only estimate the shift by comparing
@@ -608,12 +626,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
             and set to nan.
         %s
         %s
+        %s
 
         Returns
         -------
-        An array with the result of the estimation in the axis units. \
-        Although the computation is performed in batches if the signal is \
-        lazy, the result is computed in memory because it depends on the \
+        An array with the result of the estimation in the axis units. 
+        Although the computation is performed in batches if the signal is 
+        lazy, the result is computed in memory because it depends on the 
         current state of the axes that could change later on in the workflow.
 
         Raises
@@ -652,7 +671,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             ragged=False,
             parallel=parallel,
             inplace=False,
-            show_progressbar=show_progressbar,)
+            show_progressbar=show_progressbar,
+            max_workers=max_workers,
+        )
         shift_array = shift_signal.data
         if max_shift is not None:
             if interpolate is True:
@@ -668,7 +689,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             shift_array = shift_array.compute()
         return shift_array
 
-    estimate_shift1D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    estimate_shift1D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def align1D(self,
                 start=None,
@@ -875,11 +896,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     calibrate.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
 
-    def smooth_savitzky_golay(self,
-                              polynomial_order=None,
-                              window_length=None,
-                              differential_order=0,
-                              parallel=None, display=True, toolkit=None):
+    def smooth_savitzky_golay(
+        self,
+        polynomial_order=None,
+        window_length=None,
+        differential_order=0,
+        parallel=None,
+        max_workers=None,
+        display=True, 
+        toolkit=None,
+    ):
         """
         Apply a Savitzky-Golay filter to the data in place.
         If `polynomial_order` or `window_length` or `differential_order` are
@@ -900,6 +926,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         %s
         %s
+        %s
 
         Notes
         -----
@@ -911,7 +938,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis = self.axes_manager.signal_axes[0]
             self.map(savgol_filter, window_length=window_length,
                      polyorder=polynomial_order, deriv=differential_order,
-                     delta=axis.scale, ragged=False, parallel=parallel)
+                     delta=axis.scale, ragged=False, parallel=parallel, max_workers=max_workers)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -922,13 +949,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 smoother.window_length = window_length
             return smoother.gui(display=display, toolkit=toolkit)
 
-    smooth_savitzky_golay.__doc__ %= (PARALLEL_ARG, DISPLAY_DT, TOOLKIT_DT)
+    smooth_savitzky_golay.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG, DISPLAY_DT, TOOLKIT_DT)
 
-    def smooth_lowess(self,
-                      smoothing_parameter=None,
-                      number_of_iterations=None,
-                      show_progressbar=None,
-                      parallel=None, display=True, toolkit=None):
+    def smooth_lowess(
+        self,
+        smoothing_parameter=None,
+        number_of_iterations=None,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        display=True,
+        toolkit=None,
+    ):
         """
         Lowess data smoothing in place.
         If `smoothing_parameter` or `number_of_iterations` are None the method
@@ -942,6 +974,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         number_of_iterations: int or None
             The number of residual-based reweightings
             to perform.
+        %s
         %s
         %s
         %s
@@ -979,12 +1012,19 @@ class Signal1D(BaseSignal, CommonSignal1D):
                      return_sorted=False,
                      show_progressbar=show_progressbar,
                      ragged=False,
-                     parallel=parallel)
-    smooth_lowess.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, DISPLAY_DT,
-                              TOOLKIT_DT)
+                     parallel=parallel,
+                     max_workers=max_workers)
+    smooth_lowess.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, DISPLAY_DT, TOOLKIT_DT)
 
-    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None,
-                  parallel=None, display=True, toolkit=None):
+    def smooth_tv(
+        self,
+        smoothing_parameter=None,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        display=True,
+        toolkit=None,
+    ):
         """
         Total variation data smoothing in place.
 
@@ -993,6 +1033,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         smoothing_parameter: float or None
            Denoising weight relative to L2 minimization. If None the method
            is run in interactive mode.
+        %s
         %s
         %s
         %s
@@ -1011,10 +1052,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             self.map(_tv_denoise_1d, weight=smoothing_parameter,
                      ragged=False,
                      show_progressbar=show_progressbar,
-                     parallel=parallel)
+                     parallel=parallel,
+                     max_workers=max_workers)
 
-    smooth_tv.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, DISPLAY_DT,
-                          TOOLKIT_DT)
+    smooth_tv.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
@@ -1105,7 +1146,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         background_type : str
             The type of component which should be used to fit the background.
             Possible components:  Gaussian, Lorentzian, Offset, Polynomial,
-             PowerLaw, Exponential, SkewNormal, Voigt.
+            PowerLaw, Exponential, SkewNormal, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
@@ -1326,9 +1367,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self.events.data_changed.trigger(obj=self)
         return channels
 
-    def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
-                            subchannel=True, medfilt_radius=5, maxpeakn=30000,
-                            peakgroup=10, parallel=None):
+    def find_peaks1D_ohaver(
+        self,
+        xdim=None,
+        slope_thresh=0,
+        amp_thresh=None,
+        subchannel=True,
+        medfilt_radius=5,
+        maxpeakn=30000,
+        peakgroup=10,
+        parallel=None,
+        max_workers=None
+    ):
         """Find positive peaks along a 1D Signal. It detects peaks by looking 
         for downward zero-crossings in the first derivative that exceed 
         'slope_thresh'.
@@ -1345,28 +1395,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Parameters
         ----------
         slope_thresh : float, optional
-                       1st derivative threshold to count the peak;
-                       higher values will neglect broader features;
-                       default is set to 0.
+            1st derivative threshold to count the peak;
+            higher values will neglect broader features;
+            default is set to 0.
         amp_thresh : float, optional
-                     intensity threshold below which peaks are ignored;
-                     higher values will neglect smaller features;
-                     default is set to 10%% of max(y).
+            intensity threshold below which peaks are ignored;
+            higher values will neglect smaller features;
+            default is set to 10%% of max(y).
         medfilt_radius : int, optional
-                     median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt);
-                     if 0, no filter will be applied;
-                     default is set to 5.
+            median filter window to apply to smooth the data
+            (see :py:func:`scipy.signal.medfilt`);
+            if 0, no filter will be applied;
+            default is set to 5.
         peakgroup : int, optional
-                    number of points around the "top part" of the peak
-                    that are taken to estimate the peak height;
-                    default is set to 10
+            number of points around the "top part" of the peak
+            that are taken to estimate the peak height;
+            default is set to 10
         maxpeakn : int, optional
-                   number of maximum detectable peaks;
-                   default is set to 5000.
-        subchannel : bool, optional
-                 default is set to True.
-
+            number of maximum detectable peaks;
+            default is set to 5000.
+        subchannel : bool, default True
+            default is set to True.
+        %s
         %s
 
         Returns
@@ -1393,17 +1443,21 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          subchannel=subchannel,
                          ragged=True,
                          parallel=parallel,
+                         max_workers=max_workers,
                          inplace=False)
         return peaks.data
 
-    find_peaks1D_ohaver.__doc__ %= PARALLEL_ARG
+    find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def estimate_peak_width(self,
-                            factor=0.5,
-                            window=None,
-                            return_interval=False,
-                            parallel=None,
-                            show_progressbar=None):
+    def estimate_peak_width(
+        self,
+        factor=0.5,
+        window=None,
+        return_interval=False,
+        parallel=None,
+        show_progressbar=None,
+        max_workers=None,
+    ):
         """Estimate the width of the highest intensity of peak
         of the spectra at a given fraction of its maximum.
 
@@ -1426,6 +1480,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If True, returns 2 extra signals with the positions of the
             desired height fraction at the left and right of the
             peak.
+        %s
         %s
         %s
 
@@ -1474,7 +1529,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                  ragged=False,
                                  inplace=False,
                                  parallel=parallel,
-                                 show_progressbar=show_progressbar)
+                                 show_progressbar=show_progressbar,
+                                 max_workers=None)
         left, right = both.T.split()
         width = right - left
         if factor == 0.5:
@@ -1504,7 +1560,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             return width
 
-    estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
 
 class LazySignal1D(LazySignal, Signal1D):

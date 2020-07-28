@@ -19,8 +19,8 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import Signal1D
 from hyperspy.components1d import Expression
+from hyperspy.signals import Signal1D
 
 DEFAULT_TOL = 2.0
 BASELINE_DIR = 'plot_model1d'

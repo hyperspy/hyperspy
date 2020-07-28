@@ -17,3 +17,4 @@ HyperSpy Developer Guide
     lazy_computations.rst
     speeding_up_code.rst
     writing_extensions.rst
+    useful_information.rst

@@ -20,6 +20,7 @@ import logging
 
 import numpy as np
 import warnings
+from collections.abc import Iterable
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
@@ -550,7 +551,7 @@ class EDS_mixin:
 
         Parameters
         ----------
-        xray_lines: {None, list of string}
+        xray_lines: {None, Iterable* of strings}
             If None,
             if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
@@ -560,6 +561,8 @@ class EDS_mixin:
             for the operation.
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
+            * Note that while dictionaries and strings are iterable,
+            their use is ambiguous and specifically not allowed.
         integration_windows: Float or array
             If float, the width of the integration windows is the
             'integration_windows_width' times the calculated FWHM of the line.
@@ -616,6 +619,13 @@ class EDS_mixin:
         plot
 
         """
+        if xray_lines is not None and \
+            (not isinstance(xray_lines, Iterable) or \
+            isinstance(xray_lines, (str, dict))):
+
+            raise TypeError(
+                "xray_lines must be a compatible iterable, but was "
+                "mistakenly provided as a %s." % type(xray_lines))
 
         xray_lines = self._parse_xray_lines(xray_lines, only_one, only_lines)
         if hasattr(integration_windows, '__iter__') is False:

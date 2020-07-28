@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest import mock
 import sys
+from unittest import mock
 
-import numpy as np
 import dask.array as da
-from numpy.testing import assert_array_equal, assert_almost_equal
-import pytest
+import numpy as np
 import numpy.testing as nt
+import pytest
+from numpy.testing import assert_almost_equal, assert_array_equal
 
 from hyperspy import signals
+from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
-from hyperspy.components1d import Gaussian
 
 
 def _verify_test_sum_x_E(self, s):
@@ -296,6 +296,25 @@ class Test2D:
         result = self.signal.split()
         assert len(result) == 5
         nt.assert_array_almost_equal(result[0].data, self.data[0])
+
+    def test_split_step_size_list(self):
+        result = self.signal.split(step_sizes=[1, 2])
+        assert len(result) == 2
+        nt.assert_array_almost_equal(result[0].data, self.data[:1, :10])
+        nt.assert_array_almost_equal(result[1].data, self.data[1:3, :10])
+
+    def test_split_error(self):
+        with pytest.raises(
+            ValueError,
+            match="You can define step_sizes or number_of_parts but not both",
+        ):
+            _ = self.signal.split(number_of_parts=2, step_sizes=2)
+
+        with pytest.raises(
+            ValueError,
+            match="The number of parts is greater than the axis size.",
+        ):
+            _ = self.signal.split(number_of_parts=1e9)
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
