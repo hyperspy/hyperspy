@@ -1093,8 +1093,6 @@ class BaseModel(list):
         ``navigation_dimension`` as the signal, and ``loss_function``
         is ``"ls"`` or ``"huber"``, then a weighted fit is performed,
         using the inverse of the noise variance as the weights.
-        If the attribute is set and ``loss_function`` is
-        ``"ml-poisson"``, an error is raised.
 
         Note that for both homoscedastic and heteroscedastic noise, if
         ``metadata.Signal.Noise_properties.variance`` does not contain
@@ -1318,11 +1316,12 @@ class BaseModel(list):
             weights = self._convert_variance_to_weights()
 
             if weights is not None and loss_function == "ml-poisson":
-                raise ValueError(
-                    "Weighted fitting is not supported for `loss_function='ml_poisson'`. "
-                    "You must unset ``metadata.Signal.Noise_properties.variance`` to use "
-                    "this loss function."
+                _logger.warning(
+                    "The attribute ``metadata.Signal.Noise_properties.variance`` is set, "
+                    "but weighted fitting is not supported for `loss_function='ml_poisson'`. "
+                    "Will proceeding with unweighted fitting."
                 )
+                weights = None
 
             args = (self.signal()[np.where(self.channel_switches)], weights)
 
