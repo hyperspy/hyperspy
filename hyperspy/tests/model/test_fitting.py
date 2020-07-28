@@ -100,7 +100,7 @@ class TestModelFitBinnedLeastSquares:
 
     @pytest.mark.parametrize(
         "grad, expected",
-        [("fd", (250.66282746, 50.0, 5.0)), ("analytical", (250.66282746, 50.0, 5.0)),],
+        [("fd", (250.66282746, 50.0, 5.0)), ("analytical", (250.66282746, 50.0, 5.0))],
     )
     def test_fit_trf(self, grad, expected):
         self.m.fit(optimizer="trf", grad=grad)
