@@ -1316,11 +1316,9 @@ class BaseModel(list):
             weights = self._convert_variance_to_weights()
 
             if weights is not None and loss_function == "ml-poisson":
-                _logger.warning(
-                    "The attribute ``metadata.Signal.Noise_properties.variance`` is set, "
-                    "but weighted fitting is not supported for `loss_function='ml_poisson'`. "
-                    "Will proceeding with unweighted fitting."
-                )
+                # The attribute ``metadata.Signal.Noise_properties.variance`` is set,
+                # but weighted fitting is not supported for `loss_function='ml_poisson'`.
+                # Will proceed with unweighted fitting.
                 weights = None
 
             args = (self.signal()[np.where(self.channel_switches)], weights)

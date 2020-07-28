@@ -453,13 +453,6 @@ class TestFitErrorsAndWarnings:
         with pytest.raises(ValueError, match="Finite upper and lower bounds"):
             self.m.fit(optimizer="Differential Evolution", bounded=True)
 
-    def test_logger_warning_for_ml_poisson(self, caplog):
-        self.m.signal.set_noise_variance(2.0)
-        with caplog.at_level(logging.WARNING):
-            self.m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
-
-        assert "weighted fitting is not supported" in caplog.text
-
 
 class TestCustomOptimization:
     def setup_method(self, method):
