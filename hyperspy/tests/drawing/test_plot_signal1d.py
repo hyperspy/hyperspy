@@ -170,6 +170,19 @@ class TestPlotSpectra():
             plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
                 f.canvas, click, artist)
 
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_spectra_auto_update(self):
+        s = hs.signals.Signal1D(np.arange(100))
+        s2 = s / 2
+        ax = hs.plot.plot_spectra([s, s2])
+        s.data = -s.data
+        s.events.data_changed.trigger(s)
+        s2.data = -s2.data * 4 + 50
+        s2.events.data_changed.trigger(s2)
+
+        return ax.get_figure()
+
 
 @update_close_figure
 def test_plot_nav0_close():
