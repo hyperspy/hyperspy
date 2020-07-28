@@ -63,6 +63,7 @@ if import_sklearn.sklearn_installed:
         'spectralclustering' : import_sklearn.sklearn.cluster.SpectralClustering
     }
     cluster_preprocessing_algorithms = {
+        None: None,
         "norm": import_sklearn.sklearn.preprocessing.Normalizer,
         "standard": import_sklearn.sklearn.preprocessing.StandardScaler,
         "minmax": import_sklearn.sklearn.preprocessing.MinMaxScaler
@@ -2302,20 +2303,20 @@ class MVA:
         """Convenience method to lookup method if algorithm is a string
         or if it's an object check that the object has a fit_transform method
         """
-        if algorithm:
-            preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
-            if algorithm in preprocessing_methods:
+        preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
+        if algorithm in preprocessing_methods:
+            if algorithm is not None:
                 if not import_sklearn.sklearn_installed:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
                 process_algorithm = cluster_preprocessing_algorithms[algorithm](**kwargs)
-            elif hasattr(algorithm, "fit_transform"):
-                process_algorithm = algorithm
             else:
-                raise ValueError("The cluster preprocessing method should be either %s "
-                                 "or an object with a fit_transform method"%preprocessing_methods)
-            return process_algorithm
+                process_algorithm = None
+        elif hasattr(algorithm, "fit_transform"):
+            process_algorithm = algorithm
         else:
-            return None
+            raise ValueError("The cluster preprocessing method should be either %s "
+                             "or an object with a fit_transform method"%preprocessing_methods)
+        return process_algorithm
 
     def _distances_within_cluster(self, cluster_data, memberships,
                                   squared=True, summed=False):
