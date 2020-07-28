@@ -19,9 +19,9 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import Signal2D, Signal1D
-from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
-                          Line2DROI, CircleROI)
+from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
+                          RectangularROI, SpanROI)
+from hyperspy.signals import Signal1D, Signal2D
 
 
 class TestROIs():

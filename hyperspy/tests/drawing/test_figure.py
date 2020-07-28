@@ -18,10 +18,10 @@
 import numpy as np
 import pytest
 
-from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-from hyperspy.signals import Signal1D, Signal2D
 from hyperspy._components.polynomial import Polynomial
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.signals import Signal1D, Signal2D
 
 
 def test_figure_title_length():

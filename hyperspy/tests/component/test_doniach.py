@@ -18,6 +18,7 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
+
 from hyperspy.components1d import Doniach
 
 sqrt2pi = np.sqrt(2 * np.pi)
@@ -32,5 +33,3 @@ def test_function():
     g.alpha.value = 1.0e-7
     assert_allclose(g.function(2), 3.151281311482424)
     assert_allclose(g.function(1), 7.519884823893001)
-
-

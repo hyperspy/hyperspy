@@ -18,14 +18,14 @@
 
 from unittest import mock
 
-import numpy as np
-from scipy.signal import savgol_filter
-import pytest
 import dask.array as da
+import numpy as np
+import pytest
+from scipy.signal import savgol_filter
 
-from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.decorators import lazifyTestClass
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
 
 
 @lazifyTestClass

@@ -23,7 +23,6 @@ import numpy as np
 import pytest
 
 from hyperspy.component import Parameter
-from hyperspy.exceptions import NavigationDimensionError
 
 
 class Dummy:

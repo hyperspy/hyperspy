@@ -17,12 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 
-from hyperspy.signals import Signal1D
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose
+
 from hyperspy.components1d import Lorentzian
+from hyperspy.signals import Signal1D
 from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]

@@ -63,7 +63,6 @@ if import_sklearn.sklearn_installed:
         'spectralclustering' : import_sklearn.sklearn.cluster.SpectralClustering
     }
     cluster_preprocessing_algorithms = {
-        None : import_sklearn.sklearn.preprocessing.Normalizer,
         "norm": import_sklearn.sklearn.preprocessing.Normalizer,
         "standard": import_sklearn.sklearn.preprocessing.StandardScaler,
         "minmax": import_sklearn.sklearn.preprocessing.MinMaxScaler
@@ -2290,7 +2289,7 @@ class MVA:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
                 cluster_algorithm = cluster_algorithms[algorithm](**kwargs)
         elif algorithm is None:
-            cluster_algorithm = cluster_algorithms[None](**kwargs)        
+            cluster_algorithm = cluster_algorithms[None](**kwargs)
         elif hasattr(algorithm, "fit"):
             cluster_algorithm = algorithm
         else:
@@ -2298,28 +2297,29 @@ class MVA:
                              "or a class which has a fit() method and labels_"
                              " attribute for results"%algorithms_sklearn)
         return cluster_algorithm
-    
-    def _get_cluster_preprocessing_algorithm(self,algorithm,**kwargs):
+
+    def _get_cluster_preprocessing_algorithm(self, algorithm, **kwargs):
         """Convenience method to lookup method if algorithm is a string
         or if it's an object check that the object has a fit_transform method
-        
         """
-
-        preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
-        if algorithm in preprocessing_methods:
-            if not import_sklearn.sklearn_installed:
-                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
-            process_algorithm = cluster_preprocessing_algorithms[algorithm](**kwargs)
-        elif hasattr(algorithm, "fit_transform"):
-            process_algorithm = algorithm
+        if algorithm:
+            preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
+            if algorithm in preprocessing_methods:
+                if not import_sklearn.sklearn_installed:
+                    raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
+                process_algorithm = cluster_preprocessing_algorithms[algorithm](**kwargs)
+            elif hasattr(algorithm, "fit_transform"):
+                process_algorithm = algorithm
+            else:
+                raise ValueError("The cluster preprocessing method should be either %s "
+                                 "or an object with a fit_transform method"%preprocessing_methods)
+            return process_algorithm
         else:
-            raise ValueError("The cluster preprocessing method should be either %s "
-                             "or an object with a fit_transform method"%preprocessing_methods)
-        return process_algorithm
+            return None
 
-
-    def _distances_within_cluster(self,cluster_data,memberships,squared=True,summed=False):
-        """        
+    def _distances_within_cluster(self, cluster_data, memberships,
+                                  squared=True, summed=False):
+        """Return inter cluster distances.
 
         Parameters
         ----------
@@ -2330,10 +2330,10 @@ class MVA:
         squared : bool, optional
             square distance measurement. The default is True.
         summed : bool, optional
-            If False returns array showing sum of distance from a given point 
-            to all other points in the cluster. 
-            If True returns a sum of all distances 
-            within a cluster. The results are scaled by 2*number of cluster points.
+            If False returns array showing sum of distance from a given point
+            to all other points in the cluster.
+            If True returns a sum of all distances within a cluster.
+            The results are scaled by 2*number of cluster points.
             The default is False.
 
         Returns
@@ -2346,13 +2346,13 @@ class MVA:
             [import_sklearn.sklearn.metrics.pairwise.\
                 euclidean_distances(cluster_data[memberships == c, :],
             squared=squared)
-            for c in range(np.max(memberships)+1)]
-        result = [np.mean(x,axis=0)/2.0 for x in distances]
+            for c in range(np.max(memberships) + 1)]
+        result = [np.mean(x,axis=0) / 2.0 for x in distances]
 
         if summed:
             result = [np.sum(x) for x in result]
         return result
-        
+
     def estimate_number_of_clusters(self,
                                     cluster_source,
                                     max_clusters=10,
@@ -2592,7 +2592,7 @@ class MVA:
                         alg = self._cluster_analysis(reference,
                                                      cluster_algorithm)
                         D = self._distances_within_cluster(reference,alg.labels_,
-                                                 squared=False,summed=True)
+                                                 squared=True,summed=True)
                         W = np.sum(D)
                         local_inertia[i_indx]=np.log(W)
                         pbar.update(1)

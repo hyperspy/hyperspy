@@ -142,8 +142,8 @@ signals:
 
 components1D:
   Arctan:
+    module: hyperspy._components.eels_arctan
     class: Arctan
-    module: hyperspy._components.arctan
   Bleasdale:
     module: hyperspy._components.bleasdale
     class: Bleasdale
@@ -153,6 +153,9 @@ components1D:
   DoublePowerLaw:
     module: hyperspy._components.eels_double_power_law
     class: DoublePowerLaw
+  EELSArctan:
+    module: hyperspy._components.eels_arctan
+    class: EELSArctan
   EELSCLEdge:
     module: hyperspy._components.eels_cl_edge
     class: EELSCLEdge

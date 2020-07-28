@@ -15,19 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import scipy.misc
-import pytest
-import matplotlib.pyplot as plt
 import os
 from shutil import copyfile
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pytest
+import scipy.misc
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.signals import Signal1D
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
-
 
 scalebar_color = 'blue'
 default_tol = 2.0
@@ -170,6 +169,19 @@ class TestPlotSpectra():
             assert not li.get_visible()
             plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
                 f.canvas, click, artist)
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_spectra_auto_update(self):
+        s = hs.signals.Signal1D(np.arange(100))
+        s2 = s / 2
+        ax = hs.plot.plot_spectra([s, s2])
+        s.data = -s.data
+        s.events.data_changed.trigger(s)
+        s2.data = -s2.data * 4 + 50
+        s2.events.data_changed.trigger(s2)
+
+        return ax.get_figure()
 
 
 @update_close_figure

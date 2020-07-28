@@ -22,7 +22,6 @@ import pytest
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
-
 baseline_dir = 'plot_mva'
 default_tol = 2.0
 

@@ -20,10 +20,10 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from scipy.ndimage import rotate, gaussian_filter, gaussian_filter1d
-from hyperspy.decorators import lazifyTestClass
+from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 
 
 @lazifyTestClass(ragged=False)
