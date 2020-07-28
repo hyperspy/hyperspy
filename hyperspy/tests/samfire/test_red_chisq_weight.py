@@ -17,9 +17,8 @@
 
 import numpy as np
 
-
-from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 
 
 class Test_Red_chisq_weight:

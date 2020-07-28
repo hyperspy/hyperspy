@@ -17,10 +17,8 @@
 
 import numpy as np
 
-
-from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
-from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.external.astroML.histtools import histogram
+from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
 
 
 def compare_two_value_dicts(ans_r, ans):

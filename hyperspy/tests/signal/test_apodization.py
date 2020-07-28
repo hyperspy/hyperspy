@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import numpy as np
+import pytest
 from scipy.signal import tukey
-from hyperspy.misc.math_tools import hann_window_nth_order, outer_nd
 
-from hyperspy.signals import Signal1D, Signal2D, ComplexSignal1D, ComplexSignal2D, BaseSignal
+from hyperspy.misc.math_tools import hann_window_nth_order, outer_nd
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
 
 def test_hann_nth_order():

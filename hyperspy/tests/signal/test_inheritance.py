@@ -19,9 +19,9 @@
 import numpy as np
 import pytest
 
+import hyperspy.signals
 from hyperspy.misc.utils import find_subclasses
 from hyperspy.signal import BaseSignal
-import hyperspy.signals
 
 
 @pytest.mark.parametrize("signal",

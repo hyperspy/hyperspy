@@ -17,12 +17,11 @@
 
 
 import numpy as np
-
 import pytest
 
-from hyperspy.components1d import VolumePlasmonDrude, Lorentzian
-from hyperspy.misc.eels.tools import eels_constant
 import hyperspy.api as hs
+from hyperspy.components1d import Lorentzian, VolumePlasmonDrude
+from hyperspy.misc.eels.tools import eels_constant
 
 
 class Test2D:
@@ -63,7 +62,7 @@ class Test2D:
         vpm.intensity.map['is_set'][:] = True
         vpm.plasmon_energy.map['is_set'][:] = True
         vpm.fwhm.map['is_set'][:] = True
-        s.data = (m.as_signal(show_progressbar=None) * k).data
+        s.data = (m.as_signal() * k).data
 
         # Create ZLP
         z = s.deepcopy()

@@ -17,9 +17,10 @@
 
 
 import numpy as np
+
 from hyperspy.components1d import Gaussian
-from hyperspy.signals import Signal1D
 from hyperspy.misc.utils import stash_active_state
+from hyperspy.signals import Signal1D
 
 
 class TestParametersAsSignals:

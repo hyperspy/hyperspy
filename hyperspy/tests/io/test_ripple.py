@@ -1,16 +1,14 @@
-import tempfile
-import os.path
 import gc
+import os.path
+import tempfile
 
 import numpy as np
-
-import pytest
 import numpy.testing as npt
+import pytest
 
-from hyperspy.io import load
 import hyperspy.signals as signals
+from hyperspy.io import load
 from hyperspy.io_plugins import ripple
-
 
 # Tuple of tuples (data shape, signal_dimensions)
 SHAPES_SDIM = (((3,), (1, )),

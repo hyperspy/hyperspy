@@ -40,5 +40,3 @@ def test_function():
     assert g.grad_origin(2)  == -6
     assert g.grad_shift(2)  == -12
     assert g.grad_ratio(2)  == 3
-    
-    

@@ -15,18 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import scipy.misc
-import pytest
-import matplotlib.pyplot as plt
 import os
 from shutil import copyfile
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+import scipy.misc
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.signals import Signal1D
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
-
 
 scalebar_color = 'blue'
 default_tol = 2.0

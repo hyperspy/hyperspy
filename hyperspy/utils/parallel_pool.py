@@ -17,10 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time
 import logging
-from multiprocessing import (cpu_count, Pool)
+import time
+from multiprocessing import Pool, cpu_count
 from multiprocessing.pool import Pool as Pool_type
+
 import numpy as np
 
 _logger = logging.getLogger(__name__)

@@ -17,8 +17,7 @@
 
 import pytest
 
-from hyperspy.misc.utils import attrsetter
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser, attrsetter
 
 
 class DummyThing(object):
