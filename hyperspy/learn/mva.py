@@ -2521,9 +2521,9 @@ class MVA:
                     _logger.info("For n_clusters =", k,
                                  "The distance metric is :",
                                  inertia[-1])
-                    to_return = inertia
-                    best_k =self.estimate_elbow_position(to_return,log=False)\
-                        +min_k
+                to_return = inertia
+                best_k =self.estimate_elbow_position(to_return,log=False)\
+                    +min_k
             elif metric == "silhouette":
                 k_range   = list(range(2, max_clusters+1))
                 pbar = progressbar(total=len(k_range))
@@ -2578,7 +2578,7 @@ class MVA:
                                                  cluster_algorithm)
 
                     D = self._distances_within_cluster(scaled_data,alg.labels_,
-                                                 squared=False,summed=True)
+                                                 squared=True, summed=True)
                     W = np.sum(D)
                     data_inertia[o_indx]=np.log(W)
                     # now do n_ref clusters for a uniform random distribution
