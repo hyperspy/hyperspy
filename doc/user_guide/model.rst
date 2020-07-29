@@ -243,7 +243,7 @@ Define components from a fixed-pattern
 The :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 component enables fitting a pattern (in the form of a
 :py:class:`~._signals.signal1d.Signal1D` instance) to data by shifting 
-(:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xshift`)
+(:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.shift`)
 and
 scaling it in the x and y directions using the
 :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale`
@@ -252,7 +252,7 @@ and
 parameters respectively.
 
 ``xscale`` and ``yscale`` parameters. The position of the pattern can also be adjusted
-the ``xshift``. By default the ``free`` attribute of ``xscale`` and ``xshift`` is set to ``False``.
+the ``shift``. By default the ``free`` attribute of ``xscale`` and ``shift`` is set to ``False``.
 
 
 
