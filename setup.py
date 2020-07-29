@@ -45,7 +45,7 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=0.15',
+install_req = ['scipy>=0.17',
                'matplotlib>=2.2.3',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
@@ -66,7 +66,7 @@ install_req = ['scipy>=0.15',
                'imageio',
                'pyyaml',
                'PTable',
-               'tifffile>=2018.10.18',
+               'tifffile[all]>=2018.10.18',
                ]
 
 extras_require = {
@@ -274,8 +274,8 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
                   'hyperspy.tests.io',
+                  'hyperspy.tests.learn',
                   'hyperspy.tests.model',
-                  'hyperspy.tests.mva',
                   'hyperspy.tests.samfire',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
@@ -295,6 +295,7 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.weights',
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
+        python_requires='~=3.6',
         install_requires=install_req,
         tests_require=["pytest>=3.0.2"],
         extras_require=extras_require,

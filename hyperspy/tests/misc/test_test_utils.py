@@ -19,7 +19,7 @@
 
 import warnings
 
-from hyperspy.misc.test_utils import ignore_warning, assert_warns, all_warnings
+from hyperspy.misc.test_utils import all_warnings, assert_warns, ignore_warning
 
 
 def warnsA():

@@ -25,7 +25,6 @@ import traits.api as t
 from traits.trait_errors import TraitError
 import pint
 import logging
-import itertools
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
@@ -50,7 +49,7 @@ FACTOR_DOCSTRING = \
 class ndindex_nat(np.ndindex):
 
     def __next__(self):
-        return super(ndindex_nat, self).next()[::-1]
+        return super(ndindex_nat, self).__next__()[::-1]
 
 
 def generate_axis(offset, scale, size, offset_index=0):
@@ -631,9 +630,9 @@ class DataAxis(t.HasTraits, UnitConversion):
         self._set_quantity(value, 'offset')
 
 def serpentine_iter(shape):
-    '''Similar to np.ndindex, but yields indices 
+    '''Similar to np.ndindex, but yields indices
     in serpentine pattern, like snake game
-    
+
     Code by Stackoverflow user Paul Panzer,
     from https://stackoverflow.com/questions/57366966/
     '''
@@ -777,7 +776,7 @@ class AxesManager(t.HasTraits):
         self._update_attributes()
         self._update_trait_handlers()
         self._index = None  # index for the iterpath
-        # Can use serpentine or flyback scan pattern 
+        # Can use serpentine or flyback scan pattern
         # for the axes manager indexing
         self._iterpath = 'flyback'
 
@@ -997,8 +996,8 @@ class AxesManager(t.HasTraits):
                 # for some reason. This is possibly expensive, as it needs
                 # to calculate all previous values first
                 # self._iterpath_generator = itertools.islice(
-                #     serpentine_iter(self._navigation_shape_in_array), 
-                #     self._index, 
+                #     serpentine_iter(self._navigation_shape_in_array),
+                #     self._index,
                 #     None)
                 val = next(self._iterpath_generator)[::-1]
             else:
@@ -1541,11 +1540,21 @@ class AxesManager(t.HasTraits):
         self._axes = list(new_axes)
 
     def gui_navigation_sliders(self, title="", display=True, toolkit=None):
-        return get_gui(self=self.navigation_axes,
-                       toolkey="hyperspy.navigation_sliders",
-                       display=display,
-                       toolkit=toolkit,
-                       title=title)
+        # With traits 6.1 and traitsui 7.0, we have this deprecation warning,
+        # which is fine to filter
+        # https://github.com/enthought/traitsui/issues/883
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning,
+                                    message="'TraitPrefixList'",
+                                    module='traitsui')
+            warnings.filterwarnings("ignore", category=DeprecationWarning,
+                                    message="'TraitMap'",
+                                    module='traits')
+            return get_gui(self=self.navigation_axes,
+                           toolkey="hyperspy.navigation_sliders",
+                           display=display,
+                           toolkit=toolkit,
+                           title=title)
     gui_navigation_sliders.__doc__ = \
         """
         Navigation sliders to control the index of the navigation axes.

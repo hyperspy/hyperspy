@@ -17,11 +17,11 @@
 
 from unittest import mock
 
-import numpy.testing as npt
 import numpy as np
-from scipy.misc import face, ascent
-from scipy.ndimage import fourier_shift
+import numpy.testing as npt
 import pytest
+from scipy.misc import ascent, face
+from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -84,6 +84,14 @@ class TestSubPixelAlign:
         plt.switch_backend('agg')
         s = self.signal
         s.estimate_shift2D(sub_pixel_factor=200, plot=plot)
+
+    def test_align_crop_error(self):
+        s = self.signal
+        shifts = self.shifts
+        s_size = np.array(s.axes_manager.signal_shape)
+        shifts[0] = s_size + 1
+        with pytest.raises(ValueError, match="Cannot crop signal"):
+            s.align2D(shifts=shifts, crop=True)
 
 
 @lazifyTestClass
@@ -179,8 +187,3 @@ def test_add_ramp_lazy():
     s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4).as_lazy()
     s.add_ramp(-1, -1, -4)
     npt.assert_almost_equal(s.data.compute(), 0)
-
-
-if __name__ == '__main__':
-    import pytest
-    pytest.main(__name__)

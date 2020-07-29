@@ -18,11 +18,10 @@
 
 import os
 
-import pytest
 import numpy as np
-from numpy.testing import assert_allclose
+import pytest
 import traits.api as t
-
+from numpy.testing import assert_allclose
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file

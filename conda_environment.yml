@@ -3,20 +3,21 @@ channels:
 - defaults
 - conda-forge
 dependencies:
-# Minimal dependencies in alphabetical order
 - dask
 - dill
 - h5py
 - imageio
 - ipyparallel
-- matplotlib
+- matplotlib-base
 - mrcz
 - natsort
+- numba
 - numexpr
 - numpy
 - pint
 - PTable
 - python-dateutil
+- pyusid
 - pyyaml
 - requests
 - scikit-image

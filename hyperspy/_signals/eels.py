@@ -23,6 +23,7 @@ import numpy as np
 import dask.array as da
 import traits.api as t
 from scipy import constants
+from prettytable import PrettyTable
 
 from hyperspy.signal import BaseSetMetadataItems
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
@@ -30,7 +31,7 @@ from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.utils import isiterable, underline, print_html
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
@@ -156,6 +157,54 @@ class EELSSpectrum_mixin:
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
 
+    @staticmethod
+    def print_edges_near_energy(energy, width=10):
+        """Find and print a table of edges near a given energy that are within 
+        the given energy window.
+        
+        Parameters
+        ----------
+        energy : float
+            Energy to search, in eV
+        width : float
+            Width of window, in eV, around energy in which to find nearby 
+            energies, i.e. a value of 1 eV (the default) means to 
+            search +/- 0.5 eV. The default is 10.
+        
+        Returns
+        -------
+        A PrettyText object where its representation is ASCII in terminal and 
+        html-formatted in Jupyter notebook 
+        """ 
+        
+        edges = get_edges_near_energy(energy, width=width)
+        
+        table = PrettyTable()
+        table.field_names = [
+        'edge',
+        'onset energy (eV)',
+        'relevance',
+        'description']
+        
+        for edge in edges:
+            element, shell = edge.split('_')
+            shell_dict = elements_db[element]['Atomic_properties'][
+                         'Binding_energies'][shell]
+            
+            onset = shell_dict['onset_energy (eV)']
+            relevance = shell_dict['relevance']
+            threshold = shell_dict['threshold']
+            edge_ = shell_dict['edge']            
+            description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
+
+            table.add_row([edge, onset, relevance, description])
+
+        # this ensures the html version try its best to mimick the ASCII one
+        table.format = True
+
+        return print_html(f_text=table.get_string,
+                          f_html=table.get_html_string)
+    
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
 

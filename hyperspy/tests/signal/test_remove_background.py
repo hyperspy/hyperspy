@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import gc
+
 import numpy as np
 import pytest
 
@@ -94,8 +95,7 @@ class TestRemoveBackground1DLorentzian:
         # Fast is not accurate
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='Lorentzian',
-            show_progressbar=None)
+            background_type='Lorentzian')
         assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
 
     def test_background_remove_lorentzian_full_fit(self):
@@ -126,8 +126,7 @@ class TestRemoveBackground1DPowerLaw:
     def test_background_remove_pl(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='PowerLaw',
-            show_progressbar=None)
+            background_type='PowerLaw')
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=self.atol)
         assert s1.axes_manager.navigation_dimension == 0
@@ -136,8 +135,7 @@ class TestRemoveBackground1DPowerLaw:
         s1 = self.signal_noisy.remove_background(
             signal_range=(110.0, 190.0),
             background_type='PowerLaw',
-            zero_fill=True,
-            show_progressbar=None)
+            zero_fill=True)
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
                            atol=self.atol_zero_fill)
@@ -147,8 +145,7 @@ class TestRemoveBackground1DPowerLaw:
         self.signal.change_dtype("int")
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='PowerLaw',
-            show_progressbar=None)
+            background_type='PowerLaw')
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=self.atol)
 
@@ -157,8 +154,7 @@ class TestRemoveBackground1DPowerLaw:
         s1 = self.signal_noisy.remove_background(
             signal_range=(110.0, 190.0),
             background_type='PowerLaw',
-            zero_fill=True,
-            show_progressbar=None)
+            zero_fill=True)
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
                            atol=self.atol_zero_fill)
@@ -183,8 +179,7 @@ class TestRemoveBackground1DSkewNormal:
         # Fast is not accurate
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='SkewNormal',
-            show_progressbar=None)
+            background_type='SkewNormal')
         assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
 
     def test_background_remove_skewnormal_full_fit(self):
@@ -214,7 +209,6 @@ class TestRemoveBackground1DVoigt:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Voigt',
-            show_progressbar=None,
             fast=False)
         assert np.allclose(np.zeros(len(s1.data)), s1.data)
 
@@ -243,8 +237,7 @@ class TestRemoveBackground1DExponential:
         # Fast is not accurate
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='Exponential',
-            show_progressbar=None)
+            background_type='Exponential')
         assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=self.atol)
 
     def test_background_remove_exponential_full_fit(self):

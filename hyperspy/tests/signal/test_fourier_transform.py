@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 
-from hyperspy.signals import Signal1D, Signal2D, ComplexSignal1D, ComplexSignal2D, BaseSignal
+from hyperspy.signals import (BaseSignal, ComplexSignal1D, ComplexSignal2D,
+                              Signal1D, Signal2D)
 
 
 @pytest.mark.parametrize('lazy', [True, False])

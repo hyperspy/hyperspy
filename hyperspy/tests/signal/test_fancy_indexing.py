@@ -17,11 +17,10 @@
 
 
 import numpy as np
-from numpy.testing import assert_array_equal
 import pytest
+from numpy.testing import assert_array_equal
 
-from hyperspy import signals
-from hyperspy import roi
+from hyperspy import roi, signals
 
 
 class Test1D:
