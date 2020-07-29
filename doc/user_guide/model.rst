@@ -2,12 +2,13 @@ Model fitting
 *************
 
 HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
-two-dimensional signals (images) in `n`-dimensional data sets. Models can be
-created as a linear combination of predefined components and multiple
-optimization algorithms can be used to fit the model to experimental data.
-Bounds and weights are supported. The syntax for creating both kinds of model
-is essentially the same, as in this documentation any method referred to in
-the :py:class:`~.model.BaseModel` class is available for both kinds.
+two-dimensional signals (images) in `n`-dimensional data sets.
+Models are defined by adding individual functions (components in HyperSpy's
+terminology) to a :py:class:`~.model.BaseModel` instance. Those individual
+components are then summed to create the final model function that can be
+fitted to the data, by adjusting the free parameters of the individual
+components.
+
 
 Models can be created and fit to experimental data in both one and two
 dimensions i.e. spectra and images respectively. Most of the syntax is
@@ -21,21 +22,19 @@ dimensional model is created for a :py:class:`~._signals.signal2d.Signal2D`.
     implemented for the :py:class:`~.models.model2d.Model2D` class.
 
 
-Binned/unbinned signals
------------------------
+Caveats
+-------
 
-Before creating a model verify that the ``Signal.binned`` metadata
-attribute of the signal is set to the correct value because the resulting
-model depends on this parameter. See :ref:`signal.binned` for more details.
-
-.. Warning::
-
-   When importing data that have been binned using other software, in
-   particular Gatan's DM, the stored values may be the averages of the
-   binned channels or pixels, instead of their sum, as would be required
-   for proper statistical analysis. We therefore cannot guarantee that
-   the statistics will be valid. We therefore strongly recommend that all
-   pre-fitting binning should be done using Hyperspy.
+* Before creating a model verify that the
+  :py:attr:`~.signal.BaseSignal.metadata.Signal.binned` metadata
+  attribute of the signal is set to the correct value because the resulting
+  model depends on this parameter. See :ref:`signal.binned` for more details.
+* When importing data that have been binned using other software, in
+  particular Gatan's DM, the stored values may be the averages of the
+  binned channels or pixels, instead of their sum, as would be required
+  for proper statistical analysis. We therefore cannot guarantee that
+  the statistics will be valid. We therefore strongly recommend that all
+  pre-fitting binning should be done using Hyperspy.
 
 Creating a model
 ----------------
@@ -65,13 +64,19 @@ datafile, `e.g.` if ``s`` is EELS data, you may be asked for the accelerating
 voltage, convergence and collection semi-angles etc.
 
 
-Creating components for the model
----------------------------------
+Model components
+----------------
+
+In HyperSpy a model consists of a sum of individual components. For convenience,
+HyperSpy provides a number of pre-defined model components as well as mechanisms
+to create your own components.
 
 .. _model_components-label:
 
-In HyperSpy a model consists of a linear combination of components
-and various components are available in one (:py:mod:`~.components1d`) and
+Pre-defined model components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Various components are available in one (:py:mod:`~.components1d`) and
 two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
@@ -97,7 +102,8 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~._components.voigt.Voigt`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
-The following components developed with specific signal types in mind are currently available for one-dimensional models:
+The following components developed with specific signal types in mind are
+currently available for one-dimensional models:
 
 * :py:class:`~._components.eels_arctan.EELSArctan`
 * :py:class:`~._components.eels_double_power_law.DoublePowerLaw`
@@ -112,25 +118,15 @@ The following components are currently available for two-dimensional models:
 * :py:class:`~._components.expression.Expression`
 * :py:class:`~._components.gaussian2d.Gaussian2D`
 
-However, this doesn't mean that you have to limit yourself to this meagre list
-of functions. A new function can easily be written as specified as below.
-
-Define components from a pattern
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To turn a Signal1D into a component, pass a Signal1D that does not have any navigation
-axes to :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`.
-ScaleableFixedPatterns can be scaled in the x and y directions using the
-``xscale`` and ``yscale`` parameters. The position of the pattern can also be adjusted
-the ``xshift``. By default the ``free`` attribute of ``xscale`` and ``xshift`` is set to ``False``.
+However, this doesn't mean that you have to limit yourself to this meagre
+list of functions. As discussed below, it is very easy to turn a
+mathematical, fixed-pattern or Python function into a component.
 
 .. _expression_component-label:
 
 Define components from a mathematical expression
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In addition to the above specific components, Hyperspy can take any Signal1D as
-well as most mathematical expressions as components, as detailed below.
 
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the
@@ -178,12 +174,12 @@ example we create a 2D Gaussian that rotates around its center:
     ... "Gaussian2d", add_rotation=True, position=("x0", "y0"),
     ... module="numpy", )
 
+Define new components from a Python function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Of course :py:class:`~._components.expression.Expression` is only useful for
-analytical functions. For more general components you need to create the
-component "by hand". The good news is that, if you know how to write the
-function with Python, turning it into a component is very easy, just modify
-the following template to suit your needs:
+analytical functions. You can define more general components modifying the
+following template to suit your needs:
 
 
 .. code-block:: python
@@ -241,7 +237,19 @@ the following template to suit your needs:
             """
             return x
 
+Define components from a fixed-pattern
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+component enables fitting a pattern (in the form of a
+:py:class:`~._signals.signal1d.Signal1D` instance) to data by shifting 
+(:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.shift`)
+and
+scaling it in the x and y directions using the
+:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale`
+and
+:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.yscale`
+parameters respectively.
 
 Adding components to the model
 ------------------------------
@@ -259,16 +267,20 @@ attribute name, component name and component type will be printed:
     ---- | -------------------- | -------------------- | ---------------------
 
 
-In fact, components may be created automatically in some cases. For example, if
-the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
-power-law background component will automatically be placed in the model. To
-add a component, first we have to create an instance of the component. Once
-the instance has been created we can add the component to the model using
-the :py:meth:`~.model.BaseModel.append` and :py:meth:`~.model.BaseModel.extend`
-methods for one or more components respectively.
+.. note:: Sometimes components may be created automatically. For example, if
+   the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
+   power-law background component may automatically be added to the model.
+   Therefore, the table above may not all may empty on model creation.
 
-As an example for a type of data that can be modelled using Gaussians,
-we might proceed as follows:
+To add a component to the model, first we have to create an instance of the
+component.
+Once the instance has been created we can add the component to the model
+using the :py:meth:`~.model.BaseModel.append` and
+:py:meth:`~.model.BaseModel.extend` methods for one or more components
+respectively.
+
+As an example, let's add several :py:class:`~._components.gaussian.Gaussian`
+components to the model:
 
 .. code-block:: python
 
@@ -313,7 +325,7 @@ We can customise the name of the components.
        2 |              Nitrogen |              Nitrogen |            Gaussian
 
 
-Two components cannot have the same name.
+Notice that two components cannot have the same name:
 
 .. code-block:: python
 
@@ -363,34 +375,9 @@ enables tab completion.
 It is possible to "switch off" a component by setting its
 ``active`` attribute to ``False``. When a component is
 switched off, to all effects it is as if it was not part of the model. To
-switch it on simply set the ``active`` attribute back to ``True``.
+switch it back on simply set the ``active`` attribute back to ``True``.
 
-
-.. _Component.print_current_values:
-
-The current values of a component can be visualised using the
-:py:attr:`~.component.Component.print_current_values()` method. The
-IPython display function elegantly presents it using HTML
-and allows for correct copying and pasting into Excel spreadsheets.
-Alternatively, a simpler form can be shown by setting the
-``fancy`` argument to ``False``
-
-.. code-block:: python
-
-    >>> m = s.create_model()
-    >>> m.fit()
-    >>> G = m[1]
-    >>> G.print_current_values(fancy=False)
-    Gaussian: Al_Ka
-    Active: True
-    Parameter Name |  Free |      Value |        Std |        Min
-    ============== | ===== | ========== | ========== | ==========
-                 A |  True | 62894.6824 | 1039.40944 |        0.0
-             sigma | False | 0.03253440 |       None |       None
-            centre | False |     1.4865 |       None |       None
-
-
-In multidimensional signals it is possible to store the value of the
+In multi-dimensional signals it is possible to store the value of the
 ``active`` attribute at each navigation index.
 To enable this feature for a given component set the
 :py:attr:`~.component.Component.active_is_multidimensional` attribute to
@@ -417,6 +404,7 @@ To enable this feature for a given component set the
     >>> g1.active_is_multidimensional = False
     >>> g1._active_array is None
     True
+
 
 .. _model_indexing-label:
 
@@ -452,8 +440,28 @@ terminal view with the argument ``fancy=False``. One can also filter for only ac
 components and only showing component with free parameters with the arguments
 ``only_active`` and ``only_free``, respectively.
 
-The current coordinates can be either set by navigating the :py:meth:`~.model.BaseModel.plot`, or specified by
-pixel indices in ``m.axes_manager.indices`` or as calibrated coordinates in
+.. _Component.print_current_values:
+
+The current values of a particular component can be printed using the
+:py:attr:`~.component.Component.print_current_values()` method.
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> m.fit()
+    >>> G = m[1]
+    >>> G.print_current_values(fancy=False)
+    Gaussian: Al_Ka
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min
+    ============== | ===== | ========== | ========== | ==========
+                 A |  True | 62894.6824 | 1039.40944 |        0.0
+             sigma | False | 0.03253440 |       None |       None
+            centre | False |     1.4865 |       None |       None
+
+The current coordinates can be either set by navigating the
+:py:meth:`~.model.BaseModel.plot`, or specified by pixel indices in
+``m.axes_manager.indices`` or as calibrated coordinates in
 ``m.axes_manager.coordinates``.
 
 :py:attr:`~.component.Component.parameters` contains a list of the parameters
@@ -462,12 +470,13 @@ the free parameters.
 
 The value of a particular parameter in the current coordinates can be
 accessed by :py:attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
-To access an array of the value of the parameter across all
-navigation pixels, :py:attr:`component.Parameter.map['values']` (e.g. ``Gaussian.A.map["values"]``) can be used.
-On its own, :py:attr:`component.Parameter.map` returns a NumPy array with three elements:
-``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and standard error for
-each index. The last element shows whether the value has been set in a given index, either
-by a fitting procedure or manually.
+To access an array of the value of the parameter across all navigation
+pixels, :py:attr:`component.Parameter.map['values']` (e.g.
+``Gaussian.A.map["values"]``) can be used. On its own,
+:py:attr:`component.Parameter.map` returns a NumPy array with three elements:
+``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and
+standard error for each index. The last element shows whether the value has
+been set in a given index, either by a fitting procedure or manually.
 
 If a model contains several components with the same parameters, it is possible
 to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`.
