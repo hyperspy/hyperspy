@@ -251,12 +251,6 @@ and
 :py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.yscale`
 parameters respectively.
 
-``xscale`` and ``yscale`` parameters. The position of the pattern can also be adjusted
-the ``shift``. By default the ``free`` attribute of ``xscale`` and ``shift`` is set to ``False``.
-
-
-
-
 Adding components to the model
 ------------------------------
 
