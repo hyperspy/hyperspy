@@ -449,11 +449,7 @@ components and only showing component with free parameters with the arguments
 .. _Component.print_current_values:
 
 The current values of a particular component can be printed using the
-:py:attr:`~.component.Component.print_current_values()` method. The
-IPython display function elegantly presents it using HTML
-and allows for correct copying and pasting into Excel spreadsheets.
-Alternatively, a simpler form can be shown by setting the
-``fancy`` argument to ``False``
+:py:attr:`~.component.Component.print_current_values()` method.
 
 .. code-block:: python
 
