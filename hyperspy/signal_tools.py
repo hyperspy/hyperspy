@@ -1015,6 +1015,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.background_type, self.polynomial_order)
         if self.model is not None and len(self.model) == 0:
             self.model.append(self.background_estimator)
+        if not self.fast and self.is_span_selector_valid:
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value,
+                self.ss_right_value,
+                only_current=True)
 
     def _polynomial_order_changed(self, old, new):
         self.set_background_estimator()
