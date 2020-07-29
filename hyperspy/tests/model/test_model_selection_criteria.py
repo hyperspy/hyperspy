@@ -24,7 +24,6 @@ from hyperspy.utils.model_selection import AIC, BIC, AICc
 
 
 class TestModelSelection:
-
     def setup_method(self, method):
         s = Signal1D(range(10))
         m1 = s.create_model()
@@ -51,5 +50,5 @@ class TestModelSelection:
     def test_BIC(self):
         _bic1 = BIC(self.m1)
         _bic2 = BIC(self.m2)
-        np.testing.assert_allclose(_bic1, 75.68740210134942)
+        np.testing.assert_allclose(_bic1, 75.687402101349420)
         np.testing.assert_allclose(_bic2, 73.959606174200346)
