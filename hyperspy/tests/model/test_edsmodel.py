@@ -24,7 +24,6 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc import utils
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
-from hyperspy.misc.test_utils import assert_warns
 
 
 @lazifyTestClass

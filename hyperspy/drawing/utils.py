@@ -28,6 +28,7 @@ from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
 import logging
+from functools import partial
 
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
@@ -124,7 +125,7 @@ def create_figure(window_title=None,
     window_title : {None, string}, optional
     _on_figure_window_close : {None, function}, optional
     disable_xyscale_keys : bool, optional
-        Disable the `k`, `l` and `L` shortcuts which toggle the x or y axis 
+        Disable the `k`, `l` and `L` shortcuts which toggle the x or y axis
         between linear and log scale. Default False.
 
     Returns
@@ -555,9 +556,9 @@ def plot_images(images,
         If None, default options will be used.
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values.
-        Values should be supplied as used in 
+        Values should be supplied as used in
         :py:func:`matplotlib.pyplot.subplots_adjust`,
-        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and 
+        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and
         'hspace' (height).
     tight_layout : bool, optional
         If true, hyperspy will attempt to improve image placement in
@@ -1181,6 +1182,7 @@ def plot_spectra(
         legend_loc='upper right',
         fig=None,
         ax=None,
+        auto_update=None,
         **kwargs):
     """Plot several spectra in the same figure.
 
@@ -1226,6 +1228,10 @@ def plot_spectra(
     ax : {none, matplotlib ax (subplot)}, optional
         If None, a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
+    auto_update : bool or None
+        If True, the plot will update when the data are changed. Only supported
+        with style='overlap' and a list of signal with navigation dimension 0.
+        If None (default), update the plot only for style='overlap'.
     **kwargs, optional
         Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
         :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
@@ -1361,6 +1367,31 @@ def plot_spectra(
             ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 
+    def update_line(spectrum, line):
+        x_axis = spectrum.axes_manager[-1].axis
+        line.set_data(x_axis, spectrum.data)
+        fig = line.get_figure()
+        ax = fig.get_axes()[0]
+        # `relim` needs to be called before `autoscale_view`
+        ax.relim()
+        ax.autoscale_view()
+        fig.canvas.draw()
+
+    if auto_update is None and style == 'overlap':
+        auto_update = True
+
+    if auto_update:
+        if style != 'overlap':
+            raise ValueError("auto_update=True is only supported with "
+                             "style='overlap'.")
+
+        for spectrum, line in zip(spectra, ax.get_lines()):
+            f = partial(update_line, spectrum, line)
+            spectrum.events.data_changed.connect(f, [])
+            # disconnect event when closing figure
+            disconnect = partial(spectrum.events.data_changed.disconnect, f)
+            on_figure_window_close(fig, disconnect)
+
     return ax
 
 
@@ -1445,7 +1476,7 @@ def plot_histograms(signal_list,
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
         If `None`, use default matplotlib color cycle.
-    line_style: {None, valid matplotlib line style, list of line styles}, 
+    line_style: {None, valid matplotlib line style, list of line styles},
     optional
         The main line styles are '-','--','steps','-.',':'.
         For a list, if its length is less than the number of

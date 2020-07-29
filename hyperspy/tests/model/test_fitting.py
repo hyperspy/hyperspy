@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import pytest
-import logging
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
-
 
 TOL = 1e-5
 
@@ -81,7 +81,7 @@ class TestModelFitBinnedLeastSquares:
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     @pytest.mark.parametrize(
         "bounded, expected",
         [(False, (250.66282746, 50.0, 5.0)), (True, (257.48162397, 55.0, 7.76886132))],
@@ -100,10 +100,7 @@ class TestModelFitBinnedLeastSquares:
 
     @pytest.mark.parametrize(
         "grad, expected",
-        [
-            ("auto", (250.66282746, 50.0, 5.0)),
-            ("analytical", (250.66282746, 50.0, 5.0)),
-        ],
+        [("fd", (250.66282746, 50.0, 5.0)), ("analytical", (250.66282746, 50.0, 5.0))],
     )
     def test_fit_trf(self, grad, expected):
         self.m.fit(optimizer="trf", grad=grad)
@@ -118,7 +115,7 @@ class TestModelFitBinnedLeastSquares:
         "grad, expected",
         [
             (None, (250.66282746, 50.0, 5.0)),
-            ("auto", (250.66282746, 50.0, 5.0)),
+            ("fd", (250.66282746, 50.0, 5.0)),
             ("analytical", (250.66282746, 50.0, 5.0)),
         ],
     )
@@ -179,7 +176,7 @@ class TestModelFitBinnedScipyMinimize:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     @pytest.mark.parametrize(
         "loss_function, bounded, expected",
         [
@@ -203,7 +200,7 @@ class TestModelFitBinnedScipyMinimize:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     @pytest.mark.filterwarnings("ignore:divide by zero:RuntimeWarning")
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     @pytest.mark.parametrize(
         "delta, expected",
         [
@@ -306,13 +303,13 @@ class TestModelWeighted:
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     def test_chisq(self, grad):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(grad=grad)
         np.testing.assert_allclose(self.m.chisq.data, 18.81652763)
 
-    @pytest.mark.parametrize("grad", ["auto", "analytical"])
+    @pytest.mark.parametrize("grad", ["fd", "analytical"])
     def test_red_chisq(self, grad):
         self.m.fit(grad=grad)
         np.testing.assert_allclose(self.m.red_chisq.data, 0.02100059)
@@ -364,7 +361,7 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
 
-class TestFitPrintInfo:
+class TestFitPrintReturnInfo:
     def setup_method(self, method):
         np.random.seed(1)
         s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
@@ -392,9 +389,21 @@ class TestFitPrintInfo:
         assert "Fit info:" in captured.out
 
     def test_no_print_info(self, capfd):
-        self.m.fit(optimizer="lm")  # Default is print_info=False
+        # Default is print_info=False
+        self.m.fit(optimizer="lm")
         captured = capfd.readouterr()
         assert "Fit info:" not in captured.out
+
+    @pytest.mark.parametrize("optimizer", ["odr", "Nelder-Mead", "L-BFGS-B"])
+    def test_return_info(self, optimizer):
+        # Default is return_info=True
+        res = self.m.fit(optimizer=optimizer)
+        assert isinstance(res, OptimizeResult)
+
+    def test_no_return_info(self):
+        # Default is return_info=True
+        res = self.m.fit(optimizer="lm", return_info=False)
+        assert res is None
 
 
 class TestFitErrorsAndWarnings:
@@ -445,7 +454,7 @@ class TestFitErrorsAndWarnings:
 
     def test_wrong_fd_scheme(self):
         with pytest.raises(ValueError, match="`fd_scheme` must be one of"):
-            self.m.fit(optimizer="L-BFGS-B", grad="auto", fd_scheme="random")
+            self.m.fit(optimizer="L-BFGS-B", grad="fd", fd_scheme="random")
 
     @pytest.mark.parametrize("some_bounds", [True, False])
     def test_global_optimizer_wrong_bounds(self, some_bounds):
@@ -455,11 +464,6 @@ class TestFitErrorsAndWarnings:
 
         with pytest.raises(ValueError, match="Finite upper and lower bounds"):
             self.m.fit(optimizer="Differential Evolution", bounded=True)
-
-    def test_error_for_ml_poisson(self):
-        self.m.signal.set_noise_variance(2.0)
-        with pytest.raises(ValueError, match="Weighted fitting is not supported"):
-            self.m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
 
 
 class TestCustomOptimization:

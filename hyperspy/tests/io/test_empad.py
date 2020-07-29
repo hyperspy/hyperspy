@@ -1,13 +1,13 @@
 
 import os
-import traits.api as t
+import struct
+
 import numpy as np
 import numpy.testing as nt
 import pytest
-import struct
+import traits.api as t
 
 import hyperspy.api as hs
-
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'empad_data')
 FILENAME_STACK_RAW = os.path.join(DATA_DIR, 'series_x10.raw')
@@ -44,13 +44,16 @@ def test_read_stack(lazy):
     for axis in signal_axes:
         assert axis.units == t.Undefined
         assert axis.scale == 1.0
+        assert axis.offset == -64
     navigation_axes = s.axes_manager.navigation_axes
     assert navigation_axes[0].name == 'series_count'
     assert navigation_axes[0].units == 'ms'
     assert navigation_axes[0].scale == 1.0
+    assert navigation_axes[0].offset == 0.0
 
     assert s.metadata.General.date == '2019-06-07'
     assert s.metadata.General.time == '13:17:22.590279'
+    assert s.metadata.Signal.signal_type == 'electron_diffraction'
 
 
 @pytest.mark.skipif(8 * struct.calcsize("P") == 32,
@@ -67,12 +70,15 @@ def test_read_map(lazy):
     for axis in signal_axes:
         assert axis.units == '1/nm'
         nt.assert_allclose(axis.scale, 0.1826537)
+        nt.assert_allclose(axis.offset, -11.689837)
     navigation_axes = s.axes_manager.navigation_axes
     assert navigation_axes[0].name == 'scan_y'
     assert navigation_axes[1].name == 'scan_x'
     for axis in navigation_axes:
         assert axis.units == 'µm'
         nt.assert_allclose(axis.scale, 1.1415856)
+        nt.assert_allclose(axis.offset, 0.0)
 
     assert s.metadata.General.date == '2019-06-06'
     assert s.metadata.General.time == '13:30:00.164675'
+    assert s.metadata.Signal.signal_type == 'electron_diffraction'

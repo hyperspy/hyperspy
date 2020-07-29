@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest import mock
 import sys
+from unittest import mock
 
-import numpy as np
 import dask.array as da
-from numpy.testing import assert_array_equal, assert_almost_equal
-import pytest
+import numpy as np
 import numpy.testing as nt
+import pytest
+from numpy.testing import assert_almost_equal, assert_array_equal
 
 from hyperspy import signals
+from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import SpikesRemoval
-from hyperspy.components1d import Gaussian
 
 
 def _verify_test_sum_x_E(self, s):

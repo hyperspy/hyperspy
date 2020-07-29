@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.eds.utils import get_xray_lines_near_energy, take_off_angle
 import numpy as np
+
+from hyperspy.misc.eds.utils import get_xray_lines_near_energy, take_off_angle
+
 
 def test_xray_lines_near_energy():
     E = 1.36

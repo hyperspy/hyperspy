@@ -680,7 +680,7 @@ A good approach to choosing an optimization approach is to ask yourself
 the question "Do you want to...":
 
 * Apply bounds to your model parameter values?
-* Are gradient-based fitting algorithms appropriate for your model?
+* Use gradient-based fitting algorithms to accelerate your fit?
 * Estimate the standard deviations of the parameter values found by the fit?
 * Fit your data in the least-squares sense, or use another loss function?
 * Find the global optima for your parameters, or is a local optima acceptable?
@@ -733,7 +733,7 @@ Loss functions
 ^^^^^^^^^^^^^^
 
 HyperSpy supports a number of loss functions. The default is ``"ls"``,
-or the least-squares loss. For the vast majority of cases, this loss
+i.e. the least-squares loss. For the vast majority of cases, this loss
 function is appropriate, and has the additional benefit of supporting
 parameter error estimation and :ref:`goodness-of-fit <model.goodness_of_fit>`
 testing. However, if your data contains very low counts per pixel, or
@@ -847,7 +847,7 @@ Poisson maximum likelihood estimation
 To avoid biased estimation in the case of data corrupted by Poisson noise
 with very few counts, we can use Poisson maximum likelihood estimation (MLE) instead.
 This is an unbiased estimator for Poisson noise. To perform MLE, we must
-use a general, non-linear optimizer from the ref:`table above <optimizers-table>`,
+use a general, non-linear optimizer from the :ref:`table above <optimizers-table>`,
 such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
@@ -963,6 +963,8 @@ passed, using the following signature:
 Using gradient information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 1.6 ``grad="analytical"`` and ``grad="fd"`` keyword arguments
+
 Optimization algorithms that take into account the gradient of
 the loss function will often out-perform so-called "derivative-free"
 optimization algorithms in terms of how rapidly they converge to a
@@ -984,7 +986,7 @@ Following the above examples:
     >>> m.append(line)
 
     >>> # Use a 2-point finite-difference scheme to estimate the gradient
-    >>> m.fit(grad="auto", fd_scheme="2-point")
+    >>> m.fit(grad="fd", fd_scheme="2-point")
 
     >>> # Use the analytical gradient
     >>> m.fit(grad="analytical")
@@ -1028,7 +1030,6 @@ on the ``centre`` parameter.
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
-    >>> g1.centre.bounded = True
     >>> m.fit(optimizer="lm", bounded=True)
     >>> m.print_current_values(fancy=False)
     Model1D:  histogram
@@ -1046,18 +1047,24 @@ Optimization results
 
 After fitting the model, details about the optimization
 procedure, including whether it finished successfully,
-are stored in the attribute ``fit_output`` as a
-:py:class:`scipy.optimize.OptimizeResult` object. These
-details are often useful for diagnosing problems such
+are returned as :py:class:`scipy.optimize.OptimizeResult` object,
+according to the keyword argument ``return_info=True``.
+These details are often useful for diagnosing problems such
 as a poorly-fitted model or a convergence failure.
-You can also print this information using the
-``print_info`` keyword argument:
+You can also access the object as the ``fit_output`` attribute:
 
 .. code-block:: python
 
     >>> m.fit()
+    <scipy.optimize.OptimizeResult object>
+
     >>> type(m.fit_output)
     <scipy.optimize.OptimizeResult object>
+
+You can also print this information using the
+``print_info`` keyword argument:
+
+.. code-block:: python
 
     # Print the info to stdout
     >>> m.fit(optimizer="L-BFGS-B", print_info=True)
@@ -1065,7 +1072,7 @@ You can also print this information using the
       optimizer=L-BFGS-B
       loss_function=ls
       bounded=False
-      grad="auto"
+      grad="fd"
     Fit result:
       hess_inv: <3x3 LbfgsInvHessProduct with dtype=float64>
        message: b'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'

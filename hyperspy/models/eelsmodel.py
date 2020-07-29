@@ -317,9 +317,9 @@ class EELSModel(Model1D):
                 f"kind must be either 'std' or 'smart', not '{kind}'"
             )
         elif kind == "smart":
-            self.smart_fit(**kwargs)
+            return self.smart_fit(**kwargs)
         elif kind == "std":
-            Model1D.fit(self, **kwargs)
+            return Model1D.fit(self, **kwargs)
 
     fit.__doc__ %= FIT_PARAMETERS_ARG
 

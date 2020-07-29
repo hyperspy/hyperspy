@@ -24,7 +24,6 @@ from scipy.optimize import OptimizeResult
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
-
 TOL = 1e-5
 
 
@@ -83,7 +82,7 @@ class TestModel2D:
         "grad, expected",
         [
             (None, (0.9999993, -5.0000023, -4.9999982, 0.9999994, 1.9999986)),
-            ("auto", (0.9999993, -5.0000023, -4.9999982, 0.9999994, 1.9999986)),
+            ("fd", (0.9999993, -5.0000023, -4.9999982, 0.9999994, 1.9999986)),
         ],
     )
     def test_fit_scipy_minimize(self, grad, expected):

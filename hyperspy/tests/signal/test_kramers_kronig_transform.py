@@ -17,12 +17,11 @@
 
 
 import numpy as np
-
 import pytest
 
-from hyperspy.components1d import VolumePlasmonDrude, Lorentzian
-from hyperspy.misc.eels.tools import eels_constant
 import hyperspy.api as hs
+from hyperspy.components1d import Lorentzian, VolumePlasmonDrude
+from hyperspy.misc.eels.tools import eels_constant
 
 
 class Test2D:

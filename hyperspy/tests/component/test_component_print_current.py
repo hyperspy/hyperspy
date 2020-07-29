@@ -18,7 +18,10 @@
 import pytest
 
 from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
-from hyperspy.misc.model_tools import current_component_values, current_model_values, _is_iter, _iter_join, _non_iter
+from hyperspy.misc.model_tools import (_is_iter, _iter_join, _non_iter,
+                                       current_component_values,
+                                       current_model_values)
+
 
 class TestSetParameters:
 

@@ -20,7 +20,6 @@ import numpy as np
 import matplotlib.transforms as transforms
 
 from hyperspy.drawing.widgets import Widget1DBase
-from hyperspy.drawing.utils import picker_kwargs
 
 
 class LabelWidget(Widget1DBase):
