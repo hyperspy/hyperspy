@@ -96,6 +96,13 @@ class TestHistogramBinMethodsBadDataset:
         assert out.data.shape == (250,)
         assert "Capping the number of bins" in caplog.text
 
+    def test_int_bins_logger_warning(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            out = self.s1.get_histogram(bins=251)
+
+        assert out.data.shape == (250,)
+        assert "Capping the number of bins" in caplog.text
+
     @pytest.mark.parametrize("bins, size", [("scott", (106,)), (10, (10,))])
     def test_working_bins(self, bins, size):
         out = self.s1.get_histogram(bins=bins)

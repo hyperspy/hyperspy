@@ -85,7 +85,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
         )
         bins = new_bins
 
-    _bin_method = bins if isinstance(bins, str) else None
+    _old_bins = bins
 
     if bins in ["knuth", "blocks"]:
         # if range is specified, we need to truncate
@@ -100,14 +100,16 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
     else:
         bins = np.histogram_bin_edges(a, bins=bins, range=range, weights=weights)
 
-    if _bin_method and len(bins) > max_num_bins:
+    _bins_len = bins if not np.iterable(bins) else len(bins)
+
+    if _bins_len > max_num_bins:
         # To avoid memory errors such as that detailed in
         # https://github.com/hyperspy/hyperspy/issues/784,
         # we log a warning and cap the number of bins at
         # a sensible value.
         _logger.warning(
-            f"Estimated number of bins using `bins='{_bin_method}'` "
-            f"is too large ({len(bins)}). Capping the number of bins "
+            f"Estimated number of bins using `bins='{_old_bins}'` "
+            f"is too large ({_bins_len}). Capping the number of bins "
             f"at `max_num_bins={max_num_bins}`. Consider using an "
             "alternative method for calculating the bins such as "
             "`bins='scott'`, or increasing the value of the "
@@ -177,7 +179,7 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
         )
         bins = new_bins
 
-    _bin_method = bins if isinstance(bins, str) else None
+    _old_bins = bins
 
     if bins == "scott":
         _, bins = _scott_bw_dask(a, True)
@@ -189,14 +191,16 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
         with ProgressBar():
             kwargs["range"] = da.compute(a.min(), a.max())
 
-    if _bin_method and len(bins) > max_num_bins:
+    _bins_len = bins if not np.iterable(bins) else len(bins)
+
+    if _bins_len > max_num_bins:
         # To avoid memory errors such as that detailed in
         # https://github.com/hyperspy/hyperspy/issues/784,
         # we log a warning and cap the number of bins at
         # a sensible value.
         _logger.warning(
-            f"Estimated number of bins using `bins='{_bin_method}'` "
-            f"is too large ({len(bins)}). Capping the number of bins "
+            f"Estimated number of bins using `bins='{_old_bins}'` "
+            f"is too large ({_bins_len}). Capping the number of bins "
             f"at `max_num_bins={max_num_bins}`. Consider using an "
             "alternative method for calculating the bins such as "
             "`bins='scott'`, or increasing the value of the "

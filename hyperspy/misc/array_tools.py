@@ -406,7 +406,7 @@ def calculate_bins_histogram(data, max_num_bins=250):
 
     # Cap at max_num_bins to avoid memory errors when
     # the number of bins is very large
-    return min(int(np.ceil(data.ptp() / bin_width)), max_num_bins250)
+    return min(int(np.ceil(data.ptp() / bin_width)), max_num_bins)
 
 
 calculate_bins_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
