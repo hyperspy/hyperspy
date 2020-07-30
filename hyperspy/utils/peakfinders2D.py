@@ -431,7 +431,9 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
                         c - 1 for c in z.shape))) > 0:
             continue
         clean_centers.append(center)
-    return np.array(clean_centers)
+    peaks = np.array(clean_centers)
+    ind = np.lexsort((peaks[:,0], peaks[:,1]))
+    return peaks[ind]
 
 
 def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
@@ -466,9 +468,10 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     # empty array.
     try:
         centers = np.round(blobs[:, :2]).astype(int)
+        ind = np.lexsort((centers[:,0], centers[:,1]))
     except IndexError:
         return NO_PEAKS
-    return centers
+    return centers[ind]
 
 
 def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
