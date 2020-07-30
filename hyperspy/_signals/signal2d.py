@@ -25,7 +25,6 @@ import logging
 import warnings
 
 from scipy import ndimage
-from skimage.feature import peak_local_max
 try:
     # For scikit-image >= 0.17.0
     from skimage.registration._phase_cross_correlation import _upsampled_dft
@@ -44,7 +43,7 @@ from hyperspy.docstrings.plot import (
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
-        find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
+        find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
         find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
 
 
@@ -862,7 +861,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             the x, y pixel coordinates of peaks found in each image.
         """
         method_dict = {
-            'local_max': peak_local_max,
+            'local_max': find_local_max,
             'max': find_peaks_max,
             'minmax': find_peaks_minmax,
             'zaefferer': find_peaks_zaefferer,

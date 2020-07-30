@@ -140,15 +140,15 @@ class TestFindPeaks2D:
                                                      interactive=False)
 
         nt.assert_equal(peaks.inav[0, 0].data,
-                        np.array([[33, 29],
-                                  [27,  1],
+                        np.array([[27,  1],
+                                  [10, 17],
                                   [22, 23],
-                                  [10, 17]]))
+                                  [33, 29]]))
         nt.assert_equal(peaks.inav[0, 1].data,
                         np.array([[35,  3],
-                                  [29, 25],
+                                  [ 6, 13],
                                   [18, 19],
-                                  [ 6, 13]]))
+                                  [29, 25]]))
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('parallel', [True, False])

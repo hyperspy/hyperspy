@@ -19,7 +19,8 @@
 import numpy as np
 import scipy.ndimage as ndi
 from hyperspy.decorators import jit_ifnumba
-from skimage.feature import blob_dog, blob_log, corner_peaks, match_template
+from skimage.feature import (
+        peak_local_max, blob_dog, blob_log, corner_peaks, match_template)
 import copy
 
 
@@ -93,6 +94,31 @@ def clean_peaks(peaks):
     else:
         ind = np.lexsort((peaks[:,0], peaks[:,1]))
         return peaks[ind]
+
+
+def find_local_max(z, **kwargs):
+    """Method to locate positive peaks in an image by local maximum searching.
+
+    Parameters
+    ----------
+    alpha : float
+        Only maxima above `alpha * sigma` are found, where `sigma` is the
+        standard deviation of the image.
+    distance : int
+        When a peak is found, all pixels in a square region of side
+        `2 * distance` are set to zero so that no further peaks can be found
+        in that region.
+
+    Returns
+    -------
+    peaks : numpy.ndarray
+        (n_peaks, 2)
+        Peak pixel coordinates.
+
+    """
+    peaks = peak_local_max(z, **kwargs)
+    return clean_peaks(peaks)
+
 
 def find_peaks_minmax(z, distance=5., threshold=10.):
     """Method to locate the positive peaks in an image by comparing maximum
