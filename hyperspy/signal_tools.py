@@ -264,6 +264,9 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         self._get_edges_info_within_energy_axis()
 
+        self.signal.axes_manager.events.indices_changed.connect(self._on_nav_change, 
+                                                                [])
+
     def _get_edges_info_within_energy_axis(self):
         mid_energy = (self.axis.low_value + self.axis.high_value) / 2
         rng = self.axis.high_value - self.axis.low_value 
@@ -288,6 +291,10 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.energy_all = np.asarray(energy_all)
         self.relevance_all = np.asarray(relevance_all)
         self.description_all = np.asarray(description_all)
+
+    def _on_nav_change(self):
+        self.slp._check_signal_figure_changed()
+        self._plot_labels()
 
     def update_table(self):
         figure_changed = self.slp._check_signal_figure_changed()
