@@ -388,9 +388,9 @@ class EdgesRange(SpanSelectorInSignal1D):
         edges_dict = self.signal._get_edges(edges_to_show, ('Major', 'Minor'))
 
         vm, tm = self.slp.get_markers(edges_dict)
-        self.signal.put_label_on_signal(edges_to_show, 
-                                        vertical_line_marker=vm, 
-                                        text_marker=tm)
+        self.signal.plot_edges_label(edges_to_show, 
+                                     vertical_line_marker=vm, 
+                                     text_marker=tm)
         self.active_edges = active 
         self.active_complementary_edges = complementary
 

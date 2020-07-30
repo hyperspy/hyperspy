@@ -1487,14 +1487,14 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
-    def plot(self, include_edges=False, only_edges=('Major', 'Minor'), 
+    def plot(self, plot_edges=False, only_edges=('Major', 'Minor'), 
              **kwargs):
         """Plot the EELS spectrum. Markers indicating the position of the 
         EELS edges can be added.
         
         Parameters
         ----------
-        include_edges : {False, True, list of string or string}
+        plot_edges : {False, True, list of string or string}
             If True, draws on s.metadata.Sample.elements for edges.
             Alternatively, provide a string of a single edge, or an iterable 
             containing a list of valid elements, EELS families or edges. For
@@ -1508,11 +1508,11 @@ class EELSSpectrum_mixin:
         
         super().plot(**kwargs)
 
-        if include_edges is not False:
-            edges = self._get_edges_to_plot(include_edges, only_edges)
-            self.put_label_on_signal(edges)
+        if plot_edges is not False:
+            edges = self._get_edges_to_plot(plot_edges, only_edges)
+            self.plot_edges_label(edges)
 
-    def put_label_on_signal(self, edges, vertical_line_marker=None, 
+    def plot_edges_label(self, edges, vertical_line_marker=None, 
                             text_marker=None):
         """Put the EELS edge label (vertical line segment and text box) on 
         the signal 
@@ -1549,21 +1549,21 @@ class EELSSpectrum_mixin:
         
         # add the markers to the signal and store them
         self.add_marker(vertical_line_marker + text_marker)
-        info = dict(zip(edges, zip(vertical_line_marker, text_marker)))
-        self._edge_markers = {k:list(v) for k, v in info.items()}
+        self._edge_markers = dict(
+            zip(edges, map(list, zip(vertical_line_marker, text_marker))))
 
-    def _get_edges_to_plot(self, include_edges, only_edges):
+    def _get_edges_to_plot(self, plot_edges, only_edges):
         # get the dictionary of the edge to be shown
         extra_element_edge_family = []
-        if include_edges is True:
+        if plot_edges is True:
             try:
                 elements = self.metadata.Sample.elements
             except AttributeError:
-                raise Warning("No elements defined. Add them with "
-                              "s.add_elements, or specify elements, edge "
-                              "families or edges directly")
+                raise ValueError("No elements defined. Add them with "
+                                 "s.add_elements, or specify elements, edge "
+                                 "families or edges directly")
         else:
-            extra_element_edge_family.extend(np.atleast_1d(include_edges))
+            extra_element_edge_family.extend(np.atleast_1d(plot_edges))
             try:
                 elements = self.metadata.Sample.elements
             except:
