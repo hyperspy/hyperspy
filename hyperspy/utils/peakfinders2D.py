@@ -407,17 +407,15 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         if n_peaks == 0:
             return peaks_curr
 
-        if n_peaks == 1:
-            return peaks_curr
-
         m_peaks = 0
         # Repeat peak finding with more blurring to convergence
         while (n_peaks - m_peaks) / n_peaks > convergence_ratio:  # 8
             m_peaks = n_peaks
+            peaks_old = np.copy(peaks_curr)
             image, peaks_curr = _peak_find_once(image)
             n_peaks = len(peaks_curr)
             if n_peaks == 0:
-                return peaks_curr
+                return peaks_old
 
         return peaks_curr
 
