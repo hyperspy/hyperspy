@@ -81,7 +81,7 @@ def contrast_stretching(data, vmin=None, vmax=None):
     if not isinstance(vmin, (float, int)):
         vmin = np.nanpercentile(data, _parse_value(vmin, 'vmin'))
     if not isinstance(vmax, (float, int)):
-        vmax = np.nanpercentile(data, 100 - _parse_value(vmax, 'vmax'))
+        vmax = np.nanpercentile(data, _parse_value(vmax, 'vmax'))
 
     return vmin, vmax
 

@@ -376,7 +376,7 @@ def test_plot_images_single_image():
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, vmin="0.05th", vmax="0.05th")
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="0.95th")
     return plt.gcf()
 
 
@@ -386,7 +386,7 @@ def test_plot_images_single_image_stack():
     image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, vmin="0.05th", vmax="0.05th")
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="0.95th")
     return plt.gcf()
 
 

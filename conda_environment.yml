@@ -1,6 +1,5 @@
 name: test_env
 channels:
-- defaults
 - conda-forge
 dependencies:
 # Minimal dependencies in alphabetical order

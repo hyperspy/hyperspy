@@ -143,7 +143,7 @@ class PlotConfig(t.HasTraits):
                     desc='Set the default vmin for plotting image using '
                     'the x-th percentile.'
                     )
-    vmax = t.CFloat(0.05,
+    vmax = t.CFloat(0.95,
                     label='vmax x-th percentile',
                     desc='Set the default vmax for plotting image using '
                     'the x-th percentile.'
