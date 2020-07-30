@@ -391,22 +391,12 @@ def calculate_bins_histogram(data, max_num_bins=250):
         Number of bins.
 
     """
-    # Sturges rule
-    sturges_bin_width = data.ptp() / (np.log2(data.size) + 1.0)
-
-    # Freedman Diaconis rule
-    iqr = np.subtract(*np.percentile(data, [75, 25]))
-    fd_bin_width = 2.0 * iqr * data.size ** (-1.0 / 3.0)
-
-    if fd_bin_width:
-        bin_width = min(fd_bin_width, sturges_bin_width)
-    else:
-        # limited variance: fd_bin_width may be zero
-        bin_width = sturges_bin_width
+    # "auto" returns max('sturges', 'fd') which is what we want
+    n_bins = len(np.histogram_bin_edges(data, bins="auto"))
 
     # Cap at max_num_bins to avoid memory errors when
     # the number of bins is very large
-    return min(int(np.ceil(data.ptp() / bin_width)), max_num_bins)
+    return min(n_bins, max_num_bins)
 
 
 calculate_bins_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
