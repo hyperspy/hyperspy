@@ -94,7 +94,6 @@ def clean_peaks(peaks):
         ind = np.lexsort((peaks[:,0], peaks[:,1]))
         return peaks[ind]
 
-
 def find_peaks_minmax(z, distance=5., threshold=10.):
     """Method to locate the positive peaks in an image by comparing maximum
     and minimum filtered images.
@@ -405,7 +404,10 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         # Perform first iteration of peak finding
         image, peaks_curr = _peak_find_once(image)  # 4-7
         n_peaks = len(peaks_curr)
-        if n_peaks == 0:  # pragma: no cover
+        if n_peaks == 0:
+            return peaks_curr
+
+        if n_peaks == 1:
             return peaks_curr
 
         m_peaks = 0
