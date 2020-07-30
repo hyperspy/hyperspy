@@ -73,7 +73,7 @@ def _parse_xml(filename):
             'width':128,
             'height':128,
             'raw_height':130,
-            'record-by':'image'}   
+            'record-by':'image'}
     if om.has_item('root.count'):
         # Stack of images
         info.update({'series_count':int(om.root.scan_parameters.series_count)})
@@ -106,7 +106,7 @@ def file_reader(filename, lazy=False, **kwds):
         'General': {'original_filename': fname,
                     'title': os.path.splitext(fname)[0],
                     },
-        "Signal": {'signal_type': '',
+        "Signal": {'signal_type': 'electron_diffraction',
                    'record_by': 'image'},
     }
 
@@ -162,7 +162,7 @@ def file_reader(filename, lazy=False, **kwds):
                 'index_in_array': index_in_array,
                 'name': names[i],
                 'scale': scales[i],
-                'offset': origins[i],
+                'offset': origins[i] * scales[i],
                 'units': units[i],
             })
             index_in_array += 1

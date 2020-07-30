@@ -27,7 +27,6 @@ from traits.api import Undefined
 import logging
 import inspect
 import copy
-from distutils.version import LooseVersion
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils

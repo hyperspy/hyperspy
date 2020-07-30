@@ -2,36 +2,39 @@ Model fitting
 *************
 
 HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
-two-dimensional signals (images) in n-dimensional data sets. Models can be
-created as a linear combination of predefined components and multiple
-optimisation algorithms can be used to fit the model to experimental data.
-Bounds and weights are supported. The syntax for creating both kinds of model
-is essentially the same, as in this documentation any method referred to in
-the :py:class:`~.model.BaseModel` class is available for both kinds.
+two-dimensional signals (images) in `n`-dimensional data sets.
+Models are defined by adding individual functions (components in HyperSpy's
+terminology) to a :py:class:`~.model.BaseModel` instance. Those individual
+components are then summed to create the final model function that can be
+fitted to the data, by adjusting the free parameters of the individual
+components.
+
 
 Models can be created and fit to experimental data in both one and two
 dimensions i.e. spectra and images respectively. Most of the syntax is
 identical in either case. A one-dimensional model is created when a model
 is created for a :py:class:`~._signals.signal1d.Signal1D` whereas a two-
 dimensional model is created for a :py:class:`~._signals.signal2d.Signal2D`.
-At present plotting and gradient fitting methods tools for are not yet
-provided for the :py:class:`~.models.model2d.Model2D` class.
 
-Binned/unbinned signals
------------------------
+.. note::
 
-Before creating a model verify that the ``Signal.binned`` metadata
-attribute of the signal is set to the correct value because the resulting
-model depends on this parameter. See :ref:`signal.binned` for more details.
+    Plotting and analytical gradient-based fitting methods are not yet
+    implemented for the :py:class:`~.models.model2d.Model2D` class.
 
-.. Warning::
 
-   When importing data that have been binned using other software, in
-   particular Gatan's DM, the stored values may be the averages of the
-   binned channels or pixels, instead of their sum, as would be required
-   for proper statistical analysis. We therefore cannot guarantee that
-   the statistics will be valid. We therefore strongly recommend that all
-   pre-fitting binning should be done using Hyperspy.
+Caveats
+-------
+
+* Before creating a model verify that the
+  :py:attr:`~.signal.BaseSignal.metadata.Signal.binned` metadata
+  attribute of the signal is set to the correct value because the resulting
+  model depends on this parameter. See :ref:`signal.binned` for more details.
+* When importing data that have been binned using other software, in
+  particular Gatan's DM, the stored values may be the averages of the
+  binned channels or pixels, instead of their sum, as would be required
+  for proper statistical analysis. We therefore cannot guarantee that
+  the statistics will be valid. We therefore strongly recommend that all
+  pre-fitting binning should be done using Hyperspy.
 
 Creating a model
 ----------------
@@ -45,8 +48,8 @@ A :py:class:`~.models.model1d.Model1D` can be created for data in the
     >>> s = hs.signals.Signal1D(np.arange(300).reshape(30, 10))
     >>> m = s.create_model() # Creates the 1D-Model and assign it to m
 
-Similarly A :py:class:`~.models.model2d.Model2D` can be created for data in the
-:py:class:`~._signals.signal2d.Signal2D` class using the
+Similarly, a :py:class:`~.models.model2d.Model2D` can be created for data
+in the :py:class:`~._signals.signal2d.Signal2D` class using the
 :py:meth:`~._signals.signal2d.Signal2D.create_model` method:
 
 .. code-block:: python
@@ -57,19 +60,23 @@ Similarly A :py:class:`~.models.model2d.Model2D` can be created for data in the
 The syntax for creating both one-dimensional and two-dimensional models is thus
 identical for the user in practice. When a model is created  you may be
 prompted to provide important information not already included in the
-datafile, `e.g.` if s is EELS data, you may be asked for the accelerating
+datafile, `e.g.` if ``s`` is EELS data, you may be asked for the accelerating
 voltage, convergence and collection semi-angles etc.
 
 
+Model components
+----------------
 
-
-Creating components for the model
----------------------------------
+In HyperSpy a model consists of a sum of individual components. For convenience,
+HyperSpy provides a number of pre-defined model components as well as mechanisms
+to create your own components.
 
 .. _model_components-label:
 
-In HyperSpy a model consists of a linear combination of components
-and various components are available in one (:py:mod:`~.components1d`) and
+Pre-defined model components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Various components are available in one (:py:mod:`~.components1d`) and
 two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
@@ -95,7 +102,8 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~._components.voigt.Voigt`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
-The following components developed with specific signal types in mind are currently available for one-dimensional models:
+The following components developed with specific signal types in mind are
+currently available for one-dimensional models:
 
 * :py:class:`~._components.eels_arctan.EELSArctan`
 * :py:class:`~._components.eels_double_power_law.DoublePowerLaw`
@@ -110,28 +118,14 @@ The following components are currently available for two-dimensional models:
 * :py:class:`~._components.expression.Expression`
 * :py:class:`~._components.gaussian2d.Gaussian2D`
 
-However, this doesn't mean that you have to limit yourself to this meagre list
-of functions. A new function can easily be written as specified as below.
-
-Define components from a pattern
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To turn a Signal1D into a component, pass a Signal1D that does not have any navigation 
-axes to :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`.
-ScaleableFixedPatterns can be scaled in the x and y directions using the
-``xscale`` and ``yscale`` parameters. The position of the pattern can also be adjusted
-the ``xshift``. By default the ``free`` attribute of ``xscale`` and ``xshift`` is set to ``False``.
+However, this doesn't mean that you have to limit yourself to this meagre
+list of functions. As discussed below, it is very easy to turn a
+mathematical, fixed-pattern or Python function into a component.
 
 .. _expression_component-label:
 
 Define components from a mathematical expression
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component
-                  can create 2D components.
-
-In addition to the above specific components, Hyperspy can take any Signal1D as 
-well as most mathematical expressions as components, as detailed below.
 
 
 The easiest way to turn a mathematical expression into a component is using the
@@ -171,7 +165,7 @@ numpy, but often it is possible to boost performance by using
 `numexpr <https://github.com/pydata/numexpr>`_ instead.
 
 It can also create 2D components with optional rotation. In the following
-example we create a 2D gaussian that rotates around its center:
+example we create a 2D Gaussian that rotates around its center:
 
 .. code-block:: python
 
@@ -180,12 +174,12 @@ example we create a 2D gaussian that rotates around its center:
     ... "Gaussian2d", add_rotation=True, position=("x0", "y0"),
     ... module="numpy", )
 
+Define new components from a Python function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Of course :py:class:`~._components.expression.Expression` is only useful for
-analytical functions. For more general components you need to create the
-component "by hand". The good news is that, if you know how to write the
-function with Python, turning it into a component is very easy, just modify
-the following template to suit your needs:
+analytical functions. You can define more general components modifying the
+following template to suit your needs:
 
 
 .. code-block:: python
@@ -243,10 +237,19 @@ the following template to suit your needs:
             """
             return x
 
+Define components from a fixed-pattern
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you need help with the task please submit your question to the `gitter
-chat room <https://gitter.im/hyperspy/hyperspy>`__.
-
+The :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+component enables fitting a pattern (in the form of a
+:py:class:`~._signals.signal1d.Signal1D` instance) to data by shifting 
+(:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.shift`)
+and
+scaling it in the x and y directions using the
+:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale`
+and
+:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.yscale`
+parameters respectively.
 
 Adding components to the model
 ------------------------------
@@ -264,15 +267,20 @@ attribute name, component name and component type will be printed:
     ---- | -------------------- | -------------------- | ---------------------
 
 
-In fact, components may be created automatically in some cases. For example, if
-the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
-power-law background component will automatically be placed in the model. To
-add a component, first we have to create an instance of the component. Once
-the instance has been created we can add the component to the model using
-the :py:meth:`~.model.BaseModel.append` and :py:meth:`~.model.BaseModel.extend`
-methods for one or more components respectively. As an example for a type of data
-that can be modelled using Gaussians we might proceed as follows:
+.. note:: Sometimes components may be created automatically. For example, if
+   the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
+   power-law background component may automatically be added to the model.
+   Therefore, the table above may not all may empty on model creation.
 
+To add a component to the model, first we have to create an instance of the
+component.
+Once the instance has been created we can add the component to the model
+using the :py:meth:`~.model.BaseModel.append` and
+:py:meth:`~.model.BaseModel.extend` methods for one or more components
+respectively.
+
+As an example, let's add several :py:class:`~._components.gaussian.Gaussian`
+components to the model:
 
 .. code-block:: python
 
@@ -287,7 +295,7 @@ that can be modelled using Gaussians we might proceed as follows:
 
 
 We could use the :py:meth:`~.model.BaseModel.append` method twice to add the
-two gaussians, but when adding multiple components it is handier to use the
+two Gaussians, but when adding multiple components it is handier to use the
 extend method that enables adding a list of components at once.
 
 
@@ -317,7 +325,7 @@ We can customise the name of the components.
        2 |              Nitrogen |              Nitrogen |            Gaussian
 
 
-Two components cannot have the same name.
+Notice that two components cannot have the same name:
 
 .. code-block:: python
 
@@ -367,34 +375,9 @@ enables tab completion.
 It is possible to "switch off" a component by setting its
 ``active`` attribute to ``False``. When a component is
 switched off, to all effects it is as if it was not part of the model. To
-switch it on simply set the ``active`` attribute back to ``True``.
+switch it back on simply set the ``active`` attribute back to ``True``.
 
-
-.. _Component.print_current_values:
-
-The current values of a component can be visualised using the
-:py:attr:`~.component.Component.print_current_values()` method. The
-IPython display function elegantly presents it using HTML
-and allows for correct copying and pasting into Excel spreadsheets.
-Alternatively, a simpler form can be shown by setting the
-``fancy`` argument to ``False``
-
-.. code-block:: python
-
-    >>> m = s.create_model()
-    >>> m.fit()
-    >>> G = m[1]
-    >>> G.print_current_values(fancy=False)
-    Gaussian: Al_Ka
-    Active: True
-    Parameter Name |  Free |      Value |        Std |        Min
-    ============== | ===== | ========== | ========== | ==========
-                 A |  True | 62894.6824 | 1039.40944 |        0.0
-             sigma | False | 0.03253440 |       None |       None
-            centre | False |     1.4865 |       None |       None
-
-
-In multidimensional signals it is possible to store the value of the
+In multi-dimensional signals it is possible to store the value of the
 ``active`` attribute at each navigation index.
 To enable this feature for a given component set the
 :py:attr:`~.component.Component.active_is_multidimensional` attribute to
@@ -421,6 +404,7 @@ To enable this feature for a given component set the
     >>> g1.active_is_multidimensional = False
     >>> g1._active_array is None
     True
+
 
 .. _model_indexing-label:
 
@@ -456,8 +440,28 @@ terminal view with the argument ``fancy=False``. One can also filter for only ac
 components and only showing component with free parameters with the arguments
 ``only_active`` and ``only_free``, respectively.
 
-The current coordinates can be either set by navigating the :py:meth:`~.model.BaseModel.plot`, or specified by
-pixel indices in ``m.axes_manager.indices`` or as calibrated coordinates in
+.. _Component.print_current_values:
+
+The current values of a particular component can be printed using the
+:py:attr:`~.component.Component.print_current_values()` method.
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> m.fit()
+    >>> G = m[1]
+    >>> G.print_current_values(fancy=False)
+    Gaussian: Al_Ka
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min
+    ============== | ===== | ========== | ========== | ==========
+                 A |  True | 62894.6824 | 1039.40944 |        0.0
+             sigma | False | 0.03253440 |       None |       None
+            centre | False |     1.4865 |       None |       None
+
+The current coordinates can be either set by navigating the
+:py:meth:`~.model.BaseModel.plot`, or specified by pixel indices in
+``m.axes_manager.indices`` or as calibrated coordinates in
 ``m.axes_manager.coordinates``.
 
 :py:attr:`~.component.Component.parameters` contains a list of the parameters
@@ -466,12 +470,13 @@ the free parameters.
 
 The value of a particular parameter in the current coordinates can be
 accessed by :py:attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
-To access an array of the value of the parameter across all
-navigation pixels, :py:attr:`component.Parameter.map['values']` (e.g. ``Gaussian.A.map["values"]``) can be used.
-On its own, :py:attr:`component.Parameter.map` returns a NumPy array with three elements:
-``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and standard error for
-each index. The last element shows whether the value has been set in a given index, either
-by a fitting procedure or manually.
+To access an array of the value of the parameter across all navigation
+pixels, :py:attr:`component.Parameter.map['values']` (e.g.
+``Gaussian.A.map["values"]``) can be used. On its own,
+:py:attr:`component.Parameter.map` returns a NumPy array with three elements:
+``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and
+standard error for each index. The last element shows whether the value has
+been set in a given index, either by a fitting procedure or manually.
 
 If a model contains several components with the same parameters, it is possible
 to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`.
@@ -550,13 +555,11 @@ components and parameter-names can also be specified. For example:
 
 
 The value of a parameter can be coupled to the value of another by setting the
-:py:attr:`~.component.Parameter.twin` attribute.
-
-For example:
+:py:attr:`~.component.Parameter.twin` attribute:
 
 .. code-block:: python
 
-    >>> gaussian.parameters # Print the parameters of the gaussian components
+    >>> gaussian.parameters # Print the parameters of the Gaussian components
     (<Parameter A of Carbon component>,
     <Parameter sigma of Carbon component>,
     <Parameter centre of Carbon component>)
@@ -659,65 +662,88 @@ Fitting the model to the data
 -----------------------------
 
 To fit the model to the data at the current coordinates (e.g. to fit one
-spectrum at a particular point in a spectrum-image) use
-:py:meth:`~.model.BaseModel.fit`.
+spectrum at a particular point in a spectrum-image), use
+:py:meth:`~.model.BaseModel.fit`. HyperSpy implements a number of
+different optimization approaches, each of which can have particular
+benefits and/or drawbacks depending on your specific application.
+A good approach to choosing an optimization approach is to ask yourself
+the question "Do you want to...":
 
-The following table summarizes the features of the currently available
-optimizers. For more information on the local and global optimization
-algorithms, see the
-`Scipy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
+* Apply bounds to your model parameter values?
+* Use gradient-based fitting algorithms to accelerate your fit?
+* Estimate the standard deviations of the parameter values found by the fit?
+* Fit your data in the least-squares sense, or use another loss function?
+* Find the global optima for your parameters, or is a local optima acceptable?
 
-.. versionadded:: 1.1 Global optimizer `Differential Evolution` added.
+Optimization algorithms
+^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX`
-                    methods changed to the `scipy.optimze.minimize()` notation.
+The following table summarizes the features of some of the optimizers
+currently available in HyperSpy, including whether they support parameter
+bounds, gradients and parameter error estimation. The "Type" column indicates
+whether the optimizers find a local or global optima.
 
 .. _optimizers-table:
 
-.. table:: Features of curve fitting optimizers.
+.. table:: Features of supported curve-fitting optimizers.
 
-    +--------------------------+--------+------------------+----------------------+--------+
-    | Optimizer                | Bounds | Error estimation | Method               | Type   |
-    +==========================+========+==================+======================+========+
-    | "leastsq"                |  Yes   | Yes              | 'ls'                 | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "mpfit"                  |  Yes   | Yes              | 'ls'                 | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "odr"                    |  No    | Yes              | 'ls'                 | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "Nelder-Mead"            |  No    | No               | 'ls', 'ml', 'custom' | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "Powell"                 |  No    | No               | 'ls', 'ml', 'custom' | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "CG"                     |  No    | No               | 'ls', 'ml', 'custom' | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "BFGS"                   |  No    | No               | 'ls', 'ml', 'custom' | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "Newton-CG"              |  No    | No               | 'ls', 'ml', 'custom' | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "L-BFGS-B"               |  Yes   | No               | 'ls', 'ml', 'custom' | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "TNC"                    |  Yes   | No               | 'ls', 'ml', 'custom' | local  |
-    +--------------------------+--------+------------------+----------------------+--------+
-    | "Differential Evolution" |  Yes   | No               | 'ls', 'ml', 'custom' | global |
-    +--------------------------+--------+------------------+----------------------+--------+
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | Optimizer                            | Bounds | Gradients | Errors | Loss function  | Type   |
+    +======================================+========+===========+========+================+========+
+    | ``"lm"`` (default)                   |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"trf"``                            |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"dogbox"``                         |  Yes   | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"odr"``                            |  No    | Yes       | Yes    | Only ``"ls"``  | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | :py:func:`scipy.optimize.minimize`   |  Yes * | Yes *     | No     | All            | local  |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"Differential Evolution"``         |  Yes   | No        | No     | All            | global |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"Dual Annealing"`` **              |  Yes   | No        | No     | All            | global |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
+    | ``"SHGO"`` **                        |  Yes   | No        | No     | All            | global |
+    +--------------------------------------+--------+-----------+--------+----------------+--------+
 
+.. note::
+
+    \* **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
+    supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
+    please see the `SciPy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
+
+    \*\* Requires ``scipy >= 1.2.0``.
+
+The default optimizer in HyperSpy is ``"lm"``, which stands for the `Levenberg-Marquardt
+algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_. In
+earlier versions of HyperSpy (< 1.6) this was known as ``"leastsq"``.
+
+Loss functions
+^^^^^^^^^^^^^^
+
+HyperSpy supports a number of loss functions. The default is ``"ls"``,
+i.e. the least-squares loss. For the vast majority of cases, this loss
+function is appropriate, and has the additional benefit of supporting
+parameter error estimation and :ref:`goodness-of-fit <model.goodness_of_fit>`
+testing. However, if your data contains very low counts per pixel, or
+is corrupted by outliers, the ``"ml-poisson"`` and ``"huber"`` loss
+functions may be worth investigating.
 
 Least squares with error estimation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following example shows how to perfom least squares optimisation with error estimation.
-
-First we create data consisting of a line line ``y = a*x + b`` with ``a = 1``
-and ``b = 100`` and we add white noise to it:
+The following example shows how to perfom least squares optimization with
+error estimation. First we create data consisting of a line
+``y = a*x + b`` with ``a = 1`` and ``b = 100``, and we then add Gaussian
+noise to it:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D(
-    ...     np.arange(100, 300))
+    >>> s = hs.signals.Signal1D(np.arange(100, 300))
     >>> s.add_gaussian_noise(std=100)
 
-To fit it we create a model consisting of a
+To fit it, we create a model consisting of a
 :class:`~._components.polynomial.Polynomial` component of order 1 and fit it
 to the data.
 
@@ -728,7 +754,7 @@ to the data.
     >>> m.append(line)
     >>> m.fit()
 
-On fitting completion, the optimized value of the parameters and their
+Once the fit is complete, the optimized value of the parameters and their
 estimated standard deviation are stored in the following line attributes:
 
 .. code-block:: python
@@ -742,29 +768,27 @@ estimated standard deviation are stored in the following line attributes:
     >>> line.b.std
     13.541061301257537
 
+.. warning::
 
+    When the noise is heteroscedastic, only if the
+    ``metadata.Signal.Noise_properties.variance`` attribute of the
+    :class:`~._signals.signal1d.Signal1D` instance is defined can
+    the parameter standard deviations be estimated accurately.
 
-When the noise is heterocedastic, only if the
-``metadata.Signal.Noise_properties.variance`` attribute of the
-:class:`~._signals.signal1d.Signal1D` instance is defined can the errors be
-estimated accurately. If the variance is not defined, the standard deviation of
-the parameters are still computed and stored in the
-:attr:`~.component.Parameter.std` attribute by setting variance equal 1.
-However, the value won't be correct unless an accurate value of the variance is
-defined in ``metadata.Signal.Noise_properties.variance``. See
-:ref:`signal.noise_properties` for more information.
-
+    If the variance is not defined, the standard deviations are still
+    computed, by setting variance equal to 1. However, this calculation
+    will not be correct unless an accurate value of the variance is
+    provided. See :ref:`signal.noise_properties` for more information.
 
 Weighted least squares with error estimation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the following example, we add poissonian noise to the data instead of
-gaussian noise and proceed to fit as in the previous example.
+In the following example, we add Poisson noise to the data instead of
+Gaussian noise, and proceed to fit as in the previous example.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D(
-    ...     np.arange(300))
+    >>> s = hs.signals.Signal1D(np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
     >>> line  = hs.model.components1D.Polynomial(order=1)
@@ -775,43 +799,77 @@ gaussian noise and proceed to fit as in the previous example.
     >>> line.coefficients.std
     (0.0081710549764721901, 1.4117294994070277)
 
-Because the noise is heterocedastic, the least squares optimizer estimation is
-biased. A more accurate result can be obtained by using weighted least squares
-instead that, although still biased for poissonian noise, is a good
-approximation in most cases.
+Because the noise is heteroscedastic, the least squares optimizer estimation is
+biased. A more accurate result can be obtained with weighted least squares,
+where the weights are proportional to the inverse of the noise variance.
+Although this is still biased for Poisson noise, it is a good approximation
+in most cases where there are a sufficient number of counts per pixel.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(
-   ...     expected_value=hs.signals.Signal1D(np.arange(300)))
+   >>> exp_val = hs.signals.Signal1D(np.arange(300))
+   >>> s.estimate_poissonian_noise_variance(expected_value=exp_val)
    >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
    >>> line.coefficients.std
    (0.0055752036447948173, 0.46950832982673557)
 
+.. warning::
 
-Maximum likelihood optimisation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    When the attribute ``metadata.Signal.Noise_properties.variance``
+    is defined, the behaviour is to perform a weighted least-squares
+    fit using the inverse of the noise variance as the weights.
+    In this scenario, to then disable weighting, you will need to **unset**
+    the attribute. You can achieve this with
+    :meth:`~.signal.BaseSignal.set_noise_variance`:
 
-We can use Poisson maximum likelihood estimation
-instead, which is an unbiased estimator for poissonian noise.
-To do so, we use a general optimizer called "Nelder-Mead".
+    .. code-block:: python
+
+        >>> m.signal.set_noise_variance(None)
+        >>> m.fit()  # This will now be an unweighted fit
+        >>> line.coefficients.value
+        (1.0052331707848698, -1.0723588390873573)
+
+Poisson maximum likelihood estimation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To avoid biased estimation in the case of data corrupted by Poisson noise
+with very few counts, we can use Poisson maximum likelihood estimation (MLE) instead.
+This is an unbiased estimator for Poisson noise. To perform MLE, we must
+use a general, non-linear optimizer from the :ref:`table above <optimizers-table>`,
+such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
 
-   >>> m.fit(fitter="Nelder-Mead", method="ml")
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
-Custom optimisations
-^^^^^^^^^^^^^^^^^^^^
+Estimation of the parameter errors is not currently supported for Poisson
+maximum likelihood estimation.
 
-.. versionadded:: 1.4 Custom optimiser functions
+Huber loss function
+~~~~~~~~~~~~~~~~~~~
 
-Instead of the in-built least squares (``'ls'``) and maximum likelihood
-(``'ml'``) optimisation functions, a custom function can be passed to the
-model:
+HyperSpy also implements the
+`Huber loss <https://en.wikipedia.org/wiki/Huber_loss>`_ function,
+which is typically less sensitive to outliers in the data compared
+to the least-squares loss. Again, we need to use one of the general
+non-linear optimization algorithms:
+
+.. code-block:: python
+
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="huber")
+
+Estimation of the parameter errors is not currently supported
+for the Huber loss function.
+
+Custom loss functions
+~~~~~~~~~~~~~~~~~~~~~
+
+As well as the built-in loss functions described above,
+a custom loss function can be passed to the model:
 
 .. code-block:: python
 
@@ -823,7 +881,7 @@ model:
     ...        the model that is fitted.
     ...    values : np.ndarray
     ...        A one-dimensional array with free parameter values suggested by the
-    ...        optimiser (that are not yet stored in the model).
+    ...        optimizer (that are not yet stored in the model).
     ...    data : np.ndarray
     ...        A one-dimensional array with current data that is being fitted.
     ...    weights : {np.ndarray, None}
@@ -849,9 +907,11 @@ model:
     ...
     ...    # Return squared and summed weighted difference
     ...    return (difference**2).sum()
-    >>> m.fit(fitter='TNC', method='custom', min_function=my_custom_function)
 
-If the optimiser requires a gradient estimation function, it can be similarly
+    >>> # We must use a general non-linear optimizer
+    >>> m.fit(optimizer='Nelder-Mead', loss_function=my_custom_function)
+
+If the optimizer requires an analytical gradient function, it can be similarly
 passed, using the following signature:
 
 .. code-block:: python
@@ -864,7 +924,7 @@ passed, using the following signature:
     ...        the model that is fitted.
     ...    values : np.ndarray
     ...        A one-dimensional array with free parameter values suggested by the
-    ...        optimiser (that are not yet stored in the model).
+    ...        optimizer (that are not yet stored in the model).
     ...    data : np.ndarray
     ...        A one-dimensional array with current data that is being fitted.
     ...    weights : {np.ndarray, None}
@@ -884,26 +944,70 @@ passed, using the following signature:
     ...    jac = model._jacobian(values, data)
     ...
     ...    return -(jac * (data / cur_value - 1)).sum(1)
-    >>> m.fit(method='custom',
-    ...       grad=True,
-    ...       fitter='BFGS', # an optimiser that requires gradient estimation
-    ...       min_function=my_custom_function,
-    ...       min_function_grad=my_custom_gradient_function)
 
+    >>> # We must use a general non-linear optimizer again
+    >>> m.fit(optimizer='L-BFGS-B',
+    ...       loss_function=my_custom_function,
+    ...       grad=my_custom_gradient_function)
 
-Bounded optimisation
+Using gradient information
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 1.6 ``grad="analytical"`` and ``grad="fd"`` keyword arguments
+
+Optimization algorithms that take into account the gradient of
+the loss function will often out-perform so-called "derivative-free"
+optimization algorithms in terms of how rapidly they converge to a
+solution. HyperSpy can use analytical gradients for model-fitting,
+as well as numerical estimates of the gradient based on finite differences.
+
+If all the components in the model support analytical gradients,
+you can pass ``grad="analytical"`` in order to use this information
+when fitting. The results are typically more accurate than an
+estimated gradient, and the optimization often runs faster since
+fewer function evaluations are required to calculate the gradient.
+
+Following the above examples:
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> line = hs.model.components1D.Polynomial(order=1)
+    >>> m.append(line)
+
+    >>> # Use a 2-point finite-difference scheme to estimate the gradient
+    >>> m.fit(grad="fd", fd_scheme="2-point")
+
+    >>> # Use the analytical gradient
+    >>> m.fit(grad="analytical")
+
+    >>> # Huber loss and Poisson MLE functions
+    >>> # also support analytical gradients
+    >>> m.fit(grad="analytical", loss_function="huber")
+    >>> m.fit(grad="analytical", loss_function="ml-poisson")
+
+.. note::
+
+    Analytical gradients are not yet implemented for the
+    :py:class:`~.models.model2d.Model2D` class.
+
+Bounded optimization
 ^^^^^^^^^^^^^^^^^^^^
 
-Problems of ill-conditioning and divergence can be improved by using bounded
-optimization. All components' parameters have the attributes `parameter.bmin` and
-`parameter.bmax` ("bounded min" and "bounded max"). When fitting using the
-`bounded=True` argument by `m.fit(bounded=True)` or `m.multifit(bounded=True)`,
-these attributes set the minimum and maximum values allowed for `parameter.value`.
+Non-linear optimization can sometimes fail to converge to a good optimum,
+especially if poor starting values are provided. Problems of ill-conditioning
+and non-convergence can be improved by using bounded optimization.
+
+All components' parameters have the attributes ``parameter.bmin`` and
+``parameter.bmax`` ("bounded min" and "bounded max"). When fitting using the
+``bounded=True`` argument by ``m.fit(bounded=True)`` or ``m.multifit(bounded=True)``,
+these attributes set the minimum and maximum values allowed for ``parameter.value``.
 
 Currently, not all optimizers support bounds - see the
-:ref:`table above <optimizers-table>`. In the following example a gaussian
+:ref:`table above <optimizers-table>`. In the following example, a Gaussian
 histogram is fitted using a :class:`~._components.gaussian.Gaussian`
-component using mpfit and bounds on the ``centre`` parameter.
+component using the Levenberg-Marquardt ("lm") optimizer and bounds
+on the ``centre`` parameter.
 
 .. code-block:: python
 
@@ -916,8 +1020,7 @@ component using mpfit and bounds on the ``centre`` parameter.
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
-    >>> g1.centre.bounded = True
-    >>> m.fit(fitter="mpfit", bounded=True)
+    >>> m.fit(optimizer="lm", bounded=True)
     >>> m.print_current_values(fancy=False)
     Model1D:  histogram
     Gaussian: Gaussian
@@ -928,17 +1031,66 @@ component using mpfit and bounds on the ``centre`` parameter.
              sigma |  True | 0.00999184 | 2.68064163 |       None |       None
             centre |  True | 9.99980788 | 2.68064070 |        7.0 |       14.0
 
+
+Optimization results
+^^^^^^^^^^^^^^^^^^^^
+
+After fitting the model, details about the optimization
+procedure, including whether it finished successfully,
+are returned as :py:class:`scipy.optimize.OptimizeResult` object,
+according to the keyword argument ``return_info=True``.
+These details are often useful for diagnosing problems such
+as a poorly-fitted model or a convergence failure.
+You can also access the object as the ``fit_output`` attribute:
+
+.. code-block:: python
+
+    >>> m.fit()
+    <scipy.optimize.OptimizeResult object>
+
+    >>> type(m.fit_output)
+    <scipy.optimize.OptimizeResult object>
+
+You can also print this information using the
+``print_info`` keyword argument:
+
+.. code-block:: python
+
+    # Print the info to stdout
+    >>> m.fit(optimizer="L-BFGS-B", print_info=True)
+    Fit info:
+      optimizer=L-BFGS-B
+      loss_function=ls
+      bounded=False
+      grad="fd"
+    Fit result:
+      hess_inv: <3x3 LbfgsInvHessProduct with dtype=float64>
+       message: b'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'
+          nfev: 168
+           nit: 32
+          njev: 42
+        status: 0
+       success: True
+             x: array([ 9.97614503e+03, -1.10610734e-01,  1.98380701e+00])
+
+
+.. _model.goodness_of_fit:
+
 Goodness of fit
 ^^^^^^^^^^^^^^^
 
 The chi-squared, reduced chi-squared and the degrees of freedom are
-computed automatically when fitting. They are stored as signals, in the
-:attr:`~.model.BaseModel.chisq`, :attr:`~.model.BaseModel.red_chisq`  and
-:attr:`~.model.BaseModel.dof` attributes of the model respectively. Note that,
-unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
-estimation of the variance of the data, the chi-squared and reduced
-chi-squared cannot be computed correctly. This is also true for
-homocedastic noise.
+computed automatically when fitting a (weighted) least-squares model
+(i.e. only when ``loss_function="ls"``). They are stored as signals, in the
+:attr:`~.model.BaseModel.chisq`, :attr:`~.model.BaseModel.red_chisq` and
+:attr:`~.model.BaseModel.dof` attributes of the model respectively.
+
+.. warning::
+
+    Unless ``metadata.Signal.Noise_properties.variance`` contains
+    an accurate estimation of the variance of the data, the chi-squared and
+    reduced chi-squared will not be computed correctly. This is true for both
+    homocedastic and heteroscedastic noise.
 
 .. _model.visualization:
 
@@ -950,9 +1102,6 @@ To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
 .. code-block:: python
 
     >>> m.plot() # Visualise the results
-
-
-
 
 By default only the full model line is displayed in the plot. In addition, it
 is possible to display the individual components by calling
@@ -976,22 +1125,19 @@ figure but not its navigator:
 
     >>> m.plot(navigator=False)
 
-
 By default the model plot is automatically updated when any parameter value
 changes. It is possible to suspend this feature with
 :py:meth:`~.model.BaseModel.suspend_update`.
 
 .. To resume it use :py:meth:`~.model.BaseModel.resume_update`.
 
-
 .. _model.starting:
 
 Setting the initial parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Non-linear regression often requires setting sensible starting
-parameters. This can be done by plotting the model and adjusting the parameters
-by hand.
+Non-linear optimization often requires setting sensible starting parameters.
+This can be done by plotting the model and adjusting the parameters by hand.
 
 .. versionchanged:: 1.3
     All :meth:`notebook_interaction` methods renamed to :meth:`gui`. The
@@ -1005,7 +1151,6 @@ conveniently adjust the parameter values by running
 :py:class:`~.component.Component` and
 :py:class:`~.component.Parameter`.
 
-
 .. figure::  images/notebook_widgets.png
     :align:   center
     :width:   985
@@ -1014,12 +1159,10 @@ conveniently adjust the parameter values by running
     sliders to adjust current parameter values. Typing different minimum and
     maximum values changes the boundaries of the slider.
 
-
 Also, :py:meth:`~.models.model1d.Model1D.enable_adjust_position` provides an
 interactive way of setting the position of the components with a
 well-defined position.
 :py:meth:`~.models.model1d.Model1D.disable_adjust_position` disables the tool.
-
 
 .. figure::  images/model_adjust_position.png
     :align:   center
@@ -1027,8 +1170,6 @@ well-defined position.
 
     Interactive component position adjustment tool. Drag the vertical lines
     to set the initial value of the position parameter.
-
-
 
 Exclude data from the fitting process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1043,65 +1184,65 @@ undesired spectral channels from the fitting process:
 Fitting multidimensional datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To fit the model to all the elements of a multidimensional dataset use
-:py:meth:`~.model.BaseModel.multifit`, e.g.:
+To fit the model to all the elements of a multidimensional dataset, use
+:py:meth:`~.model.BaseModel.multifit`:
 
 .. code-block:: python
 
     >>> m.multifit() # warning: this can be a lengthy process on large datasets
 
 :py:meth:`~.model.BaseModel.multifit` fits the model at the first position,
-store the result of the fit internally and move to the next position until
+stores the result of the fit internally and move to the next position until
 reaching the end of the dataset.
 
 .. NOTE::
 
     Sometimes this method can fail, especially in the case of a TEM spectrum
     image of a particle surrounded by vacuum (since in that case the
-    top-left pixel will typically be an empty signal). To get sensible
-    starting parameters, you can do a single
+    top-left pixel will typically be an empty signal).
+
+    To get sensible starting parameters, you can do a single
     :py:meth:`~.model.BaseModel.fit` after changing the active position
     within the spectrum image (either using the plotting GUI or by directly
     modifying ``s.axes_manager.indices`` as in :ref:`Setting_axis_properties`).
+
     After doing this, you can initialize the model at every pixel to the
-    values from the single pixel fit using
-    ``m.assign_current_values_to_all()``, and then use
-    :py:meth:`~.model.BaseModel.multifit` to perform the fit over the entire
-    spectrum image.
+    values from the single pixel fit using ``m.assign_current_values_to_all()``,
+    and then use :py:meth:`~.model.BaseModel.multifit` to perform the fit over
+    the entire spectrum image.
 
 .. versionadded:: 1.6 New optional fitting iteration path `"serpentine"`
 
-Typically, curve fitting on a multidimensional dataset happens in the following 
-manner: Pixels are fit along the row from the first index in the first row, and once the 
-final pixel is reached, one proceeds from the first index in the second row. 
-Since the fitting procedure typically uses the fit of the previous pixel 
-as the starting point for the next, a common problem with this fitting iteration 
-path is that the fitting fails going from the end of one row to the beginning of 
-the next, as the spectrum can change abruptly. This kind of iteration path is 
-the default in HyperSpy (but will change to ``'serpentine'`` in HyperSpy version 
-2.0). It can be explicitly set using the :py:meth:`~.model.BaseModel.multifit` 
-``iterpath='flyback'`` argument. A simple solution to the flyback fitting problem 
-is to iterate through the signal indices in a horizontal serpentine pattern, 
-as seen on the image below. This alternate iteration method can be enabled 
-by the :py:meth:`~.model.BaseModel.multifit` ``iterpath='serpentine'`` argument. 
-The serpentine pattern supports n-dimensional navigation space, so the first 
-index in the second frame of a three-dimensional navigation space will be at the 
-last position of the previous frame.
+Typically, curve fitting on a multidimensional dataset happens in the following
+manner: Pixels are fit along the row from the first index in the first row, and once the
+final pixel is reached, one proceeds from the first index in the second row.
+Since the fitting procedure typically uses the fit of the previous pixel
+as the starting point for the next, a common problem with this fitting iteration
+path is that the fitting fails going from the end of one row to the beginning of
+the next, as the spectrum can change abruptly. This kind of iteration path is
+the default in HyperSpy (but will change to ``'serpentine'`` in HyperSpy version
+2.0). It can be explicitly set using the :py:meth:`~.model.BaseModel.multifit`
+``iterpath='flyback'`` argument.
+
+A simple solution to the flyback fitting problem is to iterate through the
+signal indices in a horizontal serpentine pattern, as seen on the image below.
+This alternate iteration method can be enabled by the :py:meth:`~.model.BaseModel.multifit`
+``iterpath='serpentine'`` argument. The serpentine pattern supports n-dimensional
+navigation space, so the first index in the second frame of a three-dimensional
+navigation space will be at the last position of the previous frame.
 
 .. figure::  images/FlybackVsSerpentine.png
     :align:   center
     :width:   500
 
-    Comparing the scan patterns generated by the  ``'flyback'`` and ``'serpentine'``  
-    iterpath options for a 2D navigation space. The pixel intensity and number refers 
+    Comparing the scan patterns generated by the  ``'flyback'`` and ``'serpentine'``
+    iterpath options for a 2D navigation space. The pixel intensity and number refers
     to the order that the signal is fitted in.
-
 
 Sometimes one may like to store and fetch the value of the parameters at a
 given position manually. This is possible using
 :py:meth:`~.model.BaseModel.store_current_values` and
 :py:meth:`~.model.BaseModel.fetch_stored_values`.
-
 
 Visualising the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1176,6 +1317,7 @@ Current stored models can be listed by calling ``s.models``:
        # |      Attribute Name |       Component Name |       Component Type
     ---- | ------------------- | -------------------- | --------------------
        0 |          Lorentzian |           Lorentzian |           Lorentzian
+
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1387,4 +1529,4 @@ the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
 
 .. code-block:: python
 
-    >>> samf.start(fitter='mpfit', bounded=True)
+    >>> samf.start(optimizer='lm', bounded=True)

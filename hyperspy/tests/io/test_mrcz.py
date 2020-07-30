@@ -28,21 +28,8 @@ from hyperspy import signals
 from hyperspy.io import load, save
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
-try:
-    import blosc
-    blosc_installed = True
-except BaseException:
-    blosc_installed = False
-try:
-    import mrcz
-    mrcz_installed = True
-except BaseException:
-    mrcz_installed = False
 
-
-
-pytestmark = pytest.mark.skipif(
-    not mrcz_installed, reason="mrcz not installed")
+mrcz = pytest.importorskip("mrcz", reason="skipping test_mrcz tests, requires mrcz")
 
 
 #==============================================================================
@@ -168,6 +155,14 @@ class TestPythonMrcz:
                              _generate_parameters())
     def test_MRC(self, dtype, compressor, clevel, lazy):
         t_start = perf_counter()
+
+        try:
+            import blosc
+
+            blosc_installed = True
+        except BaseException:
+            blosc_installed = False
+
         if not blosc_installed and compressor is not None:
             with pytest.raises(ImportError):
                 return self.compareSaveLoad([2, 64, 32], dtype=dtype,
@@ -182,7 +177,7 @@ class TestPythonMrcz:
 
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
-        pytest.importorskip('blosc')
+        blosc = pytest.importorskip('blosc', reason="skipping test_async, requires blosc")
         t_start = perf_counter()
         self.compareSaveLoad([2, 64, 32], dtype=dtype, compressor='zstd',
                              clevel=1, do_async=True)

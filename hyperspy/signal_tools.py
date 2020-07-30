@@ -56,7 +56,8 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        self.signal.plot()
+        if signal._plot is None or not signal._plot.is_active:
+            signal.plot()
         self.span_selector_switch(on=True)
 
     def on_disabling_span_selector(self):
@@ -96,6 +97,11 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.ss_right_value = np.nan
         self.span_selector_switch(True)
 
+    @property
+    def is_span_selector_valid(self):
+        return (not np.isnan(self.ss_left_value) and
+                not np.isnan(self.ss_right_value) and
+                self.ss_left_value <= self.ss_right_value)
 
 class LineInSignal1D(t.HasTraits):
 
@@ -606,7 +612,7 @@ class ImageContrastEditor(t.HasTraits):
                 lambda: self.image.axes_manager.events.indices_changed.disconnect(
                     self._reset), [])
 
-            # Disconnect update image to avoid image flickering and reconnect 
+            # Disconnect update image to avoid image flickering and reconnect
             # it when necessary in the close method.
             self.image.disconnect()
 
@@ -720,7 +726,7 @@ class ImageContrastEditor(t.HasTraits):
                                          step="mid", color=color)
         self.ax.set_xlim(self._vmin, self._vmax)
         if update_span:
-            # Restore the span selector at the correct position after updating 
+            # Restore the span selector at the correct position after updating
             # the range of the histogram
             self.span_selector._set_span_x(
                     self.ax.transData.inverted().transform(span_x_coord)[0])
@@ -772,8 +778,8 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            # No span selector, so we use the saturated_pixels value to 
-            # calculate the vim and vmax values 
+            # No span selector, so we use the saturated_pixels value to
+            # calculate the vim and vmax values
             self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
@@ -867,25 +873,25 @@ IMAGE_CONTRAST_EDITOR_HELP = \
 <p><b>Norm</b>: Normalisation used to display the image.</p>
 
 <p><b>Saturated pixels</b>: The percentage of pixels that are left out of the bounds.
-For example, the low and high bounds of a value of 1 are the 0.5% and 99.5% 
+For example, the low and high bounds of a value of 1 are the 0.5% and 99.5%
 percentiles. It must be in the [0, 100] range.</p>
 
-<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma 
+<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma
 correction). <i>(not compatible with the 'log' norm)</i>.</p>
 
-<p><b>Auto</b>: If selected, adjust automatically the contrast when changing 
+<p><b>Auto</b>: If selected, adjust automatically the contrast when changing
 nagivation axis by taking into account others parameters.</p>
 
 <h3>Advanced parameters</h3>
-                                                
-<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+
+<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
-<p><b>Linear scale</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+<p><b>Linear scale</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
 <h3>Buttons</h3>
@@ -938,6 +944,7 @@ class IntegrateArea(SpanSelectorInSignal1D):
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
+        'Doniach',
         'Gaussian',
         'Lorentzian',
         'Offset',
@@ -945,6 +952,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Power Law',
         'Exponential',
         'SkewNormal',
+        'SplitVoigt',
         'Voigt',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
@@ -964,25 +972,34 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            'full',
                            'ss_range',
                            default='full')
-    hi = t.Int(0)
+    red_chisq = t.Float(np.nan)
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
-                 show_progressbar=None):
+                 show_progressbar=None, model=None):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
-        self.polynomial_order = polynomial_order
-        self.background_type = background_type
-        self.set_background_estimator()
-        self.fast = fast
-        self.plot_remainder = plot_remainder
-        self.zero_fill = zero_fill
-        self.show_progressbar = show_progressbar
         self.bg_line = None
         self.rm_line = None
+        self.background_estimator = None
+        self.fast = fast
+        self.plot_remainder = plot_remainder
+        if model is None:
+            from hyperspy.models.model1d import Model1D
+            model = Model1D(signal)
+        self.model = model
+        self.polynomial_order = polynomial_order
+        self.background_type = background_type
+        self.zero_fill = zero_fill
+        self.show_progressbar = show_progressbar
+        self.set_background_estimator()
+
+        self.signal.axes_manager.events.indices_changed.connect(self._fit, [])
 
     def on_disabling_span_selector(self):
+        # Disconnect event
+        self.disconnect()
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
@@ -991,42 +1008,32 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.rm_line = None
 
     def set_background_estimator(self):
-        if self.background_type == 'Gaussian':
-            self.background_estimator = components1d.Gaussian()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Lorentzian':
-            self.background_estimator = components1d.Lorentzian()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Offset':
-            self.background_estimator = components1d.Offset()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Polynomial':
-            with ignore_warning(message="The API of the `Polynomial` component"):
-                self.background_estimator = components1d.Polynomial(
-                    self.polynomial_order)
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Power Law':
-            self.background_estimator = components1d.PowerLaw()
-            self.bg_line_range = 'from_left_range'
-        elif self.background_type == 'Exponential':
-            self.background_estimator = components1d.Exponential()
-            self.bg_line_range = 'from_left_range'
-        elif self.background_type == 'SkewNormal':
-            self.background_estimator = components1d.SkewNormal()
-            self.bg_line_range = 'full'
-        elif self.background_type == 'Voigt':
-            with ignore_warning(message="The API of the `Voigt` component"):
-                self.background_estimator = components1d.Voigt(legacy=False)
-            self.bg_line_range = 'full'
+        if self.model is not None:
+            for component in self.model:
+                self.model.remove(component)
+        self.background_estimator, self.bg_line_range = _get_background_estimator(
+            self.background_type, self.polynomial_order)
+        if self.model is not None and len(self.model) == 0:
+            self.model.append(self.background_estimator)
+        if not self.fast and self.is_span_selector_valid:
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value,
+                self.ss_right_value,
+                only_current=True)
 
     def _polynomial_order_changed(self, old, new):
-        with ignore_warning(message="The API of the `Polynomial` component"):
-            self.background_estimator = components1d.Polynomial(new)
+        self.set_background_estimator()
         self.span_selector_changed()
 
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
         self.span_selector_changed()
+
+    def _fast_changed(self, old, new):
+        if self.span_selector is None or not self.is_span_selector_valid:
+            return
+        self._fit()
+        self._update_line()
 
     def _ss_left_value_changed(self, old, new):
         if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
@@ -1059,11 +1066,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.rm_line.plot()
 
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
-        # First try to update the estimation
-        self.background_estimator.estimate_parameters(
-            self.signal, self.ss_left_value, self.ss_right_value,
-            only_current=True)
-
         if self.bg_line_range == 'from_left_range':
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
@@ -1090,46 +1092,127 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         return self.signal() - self.bg_line.line.get_ydata()
 
     def span_selector_changed(self):
-        if self.ss_left_value is np.nan or self.ss_right_value is np.nan or\
-                self.ss_right_value <= self.ss_left_value:
+        if not self.is_span_selector_valid:
             return
-        if self.background_estimator is None:
+        try:
+            self._fit()
+            self._update_line()
+        except:
+            pass
+
+    def _fit(self):
+        if not self.is_span_selector_valid:
             return
-        res = self.background_estimator.estimate_parameters(
-            self.signal, self.ss_left_value,
-            self.ss_right_value,
-            only_current=True)
+        # Set signal range here to set correctly the channel_switches for
+        # the chisq calculation when using fast
+        self.model.set_signal_range(self.ss_left_value, self.ss_right_value)
+        if self.fast:
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value,
+                self.ss_right_value,
+                only_current=True)
+            # Calculate chisq
+            self.model._calculate_chisq()
+        else:
+            self.model.fit()
+        self.red_chisq = self.model.red_chisq.data[
+            self.model.axes_manager.indices]
+
+    def _update_line(self):
         if self.bg_line is None:
-            if res:
-                self.create_background_line()
+            self.create_background_line()
         else:
             self.bg_line.update()
         if self.plot_remainder:
             if self.rm_line is None:
-                if res:
-                    self.create_remainder_line()
+                self.create_remainder_line()
             else:
                 self.rm_line.update()
 
     def apply(self):
-        if self.signal._plot:
-            self.signal._plot.close()
-            plot = True
-        else:
-            plot = False
-        background_type = ("PowerLaw" if self.background_type == "Power Law"
-                           else self.background_type)
-        new_spectra = self.signal.remove_background(
+        if not self.is_span_selector_valid:
+            return
+        return_model = (self.model is not None)
+        result = self.signal._remove_background_cli(
             signal_range=(self.ss_left_value, self.ss_right_value),
-            background_type=background_type,
+            background_estimator=self.background_estimator,
             fast=self.fast,
             zero_fill=self.zero_fill,
-            polynomial_order=self.polynomial_order,
-            show_progressbar=self.show_progressbar)
+            show_progressbar=self.show_progressbar,
+            model=self.model,
+            return_model=return_model)
+        new_spectra = result[0] if return_model else result
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
-        if plot:
-            self.signal.plot()
+
+    def disconnect(self):
+        axes_manager = self.signal.axes_manager
+        if self._fit in axes_manager.events.indices_changed.connected:
+            axes_manager.events.indices_changed.disconnect(self._fit)
+
+
+def _get_background_estimator(background_type, polynomial_order=1):
+    """
+    Assign 1D component to specified background type.
+
+    Parameters
+    ----------
+    background_type : str
+        The name of the component to model the background.
+    polynomial_order : int, optional
+        The polynomial order used in the polynomial component
+
+    Raises
+    ------
+    ValueError
+        When the background type is not a valid string.
+
+    Returns
+    -------
+    background_estimator : Component1D
+        The component mdeling the background.
+    bg_line_range : 'full' or 'from_left_range'
+        The range to draw the component (used in the BackgroundRemoval tool)
+
+    """
+    background_type = background_type.lower().replace(' ', '')
+    if background_type == 'doniach':
+        background_estimator = components1d.Doniach()
+        bg_line_range = 'full'
+    elif background_type == 'gaussian':
+        background_estimator = components1d.Gaussian()
+        bg_line_range = 'full'
+    elif background_type == 'lorentzian':
+        background_estimator = components1d.Lorentzian()
+        bg_line_range = 'full'
+    elif background_type == 'offset':
+        background_estimator = components1d.Offset()
+        bg_line_range = 'full'
+    elif background_type == 'polynomial':
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            background_estimator = components1d.Polynomial(
+                 order=polynomial_order, legacy=False)
+        bg_line_range = 'full'
+    elif background_type == 'powerlaw':
+        background_estimator = components1d.PowerLaw()
+        bg_line_range = 'from_left_range'
+    elif background_type == 'exponential':
+        background_estimator = components1d.Exponential()
+        bg_line_range = 'from_left_range'
+    elif background_type == 'skewnormal':
+        background_estimator = components1d.SkewNormal()
+        bg_line_range = 'full'
+    elif background_type == 'splitvoigt':
+        background_estimator = components1d.SplitVoigt()
+        bg_line_range = 'full'
+    elif background_type == 'voigt':
+        with ignore_warning(message="The API of the `Voigt` component"):
+            background_estimator = components1d.Voigt(legacy=False)
+        bg_line_range = 'full'
+    else:
+        raise ValueError(f"Background type '{background_type}' not recognized.")
+
+    return background_estimator, bg_line_range
 
 
 SPIKES_REMOVAL_INSTRUCTIONS = (

@@ -20,13 +20,16 @@
 import itertools
 
 import numpy as np
-import pytest
 from numpy.testing import assert_allclose
+import pytest
 
 from hyperspy.components1d import SplitVoigt
 from hyperspy.signals import Signal1D
+from hyperspy.utils import stack
+
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
+
 
 def test_function():
     g = SplitVoigt()
@@ -46,7 +49,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 1
     axis.offset = -20
-    g1 = SplitVoigt(A=20001.0, centre=10.0, sigma1=3.0,sigma2=3.0)
+    g1 = SplitVoigt(A=20001.0, centre=10.0, sigma1=3.0, sigma2=3.0)
     s.data = g1.function(axis.axis)
     if lazy:
         s = s.as_lazy()
@@ -55,7 +58,32 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g1.A.value, g2.A.value * factor,rtol=0.2)
+    assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.2)
     assert abs(g2.centre.value - g1.centre.value) <= 0.1
     assert abs(g2.sigma1.value - g1.sigma1.value) <= 0.1
     assert abs(g2.sigma2.value - g1.sigma2.value) <= 0.1
+
+
+@pytest.mark.parametrize(("lazy"), (True, False))
+def test_function_nd(lazy):
+    s = Signal1D(np.empty((200,)))
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = .05
+    axis.offset = -5
+    A, sigma1, sigma2, fraction, centre = 5, 0.3, 0.75, 0.5, 1
+    g1 = SplitVoigt(A=A, sigma1=sigma1, sigma2=sigma2, fraction=fraction,
+                    centre=centre)
+    s.data = g1.function(axis.axis)
+    s2 = stack([s] * 2)
+    if lazy:
+        s2 = s2.as_lazy()
+    g2 = SplitVoigt()
+    assert g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
+
+    g2.A.map['values'] = [A] * 2
+    g2.sigma1.map['values'] = [sigma1] * 2
+    g2.sigma2.map['values'] = [sigma2] * 2
+    g2.fraction.map['values'] = [fraction] * 2
+    g2.centre.map['values'] = [centre] * 2
+
+    assert_allclose(g2.function_nd(axis.axis), s2.data)

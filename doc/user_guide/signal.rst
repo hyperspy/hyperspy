@@ -1390,18 +1390,27 @@ set this attribute as in the following example where we set the variance to be
 
 .. code-block:: python
 
-    s.metadata.Signal.set_item("Noise_properties.variance", 10)
+    >>> s.metadata.Signal.set_item("Noise_properties.variance", 10)
 
-For heterocedastic noise the ``variance`` attribute must be a
+You can also use the functions :meth:`~.signal.BaseSignal.set_noise_variance`
+and :meth:`~.signal.BaseSignal.get_noise_variance` for convenience:
+
+.. code-block:: python
+
+    >>> s.set_noise_variance(10)
+    >>> s.get_noise_variance()
+    10
+
+For heteroscedastic noise the ``variance`` attribute must be a
 :class:`~.signal.BaseSignal`.  Poissonian noise is a common case  of
-heterocedastic noise where the variance is equal to the expected value. The
+heteroscedastic noise where the variance is equal to the expected value. The
 :meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance`
-:class:`~.signal.BaseSignal` method can help setting the variance of data with
-semi-poissonian noise. With the default arguments, this method simply sets the
+method can help setting the variance of data with
+semi-Poissonian noise. With the default arguments, this method simply sets the
 variance attribute to the given ``expected_value``. However, more generally
-(although then noise is not strictly poissonian), the variance may be
+(although the noise is not strictly Poissonian), the variance may be
 proportional to the expected value. Moreover, when the noise is a mixture of
-white (gaussian) and poissonian noise, the variance is described by the
+white (Gaussian) and Poissonian noise, the variance is described by the
 following linear model:
 
     .. math::

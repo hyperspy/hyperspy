@@ -36,7 +36,6 @@ import sys
 import zlib
 import os
 import warnings
-import re
 
 #Maybe later we can implement reading the class with the io utils tools instead
 #of re-defining read functions in the class
@@ -47,7 +46,6 @@ import re
 
 #DictionaryTreeBrowser class handles the fancy metadata dictionnaries
 #from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.docstrings.signal import OPTIMIZE_ARG
 from hyperspy.exceptions import MountainsMapFileError
 
 _logger = logging.getLogger(__name__)
