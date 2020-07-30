@@ -20,10 +20,16 @@ import copy
 import itertools
 
 import numpy as np
-from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.marker import markers
 
 class SpectrumLabelPosition():
+    '''
+    A class to get the positions of labels in spectrums such as EELS, EDX,
+    XRF. The main method is the get_markers method which the user supplies a 
+    dictionary of edge labels specifying its energy positions, and it returns 
+    markers for labelling them.
+    '''
+    
     edge_label_style = {'ha' : 'center', 'va' : 'center', 
                         'bbox' : dict(facecolor='white', alpha=0.2)}
     colour_list_label = ['black', 'darkblue', 'darkgreen', 
@@ -103,10 +109,9 @@ class SpectrumLabelPosition():
 
         Parameters
         ----------
-        labels : iterable
-            A sequence of strings contains edges in the format of 
-            element_subshell for EELS. Could be a dictionary specifying the 
-            energy value or just strings.
+        labels : dictionary
+            A dictionary with the labels as keys and their energies as values.
+            E.g. for EELS edges it could be {'Mn_L2': 651.0, 'Cr_L3': 575.0}.
     
         Returns
         -------
@@ -115,7 +120,7 @@ class SpectrumLabelPosition():
         txs : list
             A list contains HyperSpy's text marker
         '''
-        
+
         xytext = self._get_textbox_pos(labels)
         
         vls = []
@@ -158,10 +163,7 @@ class SpectrumLabelPosition():
 
         xytext = []
         for edge in edges:
-            try:
-                energy = edges[edge]
-            except TypeError:
-                energy = get_info_from_edges(edge)[0]['onset_energy (eV)']
+            energy = edges[edge]
             
             yval = self.signal.isig[float(energy)].data[self.sig_index] 
             if yval <= mid: # from top
