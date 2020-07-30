@@ -20,12 +20,15 @@ import numpy as np
 
 from hyperspy.component import Component
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
-sqrt2pi = np.sqrt(2*np.pi)
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
+
+sqrt2pi = np.sqrt(2 * np.pi)
 
 
 class SplitVoigt(Component):
 
-    r"""Split pseudo - voigt
+    r"""Split pseudo-Voigt
 
     .. math::
         :nowrap:
@@ -43,6 +46,7 @@ class SplitVoigt(Component):
             pV(x,centre,\sigma_2), & x >  centre
         \end{cases}
         \]
+
     ================= ===========
     Variable           Parameter
     ================= ===========
@@ -59,17 +63,17 @@ class SplitVoigt(Component):
     sigma is allowed to vary to create an asymmetric profile
     In this case the voigt is a pseudo voigt- consisting of a
     mixed gaussian and lorentzian sum
-    
+
     """
 
-    def __init__(self, A=1., sigma1=1.,sigma2=1.0, fraction=0.0,centre=0.):
-        Component.__init__(self, ('A', 'sigma1','sigma2', 'centre','fraction'))
+    def __init__(self, A=1., sigma1=1., sigma2=1.0, fraction=0.0, centre=0.):
+        Component.__init__(
+            self, ('A', 'sigma1', 'sigma2', 'centre', 'fraction'))
         self.A.value = A
         self.sigma1.value = sigma1
         self.sigma2.value = sigma2
         self.centre.value = centre
         self.fraction.value = fraction
-
 
         # Boundaries
         self.A.bmin = 1.0e-8
@@ -83,7 +87,23 @@ class SplitVoigt(Component):
         self.isbackground = False
         self.convolved = True
 
-    def function(self,x):
+    def _function(self, x, A, sigma1, sigma2, fraction, centre):
+        arg = (x - centre)
+        lor1 = (A / (1.0 + ((1.0 * arg) / sigma1) ** 2)) \
+            / (0.5 * np.pi * (sigma1 + sigma2))
+        lor2 = (A / (1.0 + ((1.0 * arg) / sigma2) ** 2)) \
+            / (0.5 * np.pi * (sigma1 + sigma2))
+
+        prefactor = A / (sqrt2pi * 0.5 * (sigma1 + sigma2))
+        gauss1 = prefactor * np.exp(-0.5 * arg * arg / (sigma1 * sigma1))
+        gauss2 = prefactor * np.exp(-0.5 * arg * arg / (sigma2 * sigma2))
+
+        p1 = (1.0 - fraction) * gauss1 + fraction * lor1
+        p2 = (1.0 - fraction) * gauss2 + fraction * lor2
+
+        return np.where(x <= centre, p1, p2)
+
+    def function(self, x):
         """Split pseudo voigt - a linear combination  of gaussian and lorentzian
 
         Parameters
@@ -102,27 +122,35 @@ class SplitVoigt(Component):
             weight for lorentzian peak in the linear combination,
             and (1-fraction) is the weight for gaussian peak.
         """
-        area      = self.A.value
-        sigma1    = self.sigma1.value
-        sigma2    = self.sigma2.value
-        centre    = self.centre.value
-        fraction  = self.fraction.value
+        A = self.A.value
+        sigma1 = self.sigma1.value
+        sigma2 = self.sigma2.value
+        fraction = self.fraction.value
+        centre = self.centre.value
 
-        arg = (x-centre)
-        lor1 = (area / (1.0 + ((1.0 * arg) / sigma1) ** 2)) \
-            / (0.5*np.pi * (sigma1+sigma2))
-        lor2 = (area / (1.0 + ((1.0 * arg) / sigma2) ** 2)) \
-            / (0.5*np.pi * (sigma1+sigma2))
+        return self._function(x, A, sigma1, sigma2, fraction, centre)
 
-        prefactor = area / (sqrt2pi * 0.5*(sigma1+sigma2))
-        gauss1 = prefactor*np.exp(-0.5 *arg*arg/(sigma1*sigma1))
-        gauss2 = prefactor*np.exp(-0.5 *arg*arg/(sigma2*sigma2))
+    def function_nd(self, axis):
+        """%s
 
-        p1 = (1.0-fraction)*gauss1 + fraction*lor1
-        p2 = (1.0-fraction)*gauss2 + fraction*lor2
-        return np.where(x<=centre,p1,p2)
+        """
+        if self._is_navigation_multidimensional:
+            x = axis[np.newaxis, :]
+            A = self.A.map['values'][..., np.newaxis]
+            sigma1 = self.sigma1.map['values'][..., np.newaxis]
+            sigma2 = self.sigma2.map['values'][..., np.newaxis]
+            fraction = self.fraction.map['values'][..., np.newaxis]
+            centre = self.centre.map['values'][..., np.newaxis]
+        else:
+            x = axis
+            A = self.A.value
+            sigma1 = self.sigma1.value
+            sigma2 = self.sigma2.value
+            fraction = self.fraction.value
+            centre = self.centre.value
+        return self._function(x, A, sigma1, sigma2, fraction, centre)
 
-
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the split voigt function by calculating the

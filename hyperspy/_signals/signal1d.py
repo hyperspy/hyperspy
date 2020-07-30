@@ -49,12 +49,10 @@ from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.signal_tools import IntegrateArea
-from hyperspy import components1d
+from hyperspy.signal_tools import IntegrateArea, _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
-from hyperspy.misc.test_utils import ignore_warning
 
 
 _logger = logging.getLogger(__name__)
@@ -496,10 +494,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
     shift1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def interpolate_in_between(
-        self, 
+        self,
         start,
         end,
-        delta=3,        
+        delta=3,
         show_progressbar=None,
         parallel=None,
         max_workers=None,
@@ -546,8 +544,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 **kwargs)
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             return dat
-        self._map_iterate(interpolating_function, ragged=False,
-                          parallel=parallel, show_progressbar=show_progressbar, max_workers=max_workers)
+        self._map_iterate(interpolating_function,
+                          ragged=False,
+                          parallel=parallel,
+                          show_progressbar=show_progressbar,
+                          max_workers=max_workers)
         self.events.data_changed.trigger(obj=self)
 
     interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -614,9 +615,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        An array with the result of the estimation in the axis units. 
-        Although the computation is performed in batches if the signal is 
-        lazy, the result is computed in memory because it depends on the 
+        An array with the result of the estimation in the axis units.
+        Although the computation is performed in batches if the signal is
+        lazy, the result is computed in memory because it depends on the
         current state of the axes that could change later on in the workflow.
 
         Raises
@@ -857,7 +858,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         It displays a window where the new calibration can be set by:
 
         * setting the values of offset, units and scale directly
-        * or selecting a range by dragging the mouse on the spectrum figure 
+        * or selecting a range by dragging the mouse on the spectrum figure
           and setting the new values for the given range limits
 
         Parameters
@@ -887,7 +888,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         differential_order=0,
         parallel=None,
         max_workers=None,
-        display=True, 
+        display=True,
         toolkit=None,
     ):
         """
@@ -973,7 +974,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Notes
         -----
-        This method uses the lowess algorithm from the `statsmodels` library, 
+        This method uses the lowess algorithm from the `statsmodels` library,
         which needs to be installed to use this method.
         """
         if not statsmodels_installed:
@@ -1072,16 +1073,29 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
-            zero_fill=False, show_progressbar=None):
-        from hyperspy.models.model1d import Model1D
-        model = Model1D(self)
-        model.append(background_estimator)
+            zero_fill=False, show_progressbar=None, model=None,
+            return_model=False):
+        """ See :py:meth:`~hyperspy._signal1d.signal1D.remove_background`. """
+        if model is None:
+            from hyperspy.models.model1d import Model1D
+            model = Model1D(self)
+        if background_estimator not in model:
+            model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if fast and not self._lazy:
+
+        if not fast:
+            model.set_signal_range(signal_range[0], signal_range[1])
+            model.multifit(show_progressbar=show_progressbar,
+                           iterpath='serpentine')
+            model.reset_signal_range()
+
+        if self._lazy:
+            result = self - model.as_signal(show_progressbar=show_progressbar)
+        else:
             try:
                 axis = self.axes_manager.signal_axes[0]
                 scale_factor = axis.scale if self.metadata.Signal.binned else 1
@@ -1090,13 +1104,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
             except MemoryError:
                 result = self - model.as_signal(
                     show_progressbar=show_progressbar)
-        else:
-            model.set_signal_range(signal_range[0], signal_range[1])
-            # HyperSpy 2.0: remove setting iterpath='serpentine'
-            model.multifit(show_progressbar=show_progressbar,
-                           iterpath='serpentine')
-            model.reset_signal_range()
-            result = self - model.as_signal(show_progressbar=show_progressbar)
 
         if zero_fill:
             if self._lazy:
@@ -1106,6 +1113,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 result.data = da.concatenate([z, cropped_da])
             else:
                 result.isig[:signal_range[0]] = 0
+        if return_model:
+            if fast:
+                # Calculate the variance for each navigation position only when
+                # using fast, otherwise the chisq is already calculated when
+                # doing the multifit
+                d = result.data[..., np.where(model.channel_switches)[0]]
+                variance = model._get_variance(only_current=False)
+                d *= d / (1. * variance)  # d = difference^2 / variance.
+                model.chisq.data = d.sum(-1)
+            result = (result, model)
         return result
 
     def remove_background(
@@ -1116,10 +1133,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
             fast=True,
             zero_fill=False,
             plot_remainder=True,
-            show_progressbar=None, display=True, toolkit=None):
+            show_progressbar=None,
+            return_model=False,
+            display=True,
+            toolkit=None):
         """
         Remove the background, either in place using a gui or returned as a new
-        spectrum using the command line.
+        spectrum using the command line. The fast option is not accurate for
+        most background type - except Gaussian, Offset and Power law - but it
+        is useful to estimate the initial fitting parameters before performing
+        a full fit.
 
         Parameters
         ----------
@@ -1129,8 +1152,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components:  Gaussian, Lorentzian, Offset, Polynomial,
-            PowerLaw, Exponential, SkewNormal, Voigt.
+            Possible components: Doniach, Gaussian, Lorentzian, Offset, Polynomial,
+            PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
@@ -1150,9 +1173,20 @@ class Signal1D(BaseSignal, CommonSignal1D):
             background removal. This preview is obtained from a Fast calculation
             so the result may be different if a NLLS calculation is finally
             performed.
+        return_model : bool
+            If True, the background model is returned. The chi² can be obtained
+            from this model using
+            :py:meth:`~hyperspy.models.model1d.Model1D.chisqd`.
         %s
         %s
         %s
+
+        Returns
+        -------
+        {None, signal, background_model or (signal, background_model)}
+            If signal_range is not 'interactive', the background substracted
+            signal is returned. If return_model is True, returns the background
+            model.
 
         Examples
         --------
@@ -1161,13 +1195,23 @@ class Signal1D(BaseSignal, CommonSignal1D):
         >>> s = hs.signals.Signal1D(range(1000))
         >>> s.remove_background() #doctest: +SKIP
 
-        Using command line, returns a spectrum
+        Using command line, returns a Signal1D:
 
-        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        >>> s.remove_background(signal_range=(400,450),
+                                background_type='PowerLaw')
+        <Signal1D, title: , dimensions: (|1000)>
 
-        Using a full model to fit the background
+        Using a full model to fit the background:
 
-        >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
+        >>> s.remove_background(signal_range=(400,450), fast=False)
+        <Signal1D, title: , dimensions: (|1000)>
+
+        Returns background substracted and the model:
+
+        >>> s.remove_background(signal_range=(400,450),
+                                fast=False,
+                                return_model=True)
+        (<Signal1D, title: , dimensions: (|1000)>, <Model1D>)
 
         Raises
         ------
@@ -1176,46 +1220,32 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
 
         self._check_signal_dimension_equals_one()
+        # Create model here, so that we can return it
+        from hyperspy.models.model1d import Model1D
+        model = Model1D(self)
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
                                    fast=fast,
                                    plot_remainder=plot_remainder,
                                    show_progressbar=show_progressbar,
-                                   zero_fill=zero_fill)
-            return br.gui(display=display, toolkit=toolkit)
+                                   zero_fill=zero_fill,
+                                   model=model)
+            br.gui(display=display, toolkit=toolkit)
+            if return_model:
+                return model
         else:
-            if background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
-            elif background_type == 'Lorentzian':
-                background_estimator = components1d.Lorentzian()
-            elif background_type == 'Offset':
-                background_estimator = components1d.Offset()
-            elif background_type == 'Polynomial':
-                with ignore_warning(message="The API of the `Polynomial` component"):
-                    background_estimator = components1d.Polynomial(
-                        polynomial_order, legacy=False)
-            elif background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Exponential':
-                background_estimator = components1d.Exponential()
-            elif background_type in ('SkewNormal', 'Skew Normal'):
-                background_estimator = components1d.SkewNormal()
-            elif background_type == 'Voigt':
-                with ignore_warning(message="The API of the `Voigt` component"):
-                    background_estimator = components1d.Voigt(legacy=False)
-            else:
-                raise ValueError(
-                    "Background type: " +
-                    background_type +
-                    " not recognized")
-            spectra = self._remove_background_cli(
+            background_estimator = _get_background_estimator(
+                background_type, polynomial_order)[0]
+            result = self._remove_background_cli(
                 signal_range=signal_range,
                 background_estimator=background_estimator,
                 fast=fast,
                 zero_fill=zero_fill,
-                show_progressbar=show_progressbar)
-            return spectra
+                show_progressbar=show_progressbar,
+                model=model,
+                return_model=return_model)
+            return result
     remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
@@ -1351,20 +1381,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self.events.data_changed.trigger(obj=self)
         return channels
 
-    def find_peaks1D_ohaver(
-        self,
-        xdim=None,
-        slope_thresh=0,
-        amp_thresh=None,
-        subchannel=True,
-        medfilt_radius=5,
-        maxpeakn=30000,
-        peakgroup=10,
-        parallel=None,
-        max_workers=None
-    ):
-        """Find positive peaks along a 1D Signal. It detects peaks by looking 
-        for downward zero-crossings in the first derivative that exceed 
+    def find_peaks1D_ohaver(self, xdim=None,
+                            slope_thresh=0,
+                            amp_thresh=None,
+                            subchannel=True,
+                            medfilt_radius=5,
+                            maxpeakn=30000,
+                            peakgroup=10,
+                            parallel=None,
+                            max_workers=None):
+        """Find positive peaks along a 1D Signal. It detects peaks by looking
+        for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
@@ -1405,7 +1432,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        structured array of shape (npeaks) containing fields: 'position', 
+        structured array of shape (npeaks) containing fields: 'position',
         'width', and 'height' for each peak.
 
 
@@ -1470,7 +1497,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        width or [width, left, right], depending on the value of 
+        width or [width, left, right], depending on the value of
         `return_interval`.
         """
 

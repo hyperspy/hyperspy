@@ -23,7 +23,7 @@ import copy
 import types
 from io import StringIO
 import codecs
-import collections
+from collections.abc import Iterable
 import unicodedata
 from contextlib import contextmanager
 import importlib
@@ -793,7 +793,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    return isinstance(obj, collections.abc.Iterable)
+    return isinstance(obj, Iterable)
 
 
 def ordinal(value):
@@ -1140,8 +1140,7 @@ def multiply(iterable):
 
 
 def iterable_not_string(thing):
-    return isinstance(thing, collections.abc.Iterable) and \
-        not isinstance(thing, str)
+    return isinstance(thing, Iterable) and not isinstance(thing, str)
 
 
 def deprecation_warning(msg):

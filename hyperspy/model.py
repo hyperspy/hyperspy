@@ -315,7 +315,7 @@ class BaseModel(list):
               attributes, for more information, see
               :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
-              the model (see 
+              the model (see
               :py:meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
@@ -983,16 +983,28 @@ class BaseModel(list):
         else:
             return [0, self._jacobian(p, y).T]
 
-    def _calculate_chisq(self):
+    def _get_variance(self, only_current=True):
+        """Return the variance taking into account the `channel_switches`.
+        If only_current=True, the variance for the current navigation indices
+        is returned, otherwise the variance for all navigation indices is
+        returned.
+        """
         variance = self.signal.get_noise_variance()
         if variance is not None:
             if isinstance(variance, BaseSignal):
-                variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple)[np.where(
-                                                      self.channel_switches)]
+                if only_current:
+                    variance = variance.data.__getitem__(
+                        self.axes_manager._getitem_tuple
+                        )[np.where(self.channel_switches)]
+                else:
+                    variance = variance.data[..., np.where(
+                        self.channel_switches)[0]]
         else:
             variance = 1.0
+        return variance
 
+    def _calculate_chisq(self):
+        variance = self._get_variance()
         d = self(onlyactive=True).ravel() - self.signal()[np.where(
             self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
@@ -2022,13 +2034,13 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : dict 
+        dictionary : dict
             A dictionary including at least the following fields:
 
-            * components: a list of dictionaries of components, one per 
+            * components: a list of dictionaries of components, one per
               component
             * _whitelist: a dictionary with keys used as references for saved
-              attributes, for more information, see 
+              attributes, for more information, see
               :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 

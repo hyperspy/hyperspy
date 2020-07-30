@@ -18,8 +18,10 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 from hyperspy.components1d import Doniach
+from hyperspy._signals.signal1d import Signal1D
 
 sqrt2pi = np.sqrt(2 * np.pi)
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
@@ -33,3 +35,26 @@ def test_function():
     g.alpha.value = 1.0e-7
     assert_allclose(g.function(2), 3.151281311482424)
     assert_allclose(g.function(1), 7.519884823893001)
+
+
+@pytest.mark.parametrize(("lazy"), (True, False))
+@pytest.mark.parametrize(("only_current"), (True, False))
+@pytest.mark.parametrize(("binned"), (True, False))
+def test_estimate_parameters_binned(only_current, binned, lazy):
+    s = Signal1D(np.empty((200,)))
+    s.metadata.Signal.binned = binned
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = .05
+    axis.offset = -5
+    g1 = Doniach(centre=1, A=5, sigma=1, alpha=0.5)
+    s.data = g1.function(axis.axis)
+    if lazy:
+        s = s.as_lazy()
+    g2 = Doniach()
+    factor = axis.scale if binned else 1
+    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
+                                  only_current=only_current)
+    assert g2.binned == binned
+    assert_allclose(g2.sigma.value, 2.331764, 0.01)
+    assert_allclose(g1.A.value, g2.A.value * factor, 0.3)
+    assert_allclose(g2.centre.value, -0.4791825)
