@@ -271,13 +271,13 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
     return clean_peaks(peaks)
 
 
-def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
+def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
     """Method to locate positive peaks in an image based on statistical
     refinement and difference with respect to mean intensity.
 
     Parameters
     ----------
-    z : ndarray
+    z : numpy.ndarray
         Array of image intensities.
     alpha : float
         Only maxima above `alpha * sigma` are found, where `sigma` is the
@@ -297,11 +297,28 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
 
     Notes
     -----
-    Implemented as described in the PhD thesis of Thomas White (2009) the
-    algorithm was developed by Gordon Ball during a summer project in
-    Cambridge.
-    This version by Ben Martineau (2016), with minor modifications to the
-    original where methods were ambiguous or unclear.
+    Implemented as described in the PhD thesis of Thomas White, University of
+    Cambridge, 2009, with minor modifications to resolve ambiguities.
+
+    The algorithm is as follows:
+
+    1. Adjust the contrast and intensity bias of the image so that all pixels
+       have values between 0 and 1.
+    2. For each pixel, determine the mean and standard deviation of all pixels
+       inside a circle of radius 10 pixels centered on that pixel.
+    3. If the value of the pixel is greater than the mean of the pixels in the
+       circle by more than one standard deviation, set that pixel to have an
+       intensity of 1. Otherwise, set the intensity to 0.
+    4. Smooth the image by convovling it twice with a flat 3x3 kernel.
+    5. Let k = (1/2 - mu)/sigma where mu and sigma are the mean and standard
+       deviations of all the pixel intensities in the image.
+    6. For each pixel in the image, if the value of the pixel is greater than
+       mu + k*sigma set that pixel to have an intensity of 1. Otherwise, set the
+       intensity to 0.
+    7. Detect peaks in the image by locating the centers of gravity of regions
+       of adjacent pixels with a value of 1.
+    8. Repeat #4-7 until the number of peaks found in the previous step
+       converges to within the user defined convergence_ratio.
     """
     try:
         from sklearn.cluster import DBSCAN
@@ -314,7 +331,7 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
 
     def _local_stat(image, radius, func):
         """Calculates rolling method 'func' over a circular kernel."""
-        x, y = np.ogrid[-radius:radius + 1, -radius:radius + 1]
+        x, y = np.ogrid[-radius : radius + 1, -radius : radius + 1]
         kernel = np.hypot(x, y) < radius
         stat = ndi.filters.generic_filter(image, func, footprint=kernel)
         return stat
@@ -356,39 +373,47 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
 
     def separate_peaks(binarised_image):
         """Identify adjacent 'on' coordinates via DBSCAN."""
-        bi = binarised_image.astype('bool')
-        coordinates = np.indices(bi.shape).reshape(2, -1).T[
-            bi.flatten()]
+        bi = binarised_image.astype("bool")
+        coordinates = np.indices(bi.shape).reshape(2, -1).T[bi.flatten()]
         db = DBSCAN(2, 3)
         peaks = []
-        labeled_points = db.fit_predict(coordinates)
-        for peak_label in list(set(labeled_points)):
-            peaks.append(coordinates[labeled_points == peak_label])
+        if coordinates.shape[0] > 0:  # we have at least some peaks
+            labeled_points = db.fit_predict(coordinates)
+            for peak_label in list(set(labeled_points)):
+                peaks.append(coordinates[labeled_points == peak_label])
         return peaks
 
     def _peak_find_once(image):
         """Smooth, binarise, and find peaks according to main algorithm."""
-        image = smooth(image)
-        image = half_binarise(image)
-        peaks = separate_peaks(image)
-        return image, peaks
+        image = smooth(image)  # 4
+        image = half_binarise(image)  # 5
+        peaks = separate_peaks(image)  # 6
+        centers = np.array([np.mean(peak, axis=0) for peak in peaks])  # 7
+        return image, centers
 
-    def stat_peak_finder(image):
+    def stat_peak_finder(image, convergence_ratio):
         """Find peaks in image. Algorithm stages in comments."""
+        # Image preparation
         image = normalize(image)  # 1
         image = stat_binarise(image)  # 2, 3
-        n_peaks = np.infty  # Initial number of peaks
-        image, peaks = _peak_find_once(image)  # 4-6
-        m_peaks = len(peaks)  # Actual number of peaks
-        while (n_peaks - m_peaks) / n_peaks > convergence_ratio:  # 8
-            n_peaks = m_peaks
-            image, peaks = _peak_find_once(image)
-            m_peaks = len(peaks)
-        peak_centers = np.array(
-            [np.mean(peak, axis=0) for peak in peaks])  # 7
-        return peak_centers
+        # Perform first iteration of peak finding
+        image, peaks_curr = _peak_find_once(image)  # 4-7
+        n_peaks = len(peaks_curr)
+        if n_peaks == 0:  # pragma: no cover
+            return peaks_curr
 
-    return clean_peaks(np.round(stat_peak_finder(z)).astype(int))
+        m_peaks = 0
+        # Repeat peak finding with more blurring to convergence
+        while (n_peaks - m_peaks) / n_peaks > convergence_ratio:  # 8
+            m_peaks = n_peaks
+            image, peaks_curr = _peak_find_once(image)
+            n_peaks = len(peaks_curr)
+            if n_peaks == 0:
+                return peaks_curr
+
+        return peaks_curr
+
+    return clean_peaks(stat_peak_finder(z, convergence_ratio))
 
 
 def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
