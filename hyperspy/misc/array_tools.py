@@ -22,7 +22,6 @@ import logging
 
 import numpy as np
 
-from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.misc.math_tools import anyfloatin
 from hyperspy.decorators import jit_ifnumba
 
@@ -371,35 +370,6 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
         else:
             sarray[name] = dictionary[name]
     return sarray
-
-
-def calculate_bins_histogram(data, max_num_bins=250):
-    """
-    Calculate number of bins according to the Freedman Diaconis or the Sturges
-    rules, taking the maximum of these two.
-    See the :py:func:`numpy.histogram` documentation for more details.
-
-    Parameters
-    ----------
-    data : numpy array
-        Input data.
-    %s
-
-    Returns
-    -------
-    bins : int
-        Number of bins.
-
-    """
-    # "auto" returns max('sturges', 'fd') which is what we want
-    n_bins = len(np.histogram_bin_edges(data, bins="auto"))
-
-    # Cap at max_num_bins to avoid memory errors when
-    # the number of bins is very large
-    return min(n_bins, max_num_bins)
-
-
-calculate_bins_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
 
 
 @jit_ifnumba()

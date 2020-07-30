@@ -28,6 +28,7 @@ import matplotlib.text as mpl_text
 import traits.api as t
 
 from hyperspy import drawing
+from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.axes import AxesManager, DataAxis
 from hyperspy.drawing.widgets import VerticalLineWidget
@@ -36,7 +37,7 @@ from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
+from hyperspy.misc.array_tools import numba_histogram
 from hyperspy.defaults_parser import preferences
 
 
@@ -694,11 +695,28 @@ class ImageContrastEditor(t.HasTraits):
                                               offset=self.xaxis[1],
                                               scale=self.xaxis[1]-self.xaxis[0])
 
-    def plot_histogram(self):
+    def plot_histogram(self, max_num_bins=250):
+        """Plot a histogram of the data.
+
+        Parameters
+        ----------
+        %s
+
+        Returns
+        -------
+        None
+
+        """
         if self._vmin == self._vmax:
             return
         data = self._get_data()
-        self.bins = calculate_bins_histogram(data)
+
+        # "auto" returns max('sturges', 'fd') which is what we want
+        n_bins = len(np.histogram_bin_edges(data, bins="auto"))
+        # Cap at max_num_bins to avoid memory errors when
+        # the number of bins is very large
+        self.bins = min(n_bins, max_num_bins)
+
         self.hist_data = self._get_histogram(data)
         self._set_xaxis()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
@@ -711,6 +729,8 @@ class ImageContrastEditor(t.HasTraits):
                                        color='#ff7f0e')[0]
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
         plt.tight_layout(pad=0)
+
+    plot_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
 
     def update_histogram(self):
         if self._vmin == self._vmax:

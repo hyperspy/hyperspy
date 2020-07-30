@@ -24,7 +24,6 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.misc.array_tools import calculate_bins_histogram
 
 
 def generate_bad_toy_data():
@@ -42,21 +41,6 @@ def generate_bad_toy_data():
     s2 = hs.stack([s2] * 5)
     s1.align_zero_loss_peak(also_align=[s2])
     return s1
-
-
-def check_bins_histogram_good():
-    rng = np.random.random_state(123)
-    s1 = rng.randn(1000,)
-    n_bins = calculate_bins_histogram(s1)
-    assert n_bins == len(np.histogram_bin_edges(a, bins="fd"))
-
-
-def check_bins_histogram_bad():
-    s1 = generate_bad_toy_data()
-    n_bins = calculate_bins_histogram(s1.data)
-    assert n_bins == 250
-    n_bins = calculate_bins_histogram(s1.data, max_num_bins=np.inf)
-    assert n_bins == len(np.histogram_bin_edges(a, bins="fd"))
 
 
 def test_knuth_bad_data_set(caplog):
