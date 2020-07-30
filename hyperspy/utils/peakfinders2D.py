@@ -18,7 +18,7 @@
 
 import numpy as np
 import scipy.ndimage as ndi
-from numba import njit
+from hyperspy.decorators import jit_ifnumba
 from skimage.feature import blob_dog, blob_log, corner_peaks, match_template
 import copy
 
@@ -26,7 +26,7 @@ import copy
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
 
-@njit(cache=True)
+@jit_ifnumba(nopython=True, cache=True)
 def _fast_mean(X):
     """JIT-compiled mean of array.
     Parameters
@@ -46,7 +46,7 @@ def _fast_mean(X):
     return np.mean(X)
 
 
-@njit(cache=True)
+@jit_ifnumba(nopython=True, cache=True)
 def _fast_std(X):
     """JIT-compiled standard deviation of array.
     Parameters
