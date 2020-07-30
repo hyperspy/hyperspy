@@ -46,6 +46,7 @@ class Vignetting(Component):
         self.gaussian.centre.free, self.gaussian.A.free = False, False
         self.sigma.value = 1.
         self.gaussian.A.value = 1.
+        self.period.value = 1.
         self.extension_nch = 100
         self._position = self.optical_center
 

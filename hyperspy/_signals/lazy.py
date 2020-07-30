@@ -30,7 +30,7 @@ from itertools import product
 from ..signal import BaseSignal
 from ..misc.utils import multiply, dummy_context_manager
 from ..external.progressbar import progressbar
-from ..external.astroML.histtools import dasky_histogram
+from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.array_tools import _requires_linear_rebin
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning import import_sklearn
@@ -416,14 +416,14 @@ class LazySignal(BaseSignal):
 
     valuemin.__doc__ = BaseSignal.valuemin.__doc__
 
-    def get_histogram(self, bins='freedman', out=None, rechunk=True, **kwargs):
+    def get_histogram(self, bins='fd', out=None, rechunk=True, **kwargs):
         if 'range_bins' in kwargs:
             _logger.warning("'range_bins' argument not supported for lazy "
                             "signals")
             del kwargs['range_bins']
         from hyperspy.signals import Signal1D
         data = self._lazy_data(rechunk=rechunk).flatten()
-        hist, bin_edges = dasky_histogram(data, bins=bins, **kwargs)
+        hist, bin_edges = histogram_dask(data, bins=bins, **kwargs)
         if out is None:
             hist_spec = Signal1D(hist)
             hist_spec._lazy = True
