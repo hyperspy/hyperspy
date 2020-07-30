@@ -15,7 +15,7 @@ import hyperspy.api as hs
 matplotlib.rcParams['figure.max_open_warning'] = 25
 matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.vmin = 0.0
-hs.preferences.Plot.vmax = 0.0
+hs.preferences.Plot.vmax = 100.0
 
 def pytest_configure(config):
     config.addinivalue_line(
