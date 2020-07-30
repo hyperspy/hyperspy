@@ -26,17 +26,17 @@ NO_PEAKS = np.array([[np.nan, np.nan]])
 
 
 def clean_peaks(peaks):
-    """Utility function to deal with no peaks being found.
+    """Sort array of peaks and deal with no peaks being found.
 
     Parameters
     ----------
     peaks : numpy.ndarray
-        Result of peak finding
+        Array of found peaks.
 
     Returns
     -------
     peaks : numpy.ndarray
-        Result of peak finding
+        Sorted array of found peaks.
     NO_PEAKS : str
         Flag indicating no peaks found.
 
@@ -44,7 +44,8 @@ def clean_peaks(peaks):
     if len(peaks) == 0:
         return NO_PEAKS
     else:
-        return peaks
+        ind = np.lexsort((peaks[:,0], peaks[:,1]))
+        return peaks[ind]
 
 
 def find_peaks_minmax(z, distance=5., threshold=10.):
