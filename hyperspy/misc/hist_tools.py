@@ -21,7 +21,6 @@ import warnings
 
 import dask.array as da
 import numpy as np
-from dask.diagnostics import ProgressBar
 
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import VisibleDeprecationWarning
@@ -188,8 +187,7 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
     elif isinstance(bins, str):
         raise ValueError(f"Unrecognized 'bins' argument: got {bins}")
     elif not np.iterable(bins):
-        with ProgressBar():
-            kwargs["range"] = da.compute(a.min(), a.max())
+        kwargs["range"] = da.compute(a.min(), a.max())
 
     _bins_len = bins if not np.iterable(bins) else len(bins)
 
@@ -207,13 +205,11 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
             "`max_num_bins` keyword argument."
         )
         bins = max_num_bins
-        with ProgressBar():
-            kwargs["range"] = da.compute(a.min(), a.max())
+        kwargs["range"] = da.compute(a.min(), a.max())
 
     h, bins = da.histogram(a, bins=bins, **kwargs)
 
-    with ProgressBar():
-        return h.compute(), bins
+    return h.compute(), bins
 
 
 histogram_dask.__doc__ %= HISTOGRAM_MAX_BIN_ARGS

@@ -3822,7 +3822,13 @@ class BaseSignal(FancySlicing,
         from hyperspy import signals
         data = self.data[~np.isnan(self.data)].flatten()
 
-        hist, bin_edges = histogram(data, bins=bins, range=range_bins, **kwargs)
+        hist, bin_edges = histogram(
+            data,
+            bins=bins,
+            max_num_bins=max_num_bins,
+            range=range_bins,
+            **kwargs
+        )
 
         if out is None:
             hist_spec = signals.Signal1D(hist)
