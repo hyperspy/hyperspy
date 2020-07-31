@@ -135,7 +135,7 @@ Maximum based peak finder
     >>> s.find_peaks(method='max')
     >>> s.find_peaks(method='minmax')
 
-These methods search for peaks using maximum (and mimimum) values in the
+These methods search for peaks using maximum (and minimum) values in the
 image. There all have a ``distance`` parameter to set the minimum distance
 between the peaks.
 

@@ -861,7 +861,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Array of shape `_navigation_shape_in_array` in which each cell
             contains an array with dimensions (npeaks, 2) that contains
             the `x, y` pixel coordinates of peaks found in each image sorted
-            first along y and then along `x`.
+            first along `y` and then along `x`.
         """
         method_dict = {
             'local_max': find_local_max,
