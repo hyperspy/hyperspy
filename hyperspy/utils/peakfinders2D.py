@@ -84,7 +84,8 @@ def clean_peaks(peaks):
     Returns
     -------
     peaks : numpy.ndarray
-        Sorted array of found peaks.
+        Sorted array, first by `peaks[:,1]` (y-coordinate) then by `peaks[:,0]`
+        (x-coordinate), of found peaks.
     NO_PEAKS : str
         Flag indicating no peaks found.
 
