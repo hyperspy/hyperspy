@@ -787,7 +787,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
-                   parallel=None, display=True, toolkit=None, **kwargs):
+                   parallel=None, max_workers=None, display=True, toolkit=None,
+                   **kwargs):
         """Find peaks in a 2D signal.
 
         Function to locate the positive peaks in an image using various, user
@@ -858,7 +859,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         peaks : :py:class:`~hyperspy.signal.BaseSignal` or numpy.ndarray if current_index=True
             Array of shape `_navigation_shape_in_array` in which each cell
             contains an array with dimensions (npeaks, 2) that contains
-            the x, y pixel coordinates of peaks found in each image.
+            the `x, y` pixel coordinates of peaks found in each image sorted
+            first along y and then along `x`.
         """
         method_dict = {
             'local_max': find_local_max,
@@ -897,13 +899,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
             peaks = method_func(self.__call__(), **kwargs)
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
-                             parallel=parallel, inplace=False,
-                             ragged=True, **kwargs)
+                             parallel=parallel, inplace=False, ragged=True,
+                             max_workers=max_workers, **kwargs)
 
         return peaks
 
     find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG,
-                           DISPLAY_DT, TOOLKIT_DT)
+                           DISPLAY_DT, TOOLKIT_DT, MAX_WORKERS_ARG)
 
 
 class LazySignal2D(LazySignal, Signal2D):
