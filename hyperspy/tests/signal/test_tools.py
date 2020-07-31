@@ -322,9 +322,27 @@ class Test2D:
         nt.assert_array_equal(result.data, np.array([17, 16, 17]))
         assert result.metadata.Signal.binned
 
+    def test_noise_variance_helpers(self):
+        assert self.signal.get_noise_variance() is None
+        self.signal.set_noise_variance(2)
+        assert self.signal.get_noise_variance() == 2
+        self.signal.set_noise_variance(self.signal)
+        variance = self.signal.get_noise_variance()
+        nt.assert_array_equal(variance.data, self.signal.data)
+        self.signal.set_noise_variance(None)
+        assert self.signal.get_noise_variance() is None
+
+        with pytest.raises(ValueError, match="`variance` must be one of"):
+            self.signal.set_noise_variance(np.array([0, 1, 2]))
+
     def test_estimate_poissonian_noise_copy_data(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
+        assert variance.data is not self.signal.data
+
+    def test_estimate_poissonian_noise_copy_data_helper_function(self):
+        self.signal.estimate_poissonian_noise_variance()
+        variance = self.signal.get_noise_variance()
         assert variance.data is not self.signal.data
 
     def test_estimate_poissonian_noise_noarg(self):

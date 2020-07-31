@@ -26,6 +26,7 @@ import scipy.misc
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.signals import Signal1D
+from hyperspy.drawing.signal1d import Signal1DLine
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 
 scalebar_color = 'blue'
@@ -270,3 +271,28 @@ def test_plot_with_non_finite_value():
     s = hs.signals.Signal1D(np.array([np.inf, 2.0]))
     s.plot()
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+
+def test_plot_add_line_events():
+    s = hs.signals.Signal1D(np.arange(100))
+    s.plot()
+    assert len(s.axes_manager.events.indices_changed.connected) == 2
+    figure = s._plot.signal_plot
+
+    def line_function(axes_manager=None):
+        return 100 - np.arange(100)
+
+    line = Signal1DLine()
+    line.data_function = line_function
+    line.set_line_properties(color='blue', type='line', scaley=False)
+    figure.add_line(line)
+    line.plot()    
+    assert len(line.events.closed.connected) == 1
+    assert len(s.axes_manager.events.indices_changed.connected) == 3
+
+    line.close()
+    assert len(line.events.closed.connected) == 0
+    assert len(s.axes_manager.events.indices_changed.connected) == 2
+
+    figure.close()
+    assert len(s.axes_manager.events.indices_changed.connected) == 0
