@@ -54,17 +54,17 @@ def test_plot_BackgroundRemoval():
 @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
 @pytest.mark.parametrize("gamma", (0.7, 1.2))
-@pytest.mark.parametrize("percentile", ("0.15th", "0.25th"))
+@pytest.mark.parametrize("percentile", (["0.15th", "99.85th"], ["0.25th", "99.75th"]))
 def test_plot_contrast_editor(gamma, percentile):
     np.random.seed(1)
     data = np.random.random(size=(10, 10, 100, 100))*1000
     data += np.arange(10*10*100*100).reshape((10, 10, 100, 100))
     s = signals.Signal2D(data)
-    s.plot(gamma=gamma, vmin=percentile, vmax=percentile)
+    s.plot(gamma=gamma, vmin=percentile[0], vmax=percentile[1])
     ceditor = ImageContrastEditor(s._plot.signal_plot)
     assert ceditor.gamma == gamma
-    assert ceditor.vmin_percentile == float(percentile.split("th")[0])
-    assert ceditor.vmax_percentile == float(percentile.split("th")[0])
+    assert ceditor.vmin_percentile == float(percentile[0].split("th")[0])
+    assert ceditor.vmax_percentile == float(percentile[1].split("th")[0])
     return plt.gcf()
 
 

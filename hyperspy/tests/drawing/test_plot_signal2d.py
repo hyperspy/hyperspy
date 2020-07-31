@@ -113,13 +113,13 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
-@pytest.mark.parametrize("percentile", [None, "1th"])
+@pytest.mark.parametrize("percentile", [(None, None), ("1th", "99th")])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_log_scale(percentile):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal += 1  # need to avoid zeros in log
-    test_plot.signal.plot(norm='log', vmin=percentile, vmax=percentile)
+    test_plot.signal.plot(norm='log', vmin=percentile[0], vmax=percentile[1])
     return test_plot.signal._plot.signal_plot.figure
 
 
@@ -414,10 +414,11 @@ def test_plot_images_multi_signal_w_axes_replot():
     return f
 
 
-@pytest.mark.parametrize("percentile", ["2.5th",
-                                        ["0th", "10th", "20th"],
-                                        ["5th", "10th"],
-                                        ["5th", None, "10th"]])
+@pytest.mark.parametrize("percentile", [("2.5th", "97.5th"),
+                                        [["0th", "10th", "20th"], ["100th", "90th", "80th"]],
+                                        [["5th", "10th"], ["95th", "90th"]],
+                                        [["5th", None, "10th"], ["95th", None, "90th"]],
+                                        ])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_images_vmin_vmax_percentile(percentile):
@@ -425,8 +426,8 @@ def test_plot_images_vmin_vmax_percentile(percentile):
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
     ax = hs.plot.plot_images([image0, image0, image0],
-                             vmin=percentile,
-                             vmax=percentile,
+                             vmin=percentile[0],
+                             vmax=percentile[1],
                              axes_decor='off')
     return ax[0].figure
 
