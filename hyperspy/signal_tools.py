@@ -1326,7 +1326,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
         _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
-                        title="Instructions")
+                        title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
         self.signal._spikes_diagnosis(signal_mask=self.signal_mask,
@@ -1539,6 +1539,229 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.interpolated_line = None
         self.reset_span_selector()
         self.find()
+
+
+@add_gui_method(toolkey="hyperspy.Signal2D.find_peaks")
+class PeaksFinder2D(t.HasTraits):
+    method = t.Enum(
+        'Local max',
+        'Max',
+        'Minmax',
+        'Zaefferer',
+        'Stat',
+        'Laplacian of Gaussian',
+        'Difference of Gaussian',
+        'Template matching',
+        default='Local Max')
+    # For "Local max" method
+    local_max_distance = t.Range(1, 20, value=3)
+    local_max_threshold = t.Range(0, 20., value=10)
+    # For "Max" method
+    max_alpha = t.Range(0, 6., value=3)
+    max_distance = t.Range(1, 20, value=10)
+    # For "Minmax" method
+    minmax_distance = t.Range(0, 6., value=3)
+    minmax_threshold = t.Range(0, 20., value=10)
+    # For "Zaefferer" method
+    zaefferer_grad_threshold = t.Range(0, 0.2, value=0.1)
+    zaefferer_window_size = t.Range(2, 80, value=40)
+    zaefferer_distance_cutoff = t.Range(1, 100., value=50)
+    # For "Stat" method
+    stat_alpha = t.Range(0, 2., value=1)
+    stat_window_radius = t.Range(5, 20, value=10)
+    stat_convergence_ratio = t.Range(0, 0.1, value=0.05)
+    # For "Laplacian of Gaussian" method
+    log_min_sigma = t.Range(0, 2., value=1)
+    log_max_sigma = t.Range(0, 100., value=50)
+    log_num_sigma = t.Range(0, 20., value=10)
+    log_threshold = t.Range(0, 0.4, value=0.2)
+    log_overlap = t.Range(0, 1., value=0.5)
+    log_log_scale = t.Bool(False)
+    # For "Difference of Gaussian" method
+    dog_min_sigma = t.Range(0, 2., value=1)
+    dog_max_sigma = t.Range(0, 100., value=50)
+    dog_sigma_ratio = t.Range(0, 3.2, value=1.6)
+    dog_threshold = t.Range(0, 0.4, value=0.2)
+    dog_overlap = t.Range(0, 1., value=0.5)
+    # For "Cross correlation" method
+    xc_template = None
+    xc_distance = t.Range(0, 100., value=5.)
+    xc_threshold = t.Range(0, 10., value=0.5)
+
+    random_navigation_position = t.Button()
+    compute_over_navigation_axes = t.Button()
+
+    show_navigation_sliders = t.Bool(False)
+
+    def __init__(self, signal, method, peaks=None, **kwargs):
+        self._attribute_argument_mapping_local_max = {
+            'local_max_distance': 'min_distance',
+            'local_max_threshold': 'threshold_abs',
+            }
+        self._attribute_argument_mapping_max = {
+            'max_alpha': 'alpha',
+            'max_distance': 'distance',
+            }
+        self._attribute_argument_mapping_local_minmax = {
+            'minmax_distance': 'distance',
+            'minmax_threshold': 'threshold',
+            }
+        self._attribute_argument_mapping_local_zaefferer = {
+            'zaefferer_grad_threshold': 'grad_threshold',
+            'zaefferer_window_size': 'window_size',
+            'zaefferer_distance_cutoff': 'distance_cutoff',
+            }
+        self._attribute_argument_mapping_local_stat = {
+            'stat_alpha': 'alpha',
+            'stat_window_radius': 'window_radius',
+            'stat_convergence_ratio': 'convergence_ratio',
+            }
+        self._attribute_argument_mapping_local_log = {
+            'log_min_sigma': 'min_sigma',
+            'log_max_sigma': 'max_sigma',
+            'log_num_sigma': 'num_sigma',
+            'log_threshold': 'threshold',
+            'log_overlap': 'overlap',
+            'log_log_scale': 'log_scale',
+            }
+        self._attribute_argument_mapping_local_dog = {
+            'dog_min_sigma': 'min_sigma',
+            'dog_max_sigma': 'max_sigma',
+            'dog_sigma_ratio': 'sigma_ratio',
+            'dog_threshold': 'threshold',
+            'dog_overlap': 'overlap',
+            }
+        self._attribute_argument_mapping_local_xc = {
+            'xc_template': 'template',
+            'xc_distance': 'distance',
+            'xc_threshold': 'threshold',
+            } 
+
+        self._attribute_argument_mapping_dict = {
+            'local_max': self._attribute_argument_mapping_local_max,
+            'max': self._attribute_argument_mapping_max,
+            'minmax': self._attribute_argument_mapping_local_minmax,
+            'zaefferer': self._attribute_argument_mapping_local_zaefferer,
+            'stat': self._attribute_argument_mapping_local_stat,
+            'laplacian_of_gaussian': self._attribute_argument_mapping_local_log,
+            'difference_of_gaussian': self._attribute_argument_mapping_local_dog,
+            'template_matching': self._attribute_argument_mapping_local_xc,
+            }
+
+        if signal.axes_manager.signal_dimension != 2:
+            raise SignalDimensionError(
+                signal.axes.signal_dimension, 2)
+
+        self._set_parameters_observer()
+        self.on_trait_change(self.set_random_navigation_position,
+                             'random_navigation_position')
+
+        self.signal = signal
+        self.peaks = peaks
+        if self.signal._plot is None or not self.signal._plot.is_active:
+            self.signal.plot()
+        if self.signal.axes_manager.navigation_size > 0:
+            self.show_navigation_sliders = True
+            self.signal.axes_manager.events.indices_changed.connect(
+                self._update_peak_finding, [])
+            self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
+        # Set initial parameters:
+        # As a convenience, if the template argument is provided, we keep it 
+        # even if the method is different, to be able to use it later.
+        if 'template' in kwargs.keys():
+            self.xc_template = kwargs['template']
+        if method is not None:
+            self.method = method.capitalize().replace('_', ' ')
+        self._parse_paramaters_initial_values(**kwargs)
+        self._update_peak_finding()
+
+    def _parse_paramaters_initial_values(self, **kwargs):
+        # Get the attribute to argument mapping for the current method
+        arg_mapping = self._attribute_argument_mapping_dict[
+            self._normalise_method_name(self.method)]
+        for attr, arg in arg_mapping.items():
+            if arg in kwargs.keys():
+                setattr(self, attr, kwargs[arg])
+
+    def _update_peak_finding(self, method=None):
+        if method is None:
+            method = self.method.lower().replace(' ', '_')
+        self._find_peaks_current_index(method=method)
+        self._plot_markers()
+
+    def _method_changed(self, old, new):
+        if new == 'Template matching' and self.xc_template is None:
+            raise RuntimeError('The "template" argument is required.')
+        self._update_peak_finding(method=new)
+
+    def _parameter_changed(self, old, new):
+        self._update_peak_finding()
+
+    def _set_parameters_observer(self):
+        for parameters_mapping in self._attribute_argument_mapping_dict.values():
+            for parameter in list(parameters_mapping.keys()):
+                self.on_trait_change(self._parameter_changed, parameter)
+
+    def _get_parameters(self, method):
+        # Get the attribute to argument mapping for the given method
+        arg_mapping = self._attribute_argument_mapping_dict[method]
+        # return argument and values as kwargs
+        return {arg: getattr(self, attr) for attr, arg in arg_mapping.items()}
+
+    def _normalise_method_name(self, method):
+        return method.lower().replace(' ', '_')
+
+    def _find_peaks_current_index(self, method):
+        method = self._normalise_method_name(method)
+        self.peaks = self.signal.find_peaks(method, current_index=True,
+                                            interactive=False,
+                                            **self._get_parameters(method))
+
+    def _plot_markers(self):
+        if self.signal._plot is not None and self.signal._plot.is_active:
+            self.signal._plot.signal_plot.remove_markers(render_figure=True)
+        peaks_markers = self._peaks_to_marker()
+        self.signal.add_marker(peaks_markers, render_figure=True)
+
+    def _peaks_to_marker(self, markersize=20, add_numbers=True,
+                         color='red'):
+        # make marker_list for current index
+        from hyperspy.drawing._markers.point import Point
+
+        x_axis = self.signal.axes_manager.signal_axes[0]
+        y_axis = self.signal.axes_manager.signal_axes[1]
+
+        marker_list = [Point(x=x_axis.index2value(x),
+                             y=y_axis.index2value(y),
+                             color=color,
+                             size=markersize)
+            for x, y in zip(self.peaks[:, 1], self.peaks[:, 0])]
+
+        return marker_list
+
+    def compute_navigation(self):
+        method = self._normalise_method_name(self.method)
+        with self.signal.axes_manager.events.indices_changed.suppress():
+            self.signal.peaks = self.signal.find_peaks(
+                method, interactive=False, current_index=False,
+                **self._get_parameters(method))
+
+    def close(self):
+        # remove markers
+        if self.signal._plot is not None and self.signal._plot.is_active:
+            self.signal._plot.signal_plot.remove_markers(render_figure=True)
+        self.disconnect()
+
+    def disconnect(self):
+        # disconnect event
+        am = self.signal.axes_manager
+        if self._update_peak_finding in am.events.indices_changed.connected:
+            am.events.indices_changed.disconnect(self._update_peak_finding)
+
+    def set_random_navigation_position(self):
+        index = np.random.randint(0, self.signal.axes_manager._max_index)
+        self.signal.axes_manager.indices = np.unravel_index(index, 
+            tuple(self.signal.axes_manager._navigation_shape_in_array))[::-1]
 
 
 # For creating a text handler in legend (to label derivative magnitude)

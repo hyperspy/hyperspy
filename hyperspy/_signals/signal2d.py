@@ -18,11 +18,13 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy as sp
 import numpy.ma as ma
 import dask.array as da
-import scipy as sp
 import logging
 import warnings
+
+from scipy import ndimage
 try:
     # For scikit-image >= 0.17.0
     from skimage.registration._phase_cross_correlation import _upsampled_dft
@@ -35,9 +37,14 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize, optimal_fft_siz
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
+from hyperspy.signal_tools import PeaksFinder2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
+from hyperspy.utils.peakfinders2D import (
+        find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
+        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
 
 
 _logger = logging.getLogger(__name__)
@@ -51,7 +58,7 @@ def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
         else:
             # Disable interpolation
             order = 0
-        return sp.ndimage.shift(im, shift, cval=fill_value, order=order)
+        return ndimage.shift(im, shift, cval=fill_value, order=order)
     else:
         return im
 
@@ -79,8 +86,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = sp.ndimage.sobel(im, axis=0, mode='constant')
-    sy = sp.ndimage.sobel(im, axis=1, mode='constant')
+    sx = ndimage.sobel(im, axis=0, mode='constant')
+    sy = ndimage.sobel(im, axis=1, mode='constant')
     sob = np.hypot(sx, sy)
     return sob
 
@@ -185,8 +192,8 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     References
     ----------
-    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner. 
-       “Automated Spatial Drift Correction for EFTEM Image Series.” 
+    .. [*] Bernhard Schaffer, Werner Grogger and Gerald Kothleitner.
+       “Automated Spatial Drift Correction for EFTEM Image Series.”
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
@@ -731,7 +738,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         convert_units : bool
             Default is False
             If True, convert the signal units using the 'convert_to_units'
-            method of the 'axes_manager'. If False, does nothing.
+            method of the `axes_manager`. If False, does nothing.
 
         See also
         --------
@@ -777,6 +784,129 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
+
+    def find_peaks(self, method='local_max', interactive=True,
+                   current_index=False, show_progressbar=None,
+                   parallel=None, max_workers=None, display=True, toolkit=None,
+                   **kwargs):
+        """Find peaks in a 2D signal.
+
+        Function to locate the positive peaks in an image using various, user
+        specified, methods. Returns a structured array containing the peak
+        positions.
+
+        Parameters
+        ----------
+        method : str
+             Select peak finding algorithm to implement. Available methods
+             are:
+
+             * 'local_max' - simple local maximum search using the
+               :py:func:`skimage.feature.peak_local_max` function
+             * 'max' - simple local maximum search using the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_max`.
+             * 'minmax' - finds peaks by comparing maximum filter results
+               with minimum filter, calculates centers of mass. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax`
+               function.
+             * 'zaefferer' - based on gradient thresholding and refinement
+               by local region of interest optimisation. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_zaefferer`
+               function.
+             * 'stat' - based on statistical refinement and difference with
+               respect to mean intensity. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_stat`
+               function.
+             * 'laplacian_of_gaussian' - a blob finder using the laplacian of
+               Gaussian matrices approach. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               function.
+             * 'difference_of_gaussian' - a blob finder using the difference
+               of Gaussian matrices approach. See the
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               function.
+             * 'template_matching' - A cross correlation peakfinder. This
+               method requires providing a template with the ``template``
+               parameter, which is used as reference pattern to perform the
+               template matching to the signal. It uses the
+               :py:func:`skimage.feature.match_template` function and the peaks
+               position are obtained by using `minmax` method on the
+               template matching result.
+
+        interactive : bool
+            If True, the method parameter can be adjusted interactively.
+            If False, the results will be returned.
+        current_index : bool
+            if True, the computation will be performed for the current index.
+        %s
+        %s
+        %s
+        %s
+        %s
+
+        **kwargs : dict
+            Keywords parameters associated with above methods, see the
+            documentation of each method for more details.
+
+        Notes
+        -----
+        As a convenience, the 'local_max' method accepts the 'distance' and
+        'threshold' argument, which will be map to the 'min_distance' and
+        'threshold_abs' of the :py:func:`skimage.feature.peak_local_max`
+        function.
+
+        Returns
+        -------
+        peaks : :py:class:`~hyperspy.signal.BaseSignal` or numpy.ndarray if current_index=True
+            Array of shape `_navigation_shape_in_array` in which each cell
+            contains an array with dimensions (npeaks, 2) that contains
+            the `x, y` pixel coordinates of peaks found in each image sorted
+            first along `y` and then along `x`.
+        """
+        method_dict = {
+            'local_max': find_local_max,
+            'max': find_peaks_max,
+            'minmax': find_peaks_minmax,
+            'zaefferer': find_peaks_zaefferer,
+            'stat': find_peaks_stat,
+            'laplacian_of_gaussian':  find_peaks_log,
+            'difference_of_gaussian': find_peaks_dog,
+            'template_matching' : find_peaks_xc,
+        }
+        # As a convenience, we map 'distance' to 'min_distance' and
+        # 'threshold' to 'threshold_abs' when using the 'local_max' method to
+        # match with the arguments of skimage.feature.peak_local_max.
+        if method == 'local_max':
+            if 'distance' in kwargs.keys():
+                kwargs['min_distance'] = kwargs.pop('distance')
+            if 'threshold' in kwargs.keys():
+                kwargs['threshold_abs'] = kwargs.pop('threshold')
+        if method in method_dict.keys():
+            method_func = method_dict[method]
+        else:
+            raise NotImplementedError(f"The method `{method}` is not "
+                                      "implemented. See documentation for "
+                                      "available implementations.")
+        if interactive:
+            # Create a peaks signal with the same navigation shape as a
+            # placeholder for the output
+            axes_dict = self.axes_manager._get_axes_dicts(
+                self.axes_manager.navigation_axes)
+            peaks = BaseSignal(np.empty(self.axes_manager.navigation_shape),
+                               axes=axes_dict)
+            pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
+            pf2D.gui(display=display, toolkit=toolkit)
+        elif current_index:
+            peaks = method_func(self.__call__(), **kwargs)
+        else:
+            peaks = self.map(method_func, show_progressbar=show_progressbar,
+                             parallel=parallel, inplace=False, ragged=True,
+                             max_workers=max_workers, **kwargs)
+
+        return peaks
+
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+                           DISPLAY_DT, TOOLKIT_DT)
 
 
 class LazySignal2D(LazySignal, Signal2D):
