@@ -546,8 +546,8 @@ class ImageContrastEditor(t.HasTraits):
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.1, 3.0, 1.0)
-    vmin_percentile = t.Range(0.0, 100.0, preferences.Plot.vmin)
-    vmax_percentile = t.Range(0.0, 100.0, preferences.Plot.vmax)
+    vmin_percentile = t.Range(0.0, 100.0, 0)
+    vmax_percentile = t.Range(0.0, 100.0, 100)
 
     norm = t.Enum(
         'Linear',
@@ -588,13 +588,13 @@ class ImageContrastEditor(t.HasTraits):
                 self.image._vmax_percentile.split('th')[0])
 
         # Copy the original value to be used when resetting the display
-        self.vmin_original = copy.deepcopy(self._vmin)
-        self.vmax_original = copy.deepcopy(self._vmax)
-        self.gamma_original = copy.deepcopy(self.gamma)
-        self.linthresh_original = copy.deepcopy(self.linthresh)
-        self.linscale_original = copy.deepcopy(self.linscale)
-        self.vmin_percentile_original = copy.deepcopy(self.vmin_percentile)
-        self.vmax_percentile_original = copy.deepcopy(self.vmax_percentile)
+        self.vmin_original = self._vmin
+        self.vmax_original = self._vmax
+        self.gamma_original = self.gamma
+        self.linthresh_original = self.linthresh
+        self.linscale_original = self.linscale
+        self.vmin_percentile_original = self.vmin_percentile
+        self.vmax_percentile_original = self.vmax_percentile
 
         if self.image.norm == 'auto':
             self.norm = 'Linear'
@@ -817,14 +817,16 @@ class ImageContrastEditor(t.HasTraits):
             self._reset(indices_changed=False)
 
     def _reset_original_settings(self):
+        if self.vmin_percentile_original is not None:
+            self.vmin_percentile = self.vmin_percentile_original
+        if self.vmax_percentile_original is not None:
+            self.vmax_percentile = self.vmax_percentile_original
+        self._vmin = self.vmin_original
+        self._vmax = self.vmax_original
         self.norm = self.norm_original.capitalize()
         self.gamma = self.gamma_original
         self.linthresh = self.linthresh_original
         self.linscale = self.linscale_original
-        self._vmin = self.vmin_original
-        self._vmax = self.vmax_original
-        self.vmin_pecentile = self.vmin_pecentile_original
-        self.vmax_pecentile = self.vmax_pecentile_original
 
     def _get_current_range(self):
         if self.span_selector._get_span_width() != 0:

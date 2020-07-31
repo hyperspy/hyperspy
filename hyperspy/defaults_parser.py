@@ -138,16 +138,10 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    vmin = t.CFloat(0.05,
-                    label='vmin x-th percentile',
-                    desc='Set the default vmin for plotting image using '
-                    'the x-th percentile.'
-                    )
-    vmax = t.CFloat(0.05,
-                    label='vmax x-th percentile',
-                    desc='Set the default vmax for plotting image using '
-                    'the x-th percentile.'
-                    )
+    saturated_pixels = t.CFloat(0.,
+                                label='Saturated pixels (deprecated)',
+                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
+                                )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )

@@ -41,7 +41,7 @@ def test_contrast_stretching():
     data = np.arange(100)
     assert contrast_stretching(data, 1, 99) == (1, 99)
     assert contrast_stretching(data, 1.0, 99.0) == (1, 99)
-    assert contrast_stretching(data, '1th', '1th') == (0.99, 98.01)
-    assert contrast_stretching(data, '0.05th', '0.05th') == (0.0495, 98.9505)
+    assert contrast_stretching(data, '1th', '99th') == (0.99, 98.01)
+    assert contrast_stretching(data, '0.05th', '99.95th') == (0.0495, 98.9505)
     # vmin, vmax are to set in conftest.py
     assert contrast_stretching(data, None, None) == (0.0, 99.0)
