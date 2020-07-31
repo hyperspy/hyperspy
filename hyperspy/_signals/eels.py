@@ -163,102 +163,102 @@ class EELSSpectrum_mixin:
 
     def edges_at_energy(self, energy='interactive', width=10, only_major=False,
                         order='closest', display=True, toolkit=None):
-        """Show EELS edges according to an energy range selected from the 
+        """Show EELS edges according to an energy range selected from the
         spectrum or within a provided energy window
-        
+
         Parameters
         ----------
         energy : 'interactive' or float
             If it is 'interactive', a table with edges are shown and it depends
             on the energy range selected in the spectrum. If it is a float, a
-            table with edges are shown and it depends on the energy window 
+            table with edges are shown and it depends on the energy window
             defined by energy +/- (width/2). The default is 'interactive'.
         width : float
-            Width of window, in eV, around energy in which to find nearby 
-            energies, i.e. a value of 10 eV (the default) means to 
+            Width of window, in eV, around energy in which to find nearby
+            energies, i.e. a value of 10 eV (the default) means to
             search +/- 5 eV. The default is 10.
         only_major : bool
             Whether to show only the major edges. The default is False.
         order : str
-            Sort the edges, if 'closest', return in the order of energy 
-            difference, if 'ascending', return in ascending order, similarly 
+            Sort the edges, if 'closest', return in the order of energy
+            difference, if 'ascending', return in ascending order, similarly
             for 'descending'. The default is 'closest'.
-            
+
         Returns
         -------
-        An interactive widget if energy is 'interactive', or a html-format 
+        An interactive widget if energy is 'interactive', or a html-format
         table or ASCII table, depends on the environment.
         """
-        
+
         if energy == 'interactive':
             er = EdgesRange(self)
             return er.gui(display=display, toolkit=toolkit)
         else:
-            return self.print_edges_near_energy(energy, width, only_major, 
+            return self.print_edges_near_energy(energy, width, only_major,
                                                 order)
-            
+
     @staticmethod
-    def print_edges_near_energy(energy=None, width=10, only_major=False, 
+    def print_edges_near_energy(energy=None, width=10, only_major=False,
                                 order='closest', edges=None):
-        """Find and print a table of edges near a given energy that are within 
+        """Find and print a table of edges near a given energy that are within
         the given energy window.
-        
+
         Parameters
         ----------
         energy : float
             Energy to search, in eV
         width : float
-            Width of window, in eV, around energy in which to find nearby 
-            energies, i.e. a value of 10 eV (the default) means to 
+            Width of window, in eV, around energy in which to find nearby
+            energies, i.e. a value of 10 eV (the default) means to
             search +/- 5 eV. The default is 10.
         only_major : bool
             Whether to show only the major edges. The default is False.
         order : str
-            Sort the edges, if 'closest', return in the order of energy 
-            difference, if 'ascending', return in ascending order, similarly 
+            Sort the edges, if 'closest', return in the order of energy
+            difference, if 'ascending', return in ascending order, similarly
             for 'descending'. The default is 'closest'.
         edges : iterable
             A sequence of edges, if provided, it overrides energy, width,
             only_major and order.
-        
+
         Returns
         -------
-        A PrettyText object where its representation is ASCII in terminal and 
-        html-formatted in Jupyter notebook 
-        """ 
-        
+        A PrettyText object where its representation is ASCII in terminal and
+        html-formatted in Jupyter notebook
+        """
+
         if edges is None and energy is not None:
             edges = get_edges_near_energy(energy=energy, width=width,
                                           only_major=only_major, order=order)
         elif edges is None and energy is None:
             raise ValueError('Either energy or edges should be provided.')
-        
+
         table = PrettyTable()
         table.field_names = [
         'edge',
         'onset energy (eV)',
         'relevance',
         'description']
-        
+
         for edge in edges:
             element, shell = edge.split('_')
             shell_dict = elements_db[element]['Atomic_properties'][
                          'Binding_energies'][shell]
-            
+
             onset = shell_dict['onset_energy (eV)']
             relevance = shell_dict['relevance']
             threshold = shell_dict['threshold']
-            edge_ = shell_dict['edge']            
+            edge_ = shell_dict['edge']
             description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
 
             table.add_row([edge, onset, relevance, description])
 
         # this ensures the html version try its best to mimick the ASCII one
         table.format = True
-        
+
         return print_html(f_text=table.get_string,
                           f_html=table.get_html_string)
-    
+
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
 
@@ -837,7 +837,7 @@ class EELSSpectrum_mixin:
                                     extrapolate_coreloss=True):
         """Performs Fourier-ratio deconvolution.
 
-        The core-loss should have the background removed. To reduce the noise 
+        The core-loss should have the background removed. To reduce the noise
         amplication the result is convolved with a Gaussian function.
 
         Parameters
@@ -1487,42 +1487,42 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
-    def plot(self, plot_edges=False, only_edges=('Major', 'Minor'), 
+    def plot(self, plot_edges=False, only_edges=('Major', 'Minor'),
              **kwargs):
-        """Plot the EELS spectrum. Markers indicating the position of the 
+        """Plot the EELS spectrum. Markers indicating the position of the
         EELS edges can be added.
-        
+
         Parameters
         ----------
         plot_edges : {False, True, list of string or string}
             If True, draws on s.metadata.Sample.elements for edges.
-            Alternatively, provide a string of a single edge, or an iterable 
+            Alternatively, provide a string of a single edge, or an iterable
             containing a list of valid elements, EELS families or edges. For
-            example, an element should be 'Zr', an element edge family should 
+            example, an element should be 'Zr', an element edge family should
             be 'Zr_L' or an EELS edge 'Zr_L3'.
         only_edges : tuple of string
             Either 'Major' or 'Minor'. Defaults to both.
         kwargs
             The extra keyword arguments for plot()
         """
-        
+
         super().plot(**kwargs)
 
         if plot_edges is not False:
             edges = self._get_edges_to_plot(plot_edges, only_edges)
             self.plot_edges_label(edges)
 
-    def plot_edges_label(self, edges, vertical_line_marker=None, 
+    def plot_edges_label(self, edges, vertical_line_marker=None,
                             text_marker=None):
-        """Put the EELS edge label (vertical line segment and text box) on 
-        the signal 
+        """Put the EELS edge label (vertical line segment and text box) on
+        the signal
 
         Parameters
         ----------
         edges : iterable
-            A sequence of strings contains edges in the format of 
-            element_subshell for EELS. Could be a dictionary specifying the 
-            energy value or just strings. For example, ['Fe_L2', 'O_K'] or 
+            A sequence of strings contains edges in the format of
+            element_subshell for EELS. Could be a dictionary specifying the
+            energy value or just strings. For example, ['Fe_L2', 'O_K'] or
             {'Fe_L2': 721.0, 'O_K': 532.0}
         vertical_line_marker :  list
             A list contains HyperSpy's vertical line segment marker, if None,
@@ -1537,7 +1537,7 @@ class EELSSpectrum_mixin:
             If the size of edges, vertical_line_marker and text_marker do not
             match.
         """
-        
+
         if vertical_line_marker is None or text_marker is None:
             # get position of markers for edges if no marker is provided
             slp = SpectrumLabelPosition(self)
@@ -1546,11 +1546,11 @@ class EELSSpectrum_mixin:
             len(edges) != len(vertical_line_marker):
             raise ValueError('The size of edges, vertical_line_marker and '
                              'text_marker needs to be the same.')
-        
+
         # add the markers to the signal and store them
         self.add_marker(vertical_line_marker + text_marker, render_figure=False)
         added = dict(zip(edges, map(list, zip(vertical_line_marker, text_marker))))
-        self._edge_markers.update(added) 
+        self._edge_markers.update(added)
 
     def _get_edges_to_plot(self, plot_edges, only_edges):
         # get the dictionary of the edge to be shown
@@ -1567,7 +1567,7 @@ class EELSSpectrum_mixin:
             try:
                 elements = self.metadata.Sample.elements
             except:
-                elements = []        
+                elements = []
 
         element_edge_family = elements + extra_element_edge_family
         edges_dict = self._get_edges(element_edge_family, only_edges)
@@ -1579,24 +1579,24 @@ class EELSSpectrum_mixin:
         # a particular edge or a family of edge
         axis_min = self.axes_manager[-1].low_value
         axis_max = self.axes_manager[-1].high_value
-        
+
         names_and_energies = {}
         shells = ["K", "L", "M", "N", "O"]
-        
+
         errmsg = ("Edge family '{}' is not supported. Supported edge family "
                   "is {}.")
         for member in element_edge_family:
             try:
                 element, ss = member.split("_")
-                
+
                 if len(ss) == 1:
                     memtype = 'family'
                     if ss not in shells:
-                        raise AttributeError(errmsg.format(ss, shells))            
+                        raise AttributeError(errmsg.format(ss, shells))
                 if len(ss) == 2:
                     memtype = 'edge'
                     if ss[0] not in shells:
-                        raise AttributeError(errmsg.format(ss[0], shells))                           
+                        raise AttributeError(errmsg.format(ss[0], shells))
             except ValueError:
                 element = member
                 ss = ''
@@ -1606,16 +1606,16 @@ class EELSSpectrum_mixin:
                 Binding_energies = elements_db[element]["Atomic_properties"]["Binding_energies"]
             except KeyError as err:
                 raise ValueError("'{}' is not a valid element".format(element)) from err
-                
-            for edge in Binding_energies.keys(): 
+
+            for edge in Binding_energies.keys():
                 relevance = Binding_energies[edge]["relevance"]
                 energy = Binding_energies[edge]["onset_energy (eV)"]
-                
+
                 isInRel = relevance in only_edges
-                isInRng = axis_min < energy < axis_max 
+                isInRng = axis_min < energy < axis_max
                 isSameFamily = ss in edge
-                
-                if memtype == 'element': 
+
+                if memtype == 'element':
                     flag = isInRel & isInRng
                     edge_key = element + "_" + edge
                 elif memtype == 'edge':
@@ -1624,10 +1624,10 @@ class EELSSpectrum_mixin:
                 elif memtype == 'family':
                     flag = isInRel & isInRng & isSameFamily
                     edge_key = element + "_" + edge
-                
+
                 if flag:
                     names_and_energies[edge_key] = energy
-                    
+
         return names_and_energies
 
     def _edge_marker_closed(self, obj):
@@ -1646,36 +1646,52 @@ class EELSSpectrum_mixin:
                 while line_markers:
                     m = line_markers.pop()
                     m.close(render_figure=False)
-                    
+
     def get_complementary_edges(self, edges, only_major=False):
-        # get other edges of the same element present in active edges within
-        # the energy range of the axis
+        ''' Get other edges of the same element present within the energy
+        range of the axis
+
+        Parameters
+        ----------
+        edges : iterable
+            A sequence of strings contains edges in the format of
+            element_subshell for EELS. For example, ['Fe_L2', 'O_K']
+        only_major : bool
+            Whether to show only the major edges. The default is False.
+
+        Returns
+        -------
+        complmt_edges : list
+            A list containing all the complementary edges of the same element
+            present within the energy range of the axis
+        '''
+
         emin = self.axes_manager[-1].low_value
         emax = self.axes_manager[-1].high_value
         complmt_edges = []
-        
+
         elements = set()
         for edge in edges:
             element, _ = edge.split('_')
-            elements.update([element])        
-        
+            elements.update([element])
+
         for element in elements:
             ss_info = elements_db[element]['Atomic_properties'][
                         'Binding_energies']
-        
+
             for subshell in ss_info:
                 sse = ss_info[subshell]['onset_energy (eV)']
                 ssr = ss_info[subshell]['relevance']
-                
+
                 if only_major:
                     if ssr != 'Major':
                         continue
-                
+
                 edge = element + '_' + subshell
                 if (emin <= sse <= emax) and (subshell[-1] != 'a') and \
                     (edge not in edges):
                     complmt_edges.append(edge)
-        
+
         return complmt_edges
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):

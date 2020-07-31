@@ -20,7 +20,7 @@ import os
 import numpy as np
 import pytest
 
-from hyperspy import signals, model
+from hyperspy import signals, model, datasets
 from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.io import load
@@ -353,7 +353,7 @@ class Test_Print_Edges_Near_Energy:
     def test_at_532eV(self):
         s = self.signal
         table_ascii = s.print_edges_near_energy(532)
-        
+
         assert table_ascii.__repr__() == ('+-------+-------------------+------'
         '-----+-----------------+\n|  edge | onset energy (eV) | relevance '
         '|   description   |\n+-------+-------------------+-----------+'
@@ -363,3 +363,119 @@ class Test_Print_Edges_Near_Energy:
         '| Delayed maximum |\n| Sb_M4 |       537.0       |   Major   '
         '| Delayed maximum |\n+-------+-------------------+-----------+'
         '-----------------+')
+
+    def test_sequence_edges(self):
+        s = self.signal
+        table_ascii = s.print_edges_near_energy(123,
+                                                edges=['Mn_L2', 'O_K', 'Fe_L2'])
+
+        assert table_ascii.__repr__() == ('+-------+-------------------+------'
+        '-----+-----------------------------+\n|  edge | onset energy (eV) '
+        '| relevance |         description         |\n+-------+------------'
+        '-------+-----------+-----------------------------+\n| Mn_L2 |     '
+        '  651.0       |   Major   | Sharp peak. Delayed maximum |\n|  O_K  |'
+        '       532.0       |   Major   |         Abrupt onset        '
+        '|\n| Fe_L2 |       721.0       |   Major   | Sharp peak. '
+        'Delayed maximum |\n+-------+-------------------+-----------+---------'
+        '--------------------+')
+
+    def test_no_energy_and_edges(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.print_edges_near_energy()
+
+class Test_Edges_At_Energy:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_at_532eV(self):
+        s = self.signal
+        table_ascii = s.edges_at_energy(532, width=20, only_major=True,
+                                        order='ascending')
+
+        assert table_ascii.__repr__() == ('+-------+-------------------+------'
+        '-----+-----------------+\n|  edge | onset energy (eV) | relevance |  '
+        ' description   |\n+-------+-------------------+-----------+----------'
+        '-------+\n| Sb_M5 |       528.0       |   Major   | Delayed maximum '
+        '|\n|  O_K  |       532.0       |   Major   |   Abrupt onset  |\n| '
+        'Sb_M4 |       537.0       |   Major   | Delayed maximum |\n+-------+'
+        '-------------------+-----------+-----------------+')
+
+    def test_at_interactive(self):
+        s = self.signal
+        ret = s.edges_at_energy(energy='interactive')
+
+        assert ret is None
+
+class Test_Get_Complementary_Edges:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_Fe_O(self):
+        s = self.signal
+        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'])
+
+        assert complementary == ['Fe_L1', 'Fe_L3', 'Fe_M3', 'Fe_M2']
+
+    def test_Fe_O_only_major(self):
+        s = self.signal
+        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'],
+                                                  only_major=True)
+
+        assert complementary == ['Fe_L3', 'Fe_M3', 'Fe_M2']
+
+class Test_Plot_EELS:
+    def setup_method(self, method):
+        s = datasets.artificial_data.get_core_loss_eels_signal()
+        self.signal = s
+
+    def test_plot_no_markers(self):
+        s = self.signal
+        s.add_elements(('Mn','Cr'))
+        s.plot()
+
+        assert len(s._edge_markers) == 0
+
+    def test_plot_edges_True(self):
+        s = self.signal
+        s.add_elements(('Mn','Cr'))
+        s.plot(plot_edges=True)
+
+        assert len(s._edge_markers) == 6
+        assert set(s._edge_markers.keys()) == set(['Mn_L2', 'Mn_L3', 'Mn_L1',
+                                                   'Cr_L2', 'Cr_L3', 'Cr_L1'])
+
+    def test_plot_edges_True_without_elements(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.plot(plot_edges=True)
+
+    def test_plot_edges_from_element_family_specific(self):
+        s = self.signal
+        s.plot(plot_edges=['Mn', 'Ti_L', 'Cr_L3'], only_edges=('Major'))
+
+        assert len(s._edge_markers) == 5
+        assert set(s._edge_markers.keys()) == set(['Cr_L3', 'Mn_L2', 'Mn_L3',
+                                                   'Ti_L2', 'Ti_L3'])
+
+    def test_unsupported_edge_family(self):
+        s = self.signal
+        with pytest.raises(AttributeError):
+            s.plot(plot_edges=['Cr_P'])
+
+    def test_supported_element(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.plot(plot_edges=['ABC_L1'])
+
+    def test_remove_edge_labels(self):
+        s = self.signal
+        s.plot(plot_edges=['Cr_L', 'Fe_L2'])
+        s.remove_EELS_edges_markers(['Cr_L1', 'Fe_L2'])
+
+        assert len(s._edge_markers) == 2
+        assert set(s._edge_markers.keys()) == set(['Cr_L2', 'Cr_L3'])
