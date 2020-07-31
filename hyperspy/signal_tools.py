@@ -250,7 +250,7 @@ class EdgesRange(SpanSelectorInSignal1D):
     only_major = t.Bool()
     order = t.Unicode('closest')
     complementary = t.Bool(True)
-    
+
     def __init__(self, signal):
         super(EdgesRange, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
@@ -264,16 +264,16 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         self._get_edges_info_within_energy_axis()
 
-        self.signal.axes_manager.events.indices_changed.connect(self._on_nav_change, 
+        self.signal.axes_manager.events.indices_changed.connect(self._on_nav_change,
                                                                 [])
 
     def _get_edges_info_within_energy_axis(self):
         mid_energy = (self.axis.low_value + self.axis.high_value) / 2
-        rng = self.axis.high_value - self.axis.low_value 
-        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng, 
+        rng = self.axis.high_value - self.axis.low_value
+        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng,
                                                          order=self.order))
         info = get_info_from_edges(self.edge_all)
-        
+
         energy_all = []
         relevance_all = []
         description_all = []
@@ -281,30 +281,30 @@ class EdgesRange(SpanSelectorInSignal1D):
             onset = d['onset_energy (eV)']
             relevance = d['relevance']
             threshold = d['threshold']
-            edge_ = d['edge']            
+            edge_ = d['edge']
             description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
-        
+
             energy_all.append(onset)
             relevance_all.append(relevance)
             description_all.append(description)
-        
+
         self.energy_all = np.asarray(energy_all)
         self.relevance_all = np.asarray(relevance_all)
         self.description_all = np.asarray(description_all)
 
     def _on_nav_change(self):
-        self.slp._check_signal_figure_changed()
+        self.slp._set_active_figure_properties()
         self._plot_labels()
 
     def update_table(self):
         figure_changed = self.slp._check_signal_figure_changed()
         if figure_changed:
-            self._clear_all_markers()
+            self._clear_markers()
 
         if self.span_selector is not None:
             energy_mask = (self.ss_left_value <= self.energy_all) & \
                 (self.energy_all <= self.ss_right_value)
-            if self.only_major:             
+            if self.only_major:
                 relevance_mask = self.relevance_all == 'Major'
             else:
                 relevance_mask = np.ones(len(self.edge_all), bool)
@@ -333,7 +333,7 @@ class EdgesRange(SpanSelectorInSignal1D):
                 self.signal.remove_EELS_edges_markers([edge])
             elif (edge not in self.active_edges):
                 self.active_edges.append(edge)
-        
+
         self.on_complementary()
         self._plot_labels()
 
@@ -349,33 +349,33 @@ class EdgesRange(SpanSelectorInSignal1D):
             if edge in self.active_complementary_edges:
                 self.active_complementary_edges.remove(edge)
             self.signal.remove_EELS_edges_markers([edge])
-            
+
         self.on_complementary()
         self._plot_labels()
 
     def on_complementary(self):
-        
+
         if self.complementary:
             self.active_complementary_edges = \
-                self.signal.get_complementary_edges(self.active_edges, 
+                self.signal.get_complementary_edges(self.active_edges,
                                                     self.only_major)
         else:
             self.active_complementary_edges = []
 
     def check_btn_state(self):
-        
+
         edges = [btn.description for btn in self.btns]
         for btn in self.btns:
             edge = btn.description
             if btn.value is False:
                 if edge in self.active_edges:
                     self.active_edges.remove(edge)
-                    self.signal.remove_EELS_edges_markers([edge])                
+                    self.signal.remove_EELS_edges_markers([edge])
                 if edge in self.active_complementary_edges:
                     btn.value = True
-                    
+
             if btn.value is True and self.complementary:
-                comp = self.signal.get_complementary_edges(self.active_edges, 
+                comp = self.signal.get_complementary_edges(self.active_edges,
                                                            self.only_major)
                 for cedge in comp:
                     if cedge in edges:
@@ -388,26 +388,47 @@ class EdgesRange(SpanSelectorInSignal1D):
             active = self.active_edges
         if complementary is None:
             complementary = self.active_complementary_edges
-            
-        self._clear_all_markers()
-            
-        edges_to_show = list(set(active).union(complementary))
-        edges_dict = self.signal._get_edges(edges_to_show, ('Major', 'Minor'))
 
-        vm, tm = self.slp.get_markers(edges_dict)
-        self.signal.plot_edges_label(edges_to_show, 
-                                     vertical_line_marker=vm, 
-                                     text_marker=tm)
-        self.active_edges = active 
-        self.active_complementary_edges = complementary
+        edges_on_signal = set(self.signal._edge_markers.keys())
+        edges_to_show = set(set(active).union(complementary))
+        edge_keep = edges_on_signal.intersection(edges_to_show)
+        edge_remove =  edges_on_signal.difference(edge_keep)
+        edge_add = edges_to_show.difference(edge_keep)
 
-    def _clear_all_markers(self):
-        edge_all = list(self.signal._edge_markers.keys())
-        self.signal.remove_EELS_edges_markers(edge_all)
-        self.slp._ele_col_dict = {}
-        self.active_edges = []
-        self.active_complementary_edges = []
-        
+        self._clear_markers(edge_remove)
+
+        # all edges to be shown on the signal
+        edge_dict = self.signal._get_edges(edges_to_show, ('Major', 'Minor'))
+        vm_new, tm_new = self.slp.get_markers(edge_dict)
+        for k, edge in enumerate(edge_dict.keys()):
+            v = vm_new[k]
+            t = tm_new[k]
+
+            if edge in edge_keep:
+                # update position of vertical line segment
+                self.signal._edge_markers[edge][0].data = v.data
+                self.signal._edge_markers[edge][0].update()
+
+                # update position of text box
+                self.signal._edge_markers[edge][1].data = t.data
+                self.signal._edge_markers[edge][1].update()
+            elif edge in edge_add:
+                self.signal.plot_edges_label([edge],
+                                             vertical_line_marker=[v],
+                                             text_marker=[t])
+
+    def _clear_markers(self, edges=None):
+        if edges is None:
+            edges = list(self.signal._edge_markers.keys())
+
+        self.signal.remove_EELS_edges_markers(list(edges))
+
+        for edge in edges:
+            if edge in self.active_edges:
+                self.active_edges.remove(edge)
+            if edge in self.active_complementary_edges:
+                self.active_complementary_edges.remove(edge)
+
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
@@ -775,7 +796,7 @@ class ImageContrastEditor(t.HasTraits):
                 lambda: self.image.axes_manager.events.indices_changed.disconnect(
                     self._reset), [])
 
-            # Disconnect update image to avoid image flickering and reconnect 
+            # Disconnect update image to avoid image flickering and reconnect
             # it when necessary in the close method.
             self.image.disconnect()
 
@@ -889,7 +910,7 @@ class ImageContrastEditor(t.HasTraits):
                                          step="mid", color=color)
         self.ax.set_xlim(self._vmin, self._vmax)
         if update_span:
-            # Restore the span selector at the correct position after updating 
+            # Restore the span selector at the correct position after updating
             # the range of the histogram
             self.span_selector._set_span_x(
                     self.ax.transData.inverted().transform(span_x_coord)[0])
@@ -941,8 +962,8 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            # No span selector, so we use the saturated_pixels value to 
-            # calculate the vim and vmax values 
+            # No span selector, so we use the saturated_pixels value to
+            # calculate the vim and vmax values
             self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
@@ -1036,25 +1057,25 @@ IMAGE_CONTRAST_EDITOR_HELP = \
 <p><b>Norm</b>: Normalisation used to display the image.</p>
 
 <p><b>Saturated pixels</b>: The percentage of pixels that are left out of the bounds.
-For example, the low and high bounds of a value of 1 are the 0.5% and 99.5% 
+For example, the low and high bounds of a value of 1 are the 0.5% and 99.5%
 percentiles. It must be in the [0, 100] range.</p>
 
-<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma 
+<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma
 correction). <i>(not compatible with the 'log' norm)</i>.</p>
 
-<p><b>Auto</b>: If selected, adjust automatically the contrast when changing 
+<p><b>Auto</b>: If selected, adjust automatically the contrast when changing
 nagivation axis by taking into account others parameters.</p>
 
 <h3>Advanced parameters</h3>
-                                                
-<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+
+<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
-<p><b>Linear scale</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+<p><b>Linear scale</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
 
 <h3>Buttons</h3>

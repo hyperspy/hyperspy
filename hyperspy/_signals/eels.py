@@ -1549,8 +1549,8 @@ class EELSSpectrum_mixin:
         
         # add the markers to the signal and store them
         self.add_marker(vertical_line_marker + text_marker)
-        self._edge_markers = dict(
-            zip(edges, map(list, zip(vertical_line_marker, text_marker))))
+        added = dict(zip(edges, map(list, zip(vertical_line_marker, text_marker))))
+        self._edge_markers.update(added) 
 
     def _get_edges_to_plot(self, plot_edges, only_edges):
         # get the dictionary of the edge to be shown

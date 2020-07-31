@@ -25,31 +25,33 @@ from hyperspy.drawing.marker import markers
 class SpectrumLabelPosition():
     '''
     A class to get the positions of labels in spectrums such as EELS, EDX,
-    XRF. The main method is the get_markers method which the user supplies a 
-    dictionary of edge labels specifying its energy positions, and it returns 
+    XRF. The main method is the get_markers method which the user supplies a
+    dictionary of edge labels specifying its energy positions, and it returns
     markers for labelling them.
     '''
-    
-    edge_label_style = {'ha' : 'center', 'va' : 'center', 
+
+    edge_label_style = {'ha' : 'center', 'va' : 'center',
                         'bbox' : dict(facecolor='white', alpha=0.2)}
-    colour_list_label = ['black', 'darkblue', 'darkgreen', 
+    colour_list_label = ['black', 'darkblue', 'darkgreen',
                          'darkcyan', 'darkmagenta', 'dimgray',
                          'brown', 'deeppink', 'olive',
                          'crimson']
-    
+
     def __init__(self, signal):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self._ele_col_dict = {}
+        self.color_cycle = itertools.cycle(self.colour_list_label)
+
         self._set_active_figure_properties()
-        
+
     def _set_active_figure_properties(self):
         # set the properties which depend on the figure
         self.signal_figure = self.signal._plot.signal_plot.figure
         self.figsize = self.signal_figure.get_size_inches()
         self.smin, self.smax = self.signal_figure.get_axes()[0].get_ylim()
-        
-        self.sig_index = self._get_current_signal_index()        
+
+        self.sig_index = self._get_current_signal_index()
         self.text_width, self.text_height = self._estimate_textbox_dimension()
 
     def _get_current_signal_index(self):
@@ -72,35 +74,35 @@ class SpectrumLabelPosition():
             return True
         else:
             return False
-    
+
     def _get_bbox_from_textbox_patch(self, fig, textbox):
         # get the bbox object of the textbox
         ax = fig.axes[0]
-        r = fig.canvas.get_renderer()    
+        r = fig.canvas.get_renderer()
         fig.draw(r)
         extent = textbox.get_bbox_patch().get_window_extent()
-        bbox_patch = extent.transformed(ax.transData.inverted()) 
-    
+        bbox_patch = extent.transformed(ax.transData.inverted())
+
         return bbox_patch
-    
+
     def _estimate_textbox_dimension(self, dummy_text='My_g8'):
         # get the dimension of a typical textbox in the current figure
         dummy_style = copy.deepcopy(self.edge_label_style)
         dummy_style['bbox']['alpha'] = 0
         dummy_style['alpha'] = 0
-        tx = markers.text.Text(x=(self.axis.low_value+self.axis.high_value)/2, 
+        tx = markers.text.Text(x=(self.axis.low_value+self.axis.high_value)/2,
                                y=(self.smin+self.smax)/2,
                                text=self._text_parser(dummy_text),
-                               **dummy_style)           
+                               **dummy_style)
         self.signal.add_marker(tx)
 
-        fig = tx.marker.get_figure() 
+        fig = tx.marker.get_figure()
         dummybb = self._get_bbox_from_textbox_patch(fig, tx.marker)
         tx.close()
-    
+
         text_width = dummybb.width
         text_height = dummybb.height
-    
+
         return text_width, text_height
 
     def get_markers(self, labels):
@@ -112,7 +114,7 @@ class SpectrumLabelPosition():
         labels : dictionary
             A dictionary with the labels as keys and their energies as values.
             E.g. for EELS edges it could be {'Mn_L2': 651.0, 'Cr_L3': 575.0}.
-    
+
         Returns
         -------
         vls : list
@@ -122,7 +124,7 @@ class SpectrumLabelPosition():
         '''
 
         xytext = self._get_textbox_pos(labels)
-        
+
         vls = []
         txs = []
         for xyt in xytext:
@@ -136,13 +138,15 @@ class SpectrumLabelPosition():
 
             vl.events.closed.connect(self.signal._edge_marker_closed)
             tx.events.closed.connect(self.signal._edge_marker_closed)
-        
+            vl.auto_update = True
+            tx.auto_update = True
+
             vls.append(vl)
             txs.append(tx)
-            
+
         return vls, txs
 
-    def _get_textbox_pos(self, edges, offset=None, step=None, lb=None, 
+    def _get_textbox_pos(self, edges, offset=None, step=None, lb=None,
                          ub=None):
         # get the information on placing the textbox and its properties
         if offset is None:
@@ -164,8 +168,8 @@ class SpectrumLabelPosition():
         xytext = []
         for edge in edges:
             energy = edges[edge]
-            
-            yval = self.signal.isig[float(energy)].data[self.sig_index] 
+
+            yval = self.signal.isig[float(energy)].data[self.sig_index]
             if yval <= mid: # from top
                 y = ub - itop*step
                 if y <= lb:
@@ -176,26 +180,29 @@ class SpectrumLabelPosition():
                 y = lb + ibtm*step
                 if y >= ub:
                     ibtm = 1
-                    y = lb + ibtm*step            
+                    y = lb + ibtm*step
                 ibtm += 1
-            
-            c = self._ele_col_dict[edge.split('_')[0]]
+
+            try:
+                c = self._ele_col_dict[edge.split('_')[0]]
+            except KeyError:
+                self._ele_col_dict[edge.split('_')[0]] = next(self.color_cycle)
+                c =  self._ele_col_dict[edge.split('_')[0]]
+
             xytext.append((energy, y, yval, edge, c))
 
         return xytext
-        
+
     def _element_colour_dict(self, edges):
         # assign a colour to each element of the edges
-        color_cycle = itertools.cycle(self.colour_list_label)
-        
         if isinstance(edges, dict):
             edges = edges.keys()
-        
+
         elements = self._unique_element_of_edges(edges)
-        
+
         d = {}
         for element in elements:
-            d[element] = next(color_cycle)
+            d[element] = next(self.color_cycle)
 
         return d
 
@@ -207,11 +214,11 @@ class SpectrumLabelPosition():
             elements.update([element])
 
         return elements
-    
+
     def _text_parser(self, text_edge):
         # format the edge labels for LaTeX
         element, subshell = text_edge.split('_')
-        
+
         if subshell[-1].isdigit():
             formatted = element+' '+'$\mathregular{'+subshell[0]+'_'+\
                 subshell[-1]+'}$'
@@ -219,4 +226,3 @@ class SpectrumLabelPosition():
             formatted = element+' '+'$\mathregular{'+subshell[0]+'}$'
 
         return formatted
-    
