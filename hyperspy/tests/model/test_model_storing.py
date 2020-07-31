@@ -17,17 +17,16 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import gc
 from os import remove
 from unittest import mock
-import gc
 
 import numpy as np
-
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Expression, Gaussian, GaussianHF
 from hyperspy.io import load
-from hyperspy.components1d import Gaussian, Expression, GaussianHF
 
 
 def clean_model_dictionary(d):

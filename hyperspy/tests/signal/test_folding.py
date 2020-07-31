@@ -1,8 +1,8 @@
 
 import numpy as np
 
-from hyperspy.signal import BaseSignal
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal import BaseSignal
 
 
 @lazifyTestClass

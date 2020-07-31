@@ -34,6 +34,5 @@ SamfirePool
     The parallel pool, customized to run SAMFire.
 
 """
-from hyperspy.samfire_utils import fit_tests
-from hyperspy.samfire_utils import global_strategies
-from hyperspy.samfire_utils import local_strategies
+from hyperspy.samfire_utils import (fit_tests, global_strategies,
+                                    local_strategies)
