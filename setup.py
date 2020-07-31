@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 
 install_req = ['scipy>=0.17',
                'matplotlib>=2.2.3',
-               'numpy>=1.10, !=1.13.0',
+               'numpy>=1.11, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -289,7 +289,7 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
-                  'hyperspy.external.astroML',
+                  'hyperspy.external.astropy',
                   'hyperspy.samfire_utils',
                   'hyperspy.samfire_utils.segmenters',
                   'hyperspy.samfire_utils.weights',
