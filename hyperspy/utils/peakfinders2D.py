@@ -97,9 +97,7 @@ def clean_peaks(peaks):
         return peaks[ind]
 
 
-def find_local_max(z, min_distance=1, threshold_abs=None, threshold_rel=None,
-                   exclude_border=True, indices=True, num_peaks=np.inf,
-                   footprint=None, labels=None, num_peaks_per_label=np.inf):
+def find_local_max(z, **kwargs):
     """Method to locate positive peaks in an image by local maximum searching.
 
     This function wraps :py:func:`skimage.feature.peak_local_max` function and
@@ -107,9 +105,8 @@ def find_local_max(z, min_distance=1, threshold_abs=None, threshold_rel=None,
 
     z : numpy.ndarray
         Array of image intensities.
-    min_distance, threshold_abs, threshold_rel, exclude_border, indices,
-    num_peaks, footprint, labels, num_peaks_per_label:
-        Additional parameters to be passed to the ``peak_local_max`` method of
+    **kwargs
+        Keyword arguments to be passed to the ``peak_local_max`` method of
         the ``scikit-image`` library. See its documentation for details:
         http://scikit-image.org/docs/dev/api/skimage.feature.html#peak-local-max
 
@@ -120,10 +117,7 @@ def find_local_max(z, min_distance=1, threshold_abs=None, threshold_rel=None,
         Peak pixel coordinates.
 
     """
-    peaks = peak_local_max(z, min_distance=min_distance, threshold_abs=threshold_abs,
-                           threshold_rel=threshold_rel, exclude_border=exclude_border,
-                           indices=indices, num_peaks=num_peaks, footprint=footprint,
-                           labels=labels, num_peaks_per_label=num_peaks_per_label)
+    peaks = peak_local_max(z, **kwargs)
     return clean_peaks(peaks)
 
 
