@@ -1519,11 +1519,9 @@ class EELSSpectrum_mixin:
 
         Parameters
         ----------
-        edges : iterable
-            A sequence of strings contains edges in the format of
-            element_subshell for EELS. Could be a dictionary specifying the
-            energy value or just strings. For example, ['Fe_L2', 'O_K'] or
-            {'Fe_L2': 721.0, 'O_K': 532.0}
+        edges : dictionary
+            A dictionary with the labels as keys and their energies as values.
+            For example, {'Fe_L2': 721.0, 'O_K': 532.0}
         vertical_line_marker :  list
             A list contains HyperSpy's vertical line segment marker, if None,
             determine from the given edges

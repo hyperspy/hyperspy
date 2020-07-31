@@ -457,7 +457,12 @@ class Test_Plot_EELS:
         with pytest.raises(AttributeError):
             s.plot(plot_edges=['Cr_P'])
 
-    def test_supported_element(self):
+    def test_unsupported_edge(self):
+        s = self.signal
+        with pytest.raises(AttributeError):
+            s.plot(plot_edges=['Xe_P4'])
+
+    def test_unsupported_element(self):
         s = self.signal
         with pytest.raises(ValueError):
             s.plot(plot_edges=['ABC_L1'])
@@ -469,3 +474,19 @@ class Test_Plot_EELS:
 
         assert len(s._edge_markers) == 2
         assert set(s._edge_markers.keys()) == set(['Cr_L2', 'Cr_L3'])
+
+    def test_unequal_edges_and_markers(self):
+        s = self.signal
+        s.plot()
+        with pytest.raises(ValueError):
+            s.plot_edges_label(['Cr_L3', 'Fe_L2'],
+                               vertical_line_marker=['vl1', 'vl2'],
+                               text_marker=['tx1'])
+
+    def test_plot_edges_without_markers_provided(self):
+        s = self.signal
+        s.plot()
+        s.plot_edges_label({'Fe_L2': 721.0, 'O_K': 532.0})
+
+        assert len(s._edge_markers) == 2
+        assert set(s._edge_markers.keys()) == set(['Fe_L2', 'O_K'])
