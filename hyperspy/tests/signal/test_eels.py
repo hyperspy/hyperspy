@@ -399,12 +399,6 @@ class Test_Edges_At_Energy:
         'Sb_M4 |       537.0       |   Major   | Delayed maximum |\n+-------+'
         '-------------------+-----------+-----------------+')
 
-    def test_at_interactive(self):
-        s = self.signal
-        ret = s.edges_at_energy(energy='interactive')
-
-        assert ret is None
-
 class Test_Get_Complementary_Edges:
     def setup_method(self, method):
         # Create an empty spectrum
