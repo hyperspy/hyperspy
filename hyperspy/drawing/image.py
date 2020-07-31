@@ -83,8 +83,8 @@ class ImagePlot(BlittedFigure):
         self._vmin_percentile = None
         self._vmax_percentile = None
         # default values used when the numeric and percentile are None  
-        self._vmin_default = f"{preferences.Plot.vmin}th"
-        self._vmax_default = f"{preferences.Plot.vmax}th"
+        self._vmin_default = f"{preferences.Plot.saturated_pixels / 2}th"
+        self._vmax_default = f"{100 - preferences.Plot.saturated_pixels / 2}th"
         # use to store internally the numeric value of contrast
         self._vmin = None
         self._vmax = None

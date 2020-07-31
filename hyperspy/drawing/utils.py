@@ -65,7 +65,10 @@ def contrast_stretching(data, vmin=None, vmax=None):
     """
     def _parse_value(value, value_name):
         if value is None:
-            value = f'{getattr(preferences.Plot, value_name)}th'
+            if value_name == "vmin":
+                value = f'{preferences.Plot.saturated_pixels / 2}th'
+            elif value_name == "vmax":
+                value = f'{100 -  preferences.Plot.saturated_pixels / 2}th'
         if isinstance(value, str):
             value = float(value.split("th")[0])
         if not 0 <= value <= 100:
