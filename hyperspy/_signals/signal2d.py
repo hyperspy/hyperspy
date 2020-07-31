@@ -842,6 +842,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         %s
         %s
         %s
+        %s
 
         **kwargs : dict
             Keywords parameters associated with above methods, see the
@@ -904,8 +905,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         return peaks
 
-    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG,
-                           DISPLAY_DT, TOOLKIT_DT, MAX_WORKERS_ARG)
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+                           DISPLAY_DT, TOOLKIT_DT)
 
 
 class LazySignal2D(LazySignal, Signal2D):
