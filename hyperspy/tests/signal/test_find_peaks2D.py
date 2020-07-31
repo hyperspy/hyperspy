@@ -174,5 +174,5 @@ class TestFindPeaks2D:
             sig.axes_manager.navigation_axes)
         peaks = BaseSignal(np.empty(sig.axes_manager.navigation_shape),
                            axes=axes_dict)
-        pf2D = PeaksFinder2D(sig, method='local_max', peaks=peaks)
+        pf2D = PeaksFinder2D(sig, method='max', peaks=peaks)
         pf2D.close()

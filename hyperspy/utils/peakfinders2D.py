@@ -96,18 +96,21 @@ def clean_peaks(peaks):
         return peaks[ind]
 
 
-def find_local_max(z, **kwargs):
+def find_local_max(z, min_distance=1, threshold_abs=None, threshold_rel=None,
+                   exclude_border=True, indices=True, num_peaks=inf,
+                   footprint=None, labels=None, num_peaks_per_label=inf):
     """Method to locate positive peaks in an image by local maximum searching.
 
-    Parameters
-    ----------
-    alpha : float
-        Only maxima above `alpha * sigma` are found, where `sigma` is the
-        standard deviation of the image.
-    distance : int
-        When a peak is found, all pixels in a square region of side
-        `2 * distance` are set to zero so that no further peaks can be found
-        in that region.
+    This function wraps :py:func:`skimage.feature.peak_local_max` function and
+    sorts the results for consistency with other peak finding methods.
+
+    z : numpy.ndarray
+        Array of image intensities.
+    min_distance, threshold_abs, threshold_rel, exclude_border, indices,
+    num_peaks, footprint, labels, num_peaks_per_label:
+        Additional parameters to be passed to the ``peak_local_max`` method of
+        the ``scikit-image`` library. See its documentation for details:
+        http://scikit-image.org/docs/dev/api/skimage.feature.html#peak-local-max
 
     Returns
     -------
