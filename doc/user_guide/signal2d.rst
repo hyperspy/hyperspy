@@ -123,8 +123,8 @@ Peak finding
 .. versionadded:: 1.6
 
 The :py:meth:`~._signals.signal2d.Signal2D.find_peaks` method provides access
-to a number of algorithms for that achieve peak finding in two dimensional
-signals. The methods available are as follows:
+to a number of algorithms for peak finding in two dimensional signals. The
+methods available are:
 
 Maximum based peak finder
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -135,9 +135,10 @@ Maximum based peak finder
     >>> s.find_peaks(method='max')
     >>> s.find_peaks(method='minmax')
 
-These methods are searching peaks using maximum (and mimimum) values in the
+These methods search for peaks using maximum (and mimimum) values in the
 image. There all have a ``distance`` parameter to set the minimum distance
 between the peaks.
+
 - the ``'local_max'`` method uses the :py:func:`skimage.feature.peak_local_max`
   function (``distance`` and ``threshold`` parameters are mapped to
   ``min_distance`` and ``threshold_abs``, respectively).
@@ -159,16 +160,14 @@ Zaeferrer peak finder
 
     >>> s.find_peaks(method='zaefferer')
 
-This algorithm was developed by Zaefferer [1]_ and the
-implementation here is after the description of the algorithm in the Ph.D.
-thesis of Thomas A. White. It is based on a gradient threshold followed by a
-local maximum search within a square window, which is moved until it is
-centered on the brightest point, which is taken as a peak if it is within a
-certain distance of the starting point. It uses the
-:py:func:`~.utils.peakfinders2D.find_peaks_zaefferer` function, which can
-take the ``grad_threshold``, ``window_size`` and ``distance_cutoff`` as
-parameters. See the :py:func:`~.utils.peakfinders2D.find_peaks_zaefferer`
-function documentation for more details.
+This algorithm was developed by Zaefferer [Zaefferer2000]_. It is based on a
+gradient threshold followed by a local maximum search within a square window,
+which is moved until it is centered on the brightest point, which is taken as a
+peak if it is within a certain distance of the starting point. It uses the
+:py:func:`~.utils.peakfinders2D.find_peaks_zaefferer` function, which can take
+``grad_threshold``, ``window_size`` and ``distance_cutoff`` as parameters. See
+the :py:func:`~.utils.peakfinders2D.find_peaks_zaefferer` function documentation
+for more details.
 
 Ball statistical peak finder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -177,15 +176,15 @@ Ball statistical peak finder
 
     >>> s.find_peaks(method='stat')
 
-Developed by Gordon Ball, and described in the Ph.D. thesis of Thomas A.
-White, this method is based on finding points which have a statistically
-higher value than the surrounding areas, then iterating between smoothing and
-binarising until the number of peaks has converged. This method is slow, but
-very robust to a variety of image types. It uses the
-:py:func:`~.utils.peakfinders2D.find_peaks_stat` function, which can
-take the ``alpha``, ``window_radius`` and ``convergence_ratio`` as
-parameters. See the :py:func:`~.utils.peakfinders2D.find_peaks_stat`
-function documentation for more details.
+Described by White [White2009]_, this method is based on finding points that
+have a statistically higher value than the surrounding areas, then iterating
+between smoothing and binarising until the number of peaks has converged. This
+method can be slow, though it will automatically run much faster if `numba` is
+installed and is very robust to a variety of image types. It uses the
+:py:func:`~.utils.peakfinders2D.find_peaks_stat` function, which can take
+``alpha``, ``window_radius`` and ``convergence_ratio`` as parameters. See the
+:py:func:`~.utils.peakfinders2D.find_peaks_stat` function documentation for more
+details.
 
 Matrix based peak finding
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -211,14 +210,15 @@ Template matching
     >>> template = hs.model.components2D.Gaussian2D().function(x, y)
     >>> s.find_peaks(method='template_matching', template=template)
 
-This method locate peaks in the cross correlation between the image and a
-template followed by the :py:func:`~.utils.peakfinders2D.find_peaks_minmax`
-function. See 
+This method locates peaks in the cross correlation between the image and a
+template using the :py:func:`~.utils.peakfinders2D.find_peaks_xc` function. See
+the :py:func:`~.utils.peakfinders2D.find_peaks_xc` function documentation for
+more details.
 
 Interactive parametrization
 ---------------------------
 
-Many of the peak finding algorithms implemented here have a number of tuneable
+Many of the peak finding algorithms implemented here have a number of tunable
 parameters that significantly affect their accuracy and speed. The GUIs can be
 used to set to select the method and set the parameters interactively:
 
@@ -241,10 +241,3 @@ Several widgets are available:
 .. note:: Some methods take significantly longer than others, particularly
    where there are a large number of peaks to be found. The plotting window
    may be inactive during this time.
-
-References
-----------
-
-.. [1] S. Zaefferer, “New developments of computer-aided
-   crystallographic analysis in transmission electron microscopy research
-   papers,” J. Appl. Crystallogr., vol. 33, no. v, pp. 10–25, 2000.
