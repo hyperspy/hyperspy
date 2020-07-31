@@ -70,6 +70,27 @@ more information about the edges.
     | Cd_M4 |       411.0       |   Major   |       Delayed maximum       |
     +-------+-------------------+-----------+-----------------------------+
 
+The method :py:meth:`~._signals.eels.EELSSpectrum_mixin.edges_at_energy` allows
+inspecting different sections of the signal for interactive edge 
+identification (the default). A region can be selected by dragging the mouse 
+across the signal and after clicking the `Update` button, edges with onset 
+energies within the selected energy range will be displayed. By toggling the 
+edge buttons, it will put or remove the corresponding edges on the signal. When 
+the `Complementary edge` box is ticked, edges outside the selected range with 
+the same element of edges within the selected energy range will be shown as well 
+to aid identification of edges.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.edges_at_energy()
+
+.. figure::  images/EELS_edges_at_energy.png
+   :align:   center
+   :width:   500
+
+   Labels of edges can be put or remove by toggling the edge buttons.
+    
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
