@@ -97,8 +97,8 @@ def clean_peaks(peaks):
 
 
 def find_local_max(z, min_distance=1, threshold_abs=None, threshold_rel=None,
-                   exclude_border=True, indices=True, num_peaks=inf,
-                   footprint=None, labels=None, num_peaks_per_label=inf):
+                   exclude_border=True, indices=True, num_peaks=np.inf,
+                   footprint=None, labels=None, num_peaks_per_label=np.inf):
     """Method to locate positive peaks in an image by local maximum searching.
 
     This function wraps :py:func:`skimage.feature.peak_local_max` function and
@@ -119,7 +119,10 @@ def find_local_max(z, min_distance=1, threshold_abs=None, threshold_rel=None,
         Peak pixel coordinates.
 
     """
-    peaks = peak_local_max(z, **kwargs)
+    peaks = peak_local_max(z, min_distance=min_distance, threshold_abs=threshold_abs,
+                           threshold_rel=threshold_rel, exclude_border=exclude_border,
+                           indices=indices, num_peaks=num_peaks, footprint=footprint,
+                           labels=labels, num_peaks_per_label=num_peaks_per_label)
     return clean_peaks(peaks)
 
 
