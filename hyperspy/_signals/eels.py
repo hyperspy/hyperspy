@@ -1548,7 +1548,7 @@ class EELSSpectrum_mixin:
                              'text_marker needs to be the same.')
         
         # add the markers to the signal and store them
-        self.add_marker(vertical_line_marker + text_marker)
+        self.add_marker(vertical_line_marker + text_marker, render_figure=False)
         added = dict(zip(edges, map(list, zip(vertical_line_marker, text_marker))))
         self._edge_markers.update(added) 
 
@@ -1645,7 +1645,7 @@ class EELSSpectrum_mixin:
                 line_markers = self._edge_markers[EELS_edge]
                 while line_markers:
                     m = line_markers.pop()
-                    m.close()
+                    m.close(render_figure=False)
                     
     def get_complementary_edges(self, edges, only_major=False):
         # get other edges of the same element present in active edges within
