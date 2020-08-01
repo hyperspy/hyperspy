@@ -868,11 +868,12 @@ class ImageContrastEditor(t.HasTraits):
 
     def _show_help_fired(self):
         from pyface.message_dialog import information
-        _ = information(None, IMAGE_CONTRAST_EDITOR_HELP,
-                        title="Help"),
+        _help = _IMAGE_CONTRAST_EDITOR_HELP.replace("PERCENTILE",
+                                                    _PERCENTILE_TRAITSUI)
+        _ = information(None, _help, title="Help"),
 
 
-IMAGE_CONTRAST_EDITOR_HELP = \
+_IMAGE_CONTRAST_EDITOR_HELP = \
 """
 <h2>Image contrast editor</h2>
 <p>This tool provides controls to adjust the contrast of the image.</p>
@@ -882,13 +883,7 @@ IMAGE_CONTRAST_EDITOR_HELP = \
 <p><b>Auto</b>: If selected, adjust automatically the contrast when changing
 nagivation axis by taking into account others parameters.</p>
 
-<p><b>vmin percentile</b>: The percentage of pixels that are left out of the
-lower bounds. For example, the low bounds of a value of 1 is the 0.5%
-percentiles. It must be in the [0, 100] range.</p>
-
-<p><b>vmax percentile</b>: The percentage of pixels that are left out of the
-high bounds. For example, the high bounds of a value of 1 is the 0.5%
-percentiles. It must be in the [0, 100] range.</p>
+PERCENTILE
 
 <p><b>Bins</b>: Number of bins used in the histogram calculation</p>
 
@@ -920,6 +915,20 @@ the range selector.</p>
 <p><b>OK</b>: Close this tool.</p>
 
 """
+
+_PERCENTILE_TRAITSUI = \
+"""<p><b>vmin percentile</b>: The percentile value defining the number of
+pixels left out of the lower bounds.</p>
+
+<p><b>vmax percentile</b>: The percentile value defining the number of
+pixels left out of the upper bounds.</p>"""
+
+_PERCENTILE_IPYWIDGETS = \
+"""<p><b>vmin/vmax percentile</b>: The percentile values defining the number of
+pixels left out of the lower and upper bounds.</p>"""
+
+IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS = _IMAGE_CONTRAST_EDITOR_HELP.replace(
+    "PERCENTILE", _PERCENTILE_IPYWIDGETS)
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.integrate_in_range")
