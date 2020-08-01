@@ -1275,7 +1275,7 @@ class SimpleMessage(t.HasTraits):
         self.text = text
 
 
-class SpikesRemoval(object):
+class SpikesRemoval:
 
     def __init__(self, signal, navigation_mask=None, signal_mask=None,
                  threshold='auto', default_spike_width=5, add_noise=True):
@@ -1489,7 +1489,8 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
 
     def _show_derivative_histogram_fired(self):
         self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
-                                     navigation_mask=self.navigation_mask)
+                                     navigation_mask=self.navigation_mask,
+                                     max_num_bins=1000)
 
     def _reset_line(self):
         if self.interpolated_line is not None:
@@ -1710,7 +1711,7 @@ class PeaksFinder2D(t.HasTraits):
             'xc_template': 'template',
             'xc_distance': 'distance',
             'xc_threshold': 'threshold',
-            } 
+            }
 
         self._attribute_argument_mapping_dict = {
             'local_max': self._attribute_argument_mapping_local_max,
@@ -1741,7 +1742,7 @@ class PeaksFinder2D(t.HasTraits):
                 self._update_peak_finding, [])
             self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
         # Set initial parameters:
-        # As a convenience, if the template argument is provided, we keep it 
+        # As a convenience, if the template argument is provided, we keep it
         # even if the method is different, to be able to use it later.
         if 'template' in kwargs.keys():
             self.xc_template = kwargs['template']
@@ -1835,7 +1836,7 @@ class PeaksFinder2D(t.HasTraits):
 
     def set_random_navigation_position(self):
         index = np.random.randint(0, self.signal.axes_manager._max_index)
-        self.signal.axes_manager.indices = np.unravel_index(index, 
+        self.signal.axes_manager.indices = np.unravel_index(index,
             tuple(self.signal.axes_manager._navigation_shape_in_array))[::-1]
 
 

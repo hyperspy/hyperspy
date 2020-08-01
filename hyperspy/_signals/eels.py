@@ -36,8 +36,12 @@ from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
-from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+from hyperspy.docstrings.signal1d import (
+    CROP_PARAMETER_DOC, SPIKES_DIAGNOSIS_DOCSTRING, MASK_ZERO_LOSS_PEAK_WIDTH,
+    SPIKES_REMOVAL_TOOL_DOCSTRING)
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, SIGNAL_MASK_ARG,
+    NAVIGATION_MASK_ARG)
 
 
 _logger = logging.getLogger(__name__)
@@ -159,42 +163,42 @@ class EELSSpectrum_mixin:
 
     @staticmethod
     def print_edges_near_energy(energy, width=10):
-        """Find and print a table of edges near a given energy that are within 
+        """Find and print a table of edges near a given energy that are within
         the given energy window.
-        
+
         Parameters
         ----------
         energy : float
             Energy to search, in eV
         width : float
-            Width of window, in eV, around energy in which to find nearby 
-            energies, i.e. a value of 1 eV (the default) means to 
+            Width of window, in eV, around energy in which to find nearby
+            energies, i.e. a value of 1 eV (the default) means to
             search +/- 0.5 eV. The default is 10.
-        
+
         Returns
         -------
-        A PrettyText object where its representation is ASCII in terminal and 
-        html-formatted in Jupyter notebook 
-        """ 
-        
+        A PrettyText object where its representation is ASCII in terminal and
+        html-formatted in Jupyter notebook
+        """
+
         edges = get_edges_near_energy(energy, width=width)
-        
+
         table = PrettyTable()
         table.field_names = [
         'edge',
         'onset energy (eV)',
         'relevance',
         'description']
-        
+
         for edge in edges:
             element, shell = edge.split('_')
             shell_dict = elements_db[element]['Atomic_properties'][
                          'Binding_energies'][shell]
-            
+
             onset = shell_dict['onset_energy (eV)']
             relevance = shell_dict['relevance']
             threshold = shell_dict['threshold']
-            edge_ = shell_dict['edge']            
+            edge_ = shell_dict['edge']
             description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
 
             table.add_row([edge, onset, relevance, description])
@@ -204,7 +208,7 @@ class EELSSpectrum_mixin:
 
         return print_html(f_text=table.get_string,
                           f_html=table.get_html_string)
-    
+
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
 
@@ -392,29 +396,27 @@ class EELSSpectrum_mixin:
                                   also_align + [self])
     align_zero_loss_peak.__doc__ %= (SHOW_PROGRESSBAR_ARG, CROP_PARAMETER_DOC)
 
-    def get_zero_loss_peak_mask(self, zero_loss_full_width=5.0,
+    def get_zero_loss_peak_mask(self, zero_loss_peak_mask_width=5.0,
                                 signal_mask=None):
-        """Return boolean array with True value at the position of the zero 
-        loss peak. This mask can be used to restrict operation to the signal 
+        """Return boolean array with True value at the position of the zero
+        loss peak. This mask can be used to restrict operation to the signal
         locations not marked as True (masked).
 
         Parameters
         ----------
-        zero_loss_width: float
-            Full width of the zero loss peak
-        signal_mask: boolean array
-            Signal mask to combine with the zero loss peak mask.
-
+        zero_loss_peak_mask_width: float
+            Width of the zero loss peak mask.
+        %s
 
         Returns
         -------
-        boolean array
+        bool array
         """
         zlpc = self.estimate_zero_loss_peak_centre()
         (signal_axis, ) = self.axes_manager[self.axes_manager.signal_axes]
         axis = signal_axis.axis
-        mini_value = zlpc.data.mean() - zero_loss_full_width / 2
-        maxi_value = zlpc.data.mean() + zero_loss_full_width / 2
+        mini_value = zlpc.data.mean() - zero_loss_peak_mask_width / 2
+        maxi_value = zlpc.data.mean() + zero_loss_peak_mask_width / 2
         mask = np.logical_and(mini_value <= axis, axis <= maxi_value)
         if signal_mask is not None:
             signal_mask = np.logical_or(mask, signal_mask)
@@ -422,78 +424,35 @@ class EELSSpectrum_mixin:
             signal_mask = mask
         return signal_mask
 
+    get_zero_loss_peak_mask.__doc__ %= (SIGNAL_MASK_ARG)
+
     def spikes_diagnosis(self, signal_mask=None, navigation_mask=None,
-                         filter_zero_loss_peak=False, zero_loss_full_width=5.0):
-        """Plots a histogram to help in choosing the threshold for
-        spikes removal.
-
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked).
-
-        See also
-        --------
-        spikes_removal_tool
-
-        """
-        if filter_zero_loss_peak:
-            signal_mask = self.get_zero_loss_peak_mask(zero_loss_full_width,
+                         zero_loss_peak_mask_width=None, **kwargs):
+        if zero_loss_peak_mask_width is not None:
+            signal_mask = self.get_zero_loss_peak_mask(zero_loss_peak_mask_width,
                                                        signal_mask)
-        super().spikes_diagnosis(signal_mask=signal_mask, navigation_mask=None)
+        super().spikes_diagnosis(signal_mask=signal_mask, navigation_mask=None,
+                                 **kwargs)
+
+    spikes_diagnosis.__doc__ = SPIKES_DIAGNOSIS_DOCSTRING % MASK_ZERO_LOSS_PEAK_WIDTH
 
     def spikes_removal_tool(self, signal_mask=None,
                             navigation_mask=None,
                             threshold='auto',
-                            filter_zero_loss_peak=False,
-                            zero_loss_full_width=5.0,
+                            zero_loss_peak_mask_width=None,
                             interactive=True,
                             display=True,
                             toolkit=None):
-        if filter_zero_loss_peak:
-            signal_mask = self.get_zero_loss_peak_mask(zero_loss_full_width,
+        if zero_loss_peak_mask_width is not None:
+            signal_mask = self.get_zero_loss_peak_mask(zero_loss_peak_mask_width,
                                                        signal_mask)
         super().spikes_removal_tool(signal_mask=signal_mask,
                                     navigation_mask=navigation_mask,
                                     threshold=threshold,
                                     interactive=interactive,
                                     display=display, toolkit=toolkit)
-
-    spikes_removal_tool.__doc__ =\
-        """Graphical interface to remove spikes from EELS spectra.
-
-Parameters
-----------
-signal_mask: boolean array
-    Restricts the operation to the signal locations not marked
-    as True (masked)
-navigation_mask: boolean array
-    Restricts the operation to the navigation locations not
-    marked as True (masked)
-threshold: 'auto' or int
-    if `int` set the threshold value use for the detecting the spikes. If 
-    `auto`, determine the threshold value using the `spikes_diagnosis` method.
-filter_zero_loss_peak: boolean
-    Mask the zero-loss peak to detect the spikes.
-zero_loss_full_width: float
-    Full width of the signal mask for the zero-loss peak.
-interactive: boolean
-    If True, remove the spikes using the graphical user interface. If False, 
-    remove the spikes automatically, which could introduce artefacts if used 
-    with signal containing peak-like features. However, this could be 
-    mitigated by it in combination with the `signal_mask` argument to mask the 
-    signal of interest.
-%s
-%s
-See also
---------
-spikes_diagnosis,
-
-""" % (DISPLAY_DT, TOOLKIT_DT)
+    spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, MASK_ZERO_LOSS_PEAK_WIDTH, DISPLAY_DT, TOOLKIT_DT)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
@@ -885,7 +844,7 @@ spikes_diagnosis,
                                     extrapolate_coreloss=True):
         """Performs Fourier-ratio deconvolution.
 
-        The core-loss should have the background removed. To reduce the noise 
+        The core-loss should have the background removed. To reduce the noise
         amplication the result is convolved with a Gaussian function.
 
         Parameters
