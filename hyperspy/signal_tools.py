@@ -37,7 +37,6 @@ from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import calculate_bins_histogram, numba_histogram
-from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -556,11 +555,11 @@ class ImageContrastEditor(t.HasTraits):
         'Symlog',
         default='Linear')
     linthresh = t.Range(0.0, 1.0, 0.01, exclude_low=True, exclude_high=False,
-                        desc=f"Range of value closed to zero, which are "
-                        "linearly extrapolated. {mpl_help}")
+                        desc="Range of value closed to zero, which are "
+                        f"linearly extrapolated. {mpl_help}")
     linscale = t.Range(0.0, 10.0, 0.1, exclude_low=False, exclude_high=False,
-                       desc=f"Number of decades to use for each half of "
-                       "the linear range. {mpl_help}")
+                       desc="Number of decades to use for each half of "
+                       f"the linear range. {mpl_help}")
     auto = t.Bool(True,
                   desc="Adjust automatically the display when changing "
                   "navigator indices. Unselect to keep the same display.")
@@ -614,7 +613,7 @@ class ImageContrastEditor(t.HasTraits):
                 lambda: self.image.axes_manager.events.indices_changed.disconnect(
                     self._reset), [])
 
-            # Disconnect update image to avoid image flickering and reconnect 
+            # Disconnect update image to avoid image flickering and reconnect
             # it when necessary in the close method.
             self.image.disconnect()
 
@@ -794,7 +793,7 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            # No span selector, so we use the default vim and vmax values 
+            # No span selector, so we use the default vim and vmax values
             self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
@@ -880,40 +879,40 @@ IMAGE_CONTRAST_EDITOR_HELP = \
 
 <h3>Basic parameters</h3>
 
-<p><b>Auto</b>: If selected, adjust automatically the contrast when changing 
+<p><b>Auto</b>: If selected, adjust automatically the contrast when changing
 nagivation axis by taking into account others parameters.</p>
 
-<p><b>vmin percentile</b>: The percentage of pixels that are left out of the 
+<p><b>vmin percentile</b>: The percentage of pixels that are left out of the
 lower bounds. For example, the low bounds of a value of 1 is the 0.5%
 percentiles. It must be in the [0, 100] range.</p>
 
-<p><b>vmax percentile</b>: The percentage of pixels that are left out of the 
-high bounds. For example, the high bounds of a value of 1 is the 0.5% 
+<p><b>vmax percentile</b>: The percentage of pixels that are left out of the
+high bounds. For example, the high bounds of a value of 1 is the 0.5%
 percentiles. It must be in the [0, 100] range.</p>
 
 <p><b>Bins</b>: Number of bins used in the histogram calculation</p>
 
 <p><b>Norm</b>: Normalisation used to display the image.</p>
 
-<p><b>Gamma</b>: Paramater of the power law transform, also known as gamma 
+<p><b>Gamma</b>: Paramater of the power law transform, also known as gamma
 correction. <i>Only available with the 'power' norm</i>.</p>
 
 
 <h3>Advanced parameters</h3>
-                                                
-<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+
+<p><b>Linear threshold</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>Only with the 'log' norm and when values <= 0 are displayed</i>.</p>
 
-<p><b>Linear scale</b>: Since the values close to zero tend toward infinity, 
-there is a need to have a range around zero that is linear. 
-This allows the user to specify the size of this range around zero. 
+<p><b>Linear scale</b>: Since the values close to zero tend toward infinity,
+there is a need to have a range around zero that is linear.
+This allows the user to specify the size of this range around zero.
 <i>Only with the 'log' norm and when values <= 0 are displayed</i>.</p>
 
 <h3>Buttons</h3>
 
-<p><b>Apply</b>: Calculate the histogram using the selected range defined by 
+<p><b>Apply</b>: Calculate the histogram using the selected range defined by
 the range selector.</p>
 
 <p><b>Reset</b>: Reset the settings to their initial values.</p>
@@ -1249,7 +1248,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
-        m = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
+        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
                         title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
