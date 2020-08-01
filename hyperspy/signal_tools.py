@@ -841,8 +841,8 @@ class ImageContrastEditor(t.HasTraits):
                 self.image.vmin = f"{self.vmin_percentile}th"
                 self.image.vmax = f"{self.vmax_percentile}th"
             else:
-                self.image.vmin = self.vmin
-                self.image.vmax = self.vmax
+                self.image.vmin = self._vmin
+                self.image.vmax = self._vmax
             self.image.connect()
         self.hspy_fig.close()
 

@@ -82,7 +82,7 @@ class ImagePlot(BlittedFigure):
         # user provided percentile values
         self._vmin_percentile = None
         self._vmax_percentile = None
-        # default values used when the numeric and percentile are None  
+        # default values used when the numeric and percentile are None
         self._vmin_default = f"{preferences.Plot.saturated_pixels / 2}th"
         self._vmax_default = f"{100 - preferences.Plot.saturated_pixels / 2}th"
         # use to store internally the numeric value of contrast
@@ -555,7 +555,8 @@ class ImagePlot(BlittedFigure):
         self.figure.canvas.mpl_connect('key_press_event',
                                         self.on_key_press)
         if self.axes_manager:
-            self.axes_manager.events.indices_changed.connect(self.update, [])
+            if self.update not in self.axes_manager.events.indices_changed.connected:
+                self.axes_manager.events.indices_changed.connect(self.update, [])
             if self.disconnect not in self.events.closed.connected:
                 self.events.closed.connect(self.disconnect, [])
 
