@@ -142,42 +142,30 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.signal.inav[0].find_peaks1D_ohaver()[0]
-        if self.signal._lazy:
-            peaks = peaks.compute()
         assert np.allclose(
             peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4)
 
     def test_two_spectra(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
         assert np.allclose(
             peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4)
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
         assert np.allclose(
             peaks['height'], 1.0, rtol=1e-5, atol=1e-4)
 
     def test_width(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
         assert np.allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
 
     def test_n_peaks(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
         assert len(peaks) == 8
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
             peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)[1]
-            if self.signal._lazy:
-                peaks = peaks.compute()
             assert len(peaks) == min((8, n))
 
 

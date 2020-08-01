@@ -27,7 +27,7 @@ from hyperspy.decorators import lazifyTestClass
 
 
 @lazifyTestClass(ragged=False)
-class TestImage:
+class TestSignal2D:
 
     def setup_method(self, method):
         self.im = hs.signals.Signal2D(np.arange(0., 18).reshape((2, 3, 3)))
@@ -115,8 +115,16 @@ class TestImage:
     def test_different_shapes(self, parallel):
         s = self.im
         angles = hs.signals.BaseSignal([0, 45])
-        s.map(rotate, angle=angles.T, reshape=True, parallel=parallel,
-              ragged=True)
+        if s._lazy:
+            # inplace not compatible with ragged and lazy
+            with pytest.raises(ValueError):
+                s.map(rotate, angle=angles.T, reshape=True, inplace=True, 
+                      ragged=True)
+            s = s.map(rotate, angle=angles.T, reshape=True, inplace=False,
+                  ragged=True)
+        else:
+            s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
+                  parallel=parallel, ragged=True)
         # the dtype
         assert s.data.dtype is np.dtype('O')
         # the special slicing
@@ -134,6 +142,26 @@ class TestImage:
                                                  15.65165043, 0.],
                                              [0., 0., 0., 0.]]))
 
+    @pytest.mark.parametrize('ragged', [True, False])
+    def test_ragged(self, ragged):
+        s = self.im
+        out = s.map(lambda x: x, inplace=False, ragged=ragged)
+        assert out.axes_manager.navigation_shape == s.axes_manager.navigation_shape
+        if ragged:
+            if s._lazy:
+                with pytest.raises(ValueError):
+                    s.map(lambda x: x, inplace=True, ragged=ragged)
+            for i in range(s.axes_manager.navigation_size):
+                np.testing.assert_allclose(s.data[i], out.data[i])
+        else:
+            np.testing.assert_allclose(s.data, out.data)
+
+    @pytest.mark.parametrize('ragged', [True, False])
+    def test_ragged_navigation_shape(self, ragged):
+        s = hs.stack([self.im]*3)
+        out = s.map(lambda x: x, inplace=False, ragged=ragged)
+        assert out.axes_manager.navigation_shape == s.axes_manager.navigation_shape
+        assert out.data.shape[:2] == s.axes_manager.navigation_shape[::-1]
 
 @lazifyTestClass(ragged=False)
 class TestSignal1D:
@@ -186,6 +214,15 @@ class TestSignal1D:
               parallel=parallel, ragged=self.ragged)
         assert s.data.dtype is np.dtype('complex128')
 
+    @pytest.mark.parametrize('ragged', [True, False])
+    def test_ragged(self, ragged):
+        s = self.s
+        out = s.map(lambda x: x, inplace=False, ragged=ragged)
+        if ragged:
+            for i in range(s.axes_manager.navigation_size):
+                np.testing.assert_allclose(s.data[i], out.data[i])
+        else:
+            np.testing.assert_allclose(s.data, out.data)
 
 @lazifyTestClass(ragged=False)
 class TestSignal0D:
@@ -308,20 +345,34 @@ def test_new_axes(parallel):
     assert 0 == sl.axes_manager.navigation_dimension
 
 
-def test_singleton():
+@pytest.mark.parametrize('lazy', [True, False])
+@pytest.mark.parametrize('ragged', [True, False, None])
+def test_singleton(lazy, ragged):
     sig = hs.signals.Signal2D(np.empty((3, 2)))
+    if lazy:
+        sig = sig.as_lazy()
+        from hyperspy._signals.lazy import LazySignal
+        if ragged is None:
+            pytest.skip("Not compatible with lazy signal.")
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
 
     # One without arguments
-    sig1 = sig.map(lambda x: 3, inplace=False)
-    sig2 = sig.map(np.sum, inplace=False)
-    sig.map(np.sum)
-    for _s in (sig1, sig2, sig):
+    sig1 = sig.map(lambda x: 3, inplace=False, ragged=ragged)
+    sig2 = sig.map(np.sum, inplace=False, ragged=ragged)
+    # in place not supported for lazy signal and ragged
+    if lazy and ragged:
+        sig_list = (sig1, sig2)
+    else:
+        sig_list =  (sig1, sig2, sig)
+        sig.map(np.sum, ragged=ragged, inplace=True)
+    for _s in sig_list:
         assert len(_s.axes_manager._axes) == 1
         assert _s.axes_manager[0].name == 'Scalar'
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
+        if lazy and not ragged:
+            assert isinstance(_s, LazySignal)
 
 
 def test_map_ufunc(caplog):
