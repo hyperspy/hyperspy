@@ -210,7 +210,7 @@ class EELSSpectrum_mixin:
                           f_html=table.get_html_string)
 
     def estimate_zero_loss_peak_centre(self, mask=None):
-        """Estimate the posision of the zero-loss peak.
+        """Estimate the position of the zero-loss peak.
 
         This function provides just a coarse estimation of the position
         of the zero-loss peak centre by computing the position of the maximum
@@ -444,6 +444,11 @@ class EELSSpectrum_mixin:
                             display=True,
                             toolkit=None):
         if zero_loss_peak_mask_width is not None:
+            axis = self.axes_manager.signal_axes[0].axis
+            # check the zero_loss is in the signal
+            if (axis[0] - zero_loss_peak_mask_width / 2 > 0 or
+                axis[-1] + zero_loss_peak_mask_width / 2 < 0):
+                raise ValueError("The zero loss peaks isn't in the energy range.")
             signal_mask = self.get_zero_loss_peak_mask(zero_loss_peak_mask_width,
                                                        signal_mask)
         super().spikes_removal_tool(signal_mask=signal_mask,

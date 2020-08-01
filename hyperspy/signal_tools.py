@@ -1278,7 +1278,8 @@ class SimpleMessage(t.HasTraits):
 class SpikesRemoval:
 
     def __init__(self, signal, navigation_mask=None, signal_mask=None,
-                 threshold='auto', default_spike_width=5, add_noise=True):
+                 threshold='auto', default_spike_width=5, add_noise=True,
+                 max_num_bins=1000):
         self.ss_left_value = np.nan
         self.ss_right_value = np.nan
         self.default_spike_width = default_spike_width
@@ -1298,7 +1299,8 @@ class SpikesRemoval:
             # Find the first zero of the spikes diagnosis plot
             hist = signal._get_spikes_diagnosis_histogram_data(
                     signal_mask=signal_mask,
-                    navigation_mask=navigation_mask)
+                    navigation_mask=navigation_mask,
+                    max_num_bins=max_num_bins)
             zero_index = np.where(hist.data == 0)[0]
             if zero_index.shape[0] > 0:
                 index = zero_index[0]
@@ -1466,17 +1468,14 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
                        "in the Signal metadata are used if present,"
                             "otherwise\nshot noise is used as a default")
 
-    def __init__(self, signal, navigation_mask=None, signal_mask=None,
-                 threshold='auto'):
+    def __init__(self, signal, max_num_bins=1000, **kwargs):
         SpanSelectorInSignal1D.__init__(self, signal=signal)
         signal._plot.auto_update_plot = False
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
-        SpikesRemoval.__init__(self, signal=signal,
-                               navigation_mask=navigation_mask,
-                               signal_mask=signal_mask,
-                               threshold=threshold)
+        SpikesRemoval.__init__(self, signal=signal, **kwargs)
         self.update_signal_mask()
+        self.max_num_bins = max_num_bins
 
     def _threshold_changed(self, old, new):
         self.index = 0
@@ -1490,7 +1489,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
     def _show_derivative_histogram_fired(self):
         self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
                                      navigation_mask=self.navigation_mask,
-                                     max_num_bins=1000)
+                                     max_num_bins=self.max_num_bins)
 
     def _reset_line(self):
         if self.interpolated_line is not None:

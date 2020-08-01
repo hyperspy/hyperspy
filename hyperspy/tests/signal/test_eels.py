@@ -20,7 +20,7 @@ import os
 import numpy as np
 import pytest
 
-from hyperspy import signals
+import hyperspy.api as hs
 from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.io import load
@@ -33,7 +33,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        s = signals.EELSSpectrum(np.zeros((3, 2, 1024)))
+        s = hs.signals.EELSSpectrum(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.02
         energy_axis.offset = -5
@@ -111,7 +111,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 class TestEstimateZLPCentre:
 
     def setup_method(self, method):
-        s = signals.EELSSpectrum(np.diag(np.arange(1, 11)))
+        s = hs.signals.EELSSpectrum(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
         self.signal = s
@@ -131,7 +131,7 @@ class TestEstimateZLPCentre:
 class TestAlignZLP:
 
     def setup_method(self, method):
-        s = signals.EELSSpectrum(np.zeros((10, 100)))
+        s = hs.signals.EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -215,7 +215,7 @@ class TestSpikesRemovalToolZLP:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        s = signals.EELSSpectrum(np.zeros((2, 3, 64)))
+        s = hs.signals.EELSSpectrum(np.zeros((2, 3, 64)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.2
         energy_axis.offset = -5
@@ -256,31 +256,39 @@ class TestSpikesRemovalToolZLP:
         if self.signal._lazy:
             pytest.skip("Spikes diagnosis is not supported for lazy signal")
         self._add_spikes()
-        self.signal.spikes_diagnosis(filter_zero_loss_peak=True)
+        self.signal.spikes_diagnosis(zero_loss_peak_mask_width=5.0)
 
         zlp_mask = self.signal.get_zero_loss_peak_mask()
         hist_data = self.signal._get_spikes_diagnosis_histogram_data(
-            signal_mask=zlp_mask)
-        expected_data = np.zeros(543)
-        expected_data[:13] = [42, 45, 31, 32, 29, 16, 13, 4, 5, 5, 2, 1, 1]
+            signal_mask=zlp_mask, max_num_bins=1000)
+        expected_data = np.zeros(544)
+        expected_data[:13] = [41, 46, 31, 31, 30, 15, 14,  4,  5,  5,  2,  1,  1,]
         expected_data[-4:] = [1, 0, 0, 1]
         np.testing.assert_allclose(hist_data.data, expected_data)
 
-        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data()
+        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data(
+            max_num_bins=1000)
         expected_data2 = np.array([266, 12, 0, 12, 0, 0, 0, 0, 0, 12, 0, 0, 0,
                                    2, 0, 0, 0, 0, 0, 0, 12, 12, 1, 0, 0, 0,
                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,
                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   5, 7, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 12,
-                                   0, 0, 2, 0, 0, 0, 0, 1])
+                                   10, 2, 0, 2, 9, 0, 0, 0, 0, 0, 0, 0, 12,
+                                   0, 0, 2, 0, 0, 0, 1])
         np.testing.assert_allclose(hist_data2.data, expected_data2)
+
+
+def test_spikes_removal_tool_no_zlp():
+    s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal()
+    with pytest.raises(ValueError):
+        # Zero not in energy range
+        s.spikes_removal_tool(zero_loss_peak_mask_width=5.0)
 
 
 @lazifyTestClass
 class TestPowerLawExtrapolation:
 
     def setup_method(self, method):
-        s = signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
+        s = hs.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
         s.metadata.Signal.binned = False
         s.axes_manager[-1].offset = 50
         s.axes_manager[-1].scale = 0.5
@@ -304,12 +312,12 @@ class TestFourierRatioDeconvolution:
 
     @pytest.mark.parametrize(('extrapolate_lowloss'), [True, False])
     def test_running(self, extrapolate_lowloss):
-        s = signals.EELSSpectrum(np.arange(200))
+        s = hs.signals.EELSSpectrum(np.arange(200))
         gaussian = Gaussian()
         gaussian.A.value = 50
         gaussian.sigma.value = 10
         gaussian.centre.value = 20
-        s_ll = signals.EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
+        s_ll = hs.signals.EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
         s_ll.axes_manager[0].offset = -50
         s.fourier_ratio_deconvolution(s_ll,
                                       extrapolate_lowloss=extrapolate_lowloss)
@@ -318,7 +326,7 @@ class TestFourierRatioDeconvolution:
 class TestRebin:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_rebin_without_dwell_time(self):
@@ -351,6 +359,7 @@ class TestRebin:
         assert s2.axes_manager[0].offset == 1.5
         assert s2.axes_manager[1].offset == 2.5
         assert s2.axes_manager[2].offset == s.axes_manager[2].offset
+
 
 @lazifyTestClass
 class Test_Estimate_Thickness:
@@ -405,10 +414,11 @@ class Test_Estimate_Thickness:
         with pytest.raises(RuntimeError):
             self.s.estimate_thickness(zlp=self.zlp, density=3.6)
 
+
 class Test_Print_Edges_Near_Energy:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_at_532eV(self):
