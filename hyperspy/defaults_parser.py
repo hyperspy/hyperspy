@@ -22,7 +22,7 @@ import configparser
 import logging
 
 import traits.api as t
-from matplotlib.cm import cmap_d
+import matplotlib.pyplot as plt
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
@@ -144,11 +144,11 @@ class PlotConfig(t.HasTraits):
                                 desc='Set the default saturated pixels value '
                                 'for plotting images.'
                                 )
-    cmap_navigator = t.Enum(list(cmap_d.keys()),
+    cmap_navigator = t.Enum(plt.colormaps(),
                             label='Color map navigator',
                             desc='Set the default color map for the navigator.',
                             )
-    cmap_signal = t.Enum(list(cmap_d.keys()),
+    cmap_signal = t.Enum(plt.colormaps(),
                          label='Color map signal',
                          desc='Set the default color map for the signal plot.',
                          )
