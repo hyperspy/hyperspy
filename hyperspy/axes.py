@@ -1100,6 +1100,15 @@ def serpentine_iter(shape):
         else:  # pragma: no cover
             break
 
+def flyback_iter(shape):
+    return np.ndindex(shape)
+
+iterpath_error = '''The iterpath scan pattern is set to "{}". \
+It must be either "serpentine" or "flyback", or an iterable of \
+hyperspy indices, and is set either \
+as multifit `iterpath` argument or \
+`axes_manager.iterpath`'''
+
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
 
@@ -1226,10 +1235,7 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self._index = None  # index for the iterpath
-        # Can use serpentine or flyback scan pattern
-        # for the axes manager indexing
-        self._iterpath = 'flyback'
+        self.iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -1427,57 +1433,50 @@ class AxesManager(t.HasTraits):
         if self._max_index != 0:
             self._max_index -= 1
 
+    @property
+    def iterpath(self):
+        return self._iterpath
+
+    @iterpath.setter
+    def iterpath(self, path):
+        if isinstance(path, str):
+            if path is 'serpentine':
+                self._iterpath = "serpentine"
+                self._iterpath_generator = serpentine_iter(self.navigation_shape)
+            elif path is 'flyback':
+                self._iterpath = 'flyback'
+                self._iterpath_generator = flyback_iter(self.navigation_shape)
+            else:
+                raise ValueError(iterpath_error.format(path))
+        else:
+            # Pass a custom indices iterator
+            self._iterpath = path
+            try:
+                self._iterpath_generator = iter(self._iterpath)
+            except (TypeError, AttributeError):
+                 raise TypeError(
+                f"The iterpath '{self._iterpath}' is not a correct iterpath. "
+                "Ensure it is an iterable delivering incides with length equal "
+                f"to the navigation dimension, which is {self.navigation_dimension}.")
+
     def __next__(self):
         """
-        Standard iterator method, updates the index and returns the
-        current coordinates
+        Standard iterator method, returns the current coordinates
 
         Returns
         -------
-        val : tuple of ints
+        self.indices : tuple of ints
             Returns a tuple containing the coordinates of the current
             iteration.
 
         """
-        if self._iterpath not in ['serpentine', 'flyback']:
-            raise ValueError('''The iterpath scan pattern is set to {}. \
-            It must be either "serpentine" or "flyback", and is set either \
-            as multifit `iterpath` argument or \
-            `axes_manager._iterpath`'''.format(self._iterpath))
-        if self._index is None:
-            self._index = 0
-            if self._iterpath == 'serpentine':
-                self._iterpath_generator = serpentine_iter(
-                    self._navigation_shape_in_array)
-                val = next(self._iterpath_generator)
-            else: # flyback
-                val = (0,) * self.navigation_dimension
-            self.indices = val
-        elif self._index >= self._max_index:
-            raise StopIteration
-        else:
-            self._index += 1
-            if self._iterpath == 'serpentine':
-                # In case we need to start further out in the generator
-                # for some reason. This is possibly expensive, as it needs
-                # to calculate all previous values first
-                # self._iterpath_generator = itertools.islice(
-                #     serpentine_iter(self._navigation_shape_in_array),
-                #     self._index,
-                #     None)
-                val = next(self._iterpath_generator)[::-1]
-            else:
-                val = np.unravel_index(
-                    self._index,
-                    tuple(self._navigation_shape_in_array)
-                )[::-1]
-            self.indices = val
-        return val
+        self.indices = next(self._iterpath_generator)
+        return self.indices
 
     def __iter__(self):
-        # Reset the _index that can have a value != None due to
-        # a previous iteration that did not hit a StopIteration
-        self._index = None
+        # re-initialize iterpath as it is set before correct data shape
+        # is created before data shape is known
+        self.iterpath = self._iterpath
         return self
 
     def _append_axis(self, **kwargs):

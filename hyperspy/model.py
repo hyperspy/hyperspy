@@ -1575,7 +1575,7 @@ class BaseModel(list):
         show_progressbar = show_progressbar and (maxval > 0)
 
         if iterpath is None:
-            self.axes_manager._iterpath = "flyback"
+            self.axes_manager.iterpath = "flyback"
             warnings.warn(
                 "The 'iterpath' default will change from 'flyback' to 'serpentine' "
                 "in HyperSpy version 2.0. Change 'iterpath' to other than None to "
@@ -1583,7 +1583,7 @@ class BaseModel(list):
                 VisibleDeprecationWarning,
             )
         else:
-            self.axes_manager._iterpath = iterpath
+            self.axes_manager.iterpath = iterpath
 
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(

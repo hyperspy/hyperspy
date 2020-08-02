@@ -826,3 +826,21 @@ def test_deprecated_private_functions():
 
     with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
         m.set_mpfit_parameters_info()
+
+class Test_multifit_iterpath():
+    def setup_method(self, method):
+        data = np.ones((3, 3, 10))
+        s = hs.signals.Signal1D(data)
+        ax = s.axes_manager
+        m = s.create_model()
+        G = hs.model.components1D.Gaussian()
+        m.append(G)
+        self.m = m
+        self.ax = ax
+    
+    def test_custom_iterpath(self):
+        indices = np.array([(0,0), (1,1), (2,2)])
+        self.ax.iterpath = indices
+        self.m.multifit(iterpath=indices)
+        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
+        np.testing.assert_array_equal(indices, set_indices)

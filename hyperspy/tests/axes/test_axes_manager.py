@@ -18,7 +18,7 @@
 
 from unittest import mock
 
-from numpy import arange, zeros
+from numpy import array, arange, zeros
 
 from hyperspy.axes import AxesManager
 from hyperspy.defaults_parser import preferences
@@ -346,9 +346,19 @@ class TestIterPathScanPattern:
         s = Signal1D(zeros((3, 3, 3, 2)))
         self.am = s.axes_manager
 
+    def test_wrong_iterpath(self):
+        self.am.iterpath = "blahblah"
+        for _ in self.am:
+            pass
+
+    def test_wrong_iterpath2(self):
+        self.am.iterpath = ""
+        for _ in self.am:
+            pass
+
     def test_flyback(self):
-        self.am._iterpath = "flyback"
-        for i, index in enumerate(self.am):
+        self.am.iterpath = "flyback"
+        for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (0, 1, 0)
             # Hits a new layer on index 9
@@ -357,11 +367,21 @@ class TestIterPathScanPattern:
             break
 
     def test_serpentine(self):
-        self.am._iterpath = "serpentine"
-        for i, index in enumerate(self.am):
+        self.am.iterpath = "serpentine"
+        for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (2, 1, 0)
             # Hits a new layer on index 9
             if i == 9:
                 assert self.am.indices == (2, 2, 1)
             break
+
+    def test_custom_iterpath(self):
+        self.am.iterpath = np.array([(0,1,1), (1,1,1)])
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == (0,1,1)
+            # Hits a new layer on index 9
+            if i == 1:
+                assert self.am.indices == (1,1,1)
+            break        
