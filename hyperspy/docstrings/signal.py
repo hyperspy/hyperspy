@@ -76,3 +76,69 @@ MAX_WORKERS_ARG = \
     """max_workers : None or int
            Maximum number of threads used when ``parallel=True``. If None, defaults
            to ``min(32, os.cpu_count())``."""
+
+HISTOGRAM_BIN_ARGS = \
+    """bins : int or sequence of scalars or str, default "fd"
+           If `bins` is an int, it defines the number of equal-width
+           bins in the given range. If `bins` is a
+           sequence, it defines the bin edges, including the rightmost
+           edge, allowing for non-uniform bin widths.
+
+           If `bins` is a string from the list below, will use
+           the method chosen to calculate the optimal bin width and
+           consequently the number of bins (see `Notes` for more detail on
+           the estimators) from the data that falls within the requested
+           range. While the bin width will be optimal for the actual data
+           in the range, the number of bins will be computed to fill the
+           entire range, including the empty portions. For visualisation,
+           using the 'auto' option is suggested. Weighted data is not
+           supported for automated bin size selection.
+
+           'auto'
+               Maximum of the 'sturges' and 'fd' estimators. Provides good
+               all around performance.
+
+           'fd' (Freedman Diaconis Estimator)
+               Robust (resilient to outliers) estimator that takes into
+               account data variability and data size.
+
+           'doane'
+               An improved version of Sturges' estimator that works better
+               with non-normal datasets.
+
+           'scott'
+               Less robust estimator that that takes into account data
+               variability and data size.
+
+           'stone'
+               Estimator based on leave-one-out cross-validation estimate of
+               the integrated squared error. Can be regarded as a generalization
+               of Scott's rule.
+
+           'rice'
+               Estimator does not take variability into account, only data
+               size. Commonly overestimates number of bins required.
+
+           'sturges'
+               R's default method, only accounts for data size. Only
+               optimal for gaussian data and underestimates number of bins
+               for large non-gaussian datasets.
+
+           'sqrt'
+               Square root (of data size) estimator, used by Excel and
+               other programs for its speed and simplicity.
+
+           'knuth'
+               Knuth's rule is a fixed-width, Bayesian approach to determining
+               the optimal bin width of a histogram.
+
+           'blocks'
+               Determination of optimal adaptive-width histogram bins using
+               the Bayesian Blocks algorithm.
+    """
+
+HISTOGRAM_MAX_BIN_ARGS = \
+    """max_num_bins : int, default 250
+           When estimating the bins using one of the str methods, the
+           number of bins is capped by this number to avoid a MemoryError
+           being raised by :py:func:`numpy.histogram`."""

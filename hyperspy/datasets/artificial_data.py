@@ -28,7 +28,7 @@ NOISE_NOTE_DOCSTRING = \
 
 RETURNS_DOCSTRING = \
 """Returns
-    ----
+    -------
     :py:class:`~hyperspy._signals.eels.EELSSpectrum`
     """
 
@@ -40,8 +40,11 @@ def get_low_loss_eels_signal(add_noise=True):
     Parameters
     ----------
     %s
-
     %s
+
+    Returns
+    -------
+    artificial_low_loss_signal : :py:class:`~hyperspy._signals.eels.EELSSpectrum`
 
     Example
     -------
@@ -52,10 +55,8 @@ def get_low_loss_eels_signal(add_noise=True):
 
     See also
     --------
-    get_core_loss_eels_signal : get a core loss signal
-    get_core_loss_eels_model : get a core loss model
-    get_low_loss_eels_line_scan_signal : get EELS low loss line scan
-    get_core_loss_eels_line_scan_signal : get EELS core loss line scan
+    get_core_loss_eels_signal, get_core_loss_eels_model,
+    get_low_loss_eels_line_scan_signal, get_core_loss_eels_line_scan_signal
 
     """
 
@@ -126,10 +127,8 @@ def get_core_loss_eels_signal(add_powerlaw=False, add_noise=True):
 
     See also
     --------
-    get_low_loss_eels_model : get a low loss signal
-    get_core_loss_eels_model : get a model instead of a signal
-    get_low_loss_eels_line_scan_signal : get EELS low loss line scan
-    get_core_loss_eels_line_scan_signal : get EELS core loss line scan
+    get_core_loss_eels_line_scan_signal, get_low_loss_eels_line_scan_signal, 
+    get_core_loss_eels_model
 
     """
 
@@ -186,9 +185,8 @@ def get_low_loss_eels_line_scan_signal(add_noise=True):
 
     See also
     --------
-    get_core_loss_eels_signal : get a core loss signal
-    get_core_loss_eels_model : get a core loss model
-    get_core_loss_eels_line_scan_signal : core loss signal with the same size
+    get_core_loss_eels_line_scan_signal, get_core_loss_eels_signal,
+    get_core_loss_eels_model
 
     """
 
@@ -243,9 +241,7 @@ def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True):
 
     See also
     --------
-    get_low_loss_eels_model : get a low loss signal
-    get_core_loss_eels_model : get a model instead of a signal
-    get_low_loss_eels_line_scan_signal : get low loss signal with the same size
+    get_low_loss_eels_line_scan_signal, get_core_loss_eels_model
 
     %s
 
@@ -278,6 +274,10 @@ def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True):
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
         data += powerlaw.function_nd(np.stack([x]*len(mn_intensity)))
+
+    if add_powerlaw:
+        powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
+        data += powerlaw.function(x)
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -325,8 +325,7 @@ def get_core_loss_eels_model(add_powerlaw=False, add_noise=True):
 
     See also
     --------
-    get_low_loss_eels_model : get a low loss signal
-    get_core_loss_eels_signal : get a model instead of a signal
+    get_core_loss_eels_signal
 
     """
     s = get_core_loss_eels_signal(add_powerlaw=add_powerlaw,

@@ -68,13 +68,13 @@ in ``s.axes_manager.indices`` or as calibrated coordinates in
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
 
-In matplotlib, left and right arrow keys are by default set to navigate the 
-"zoom" history. To avoid the problem of changing zoom while navigating, 
+In matplotlib, left and right arrow keys are by default set to navigate the
+"zoom" history. To avoid the problem of changing zoom while navigating,
 Ctrl + arrows can be used instead. Navigating without using the modifier keys
 will be deprecated in version 2.0.
 
 To navigate navigation dimensions larger than 2, modifier keys can be used.
-The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down) 
+The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down)
 for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
 
 Hotkeys and modifier keys for navigating the plot can be set in the ``hs.preferences.gui()``.
@@ -128,8 +128,8 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    Plotting ``float16`` images is currently not supported by matplotlib; however, it is 
-    possible to convert the type of the data by using the 
+    Plotting ``float16`` images is currently not supported by matplotlib; however, it is
+    possible to convert the type of the data by using the
     :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
@@ -479,7 +479,7 @@ font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
    dimension 2 and signal dimension 0.
 
 A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
@@ -722,7 +722,7 @@ same figure. It supports different styles, the default
 being "overlap".
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
    dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian
@@ -950,6 +950,35 @@ and "overlap" styles:
   :width:   350
 
   Plotting on existing matplotlib axes.
+
+Plotting profiles interactively
+-------------------------------
+
+Spectra or line profile can be plotted interactively on the same figure using
+the :py:func:`~.drawing.utils.plot_spectra` function. For example, profiles
+obtained from different Signal2D using the :py:class:`~.roi.Line2DROI` ROI can
+be plotted interactively:
+
+.. code-block:: python
+
+    >>> im0 = hs.datasets.example_signals.reference_hologram()
+    >>> im1 = hs.datasets.example_signals.object_hologram()
+    >>> im0.plot()
+    >>> im1.plot()
+    >>> # Create the ROI
+    >>> line_profile = hs.roi.Line2DROI(400, 250, 220, 600)
+    >>> # Obtain the signals to plot by "slicing" the signals with the ROI
+    >>> line0 = line_profile.interactive(im0)
+    >>> line1 = line_profile.interactive(im1)
+    >>> # Plotting the profile on the same figure
+    >>> hs.plot.plot_spectra([line0, line1])
+
+.. figure::  images/interactive_profiles.gif
+  :align:   center
+  :width:   1024
+
+  Plotting profiles from different images interactively.
+
 
 .. _plot.signals:
 
