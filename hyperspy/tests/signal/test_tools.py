@@ -1213,7 +1213,11 @@ class TestSpikesRemovalTool():
     def test_spikes_removal_tool_call(self):
         s = self.s
         s.spikes_removal_tool(interactive=False)
-        s.spikes_removal_tool()
+
+        # test when at least one GUI is available
+        from hyperspy.ui_registry import TOOLKIT_REGISTRY
+        if len(TOOLKIT_REGISTRY) > 0:
+            s.spikes_removal_tool()
 
     def test_spikes_removal_tool_mask(self):
         s = self.s
