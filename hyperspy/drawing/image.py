@@ -69,7 +69,7 @@ class ImagePlot(BlittedFigure):
 
         # Attribute matching the arguments of
         # `hyperspy._signal.signal2d.signal2D.plot`
-        self.intensity_autoscale = True
+        self.autoscale = "z"
         self.saturated_pixels = None
         self.norm = "auto"
         self.vmin = None
@@ -81,7 +81,6 @@ class ImagePlot(BlittedFigure):
         self.scalebar_color = "white"
         self.axes_ticks = None
         self.axes_off = False
-        self.axes_autoscale = True
         self.axes_manager = None
         self.no_nans = False
         self.colorbar = True
@@ -187,10 +186,10 @@ class ImagePlot(BlittedFigure):
             self._ylabel += ' ({})'.format(yaxis.units)
 
         # Calibrate the axes of the navigator image
-        self._extent = (xaxis.axis[0] - xaxis.scale / 2.,
+        self._extent = [xaxis.axis[0] - xaxis.scale / 2.,
                         xaxis.axis[-1] + xaxis.scale / 2.,
                         yaxis.axis[-1] + yaxis.scale / 2.,
-                        yaxis.axis[0] - yaxis.scale / 2.)
+                        yaxis.axis[0] - yaxis.scale / 2.]
         self._calculate_aspect()
         if self.saturated_pixels is None:
             self.saturated_pixels = preferences.Plot.saturated_pixels
@@ -369,12 +368,13 @@ class ImagePlot(BlittedFigure):
             data = self._current_data = data
             self._is_rgb = True
         ims = self.ax.images
-        if self.axes_autoscale:
-            # update extent:
-            self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
-                            self.xaxis.axis[-1] + self.xaxis.scale / 2.,
-                            self.yaxis.axis[-1] + self.yaxis.scale / 2.,
-                            self.yaxis.axis[0] - self.yaxis.scale / 2.)
+        # update extent:
+        if 'x' in self.autoscale:
+            self._extent[0] = self.xaxis.axis[0] - self.xaxis.scale / 2
+            self._extent[1] = self.xaxis.axis[-1] + self.xaxis.scale / 2
+        if 'y' in self.autoscale:
+            self._extent[2] = self.yaxis.axis[-1] + self.yaxis.scale / 2
+            self._extent[3] = self.yaxis.axis[0] - self.yaxis.scale / 2
 
         # Turn on centre_colormap if a diverging colormap is used.
         if not self._is_rgb and self.centre_colormap == "auto":
@@ -413,7 +413,7 @@ class ImagePlot(BlittedFigure):
 
             old_vmin, old_vmax = self.vmin, self.vmax
             # Use _vmin_auto and _vmax_auto if optimize_contrast is True
-            if optimize_contrast or self.intensity_autoscale:
+            if optimize_contrast or 'z' in self.autoscale:
                 self.optimize_contrast(data, optimize_contrast)
                 vmin, vmax = self._vmin_auto, self._vmax_auto
             else:
@@ -470,9 +470,11 @@ class ImagePlot(BlittedFigure):
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
-            if self.axes_autoscale:
+            if 'x' in self.autoscale:
                 self.ax.set_xlim(self._extent[:2])
+            if 'y' in self.autoscale:
                 self.ax.set_ylim(self._extent[2:])
+            if 'x' in self.autoscale or 'y' in self.autoscale:
                 ims[0].set_extent(self._extent)
                 self._calculate_aspect()
                 self.ax.set_aspect(self._aspect)

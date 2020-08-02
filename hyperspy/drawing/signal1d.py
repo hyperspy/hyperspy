@@ -209,8 +209,7 @@ class Signal1DLine(object):
 
         # Properties
         self.auto_update = True
-        self.intensity_autoscale = True
-        self.axes_autoscale = False
+        self.autoscale = 'z'
         self.line = None
         self.plot_indices = False
         self.text = None
@@ -381,10 +380,10 @@ class Signal1DLine(object):
             self.line.set_data(self.axis.axis, ydata)
         else:
             self.line.set_ydata(ydata)
-        if self.axes_autoscale is True:
+        if 'x' in self.autoscale:
             self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
 
-        if self.intensity_autoscale is True:
+        if 'z' in self.autoscale:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())

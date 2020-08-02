@@ -98,25 +98,23 @@ PLOT1D_DOCSTRING = \
             (default value is ``'auto'``).
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
-        intensity_autoscale : bool
-            If True, the intensity ('y') limits are reset to their extrema when
-            the navigation indices or data are changed. Default is True.
-        axes_autoscale : bool
-            If True, the axis ('x') limits are reset to their maxima when the
-            the navigation indices or data are changed. If False, the limit of
-            the axes are not reset automotically. Use ``intensity_autoscale``
-            to reset automatically the intensity ('y') limits. Default is
-            False.
+        autoscale : str
+            Set the axes to be reset to their maxima when the navigation
+            indices or data are changed. If 'x' is in the string, the
+            horizontal axis is reset automatically. If 'z' is in the string,
+            the vertical axis is reset automatically. Default is 'z'.
         """
 
 
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
-        intensity_autoscale : bool
-            If True, the intensity limits of the image are reset to the
-            estimated value defined by vmin, vmax, when the navigation indices
-            or data are changed. Default is True.
+        autoscale : str
+            Set the axes to be reset to their maxima when the navigation
+            indices or data are changed. If 'x' or 'y' are in the string, the
+            extent of the image are reset automatically. If 'z' is in the
+            string, the displayed value of the image are reset automatically.
+            Default is 'z'.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
@@ -156,11 +154,6 @@ PLOT2D_DOCSTRING = \
             are never plotted.
         axes_off : {bool}
             Default is False.
-        axes_autoscale : bool
-            If True, the limits of the extent of the image are reset
-            automatically to their extrema when the navigation indices or the
-            data are changed. Use ``intensity_autoscale`` to reset
-            automatically the intensity limits of the image. Default is False.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}

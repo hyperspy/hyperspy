@@ -851,9 +851,8 @@ class EDS_mixin:
              integration_windows=None,
              navigator="auto",
              plot_markers=True,
-             intensity_autoscale=True,
+             autoscale='z',
              norm="auto",
-             axes_autoscale=False,
              axes_manager=None,
              navigator_kwds={},
              **kwargs):
@@ -926,9 +925,8 @@ class EDS_mixin:
         """
         super().plot(navigator=navigator,
                      plot_markers=plot_markers,
-                     intensity_autoscale=intensity_autoscale,
+                     autoscale=autoscale,
                      norm=norm,
-                     axes_autoscale=axes_autoscale,
                      axes_manager=axes_manager,
                      navigator_kwds=navigator_kwds,
                      **kwargs)

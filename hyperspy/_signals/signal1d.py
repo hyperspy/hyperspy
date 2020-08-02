@@ -498,10 +498,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
     shift1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def interpolate_in_between(
-        self, 
+        self,
         start,
         end,
-        delta=3,        
+        delta=3,
         show_progressbar=None,
         parallel=None,
         max_workers=None,
@@ -616,9 +616,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        An array with the result of the estimation in the axis units. 
-        Although the computation is performed in batches if the signal is 
-        lazy, the result is computed in memory because it depends on the 
+        An array with the result of the estimation in the axis units.
+        Although the computation is performed in batches if the signal is
+        lazy, the result is computed in memory because it depends on the
         current state of the axes that could change later on in the workflow.
 
         Raises
@@ -889,7 +889,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         differential_order=0,
         parallel=None,
         max_workers=None,
-        display=True, 
+        display=True,
         toolkit=None,
     ):
         """
@@ -1365,8 +1365,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         parallel=None,
         max_workers=None
     ):
-        """Find positive peaks along a 1D Signal. It detects peaks by looking 
-        for downward zero-crossings in the first derivative that exceed 
+        """Find positive peaks along a 1D Signal. It detects peaks by looking
+        for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
@@ -1551,9 +1551,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def plot(self,
              navigator="auto",
              plot_markers=True,
-             intensity_autoscale=True,
+             autoscale='z',
              norm="auto",
-             axes_autoscale=False,
              axes_manager=None,
              navigator_kwds={},
              **kwargs):
@@ -1563,9 +1562,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         super().plot(navigator=navigator,
                      plot_markers=plot_markers,
-                     intensity_autoscale=intensity_autoscale,
+                     autoscale=autoscale,
                      norm=norm,
-                     axes_autoscale=axes_autoscale,
                      axes_manager=axes_manager,
                      navigator_kwds=navigator_kwds,
                      **kwargs)

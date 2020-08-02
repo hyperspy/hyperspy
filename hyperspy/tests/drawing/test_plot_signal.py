@@ -200,14 +200,12 @@ def test_plot_close_cycle(sdim):
     s._plot.close()
 
 
-@pytest.mark.parametrize('bool_value', [True, False])
+@pytest.mark.parametrize('autoscale', [True, False])
 @pytest.mark.parametrize("ndim", [1, 2])
-def test_plot_navigator_kwds(ndim, bool_value):
+def test_plot_navigator_kwds(ndim, autoscale):
     test_plot_nav1d = _TestPlot(ndim=ndim, sdim=2, data_type="real")
     s = test_plot_nav1d.signal
-    s.plot(navigator_kwds={'norm':'log',
-                           'intensity_autoscale':bool_value,
-                           'axes_autoscale':bool_value})
+    s.plot(navigator_kwds={'norm':'log', 'autoscale':autoscale})
     if ndim == 1:
         assert isinstance(s._plot.navigator_plot, Signal1DFigure)
         plot = s._plot.navigator_plot.ax_lines[0]
@@ -217,8 +215,7 @@ def test_plot_navigator_kwds(ndim, bool_value):
         assert isinstance(plot, ImagePlot)
 
     assert plot.norm == 'log'
-    assert plot.intensity_autoscale is bool_value
-    assert plot.axes_autoscale is bool_value
+    assert plot.autoscale is autoscale
     s._plot.close()
 
 

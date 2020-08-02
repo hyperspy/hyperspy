@@ -518,20 +518,12 @@ def test_plot_navigator_colormap(cmap):
     return s._plot.navigator_plot.figure
 
 
-intensity_autoscale = False
-axes_autoscale = False
-
-@pytest.mark.parametrize("intensity_autoscale", [True, False])
-@pytest.mark.parametrize("axes_autoscale", [True, False])
+@pytest.mark.parametrize("autoscale", ['', 'xy', 'xyz', 'z'])
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_autoscale(intensity_autoscale, axes_autoscale):
+def test_plot_autoscale(autoscale):
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    s.plot(intensity_autoscale=intensity_autoscale,
-           axes_autoscale=axes_autoscale,
-           axes_ticks=True)
-    print("axes_autoscale:", axes_autoscale)
-    print("intensity_autoscale:", intensity_autoscale)
+    s.plot(autoscale=autoscale, axes_ticks=True)
     imf = s._plot.signal_plot
     ax = imf.ax
     extend = [5.0, 10.0, 3., 10.0]
