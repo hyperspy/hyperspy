@@ -1071,7 +1071,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             type='line',
             scaley=False)
         self.signal._plot.signal_plot.add_line(self.bg_line)
-        self.bg_line.autoscale = False
+        self.bg_line.autoscale = ''
         self.bg_line.plot()
 
     def create_remainder_line(self):
@@ -1082,7 +1082,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             type='line',
             scaley=False)
         self.signal._plot.signal_plot.add_line(self.rm_line)
-        self.rm_line.autoscale = False
+        self.rm_line.autoscale = ''
         self.rm_line.plot()
 
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
@@ -1473,7 +1473,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
         self.interpolated_line.auto_update = False
-        self.interpolated_line.autoscale = False
+        self.interpolated_line.autoscale = ''
         self.interpolated_line.plot()
 
     def get_interpolation_range(self):
@@ -1655,7 +1655,7 @@ class PeaksFinder2D(t.HasTraits):
             'xc_template': 'template',
             'xc_distance': 'distance',
             'xc_threshold': 'threshold',
-            } 
+            }
 
         self._attribute_argument_mapping_dict = {
             'local_max': self._attribute_argument_mapping_local_max,
@@ -1686,7 +1686,7 @@ class PeaksFinder2D(t.HasTraits):
                 self._update_peak_finding, [])
             self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
         # Set initial parameters:
-        # As a convenience, if the template argument is provided, we keep it 
+        # As a convenience, if the template argument is provided, we keep it
         # even if the method is different, to be able to use it later.
         if 'template' in kwargs.keys():
             self.xc_template = kwargs['template']
@@ -1780,7 +1780,7 @@ class PeaksFinder2D(t.HasTraits):
 
     def set_random_navigation_position(self):
         index = np.random.randint(0, self.signal.axes_manager._max_index)
-        self.signal.axes_manager.indices = np.unravel_index(index, 
+        self.signal.axes_manager.indices = np.unravel_index(index,
             tuple(self.signal.axes_manager._navigation_shape_in_array))[::-1]
 
 
