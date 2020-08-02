@@ -1180,30 +1180,86 @@ def test_lazy_diff_rechunk():
                                                           10, (1,) * 99)  # The data has not been rechunked
 
 
-def test_spikes_removal_tool():
-    s = signals.Signal1D(np.ones((2, 3, 30)))
-    np.random.seed(1)
-    s.add_gaussian_noise(1)
-    # Add three spikes
-    s.data[1, 0, 5] += 20
-    s.data[0, 2, 29] += 10
-    s.data[1, 2, 14] += 10
+class TestSpikesRemovalTool():
 
-    s._get_spikes_diagnosis_histogram_data()
+    def setup_method(self, method):
+        s = signals.Signal1D(np.ones((2, 3, 30)))
+        np.random.seed(1)
+        s.add_gaussian_noise(1)
+        # Add three spikes
+        s.data[1, 0, 5] += 20
+        s.data[0, 2, 29] += 10
+        s.data[1, 2, 14] += 10
+        self.s = s
 
-    sr = SpikesRemoval(s, threshold=15)
-    sr.find()
-    assert s.axes_manager.indices == (0, 1)
-    sr.threshold = 5
-    sr.index = 0
-    s.axes_manager.indices = sr.coordinates[sr.index]
-    sr.find()
-    assert s.axes_manager.indices == (2, 0)
-    sr.find()
-    assert s.axes_manager.indices == (0, 1)
-    sr.find(back=True)
-    assert s.axes_manager.indices == (2, 0)
-    sr.add_noise = False
+    def test_spikes_removal_tool(self):
+        s = self.s
+        s._get_spikes_diagnosis_histogram_data()
+
+        sr = SpikesRemoval(s, threshold=15)
+        sr.find()
+        assert s.axes_manager.indices == (0, 1)
+        sr.threshold = 5
+        sr.index = 0
+        s.axes_manager.indices = sr.coordinates[sr.index]
+        sr.find()
+        assert s.axes_manager.indices == (2, 0)
+        sr.find()
+        assert s.axes_manager.indices == (0, 1)
+        sr.find(back=True)
+        assert s.axes_manager.indices == (2, 0)
+        sr.add_noise = False
+
+    def test_spikes_removal_tool_call(self):
+        s = self.s
+        s.spikes_removal_tool(interactive=False)
+        s.spikes_removal_tool()
+
+    def test_spikes_removal_tool_mask(self):
+        s = self.s
+        signal_mask = np.array([False] * s.data.shape[-1])
+        signal_mask[:10] = True
+
+        sr = SpikesRemoval(s, threshold=5, signal_mask=signal_mask)
+        assert_array_equal(sr.signal_mask, signal_mask)
+        assert sr.find()
+        # first peak is masked
+        assert s.axes_manager.indices == (2, 0)
+
+    def test_remove_all_spikes(self):
+        s = self.s
+        assert s.data.max() > 5.0
+        sr = SpikesRemoval(s, threshold=5)
+        sr.remove_all_spikes()
+        assert s.data.max() <= 5.0
+
+    def test_remove_all_spikes_white_noise(self):
+        s = self.s
+        s.set_noise_variance(1.0)
+        assert s.data.max() > 5.0
+        sr = SpikesRemoval(s, threshold=5)
+        assert sr.noise_type == "white"
+        sr.remove_all_spikes()
+        assert s.data.max() <= 5.0
+
+    def test_remove_all_spikes_heteroscedastic_noise(self):
+        s = self.s
+        variance = s._deepcopy_with_new_data(np.ones_like(s.data))
+        s.set_noise_variance(variance)
+        assert s.data.max() > 5.0
+        sr = SpikesRemoval(s, threshold=5)
+        assert sr.noise_type == "heteroscedastic"
+        sr.remove_all_spikes()
+        assert s.data.max() <= 5.0
+
+    def test_remove_all_spikes_shot_noise(self):
+        s = self.s
+        s.metadata.add_node('Signal.Noise_properties')
+        assert s.data.max() > 5.0
+        sr = SpikesRemoval(s, threshold=5)
+        assert sr.noise_type == "shot noise"
+        sr.remove_all_spikes()
+        assert s.data.max() <= 5.0
 
 
 def test_spikes_removal_tool_interactive():
