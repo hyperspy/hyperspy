@@ -1311,7 +1311,7 @@ class MVATools(object):
 
         See Also
         --------
-        get_cluster_centers,
+        get_cluster_signals,
         get_cluster_labels.
 
         """
@@ -1685,7 +1685,7 @@ class MVATools(object):
 
         See Also
         --------
-        get_cluster_centers
+        get_cluster_signals
 
         Returns
         --------
@@ -1707,7 +1707,7 @@ class MVATools(object):
             "Cluster labels of " + self.metadata.General.title)
         return label_signal
 
-    def get_cluster_centers(self):
+    def get_cluster_signals(self):
         """Return the cluster centers as a Signal.
 
         See Also
@@ -1729,7 +1729,7 @@ class MVATools(object):
     
         See Also
         --------
-        get_cluster_centers
+        get_cluster_signals
         
         Returns
         --------
@@ -2015,7 +2015,7 @@ class MVATools(object):
         plot_cluster_centers, plot_cluster_labels.
 
         """
-        centers = self.get_cluster_centers()
+        centers = self.get_cluster_signals()
         labels = self.get_cluster_labels()
         _plot_x_results(factors=centers,
                         loadings=labels,
