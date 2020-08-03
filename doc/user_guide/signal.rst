@@ -961,8 +961,7 @@ arbitrary new shapes as long as the number of dimensions stays the same.
 However, internally, it uses two different algorithms to perform the task. Only
 when the new shape dimensions are divisors of the old shape's, the operation
 supports :ref:`lazy-evaluation <big-data-label>` and is usually faster.
-Otherwise, the operation requires linear interpolation and is generally slower if
-`Numba <http://numba.pydata.org/>`_ is not installed.
+Otherwise, the operation requires linear interpolation.
 
 For example, the following two equivalent rebinning operations can be  performed
 lazily:
