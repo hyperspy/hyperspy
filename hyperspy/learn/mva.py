@@ -2473,9 +2473,14 @@ class MVA:
                 # otherwise use elbow method to find first knee
                 best_k = min_k+1
                 for i in range(1,len(k_range)-1):
-                    if gap[i] >= (gap[i+1]- std_error[i+1]):
-                        best_k=i+min_k
-                        break
+                    if i < len(k_range)-1:
+                        if gap[i] >= (gap[i+1]- std_error[i+1]):
+                            best_k=i+min_k
+                            break
+                    else:
+                        if gap[i] > gap[i-1]+std_error[i-1]:
+                            best_k = len(k_range)
+
             target.cluster_metric_index=k_range
             target.cluster_metric_data=to_return
             target.cluster_metric=metric

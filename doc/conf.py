@@ -245,6 +245,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'dask': ('https://docs.dask.org/en/latest', None),
                        'astroML': ('https://www.astroml.org/', None),
                        'sklearn': ('https://scikit-learn.org/stable', None),
+                       'skimage': ('https://scikit-image.org/docs/stable', None),
                        }
 
 graphviz_output_format = "svg"

@@ -46,21 +46,22 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
-from hyperspy.external.astroML.histtools import histogram
+from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, CLUSTER_SIGNALS_ARG)
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
+from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -4282,27 +4283,25 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def get_histogram(self, bins='freedman', range_bins=None, out=None,
+    def get_histogram(self, bins='fd', range_bins=None, max_num_bins=250, out=None,
                       **kwargs):
         """Return a histogram of the signal data.
 
-        More sophisticated algorithms for determining bins can be used.
-        Aside from the `bins` argument allowing a string specified how bins
-        are computed, the parameters are the same as :py:func:`numpy.histogram`.
+        More sophisticated algorithms for determining the bins can be used
+        by passing a string as the ``bins`` argument. Other than the ``'blocks'``
+        and ``'knuth'`` methods, the available algorithms are the same as
+        :py:func:`numpy.histogram`.
+
+        Note: The lazy version of the algorithm only supports ``"scott"``
+        and ``"fd"`` as a string argument for ``bins``.
 
         Parameters
         ----------
-        bins : int, list, or str, optional
-            If `bins` is a string, then it must be one of:
-
-                - ``'knuth'`` : use Knuth's rule to determine bins
-                - ``'scotts'`` : use Scott's rule to determine bins
-                - ``'freedman'`` : use the Freedman-diaconis rule to
-                  determine bins
-                - ``'blocks'`` : use bayesian blocks for dynamic bin widths
+        %s
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If
             `range_bins` is ``None``, (``x.min()``, ``x.max()``) will be used.
+        %s
         %s
         %s
         **kwargs
@@ -4316,17 +4315,9 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        print_summary_statistics,
-        :py:func:`astroML.density_estimation.histogram`,
-        :py:func:`numpy.histogram`
-
-        Notes
-        -----
-            - The lazy version of the algorithm does not support the
-              ``'knuth'`` and ``'blocks'`` `bins` arguments.
-            - The estimators for `bins` are taken from the AstroML project.
-              Read the documentation of
-              :py:func:`astroML.density_estimation.histogram` for more info.
+        * print_summary_statistics
+        * :py:func:`numpy.histogram`
+        * :py:func:`dask.histogram`
 
         Examples
         --------
@@ -4339,10 +4330,15 @@ class BaseSignal(FancySlicing,
         """
         from hyperspy import signals
         data = self.data[~np.isnan(self.data)].flatten()
-        hist, bin_edges = histogram(data,
-                                    bins=bins,
-                                    range=range_bins,
-                                    **kwargs)
+
+        hist, bin_edges = histogram(
+            data,
+            bins=bins,
+            max_num_bins=max_num_bins,
+            range=range_bins,
+            **kwargs
+        )
+
         if out is None:
             hist_spec = signals.Signal1D(hist)
         else:
@@ -4351,16 +4347,20 @@ class BaseSignal(FancySlicing,
                 hist_spec.data[:] = hist
             else:
                 hist_spec.data = hist
+
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
-                "The options `bins = 'blocks'` is not fully supported in this "
-                "versions of hyperspy. It should be used for plotting purpose"
-                "only.")
+                "The option `bins='blocks'` is not fully supported in this "
+                "version of HyperSpy. It should be used for plotting purposes "
+                "only.",
+                UserWarning,
+            )
         else:
             hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
             hist_spec.axes_manager[0].offset = bin_edges[0]
             hist_spec.axes_manager[0].size = hist.shape[-1]
+
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
@@ -4369,7 +4369,8 @@ class BaseSignal(FancySlicing,
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
-    get_histogram.__doc__ %= (OUT_ARG, RECHUNK_ARG)
+
+    get_histogram.__doc__ %= (HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, OUT_ARG, RECHUNK_ARG)
 
     def map(
         self,
@@ -4407,11 +4408,12 @@ class BaseSignal(FancySlicing,
         inplace : bool, default True
             if ``True``, the data is replaced by the result. Otherwise
             a new Signal with the results is returned.
-        ragged : None or bool
+        ragged : None or bool, default None
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
-            the appropriate choice is made while processing. Note: ``None``
-            is not allowed for Lazy signals!
+            the appropriate choice is made while processing. If True in case
+            of lazy signal, the signal will be compute at the end of the
+            mapping. Note: ``None`` is not allowed for Lazy signals!
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
 
@@ -4902,12 +4904,12 @@ class BaseSignal(FancySlicing,
         variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
                                                             gain_offset,
                                                             correlation_factor)
+
         variance = BaseSignal(variance, attributes={'_lazy': self._lazy})
         variance.axes_manager = self.axes_manager
-        variance.metadata.General.title = ("Variance of " +
-                                           self.metadata.General.title)
-        self.metadata.set_item(
-            "Signal.Noise_properties.variance", variance)
+        variance.metadata.General.title = ("Variance of " + self.metadata.General.title)
+
+        self.set_noise_variance(variance)
 
     @staticmethod
     def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
@@ -4915,6 +4917,64 @@ class BaseSignal(FancySlicing,
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
+
+    def set_noise_variance(self, variance):
+        """Set the noise variance of the signal.
+
+        Equivalent to ``s.metadata.set_item("Signal.Noise_properties.variance", variance)``.
+
+        Parameters
+        ----------
+        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+            Value or values of the noise variance. A value of None is
+            equivalent to clearing the variance.
+
+        Returns
+        -------
+        None
+
+        """
+        if isinstance(variance, BaseSignal):
+            if (
+                variance.axes_manager.navigation_shape
+                != self.axes_manager.navigation_shape
+            ):
+                raise ValueError(
+                    "The navigation shape of the `variance` is "
+                    "not equal to the navigation shape of the signal"
+                )
+        elif isinstance(variance, numbers.Number):
+            pass
+        elif variance is None:
+            pass
+        else:
+            raise ValueError(
+                "`variance` must be one of [None, float, "
+                f"hyperspy.signal.BaseSignal], not {type(variance)}."
+            )
+
+        self.metadata.set_item("Signal.Noise_properties.variance", variance)
+
+    def get_noise_variance(self):
+        """Get the noise variance of the signal, if set.
+
+        Equivalent to ``s.metadata.Signal.Noise_properties.variance``.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+            Noise variance of the signal, if set.
+            Otherwise returns None.
+
+        """
+        if "Signal.Noise_properties.variance" in self.metadata:
+            return self.metadata.Signal.Noise_properties.variance
+
+        return None
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a
@@ -5551,84 +5611,101 @@ class BaseSignal(FancySlicing,
                 marker.plot(render_figure=False)
         self._render_figure()
 
-    def add_poissonian_noise(self, keep_dtype=True):
-        """Add Poissonian noise to the data
+    def add_poissonian_noise(self, keep_dtype=True, random_state=None):
+        """Add Poissonian noise to the data.
 
-        This method works in-place. The resulting data type is ``int64``. If
-        this is different from the original data type a warning is added to the
-        log.
+        This method works in-place. The resulting data type is ``int64``.
+        If this is different from the original data type then a warning
+        is added to the log.
 
         Parameters
         ----------
-        keep_dtype : bool
+        keep_dtype : bool, default True
             If ``True``, keep the original data type of the signal data. For
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
-            ``'float64'``. The default is ``True`` for convenience.
+            ``'float64'``.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.poisson`
-        (or :py:func:`dask.array.random.poisson` for lazy signals) to
-        generate the Poissonian noise. In order to seed it,
-        you must use :py:func:`numpy.random.seed`.
+        (or :py:func:`dask.array.random.poisson` for lazy signals)
+        to generate the Poissonian noise.
 
         """
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import poisson
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import poisson
+
         original_dtype = self.data.dtype
-        self.data = poisson(lam=self.data, **kwargs)
+
+        self.data = random_state.poisson(lam=self.data, **kwargs)
+
         if self.data.dtype != original_dtype:
             if keep_dtype:
                 _logger.warning(
-                    "Changing data type from %s to the original %s." % (
-                        self.data.dtype, original_dtype)
+                    f"Changing data type from {self.data.dtype} "
+                    f"to the original {original_dtype}"
                 )
                 # Don't change the object if possible
                 self.data = self.data.astype(original_dtype, copy=False)
             else:
-                _logger.warning("The data type changed from %s to %s" % (
-                    original_dtype, self.data.dtype
-                ))
+                _logger.warning(
+                    f"The data type changed from {original_dtype} "
+                    f"to {self.data.dtype}"
+                )
+
         self.events.data_changed.trigger(obj=self)
 
-    def add_gaussian_noise(self, std):
+    def add_gaussian_noise(self, std, random_state=None):
         """Add Gaussian noise to the data.
 
         The operation is performed in-place (*i.e.* the data of the signal
-        is modified). This method requires a float data type, otherwise numpy
-        raises a :py:exc:`TypeError`.
+        is modified). This method requires the signal to have a float data type,
+        otherwise it will raise a :py:exc:`TypeError`.
 
         Parameters
         ----------
         std : float
             The standard deviation of the Gaussian noise.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.normal` (or
-        :py:func:`dask.array.random.normal` for lazy signals) to generate the
-        Gaussian noise. In order to seed it, you must use
-        :py:func:`numpy.random.seed`.
+        :py:func:`dask.array.random.normal` for lazy signals)
+        to generate the noise.
+
         """
 
+        if self.data.dtype.char not in np.typecodes["AllFloat"]:
+            raise TypeError(
+                "`s.add_gaussian_noise()` requires the data to have "
+                f"a float datatype, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64'))."
+            )
+
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import normal
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import normal
-        noise = normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
+        noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
         if self._lazy:
             # With lazy data we can't keep the same array object
             self.data = self.data + noise
         else:
             # Don't change the object
             self.data += noise
+
         self.events.data_changed.trigger(obj=self)
 
     def transpose(self, signal_axes=None,
@@ -5776,13 +5853,14 @@ class BaseSignal(FancySlicing,
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
         res._assign_subclass()
-        if res.metadata.has_item("Signal.Noise_properties.variance"):
-            var = res.metadata.Signal.Noise_properties.variance
-            if isinstance(var, BaseSignal):
-                var = var.transpose(signal_axes=idx_sig,
-                                    navigation_axes=idx_nav,
-                                    optimize=optimize)
-                res.metadata.set_item('Signal.Noise_properties.variance', var)
+
+        var = res.get_noise_variance()
+        if isinstance(var, BaseSignal):
+            var = var.transpose(signal_axes=idx_sig,
+                                navigation_axes=idx_nav,
+                                optimize=optimize)
+            res.set_noise_variance(var)
+
         if optimize:
             res._make_sure_data_is_contiguous()
         if res.metadata.has_item('Markers'):

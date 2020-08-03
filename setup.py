@@ -45,9 +45,9 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=0.15',
+install_req = ['scipy>=0.17',
                'matplotlib>=2.2.3',
-               'numpy>=1.10, !=1.13.0',
+               'numpy>=1.11, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -58,7 +58,7 @@ install_req = ['scipy>=0.15',
                'python-dateutil>=2.5.0',
                'ipyparallel',
                'dask[array]>=0.18, !=2.0',
-               'scikit-image>=0.13',
+               'scikit-image>=0.15',
                'pint>=0.8',
                'statsmodels',
                'numexpr',
@@ -67,6 +67,7 @@ install_req = ['scipy>=0.15',
                'pyyaml',
                'PTable',
                'tifffile[all]>=2018.10.18',
+               'numba',
                ]
 
 extras_require = {
@@ -74,7 +75,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["numba", "cython"],
+    "speed": ["cython"],
     "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
@@ -289,7 +290,7 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
-                  'hyperspy.external.astroML',
+                  'hyperspy.external.astropy',
                   'hyperspy.samfire_utils',
                   'hyperspy.samfire_utils.segmenters',
                   'hyperspy.samfire_utils.weights',

@@ -17,6 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import logging
+
 from unittest import mock
 
 import dask.array as da
@@ -322,9 +324,27 @@ class Test2D:
         nt.assert_array_equal(result.data, np.array([17, 16, 17]))
         assert result.metadata.Signal.binned
 
+    def test_noise_variance_helpers(self):
+        assert self.signal.get_noise_variance() is None
+        self.signal.set_noise_variance(2)
+        assert self.signal.get_noise_variance() == 2
+        self.signal.set_noise_variance(self.signal)
+        variance = self.signal.get_noise_variance()
+        nt.assert_array_equal(variance.data, self.signal.data)
+        self.signal.set_noise_variance(None)
+        assert self.signal.get_noise_variance() is None
+
+        with pytest.raises(ValueError, match="`variance` must be one of"):
+            self.signal.set_noise_variance(np.array([0, 1, 2]))
+
     def test_estimate_poissonian_noise_copy_data(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
+        assert variance.data is not self.signal.data
+
+    def test_estimate_poissonian_noise_copy_data_helper_function(self):
+        self.signal.estimate_poissonian_noise_variance()
+        variance = self.signal.get_noise_variance()
         assert variance.data is not self.signal.data
 
     def test_estimate_poissonian_noise_noarg(self):
@@ -418,6 +438,35 @@ class Test2D:
         np.testing.assert_array_almost_equal(
             s.data - data, normal(scale=1.0, size=data.shape, **kwargs))
 
+    def test_add_gaussian_noise_seed(self):
+        s = self.signal
+        s.change_dtype("float64")
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import RandomState
+            kwargs["chunks"] = s.data.chunks
+            rng1 = RandomState(123)
+            rng2 = RandomState(123)
+        else:
+            data = s.data.copy()
+            rng1 = np.random.RandomState(123)
+            rng2 = np.random.RandomState(123)
+
+        s.add_gaussian_noise(std=1.0, random_state=rng1)
+        if s._lazy:
+            s.compute()
+
+        np.testing.assert_array_almost_equal(
+            s.data - data, rng2.normal(scale=1.0, size=data.shape, **kwargs))
+
+    def test_gaussian_noise_error(self):
+        s = self.signal
+        s.change_dtype("int64")
+        with pytest.raises(TypeError, match="float datatype"):
+            s.add_gaussian_noise(std=1.0)
+
+
     def test_add_poisson_noise(self):
         s = self.signal
         kwargs = {}
@@ -429,7 +478,9 @@ class Test2D:
             data = s.data.copy()
             from numpy.random import seed, poisson
         seed(1)
+
         s.add_poissonian_noise(keep_dtype=False)
+
         if s._lazy:
             s.compute()
         seed(1)
@@ -437,10 +488,54 @@ class Test2D:
             s.data, poisson(lam=data, **kwargs))
         s.change_dtype("float64")
         seed(1)
+
         s.add_poissonian_noise(keep_dtype=True)
         if s._lazy:
             s.compute()
         assert s.data.dtype == np.dtype("float64")
+
+    def test_add_poisson_noise_seed(self):
+        s = self.signal
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import RandomState
+            kwargs["chunks"] = s.data.chunks
+            rng1 = RandomState(123)
+            rng2 = RandomState(123)
+        else:
+            data = s.data.copy()
+            rng1 = np.random.RandomState(123)
+            rng2 = np.random.RandomState(123)
+
+        s.add_poissonian_noise(keep_dtype=False, random_state=rng1)
+
+        if s._lazy:
+            s.compute()
+
+        np.testing.assert_array_almost_equal(
+            s.data, rng2.poisson(lam=data, **kwargs))
+        s.change_dtype("float64")
+
+        s.add_poissonian_noise(keep_dtype=True, random_state=rng1)
+        if s._lazy:
+            s.compute()
+
+        assert s.data.dtype == np.dtype("float64")
+
+    def test_add_poisson_noise_warning(self, caplog):
+        s = self.signal
+        s.change_dtype("float64")
+
+        with caplog.at_level(logging.WARNING):
+            s.add_poissonian_noise(keep_dtype=True)
+
+        assert "Changing data type from" in caplog.text
+
+        with caplog.at_level(logging.WARNING):
+            s.add_poissonian_noise(keep_dtype=False)
+
+        assert "The data type changed from" in caplog.text
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):

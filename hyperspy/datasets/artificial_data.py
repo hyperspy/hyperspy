@@ -6,15 +6,22 @@ For use in things like docstrings or to test HyperSpy functionalities.
 
 import numpy as np
 
+from hyperspy.misc.math_tools import check_random_state
 
-def get_low_loss_eels_signal():
+
+def get_low_loss_eels_signal(random_state=None):
     """Get an artificial low loss electron energy loss spectrum.
 
     The zero loss peak is offset by 4.1 eV.
 
+    Parameters
+    ----------
+    random_state : None or int or RandomState instance, default None
+        Random seed used to generate the data.
+
     Returns
     -------
-    artificial_low_loss_signal : HyperSpy EELSSpectrum
+    artificial_low_loss_signal : :py:class:`~hyperspy._signals.eels.EELSSpectrum`
 
     Example
     -------
@@ -23,15 +30,15 @@ def get_low_loss_eels_signal():
 
     See also
     --------
-    get_core_loss_eels_signal : get a core loss signal
-    get_core_loss_eels_model : get a core loss model
-    get_low_loss_eels_line_scan_signal : get EELS low loss line scan
-    get_core_loss_eels_line_scan_signal : get EELS core loss line scan
+    get_core_loss_eels_signal, get_core_loss_eels_model,
+    get_low_loss_eels_line_scan_signal, get_core_loss_eels_line_scan_signal
 
     """
 
     from hyperspy.signals import EELSSpectrum
     from hyperspy import components1d
+
+    random_state = check_random_state(random_state)
 
     x = np.arange(-100, 400, 0.5)
     zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
@@ -39,7 +46,7 @@ def get_low_loss_eels_signal():
 
     data = zero_loss.function(x)
     data += plasmon.function(x)
-    data += np.random.random(size=len(x)) * 0.7
+    data += random_state.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -52,7 +59,7 @@ def get_low_loss_eels_signal():
     return s
 
 
-def get_core_loss_eels_signal(add_powerlaw=False):
+def get_core_loss_eels_signal(add_powerlaw=False, random_state=None):
     """Get an artificial core loss electron energy loss spectrum.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
@@ -62,13 +69,14 @@ def get_core_loss_eels_signal(add_powerlaw=False):
 
     Parameters
     ----------
-    add_powerlaw : bool
+    add_powerlaw : bool, default False
         If True, adds a powerlaw background to the spectrum.
-        Default False.
+    random_state : None or int or RandomState instance, default None
+        Random seed used to generate the data.
 
     Returns
     -------
-    artificial_core_loss_signal : HyperSpy EELSSpectrum
+    artificial_core_loss_signal ::py:class:`~hyperspy._signals.eels.EELSSpectrum`
 
     Example
     -------
@@ -84,24 +92,22 @@ def get_core_loss_eels_signal(add_powerlaw=False):
     To make the noise the same for multiple spectra, which can
     be useful for testing fitting routines
 
-    >>> np.random.seed(seed=10)
-    >>> s1 = ad.get_core_loss_eels_signal()
-    >>> np.random.seed(seed=10)
-    >>> s2 = ad.get_core_loss_eels_signal()
+    >>> s1 = ad.get_core_loss_eels_signal(random_state=10)
+    >>> s2 = ad.get_core_loss_eels_signal(random_state=10)
     >>> (s1.data == s2.data).all()
     True
 
     See also
     --------
-    get_low_loss_eels_model : get a low loss signal
-    get_core_loss_eels_model : get a model instead of a signal
-    get_low_loss_eels_line_scan_signal : get EELS low loss line scan
-    get_core_loss_eels_line_scan_signal : get EELS core loss line scan
+    get_core_loss_eels_line_scan_signal, get_low_loss_eels_line_scan_signal, 
+    get_core_loss_eels_model
 
     """
 
     from hyperspy.signals import EELSSpectrum
     from hyperspy import components1d
+
+    random_state = check_random_state(random_state)
 
     x = np.arange(400, 800, 1)
     arctan = components1d.EELSArctan(A=1, k=0.2, x0=688)
@@ -111,7 +117,7 @@ def get_core_loss_eels_signal(add_powerlaw=False):
     data = arctan.function(x)
     data += mn_l3_g.function(x)
     data += mn_l2_g.function(x)
-    data += np.random.random(size=len(x)) * 0.7
+    data += random_state.random(size=len(x)) * 0.7
 
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
@@ -127,14 +133,19 @@ def get_core_loss_eels_signal(add_powerlaw=False):
     return s
 
 
-def get_low_loss_eels_line_scan_signal():
+def get_low_loss_eels_line_scan_signal(random_state=None):
     """Get an artificial low loss electron energy loss line scan spectrum.
 
     The zero loss peak is offset by 4.1 eV.
 
+    Parameters
+    ----------
+    random_state : None or int or RandomState instance, default None
+        Random seed used to generate the data.
+
     Returns
     -------
-    artificial_low_loss_line_scan_signal : HyperSpy EELSSpectrum
+    artificial_low_loss_line_scan_signal : :py:class:`~hyperspy._signals.eels.EELSSpectrum`
 
     Example
     -------
@@ -143,14 +154,15 @@ def get_low_loss_eels_line_scan_signal():
 
     See also
     --------
-    get_core_loss_eels_signal : get a core loss signal
-    get_core_loss_eels_model : get a core loss model
-    get_core_loss_eels_line_scan_signal : core loss signal with the same size
+    get_core_loss_eels_line_scan_signal, get_core_loss_eels_signal,
+    get_core_loss_eels_model
 
     """
 
     from hyperspy.signals import EELSSpectrum
     from hyperspy import components1d
+
+    random_state = check_random_state(random_state)
 
     x = np.arange(-100, 400, 0.5)
     zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
@@ -161,7 +173,7 @@ def get_low_loss_eels_line_scan_signal():
     data = np.zeros((12, len(x)))
     for i in range(12):
         data[i] += data_signal
-        data[i] += np.random.random(size=len(x)) * 0.7
+        data[i] += random_state.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -176,14 +188,21 @@ def get_low_loss_eels_line_scan_signal():
     return s
 
 
-def get_core_loss_eels_line_scan_signal():
+def get_core_loss_eels_line_scan_signal(add_powerlaw=False, random_state=None):
     """Get an artificial core loss electron energy loss line scan spectrum.
 
     Similar to a Mn-L32 and Fe-L32 edge from a perovskite oxide.
 
+    Parameters
+    ----------
+    add_powerlaw : bool, default False
+        If True, adds a powerlaw background to the spectrum.
+    random_state : None or int or RandomState instance, default None
+        Random seed used to generate the data.
+
     Returns
     -------
-    artificial_core_loss_line_scan_signal : HyperSpy EELSSpectrum
+    artificial_core_loss_line_scan_signal : :py:class:`~hyperspy._signals.eels.EELSSpectrum`
 
     Example
     -------
@@ -192,14 +211,14 @@ def get_core_loss_eels_line_scan_signal():
 
     See also
     --------
-    get_low_loss_eels_model : get a low loss signal
-    get_core_loss_eels_model : get a model instead of a signal
-    get_low_loss_eels_line_scan_signal : get low loss signal with the same size
+    get_low_loss_eels_line_scan_signal, get_core_loss_eels_model
 
     """
 
     from hyperspy.signals import EELSSpectrum
     from hyperspy import components1d
+
+    random_state = check_random_state(random_state)
 
     x = np.arange(400, 800, 1)
     arctan_mn = components1d.EELSArctan(A=1, k=0.2, x0=688)
@@ -219,7 +238,11 @@ def get_core_loss_eels_line_scan_signal():
         data[i] += arctan_fe.function(x) * fe_intensity[i]
         data[i] += fe_l3_g.function(x) * fe_intensity[i]
         data[i] += fe_l2_g.function(x) * fe_intensity[i]
-        data[i] += np.random.random(size=len(x)) * 0.7
+        data[i] += random_state.random(size=len(x)) * 0.7
+
+    if add_powerlaw:
+        powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
+        data += powerlaw.function(x)
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -233,20 +256,21 @@ def get_core_loss_eels_line_scan_signal():
     return s
 
 
-def get_core_loss_eels_model(add_powerlaw=False):
+def get_core_loss_eels_model(add_powerlaw=False, random_state=None):
     """Get an artificial core loss electron energy loss model.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
 
     Parameters
     ----------
-    add_powerlaw : bool
+    add_powerlaw : bool, default False
         If True, adds a powerlaw background to the spectrum.
-        Default False.
+    random_state : None or int or RandomState instance, default None
+        Random seed used to generate the data.
 
     Returns
     -------
-    artificial_core_loss_model : HyperSpy EELSModel
+    artificial_core_loss_model : :py:class:`~hyperspy.models.eelsmodel.EELSModel`
 
     Example
     -------
@@ -261,11 +285,10 @@ def get_core_loss_eels_model(add_powerlaw=False):
 
     See also
     --------
-    get_low_loss_eels_model : get a low loss signal
-    get_core_loss_eels_signal : get a model instead of a signal
+    get_core_loss_eels_signal
 
     """
-    s = get_core_loss_eels_signal(add_powerlaw=add_powerlaw)
+    s = get_core_loss_eels_signal(add_powerlaw=add_powerlaw, random_state=random_state)
     m = s.create_model(auto_background=False, GOS='hydrogenic')
     return m
 
@@ -275,7 +298,7 @@ def get_atomic_resolution_tem_signal2d():
 
     Returns
     -------
-    artificial_tem_image : HyperSpy Signal2D
+    artificial_tem_image : :py:class:`~hyperspy._signals.signal2d.Signal2D`
 
     Example
     -------

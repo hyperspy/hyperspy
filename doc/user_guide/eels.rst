@@ -50,8 +50,8 @@ they are arranged in the order closest to 849 eV.
     >>> get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
-The static method :py:meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` 
-in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing 
+The static method :py:meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy`
+in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing
 more information about the edges.
 
 .. code-block:: python
@@ -151,7 +151,7 @@ the refractive index is known and approximately correct for surface
 plasmon excitations in layers.
 
 
-
+.. _eels.fitting:
 
 EELS curve fitting
 ------------------

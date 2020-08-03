@@ -24,6 +24,7 @@ import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
+from hyperspy.misc.math_tools import check_random_state
 from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
@@ -115,6 +116,8 @@ class Samfire:
     save_every : int
         When running, samfire saves results every time save_every good fits are
         found.
+    random_state : None or int or RandomState instance, default None
+        Random seed used to select the next pixels.
 
     Methods
     -------
@@ -158,7 +161,7 @@ class Samfire:
     _args = None
     count = 0
 
-    def __init__(self, model, workers=None, setup=True, **kwargs):
+    def __init__(self, model, workers=None, setup=True, random_state=None, **kwargs):
         # constants:
         if workers is None:
             workers = max(1, cpu_count() - 1)
@@ -192,6 +195,7 @@ class Samfire:
         if len(kwargs) or setup:
             self._setup(**kwargs)
         self.refresh_database()
+        self.random_state = check_random_state(random_state)
 
     @property
     def active_strategy(self):
@@ -495,7 +499,7 @@ class Samfire:
         if best > 0.0:
             ind_list = np.where(self.metadata.marker == best)
             while number and ind_list[0].size > 0:
-                i = np.random.randint(len(ind_list[0]))
+                i = self.random_state.randint(len(ind_list[0]))
                 ind = tuple([lst[i] for lst in ind_list])
                 if ind not in self.running_pixels:
                     inds.append(ind)

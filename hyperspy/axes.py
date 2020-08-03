@@ -1299,9 +1299,11 @@ class AxesManager(t.HasTraits):
     def __deepcopy__(self, *args):
         return AxesManager(self._get_axes_dicts())
 
-    def _get_axes_dicts(self):
+    def _get_axes_dicts(self, axes=None):
+        if axes is None:
+            axes = self._axes
         axes_dicts = []
-        for axis in self._axes:
+        for axis in axes:
             axes_dicts.append(axis.get_axis_dictionary())
         return axes_dicts
 

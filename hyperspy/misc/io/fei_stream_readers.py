@@ -20,7 +20,7 @@ import numpy as np
 import dask.array as da
 import sparse
 
-from hyperspy.decorators import jit_ifnumba
+from numba import jit
 
 
 class DenseSliceCOO(sparse.COO):
@@ -35,7 +35,7 @@ class DenseSliceCOO(sparse.COO):
             return obj
 
 
-@jit_ifnumba()
+@jit(nopython=True, cache=True)
 def _stream_to_sparse_COO_array_sum_frames(
         stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
     navigation_index = 0
@@ -116,7 +116,7 @@ def _stream_to_sparse_COO_array_sum_frames(
     return coords, data, final_shape
 
 
-@jit_ifnumba()
+@jit(nopython=True, cache=True)
 def _stream_to_sparse_COO_array(
         stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
     navigation_index = 0
@@ -242,7 +242,7 @@ def stream_to_sparse_COO_array(
     return dask_sparse
 
 
-@jit_ifnumba()
+@jit(nopython=True, cache=True)
 def _fill_array_with_stream_sum_frames(spectrum_image, stream,
                                        first_frame, last_frame, rebin_energy=1):
     # jit speeds up this function by a factor of ~ 30
@@ -267,7 +267,7 @@ def _fill_array_with_stream_sum_frames(spectrum_image, stream,
             navigation_index += 1
 
 
-@jit_ifnumba()
+@jit(nopython=True, cache=True)
 def _fill_array_with_stream(spectrum_image, stream, first_frame,
                             last_frame, rebin_energy=1):
     navigation_index = 0
@@ -346,7 +346,7 @@ def stream_to_array(
     return spectrum_image
 
 
-@jit_ifnumba()
+@jit(nopython=True, cache=True)
 def array_to_stream(array):
     """Convert an array to a FEI stream
 

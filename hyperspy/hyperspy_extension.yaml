@@ -256,6 +256,7 @@ GUI:
     - hyperspy.Signal1D.remove_background
     - hyperspy.SimpleMessage
     - hyperspy.Signal1D.spikes_removal_tool
+    - hyperspy.Signal2D.find_peaks
     - hyperspy.Point1DROI
     - hyperspy.Point2DROI
     - hyperspy.SpanROI

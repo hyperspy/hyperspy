@@ -93,7 +93,7 @@ class Signal1DFigure(BlittedFigure):
                 line.axes_manager = self.right_axes_manager
         line.axes_manager.events.indices_changed.connect(
             line._auto_update_line, [])
-        self.events.closed.connect(
+        line.events.closed.connect(
             lambda: line.axes_manager.events.indices_changed.disconnect(
                 line._auto_update_line), [])
         line.axis = self.axis
