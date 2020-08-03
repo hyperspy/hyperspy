@@ -59,3 +59,26 @@ class TestContrastEditorTool:
 
         assert_allclose(ceditor._vmin, 409.9)
         assert_allclose(ceditor._vmax, 498.01)
+
+    def test_vmin_vmax_changed(self):
+        s = self.s
+        s.plot(vmin='0th', vmax='100th')
+        ceditor = ImageContrastEditor(s._plot.signal_plot)
+
+        assert_allclose(ceditor._vmin, 0.0)
+        assert_allclose(ceditor._vmax, 99.0)
+        try:
+            # Convenience to be able to run test on systems using backends
+            # supporting blit
+            ceditor._vmin_percentile_changed(0, 10)
+        except TypeError:
+            pass
+        try:
+            # Convenience to be able to run test on systems using backends
+            # supporting blit
+            ceditor._vmax_percentile_changed(100, 99)
+        except TypeError:
+            pass
+
+        assert_allclose(ceditor._vmin, 9.9)
+        assert_allclose(ceditor._vmax, 98.01)
