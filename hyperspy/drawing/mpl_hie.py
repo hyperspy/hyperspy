@@ -64,7 +64,6 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
         imf.axes_off = axes_off
-        imf.vmin, imf.vmax = vmin, vmax
         imf.saturated_pixels = saturated_pixels
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
@@ -77,6 +76,8 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
             kwargs["cmap"] = preferences.Plot.cmap_signal
+        kwargs['vmin'] = vmin
+        kwargs['vmax'] = vmax
         imf.plot(**kwargs)
         self.signal_plot = imf
 

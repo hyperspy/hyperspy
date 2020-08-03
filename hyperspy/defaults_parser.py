@@ -139,10 +139,9 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.05,
-                                label='Saturated pixels',
-                                desc='Set the default saturated pixels value '
-                                'for plotting images.'
+    saturated_pixels = t.CFloat(0.,
+                                label='Saturated pixels (deprecated)',
+                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
                                 )
     cmap_navigator = t.Enum(list(cmap_d.keys()),
                             label='Color map navigator',
