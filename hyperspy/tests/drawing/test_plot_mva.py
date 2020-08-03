@@ -143,8 +143,8 @@ class TestPlotClusterAnalysis:
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_cluster_centers_nav1_sig1(self):
-        return self.s.plot_cluster_centers()
+    def test_plot_cluster_signals_nav1_sig1(self):
+        return self.s.plot_cluster_signals()
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
@@ -158,8 +158,8 @@ class TestPlotClusterAnalysis:
     
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_cluster_centers_nav2_sig1(self):
-        return self.s2.plot_cluster_centers()
+    def test_plot_cluster_signals_nav2_sig1(self):
+        return self.s2.plot_cluster_signals()
     
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
@@ -175,8 +175,8 @@ class TestPlotClusterAnalysis:
  #                       reason="does not run on windows 32")
  #   @pytest.mark.mpl_image_compare(
  #       baseline_dir=baseline_dir, tolerance=default_tol)
- #   def test_plot_cluster_centers_nav2_sig2(self):
- #       return self.s3.plot_cluster_centers()
+ #   def test_plot_cluster_signals_nav2_sig2(self):
+ #       return self.s3.plot_cluster_signals()
  #   @pytest.mark.skipif(sys.platform == "win32", 
  #                       reason="does not run on windows 32")
     @pytest.mark.mpl_image_compare(

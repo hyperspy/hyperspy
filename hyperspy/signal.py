@@ -53,7 +53,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, CLUSTER_SIGNALS_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
@@ -1311,7 +1311,7 @@ class MVATools(object):
 
         See Also
         --------
-        get_cluster_centers,
+        get_cluster_signals,
         get_cluster_labels.
 
         """
@@ -1472,13 +1472,16 @@ class MVATools(object):
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
-        signal = signals.BaseSignal(
-            data,
-            axes=(
-                [{"size": data.shape[0], "navigate": True}] +
-                self.axes_manager._get_navigation_axes_dicts()))
-        for axis in signal.axes_manager._axes[1:]:
-            axis.navigate = False
+        if data.shape[0] > 1:
+            signal = signals.BaseSignal(
+                data,
+                axes=(
+                    [{"size": data.shape[0], "navigate": True}] +
+                    self.axes_manager._get_navigation_axes_dicts()))
+            for axis in signal.axes_manager._axes[1:]:
+                axis.navigate = False
+        else:
+            signal = self._get_navigation_signal(data.squeeze())
         return signal
 
     def _get_factors(self, factors):
@@ -1669,66 +1672,82 @@ class MVATools(object):
                         factors_dim=factors_dim,
                         loadings_dim=loadings_dim)
 
-    def get_cluster_labels(self,merged=False):
+    def get_cluster_labels(self, merged=False):
         """Return cluster labels as a Signal.
-    
+
         Parameters:
         --------
-        merged : bool 
-            If False the cluster label signal
-            has a navigation axes of length number_of_clusters and the signal
-            along the the navigation direction is binary - 0 the point is not 
-            in the cluster, 1 it is included. If True the cluster labels are 
-            merged (no navigation axes).
-            The value of the signal at any point will be between 
-            0 and Number of clusters-1
-    
+        merged : bool
+            If False the cluster label signal has a navigation axes of length
+            number_of_clusters and the signal along the the navigation
+            direction is binary - 0 the point is not in the cluster, 1 it is
+            included. If True, the cluster labels are merged (no navigation
+            axes). The value of the signal at any point will be between -1 and
+            the number of clusters. -1 represents the points that
+            were masked for cluster analysis if any.
+
         See Also
         --------
-        get_cluster_centers
-        
+        get_cluster_signals
+
         Returns
         --------
-        signal
-            Hyperspy signal of cluster labels        
-    
+        signal Hyperspy signal of cluster labels
         """
         if self.learning_results.cluster_labels is None:
-            raise RuntimeError("Cluster analysis needs to be performed first.")
+            raise RuntimeError(
+                "Cluster analysis needs to be performed first.")
         if merged:
-            label_signal = self._get_loadings(self.learning_results.cluster_membership)
-            label_signal = label_signal.squeeze()
+            data = (np.arange(1, self.learning_results.number_of_clusters + 1)
+                    [:, np.newaxis] *
+                    self.learning_results.cluster_labels ).sum(0) - 1
+            label_signal = self._get_loadings(data)
         else:
-            label_signal = self._get_loadings(self.learning_results.cluster_labels.T)
-        label_signal.axes_manager._axes[0].name = "Cluster index"
-        label_signal.metadata.General.title = \
-            "Cluster labels of " + self.metadata.General.title
+            label_signal = self._get_loadings(
+                self.learning_results.cluster_labels.T)
+            label_signal.axes_manager._axes[0].name = "Cluster index"
+        label_signal.metadata.General.title = (
+            "Cluster labels of " + self.metadata.General.title)
         return label_signal
 
-    
-    def get_cluster_centers(self):
+    def _get_cluster_signals_factors(self, signal):
+        if self.learning_results.cluster_centroid_signals is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        if signal == "mean":
+            members = self.learning_results.cluster_labels.sum(1, keepdims=True)
+            cs = self.learning_results.cluster_sum_signals / members
+        elif signal == "sum":
+            cs=self.learning_results.cluster_sum_signals
+        elif signal == "centroid":
+            cs=self.learning_results.cluster_centroid_signals
+        return cs
+
+    def get_cluster_signals(self, signal="mean"):
         """Return the cluster centers as a Signal.
+
+        Parameter
+        ---------
+        %s
 
         See Also
         -------
         get_cluster_labels
 
         """
-        if self.learning_results.cluster_centers is None:
-            raise RuntimeError("Cluster analysis needs to be performed first.")
-        signal = self._get_factors(self.learning_results.cluster_centers.T)
-        signal.axes_manager._axes[0].name = "Cluster index"
-        signal.metadata.General.title = ("Cluster centers of " +
-                                         self.metadata.General.title)
+        cs = self._get_cluster_signals_factors(signal=signal)
+        signal = self._get_factors(cs.T)
+        signal.axes_manager._axes[0].name="Cluster index"
+        signal.metadata.General.title = (
+            f"Cluster {signal} signals of {self.metadata.General.title}")
         return signal
+    get_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
 
     def get_cluster_distances(self):
-        """Return cluster distances as a Signal.
-    
+        """Euclidian distances to the centroid of each cluster
     
         See Also
         --------
-        get_cluster_centers
+        get_cluster_signals
         
         Returns
         --------
@@ -1745,16 +1764,19 @@ class MVATools(object):
         return distance_signal
 
 
-    def plot_cluster_centers(self,
-                             cluster_ids=None,
-                             calibrate=True,
-                             same_window=True,
-                             comp_label="Cluster centers",
-                             per_row=3):
+    def plot_cluster_signals(
+        self,
+        signal="mean",
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label="Cluster centers",
+        per_row=3):
         """Plot centers from a cluster analysis.
 
         Parameters
         ----------
+        %s
         cluster_ids : None, int, or list of ints
             if None, returns maps of all clusters.
             if int, returns maps of clusters with ids from 0 to given
@@ -1783,9 +1805,10 @@ class MVATools(object):
         if self.axes_manager.signal_dimension > 2:
             raise NotImplementedError("This method cannot plot factors of "
                                       "signals of dimension higher than 2.")
+        cs = self._get_cluster_signals_factors(signal=signal)
         if same_window is None:
             same_window = True
-        factors = self.learning_results.cluster_centers.T
+        factors = cs.T
         if cluster_ids is None:
             cluster_ids = range(factors.shape[1])
 
@@ -1795,18 +1818,20 @@ class MVATools(object):
                                             same_window=same_window,
                                             comp_label=comp_label,
                                             per_row=per_row)
+    plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
 
-    def plot_cluster_labels(self,
-                            cluster_ids=None,
-                            calibrate=True,
-                            same_window=True,
-                            comp_label=None,
-                            with_centers=False,
-                            cmap=plt.cm.gray,
-                            no_nans=False,
-                            per_row=3,
-                            axes_decor='all',
-                            title=None):
+    def plot_cluster_labels(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label=None,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None):
         """Plot cluster labels from a cluster analysis. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
@@ -1851,7 +1876,7 @@ class MVATools(object):
 
         See Also
         --------
-        plot_cluster_centers, plot_cluster_results.
+        plot_cluster_signals, plot_cluster_results.
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -1861,7 +1886,7 @@ class MVATools(object):
                                       "`plot_cluster_results` instead.")
         if same_window is None:
             same_window = True
-        labels = self.learning_results.cluster_labels
+        labels = self.learning_results.cluster_labels.astype("uint")
         if with_centers:
             centers = self.learning_results.cluster_centers.T
         else:
@@ -1887,25 +1912,26 @@ class MVATools(object):
                                    axes_decor=axes_decor)
 
 
-    def plot_cluster_distances(self,
-                            cluster_ids=None,
-                            calibrate=True,
-                            same_window=True,
-                            comp_label=None,
-                            with_centers=False,
-                            cmap=plt.cm.gray,
-                            no_nans=False,
-                            per_row=3,
-                            axes_decor='all',
-                            title=None):
-        """Plot inter cluster distances from a cluster analysis. 
+    def plot_cluster_distances(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label=None,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None):
+        """Plot the euclidian distances to the centroid of each cluster.
+
         In case of 1D navigation axis,
         each line can be toggled on and off by clicking on the legended
         line.
 
         Parameters
         ----------
-
         cluster_ids : None, int, or list of ints
             if None (default), returns maps of all components using the 
             number_of_cluster was defined when
@@ -1943,7 +1969,7 @@ class MVATools(object):
 
         See Also
         --------
-        plot_cluster_centers, plot_cluster_results, plot_cluster_labels
+        plot_cluster_signals, plot_cluster_results, plot_cluster_labels
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -1987,17 +2013,17 @@ class MVATools(object):
                              ):
         """Plot the cluster labels and centers.
 
-        Unlike `plot_cluster_labels` and `plot_cluster_centers`, this 
-        method displays one component at a time. 
-        Therefore it provides a more compact visualization than then other 
-        two methods.  The labels and centers  are displayed in different 
-        windows and each has its own navigator/sliders to navigate them if 
-        they are multidimensional. The component index axis is synchronized 
+        Unlike `plot_cluster_labels` and `plot_cluster_signals`, this
+        method displays one component at a time.
+        Therefore it provides a more compact visualization than then other
+        two methods.  The labels and centers  are displayed in different
+        windows and each has its own navigator/sliders to navigate them if
+        they are multidimensional. The component index axis is synchronized
         between the two.
 
         Parameters
         ----------
-        centers_navigator, labels_navigator : {"smart_auto", 
+        centers_navigator, labels_navigator : {"smart_auto",
         "auto", None, "spectrum", Signal}
             "smart_auto" (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
@@ -2011,13 +2037,14 @@ class MVATools(object):
 
         See Also
         --------
-        plot_cluster_centers, plot_cluster_labels.
+        plot_cluster_signals, plot_cluster_labels.
 
         """
-        centers = self.get_cluster_centers()
-        labels = self.get_cluster_labels()
+        centers = self.get_cluster_signals()
+        distances = self.get_cluster_distances()
+        self.get_cluster_labels(merged=True).plot()
         _plot_x_results(factors=centers,
-                        loadings=labels,
+                        loadings=distances,
                         factors_navigator=centers_navigator,
                         loadings_navigator=labels_navigator,
                         factors_dim=centers_dim,

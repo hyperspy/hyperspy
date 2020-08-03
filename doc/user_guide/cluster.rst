@@ -12,7 +12,7 @@ Introduction
 is the task of grouping a set of measurements such that measurements in the same 
 group (called a cluster) are more similar (in some sense) to each other than to 
 those in other groups (clusters).
-A Hyperspy signal can represent a number of large arrays of different measurements
+A HyperSpy signal can represent a number of large arrays of different measurements
 which can represent spectra, images or sets of paramaters.
 Identifying and extracting trends from large datasets is often difficult and 
 decomposition methods, blind source separation and cluster analysis play an important role in this process. 
@@ -40,14 +40,22 @@ be found in :ref:`[Lerotic2004] <Lerotic2004>`.
 Nomenclature
 ------------
 
-Taking the example of a 1D Signal of dimensions `(20, 10|4)` containing the
+Taking the example of a 1D Signal of dimensions ``(20, 10|4)`` containing the
 dataset, we say there are 200 *samples*. The four measured parameters are the
 *features*. If we choose to search for 3 clusters within this dataset, we
-derive two main values: the `labels`, of dimensions `(20, 10|3)` (each
-sample is assigned a label to each cluster), and the `centers`, of
-dimensions `(3, 4)` (each centre has a coordinate in each feature).
-If you take all features within a given cluster and average them
-this average set of features is the center of that cluster.
+derive three main values:
+
+1. The `labels`, of dimensions ``(3| 20, 10)``. Each navigation position is
+   assigned to a cluster. The `labels` of each cluster are boolean arrays
+   that mark the data that has been assigned to the cluster with `True`.
+2. The `cluster_distances`, of dimensions ``(3| 20, 10)``, which are the
+   distances of all the data points to the centroid of each cluster.
+3. The "*cluster signals*", which are signals that are representative of
+   their clusters. In HyperSpy two are computer:
+   `cluster_sum_signals` and `cluster_centroid_signals`,
+   of dimensions ``(3| 4)``, which are the sum of all the cluster signals
+   that belong to each cluster or the signal closest to each cluster
+   centroid respectively.
 
 
 Clustering functions HyperSpy
@@ -58,9 +66,11 @@ All HyperSpy signals have the following methods for clustering analysis:
 * :py:meth:`~.learn.mva.MVA.cluster_analysis`
 * :py:meth:`~.signal.MVATools.plot_cluster_results`
 * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-* :py:meth:`~.signal.MVATools.plot_cluster_centers`
-* :py:meth:`~.signal.MVATools.get_cluster_centers`
+* :py:meth:`~.signal.MVATools.plot_cluster_signals`
+* :py:meth:`~.signal.MVATools.plot_cluster_distances`
+* :py:meth:`~.signal.MVATools.get_cluster_signals`
 * :py:meth:`~.signal.MVATools.get_cluster_labels`
+* :py:meth:`~.signal.MVATools.get_cluster_distances`
 * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`
 * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`
 
@@ -122,6 +132,80 @@ standard. Briefly, ``norm`` treats the features as a vector and normalizes the
 vector length. ``standard`` re-scales each feature by removing the mean and
 scaling to unit variance. ``minmax`` normalizes each feature between the
 minimum and maximum range of that feature.
+
+Cluster signals
+^^^^^^^^^^^^^^^
+
+In HyperSpy *cluster signals* are signals that somehow represent their clusters.
+The concept is ill-defined, since cluster algorithms only assign data points to
+clusters. HyperSpy computers 2 cluster signals, 
+
+1. ``cluster_sum_signals``, which are the sum of all the cluster signals
+   that belong to each cluster.
+2. ``cluster_centroid_signals``, which is the signal closest to each cluster
+   centroid.
+
+
+When plotting the "*cluster signals*" we can select any of those
+above using the ``signal`` keyword argument:
+
+.. code-block:: python
+
+    >>> s.plot_cluster_labels(signal="centroid")
+
+In addition, it is possible to plot the mean signal over the different
+clusters:
+
+.. code-block:: python
+
+    >>> s.plot_cluster_labels(signal="mean")
+
+
+Clustering with user defined algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+User developed preprocessing or cluster algorithms can be 
+used in place of the sklearn methods.
+A preprocessing object needs a ``fit_transform`` which
+appropriately scales the data. 
+The example below defines a preprocessing class which normalizes 
+the data then applies a square root to enhances weaker features. 
+
+.. code-block:: python
+
+    >>> class PowerScaling(object):
+    >>>     
+    >>>     def __init__(self,power=0.5):
+    >>>         self.power = power
+    >>>         
+    >>>     def fit_transform(self,data):
+    >>>         norm = np.amax(data,axis=1)
+    >>>         scaled_data = data/norm[:,None]
+    >>>         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
+    >>>         scaled_data = scaled_data ** self.power
+    >>>         return scaled_data 
+
+The PowerScaling class can then be passed to the cluster_analysis method for use.
+
+.. code-block:: python
+
+    >>> ps = PowerScaling()
+    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=ps)
+
+For user defined clustering algorithms the class must implementation
+``fit`` and have a ``label_`` attribute that contains the clustering labels.
+An example template would be:
+
+.. code-block:: python
+
+    
+    >>> class MyClustering(object):
+    >>>     
+    >>>     def __init__(self):
+    >>>         self.labels_ = None
+    >>>         
+    >>>     def fit_(self,X):
+    >>>         self.labels_ = do_something(X)       
+    
 
 
 Examples
@@ -196,60 +280,8 @@ not require any pre-processing for cluster analysis.
 
 .. image:: images/clustering_labels.png
 
-To see what the labels the cluster algorithm has assigned you can inspect:
-
-.. code-block:: python
-
-    >>> s.learning_results.cluster_membership
-    array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-       1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-       2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
-
-
-Internally they are split into a ``cluster_labels`` array to help plotting and masking:
+To see what the labels the cluster algorithm has assigned you can inspect
+the ``cluster_labels``:
 
 .. code-block:: python
 
@@ -391,74 +423,18 @@ proportionality relationship between the position of the peaks.
 
 .. code-block:: python
 
-    >>> s.plot_cluster_centers()
+    >>> s.plot_cluster_signals(signal="mean")
 
-.. image:: images/clustering_gaussian_centres_centres.png
-
-Choice of Cluster centers
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Clustering algorithms label samples with similar features.
-When constructing the cluster center we can decide how to
-use this set of labels or features. You may wish to select the mean 
-or median of the features or the point which is closest in similarity to
-the other features. This choice can be made using ``cluster_center_method``
-
-.. code-block:: python
-
-    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, cluster_center_method="median")
-
-Its important to understand how the clustering method works if 
-choosing values other than "mean". For example in ``kmeans``
-the clustering and labels are with respect to a center mean so selecting a 
-different center would need some justifcation based on outliers or skewing of the data.
-For other clustering methods the labels are chosen based on different criteria so a 
-flexibility in the choice of center can be helpful.   
+.. image:: images/clustering_gaussian_centres_mean.png
 
 
-Clustering with user defined algorithms
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-User developed preprocessing or cluster algorithms can be 
-used in place of the sklearn methods.
-A preprocessing object needs a ``fit_transform`` which
-appropriately scales the data. 
-The example below defines a preprocessing class which normalizes 
-the data then applies a square root to enhances weaker features. 
+Notice that in this case averaging or summing the signals of
+each cluster is not appropriate, since the clustering criterium
+is the ratio between the peaks positions. A better alternative
+is to plot the signals closest to the centroids:
 
-.. code-block:: python
+    >>> s.plot_cluster_signals(signal="centroid")
 
-    
-    >>> class PowerScaling(object):
-    >>>     
-    >>>     def __init__(self,power=0.5):
-    >>>         self.power = power
-    >>>         
-    >>>     def fit_transform(self,data):
-    >>>         norm = np.amax(data,axis=1)
-    >>>         scaled_data = data/norm[:,None]
-    >>>         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
-    >>>         scaled_data = scaled_data ** self.power
-    >>>         return scaled_data 
+.. image:: images/clustering_gaussian_centres_centroid.png
 
-The PowerScaling class can then be passed to the cluster_analysis method for use.
 
-.. code-block:: python
-
-    >>> ps = PowerScaling()
-    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=ps)
-
-For user defined clustering algorithms the class must implementation
-``fit`` and have a ``label_`` attribute that contains the clustering labels.
-An example template would be:
-
-.. code-block:: python
-
-    
-    >>> class MyClustering(object):
-    >>>     
-    >>>     def __init__(self):
-    >>>         self.labels_ = None
-    >>>         
-    >>>     def fit_(self,X):
-    >>>         self.labels_ = do_something(X)       
-    
