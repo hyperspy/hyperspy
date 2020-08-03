@@ -24,6 +24,7 @@ from hyperspy.axes import AxesManager
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
+import pytest
 
 class TestAxesManager:
     def setup_method(self, method):
@@ -347,14 +348,12 @@ class TestIterPathScanPattern:
         self.am = s.axes_manager
 
     def test_wrong_iterpath(self):
-        self.am.iterpath = "blahblah"
-        for _ in self.am:
-            pass
+        with pytest.raises(ValueError):
+            self.am.iterpath = "blahblah"
 
     def test_wrong_iterpath2(self):
-        self.am.iterpath = ""
-        for _ in self.am:
-            pass
+        with pytest.raises(ValueError):
+            self.am.iterpath = ""
 
     def test_flyback(self):
         self.am.iterpath = "flyback"
@@ -377,7 +376,7 @@ class TestIterPathScanPattern:
             break
 
     def test_custom_iterpath(self):
-        self.am.iterpath = np.array([(0,1,1), (1,1,1)])
+        self.am.iterpath = array([(0,1,1), (1,1,1)])
         for i, _ in enumerate(self.am):
             if i == 0:
                 assert self.am.indices == (0,1,1)
