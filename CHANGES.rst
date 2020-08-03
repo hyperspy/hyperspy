@@ -1,10 +1,92 @@
 What's new
 **********
 
+We only cover here the main highlights, for a detailed list of all the changes
+see `the commits in the GITHUB milestones
+<https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
+
 Current Version
 ===============
 
+.. _changes_1.6:
+
+v1.6
+++++
+
+NEW
+---
+
+* Support for the following file formats:
+
+  * :ref:`sur-format`
+  * :ref:`elid-format`
+  * :ref:`nexus-format`
+  * :ref:`usid-format`
+  * :ref:`empad-format`
+  * Prismatic EMD format, see :ref:`emd-format`
+* New :meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` method.
+  See an example :ref:`here <eels_edges-label>`.
+* New model asymmetric line shape components:
+
+  * :py:class:`~._components.doniach.Doniach`
+  * :py:class:`~._components.split_pvoigt.SplitVoigt`
+* :ref:`EDS absorption correction <eds_absorption-label>`.
+* :ref:`Argand diagram for complex signals <complex.argand>`.
+* :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
+
+Enhancements
+------------
+
+* The :py:meth:`~.signal.BaseSignal.get_histogram` now uses numpy's
+  `np.histogram_bin_edges()
+  <https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html>`_,
+  hence supporting all its methods.
+* Further improvements to the contrast adjustment tool. Test it by pressing the ``h`` key on any image.
+* The following components have been rewritten using
+  :py:class:`hyperspy._components.expression.Expression`, boosting their
+  speeds among other benefits.
+
+  * :py:class:`hyperspy._components.arctan.Arctan`
+  * :py:class:`hyperspy._components.voigt.Voigt`
+  * :py:class:`hyperspy._components.heaviside.HeavisideStep`
+* The model fitting :py:meth:`~.model.BaseModel.fit` and
+  :py:meth:`~.model.BaseModel.multifit` methods have been vastly improved. See
+  :ref:`model.fitting`.
+* The :py:func:`~.drawing.utils.plot_spectra` updates the figure automatically,
+  see :ref:`this example <plot_profiles_interactive-label>`.
+* Improve thread-based parallelism. Add `max_workers` argument to the
+  :py:meth:`~.signal.BaseSignal.map` method, such that the user can directly
+  control how many threads they launch.
+* Improvements to  :py:meth:`~.mva.MVA.decomposition` and
+  :py:meth:`~.mva.MVA.blind_source_separation` methods, including support for
+  scikit-learn like algorithms, better API and vastly improved documentation.
+  See :ref:`ml-label`.
+* Add option to calculate the absolute thickness to the EELS
+  :meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method.
+  See :ref:`eels_thickness-label`.
+* Vastly improved performance and memory footprint of the
+  :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` method.
+* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
+  now remove lorentzian and exponential functions. Furthermore, it can return
+  the background model that includes an estimation of the reduced chi-squared.
+* The performance of the maximum-likelihood PCA method was vastly improved.
+* All ROIs now have a ``__getitem__`` method, enabling e.g. using them with the
+  unpack ``*`` operator. See :ref:`roi-slice-label` for an example.
+* New syntax to set the contrast when plotting images. In particular, the
+  ``vmin`` and ``vmax`` keywords now take values like ``vmin="30th"`` to
+  clip the minimum value to the 30th percentile. See :ref:`signal.fft`
+  for an example.
+* The contrast editor and the decomposition methods can now operate on complex signals.
+* The default colormap can now be set in :ref:`preferences <configuring-hyperspy-label>`.
+
+
+API changes
+-----------
+
 .. _changes_1.5.2:
+
+Previous Versions
+=================
 
 v1.5.2
 ++++++
@@ -83,15 +165,6 @@ For developers
 
 Changelog
 *********
-
-Previous Versions
-=================
-
-
-We only cover here the main highlights, for a detailed list of all the changes
-see `the commits in the GITHUB milestones
-<https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
-
 
 .. _changes_1.4.2:
 

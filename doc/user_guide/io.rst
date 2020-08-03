@@ -1067,7 +1067,6 @@ HDF5 file. All other keyword arguments will be passed to
 Note that the model and other secondary data artifacts linked to the signal are not
 written to the file but these can be implemented at a later stage.
 
-
 .. _elid-format:
 
 Phenom ELID format
@@ -1082,6 +1081,7 @@ The current implementation supports ELID files created with Element Identificati
 3.8.0 and later. You can convert older ELID files by loading the file into a recent Element
 Identification release and then save the ELID file into the newer file format.
 
+.. _nexus-format:
 
 Nexus
 -----

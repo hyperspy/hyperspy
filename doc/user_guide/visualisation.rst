@@ -951,6 +951,9 @@ and "overlap" styles:
 
   Plotting on existing matplotlib axes.
 
+
+.. _plot_profiles_interactive-label:
+
 Plotting profiles interactively
 -------------------------------
 
