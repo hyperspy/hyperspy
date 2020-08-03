@@ -1886,7 +1886,7 @@ class MVATools(object):
                                       "`plot_cluster_results` instead.")
         if same_window is None:
             same_window = True
-        labels = self.learning_results.cluster_labels
+        labels = self.learning_results.cluster_labels.astype("uint")
         if with_centers:
             centers = self.learning_results.cluster_centers.T
         else:
