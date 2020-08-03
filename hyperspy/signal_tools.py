@@ -741,14 +741,20 @@ class ImageContrastEditor(t.HasTraits):
         data = self._get_data()
         # masked data outside vmin/vmax
         data = np.ma.masked_outside(data, self._vmin, self._vmax).compressed()
-        try:
-            # "auto" returns max('sturges', 'fd') which is what we want
-            n_bins = len(np.histogram_bin_edges(data, bins='auto'))
-        except MemoryError:
-            # When the range is too large, we can get a Memory error
-            n_bins = max_num_bins
 
-        self.bins = min(n_bins, max_num_bins)
+        # Sturges rule
+        sturges_bin_width = data.ptp() / (np.log2(data.size) + 1.0)
+
+        iqr = np.subtract(*np.percentile(data, [75, 25]))
+        fd_bin_width = 2.0 * iqr * data.size ** (-1.0 / 3.0)
+
+        if fd_bin_width > 0:
+            bin_width = min(fd_bin_width, sturges_bin_width)
+        else:
+            # limited variance: fd_bin_width may be zero
+            bin_width = sturges_bin_width
+
+        self.bins = min(int(np.ceil(data.ptp() / bin_width)), 250)
 
         self.hist_data = self._get_histogram(data)
         self._set_xaxis()
