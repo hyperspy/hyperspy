@@ -70,7 +70,6 @@ class SpectrumLabelPosition():
         current_figsize = self.signal_figure.get_size_inches()
         if (current_sig_index != self.sig_index) or \
             not np.isclose(current_figsize, self.figsize).all():
-            self._set_active_figure_properties()
             return True
         else:
             return False

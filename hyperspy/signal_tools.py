@@ -257,24 +257,33 @@ class EdgesRange(SpanSelectorInSignal1D):
     order = t.Unicode('closest')
     complementary = t.Bool(True)
 
-    def __init__(self, signal):
-        super(EdgesRange, self).__init__(signal)
+    def __init__(self, signal, active=None):
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
-        self.units = self.axis.units
-        self.active_edges = []
+
+        if active is None:
+            super(EdgesRange, self).__init__(signal)
+            self.active_edges = []
+        else:
+            # if active is provided, it is non-interactive mode
+            # so fix the active_edges and don't initialise the span selector
+            self.signal = signal
+            self.axis = self.signal.axes_manager.signal_axes[0]
+            self.active_edges = list(active)
+
         self.active_complementary_edges = []
+        self.units = self.axis.units
         self.slp = SpectrumLabelPosition(self.signal)
         self.btns = []
 
         self._get_edges_info_within_energy_axis()
 
-        self.signal.axes_manager.events.indices_changed.connect(self._on_nav_change,
+        self.signal.axes_manager.events.indices_changed.connect(self._on_figure_changed,
                                                                 [])
         self.signal._plot.signal_plot.events.closed.connect(
         lambda: self.signal.axes_manager.events.indices_changed.disconnect(
-        self._on_nav_change), [])
+        self._on_figure_changed), [])
 
     def _get_edges_info_within_energy_axis(self):
         mid_energy = (self.axis.low_value + self.axis.high_value) / 2
@@ -301,14 +310,15 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.relevance_all = np.asarray(relevance_all)
         self.description_all = np.asarray(description_all)
 
-    def _on_nav_change(self):
+    def _on_figure_changed(self):
         self.slp._set_active_figure_properties()
         self._plot_labels()
+        self.signal._plot.signal_plot.update()
 
     def update_table(self):
         figure_changed = self.slp._check_signal_figure_changed()
         if figure_changed:
-            self._clear_markers()
+            self._on_figure_changed()
 
         if self.span_selector is not None:
             energy_mask = (self.ss_left_value <= self.energy_all) & \
@@ -359,6 +369,9 @@ class EdgesRange(SpanSelectorInSignal1D):
                 self.active_complementary_edges.remove(edge)
             self.signal.remove_EELS_edges_markers([edge])
 
+        figure_changed = self.slp._check_signal_figure_changed()
+        if figure_changed:
+            self._on_figure_changed()
         self.on_complementary()
         self._plot_labels()
 
@@ -422,7 +435,8 @@ class EdgesRange(SpanSelectorInSignal1D):
                 self.signal._edge_markers[edge][1].data = t.data
                 self.signal._edge_markers[edge][1].update()
             elif edge in edge_add:
-                self.signal.plot_edges_label([edge],
+                # first argument as dictionary for consistency
+                self.signal.plot_edges_label({edge: edge_dict[edge]},
                                              vertical_line_marker=[v],
                                              text_marker=[t])
 

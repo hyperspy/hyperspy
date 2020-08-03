@@ -1538,8 +1538,12 @@ class EELSSpectrum_mixin:
 
         if vertical_line_marker is None or text_marker is None:
             # get position of markers for edges if no marker is provided
+            # no marker provided, implies non-interactive mode
             slp = SpectrumLabelPosition(self)
             vertical_line_marker, text_marker = slp.get_markers(edges)
+            # the object is needed to connect replot method when axes_manager
+            # indices changed
+            er = EdgesRange(self, active=list(edges.keys()))
         if len(vertical_line_marker) != len(text_marker) or \
             len(edges) != len(vertical_line_marker):
             raise ValueError('The size of edges, vertical_line_marker and '
