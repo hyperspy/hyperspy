@@ -28,6 +28,9 @@ try:
         warnings.simplefilter("ignore")
         import sklearn
         import sklearn.decomposition
+        import sklearn.cluster
+        import sklearn.preprocessing        
+        import sklearn.metrics
         from sklearn.utils.extmath import randomized_svd
 
         sklearn_installed = True

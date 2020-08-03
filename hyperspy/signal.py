@@ -54,7 +54,7 @@ from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
-    HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
+    CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
@@ -378,7 +378,6 @@ class MVATools(object):
                 plt.title(title)
             else:
                 plt.suptitle(title)
-            animate_legend(f)
         try:
             plt.tight_layout()
         except BaseException:
@@ -812,6 +811,8 @@ class MVATools(object):
                                "needs to be performed first.")
         if same_window is None:
             same_window = True
+        if self.learning_results.factors is None:
+            raise RuntimeError("Run a decomposition first.")
         factors = self.learning_results.factors
         if comp_ids is None:
             if self.learning_results.output_dimension:
@@ -973,6 +974,8 @@ class MVATools(object):
                                "needs to be performed first.")
         if same_window is None:
             same_window = True
+        if self.learning_results.loadings is None:
+            raise RuntimeError("Run a decomposition first.")
         loadings = self.learning_results.loadings.T
         if with_factors:
             factors = self.learning_results.factors
@@ -1195,34 +1198,154 @@ class MVATools(object):
 
         factors = self.learning_results.factors
         loadings = self.learning_results.loadings.T
-        self._export_factors(
-            factors,
-            folder=folder,
-            comp_ids=comp_ids,
-            calibrate=calibrate,
-            multiple_files=multiple_files,
-            factor_prefix=factor_prefix,
-            factor_format=factor_format,
-            comp_label=comp_label,
-            save_figures=save_figures,
-            cmap=cmap,
-            no_nans=no_nans,
-            same_window=same_window,
-            per_row=per_row,
-            save_figures_format=save_figures_format)
-        self._export_loadings(
-            loadings,
-            comp_ids=comp_ids, folder=folder,
-            calibrate=calibrate,
-            multiple_files=multiple_files,
-            loading_prefix=loading_prefix,
-            loading_format=loading_format,
-            comp_label=comp_label,
-            cmap=cmap,
-            save_figures=save_figures,
-            same_window=same_window,
-            no_nans=no_nans,
-            per_row=per_row)
+        self._export_factors(factors,
+                             folder=folder,
+                             comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             multiple_files=multiple_files,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             save_figures=save_figures,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
+        self._export_loadings(loadings,
+                              comp_ids=comp_ids, folder=folder,
+                              calibrate=calibrate,
+                              multiple_files=multiple_files,
+                              loading_prefix=loading_prefix,
+                              loading_format=loading_format,
+                              comp_label=comp_label,
+                              cmap=cmap,
+                              save_figures=save_figures,
+                              same_window=same_window,
+                              no_nans=no_nans,
+                              per_row=per_row)
+
+    def export_cluster_results(self,
+                               cluster_ids=None,
+                               folder=None,
+                               calibrate=True,
+                               center_prefix='cluster_center',
+                               center_format="hspy",
+                               membership_prefix='cluster_label',
+                               membership_format="hspy",
+                               comp_label=None,
+                               cmap=plt.cm.gray,
+                               same_window=False,
+                               multiple_files=True,
+                               no_nans=True,
+                               per_row=3,
+                               save_figures=False,
+                               save_figures_format='png'):
+        """Export results from a cluster analysis to any of the supported
+        formats.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None, returns all clusters/centers.
+            if int, returns clusters/centers with ids from 0 to
+            given int.
+            if list of ints, returnsclusters/centers with ids in
+            given list.
+        folder : str or None
+            The path to the folder where the file will be saved.
+            If `None` the
+            current folder is used by default.
+        center_prefix : string
+            The prefix that any exported filenames for
+            cluster centers
+            begin with
+        center_format : string
+            The extension of the format that you wish to save to. Default is
+            "hspy". See `loading format` for more details.
+        label_prefix : string
+            The prefix that any exported filenames for
+            cluster labels
+            begin with
+        label_format : string
+            The extension of the format that you wish to save to. default
+            is "hspy". The format determines the kind of output.
+            
+                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                  plots are created using the plotting flags as below, and saved
+                  at 600 dpi. One plot is saved per loading.
+                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                  are saved in single files.  All loadings are contained in the
+                  one file.
+                * For spectral formats (``'msa'``), each loading is saved to a
+                  separate file.
+                  
+        multiple_files : bool
+            If True, on exporting a file per center will
+            be created. Otherwise only two files will be created, one for
+            the centers and another for the membership. The default value can
+            be chosen in the preferences.
+        save_figures : bool
+            If True the same figures that are obtained when using the plot
+            methods will be saved with 600 dpi resolution
+
+        Plotting options (for save_figures = True ONLY)
+        ----------------------------------------------
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from
+            the axes_manager.  If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.
+        comp_label : string, the label that is either the plot title
+            (if plotting in separate windows) or the label in the legend
+            (if plotting in the same window)
+        cmap : The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        per_row : int, the number of plots in each row, when the
+        same_window
+            parameter is True.
+        save_figures_format : str
+            The image format extension.
+
+        See Also
+        --------
+        get_cluster_signals,
+        get_cluster_labels.
+
+        """
+
+        factors = self.learning_results.cluster_centers.T
+        loadings = self.learning_results.cluster_labels
+        self._export_factors(factors,
+                             folder=folder,
+                             comp_ids=cluster_ids,
+                             calibrate=calibrate,
+                             multiple_files=multiple_files,
+                             factor_prefix=center_prefix,
+                             factor_format=center_format,
+                             comp_label=comp_label,
+                             save_figures=save_figures,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
+        self._export_loadings(loadings,
+                              comp_ids=cluster_ids,
+                              folder=folder,
+                              calibrate=calibrate,
+                              multiple_files=multiple_files,
+                              loading_prefix=membership_prefix,
+                              loading_format=membership_format,
+                              comp_label=comp_label,
+                              cmap=cmap,
+                              save_figures=save_figures,
+                              same_window=same_window,
+                              no_nans=no_nans,
+                              per_row=per_row)
 
     def export_bss_results(self,
                            comp_ids=None,
@@ -1350,13 +1473,16 @@ class MVATools(object):
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
-        signal = signals.BaseSignal(
-            data,
-            axes=(
-                [{"size": data.shape[0], "navigate": True}] +
-                self.axes_manager._get_navigation_axes_dicts()))
-        for axis in signal.axes_manager._axes[1:]:
-            axis.navigate = False
+        if data.shape[0] > 1:
+            signal = signals.BaseSignal(
+                data,
+                axes=(
+                    [{"size": data.shape[0], "navigate": True}] +
+                    self.axes_manager._get_navigation_axes_dicts()))
+            for axis in signal.axes_manager._axes[1:]:
+                axis.navigate = False
+        else:
+            signal = self._get_navigation_signal(data.squeeze())
         return signal
 
     def _get_factors(self, factors):
@@ -1383,6 +1509,8 @@ class MVATools(object):
         get_decomposition_factors, export_decomposition_results
 
         """
+        if self.learning_results.loadings is None:
+            raise RuntimeError("Run a decomposition first.")
         signal = self._get_loadings(self.learning_results.loadings)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = "Decomposition loadings of " + \
@@ -1401,6 +1529,8 @@ class MVATools(object):
         get_decomposition_loadings, export_decomposition_results
 
         """
+        if self.learning_results.factors is None:
+            raise RuntimeError("Run a decomposition first.")
         signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = ("Decomposition factors of " +
@@ -1542,6 +1672,385 @@ class MVATools(object):
                         loadings_navigator=loadings_navigator,
                         factors_dim=factors_dim,
                         loadings_dim=loadings_dim)
+
+    def get_cluster_labels(self, merged=False):
+        """Return cluster labels as a Signal.
+
+        Parameters:
+        --------
+        merged : bool
+            If False the cluster label signal has a navigation axes of length
+            number_of_clusters and the signal along the the navigation
+            direction is binary - 0 the point is not in the cluster, 1 it is
+            included. If True, the cluster labels are merged (no navigation
+            axes). The value of the signal at any point will be between -1 and
+            the number of clusters. -1 represents the points that
+            were masked for cluster analysis if any.
+
+        See Also
+        --------
+        get_cluster_signals
+
+        Returns
+        --------
+        signal Hyperspy signal of cluster labels
+        """
+        if self.learning_results.cluster_labels is None:
+            raise RuntimeError(
+                "Cluster analysis needs to be performed first.")
+        if merged:
+            data = (np.arange(1, self.learning_results.number_of_clusters + 1)
+                    [:, np.newaxis] *
+                    self.learning_results.cluster_labels ).sum(0) - 1
+            label_signal = self._get_loadings(data)
+        else:
+            label_signal = self._get_loadings(
+                self.learning_results.cluster_labels.T)
+            label_signal.axes_manager._axes[0].name = "Cluster index"
+        label_signal.metadata.General.title = (
+            "Cluster labels of " + self.metadata.General.title)
+        return label_signal
+
+    def _get_cluster_signals_factors(self, signal):
+        if self.learning_results.cluster_centroid_signals is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        if signal == "mean":
+            members = self.learning_results.cluster_labels.sum(1, keepdims=True)
+            cs = self.learning_results.cluster_sum_signals / members
+        elif signal == "sum":
+            cs=self.learning_results.cluster_sum_signals
+        elif signal == "centroid":
+            cs=self.learning_results.cluster_centroid_signals
+        return cs
+
+    def get_cluster_signals(self, signal="mean"):
+        """Return the cluster centers as a Signal.
+
+        Parameter
+        ---------
+        %s
+
+        See Also
+        -------
+        get_cluster_labels
+
+        """
+        cs = self._get_cluster_signals_factors(signal=signal)
+        signal = self._get_factors(cs.T)
+        signal.axes_manager._axes[0].name="Cluster index"
+        signal.metadata.General.title = (
+            f"Cluster {signal} signals of {self.metadata.General.title}")
+        return signal
+    get_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+
+    def get_cluster_distances(self):
+        """Euclidian distances to the centroid of each cluster
+    
+        See Also
+        --------
+        get_cluster_signals
+        
+        Returns
+        --------
+        signal
+            Hyperspy signal of cluster distances        
+    
+        """
+        if self.learning_results.cluster_distances is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        distance_signal = self._get_loadings(self.learning_results.cluster_distances.T)
+        distance_signal.axes_manager._axes[0].name = "Cluster index"
+        distance_signal.metadata.General.title = \
+            "Cluster distances of " + self.metadata.General.title
+        return distance_signal
+
+
+    def plot_cluster_signals(
+        self,
+        signal="mean",
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label="Cluster centers",
+        per_row=3):
+        """Plot centers from a cluster analysis.
+
+        Parameters
+        ----------
+        %s
+        cluster_ids : None, int, or list of ints
+            if None, returns maps of all clusters.
+            if int, returns maps of clusters with ids from 0 to given
+            int.
+            if list of ints, returns maps of clusters with ids in
+            given list.
+        calibrate :
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each center to the same window.  They are
+            not scaled.
+        comp_label : string
+            the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting
+            in the same window)
+        per_row : int
+            the number of plots in each row, when the same_window parameter is
+            True.
+
+        See Also
+        --------
+        plot_cluster_labels
+
+        """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2.")
+        cs = self._get_cluster_signals_factors(signal=signal)
+        if same_window is None:
+            same_window = True
+        factors = cs.T
+        if cluster_ids is None:
+            cluster_ids = range(factors.shape[1])
+
+        return self._plot_factors_or_pchars(factors,
+                                            comp_ids=cluster_ids,
+                                            calibrate=calibrate,
+                                            same_window=same_window,
+                                            comp_label=comp_label,
+                                            per_row=per_row)
+    plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+
+    def plot_cluster_labels(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label=None,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None):
+        """Plot cluster labels from a cluster analysis. In case of 1D navigation axis,
+        each loading line can be toggled on and off by clicking on the legended
+        line.
+
+        Parameters
+        ----------
+
+        cluster_ids : None, int, or list of ints
+            if None (default), returns maps of all components using the 
+            number_of_cluster was defined when
+            executing ``cluster``. Otherwise it raises a ValueError.
+            if int, returns maps of cluster labels with ids from 0 to
+            given int.
+            if list of ints, returns maps of cluster labels with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.  They are
+            not scaled. Default is True.
+        title : string
+            Title of the plot.
+        with_centers : bool
+            If True, also returns figure(s) with the cluster centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the loading plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_results.
+
+        """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot labels of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_cluster_results` instead.")
+        if same_window is None:
+            same_window = True
+        labels = self.learning_results.cluster_labels.astype("uint")
+        if with_centers:
+            centers = self.learning_results.cluster_centers.T
+        else:
+            centers = None
+
+        if cluster_ids is None:
+            cluster_ids = range(labels.shape[0])
+
+        title = _change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title('Cluster labels of',
+                                         same_window)
+
+        return self._plot_loadings(labels,
+                                   comp_ids=cluster_ids,
+                                   with_factors=with_centers,
+                                   factors=centers,
+                                   same_window=same_window,
+                                   comp_label=title,
+                                   cmap=cmap,
+                                   no_nans=no_nans,
+                                   per_row=per_row,
+                                   axes_decor=axes_decor)
+
+
+    def plot_cluster_distances(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label=None,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None):
+        """Plot the euclidian distances to the centroid of each cluster.
+
+        In case of 1D navigation axis,
+        each line can be toggled on and off by clicking on the legended
+        line.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None (default), returns maps of all components using the 
+            number_of_cluster was defined when
+            executing ``cluster``. Otherwise it raises a ValueError.
+            if int, returns maps of cluster labels with ids from 0 to
+            given int.
+            if list of ints, returns maps of cluster labels with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.  They are
+            not scaled. Default is True.
+        title : string
+            Title of the plot.
+        with_centers : bool
+            If True, also returns figure(s) with the cluster centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the loading plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_results, plot_cluster_labels
+
+        """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot labels of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_cluster_results` instead.")
+        if same_window is None:
+            same_window = True
+        distances = self.learning_results.cluster_distances
+        if with_centers:
+            centers = self.learning_results.cluster_centers.T
+        else:
+            centers = None
+
+        if cluster_ids is None:
+            cluster_ids = range(distances.shape[0])
+
+        title = _change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title('Cluster distances of',
+                                         same_window)
+
+        return self._plot_loadings(distances,
+                                   comp_ids=cluster_ids,
+                                   with_factors=with_centers,
+                                   factors=centers,
+                                   same_window=same_window,
+                                   comp_label=title,
+                                   cmap=cmap,
+                                   no_nans=no_nans,
+                                   per_row=per_row,
+                                   axes_decor=axes_decor)
+
+
+    def plot_cluster_results(self,
+                             centers_navigator="smart_auto",
+                             labels_navigator="smart_auto",
+                             centers_dim=2,
+                             labels_dim=2,
+                             ):
+        """Plot the cluster labels and centers.
+
+        Unlike `plot_cluster_labels` and `plot_cluster_signals`, this
+        method displays one component at a time.
+        Therefore it provides a more compact visualization than then other
+        two methods.  The labels and centers  are displayed in different
+        windows and each has its own navigator/sliders to navigate them if
+        they are multidimensional. The component index axis is synchronized
+        between the two.
+
+        Parameters
+        ----------
+        centers_navigator, labels_navigator : {"smart_auto",
+        "auto", None, "spectrum", Signal}
+            "smart_auto" (default) displays sliders if the navigation
+            dimension is less than 3. For a description of the other options
+            see `plot` documentation for details.
+        labels_dim, centers_dims : int
+            Currently HyperSpy cannot plot signals of dimension higher than
+            two. Therefore, to visualize the clustering results when the
+            centers or the labels have signal dimension greater than 2
+            we can view the data as spectra(images) by setting this parameter
+            to 1(2). (Default 2)
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_labels.
+
+        """
+        centers = self.get_cluster_signals()
+        distances = self.get_cluster_distances()
+        self.get_cluster_labels(merged=True).plot()
+        _plot_x_results(factors=centers,
+                        loadings=distances,
+                        factors_navigator=centers_navigator,
+                        loadings_navigator=labels_navigator,
+                        factors_dim=centers_dim,
+                        loadings_dim=labels_dim)
+
 
 
 def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,

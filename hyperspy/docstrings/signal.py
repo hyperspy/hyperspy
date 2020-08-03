@@ -77,6 +77,12 @@ MAX_WORKERS_ARG = \
            Maximum number of threads used when ``parallel=True``. If None, defaults
            to ``min(32, os.cpu_count())``."""
 
+CLUSTER_SIGNALS_ARG = \
+    """signal : {"mean", "sum", "centroid"}, optional
+           If "mean" or "sum" return the mean signal or sum respectively
+           over each cluster. If "centroid", returns the signals closest
+           to the centroid."""
+
 HISTOGRAM_BIN_ARGS = \
     """bins : int or sequence of scalars or str, default "fd"
            If `bins` is an int, it defines the number of equal-width

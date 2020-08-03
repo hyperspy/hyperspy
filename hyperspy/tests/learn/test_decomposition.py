@@ -197,6 +197,11 @@ class TestEstimateElbowPosition:
         elbow = self.s.estimate_elbow_position(variance)
         assert elbow == 4
 
+    def test_elbow_position_log(self):
+        variance = self.s.learning_results.explained_variance_ratio
+        elbow = self.s.estimate_elbow_position(variance,log=False)
+        assert elbow == 1
+
     def test_elbow_position_none(self):
         _ = self.s.learning_results.explained_variance_ratio
         elbow = self.s.estimate_elbow_position(None)

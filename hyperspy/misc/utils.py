@@ -1199,3 +1199,22 @@ def print_html(f_text, f_html):
         def _repr_html_(self):
             return f_html()
     return PrettyText()
+
+
+def is_hyperspy_signal(input_object):
+    """
+    Check if an object is a Hyperspy Signal
+
+    Parameters
+    ----------
+    input_object : object
+        Object to be tests
+
+    Returns
+    -------
+    bool
+        If true the object is a subclass of hyperspy.signal.BaseSignal
+
+    """
+    from hyperspy.signals import BaseSignal
+    return isinstance(input_object,BaseSignal)
