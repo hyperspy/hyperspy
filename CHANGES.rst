@@ -33,6 +33,7 @@ NEW
 * :ref:`EDS absorption correction <eds_absorption-label>`.
 * :ref:`Argand diagram for complex signals <complex.argand>`.
 * :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
+* :ref:`cluster_analysis-label`.
 
 Enhancements
 ------------
