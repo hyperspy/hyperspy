@@ -255,7 +255,7 @@ with update_version_when_dev() as version:
         name="hyperspy",
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
-        # ext_modules=extensions,
+        ext_modules=extensions,
         packages=['hyperspy',
                   'hyperspy.datasets',
                   'hyperspy._components',
