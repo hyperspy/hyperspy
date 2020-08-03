@@ -58,8 +58,8 @@ All HyperSpy signals have the following methods for clustering analysis:
 * :py:meth:`~.learn.mva.MVA.cluster_analysis`
 * :py:meth:`~.signal.MVATools.plot_cluster_results`
 * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-* :py:meth:`~.signal.MVATools.plot_cluster_centers`
-* :py:meth:`~.signal.MVATools.get_cluster_centers`
+* :py:meth:`~.signal.MVATools.plot_cluster_signals`
+* :py:meth:`~.signal.MVATools.get_cluster_signals`
 * :py:meth:`~.signal.MVATools.get_cluster_labels`
 * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`
 * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`
@@ -391,7 +391,7 @@ proportionality relationship between the position of the peaks.
 
 .. code-block:: python
 
-    >>> s.plot_cluster_centers()
+    >>> s.plot_cluster_signals()
 
 .. image:: images/clustering_gaussian_centres_centres.png
 

@@ -703,7 +703,7 @@ You can use :py:meth:`~.signal.MVATools.plot_bss_results` for a compact display,
 or instead:
 
 * :py:meth:`~.signal.MVATools.plot_cluster_results`.
-* :py:meth:`~.signal.MVATools.plot_cluster_centers`.
+* :py:meth:`~.signal.MVATools.plot_cluster_signals`.
 * :py:meth:`~.signal.MVATools.plot_cluster_labels`.
 
 

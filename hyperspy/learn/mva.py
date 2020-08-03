@@ -1696,10 +1696,10 @@ class MVA:
         * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,        
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 
 
@@ -1778,9 +1778,9 @@ class MVA:
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
         * :py:meth:`~.learn.mva.MVA.cluster_analysis`,        
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,        
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
            
 
@@ -1931,7 +1931,6 @@ class MVA:
     def cluster_analysis(self,
                          cluster_source,
                          source_for_centers=None,
-                         center_signals_method="mean",
                          preprocessing=None,
                          preprocessing_kwargs={},
                          number_of_components=None,
@@ -1960,12 +1959,6 @@ class MVA:
             If "decomposition" the decomposition results are used 
             if "signal" the signal data is used 
             BaseSignal must have the same navigation dimensions as the signal.            
-        center_signals_method : {"mean","median","closest"}
-            default : 'mean'
-            Once the cluster labels have been obtained the cluster center
-            can be the mean or median of the values represent by those labels.
-            Alternatively it can be the value most similar or closest to all other
-            values.
         preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
@@ -2014,17 +2007,17 @@ class MVA:
         n_clusters : int
             Number of clusters to find using the one of the pre-defined methods
             "kmeans","agglomerative","minibatchkmeans","spectralclustering"
-            See sklearn.cluster for details 
+            See sklearn.cluster for details
 
         See Also
         --------
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,      
-        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 
 
@@ -2077,7 +2070,8 @@ class MVA:
             for i, j  in enumerate(idxs):
                 cluster_labels[j, nav_mask] = alg.labels_ == i
             # Calculate cluster centers
-            cluster_centers=[]
+            cluster_sum_signals = []
+            cluster_centroid_signals = []
             centroids = []
             distances = np.full(
                 (n_clusters, self.axes_manager.navigation_size,), np.nan, dtype="float")
@@ -2085,25 +2079,17 @@ class MVA:
                 loadings = self.learning_results.loadings[:, :number_of_components]
                 factors  = self.learning_results.factors[:, :number_of_components]
                 for i in range(n_clusters):
-                    if center_signals_method == "median":
-                        mloadings = loadings[cluster_labels[i, :], :].median(0, keepdims=True)
-                    elif center_signals_method == "mean":
-                        mloadings = loadings[cluster_labels[i, :], :].mean(0, keepdims=True)
-                    elif center_signals_method == "closest":
-                        cdata = scaled_data[cluster_labels[i, :][nav_mask], :]
-                        centroid = cdata.mean(0)
-                        centroids.append(centroid)
-                        # Calculate the distances to the whole dataset, except for
-                        # the masked areas
-                        cdist = np.linalg.norm(scaled_data - centroid[np.newaxis, :], axis=1)
-                        mloadings = loadings[nav_mask, ...][np.argmin(cdist), ...]
-                        print(mloadings.shape)
-                        distances[i, nav_mask] = cdist
-                    else:
-                        raise ValueError(f'`center_signals_method` must be "mean","median" \
-                                        or closest" but {center_signals_method} given')
-                    cluster_center = (mloadings @ factors.T).squeeze()
-                    cluster_centers.append(cluster_center)
+                    sloadings = loadings[cluster_labels[i, :], :].sum(0, keepdims=True)
+                    cluster_sum_signals.append((sloadings @ factors.T).squeeze())
+                    cdata = scaled_data[cluster_labels[i, :][nav_mask], :]
+                    centroid = cdata.mean(0)
+                    centroids.append(centroid)
+                    # Calculate the distances to the whole dataset, except for
+                    # the masked areas
+                    cdist = np.linalg.norm(scaled_data - centroid[np.newaxis, :], axis=1)
+                    mloadings = loadings[nav_mask, ...][np.argmin(cdist), ...]
+                    cluster_centroid_signals.append((mloadings @ factors.T).squeeze())
+                    distances[i, nav_mask] = cdist
             else:
                 cluster_data = \
                     self._get_cluster_signal(
@@ -2112,28 +2098,24 @@ class MVA:
                         navigation_mask=None,
                         signal_mask=None)
                 for i in range(n_clusters):
-                    if center_signals_method == "median":
-                        cluster_center = np.median(cluster_data[cluster_labels[i, :], ...], axis=0)
-                    elif center_signals_method == "mean":
-                        cluster_center = np.mean(cluster_data[cluster_labels[i, :], ...], axis=0)
-                    elif center_signals_method == "closest":
-                        cdata = scaled_data[cluster_labels[i, :][nav_mask], :]
-                        centroid = cdata.mean(0)
-                        centroids.append(centroid)
-                        # Calculate the distances to the whole dataset, except for
-                        # the masked areas
-                        cdist = np.linalg.norm(scaled_data - centroid[np.newaxis, :], axis=1)
-                        cluster_center = cluster_data[nav_mask, ...][np.argmin(cdist), ...]
-                        distances[i, nav_mask] = cdist
-                    else:
-                        raise ValueError(f'`center_signals_method` must be "mean","median" \
-                                        or closest" but {center_signals_method} given')
-                    cluster_centers.append(cluster_center)
-            cluster_centers = np.stack(cluster_centers)
+                    cluster_sum_signal = np.sum(cluster_data[cluster_labels[i, :], ...], axis=0)
+                    cluster_sum_signals.append(cluster_sum_signal)
+                    # Calculate centroid
+                    cdata = scaled_data[cluster_labels[i, :][nav_mask], :]
+                    centroid = cdata.mean(0)
+                    centroids.append(centroid)
+                    # Calculate the distances to the whole dataset, except for
+                    # the masked areas
+                    cdist = np.linalg.norm(scaled_data - centroid[np.newaxis, :], axis=1)
+                    # Find the signal closest to the centroid
+                    cluster_centroid_signal = cluster_data[nav_mask, ...][np.argmin(cdist), ...]
+                    distances[i, nav_mask] = cdist
+                    cluster_centroid_signals.append(cluster_centroid_signal)
             target.cluster_labels = cluster_labels
             target.cluster_algorithm = algorithm
             target.number_of_clusters = n_clusters
-            target.cluster_centers = cluster_centers
+            target.cluster_sum_signals = np.stack(cluster_sum_signals)
+            target.cluster_centroid_signals = np.stack(cluster_centroid_signals)
             target.cluster_distances = distances
             target.cluster_centroids = np.asarray(centroids)
 
@@ -2334,11 +2316,11 @@ class MVA:
         --------
         * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_centers`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,        
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_centers`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
 
         """

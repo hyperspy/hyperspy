@@ -73,7 +73,7 @@ class TestCluster1d:
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_centers.shape, (3, 7))
         self.signal.get_cluster_labels()
-        self.signal.get_cluster_centers()
+        self.signal.get_cluster_signals()
 
     @pytest.mark.parametrize("center_signals_method",
                              ("mean", "median", "closest"))
@@ -411,7 +411,7 @@ def test_get_methods():
     np.testing.assert_array_equal(cl.data,
                                   signal.learning_results.cluster_labels)
 
-    cl = signal.get_cluster_centers()
+    cl = signal.get_cluster_signals()
     np.testing.assert_array_equal(cl.data,
                                   signal.learning_results.cluster_centers)
 
