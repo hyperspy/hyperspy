@@ -71,21 +71,23 @@ class TestCluster1d:
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 55))
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centers.shape, (3, 7))
+            self.signal.learning_results.cluster_centroid_signals.shape, (3, 7))
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_sum_signals.shape, (3, 7))
         self.signal.get_cluster_labels()
         self.signal.get_cluster_signals()
 
-    @pytest.mark.parametrize("center_signals_method",
-                             ("mean", "median", "closest"))
-    def test_custom_algorithm(self, center_signals_method):
+    def test_custom_algorithm(self):
         self.signal.cluster_analysis("signal",
                                      n_clusters=3,
                                      preprocessing="norm",
-                                     center_signals_method=center_signals_method)
+                                     )
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 55))
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centers.shape, (3, 7))
+            self.signal.learning_results.cluster_centroid_signals.shape, (3, 7))
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_sum_signals.shape, (3, 7))
 
     def test_custom_preprocessing(self):
         custom_method = import_sklearn.sklearn.preprocessing.Normalizer()
@@ -97,7 +99,9 @@ class TestCluster1d:
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 55))
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centers.shape, (3, 7))
+            self.signal.learning_results.cluster_centroid_signals.shape, (3, 7))
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_sum_signals.shape, (3, 7))
 
 
 class TestClusterSignalSources:
@@ -131,7 +135,9 @@ class TestClusterSignalSources:
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 11))
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centers.shape, (3, 35))
+            self.signal.learning_results.cluster_centroid_signals.shape, (3, 35))
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_sum_signals.shape, (3, 35))
 
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_source_center(self, use_masks):
@@ -154,7 +160,9 @@ class TestClusterSignalSources:
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 11))
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centers.shape, (3, 35))
+            self.signal.learning_results.cluster_centroid_signals.shape, (3, 35))
+        np.testing.assert_array_equal(
+            self.signal.learning_results.cluster_sum_signals.shape, (3, 35))
 
 
 class TestClusterEstimate:
@@ -342,13 +350,6 @@ class TestClusterExceptions:
                                     n_clusters=2,
                                     algorithm=empty_object)
 
-    def test_centre_method_error(self):
-        with pytest.raises(ValueError,
-                           match=r"`center_signals_method` must be \w*"):
-            self.s.cluster_analysis("signal",
-                                    n_clusters=2,
-                                    center_signals_method="orange")
-
     def test_estimate_alg_error(self):
         with pytest.raises(ValueError,
                            match="Estimate number of clusters only works with "
@@ -404,16 +405,26 @@ def test_get_methods():
     signal.cluster_analysis("signal", n_clusters=2)
     signal.unfold()
     cl = signal.get_cluster_labels(merged=True)
-    np.testing.assert_array_equal(cl.data,
-                                  signal.learning_results.cluster_membership)
+    np.testing.assert_array_equal(
+        cl.data,
+        (signal.learning_results.cluster_labels * np.arange(2)[:, np.newaxis]).sum(0))
 
     cl = signal.get_cluster_labels(merged=False)
     np.testing.assert_array_equal(cl.data,
                                   signal.learning_results.cluster_labels)
 
-    cl = signal.get_cluster_signals()
+    cl = signal.get_cluster_signals(signal="sum")
     np.testing.assert_array_equal(cl.data,
-                                  signal.learning_results.cluster_centers)
+                                  signal.learning_results.cluster_sum_signals)
+
+    cl = signal.get_cluster_signals(signal="centroid")
+    np.testing.assert_array_equal(cl.data,
+                                  signal.learning_results.cluster_centroid_signals)
+    cl = signal.get_cluster_signals(signal="mean")
+    np.testing.assert_array_equal(
+        cl.data,
+        signal.learning_results.cluster_sum_signals /
+        signal.learning_results.cluster_labels.sum(1, keepdims=True))
 
     cl = signal.get_cluster_distances()
     np.testing.assert_array_equal(cl.data,
