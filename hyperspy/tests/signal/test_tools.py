@@ -646,8 +646,6 @@ class Test3D:
 
     def test_swap_axes_simple(self):
         s = self.signal
-        if s._lazy:
-            chunks = s.data.chunks
         assert s.swap_axes(0, 1).data.shape == (4, 2, 6)
         assert s.swap_axes(0, 2).axes_manager.shape == (6, 2, 4)
         if not s._lazy:
