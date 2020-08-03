@@ -451,7 +451,7 @@ Those new to Python may find indexing a somewhat esoteric concept but once
 mastered it is one of the most powerful features of Python based code and
 greatly simplifies many common tasks. HyperSpy's Signal indexing is similar
 to numpy array indexing and those new to Python are encouraged to read the
-associated `numpy documentation on the subject  <http://ipython.org/>`_.
+associated `numpy documentation on the subject <https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html>`_.
 
 
 Key features of indexing in HyperSpy are as follows (note that some of these
@@ -1072,38 +1072,93 @@ to reverse the :py:func:`~.utils.stack` function:
 
 .. _signal.fft:
 
-FFT and iFFT
-^^^^^^^^^^^^
+Fast Fourier Transform (FFT)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and
-the :py:meth:`~.signal.BaseSignal.ifft` methods. In order to remove streaks in FFT
-(usually used only for presenting FFT patterns rather than for quantitative
-analyses) use ``apodization`` attribute as follows:
+The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_ 
+of a signal can be computed using the :py:meth:`~.signal.BaseSignal.fft` method. By default, 
+the FFT is calculated with the origin at (0, 0), which will be displayed at the 
+bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the 
+the :py:meth:`~.signal.BaseSignal.fft` method can be used to center the output of the FFT. 
+In the following example, the FFT of a hologram is computed using ``shift=True`` and its 
+output signal is displayed, which shows that the FFT results in a complex signal with a 
+real and an imaginary parts:
 
 .. code-block:: python
 
-    >>> import numpy as np
     >>> im = hs.datasets.example_signals.reference_hologram()
-    >>> fft_power = np.log(im.fft(shift=True).amplitude)
-    >>> fft_power_apodized = np.log(im.fft(shift=True, apodization=True).amplitude)
-    >>> hs.plot.plot_images([fft_power, fft_power_apodized], tight_layout=True)
+    >>> fft_shifted = im.fft(shift=True)
+    >>> fft_shifted.plot()
 
-.. figure::  images/ref_hologram_fft.png
+.. figure::  images/FFT_vacuum_reference_hologram.png
   :align:   center
   :width:   800
 
-``apodization`` attribute can also take following values which correspond to types of apodization windows:
-``hann`` (or ``apodization=True``), ``hamming``, ``tukey``.
+The strong features in the real and imaginary parts correspond to the lattice fringes of the 
+hologram.
 
-Note that for visual inspection of FFT it is common to plot logarithm of amplitude
-rather than FFT itself as it is done in the example above.
-
-By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use ``shift=True`` option to
-calculate FFT and the inverse with origin shifted in the centre.
+For visual inspection of the FFT it is convenient to display its power spectrum 
+(i.e. the square of the absolute value of the FFT) rather than FFT itself as it is done 
+in the example above by using the ``power_spectum`` argument:
 
 .. code-block:: python
 
-    >>> im_ifft = im.fft(fft_shift=True).ifft(fft_shift=True)
+    >>> im = hs.datasets.example_signals.reference_hologram()
+    >>> fft = im.fft(True)
+    >>> fft.plot(True)
+
+Where ``power_spectum`` is set to ``True`` since it is the first argument of the 
+:py:meth:`~._signals.complex_signal.ComplexSignal_mixin.plot` method for complex signal. 
+When ``power_spectrum=True``, the plot will be displayed on a log scale by default.
+
+
+.. figure::  images/FFT_vacuum_reference_hologram_power_spectrum.png
+  :align:   center
+  :width:   400
+
+The visualisation can be further improved by setting the minimum value to display to the 30-th 
+percentile; this can be done by using ``vmin="30th"`` in the plot function:
+
+.. code-block:: python
+
+    >>> im = hs.datasets.example_signals.reference_hologram()
+    >>> fft = im.fft(True)
+    >>> fft.plot(True, vmin="30th")
+
+.. figure::  images/FFT_vacuum_reference_hologram_power_spectrum_vmin30th.png
+  :align:   center
+  :width:   400
+
+The streaks visible in the FFT come from the edge of the image and can be removed by  
+applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original 
+signal before the computation of the FFT. This can be done using the ``apodization`` argument of 
+the :py:meth:`~.signal.BaseSignal.fft` method and it is usually used for visualising FFT patterns 
+rather than for quantitative analyses. By default, the so-called ``hann`` windows is 
+used but different type of windows such as the ``hamming`` and ``tukey`` windows. 
+
+.. code-block:: python
+
+    >>> im = hs.datasets.example_signals.reference_hologram()
+    >>> fft = im.fft(shift=True)
+    >>> fft_apodized = im.fft(shift=True, apodization=True)
+    >>> fft_apodized.plot(True, vmin="30th")
+
+.. figure::  images/FFT_vacuum_reference_hologram_power_spectrum_vmin30th-apodization.png
+  :align:   center
+  :width:   400
+
+
+
+Inverse Fast Fourier Transform (iFFT)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Inverse fast Fourier transform can be calculated from a complex signal by using the 
+:py:meth:`~.signal.BaseSignal.ifft` method. Similarly to the :py:meth:`~.signal.BaseSignal.fft` method, 
+the ``shift`` argument can be provided to shift the origin of the iFFT when necessary:
+
+.. code-block:: python
+
+    >>> im_ifft = im.fft(shift=True).ifft(shift=True)
 
 
 .. _signal.change_dtype:

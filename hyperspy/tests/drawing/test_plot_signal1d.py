@@ -21,7 +21,6 @@ import pytest
 import matplotlib.pyplot as plt
 import os
 from shutil import copyfile
-import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure

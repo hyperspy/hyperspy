@@ -389,15 +389,20 @@ def calculate_bins_histogram(data):
         Number of bins.
     """
     # Sturges rule
-    bins_sturges = int(np.log2(data.size))
+    sturges_bin_width = data.ptp() / (np.log2(data.size) + 1.0)
 
     # Freedman Diaconis rule
-    q75, q25 = np.percentile(data, [75 ,25])
-    iqr = q75 - q25
-    width = 2 * iqr / np.power(data.size, 1./3)
-    bins_fd = int((data.max() - data.min()) / width)
+    iqr = np.subtract(*np.percentile(data, [75, 25]))
+    fd_bin_width = 2.0 * iqr * data.size ** (-1.0 / 3.0)
 
-    return max(bins_sturges, bins_fd)
+    if fd_bin_width:
+        bin_width = min(fd_bin_width, sturges_bin_width)
+    else:
+        # limited variance: fd_bin_width may be zero
+        bin_width = sturges_bin_width
+
+    # Cap at 250 to avoid bad surprised when getting very large number
+    return min(int(np.ceil(data.ptp() / bin_width)), 250)
 
 
 @jit_ifnumba()

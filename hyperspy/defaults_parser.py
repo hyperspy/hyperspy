@@ -138,10 +138,9 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.05,
-                                label='Saturated pixels',
-                                desc='Set the default saturated_pixels for '
-                                'plotting images.'
+    saturated_pixels = t.CFloat(0.,
+                                label='Saturated pixels (deprecated)',
+                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
                                 )
     dims_024_increase = t.Str('right',
                               label='Navigate right'

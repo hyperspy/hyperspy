@@ -113,12 +113,13 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
+@pytest.mark.parametrize("percentile", [(None, None), ("1th", "99th")])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_log_scale():
+def test_plot_log_scale(percentile):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal += 1  # need to avoid zeros in log
-    test_plot.signal.plot(norm='log')
+    test_plot.signal.plot(norm='log', vmin=percentile[0], vmax=percentile[1])
     return test_plot.signal._plot.signal_plot.figure
 
 
@@ -342,8 +343,7 @@ def test_plot_images_cmap_multi_signal():
     test_plot2.signal = test_plot2.signal.inav[::-1]
     test_plot2.signal.metadata.General.title = 'Descent'
 
-    hs.plot.plot_images([test_plot1.signal,
-                         test_plot2.signal],
+    hs.plot.plot_images([test_plot1.signal, test_plot2.signal],
                         axes_decor='off',
                         per_row=4,
                         cmap='mpl_colors')
@@ -363,9 +363,7 @@ def test_plot_images_cmap_multi_w_rgb():
     rgb_sig.change_dtype('rgb8')
     rgb_sig.metadata.General.title = 'Racoon!'
 
-    hs.plot.plot_images([test_plot1.signal,
-                         test_plot2.signal,
-                         rgb_sig],
+    hs.plot.plot_images([test_plot1.signal, test_plot2.signal, rgb_sig],
                         axes_decor='off',
                         per_row=4,
                         cmap='mpl_colors')
@@ -378,7 +376,7 @@ def test_plot_images_single_image():
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="99.95th")
     return plt.gcf()
 
 
@@ -388,7 +386,7 @@ def test_plot_images_single_image_stack():
     image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="99.95th")
     return plt.gcf()
 
 
@@ -416,16 +414,20 @@ def test_plot_images_multi_signal_w_axes_replot():
     return f
 
 
-@pytest.mark.parametrize("saturated_pixels", [5.0, [0.0, 20.0, 40.0],
-                                              [10.0, 20.0], [10.0, None, 20.0]])
+@pytest.mark.parametrize("percentile", [("2.5th", "97.5th"),
+                                        [["0th", "10th", "20th"], ["100th", "90th", "80th"]],
+                                        [["5th", "10th"], ["95th", "90th"]],
+                                        [["5th", None, "10th"], ["95th", None, "90th"]],
+                                        ])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_saturated_pixels(saturated_pixels):
+def test_plot_images_vmin_vmax_percentile(percentile):
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
     ax = hs.plot.plot_images([image0, image0, image0],
-                             saturated_pixels=saturated_pixels,
+                             vmin=percentile[0],
+                             vmax=percentile[1],
                              axes_decor='off')
     return ax[0].figure
 
