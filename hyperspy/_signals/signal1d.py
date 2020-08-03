@@ -275,6 +275,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         super().__init__(*args, **kwargs)
         if self.axes_manager.signal_dimension != 1:
             self.axes_manager.set_signal_dimension(1)
+        self.axes_manager.iterpath = self.axes_manager._iterpath
 
     def _get_spikes_diagnosis_histogram_data(self, signal_mask=None,
                                              navigation_mask=None,

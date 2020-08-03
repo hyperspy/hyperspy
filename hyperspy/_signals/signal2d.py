@@ -319,6 +319,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         super().__init__(*args, **kw)
         if self.axes_manager.signal_dimension != 2:
             self.axes_manager.set_signal_dimension(2)
+        self.axes_manager.iterpath = self.axes_manager._iterpath
 
     def plot(self,
              navigator="auto",
