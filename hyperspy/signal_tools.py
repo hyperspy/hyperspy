@@ -739,13 +739,15 @@ class ImageContrastEditor(t.HasTraits):
         if self._vmin == self._vmax:
             return
         data = self._get_data()
+        # masked data outside vmin/vmax
+        data = np.ma.masked_outside(data, self._vmin, self._vmax).compressed()
         try:
             # "auto" returns max('sturges', 'fd') which is what we want
             n_bins = len(np.histogram_bin_edges(data, bins='auto'))
         except MemoryError:
+            # When the range is too large, we can get a Memory error
             n_bins = max_num_bins
-        # Cap at max_num_bins to avoid memory errors when
-        # the number of bins is very large
+
         self.bins = min(n_bins, max_num_bins)
 
         self.hist_data = self._get_histogram(data)
