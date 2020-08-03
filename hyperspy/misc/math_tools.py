@@ -201,7 +201,7 @@ def check_random_state(seed, lazy=False):
         return da.random._state if lazy else np.random.mtrand._rand
 
     if isinstance(seed, numbers.Integral):
-        return da.random.RandomState() if lazy else np.random.RandomState(seed)
+        return da.random.RandomState(seed) if lazy else np.random.RandomState(seed)
 
     if isinstance(seed, (da.random.RandomState, np.random.RandomState)):
         return seed
