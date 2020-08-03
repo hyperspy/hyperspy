@@ -1919,11 +1919,9 @@ class MVA:
         elif type(cluster_source) is str:
             if cluster_source == "bss":
                 loadings = self.learning_results.bss_loadings
-                factors  = self.learning_results.bss_factors
             else:
                 loadings = self.learning_results.loadings
-                factors  = self.learning_results.factors
-                toreturn = loadings[navigation_mask,:number_of_components]
+            toreturn = loadings[navigation_mask,:number_of_components]
 
         return toreturn
 
@@ -2043,10 +2041,11 @@ class MVA:
         try:
             # scale the data before clustering
             cluster_signal = \
-                self._get_cluster_signal(cluster_source,
-                                        number_of_components,
-                                        navigation_mask,
-                                        signal_mask,)
+                self._get_cluster_signal(
+                    cluster_source,
+                    number_of_components,
+                    navigation_mask,
+                    signal_mask,)
             scaled_data = \
                 self._scale_data_for_clustering(
                 cluster_signal=cluster_signal,
