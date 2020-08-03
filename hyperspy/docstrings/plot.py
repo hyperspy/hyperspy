@@ -127,8 +127,12 @@ PLOT2D_DOCSTRING = \
             type. "symlog" can be used to display negative value on a negative
             scale - read :py:class:`matplotlib.colors.SymLogNorm` and the
             `linthresh` and `linscale` parameter for more details.
-        vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data.
+        vmin, vmax : {scalar, str}, optional
+            `vmin` and `vmax` are used to normalise the displayed data. It can
+            be a float or a string. If string, it should be formatted as 'xth', 
+            where 'x' must be an float in the [0, 100] range. 'x' is used to 
+            compute the x-th percentile of the data. See 
+            :py:func:`numpy.percentile` for more information.
         gamma : float
             Parameter used in the power-law normalisation when the parameter
             norm="power". Read :py:class:`matplotlib.colors.PowerNorm` for more

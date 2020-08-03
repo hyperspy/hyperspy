@@ -179,9 +179,8 @@ Ball statistical peak finder
 Described by White [White2009]_, this method is based on finding points that
 have a statistically higher value than the surrounding areas, then iterating
 between smoothing and binarising until the number of peaks has converged. This
-method can be slow, though it will automatically run much faster if `numba` is
-installed and is very robust to a variety of image types. It uses the
-:py:func:`~.utils.peakfinders2D.find_peaks_stat` function, which can take
+method can be slower than the others, but is very robust to a variety of image types.
+It uses the :py:func:`~.utils.peakfinders2D.find_peaks_stat` function, which can take
 ``alpha``, ``window_radius`` and ``convergence_ratio`` as parameters. See the
 :py:func:`~.utils.peakfinders2D.find_peaks_stat` function documentation for more
 details.

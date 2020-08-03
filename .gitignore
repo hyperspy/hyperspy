@@ -43,6 +43,8 @@ hyperspy/io_plugins/unbcf_fast.c
 hyperspy/misc/etc/test_compilers.obj
 /.cache/
 /.spyproject/
+*nbc
+*nbi
 
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/

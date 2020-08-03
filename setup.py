@@ -67,6 +67,7 @@ install_req = ['scipy>=0.17',
                'pyyaml',
                'PTable',
                'tifffile[all]>=2018.10.18',
+               'numba',
                ]
 
 extras_require = {
@@ -74,7 +75,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["numba", "cython"],
+    "speed": ["cython"],
     "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
@@ -359,14 +360,12 @@ with update_version_when_dev() as version:
             ],
         },
         author=Release.authors['all'][0],
-        author_email=Release.authors['all'][1],
-        maintainer='Francisco de la Peña',
-        maintainer_email='fjd29@cam.ac.uk',
         description=Release.description,
         long_description=open('README.rst').read(),
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,
+        project_urls=Release.PROJECT_URLS,
         keywords=Release.keywords,
         cmdclass={
             'recythonize': Recythonize,

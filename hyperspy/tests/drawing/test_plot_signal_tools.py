@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from hyperspy import components1d, signals
+from hyperspy import signals, components1d, datasets
 from hyperspy._signals.signal1d import BackgroundRemoval
 from hyperspy.signal_tools import ImageContrastEditor
 
@@ -52,16 +52,17 @@ def test_plot_BackgroundRemoval():
 @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
 @pytest.mark.parametrize("gamma", (0.7, 1.2))
-@pytest.mark.parametrize("saturated_pixels", (0.3, 0.5))
-def test_plot_contrast_editor(gamma, saturated_pixels):
+@pytest.mark.parametrize("percentile", (["0.15th", "99.85th"], ["0.25th", "99.75th"]))
+def test_plot_contrast_editor(gamma, percentile):
     np.random.seed(1)
     data = np.random.random(size=(10, 10, 100, 100))*1000
     data += np.arange(10*10*100*100).reshape((10, 10, 100, 100))
     s = signals.Signal2D(data)
-    s.plot(gamma=gamma, saturated_pixels=saturated_pixels)
+    s.plot(gamma=gamma, vmin=percentile[0], vmax=percentile[1])
     ceditor = ImageContrastEditor(s._plot.signal_plot)
     assert ceditor.gamma == gamma
-    assert ceditor.saturated_pixels == saturated_pixels
+    assert ceditor.vmin_percentile == float(percentile[0].split("th")[0])
+    assert ceditor.vmax_percentile == float(percentile[1].split("th")[0])
     return plt.gcf()
 
 
@@ -77,5 +78,17 @@ def test_plot_contrast_editor_norm(norm):
         # test log with negative numbers
         s2 = s - 5E3
         s2.plot(norm=norm)
-        ceditor2 = ImageContrastEditor(s._plot.signal_plot)
+        _ = ImageContrastEditor(s._plot.signal_plot)
     assert ceditor.norm == norm.capitalize()
+
+
+def test_plot_contrast_editor_complex():
+    s = datasets.example_signals.object_hologram()
+    fft = s.fft(True)
+    fft.plot(True, vmin=None, vmax=None)
+    ceditor = ImageContrastEditor(fft._plot.signal_plot)
+    assert ceditor.bins == 250
+    np.testing.assert_allclose(ceditor._vmin, fft._plot.signal_plot._vmin)
+    np.testing.assert_allclose(ceditor._vmax, fft._plot.signal_plot._vmax)
+    np.testing.assert_allclose(ceditor._vmin, 1.495977361e+3)
+    np.testing.assert_allclose(ceditor._vmax, 3.568838458887e+17)

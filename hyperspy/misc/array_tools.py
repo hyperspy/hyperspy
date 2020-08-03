@@ -21,9 +21,9 @@ import math as math
 import logging
 
 import numpy as np
+from numba import jit
 
 from hyperspy.misc.math_tools import anyfloatin
-from hyperspy.decorators import jit_ifnumba
 
 
 _logger = logging.getLogger(__name__)
@@ -207,7 +207,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                                  " error")
 
 
-@jit_ifnumba()
+@jit(nopython=True, cache=True)
 def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
         # Begin by determining the upper and lower limits of a given new pixel.
@@ -285,9 +285,6 @@ def _linear_bin(dat, scale, crop=True):
             'The list of bins must match the number of dimensions, including',
             'the energy dimension. In order to not bin in any of these ',
             'dimensions specifically, simply set the value in shape to 1')
-
-    if not hasattr(_linear_bin_loop, "__numba__"):
-        _logger.warning("Install numba to speed up the computation of `rebin`")
 
     for axis, s in enumerate(scale):
         # For each iteration of linear_bin the axis being interated over has to
@@ -372,7 +369,7 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
     return sarray
 
 
-@jit_ifnumba()
+@jit(nopython=True, cache=True)
 def numba_histogram(data, bins, ranges):
     """
     Parameters

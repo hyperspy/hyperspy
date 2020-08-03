@@ -1,3 +1,5 @@
+.. _model-label:
+
 Model fitting
 *************
 
