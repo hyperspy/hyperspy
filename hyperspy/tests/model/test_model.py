@@ -843,4 +843,4 @@ class Test_multifit_iterpath():
         self.ax.iterpath = indices
         self.m.multifit(iterpath=indices)
         set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
-        np.testing.assert_array_equal(indices, set_indices)
+        np.testing.assert_array_equal(set_indices, indices[:,::-1])

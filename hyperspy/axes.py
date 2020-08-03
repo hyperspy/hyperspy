@@ -1440,12 +1440,12 @@ class AxesManager(t.HasTraits):
     @iterpath.setter
     def iterpath(self, path):
         if isinstance(path, str):
-            if path is 'serpentine':
-                self._iterpath = "serpentine"
-                self._iterpath_generator = serpentine_iter(self.navigation_shape)
-            elif path is 'flyback':
+            if path == 'serpentine':
+                self._iterpath = 'serpentine'
+                self._iterpath_generator = serpentine_iter(self._navigation_shape_in_array)
+            elif path == 'flyback':
                 self._iterpath = 'flyback'
-                self._iterpath_generator = flyback_iter(self.navigation_shape)
+                self._iterpath_generator = flyback_iter(self._navigation_shape_in_array)
             else:
                 raise ValueError(iterpath_error.format(path))
         else:
@@ -1470,7 +1470,7 @@ class AxesManager(t.HasTraits):
             iteration.
 
         """
-        self.indices = next(self._iterpath_generator)
+        self.indices = next(self._iterpath_generator)[::-1]
         return self.indices
 
     def __iter__(self):

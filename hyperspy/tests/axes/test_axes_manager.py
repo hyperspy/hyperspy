@@ -376,11 +376,12 @@ class TestIterPathScanPattern:
             break
 
     def test_custom_iterpath(self):
-        self.am.iterpath = array([(0,1,1), (1,1,1)])
+        indices = [(0,1,1), (1,1,1)]
+        self.am.iterpath = indices
         for i, _ in enumerate(self.am):
             if i == 0:
-                assert self.am.indices == (0,1,1)
+                assert self.am.indices == indices[0][::-1]
             # Hits a new layer on index 9
             if i == 1:
-                assert self.am.indices == (1,1,1)
+                assert self.am.indices == indices[1][::-1]
             break        
