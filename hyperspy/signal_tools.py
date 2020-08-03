@@ -754,7 +754,7 @@ class ImageContrastEditor(t.HasTraits):
             # limited variance: fd_bin_width may be zero
             bin_width = sturges_bin_width
 
-        self.bins = min(int(np.ceil(data.ptp() / bin_width)), 250)
+        self.bins = min(int(np.ceil(data.ptp() / bin_width)), max_num_bins)
 
         self.hist_data = self._get_histogram(data)
         self._set_xaxis()
