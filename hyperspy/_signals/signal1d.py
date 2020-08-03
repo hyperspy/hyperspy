@@ -1186,7 +1186,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         {None, signal, background_model or (signal, background_model)}
             If signal_range is not 'interactive', the background substracted
             signal is returned. If return_model is True, returns the background
-            model.
+            model, otherwise, the GUI widget dictionary is returned if
+            `display=False` - see the display parameter documentation.
 
         Examples
         --------
@@ -1231,9 +1232,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    show_progressbar=show_progressbar,
                                    zero_fill=zero_fill,
                                    model=model)
-            br.gui(display=display, toolkit=toolkit)
+            gui_dict = br.gui(display=display, toolkit=toolkit)
             if return_model:
                 return model
+            else:
+                # for testing purposes
+                return gui_dict
         else:
             background_estimator = _get_background_estimator(
                 background_type, polynomial_order)[0]
