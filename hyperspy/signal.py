@@ -61,7 +61,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
+from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -5102,84 +5102,101 @@ class BaseSignal(FancySlicing,
                 marker.plot(render_figure=False)
         self._render_figure()
 
-    def add_poissonian_noise(self, keep_dtype=True):
-        """Add Poissonian noise to the data
+    def add_poissonian_noise(self, keep_dtype=True, random_state=None):
+        """Add Poissonian noise to the data.
 
-        This method works in-place. The resulting data type is ``int64``. If
-        this is different from the original data type a warning is added to the
-        log.
+        This method works in-place. The resulting data type is ``int64``.
+        If this is different from the original data type then a warning
+        is added to the log.
 
         Parameters
         ----------
-        keep_dtype : bool
+        keep_dtype : bool, default True
             If ``True``, keep the original data type of the signal data. For
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
-            ``'float64'``. The default is ``True`` for convenience.
+            ``'float64'``.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.poisson`
-        (or :py:func:`dask.array.random.poisson` for lazy signals) to
-        generate the Poissonian noise. In order to seed it,
-        you must use :py:func:`numpy.random.seed`.
+        (or :py:func:`dask.array.random.poisson` for lazy signals)
+        to generate the Poissonian noise.
 
         """
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import poisson
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import poisson
+
         original_dtype = self.data.dtype
-        self.data = poisson(lam=self.data, **kwargs)
+
+        self.data = random_state.poisson(lam=self.data, **kwargs)
+
         if self.data.dtype != original_dtype:
             if keep_dtype:
                 _logger.warning(
-                    "Changing data type from %s to the original %s." % (
-                        self.data.dtype, original_dtype)
+                    f"Changing data type from {self.data.dtype} "
+                    f"to the original {original_dtype}"
                 )
                 # Don't change the object if possible
                 self.data = self.data.astype(original_dtype, copy=False)
             else:
-                _logger.warning("The data type changed from %s to %s" % (
-                    original_dtype, self.data.dtype
-                ))
+                _logger.warning(
+                    f"The data type changed from {original_dtype} "
+                    f"to {self.data.dtype}"
+                )
+
         self.events.data_changed.trigger(obj=self)
 
-    def add_gaussian_noise(self, std):
+    def add_gaussian_noise(self, std, random_state=None):
         """Add Gaussian noise to the data.
 
         The operation is performed in-place (*i.e.* the data of the signal
-        is modified). This method requires a float data type, otherwise numpy
-        raises a :py:exc:`TypeError`.
+        is modified). This method requires the signal to have a float data type,
+        otherwise it will raise a :py:exc:`TypeError`.
 
         Parameters
         ----------
         std : float
             The standard deviation of the Gaussian noise.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.normal` (or
-        :py:func:`dask.array.random.normal` for lazy signals) to generate the
-        Gaussian noise. In order to seed it, you must use
-        :py:func:`numpy.random.seed`.
+        :py:func:`dask.array.random.normal` for lazy signals)
+        to generate the noise.
+
         """
 
+        if self.data.dtype.char not in np.typecodes["AllFloat"]:
+            raise TypeError(
+                "`s.add_gaussian_noise()` requires the data to have "
+                f"a float datatype, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64'))."
+            )
+
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import normal
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import normal
-        noise = normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
+        noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
         if self._lazy:
             # With lazy data we can't keep the same array object
             self.data = self.data + noise
         else:
             # Don't change the object
             self.data += noise
+
         self.events.data_changed.trigger(obj=self)
 
     def transpose(self, signal_axes=None,
