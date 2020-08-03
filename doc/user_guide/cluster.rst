@@ -172,7 +172,6 @@ the data then applies a square root to enhances weaker features.
 
 .. code-block:: python
 
-    
     >>> class PowerScaling(object):
     >>>     
     >>>     def __init__(self,power=0.5):
@@ -424,7 +423,18 @@ proportionality relationship between the position of the peaks.
 
 .. code-block:: python
 
-    >>> s.plot_cluster_signals()
+    >>> s.plot_cluster_signals(signal="mean")
 
-.. image:: images/clustering_gaussian_centres_centres.png
+.. image:: images/clustering_gaussian_centres_mean.png
+
+
+Notice that in this case averaging or summing the signals of
+each cluster is not appropriate, since the clustering criterium
+is the ratio between the peaks positions. A better alternative
+is to plot the signals closest to the centroids:
+
+    >>> s.plot_cluster_signals(signal="centroid")
+
+.. image:: images/clustering_gaussian_centres_centroid.png
+
 
