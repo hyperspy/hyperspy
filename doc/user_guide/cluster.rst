@@ -133,6 +133,81 @@ vector length. ``standard`` re-scales each feature by removing the mean and
 scaling to unit variance. ``minmax`` normalizes each feature between the
 minimum and maximum range of that feature.
 
+Cluster signals
+^^^^^^^^^^^^^^^
+
+In HyperSpy *cluster signals* are signals that somehow represent their clusters.
+The concept is ill-defined, since cluster algorithms only assign data points to
+clusters. HyperSpy computers 2 cluster signals, 
+
+1. ``cluster_sum_signals``, which are the sum of all the cluster signals
+   that belong to each cluster.
+2. ``cluster_centroid_signals``, which is the signal closest to each cluster
+   centroid.
+
+
+When plotting the "*cluster signals*" we can select any of those
+above using the ``signal`` keyword argument:
+
+.. code-block:: python
+
+    >>> s.plot_cluster_labels(signal="centroid")
+
+In addition, it is possible to plot the mean signal over the different
+clusters:
+
+.. code-block:: python
+
+    >>> s.plot_cluster_labels(signal="mean")
+
+
+Clustering with user defined algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+User developed preprocessing or cluster algorithms can be 
+used in place of the sklearn methods.
+A preprocessing object needs a ``fit_transform`` which
+appropriately scales the data. 
+The example below defines a preprocessing class which normalizes 
+the data then applies a square root to enhances weaker features. 
+
+.. code-block:: python
+
+    
+    >>> class PowerScaling(object):
+    >>>     
+    >>>     def __init__(self,power=0.5):
+    >>>         self.power = power
+    >>>         
+    >>>     def fit_transform(self,data):
+    >>>         norm = np.amax(data,axis=1)
+    >>>         scaled_data = data/norm[:,None]
+    >>>         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
+    >>>         scaled_data = scaled_data ** self.power
+    >>>         return scaled_data 
+
+The PowerScaling class can then be passed to the cluster_analysis method for use.
+
+.. code-block:: python
+
+    >>> ps = PowerScaling()
+    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=ps)
+
+For user defined clustering algorithms the class must implementation
+``fit`` and have a ``label_`` attribute that contains the clustering labels.
+An example template would be:
+
+.. code-block:: python
+
+    
+    >>> class MyClustering(object):
+    >>>     
+    >>>     def __init__(self):
+    >>>         self.labels_ = None
+    >>>         
+    >>>     def fit_(self,X):
+    >>>         self.labels_ = do_something(X)       
+    
+
 
 Examples
 --------
@@ -353,77 +428,3 @@ proportionality relationship between the position of the peaks.
 
 .. image:: images/clustering_gaussian_centres_centres.png
 
-Cluster signals
-^^^^^^^^^^^^^^^
-
-In HyperSpy *cluster signals* are signals that somehow represent their clusters.
-The concept is ill-defined, since cluster algorithms only assign data points to
-clusters. HyperSpy computers 2 cluster signals, 
-
-1. ``cluster_sum_signals``, which are the sum of all the cluster signals
-   that belong to each cluster.
-2. ``cluster_centroid_signals``, which is the signal closest to each cluster
-   centroid.
-
-
-When plotting the "*cluster signals*" we can select any of those
-above using the ``signal`` keyword argument:
-
-.. code-block:: python
-
-    >>> s.plot_cluster_labels(signal="centroid")
-
-In addition, it is possible to plot the mean signal over the different
-clusters:
-
-.. code-block:: python
-
-    >>> s.plot_cluster_labels(signal="mean")
-
-
-Clustering with user defined algorithms
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-User developed preprocessing or cluster algorithms can be 
-used in place of the sklearn methods.
-A preprocessing object needs a ``fit_transform`` which
-appropriately scales the data. 
-The example below defines a preprocessing class which normalizes 
-the data then applies a square root to enhances weaker features. 
-
-.. code-block:: python
-
-    
-    >>> class PowerScaling(object):
-    >>>     
-    >>>     def __init__(self,power=0.5):
-    >>>         self.power = power
-    >>>         
-    >>>     def fit_transform(self,data):
-    >>>         norm = np.amax(data,axis=1)
-    >>>         scaled_data = data/norm[:,None]
-    >>>         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
-    >>>         scaled_data = scaled_data ** self.power
-    >>>         return scaled_data 
-
-The PowerScaling class can then be passed to the cluster_analysis method for use.
-
-.. code-block:: python
-
-    >>> ps = PowerScaling()
-    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=ps)
-
-For user defined clustering algorithms the class must implementation
-``fit`` and have a ``label_`` attribute that contains the clustering labels.
-An example template would be:
-
-.. code-block:: python
-
-    
-    >>> class MyClustering(object):
-    >>>     
-    >>>     def __init__(self):
-    >>>         self.labels_ = None
-    >>>         
-    >>>     def fit_(self,X):
-    >>>         self.labels_ = do_something(X)       
-    
