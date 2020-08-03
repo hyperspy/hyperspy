@@ -1446,7 +1446,7 @@ def animate_legend(fig=None, ax=None):
 
 
 def plot_histograms(signal_list,
-                    bins='freedman',
+                    bins='fd',
                     range_bins=None,
                     color=None,
                     line_style=None,
@@ -1466,8 +1466,8 @@ def plot_histograms(signal_list,
     bins : {int, list, str}, optional
         If bins is a string, then it must be one of:
         'knuth' : use Knuth's rule to determine bins,
-        'scotts' : use Scott's rule to determine bins,
-        'freedman' : use the Freedman-diaconis rule to determine bins,
+        'scott' : use Scott's rule to determine bins,
+        'fd' : use the Freedman-diaconis rule to determine bins,
         'blocks' : use bayesian blocks for dynamic bin widths.
     range_bins : {None, tuple}, optional
         The minimum and maximum range for the histogram. If not specified,

@@ -17,7 +17,7 @@
 
 import numpy as np
 
-from hyperspy.external.astroML.histtools import histogram
+from hyperspy.misc.hist_tools import histogram
 from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
 
 
@@ -65,7 +65,7 @@ class TestHistogramSegmenter:
         s = self.s
         assert s.database is None
         assert s._min_points == 4
-        assert s.bins == 'freedman'
+        assert s.bins == 'fd'
 
     def test_most_frequent(self):
         s = self.s
