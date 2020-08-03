@@ -566,6 +566,9 @@ You can access the fitted estimator by passing ``return_info=True``.
 
 .. _mva.visualization:
 
+.. include:: cluster.rst
+
+
 Visualizing results
 ===================
 
@@ -692,6 +695,18 @@ or instead:
 
 .. _mva.get_results:
 
+Clustering plots
+----------------
+
+Visualizing cluster results is much the same as decomposition.
+You can use :py:meth:`~.signal.MVATools.plot_bss_results` for a compact display,
+or instead:
+
+* :py:meth:`~.signal.MVATools.plot_cluster_results`.
+* :py:meth:`~.signal.MVATools.plot_cluster_signals`.
+* :py:meth:`~.signal.MVATools.plot_cluster_labels`.
+
+
 Obtaining the results as BaseSignal instances
 =============================================
 
@@ -755,4 +770,3 @@ saving figures instead of data and more.
 .. warning::
    Data exported in this way cannot be easily loaded into HyperSpy's
    machine learning structure.
-
