@@ -31,12 +31,12 @@ Caveats
   :py:attr:`~.signal.BaseSignal.metadata.Signal.binned` metadata
   attribute of the signal is set to the correct value because the resulting
   model depends on this parameter. See :ref:`signal.binned` for more details.
-* When importing data that have been binned using other software, in
+* When importing data that has been binned using other software, in
   particular Gatan's DM, the stored values may be the averages of the
   binned channels or pixels, instead of their sum, as would be required
   for proper statistical analysis. We therefore cannot guarantee that
-  the statistics will be valid. We therefore strongly recommend that all
-  pre-fitting binning should be done using Hyperspy.
+  the statistics will be valid, and so strongly recommend that all
+  pre-fitting binning is performed using Hyperspy.
 
 Creating a model
 ----------------
