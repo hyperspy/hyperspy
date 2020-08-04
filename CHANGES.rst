@@ -72,8 +72,9 @@ Enhancements
 * Vastly improved performance and memory footprint of the
   :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` method.
 * The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
-  now remove lorentzian and exponential functions. Furthermore, it can return
-  the background model that includes an estimation of the reduced chi-squared.
+  now remove Doniach, exponential, Lorentzian, skew normal, split Voigt and Voigt
+  functions. Furthermore, it can return the background model that includes an estimation
+  of the reduced chi-squared.
 * The performance of the maximum-likelihood PCA method was greatly improved.
 * All ROIs now have a ``__getitem__`` method, enabling e.g. using them with the
   unpack ``*`` operator. See :ref:`roi-slice-label` for an example.
