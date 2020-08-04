@@ -56,11 +56,14 @@ Background removal
 The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method provides
 background removal capabilities through both a CLI and a GUI. The GUI displays
 an interactive preview of the remainder after background subtraction. Currently,
-the following background types are supported: power law, offset, polynomial, 
-Gaussian, Lorentzian and skew normal. By default, the background parameters are
-estimated using analytical approximations (keyword argument ``fast=True``). For 
-better accuracy, but higher processing time, the parameters can be estimated 
-using curve fitting by setting ``fast=False``.
+the following background types are supported: Doniach, Exponential, Gaussian,
+Lorentzian, Polynomial, Power law (default), Offset, Skew normal, Split Voigt 
+and Voigt. By default, the background parameters are estimated using analytical
+approximations (keyword argument ``fast=True``). The fast option is not accurate
+for most background types - except Gaussian, Offset and Power law -
+but it is useful to estimate the initial fitting parameters before performing a
+full fit. For better accuracy, but higher processing time, the parameters can
+be estimated using curve fitting by setting ``fast=False``.
 
 Example of usage:
 
