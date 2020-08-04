@@ -50,7 +50,7 @@ _logger = logging.getLogger(__name__)
 if import_sklearn.sklearn_installed:
     decomposition_algorithms = {
         "sklearn_pca": import_sklearn.sklearn.decomposition.PCA,
-        "nmf": import_sklearn.sklearn.decomposition.NMF,
+        "NMF": import_sklearn.sklearn.decomposition.NMF,
         "sparse_pca": import_sklearn.sklearn.decomposition.SparsePCA,
         "mini_batch_sparse_pca": import_sklearn.sklearn.decomposition.MiniBatchSparsePCA,
         "sklearn_fastica": import_sklearn.sklearn.decomposition.FastICA,
@@ -136,7 +136,7 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [Keenan2004]_.
-        algorithm : {"SVD", "MLPCA", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -154,7 +154,7 @@ class MVA:
             Only used by the "SVD" algorithm.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
-            decompostion.
+            decomposition.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
@@ -288,7 +288,7 @@ class MVA:
         is_sklearn_like = False
         algorithms_sklearn = [
             "sklearn_pca",
-            "nmf",
+            "NMF",
             "sparse_pca",
             "mini_batch_sparse_pca",
         ]

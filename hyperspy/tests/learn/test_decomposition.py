@@ -221,7 +221,7 @@ class TestEstimateElbowPosition:
         assert s.learning_results.number_significant_components == 2
 
         # Check that number_significant_components is reset properly
-        s.decomposition(algorithm="nmf")
+        s.decomposition(algorithm="NMF")
         assert s.learning_results.number_significant_components is None
 
 
@@ -353,7 +353,7 @@ class TestDecompositionAlgorithm:
         ):
             self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "ORPCA", "ORNMF"])
+    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec",])
     def test_name_deprecation_warning(self, algorithm):
         with pytest.warns(
             VisibleDeprecationWarning,
@@ -381,7 +381,7 @@ class TestPrintInfo:
     @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize(
-        "algorithm", ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca"]
+        "algorithm", ["sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca"]
     )
     def test_decomposition_sklearn(self, capfd, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=5)
@@ -420,7 +420,7 @@ class TestReturnInfo:
             "ORPCA",
             "ORNMF",
             "sklearn_pca",
-            "nmf",
+            "NMF",
             "sparse_pca",
             "mini_batch_sparse_pca",
         ],
@@ -444,7 +444,7 @@ class TestReturnInfo:
             "ORPCA",
             "ORNMF",
             "sklearn_pca",
-            "nmf",
+            "NMF",
             "sparse_pca",
             "mini_batch_sparse_pca",
         ],
@@ -540,7 +540,7 @@ def test_decomposition_reproject_warning(reproject):
     with pytest.warns(
         UserWarning, match="Reprojecting the signal is not yet supported"
     ):
-        s.decomposition(algorithm="nmf", reproject=reproject)
+        s.decomposition(algorithm="NMF", reproject=reproject)
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
