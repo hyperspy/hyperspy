@@ -52,7 +52,7 @@ Enhancements
   * :py:class:`hyperspy._components.heaviside.HeavisideStep`
 * The model fitting :py:meth:`~.model.BaseModel.fit` and
   :py:meth:`~.model.BaseModel.multifit` methods have been vastly improved. See
-  :ref:`model.fitting`.
+  :ref:`model.fitting` and the API changes section below.
 * The :py:func:`~.drawing.utils.plot_spectra` updates the figure automatically,
   see :ref:`this example <plot_profiles_interactive-label>`.
 * Improve thread-based parallelism. Add `max_workers` argument to the
@@ -61,7 +61,7 @@ Enhancements
 * Improvements to  :py:meth:`~.mva.MVA.decomposition` and
   :py:meth:`~.mva.MVA.blind_source_separation` methods, including support for
   scikit-learn like algorithms, better API and vastly improved documentation.
-  See :ref:`ml-label`.
+  See :ref:`ml-label` and the API changes section below.
 * Add option to calculate the absolute thickness to the EELS
   :meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method.
   See :ref:`eels_thickness-label`.
@@ -83,6 +83,33 @@ Enhancements
 
 API changes
 -----------
+
+*  of the :py:meth:`~.model.BaseModel.fit` and
+  :py:meth:`~.model.BaseModel.multifit`:
+  
+  * The ``fitter`` keyword has been renamed to ``optimizer``.
+  * The values that the ``optimizer`` keyword take have been renamed
+    for consistency with scipy:
+
+    * "fmin" -> "Nelder-Mead",
+    * "fmin_cg" -> "CG",
+    * "fmin_ncg" -> "Newton-CG",
+    * "fmin_bfgs" -> "BFGS",
+    * "fmin_l_bfgs_b" -> "L-BFGS-B",
+    * "fmin_tnc" -> "TNC",
+    * "fmin_powell" -> "Powell",
+    * "mpfit" -> "lm" (in combination with `"bounded=True"`),
+    * "leastsq" -> "lm",
+    * Passing integer arguments to ``parallel`` to select the number of
+      workers is now deprecated. Use ``parallel=True, max_workers={value}``
+      instead.
+* The ``method`` keyword has been renamed to ``loss_function``.
+* The ``loss_funtion`` value ``"ml"`` has been renamed to ``ml-poisson``.
+* The following :py:class:`~.model.BaseModel` methods are now private:
+  * :py:meth:`~.model.BaseModel.set_boundaries`
+  * :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
+  * :py:meth:`~.model.BaseModel.set_boundaries`
+* The 
 
 .. _changes_1.5.2:
 
