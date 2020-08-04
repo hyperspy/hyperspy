@@ -51,12 +51,12 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
                   :py:func:`scipy.optimize.shgo` for more details on available
                   options. Requires ``scipy >= 1.2.0``.
 
-        loss_function : {"ls", "ml-poisson", "huber", callable}, default "ls"
+        loss_function : {"ls", "ML-poisson", "huber", callable}, default "ls"
             The loss function to use for minimization. Only ``"ls"`` is available
             if ``optimizer`` is one of ``["lm", "trf", "dogbox", "odr"]``.
 
                 * "ls" minimizes the least-squares loss function.
-                * "ml-poisson" minimizes the negative log-likelihood for
+                * "ML-poisson" minimizes the negative log-likelihood for
                   Poisson-distributed data. Also known as Poisson maximum
                   likelihood estimation (MLE).
                 * "huber" minimize the Huber loss function. The delta value

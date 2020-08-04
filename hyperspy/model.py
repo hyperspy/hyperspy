@@ -1147,10 +1147,10 @@ class BaseModel(list):
         if loss_function == "ml":
             warnings.warn(
                 "`loss_function='ml'` has been deprecated and will be removed in "
-                "HyperSpy 2.0. Please use `loss_function='ml-poisson'` instead.",
+                "HyperSpy 2.0. Please use `loss_function='ML-poisson'` instead.",
                 VisibleDeprecationWarning,
             )
-            loss_function = "ml-poisson"
+            loss_function = "ML-poisson"
 
         # Deprecate grad=True/False
         if isinstance(grad, bool):
@@ -1209,7 +1209,7 @@ class BaseModel(list):
             _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
 
         _supported_fd_schemes = ["2-point", "3-point", "cs"]
-        _supported_losses = ["ls", "ml-poisson", "huber"]
+        _supported_losses = ["ls", "ML-poisson", "huber"]
         _supported_bounds = [
             "lm",
             "trf",
@@ -1328,7 +1328,7 @@ class BaseModel(list):
             # has been set, otherwise this returns None
             weights = self._convert_variance_to_weights()
 
-            if weights is not None and loss_function == "ml-poisson":
+            if weights is not None and loss_function == "ML-poisson":
                 # The attribute ``metadata.Signal.Noise_properties.variance`` is set,
                 # but weighted fitting is not supported for `loss_function='ml_poisson'`.
                 # Will proceed with unweighted fitting.
@@ -1490,7 +1490,7 @@ class BaseModel(list):
                 if loss_function == "ls":
                     f_min = self._errfunc_sq
                     f_der = self._gradient_ls if grad == "analytical" else grad
-                elif loss_function == "ml-poisson":
+                elif loss_function == "ML-poisson":
                     f_min = self._poisson_likelihood_function
                     f_der = self._gradient_ml if grad == "analytical" else grad
                 elif loss_function == "huber":

@@ -729,7 +729,7 @@ i.e. the least-squares loss. For the vast majority of cases, this loss
 function is appropriate, and has the additional benefit of supporting
 parameter error estimation and :ref:`goodness-of-fit <model.goodness_of_fit>`
 testing. However, if your data contains very low counts per pixel, or
-is corrupted by outliers, the ``"ml-poisson"`` and ``"huber"`` loss
+is corrupted by outliers, the ``"ML-poisson"`` and ``"huber"`` loss
 functions may be worth investigating.
 
 Least squares with error estimation
@@ -844,7 +844,7 @@ such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="ML-poisson")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
@@ -986,7 +986,7 @@ Following the above examples:
     >>> # Huber loss and Poisson MLE functions
     >>> # also support analytical gradients
     >>> m.fit(grad="analytical", loss_function="huber")
-    >>> m.fit(grad="analytical", loss_function="ml-poisson")
+    >>> m.fit(grad="analytical", loss_function="ML-poisson")
 
 .. note::
 
