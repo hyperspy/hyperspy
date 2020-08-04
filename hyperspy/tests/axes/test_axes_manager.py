@@ -380,8 +380,8 @@ class TestIterPathScanPattern:
         self.am.iterpath = indices
         for i, _ in enumerate(self.am):
             if i == 0:
-                assert self.am.indices == indices[0][::-1]
+                assert self.am.indices == indices[0]
             # Hits a new layer on index 9
             if i == 1:
-                assert self.am.indices == indices[1][::-1]
+                assert self.am.indices == indices[1]
             break        

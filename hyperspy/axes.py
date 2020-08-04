@@ -1082,16 +1082,20 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
 def serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices
-    in serpentine pattern, like snake game
+    in serpentine pattern, like snake game.
+    Takes shape argument in numpy order, not hyperspy order.
 
     Code by Stackoverflow user Paul Panzer,
     from https://stackoverflow.com/questions/57366966/
+
+    Note that the [::-1] reversing is necessary to iterate first along
+    the x-direction on multidimensional navigators.
     '''
     N = len(shape)
     idx = N*[0]
     drc = N*[1]
     while True:
-        yield (*idx,)
+        yield (*idx,)[::-1]
         for j in reversed(range(N)):
             if idx[j] + drc[j] not in (-1, shape[j]):
                 idx[j] += drc[j]
@@ -1101,7 +1105,27 @@ def serpentine_iter(shape):
             break
 
 def flyback_iter(shape):
-    return np.ndindex(shape)
+    "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape argument in numpy order, not hyperspy order."
+    class ndindex:
+        """
+        Equivalent of np.ndindex, except the indices returned come flipped left-right. Takes shape argument in numpy order, not hyperspy order.
+        """
+
+        def __init__(self, *shape):
+            if len(shape) == 1 and isinstance(shape[0], tuple):
+                shape = shape[0]
+            x = np.lib.stride_tricks.as_strided(np.core.numeric.zeros(1), shape=shape,
+                        strides=np.core.numeric.zeros_like(shape))
+            self._it = np.core.numeric.nditer(x, flags=['multi_index', 'zerosize_ok'],
+                                order='C')
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            next(self._it)
+            return self._it.multi_index[::-1]
+    return ndindex(shape)
 
 iterpath_error = '''The iterpath scan pattern is set to "{}". \
 It must be either "serpentine" or "flyback", or an iterable of \
@@ -1435,6 +1459,7 @@ class AxesManager(t.HasTraits):
 
     @property
     def iterpath(self):
+        "Sets or returns the current iteration path through the axes indices"
         return self._iterpath
 
     @iterpath.setter
@@ -1470,7 +1495,7 @@ class AxesManager(t.HasTraits):
             iteration.
 
         """
-        self.indices = next(self._iterpath_generator)[::-1]
+        self.indices = next(self._iterpath_generator)
         return self.indices
 
     def __iter__(self):
