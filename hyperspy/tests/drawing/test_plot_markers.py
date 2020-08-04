@@ -18,6 +18,7 @@
 import numpy as np
 import pytest
 
+from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.drawing.marker import dict2marker
 from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
@@ -535,3 +536,11 @@ def test_plot_eds_markers_no_energy():
     s = EDS_TEM_Spectrum()
     del s.metadata.Acquisition_instrument.TEM.beam_energy
     s.plot(True)
+
+
+def test_plot_eels_labels_nav():
+    s = get_core_loss_eels_line_scan_signal(True)
+    s.add_elements(['Cr', 'Fe'])
+    s.plot(plot_edges=True)
+    s.axes_manager.indices = (10, )
+    s._plot.close()
