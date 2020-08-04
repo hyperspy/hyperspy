@@ -354,6 +354,8 @@ with update_version_when_dev() as version:
                 'tests/io/emd_files/fei_emd_files.zip',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
+                'tests/io/nexus_files/*.nxs',
+                'tests/io/empad_data/*.xml',
                 'tests/signal/data/test_find_peaks1D_ohaver.hdf5',
                 'tests/signal/data/*.hspy',
                 'hyperspy_extension.yaml',
