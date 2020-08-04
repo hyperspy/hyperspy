@@ -344,7 +344,7 @@ class ImagePlot(BlittedFigure):
         for attribute in ['vmin', 'vmax']:
             if attribute in kwargs.keys():
                 setattr(self, attribute, kwargs.pop(attribute))
-        self.update(data_changed=True, **kwargs)
+        self.update(data_changed=True, auto_contrast=True, **kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.ScaleBar(
@@ -387,7 +387,7 @@ class ImagePlot(BlittedFigure):
                 axes_manager=self.axes_manager,
                 **self.data_function_kwargs)
 
-    def update(self, data_changed=True, auto_contrast=True, vmin=None,
+    def update(self, data_changed=True, auto_contrast=None, vmin=None,
                vmax=None, **kwargs):
         """
         Parameters
@@ -396,9 +396,10 @@ class ImagePlot(BlittedFigure):
             Fetch and update the data to display. It can be used to avoid
             unnecessarily reading of the data from disk with working with lazy
             signal. The default is True.
-        auto_contrast : bool, optional
-            Force automatic resetting of the intensity limits. The default is
-            False.
+        auto_contrast : bool or None, optional
+            Force automatic resetting of the intensity limits. If None, the
+            intensity values will change when 'z' is in autoscale.
+            Default is None.
         vmin, vmax : float or str
             `vmin` and `vmax` are used to normalise the displayed data.
         **kwargs : dict
@@ -410,6 +411,8 @@ class ImagePlot(BlittedFigure):
             When the selected ``norm`` is not valid or the data are not
             compatible with the selected ``norm``.
         """
+        if auto_contrast is None:
+            auto_contrast = 'z' in self.autoscale
         if data_changed:
             # When working with lazy signals the following may reread the data
             # from disk unnecessarily, for example when updating the image just
@@ -472,6 +475,12 @@ class ImagePlot(BlittedFigure):
             if auto_contrast:
                 vmin, vmax = self._calculate_vmin_max(data, auto_contrast,
                                                       vmin, vmax)
+            else:
+                # use the value store internally when not explicitely defined
+                if vmin is None:
+                    vmin = old_vmin
+                if vmax is None:
+                    vmax = old_vmax
 
             # If there is an image, any of the contrast bounds have changed and
             # the new contrast bounds are not the same redraw the colorbar.

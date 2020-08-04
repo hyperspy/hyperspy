@@ -532,8 +532,9 @@ def test_plot_autoscale(autoscale):
     ax.images[0].set_extent(extend)
     ax.set_xlim(5.0, 10.0)
     ax.set_ylim(3., 10.0)
-    ax.images[0].norm.vmin = imf.vmin = 10
-    ax.images[0].norm.vmax = imf.vmax = 50
+
+    ax.images[0].norm.vmin = imf._vmin = 10
+    ax.images[0].norm.vmax = imf._vmax = 50
 
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
     # Because we are hacking the vmin, vmax with matplotlib, we need to update
@@ -541,3 +542,22 @@ def test_plot_autoscale(autoscale):
     imf._colorbar.draw_all()
 
     return s._plot.signal_plot.figure
+
+
+@pytest.mark.parametrize("autoscale", ['', 'z'])
+def test_plot_autoscale_data_changed(autoscale):
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s.plot(autoscale=autoscale, axes_ticks=True)
+    imf = s._plot.signal_plot
+    _vmin = imf._vmin
+    _vmax = imf._vmax
+
+    s.data = s.data / 2
+    s.events.data_changed.trigger(s)
+
+    if 'z' in autoscale:
+        np.testing.assert_allclose(imf._vmin, s.data.min())
+        np.testing.assert_allclose(imf._vmax, s.data.max())
+    else:
+        np.testing.assert_allclose(imf._vmin, _vmin)
+        np.testing.assert_allclose(imf._vmax, _vmax)
