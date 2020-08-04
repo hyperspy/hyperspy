@@ -20,7 +20,7 @@ from unittest import mock
 
 from numpy import array, arange, zeros
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, serpentine_iter, flyback_iter
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
@@ -384,4 +384,14 @@ class TestIterPathScanPattern:
             # Hits a new layer on index 9
             if i == 1:
                 assert self.am.indices == indices[1]
-            break        
+            break 
+
+def test_iterpath_function_flyback():
+    for i, indices in enumerate(flyback_iter((3,3,3))):
+        if i == 3:
+            assert indices == (0, 1, 0)
+
+def test_iterpath_function_flyback():
+    for i, indices in enumerate(serpentine_iter((3,3,3))):
+        if i == 3:
+            assert indices == (2, 1, 0)

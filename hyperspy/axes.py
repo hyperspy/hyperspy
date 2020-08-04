@@ -1083,7 +1083,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 def serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices
     in serpentine pattern, like snake game.
-    Takes shape argument in numpy order, not hyperspy order.
+    Takes shape in hyperspy order, not numpy order.
 
     Code by Stackoverflow user Paul Panzer,
     from https://stackoverflow.com/questions/57366966/
@@ -1091,6 +1091,7 @@ def serpentine_iter(shape):
     Note that the [::-1] reversing is necessary to iterate first along
     the x-direction on multidimensional navigators.
     '''
+    shape = shape[::-1]
     N = len(shape)
     idx = N*[0]
     drc = N*[1]
@@ -1105,7 +1106,8 @@ def serpentine_iter(shape):
             break
 
 def flyback_iter(shape):
-    "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape argument in numpy order, not hyperspy order."
+    "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape in hyperspy order, not numpy order."
+    shape = shape[::-1]
     class ndindex_reversed(np.ndindex):
         def __next__(self):
             next(self._it)
@@ -1453,10 +1455,10 @@ class AxesManager(t.HasTraits):
         if isinstance(path, str):
             if path == 'serpentine':
                 self._iterpath = 'serpentine'
-                self._iterpath_generator = serpentine_iter(self._navigation_shape_in_array)
+                self._iterpath_generator = serpentine_iter(self.navigation_shape)
             elif path == 'flyback':
                 self._iterpath = 'flyback'
-                self._iterpath_generator = flyback_iter(self._navigation_shape_in_array)
+                self._iterpath_generator = flyback_iter(self.navigation_shape)
             else:
                 raise ValueError(iterpath_error.format(path))
         else:
