@@ -21,7 +21,7 @@ import numpy as np
 from hyperspy.learn.svd_pca import svd_solve
 
 
-def whiten_data(X, centre=True, method="pca", epsilon=1e-10):
+def whiten_data(X, centre=True, method="PCA", epsilon=1e-10):
     """Centre and whiten the data X.
 
     A whitening transformation is used to decorrelate
@@ -43,7 +43,7 @@ def whiten_data(X, centre=True, method="pca", epsilon=1e-10):
     centre : bool, default True
         If True, centre the data along the features axis.
         If False, do not centre the data.
-    method : {"pca", "zca"}
+    method : {"PCA", "ZCA"}
         How to whiten the data. The default is PCA whitening.
     epsilon : float
         Small floating-point value to avoid divide-by-zero errors.
@@ -73,16 +73,16 @@ def whiten_data(X, centre=True, method="pca", epsilon=1e-10):
     U, S, _ = svd_solve(R, svd_solver="full")
     S = np.sqrt(S + epsilon)[:, np.newaxis]
 
-    if method == "pca":
+    if method == "PCA":
         # PCA whitening was the default in HyperSpy < 1.6.0,
         # we keep it as the default here.
         W = U.T / S
 
-    elif method == "zca":
+    elif method == "ZCA":
         W = U @ (U.T / S)
 
     else:
-        raise ValueError(f"method must be one of ['pca', 'zca'], got {method}")
+        raise ValueError(f"method must be one of ['PCA', 'zca'], got {method}")
 
     # Whiten the data
     Y = Y @ W.T

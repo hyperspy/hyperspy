@@ -583,6 +583,17 @@ Extra loading arguments
   e. g. iteration over navigation axes. The cost of this speed improvement is to
   double the memory requirement during data loading.
 
+.. warning::
+
+    It has been reported that in some versions of Gatan Digital Micrograph,
+    any binned data stores the _averages_ of the binned channels or pixels,
+    rather than the _sum_, which would be required for proper statistical
+    analysis. We therefore strongly recommend that all binning is performed 
+    using Hyperspy where possible.
+
+    See the original `bug report here <https://github.com/hyperspy/hyperspy/issues/1624>`_.
+
+
 .. _edax-format:
 
 EDAX TEAM SPD and SPC

@@ -118,7 +118,7 @@ class TestRNMF:
 
         X_out, E_out = s1.decomposition(
             normalize_poissonian_noise=poisson,
-            algorithm="ornmf",
+            algorithm="ORNMF",
             output_dimension=self.rank,
             return_info=True,
         )
