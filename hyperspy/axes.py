@@ -1106,26 +1106,12 @@ def serpentine_iter(shape):
 
 def flyback_iter(shape):
     "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape argument in numpy order, not hyperspy order."
-    class ndindex:
-        """
-        Equivalent of np.ndindex, except the indices returned come flipped left-right. Takes shape argument in numpy order, not hyperspy order.
-        """
-
-        def __init__(self, *shape):
-            if len(shape) == 1 and isinstance(shape[0], tuple):
-                shape = shape[0]
-            x = np.lib.stride_tricks.as_strided(np.core.numeric.zeros(1), shape=shape,
-                        strides=np.core.numeric.zeros_like(shape))
-            self._it = np.core.numeric.nditer(x, flags=['multi_index', 'zerosize_ok'],
-                                order='C')
-
-        def __iter__(self):
-            return self
-
+    class ndindex_reversed(np.ndindex):
         def __next__(self):
             next(self._it)
             return self._it.multi_index[::-1]
-    return ndindex(shape)
+
+    return ndindex_reversed(shape)
 
 iterpath_error = '''The iterpath scan pattern is set to "{}". \
 It must be either "serpentine" or "flyback", or an iterable of \
