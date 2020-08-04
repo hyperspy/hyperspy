@@ -1138,11 +1138,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
             display=True,
             toolkit=None):
         """
-        Remove the background, either in place using a gui or returned as a new
+        Remove the background, either in place using a GUI or returned as a new
         spectrum using the command line. The fast option is not accurate for
-        most background type - except Gaussian, Offset and Power law - but it
-        is useful to estimate the initial fitting parameters before performing
-        a full fit.
+        most background types - except Gaussian, Lorentzian, Offset and
+        Power law - but it is useful to estimate the initial fitting parameters
+        before performing a full fit.
 
         Parameters
         ----------
@@ -1152,16 +1152,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components: Doniach, Gaussian, Lorentzian, Offset, Polynomial,
-            PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
+            Possible components: Doniach, Gaussian, Lorentzian, Offset,
+            Polynomial, PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         fast : bool
             If True, perform an approximative estimation of the parameters.
             If False, the signal is fitted using non-linear least squares
-            afterwards.This is slower compared to the estimation but
-            possibly more accurate.
+            afterwards. This is slower compared to the estimation but
+            often more accurate.
         zero_fill : bool
             If True, all spectral channels lower than the lower bound of the
             fitting range will be set to zero (this is the default behavior
@@ -1184,14 +1184,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Returns
         -------
         {None, signal, background_model or (signal, background_model)}
-            If signal_range is not 'interactive', the background substracted
-            signal is returned. If return_model is True, returns the background
-            model, otherwise, the GUI widget dictionary is returned if
-            `display=False` - see the display parameter documentation.
+            If signal_range is not 'interactive', the signal with background
+            substracted is returned. If return_model is True, returns the
+            background model, otherwise, the GUI widget dictionary is returned
+            if `display=False` - see the display parameter documentation.
 
         Examples
         --------
-        Using gui, replaces spectrum s
+        Using GUI, replaces spectrum s
 
         >>> s = hs.signals.Signal1D(range(1000))
         >>> s.remove_background() #doctest: +SKIP

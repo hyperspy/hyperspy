@@ -266,9 +266,9 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
 @pytest.mark.parametrize('background_type',
-                         ['Doniach', 'Gaussian', 'Lorentzian', 'Polynomial',
-                          'Power law', 'Power Law', 'PowerLaw', 'Offset', 
-                          'Skew normal', 'Skew Normal', 'SkewNormal', 
+                         ['Doniach', 'Exponential', 'Gaussian', 'Lorentzian', 
+                          'Polynomial', 'Power law', 'Power Law', 'PowerLaw', 
+                          'Offset', 'Skew normal', 'Skew Normal', 'SkewNormal', 
                           'Split Voigt', 'Split voigt', 'SplitVoigt',
                           'Voigt'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,

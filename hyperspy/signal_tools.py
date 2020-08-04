@@ -1007,12 +1007,12 @@ class IntegrateArea(SpanSelectorInSignal1D):
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
         'Doniach',
+        'Exponential',
         'Gaussian',
         'Lorentzian',
         'Offset',
         'Polynomial',
         'Power law',
-        'Exponential',
         'Skew normal',
         'Split Voigt',
         'Voigt',
