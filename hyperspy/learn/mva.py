@@ -136,7 +136,7 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [Keenan2004]_.
-        algorithm : {"SVD", "MLPCA", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "orpca", "ornmf", custom object}, default "SVD"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ornmf", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -253,7 +253,7 @@ class MVA:
             "fast_svd": "SVD",
             "fast_mlpca": "MLPCA",
             "RPCA_GoDec": "RPCA",
-            "ORPCA": "orpca",
+            "ORPCA": "ORPCA",
             "ORNMF": "ornmf",
         }
         new_algo = algorithms_deprecated.get(algorithm, None)
@@ -280,7 +280,7 @@ class MVA:
         algorithms_require_dimension = [
             "MLPCA",
             "RPCA",
-            "orpca",
+            "ORPCA",
             "ornmf",
         ]
         if algorithm in algorithms_require_dimension and output_dimension is None:
@@ -465,7 +465,7 @@ class MVA:
                 if return_info:
                     to_return = (X, E)
 
-            elif algorithm == "orpca":
+            elif algorithm == "ORPCA":
                 if return_info:
                     X, E, U, S, V = orpca(
                         data_, rank=output_dimension, store_error=True, **kwargs

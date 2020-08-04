@@ -766,7 +766,7 @@ class LazySignal(BaseSignal):
             algorithm = algorithm.lower()
 
         # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["pca", "orpca", "ornmf"]
+        algorithms_require_dimension = ["pca", "ORPCA", "ornmf"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
@@ -807,7 +807,7 @@ class LazySignal(BaseSignal):
             reproject = True
             to_print.extend(["scikit-learn estimator:", obj])
 
-        elif algorithm == "orpca":
+        elif algorithm == "ORPCA":
             from hyperspy.learn.rpca import ORPCA
 
             batch_size = kwargs.pop("batch_size", None)
@@ -922,7 +922,7 @@ class LazySignal(BaseSignal):
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
 
-            elif algorithm == "orpca":
+            elif algorithm == "ORPCA":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
@@ -938,7 +938,7 @@ class LazySignal(BaseSignal):
                     def post(a):
                         return np.concatenate(a, axis=0)
 
-                elif algorithm == "orpca":
+                elif algorithm == "ORPCA":
                     method = obj.project
 
                     def post(a):

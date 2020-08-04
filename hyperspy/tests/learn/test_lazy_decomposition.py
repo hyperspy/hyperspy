@@ -109,7 +109,7 @@ class TestLazyDecomposition:
     def test_orpca(self, normalize_poissonian_noise):
         self.s.decomposition(
             output_dimension=3,
-            algorithm="orpca",
+            algorithm="ORPCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
         factors = self.s.learning_results.factors
@@ -157,7 +157,7 @@ class TestLazyDecomposition:
 
     def test_output_dimension_error(self):
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
-            self.s.decomposition(algorithm="orpca")
+            self.s.decomposition(algorithm="ORPCA")
 
     def test_algorithm_error(self):
         with pytest.raises(ValueError, match="'algorithm' not recognised"):
@@ -184,7 +184,7 @@ class TestPrintInfo:
         rng = np.random.RandomState(123)
         self.s = Signal1D(rng.random((20, 100))).as_lazy()
 
-    @pytest.mark.parametrize("algorithm", ["SVD", "orpca", "ornmf"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "ORPCA", "ornmf"])
     def test_decomposition(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=3)
         captured = capfd.readouterr()
