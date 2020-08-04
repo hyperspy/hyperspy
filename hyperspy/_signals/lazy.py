@@ -751,7 +751,7 @@ class LazySignal(BaseSignal):
                 "be removed in future. Please use `algorithm='ornmf'` instead.",
                 VisibleDeprecationWarning,
             )
-            algorithm = "ornmf"
+            algorithm = "ORNMF"
 
         # Deprecate uppercase to favour lowercase (consistent
         # with non-lazy decomposition)
@@ -766,7 +766,7 @@ class LazySignal(BaseSignal):
             algorithm = algorithm.lower()
 
         # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["pca", "ORPCA", "ornmf"]
+        algorithms_require_dimension = ["pca", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
@@ -814,7 +814,7 @@ class LazySignal(BaseSignal):
             obj = ORPCA(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm == "ornmf":
+        elif algorithm == "ORNMF":
             from hyperspy.learn.ornmf import ORNMF
 
             batch_size = kwargs.pop("batch_size", None)
@@ -926,7 +926,7 @@ class LazySignal(BaseSignal):
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
-            elif algorithm == "ornmf":
+            elif algorithm == "ORNMF":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
@@ -944,7 +944,7 @@ class LazySignal(BaseSignal):
                     def post(a):
                         return np.concatenate(a, axis=1).T
 
-                elif algorithm == "ornmf":
+                elif algorithm == "ORNMF":
                     method = obj.project
 
                     def post(a):

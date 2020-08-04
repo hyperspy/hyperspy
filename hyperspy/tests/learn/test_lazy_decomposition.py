@@ -134,7 +134,7 @@ class TestLazyDecomposition:
     def test_ornmf(self, normalize_poissonian_noise):
         self.s.decomposition(
             output_dimension=3,
-            algorithm="ornmf",
+            algorithm="ORNMF",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
         factors = self.s.learning_results.factors
@@ -184,7 +184,7 @@ class TestPrintInfo:
         rng = np.random.RandomState(123)
         self.s = Signal1D(rng.random((20, 100))).as_lazy()
 
-    @pytest.mark.parametrize("algorithm", ["SVD", "ORPCA", "ornmf"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "ORPCA", "ORNMF"])
     def test_decomposition(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=3)
         captured = capfd.readouterr()

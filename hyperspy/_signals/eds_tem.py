@@ -624,7 +624,7 @@ class EDSTEM_mixin:
         closing: bool, default True
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
-        algorithm : {"SVD", "MLPCA", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ornmf", custom object}, default "SVD"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
