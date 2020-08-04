@@ -81,7 +81,7 @@ class TestLazyDecomposition:
     def test_pca(self, normalize_poissonian_noise):
         self.s.decomposition(
             output_dimension=3,
-            algorithm="pca",
+            algorithm="PCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
         factors = self.s.learning_results.factors
@@ -191,7 +191,7 @@ class TestPrintInfo:
         assert "Decomposition info:" in captured.out
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-    @pytest.mark.parametrize("algorithm", ["pca"])
+    @pytest.mark.parametrize("algorithm", ["PCA"])
     def test_decomposition_sklearn(self, capfd, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=3)
         captured = capfd.readouterr()

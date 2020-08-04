@@ -552,11 +552,11 @@ def test_decomposition_pipeline():
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
 
-    est = Pipeline([("scaler", StandardScaler()), ("pca", PCA(n_components=2))])
+    est = Pipeline([("scaler", StandardScaler()), ("PCA", PCA(n_components=2))])
     out = s.decomposition(algorithm=est, output_dimension=2, return_info=True)
 
     assert hasattr(out, "steps")
-    assert hasattr(out.named_steps["pca"], "explained_variance_")
+    assert hasattr(out.named_steps["PCA"], "explained_variance_")
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")

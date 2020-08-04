@@ -211,7 +211,7 @@ class MVA:
         Returns
         -------
         return_info : tuple(numpy array, numpy array) or sklearn.Estimator or None
-            * If True and 'algorithm' in ['rpca', 'orpca', 'ornmf'], returns
+            * If True and 'algorithm' in ['RPCA', 'ORPCA', 'ORNMF'], returns
               the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
             * If True and 'algorithm' is an sklearn Estimator, returns the
               Estimator object.
@@ -652,7 +652,7 @@ class MVA:
         mask=None,
         on_loadings=False,
         reverse_component_criterion="factors",
-        whiten_method="pca",
+        whiten_method="PCA",
         return_info=False,
         print_info=True,
         **kwargs,
@@ -700,7 +700,7 @@ class MVA:
         reverse_component_criterion : {"factors", "loadings"}, default "factors"
             Use either the factors or the loadings to determine if the
             component needs to be reversed.
-        whiten_method : {"pca", "zca", None}, default "pca"
+        whiten_method : {"PCA", "ZCA", None}, default "PCA"
             How to whiten the data prior to blind source separation.
             If None, no whitening is applied. See :py:func:`~.learn.whitening.whiten_data`
             for more details.

@@ -694,11 +694,11 @@ class LazySignal(BaseSignal):
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [KeenanKotula2004]_.
-        algorithm : {'svd', 'pca', 'orpca', 'ornmf'}, default 'svd'
+        algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF'}, default 'SVD'
             The decomposition algorithm to use.
         output_dimension : int or None, default None
             Number of components to keep/calculate. If None, keep all
-            (only valid for 'svd' algorithm)
+            (only valid for 'SVD' algorithm)
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
@@ -708,7 +708,7 @@ class LazySignal(BaseSignal):
             increased to contain at least ``output_dimension`` signals.
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not used in the
-            decompostion.
+            decomposition.
         signal_mask : {BaseSignal, numpy array, dask array}
             The signal locations marked as True are not used in the
             decomposition.
@@ -747,26 +747,15 @@ class LazySignal(BaseSignal):
         # Deprecate 'ONMF' for 'ORNMF'
         if algorithm == "ONMF":
             warnings.warn(
-                "The argument `algorithm='ONMF'` has been deprecated and may "
-                "be removed in future. Please use `algorithm='ornmf'` instead.",
+                "The argument `algorithm='ONMF'` has been deprecated and will "
+                "be removed in future. Please use `algorithm='ORNMF'` instead.",
                 VisibleDeprecationWarning,
             )
             algorithm = "ORNMF"
 
-        # Deprecate uppercase to favour lowercase (consistent
-        # with non-lazy decomposition)
-        if algorithm in ["PCA", "ORPCA", "ORNMF"]:
-            warnings.warn(
-                "The argument `algorithm='{}'` has been deprecated and may "
-                "be removed in future. Please use `algorithm='{}'` instead.".format(
-                    algorithm, algorithm.lower()
-                ),
-                VisibleDeprecationWarning,
-            )
-            algorithm = algorithm.lower()
 
         # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["pca", "ORPCA", "ORNMF"]
+        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
@@ -798,9 +787,9 @@ class LazySignal(BaseSignal):
         ]
 
         # LEARN
-        if algorithm == "pca":
+        if algorithm == "PCA":
             if not import_sklearn.sklearn_installed:
-                raise ImportError("algorithm='pca' requires scikit-learn")
+                raise ImportError("algorithm='PCA' requires scikit-learn")
 
             obj = import_sklearn.sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
@@ -917,7 +906,7 @@ class LazySignal(BaseSignal):
                     pass
 
             # GET ALREADY CALCULATED RESULTS
-            if algorithm == "pca":
+            if algorithm == "PCA":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
@@ -932,7 +921,7 @@ class LazySignal(BaseSignal):
 
             # REPROJECT
             if reproject:
-                if algorithm == "pca":
+                if algorithm == "PCA":
                     method = obj.transform
 
                     def post(a):

@@ -347,7 +347,7 @@ Another popular decomposition method is non-negative matrix factorization
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='nmf')
+   >>> s.decomposition(algorithm='NMF')
 
 Unlike PCA, NMF forces the components to be strictly non-negative, which can
 aid the physical interpretation of components for count data such as images,
@@ -417,13 +417,13 @@ You can access the fitted estimator by passing ``return_info=True``.
    >>> from sklearn.pipeline import Pipeline
    >>> from sklearn.decomposition import PCA
 
-   >>> pipe = Pipeline([("scaler", MinMaxScaler()), ("pca", PCA())])
+   >>> pipe = Pipeline([("scaler", MinMaxScaler()), ("PCA", PCA())])
    >>> out = s.decomposition(algorithm=pipe, return_info=True)
 
    >>> out
    Pipeline(memory=None,
             steps=[('scaler', MinMaxScaler(copy=True, feature_range=(0, 1))),
-                   ('pca', PCA(copy=True, iterated_power='auto', n_components=None,
+                   ('PCA', PCA(copy=True, iterated_power='auto', n_components=None,
                                random_state=None, svd_solver='auto', tol=0.0,
                                whiten=False))],
             verbose=False)
@@ -582,7 +582,7 @@ Scree plots
 -----------
 
 .. note::
-   Scree plots are only available for the ``"svd"`` and ``"pca"`` algorithms.
+   Scree plots are only available for the ``"svd"`` and ``"PCA"`` algorithms.
 
 PCA will sort the components in the dataset in order of decreasing
 variance. It is often useful to estimate the dimensionality of the data by
