@@ -110,7 +110,7 @@ class MVA:
     def decomposition(
         self,
         normalize_poissonian_noise=False,
-        algorithm="svd",
+        algorithm="SVD",
         output_dimension=None,
         centre=None,
         auto_transpose=True,
@@ -136,7 +136,7 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [Keenan2004]_.
-        algorithm : {"svd", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "svd"
+        algorithm : {"SVD", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -146,12 +146,12 @@ class MVA:
         centre : {None, "navigation", "signal"}, default None
             * If None, the data is not centered prior to decomposition.
             * If "navigation", the data is centered along the navigation axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
             * If "signal", the data is centered along the signal axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only used by the "svd" algorithm.
+            Only used by the "SVD" algorithm.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion.
@@ -250,7 +250,7 @@ class MVA:
 
         # Check for deprecated algorithm arguments
         algorithms_deprecated = {
-            "fast_svd": "svd",
+            "fast_svd": "SVD",
             "fast_mlpca": "mlpca",
             "RPCA_GoDec": "rpca",
             "ORPCA": "orpca",
@@ -410,7 +410,7 @@ class MVA:
             number_significant_components = None
             mean = None
 
-            if algorithm == "svd":
+            if algorithm == "SVD":
                 factors, loadings, explained_variance, mean = svd_pca(
                     data_,
                     svd_solver=svd_solver,

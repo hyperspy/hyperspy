@@ -184,7 +184,7 @@ class TestPrintInfo:
         rng = np.random.RandomState(123)
         self.s = Signal1D(rng.random((20, 100))).as_lazy()
 
-    @pytest.mark.parametrize("algorithm", ["svd", "orpca", "ornmf"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "orpca", "ornmf"])
     def test_decomposition(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=3)
         captured = capfd.readouterr()
@@ -198,7 +198,7 @@ class TestPrintInfo:
         assert "Decomposition info:" in captured.out
         assert "scikit-learn estimator:" in captured.out
 
-    @pytest.mark.parametrize("algorithm", ["svd"])
+    @pytest.mark.parametrize("algorithm", ["SVD"])
     def test_no_print(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
         captured = capfd.readouterr()

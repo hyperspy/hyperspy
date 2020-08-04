@@ -673,7 +673,7 @@ class LazySignal(BaseSignal):
     def decomposition(
         self,
         normalize_poissonian_noise=False,
-        algorithm="svd",
+        algorithm="SVD",
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
@@ -821,7 +821,7 @@ class LazySignal(BaseSignal):
             obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm != "svd":
+        elif algorithm != "SVD":
             raise ValueError("'algorithm' not recognised")
 
         original_data = self.data
@@ -863,7 +863,7 @@ class LazySignal(BaseSignal):
                 self.data = data
 
             # LEARN
-            if algorithm == "svd":
+            if algorithm == "SVD":
                 reproject = False
                 from dask.array.linalg import svd
 
@@ -972,7 +972,7 @@ class LazySignal(BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "svd":  # Only needed for online algorithms
+            if algorithm != "SVD":  # Only needed for online algorithms
                 try:
                     loadings = _reshuffle_mixed_blocks(
                         loadings, ndim, (output_dimension,), nav_chunks
@@ -987,7 +987,7 @@ class LazySignal(BaseSignal):
         target = self.learning_results
         target.decomposition_algorithm = algorithm
         target.output_dimension = output_dimension
-        if algorithm != "svd":
+        if algorithm != "SVD":
             target._object = obj
         target.factors = factors
         target.loadings = loadings

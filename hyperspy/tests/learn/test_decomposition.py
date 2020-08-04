@@ -139,7 +139,7 @@ class TestGetModel:
     @pytest.mark.parametrize("centre", [None, "signal"])
     def test_get_decomposition_model(self, centre):
         s = self.s
-        s.decomposition(algorithm="svd", centre=centre)
+        s.decomposition(algorithm="SVD", centre=centre)
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         assert rms < 5e-7
@@ -147,7 +147,7 @@ class TestGetModel:
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_get_bss_model(self):
         s = self.s
-        s.decomposition(algorithm="svd")
+        s.decomposition(algorithm="SVD")
         s.blind_source_separation(3)
         sc = self.s.get_bss_model()
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
@@ -331,7 +331,7 @@ class TestDecompositionAlgorithm:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "mlpca"])
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
@@ -370,7 +370,7 @@ class TestPrintInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "mlpca"])
     def test_decomposition(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
         captured = capfd.readouterr()
@@ -389,7 +389,7 @@ class TestPrintInfo:
         assert "Decomposition info:" in captured.out
         assert "scikit-learn estimator:" in captured.out
 
-    @pytest.mark.parametrize("algorithm", ["svd"])
+    @pytest.mark.parametrize("algorithm", ["SVD"])
     def test_no_print(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
         captured = capfd.readouterr()
@@ -400,7 +400,7 @@ class TestReturnInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "mlpca"])
     def test_decomposition_not_supported(self, algorithm):
         assert (
             self.s.decomposition(
