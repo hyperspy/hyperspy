@@ -28,7 +28,7 @@ NEW
   that, if the `hyperspy-gui-ipywidgets package
   <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
   is installed, includes an
-  awesome interactive mode. See :ref:`eels_edges-label`.
+  awesome interactive mode. See :ref:`eels_elemental_composition-label`.
 * Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
@@ -75,9 +75,9 @@ Enhancements
 * Vastly improved performance and memory footprint of the
   :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` method.
 * The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
-  now remove Doniach, exponential, Lorentzian, skew normal, split Voigt and Voigt
-  functions. Furthermore, it can return the background model that includes an estimation
-  of the reduced chi-squared.
+  now remove Doniach, exponential, Lorentzian, skew normal,
+  split Voigt and Voigt functions. Furthermore, it can return the background
+  model that includes an estimation of the reduced chi-squared.
 * The performance of the maximum-likelihood PCA method was greatly improved.
 * All ROIs now have a ``__getitem__`` method, enabling e.g. using them with the
   unpack ``*`` operator. See :ref:`roi-slice-label` for an example.
@@ -85,8 +85,10 @@ Enhancements
   ``vmin`` and ``vmax`` keywords now take values like ``vmin="30th"`` to
   clip the minimum value to the 30th percentile. See :ref:`signal.fft`
   for an example.
-* The contrast editor and the decomposition methods can now operate on complex signals.
-* The default colormap can now be set in :ref:`preferences <configuring-hyperspy-label>`.
+* The contrast editor and the decomposition methods can now operate on
+  complex signals.
+* The default colormap can now be set in
+  :ref:`preferences <configuring-hyperspy-label>`.
 
 
 API changes
@@ -95,7 +97,8 @@ API changes
 * The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
   ``saturated_pixels`` is deprecated. Please use
   ``vmin`` and/or ``vmax`` instead.
-* The :py:func:`~.io.load` keyword argument ``dataset_name`` has been renamed to ``dataset_path``.
+* The :py:func:`~.io.load` keyword argument ``dataset_name`` has been
+  renamed to ``dataset_path``.
 * The :py:meth:`~.signal.BaseSignal.set_signal_type` method no longer takes
   ``None``. Use the empty string ``""`` instead.
 * The :py:meth:`~.signal.BaseSignal.get_histogram` ``bins`` keyword values
@@ -153,8 +156,8 @@ API changes
 
     * ``"trials"`` -> ``"navigation"``
     * ``"variables"`` -> ``"signal"``
-* The ``bounds`` keyword argument of the :py:meth:`~._signals.lazy.decomposition`
-  is deprecated and will be removed.
+* The ``bounds`` keyword argument of the
+  :py:meth:`~._signals.lazy.decomposition` is deprecated and will be removed.
 * Several syntax changes in the :py:meth:`~.learn.mva.decomposition` method:
 
   * Several ``algorithm`` keyword values have been renamed as follows:
@@ -165,7 +168,8 @@ API changes
     * ``"fast_mlpca"``: ``"MLPCA"``,
     * ``"mlpca"``: ``"MLPCA"``,
     * ``"RPCA_GoDec"``: ``"RPCA"``,
-  * The ``polyfit`` argument has been deprecated and will be removed. Use ``var_func`` instead.
+  * The ``polyfit`` argument has been deprecated and will be removed.
+    Use ``var_func`` instead.
 
 .. _changes_1.5.2:
 

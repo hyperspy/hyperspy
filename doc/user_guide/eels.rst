@@ -22,6 +22,8 @@ many useful feature from its parent class that are documented in previous
 chapters.
 
 
+.. _eels_elemental_composition-label:
+
 Elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -50,8 +52,8 @@ they are arranged in the order closest to 849 eV.
     >>> get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
-.. _eels_edges-label:
 
+`
 The static method :py:meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy`
 in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing
 more information about the edges.
