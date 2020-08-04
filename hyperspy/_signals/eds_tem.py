@@ -624,7 +624,7 @@ class EDSTEM_mixin:
         closing: bool, default True
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
-        algorithm : {"svd", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "svd"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -634,25 +634,25 @@ class EDSTEM_mixin:
         centre : {None, "navigation", "signal"}, default None
             * If None, the data is not centered prior to decomposition.
             * If "navigation", the data is centered along the navigation axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
             * If "signal", the data is centered along the signal axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only used by the "svd" algorithm.
+            Only used by the "SVD" algorithm.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm.
-            Only used by the "mlpca" algorithm.
+            Only used by the "MLPCA" algorithm.
         var_func : None or function or numpy array, default None
             * If None, ignored
             * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "mlpca" algorithm.
+              Only used by the "MLPCA" algorithm.
             * If numpy array, creates ``var_array`` by applying a polynomial function
               defined by the array of coefficients to the data. Only used by
-              the "mlpca" algorithm.
+              the "MLPCA" algorithm.
         reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.

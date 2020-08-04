@@ -50,7 +50,7 @@ _logger = logging.getLogger(__name__)
 if import_sklearn.sklearn_installed:
     decomposition_algorithms = {
         "sklearn_pca": import_sklearn.sklearn.decomposition.PCA,
-        "nmf": import_sklearn.sklearn.decomposition.NMF,
+        "NMF": import_sklearn.sklearn.decomposition.NMF,
         "sparse_pca": import_sklearn.sklearn.decomposition.SparsePCA,
         "mini_batch_sparse_pca": import_sklearn.sklearn.decomposition.MiniBatchSparsePCA,
         "sklearn_fastica": import_sklearn.sklearn.decomposition.FastICA,
@@ -110,7 +110,7 @@ class MVA:
     def decomposition(
         self,
         normalize_poissonian_noise=False,
-        algorithm="svd",
+        algorithm="SVD",
         output_dimension=None,
         centre=None,
         auto_transpose=True,
@@ -136,7 +136,7 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [Keenan2004]_.
-        algorithm : {"svd", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "svd"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -146,28 +146,28 @@ class MVA:
         centre : {None, "navigation", "signal"}, default None
             * If None, the data is not centered prior to decomposition.
             * If "navigation", the data is centered along the navigation axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
             * If "signal", the data is centered along the signal axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only used by the "svd" algorithm.
+            Only used by the "SVD" algorithm.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
-            decompostion.
+            decomposition.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm.
-            Only used by the "mlpca" algorithm.
+            Only used by the "MLPCA" algorithm.
         var_func : None or function or numpy array, default None
             * If None, ignored
             * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "mlpca" algorithm.
+              Only used by the "MLPCA" algorithm.
             * If numpy array, creates ``var_array`` by applying a polynomial function
               defined by the array of coefficients to the data. Only used by
-              the "mlpca" algorithm.
+              the "MLPCA" algorithm.
         reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
@@ -211,7 +211,7 @@ class MVA:
         Returns
         -------
         return_info : tuple(numpy array, numpy array) or sklearn.Estimator or None
-            * If True and 'algorithm' in ['rpca', 'orpca', 'ornmf'], returns
+            * If True and 'algorithm' in ['RPCA', 'ORPCA', 'ORNMF'], returns
               the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
             * If True and 'algorithm' is an sklearn Estimator, returns the
               Estimator object.
@@ -250,11 +250,12 @@ class MVA:
 
         # Check for deprecated algorithm arguments
         algorithms_deprecated = {
-            "fast_svd": "svd",
-            "fast_mlpca": "mlpca",
-            "RPCA_GoDec": "rpca",
-            "ORPCA": "orpca",
-            "ORNMF": "ornmf",
+            "fast_svd": "SVD",
+            "svd": "SVD",
+            "fast_mlpca": "MLPCA",
+            "mlpca": "MLPCA",
+            "nmf": "NMF",
+            "RPCA_GoDec": "RPCA",
         }
         new_algo = algorithms_deprecated.get(algorithm, None)
         if new_algo:
@@ -278,10 +279,10 @@ class MVA:
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
-            "mlpca",
-            "rpca",
-            "orpca",
-            "ornmf",
+            "MLPCA",
+            "RPCA",
+            "ORPCA",
+            "ORNMF",
         ]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(f"`output_dimension` must be specified for '{algorithm}'")
@@ -290,7 +291,7 @@ class MVA:
         is_sklearn_like = False
         algorithms_sklearn = [
             "sklearn_pca",
-            "nmf",
+            "NMF",
             "sparse_pca",
             "mini_batch_sparse_pca",
         ]
@@ -315,7 +316,7 @@ class MVA:
             is_sklearn_like = True
             estim = algorithm
         # MLPCA is designed to handle count data & Poisson noise
-        if algorithm == "mlpca" and normalize_poissonian_noise:
+        if algorithm == "MLPCA" and normalize_poissonian_noise:
             warnings.warn(
                 "It does not make sense to normalize Poisson noise with "
                 "the maximum-likelihood MLPCA algorithm. Therefore, "
@@ -410,7 +411,7 @@ class MVA:
             number_significant_components = None
             mean = None
 
-            if algorithm == "svd":
+            if algorithm == "SVD":
                 factors, loadings, explained_variance, mean = svd_pca(
                     data_,
                     svd_solver=svd_solver,
@@ -420,7 +421,7 @@ class MVA:
                     **kwargs,
                 )
 
-            elif algorithm == "mlpca":
+            elif algorithm == "MLPCA":
                 if var_array is not None and var_func is not None:
                     raise ValueError(
                         "`var_func` and `var_array` cannot both be defined. "
@@ -455,7 +456,7 @@ class MVA:
                 factors = V
                 explained_variance = S ** 2 / len(factors)
 
-            elif algorithm == "rpca":
+            elif algorithm == "RPCA":
                 X, E, U, S, V = rpca_godec(data_, rank=output_dimension, **kwargs)
 
                 loadings = U * S
@@ -465,7 +466,7 @@ class MVA:
                 if return_info:
                     to_return = (X, E)
 
-            elif algorithm == "orpca":
+            elif algorithm == "ORPCA":
                 if return_info:
                     X, E, U, S, V = orpca(
                         data_, rank=output_dimension, store_error=True, **kwargs
@@ -483,7 +484,7 @@ class MVA:
                     loadings = L
                     factors = R.T
 
-            elif algorithm == "ornmf":
+            elif algorithm == "ORNMF":
                 if return_info:
                     X, E, W, H = ornmf(
                         data_, rank=output_dimension, store_error=True, **kwargs,
@@ -535,7 +536,11 @@ class MVA:
                     to_return = estim
 
             else:
-                raise ValueError("'algorithm' not recognised")
+                raise ValueError(
+                    f"algorithm={algorithm}' not recognised. Expected one of: "
+                     '"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", '
+                     '"mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object.'
+                    )
 
             # We must calculate the ratio here because otherwise the sum
             # information can be lost if the user subsequently calls
@@ -654,7 +659,7 @@ class MVA:
         mask=None,
         on_loadings=False,
         reverse_component_criterion="factors",
-        whiten_method="pca",
+        whiten_method="PCA",
         return_info=False,
         print_info=True,
         **kwargs,
@@ -702,7 +707,7 @@ class MVA:
         reverse_component_criterion : {"factors", "loadings"}, default "factors"
             Use either the factors or the loadings to determine if the
             component needs to be reversed.
-        whiten_method : {"pca", "zca", None}, default "pca"
+        whiten_method : {"PCA", "ZCA", None}, default "PCA"
             How to whiten the data prior to blind source separation.
             If None, no whitening is applied. See :py:func:`~.learn.whitening.whiten_data`
             for more details.

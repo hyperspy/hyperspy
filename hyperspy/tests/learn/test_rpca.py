@@ -90,7 +90,7 @@ class TestRPCA:
 
         X, E = s1.decomposition(
             normalize_poissonian_noise=poisson,
-            algorithm="rpca",
+            algorithm="RPCA",
             output_dimension=self.rank,
             return_info=True,
         )
@@ -240,7 +240,7 @@ class TestORPCA:
 
         X, E = s1.decomposition(
             normalize_poissonian_noise=poisson,
-            algorithm="orpca",
+            algorithm="ORPCA",
             output_dimension=self.rank,
             return_info=True,
         )

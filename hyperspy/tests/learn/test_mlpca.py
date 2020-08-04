@@ -70,7 +70,7 @@ def test_signal():
 
     x = X.copy().reshape(10, 10, 101)
     s = Signal1D(x)
-    s.decomposition(algorithm="mlpca", output_dimension=r)
+    s.decomposition(algorithm="MLPCA", output_dimension=r)
 
     # Check singular values
     v = s.get_explained_variance_ratio().data
