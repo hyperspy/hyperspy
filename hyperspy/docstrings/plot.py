@@ -99,10 +99,11 @@ PLOT1D_DOCSTRING = \
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
         autoscale : str
-            Set the axes to be reset to their maxima when the navigation
-            indices or data are changed. If 'x' is in the string, the
-            horizontal axis is reset automatically. If 'z' is in the string,
-            the vertical axis is reset automatically. Default is 'z'.
+            The string must contain any combination of the 'x' and 'z'
+            characters. If 'x' or 'z' are in the string, the corresponding
+            axis limits are set to cover the full range of the data at a given
+            position and the axis limits will reset when the data or the
+            navigation indices are changed. Default is 'z'.
         """
 
 
@@ -110,11 +111,12 @@ PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
         autoscale : str
-            Set the axes to be reset to their maxima when the navigation
-            indices or data are changed. If 'x' or 'y' are in the string, the
-            extent of the image are reset automatically. If 'z' is in the
-            string, the displayed value of the image are reset automatically.
-            Default is 'z'.
+            The string must contain any combination of the 'x', 'y' and 'z'
+            characters. If 'x' or 'y' are in the string, the corresponding
+            axis limits are set to cover the full range of the data at a given
+            position. If 'z' is in the string, the contrast of the image will
+            be set automatically according to `vmin` and `vmax` when the data
+            or navigation indices change. Default is 'z'.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
@@ -129,9 +131,9 @@ PLOT2D_DOCSTRING = \
             `linthresh` and `linscale` parameter for more details.
         vmin, vmax : {scalar, str}, optional
             `vmin` and `vmax` are used to normalise the displayed data. It can
-            be a float or a string. If string, it should be formatted as 'xth', 
-            where 'x' must be an float in the [0, 100] range. 'x' is used to 
-            compute the x-th percentile of the data. See 
+            be a float or a string. If string, it should be formatted as 'xth',
+            where 'x' must be an float in the [0, 100] range. 'x' is used to
+            compute the x-th percentile of the data. See
             :py:func:`numpy.percentile` for more information.
         gamma : float
             Parameter used in the power-law normalisation when the parameter

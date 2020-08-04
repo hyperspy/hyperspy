@@ -858,7 +858,7 @@ def plot_images(images,
     if colorbar == 'single':
         # check that vmin and vmax are not list
         if any([isinstance(v, (tuple, list)) for v in [vmin, vmax]]):
-            _logger.warning(f'The provided vmin or vmax value are ignored '
+            _logger.warning('The provided vmin or vmax value are ignored '
                             'because it needs to be a scalar or a str '
                             'to be compatible with a single colorbar. '
                             'The default values are used instead.')
