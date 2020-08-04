@@ -624,7 +624,7 @@ class EDSTEM_mixin:
         closing: bool, default True
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
-        algorithm : {"SVD", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "SVD"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "orpca", "ornmf", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -645,14 +645,14 @@ class EDSTEM_mixin:
             decomposition.
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm.
-            Only used by the "mlpca" algorithm.
+            Only used by the "MLPCA" algorithm.
         var_func : None or function or numpy array, default None
             * If None, ignored
             * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "mlpca" algorithm.
+              Only used by the "MLPCA" algorithm.
             * If numpy array, creates ``var_array`` by applying a polynomial function
               defined by the array of coefficients to the data. Only used by
-              the "mlpca" algorithm.
+              the "MLPCA" algorithm.
         reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.

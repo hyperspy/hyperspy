@@ -136,7 +136,7 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [Keenan2004]_.
-        algorithm : {"SVD", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "SVD"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "orpca", "ornmf", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -160,14 +160,14 @@ class MVA:
             decomposition.
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm.
-            Only used by the "mlpca" algorithm.
+            Only used by the "MLPCA" algorithm.
         var_func : None or function or numpy array, default None
             * If None, ignored
             * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "mlpca" algorithm.
+              Only used by the "MLPCA" algorithm.
             * If numpy array, creates ``var_array`` by applying a polynomial function
               defined by the array of coefficients to the data. Only used by
-              the "mlpca" algorithm.
+              the "MLPCA" algorithm.
         reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
@@ -251,8 +251,8 @@ class MVA:
         # Check for deprecated algorithm arguments
         algorithms_deprecated = {
             "fast_svd": "SVD",
-            "fast_mlpca": "mlpca",
-            "RPCA_GoDec": "rpca",
+            "fast_mlpca": "MLPCA",
+            "RPCA_GoDec": "RPCA",
             "ORPCA": "orpca",
             "ORNMF": "ornmf",
         }
@@ -278,8 +278,8 @@ class MVA:
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
-            "mlpca",
-            "rpca",
+            "MLPCA",
+            "RPCA",
             "orpca",
             "ornmf",
         ]
@@ -315,7 +315,7 @@ class MVA:
             is_sklearn_like = True
             estim = algorithm
         # MLPCA is designed to handle count data & Poisson noise
-        if algorithm == "mlpca" and normalize_poissonian_noise:
+        if algorithm == "MLPCA" and normalize_poissonian_noise:
             warnings.warn(
                 "It does not make sense to normalize Poisson noise with "
                 "the maximum-likelihood MLPCA algorithm. Therefore, "
@@ -420,7 +420,7 @@ class MVA:
                     **kwargs,
                 )
 
-            elif algorithm == "mlpca":
+            elif algorithm == "MLPCA":
                 if var_array is not None and var_func is not None:
                     raise ValueError(
                         "`var_func` and `var_array` cannot both be defined. "
@@ -455,7 +455,7 @@ class MVA:
                 factors = V
                 explained_variance = S ** 2 / len(factors)
 
-            elif algorithm == "rpca":
+            elif algorithm == "RPCA":
                 X, E, U, S, V = rpca_godec(data_, rank=output_dimension, **kwargs)
 
                 loadings = U * S

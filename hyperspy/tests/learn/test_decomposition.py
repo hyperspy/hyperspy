@@ -331,7 +331,7 @@ class TestDecompositionAlgorithm:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["SVD", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA"])
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
@@ -339,7 +339,7 @@ class TestDecompositionAlgorithm:
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
     @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-    @pytest.mark.parametrize("algorithm", ["rpca", "orpca", "ornmf", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["RPCA", "orpca", "ornmf", "MLPCA"])
     def test_decomposition_output_dimension_not_given(self, algorithm):
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm=algorithm, return_info=False)
@@ -370,7 +370,7 @@ class TestPrintInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["SVD", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA"])
     def test_decomposition(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
         captured = capfd.readouterr()
@@ -400,7 +400,7 @@ class TestReturnInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["SVD", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA"])
     def test_decomposition_not_supported(self, algorithm):
         assert (
             self.s.decomposition(
@@ -416,7 +416,7 @@ class TestReturnInfo:
     @pytest.mark.parametrize(
         "algorithm",
         [
-            "rpca",
+            "RPCA",
             "orpca",
             "ornmf",
             "sklearn_pca",
@@ -440,7 +440,7 @@ class TestReturnInfo:
     @pytest.mark.parametrize(
         "algorithm",
         [
-            "rpca",
+            "RPCA",
             "orpca",
             "ornmf",
             "sklearn_pca",
@@ -577,7 +577,7 @@ def test_decomposition_gridsearchcv():
 
 def test_decomposition_mlpca_var_func():
     s = signals.Signal1D(generate_low_rank_matrix())
-    s.decomposition(output_dimension=2, algorithm="mlpca", var_func=lambda x: x)
+    s.decomposition(output_dimension=2, algorithm="MLPCA", var_func=lambda x: x)
 
 
 def test_decomposition_mlpca_warnings_errors():
@@ -586,33 +586,33 @@ def test_decomposition_mlpca_warnings_errors():
     with pytest.warns(
         VisibleDeprecationWarning, match="`polyfit` argument has been deprecated"
     ):
-        s.decomposition(output_dimension=2, algorithm="mlpca", polyfit=[1, 2, 3])
+        s.decomposition(output_dimension=2, algorithm="MLPCA", polyfit=[1, 2, 3])
 
     with pytest.raises(
         ValueError, match="`var_func` and `var_array` cannot both be defined"
     ):
         s.decomposition(
             output_dimension=2,
-            algorithm="mlpca",
+            algorithm="MLPCA",
             var_func=[1, 2, 3],
             var_array=s.data.copy(),
         )
 
     with pytest.raises(ValueError, match="`var_array` must have the same shape"):
         s.decomposition(
-            output_dimension=2, algorithm="mlpca", var_array=s.data.copy()[:-3, :-3],
+            output_dimension=2, algorithm="MLPCA", var_array=s.data.copy()[:-3, :-3],
         )
 
     with pytest.raises(
         ValueError, match="`var_func` must be either a function or an array"
     ):
-        s.decomposition(output_dimension=2, algorithm="mlpca", var_func="func")
+        s.decomposition(output_dimension=2, algorithm="MLPCA", var_func="func")
 
     with pytest.warns(
         UserWarning, match="does not make sense to normalize Poisson noise",
     ):
         s.decomposition(
-            normalize_poissonian_noise=True, algorithm="mlpca", output_dimension=2
+            normalize_poissonian_noise=True, algorithm="MLPCA", output_dimension=2
         )
 
 
