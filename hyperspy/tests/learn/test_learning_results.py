@@ -32,7 +32,7 @@ def test_learning_results_decom():
 
     out = str(s1.learning_results)
     assert "Decomposition parameters" in out
-    assert "algorithm=svd" in out
+    assert "algorithm=SVD" in out
     assert "output_dimension=2" in out
     assert "Demixing parameters" not in out
 

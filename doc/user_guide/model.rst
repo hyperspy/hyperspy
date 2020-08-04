@@ -31,12 +31,12 @@ Caveats
   :py:attr:`~.signal.BaseSignal.metadata.Signal.binned` metadata
   attribute of the signal is set to the correct value because the resulting
   model depends on this parameter. See :ref:`signal.binned` for more details.
-* When importing data that have been binned using other software, in
+* When importing data that has been binned using other software, in
   particular Gatan's DM, the stored values may be the averages of the
   binned channels or pixels, instead of their sum, as would be required
   for proper statistical analysis. We therefore cannot guarantee that
-  the statistics will be valid. We therefore strongly recommend that all
-  pre-fitting binning should be done using Hyperspy.
+  the statistics will be valid, and so strongly recommend that all
+  pre-fitting binning is performed using Hyperspy.
 
 Creating a model
 ----------------
@@ -729,7 +729,7 @@ i.e. the least-squares loss. For the vast majority of cases, this loss
 function is appropriate, and has the additional benefit of supporting
 parameter error estimation and :ref:`goodness-of-fit <model.goodness_of_fit>`
 testing. However, if your data contains very low counts per pixel, or
-is corrupted by outliers, the ``"ml-poisson"`` and ``"huber"`` loss
+is corrupted by outliers, the ``"ML-poisson"`` and ``"huber"`` loss
 functions may be worth investigating.
 
 Least squares with error estimation
@@ -844,7 +844,7 @@ such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", loss_function="ml-poisson")
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="ML-poisson")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
@@ -986,7 +986,7 @@ Following the above examples:
     >>> # Huber loss and Poisson MLE functions
     >>> # also support analytical gradients
     >>> m.fit(grad="analytical", loss_function="huber")
-    >>> m.fit(grad="analytical", loss_function="ml-poisson")
+    >>> m.fit(grad="analytical", loss_function="ML-poisson")
 
 .. note::
 

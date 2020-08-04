@@ -761,10 +761,10 @@ class MVATools(object):
                                    comp_ids=None,
                                    calibrate=True,
                                    same_window=True,
-                                   comp_label=None,
                                    title=None,
                                    cmap=plt.cm.gray,
-                                   per_row=3
+                                   per_row=3,
+                                   **kwargs,
                                    ):
         """Plot factors from a decomposition. In case of 1D signal axis, each
         factors line can be toggled on and off by clicking on their
@@ -822,10 +822,11 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
-                                         same_window)
+                                         same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
@@ -835,15 +836,16 @@ class MVATools(object):
                                             cmap=cmap,
                                             per_row=per_row)
 
-    def plot_bss_factors(self,
-                         comp_ids=None,
-                         calibrate=True,
-                         same_window=True,
-                         comp_label=None,
-                         title=None,
-                         cmap=plt.cm.gray,
-                         per_row=3
-                         ):
+    def plot_bss_factors(
+        self,
+        comp_ids=None,
+        calibrate=True,
+        same_window=True,
+        title=None,
+        cmap=plt.cm.gray,
+        per_row=3,
+        **kwargs,
+        ):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
@@ -863,8 +865,6 @@ class MVATools(object):
         same_window : bool
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-        comp_label : str
-            Will be deprecated in 2.0, please use `title` instead
         title : str
             Title of the plot.
         cmap : :py:class:`~matplotlib.colors.Colormap`
@@ -893,9 +893,11 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('BSS factors of', same_window)
+            title = self._get_plot_title('BSS factors of',
+                                         same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
@@ -909,12 +911,13 @@ class MVATools(object):
                                     calibrate=True,
                                     same_window=True,
                                     title=None,
-                                    comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
                                     per_row=3,
-                                    axes_decor='all'):
+                                    axes_decor='all',
+                                    **kwargs,
+                                    ):
         """Plot loadings from a decomposition. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
@@ -990,10 +993,11 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('Decomposition loadings of',
-                                         same_window)
+            title = self._get_plot_title(
+                'Decomposition loadings of', same_window=same_window)
 
         return self._plot_loadings(
             loadings,
@@ -1012,12 +1016,12 @@ class MVATools(object):
                           calibrate=True,
                           same_window=True,
                           title=None,
-                          comp_label=None,
                           with_factors=False,
                           cmap=plt.cm.gray,
                           no_nans=False,
                           per_row=3,
-                          axes_decor='all'
+                          axes_decor='all',
+                          **kwargs,
                           ):
         """Plot loadings from blind source separation results. In case of 1D
         navigation axis, each loading line can be toggled on and off by
@@ -1078,10 +1082,11 @@ class MVATools(object):
                                "performed first.")
         if same_window is None:
             same_window = True
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('BSS loadings of',
-                                         same_window)
+            title = self._get_plot_title(
+                'BSS loadings of', same_window=same_window)
         loadings = self.learning_results.bss_loadings.T
         if with_factors:
             factors = self.learning_results.bss_factors
@@ -1827,13 +1832,13 @@ class MVATools(object):
         cluster_ids=None,
         calibrate=True,
         same_window=True,
-        comp_label=None,
         with_centers=False,
         cmap=plt.cm.gray,
         no_nans=False,
         per_row=3,
         axes_decor='all',
-        title=None):
+        title=None,
+        **kwargs):
         """Plot cluster labels from a cluster analysis. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
@@ -1897,10 +1902,11 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(labels.shape[0])
 
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('Cluster labels of',
-                                         same_window)
+            title = self._get_plot_title(
+                'Cluster labels of', same_window=same_window)
 
         return self._plot_loadings(labels,
                                    comp_ids=cluster_ids,
@@ -1919,13 +1925,13 @@ class MVATools(object):
         cluster_ids=None,
         calibrate=True,
         same_window=True,
-        comp_label=None,
         with_centers=False,
         cmap=plt.cm.gray,
         no_nans=False,
         per_row=3,
         axes_decor='all',
-        title=None):
+        title=None,
+        **kwargs):
         """Plot the euclidian distances to the centroid of each cluster.
 
         In case of 1D navigation axis,
@@ -1990,10 +1996,11 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(distances.shape[0])
 
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('Cluster distances of',
-                                         same_window)
+            title = self._get_plot_title(
+                'Cluster distances of', same_window=same_window)
 
         return self._plot_loadings(distances,
                                    comp_ids=cluster_ids,

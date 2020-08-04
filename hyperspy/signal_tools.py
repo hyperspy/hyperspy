@@ -19,6 +19,7 @@
 import logging
 import functools
 import copy
+import itertools
 
 import numpy as np
 import scipy as sp
@@ -36,6 +37,10 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.misc.label_position import SpectrumLabelPosition
+from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
+from hyperspy.misc.elements import elements as elements_db
+from hyperspy.drawing.marker import markers
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import numba_histogram
 
@@ -244,6 +249,208 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         self.span_selector_switch(on=True)
         self.last_calibration_stored = True
 
+@add_gui_method(toolkey="hyperspy.EELSSpectrum.print_edges_table")
+class EdgesRange(SpanSelectorInSignal1D):
+    units = t.Unicode()
+    edges_list = t.Tuple()
+    only_major = t.Bool()
+    order = t.Unicode('closest')
+    complementary = t.Bool(True)
+
+    def __init__(self, signal, active=None):
+        if signal.axes_manager.signal_dimension != 1:
+            raise SignalDimensionError(
+                signal.axes_manager.signal_dimension, 1)
+
+        if active is None:
+            super(EdgesRange, self).__init__(signal)
+            self.active_edges = []
+        else:
+            # if active is provided, it is non-interactive mode
+            # so fix the active_edges and don't initialise the span selector
+            self.signal = signal
+            self.axis = self.signal.axes_manager.signal_axes[0]
+            self.active_edges = list(active)
+
+        self.active_complementary_edges = []
+        self.units = self.axis.units
+        self.slp = SpectrumLabelPosition(self.signal)
+        self.btns = []
+
+        self._get_edges_info_within_energy_axis()
+
+        self.signal.axes_manager.events.indices_changed.connect(self._on_figure_changed,
+                                                                [])
+        self.signal._plot.signal_plot.events.closed.connect(
+        lambda: self.signal.axes_manager.events.indices_changed.disconnect(
+        self._on_figure_changed), [])
+
+    def _get_edges_info_within_energy_axis(self):
+        mid_energy = (self.axis.low_value + self.axis.high_value) / 2
+        rng = self.axis.high_value - self.axis.low_value
+        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng,
+                                                         order=self.order))
+        info = get_info_from_edges(self.edge_all)
+
+        energy_all = []
+        relevance_all = []
+        description_all = []
+        for d in info:
+            onset = d['onset_energy (eV)']
+            relevance = d['relevance']
+            threshold = d['threshold']
+            edge_ = d['edge']
+            description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
+
+            energy_all.append(onset)
+            relevance_all.append(relevance)
+            description_all.append(description)
+
+        self.energy_all = np.asarray(energy_all)
+        self.relevance_all = np.asarray(relevance_all)
+        self.description_all = np.asarray(description_all)
+
+    def _on_figure_changed(self):
+        self.slp._set_active_figure_properties()
+        self._plot_labels()
+        self.signal._plot.signal_plot.update()
+
+    def update_table(self):
+        figure_changed = self.slp._check_signal_figure_changed()
+        if figure_changed:
+            self._on_figure_changed()
+
+        if self.span_selector is not None:
+            energy_mask = (self.ss_left_value <= self.energy_all) & \
+                (self.energy_all <= self.ss_right_value)
+            if self.only_major:
+                relevance_mask = self.relevance_all == 'Major'
+            else:
+                relevance_mask = np.ones(len(self.edge_all), bool)
+
+            mask = energy_mask & relevance_mask
+            self.edges_list = tuple(self.edge_all[mask])
+            energy = tuple(self.energy_all[mask])
+            relevance = tuple(self.relevance_all[mask])
+            description = tuple(self.description_all[mask])
+        else:
+            self.edges_list = ()
+            energy, relevance, description = (), (), ()
+
+        self._keep_valid_edges()
+
+        return self.edges_list, energy, relevance, description
+
+    def _keep_valid_edges(self):
+        edge_all = list(self.signal._edge_markers.keys())
+        for edge in edge_all:
+            if (edge not in self.edges_list):
+                if edge in self.active_edges:
+                    self.active_edges.remove(edge)
+                elif edge in self.active_complementary_edges:
+                    self.active_complementary_edges.remove(edge)
+                self.signal.remove_EELS_edges_markers([edge])
+            elif (edge not in self.active_edges):
+                self.active_edges.append(edge)
+
+        self.on_complementary()
+        self._plot_labels()
+
+    def update_active_edge(self, change):
+        state = change['new']
+        edge = change['owner'].description
+
+        if state:
+            self.active_edges.append(edge)
+        else:
+            if edge in self.active_edges:
+                self.active_edges.remove(edge)
+            if edge in self.active_complementary_edges:
+                self.active_complementary_edges.remove(edge)
+            self.signal.remove_EELS_edges_markers([edge])
+
+        figure_changed = self.slp._check_signal_figure_changed()
+        if figure_changed:
+            self._on_figure_changed()
+        self.on_complementary()
+        self._plot_labels()
+
+    def on_complementary(self):
+
+        if self.complementary:
+            self.active_complementary_edges = \
+                self.signal.get_complementary_edges(self.active_edges,
+                                                    self.only_major)
+        else:
+            self.active_complementary_edges = []
+
+    def check_btn_state(self):
+
+        edges = [btn.description for btn in self.btns]
+        for btn in self.btns:
+            edge = btn.description
+            if btn.value is False:
+                if edge in self.active_edges:
+                    self.active_edges.remove(edge)
+                    self.signal.remove_EELS_edges_markers([edge])
+                if edge in self.active_complementary_edges:
+                    btn.value = True
+
+            if btn.value is True and self.complementary:
+                comp = self.signal.get_complementary_edges(self.active_edges,
+                                                           self.only_major)
+                for cedge in comp:
+                    if cedge in edges:
+                        pos = edges.index(cedge)
+                        self.btns[pos].value = True
+
+    def _plot_labels(self, active=None, complementary=None):
+        # plot selected and/or complementary edges
+        if active is None:
+            active = self.active_edges
+        if complementary is None:
+            complementary = self.active_complementary_edges
+
+        edges_on_signal = set(self.signal._edge_markers.keys())
+        edges_to_show = set(set(active).union(complementary))
+        edge_keep = edges_on_signal.intersection(edges_to_show)
+        edge_remove =  edges_on_signal.difference(edge_keep)
+        edge_add = edges_to_show.difference(edge_keep)
+
+        self._clear_markers(edge_remove)
+
+        # all edges to be shown on the signal
+        edge_dict = self.signal._get_edges(edges_to_show, ('Major', 'Minor'))
+        vm_new, tm_new = self.slp.get_markers(edge_dict)
+        for k, edge in enumerate(edge_dict.keys()):
+            v = vm_new[k]
+            t = tm_new[k]
+
+            if edge in edge_keep:
+                # update position of vertical line segment
+                self.signal._edge_markers[edge][0].data = v.data
+                self.signal._edge_markers[edge][0].update()
+
+                # update position of text box
+                self.signal._edge_markers[edge][1].data = t.data
+                self.signal._edge_markers[edge][1].update()
+            elif edge in edge_add:
+                # first argument as dictionary for consistency
+                self.signal.plot_edges_label({edge: edge_dict[edge]},
+                                             vertical_line_marker=[v],
+                                             text_marker=[t])
+
+    def _clear_markers(self, edges=None):
+        if edges is None:
+            edges = list(self.signal._edge_markers.keys())
+
+        self.signal.remove_EELS_edges_markers(list(edges))
+
+        for edge in edges:
+            if edge in self.active_edges:
+                self.active_edges.remove(edge)
+            if edge in self.active_complementary_edges:
+                self.active_complementary_edges.remove(edge)
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
@@ -1007,16 +1214,16 @@ class IntegrateArea(SpanSelectorInSignal1D):
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
         'Doniach',
+        'Exponential',
         'Gaussian',
         'Lorentzian',
         'Offset',
         'Polynomial',
-        'Power Law',
-        'Exponential',
-        'SkewNormal',
-        'SplitVoigt',
+        'Power law',
+        'Skew normal',
+        'Split Voigt',
         'Voigt',
-        default='Power Law')
+        default='Power law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
@@ -1036,7 +1243,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     red_chisq = t.Float(np.nan)
 
-    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+    def __init__(self, signal, background_type='Power law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None, model=None):
         super(BackgroundRemoval, self).__init__(signal)
@@ -1052,6 +1259,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             model = Model1D(signal)
         self.model = model
         self.polynomial_order = polynomial_order
+        if background_type in ['Power Law', 'PowerLaw']:
+            background_type = 'Power law'
+        if background_type in ['Skew Normal', 'SkewNormal']:
+            background_type = 'Skew normal'
+        if background_type in ['Split voigt', 'SplitVoigt']:
+            background_type = 'Split Voigt'
         self.background_type = background_type
         self.zero_fill = zero_fill
         self.show_progressbar = show_progressbar

@@ -657,7 +657,7 @@ __ plot.spectra_
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> si_EDS.change_dtype('float')
-    >>> si_EDS.decomposition(True, algorithm='nmf', output_dimension=3)
+    >>> si_EDS.decomposition(True, algorithm='NMF', output_dimension=3)
     >>> factors = si_EDS.get_decomposition_factors()
     >>>
     >>> # the first factor is a very strong carbon background component, so we
