@@ -24,8 +24,11 @@ NEW
   * :ref:`usid-format`
   * :ref:`empad-format`
   * Prismatic EMD format, see :ref:`emd-format`
-* :meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` method.
-  See an example :ref:`here <eels_edges-label>`.
+* :meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` method
+  that, if the `hyperspy-gui-ipywidgets package
+  <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
+  is installed, includes an
+  awesome interactive mode. See :ref:`eels_edges-label`.
 * Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
