@@ -1183,6 +1183,8 @@ undesired spectral channels from the fitting process:
 * :py:meth:`~.models.model1d.Model1D.remove_signal_range`
 * :py:meth:`~.models.model1d.Model1D.reset_signal_range`
 
+.. _model.multidimensional-label:
+
 Fitting multidimensional datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

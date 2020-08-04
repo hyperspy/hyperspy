@@ -24,9 +24,9 @@ NEW
   * :ref:`usid-format`
   * :ref:`empad-format`
   * Prismatic EMD format, see :ref:`emd-format`
-* New :meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` method.
+* :meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` method.
   See an example :ref:`here <eels_edges-label>`.
-* New model asymmetric line shape components:
+* Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
   * :py:class:`~._components.split_pvoigt.SplitVoigt`
@@ -40,9 +40,10 @@ Enhancements
 
 * The :py:meth:`~.signal.BaseSignal.get_histogram` now uses numpy's
   `np.histogram_bin_edges()
-  <https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html>`_,
-  hence supporting all its methods.
-* Further improvements to the contrast adjustment tool. Test it by pressing the ``h`` key on any image.
+  <https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html>`_
+  and supports all of its ``bins`` keyword values.
+* Further improvements to the contrast adjustment tool.
+  Test it by pressing the ``h`` key on any image.
 * The following components have been rewritten using
   :py:class:`hyperspy._components.expression.Expression`, boosting their
   speeds among other benefits.
@@ -53,14 +54,17 @@ Enhancements
 * The model fitting :py:meth:`~.model.BaseModel.fit` and
   :py:meth:`~.model.BaseModel.multifit` methods have been vastly improved. See
   :ref:`model.fitting` and the API changes section below.
-* The :py:func:`~.drawing.utils.plot_spectra` updates the figure automatically,
-  see :ref:`this example <plot_profiles_interactive-label>`.
-* Improve thread-based parallelism. Add `max_workers` argument to the
+* New serpentine iteration path for multi-dimensional fitting.
+  See :ref:`model.multidimensional-label`.
+* The :py:func:`~.drawing.utils.plot_spectra`  function now listens to
+  events to update the figure automatically.
+  See :ref:`this example <plot_profiles_interactive-label>`.
+* Improve thread-based parallelism. Add ``max_workers`` argument to the
   :py:meth:`~.signal.BaseSignal.map` method, such that the user can directly
   control how many threads they launch.
-* Improvements to  :py:meth:`~.mva.MVA.decomposition` and
+* Many improvements to the :py:meth:`~.mva.MVA.decomposition` and
   :py:meth:`~.mva.MVA.blind_source_separation` methods, including support for
-  scikit-learn like algorithms, better API and vastly improved documentation.
+  scikit-learn like algorithms, better API and much improved documentation.
   See :ref:`ml-label` and the API changes section below.
 * Add option to calculate the absolute thickness to the EELS
   :meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method.
@@ -70,7 +74,7 @@ Enhancements
 * The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
   now remove lorentzian and exponential functions. Furthermore, it can return
   the background model that includes an estimation of the reduced chi-squared.
-* The performance of the maximum-likelihood PCA method was vastly improved.
+* The performance of the maximum-likelihood PCA method was greatly improved.
 * All ROIs now have a ``__getitem__`` method, enabling e.g. using them with the
   unpack ``*`` operator. See :ref:`roi-slice-label` for an example.
 * New syntax to set the contrast when plotting images. In particular, the
@@ -84,32 +88,79 @@ Enhancements
 API changes
 -----------
 
-*  of the :py:meth:`~.model.BaseModel.fit` and
-  :py:meth:`~.model.BaseModel.multifit`:
-  
+* The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
+  ``saturated_pixels`` is deprecated. Please use
+  ``vmin`` and/or ``vmax`` instead.
+* The :py:func:`~.io.load` keyword argument ``dataset_name`` has been renamed to ``dataset_path``.
+* The :py:meth:`~.signal.BaseSignal.set_signal_type` method no longer takes
+  ``None``. Use the empty string ``""`` instead.
+* The :py:meth:`~.signal.BaseSignal.get_histogram` ``bins`` keyword values
+  have been renamed as follows for consistency with numpy:
+
+    * ``"scotts"`` -> ``"scott"``,
+    * ``"freedman"`` -> ``"fd"``
+*  Multiple changes to the syntax of the :py:meth:`~.model.BaseModel.fit`
+   and :py:meth:`~.model.BaseModel.multifit` methods:
+
   * The ``fitter`` keyword has been renamed to ``optimizer``.
   * The values that the ``optimizer`` keyword take have been renamed
     for consistency with scipy:
 
-    * "fmin" -> "Nelder-Mead",
-    * "fmin_cg" -> "CG",
-    * "fmin_ncg" -> "Newton-CG",
-    * "fmin_bfgs" -> "BFGS",
-    * "fmin_l_bfgs_b" -> "L-BFGS-B",
-    * "fmin_tnc" -> "TNC",
-    * "fmin_powell" -> "Powell",
-    * "mpfit" -> "lm" (in combination with `"bounded=True"`),
-    * "leastsq" -> "lm",
-    * Passing integer arguments to ``parallel`` to select the number of
-      workers is now deprecated. Use ``parallel=True, max_workers={value}``
-      instead.
-* The ``method`` keyword has been renamed to ``loss_function``.
-* The ``loss_funtion`` value ``"ml"`` has been renamed to ``ml-poisson``.
+    * ``"fmin"`` -> ``"Nelder-Mead"``,
+    * ``"fmin_cg"`` -> ``"CG"``,
+    * ``"fmin_ncg"`` -> ``"Newton-CG"``,
+    * ``"fmin_bfgs"`` -> ``"BFGS"``,
+    * ``"fmin_l_bfgs_b"`` -> ``"L-BFGS-B"``,
+    * ``"fmin_tnc"`` -> ``"TNC"``,
+    * ``"fmin_powell"`` -> ``"Powell"``,
+    * ``"mpfit"`` -> ``"lm"`` (in combination with ``"bounded=True"``),
+    * ``"leastsq"`` -> ``"lm"``,
+
+  * Passing integer arguments to ``parallel`` to select the number of
+    workers is now deprecated. Use ``parallel=True, max_workers={value}``
+    instead.
+  * The ``method`` keyword has been renamed to ``loss_function``.
+  * The ``loss_function`` value ``"ml"`` has been renamed to ``"ml-poisson"``.
+  * The ``grad`` keyword no longer takes boolean values. It takes the
+    following values instead: ``"fd"``, ``"analytical"``, callable or ``None``.
+  * The ``ext_bounding`` keyword has been deprecated and will be removed. Use
+    ``bounded=True`` instead.
+  * The ``min_function`` keyword argument has been deprecated and will
+    be removed. Use ``loss_function`` instead.,
+  * The ``min_function_grad`` keyword arguments has been deprecated and will be
+    removed. Use ``grad`` instead.
+  * The ``iterpath`` default will change from ``'flyback'`` to
+    ``'serpentine'`` in HyperSpy version 2.0.
+
 * The following :py:class:`~.model.BaseModel` methods are now private:
+
   * :py:meth:`~.model.BaseModel.set_boundaries`
   * :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
   * :py:meth:`~.model.BaseModel.set_boundaries`
-* The 
+
+* The ``comp_label`` keyword of the machine learning plotting functions
+  has been renamed to ``title``.
+* The :py:class:`~.learn.rpca.orpca` constructor's ``learning_rate``
+  keyword has been renamed to ``subspace_learning_rate``
+* The :py:class:`~.learn.rpca.orpca` constructor's ``momentum``
+  keyword has been renamed to ``subspace_momentum``
+* The :py:class:`~.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
+  values have been renamed as follows:
+
+    * ``"trials"`` -> ``"navigation"``
+    * ``"variables"`` -> ``"signal"``
+* The ``bounds`` keyword argument of the :py:meth:`~._signals.lazy.decomposition`
+  is deprecated and will be removed.
+* Several syntax changes in the :py:meth:`~.learn.mva.decomposition` method:
+
+  * Several ``algorithm`` keyword values have been renamed as follows:
+
+    * ``"fast_svd"``: ``"svd"``,
+    * ``"fast_mlpca"``: ``"mlpca"``,
+    * ``"RPCA_GoDec"``: ``"rpca"``,
+    * ``"ORPCA"``: ``"orpca"``,
+    * ``"ORNMF"``: ``"ornmf"``,
+  * The ``polyfit`` argument has been deprecated and will be removed. Use ``var_func`` instead.
 
 .. _changes_1.5.2:
 
