@@ -45,9 +45,9 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=0.17',
+install_req = ['scipy>=1.4.0',
                'matplotlib>=2.2.3',
-               'numpy>=1.11, !=1.13.0',
+               'numpy>=1.13.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -57,9 +57,9 @@ install_req = ['scipy>=0.17',
                'h5py>=2.3',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.18, !=2.0',
+               'dask[array]>2.0',
                'scikit-image>=0.15',
-               'pint>=0.8',
+               'pint>=0.10',
                'statsmodels',
                'numexpr',
                'sparse',
