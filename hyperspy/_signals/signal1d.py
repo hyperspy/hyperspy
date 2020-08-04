@@ -1140,7 +1140,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         Remove the background, either in place using a GUI or returned as a new
         spectrum using the command line. The fast option is not accurate for
-        most background types - except Gaussian, Lorentzian, Offset and
+        most background types - except Gaussian, Offset and
         Power law - but it is useful to estimate the initial fitting parameters
         before performing a full fit.
 
