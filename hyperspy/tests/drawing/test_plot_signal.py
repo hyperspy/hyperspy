@@ -200,7 +200,7 @@ def test_plot_close_cycle(sdim):
     s._plot.close()
 
 
-@pytest.mark.parametrize('autoscale', ['', 'x', 'xz', 'z'])
+@pytest.mark.parametrize('autoscale', ['', 'x', 'xv', 'v'])
 @pytest.mark.parametrize("ndim", [1, 2])
 def test_plot_navigator_kwds(ndim, autoscale):
     test_plot_nav1d = _TestPlot(ndim=ndim, sdim=2, data_type="real")

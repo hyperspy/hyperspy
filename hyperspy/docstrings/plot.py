@@ -99,11 +99,11 @@ PLOT1D_DOCSTRING = \
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
         autoscale : str
-            The string must contain any combination of the 'x' and 'z'
-            characters. If 'x' or 'z' are in the string, the corresponding
-            axis limits are set to cover the full range of the data at a given
-            position and the axis limits will reset when the data or the
-            navigation indices are changed. Default is 'z'.
+            The string must contain any combination of the 'x' and 'v'
+            characters. If 'x' or 'v' (for values) are in the string, the
+            corresponding horizontal or vertical axis limits are set to their
+            maxima and the axis limits will reset when the data or the
+            navigation indices are changed. Default is 'v'.
         """
 
 
@@ -111,12 +111,12 @@ PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
         autoscale : str
-            The string must contain any combination of the 'x', 'y' and 'z'
+            The string must contain any combination of the 'x', 'y' and 'v'
             characters. If 'x' or 'y' are in the string, the corresponding
             axis limits are set to cover the full range of the data at a given
-            position. If 'z' is in the string, the contrast of the image will
-            be set automatically according to `vmin` and `vmax` when the data
-            or navigation indices change. Default is 'z'.
+            position. If 'v' (for values) is in the string, the contrast of the
+            image will be set automatically according to `vmin` and `vmax` when
+            the data or navigation indices change. Default is 'v'.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%

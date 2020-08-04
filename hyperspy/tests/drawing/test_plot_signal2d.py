@@ -520,7 +520,7 @@ def test_plot_navigator_colormap(cmap):
     return s._plot.navigator_plot.figure
 
 
-@pytest.mark.parametrize("autoscale", ['', 'xy', 'xyz', 'z'])
+@pytest.mark.parametrize("autoscale", ['', 'xy', 'xv', 'xyv', 'v'])
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_autoscale(autoscale):
@@ -544,7 +544,7 @@ def test_plot_autoscale(autoscale):
     return s._plot.signal_plot.figure
 
 
-@pytest.mark.parametrize("autoscale", ['', 'z'])
+@pytest.mark.parametrize("autoscale", ['', 'v'])
 def test_plot_autoscale_data_changed(autoscale):
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     s.plot(autoscale=autoscale, axes_ticks=True)
@@ -555,7 +555,7 @@ def test_plot_autoscale_data_changed(autoscale):
     s.data = s.data / 2
     s.events.data_changed.trigger(s)
 
-    if 'z' in autoscale:
+    if 'v' in autoscale:
         np.testing.assert_allclose(imf._vmin, s.data.min())
         np.testing.assert_allclose(imf._vmax, s.data.max())
     else:

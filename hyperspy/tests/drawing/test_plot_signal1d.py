@@ -222,7 +222,7 @@ def _test_plot_two_cursors(ndim):
     return s
 
 
-@pytest.mark.parametrize('autoscale', ['', 'x', 'xz', 'z'])
+@pytest.mark.parametrize('autoscale', ['', 'x', 'xv', 'v'])
 @pytest.mark.parametrize('norm', ['log', 'auto'])
 def test_plot_two_cursos_parameters(autoscale, norm):
     kwargs = {'autoscale':autoscale, 'norm':norm}
@@ -298,7 +298,7 @@ def test_plot_add_line_events():
     line.data_function = line_function
     line.set_line_properties(color='blue', type='line', scaley=False)
     figure.add_line(line)
-    line.plot()    
+    line.plot()
     assert len(line.events.closed.connected) == 1
     assert len(s.axes_manager.events.indices_changed.connected) == 3
 
@@ -310,7 +310,7 @@ def test_plot_add_line_events():
     assert len(s.axes_manager.events.indices_changed.connected) == 0
 
 
-@pytest.mark.parametrize("autoscale", ['', 'x', 'xz', 'z'])
+@pytest.mark.parametrize("autoscale", ['', 'x', 'xv', 'v'])
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_autoscale(autoscale):

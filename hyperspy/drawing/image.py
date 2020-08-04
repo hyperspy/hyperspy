@@ -398,7 +398,7 @@ class ImagePlot(BlittedFigure):
             signal. The default is True.
         auto_contrast : bool or None, optional
             Force automatic resetting of the intensity limits. If None, the
-            intensity values will change when 'z' is in autoscale.
+            intensity values will change when 'v' is in autoscale.
             Default is None.
         vmin, vmax : float or str
             `vmin` and `vmax` are used to normalise the displayed data.
@@ -412,7 +412,7 @@ class ImagePlot(BlittedFigure):
             compatible with the selected ``norm``.
         """
         if auto_contrast is None:
-            auto_contrast = 'z' in self.autoscale
+            auto_contrast = 'v' in self.autoscale
         if data_changed:
             # When working with lazy signals the following may reread the data
             # from disk unnecessarily, for example when updating the image just
@@ -427,13 +427,6 @@ class ImagePlot(BlittedFigure):
             data = self._current_data = data
             self._is_rgb = True
         ims = self.ax.images
-        # update extent:
-        if 'x' in self.autoscale:
-            self._extent[0] = self.xaxis.axis[0] - self.xaxis.scale / 2
-            self._extent[1] = self.xaxis.axis[-1] + self.xaxis.scale / 2
-        if 'y' in self.autoscale:
-            self._extent[2] = self.yaxis.axis[-1] + self.yaxis.scale / 2
-            self._extent[3] = self.yaxis.axis[0] - self.yaxis.scale / 2
 
         # Turn on centre_colormap if a diverging colormap is used.
         if not self._is_rgb and self.centre_colormap == "auto":
@@ -535,14 +528,19 @@ class ImagePlot(BlittedFigure):
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
+            # update extent:
             if 'x' in self.autoscale:
+                self._extent[0] = self.xaxis.axis[0] - self.xaxis.scale / 2
+                self._extent[1] = self.xaxis.axis[-1] + self.xaxis.scale / 2
                 self.ax.set_xlim(self._extent[:2])
             if 'y' in self.autoscale:
+                self._extent[2] = self.yaxis.axis[-1] + self.yaxis.scale / 2
+                self._extent[3] = self.yaxis.axis[0] - self.yaxis.scale / 2
                 self.ax.set_ylim(self._extent[2:])
             if 'x' in self.autoscale or 'y' in self.autoscale:
                 ims[0].set_extent(self._extent)
-                self._calculate_aspect()
-                self.ax.set_aspect(self._aspect)
+            self._calculate_aspect()
+            self.ax.set_aspect(self._aspect)
             if not self._is_rgb:
                 ims[0].set_norm(norm)
                 ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin

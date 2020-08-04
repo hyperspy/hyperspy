@@ -1582,7 +1582,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def plot(self,
              navigator="auto",
              plot_markers=True,
-             autoscale='z',
+             autoscale='v',
              norm="auto",
              axes_manager=None,
              navigator_kwds={},

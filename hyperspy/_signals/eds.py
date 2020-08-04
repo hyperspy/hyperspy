@@ -851,7 +851,7 @@ class EDS_mixin:
              integration_windows=None,
              navigator="auto",
              plot_markers=True,
-             autoscale='z',
+             autoscale='v',
              norm="auto",
              axes_manager=None,
              navigator_kwds={},

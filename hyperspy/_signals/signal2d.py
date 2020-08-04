@@ -323,7 +323,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     def plot(self,
              navigator="auto",
              plot_markers=True,
-             autoscale='z',
+             autoscale='v',
              saturated_pixels=None,
              norm="auto",
              vmin=None,

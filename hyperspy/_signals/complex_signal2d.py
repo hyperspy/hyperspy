@@ -62,7 +62,7 @@ class Complex2Dmixin:
              fft_shift=False,
              navigator="auto",
              plot_markers=True,
-             autoscale='z',
+             autoscale='v',
              saturated_pixels=None,
              norm="auto",
              vmin=None,

@@ -209,7 +209,7 @@ class Signal1DLine(object):
 
         # Properties
         self.auto_update = True
-        self.autoscale = 'z'
+        self.autoscale = 'v'
         self.line = None
         self.plot_indices = False
         self.text = None
@@ -380,10 +380,11 @@ class Signal1DLine(object):
             self.line.set_data(self.axis.axis, ydata)
         else:
             self.line.set_ydata(ydata)
+
         if 'x' in self.autoscale:
             self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
 
-        if 'z' in self.autoscale:
+        if 'v' in self.autoscale:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())
@@ -411,8 +412,10 @@ class Signal1DLine(object):
             if not np.isfinite(y_max):
                 y_max = None  # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
+
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
+
         if render_figure:
             if self.ax.figure.canvas.supports_blit:
                 self.ax.hspy_fig._update_animated()
