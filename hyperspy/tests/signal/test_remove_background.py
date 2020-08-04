@@ -260,33 +260,32 @@ def compare_axes_manager_metadata(s0, s1):
     assert s0.metadata.General.title == s1.metadata.General.title
 
 
+@pytest.mark.parametrize('background_type',
+                         ['Doniach', 'Exponential', 'Gaussian', 'Lorentzian',
+                          'Polynomial', 'Power law', 'Power Law', 'PowerLaw',
+                          'Offset', 'Skew normal', 'Skew Normal', 'SkewNormal',
+                          'Split Voigt', 'Split voigt', 'SplitVoigt',
+                          'Voigt'])
+def test_remove_backgound_type(background_type):
+    s = hs.signals.Signal1D(np.arange(100))
+    s.remove_background(background_type=background_type,signal_range=(2,98))
+
+
 @pytest.mark.parametrize('nav_dim', [0, 1])
 @pytest.mark.parametrize('fast', [True, False])
 @pytest.mark.parametrize('zero_fill', [True, False])
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
-@pytest.mark.parametrize('background_type',
-                         ['Doniach', 'Gaussian', 'Lorentzian', 'Polynomial',
-                          'Power Law', 'Offset', 'SkewNormal', 'SplitVoigt',
-                          'Voigt'])
 def test_remove_background_metadata_axes_manager_copy(nav_dim,
                                                       fast,
                                                       zero_fill,
                                                       show_progressbar,
-                                                      plot_remainder,
-                                                      background_type):
+                                                      plot_remainder):
     if nav_dim == 0:
-        if background_type == ('Voigt'):  # speeds up the test
-            s = hs.signals.Signal1D(np.hstack((np.arange(10, 50),
-                                               np.arange(10, 50)[::-1])))
-        else:
-            s = hs.signals.Signal1D(np.arange(10, 100)[::-1])
+        data = np.arange(10, 100)[::-1]
     else:
-        if background_type == ('Voigt'):  # avoids warning
-            s = hs.signals.Signal1D(
-                np.tile(np.exp(np.arange(0, 100)[::-1]), (2, 1)))
-        else:
-            s = hs.signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
+        data = np.arange(10, 210)[::-1].reshape(2, 100)
+    s = hs.signals.Signal1D(data)
     s.axes_manager[0].name = 'axis0'
     s.axes_manager[0].units = 'units0'
     s.axes_manager[0].scale = 0.9
@@ -297,7 +296,6 @@ def test_remove_background_metadata_axes_manager_copy(nav_dim,
                               fast=fast,
                               zero_fill=zero_fill,
                               show_progressbar=show_progressbar,
-                              plot_remainder=plot_remainder,
-                              background_type=background_type)
+                              plot_remainder=plot_remainder)
     compare_axes_manager_metadata(s, s_r)
     assert s_r.data.shape == s.data.shape
