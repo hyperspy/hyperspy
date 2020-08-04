@@ -1067,20 +1067,6 @@ HDF5 file. All other keyword arguments will be passed to
 Note that the model and other secondary data artifacts linked to the signal are not
 written to the file but these can be implemented at a later stage.
 
-.. _elid-format:
-
-Phenom ELID format
-------------------
-
-This is the file format used by the software package Element Identification for the Thermo
-Fisher Scientific Phenom desktop SEM. It is a proprietary binary format which can contain
-images, single EDS spectra, 1D line scan EDS spectra and 2D EDS spectrum maps. The reader
-will convert all signals and its metadata into hyperspy signals.
-
-The current implementation supports ELID files created with Element Identification version
-3.8.0 and later. You can convert older ELID files by loading the file into a recent Element
-Identification release and then save the ELID file into the newer file format.
-
 .. _nexus-format:
 
 Nexus
@@ -1463,7 +1449,7 @@ filename of the ``raw`` file is defined in the ``xml`` file, which implies
 changing the file name of the ``raw`` file will break reading the file.
 
 
-.. _elid-format:
+.. _elid_format-label:
 
 Phenom ELID format
 ------------------

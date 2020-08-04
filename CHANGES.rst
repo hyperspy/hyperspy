@@ -19,7 +19,7 @@ NEW
 * Support for the following file formats:
 
   * :ref:`sur-format`
-  * :ref:`elid-format`
+  * :ref:`elid_format-label`
   * :ref:`nexus-format`
   * :ref:`usid-format`
   * :ref:`empad-format`
