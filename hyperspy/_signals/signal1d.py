@@ -1128,7 +1128,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def remove_background(
             self,
             signal_range='interactive',
-            background_type='Power Law',
+            background_type='Power law',
             polynomial_order=2,
             fast=True,
             zero_fill=False,

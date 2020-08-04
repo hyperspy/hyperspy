@@ -1011,12 +1011,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Lorentzian',
         'Offset',
         'Polynomial',
-        'Power Law',
+        'Power law',
         'Exponential',
-        'SkewNormal',
-        'SplitVoigt',
+        'Skew normal',
+        'Split Voigt',
         'Voigt',
-        default='Power Law')
+        default='Power law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
@@ -1036,7 +1036,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     red_chisq = t.Float(np.nan)
 
-    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+    def __init__(self, signal, background_type='Power law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None, model=None):
         super(BackgroundRemoval, self).__init__(signal)
@@ -1052,6 +1052,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             model = Model1D(signal)
         self.model = model
         self.polynomial_order = polynomial_order
+        if background_type in ['Power Law', 'PowerLaw']:
+            background_type = 'Power law'
+        if background_type in ['Skew Normal', 'SkewNormal']:
+            background_type = 'Skew normal'
+        if background_type in ['Split voigt', 'SplitVoigt']:
+            background_type = 'Split Voigt'
         self.background_type = background_type
         self.zero_fill = zero_fill
         self.show_progressbar = show_progressbar
