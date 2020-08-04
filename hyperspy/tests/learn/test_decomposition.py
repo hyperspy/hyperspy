@@ -353,7 +353,7 @@ class TestDecompositionAlgorithm:
         ):
             self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec",])
+    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "svd", "mlpca", "nmf",])
     def test_name_deprecation_warning(self, algorithm):
         with pytest.warns(
             VisibleDeprecationWarning,

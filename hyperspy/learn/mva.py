@@ -251,7 +251,10 @@ class MVA:
         # Check for deprecated algorithm arguments
         algorithms_deprecated = {
             "fast_svd": "SVD",
+            "svd": "SVD",
             "fast_mlpca": "MLPCA",
+            "mlpca": "MLPCA",
+            "nmf": "NMF",
             "RPCA_GoDec": "RPCA",
         }
         new_algo = algorithms_deprecated.get(algorithm, None)
