@@ -124,7 +124,7 @@ API changes
     workers is now deprecated. Use ``parallel=True, max_workers={value}``
     instead.
   * The ``method`` keyword has been renamed to ``loss_function``.
-  * The ``loss_function`` value ``"ml"`` has been renamed to ``"ml-poisson"``.
+  * The ``loss_function`` value ``"ml"`` has been renamed to ``"ML-poisson"``.
   * The ``grad`` keyword no longer takes boolean values. It takes the
     following values instead: ``"fd"``, ``"analytical"``, callable or ``None``.
   * The ``ext_bounding`` keyword has been deprecated and will be removed. Use
@@ -159,11 +159,12 @@ API changes
 
   * Several ``algorithm`` keyword values have been renamed as follows:
 
-    * ``"fast_svd"``: ``"svd"``,
-    * ``"fast_mlpca"``: ``"mlpca"``,
-    * ``"RPCA_GoDec"``: ``"rpca"``,
-    * ``"ORPCA"``: ``"orpca"``,
-    * ``"ORNMF"``: ``"ornmf"``,
+    * ``"svd"``: ``"SVD"``,
+    * ``"fast_svd"``: ``"SVD"``,
+    * ``"nmf"``: ``"NMF"``,
+    * ``"fast_mlpca"``: ``"MLPCA"``,
+    * ``"mlpca"``: ``"MLPCA"``,
+    * ``"RPCA_GoDec"``: ``"RPCA"``,
   * The ``polyfit`` argument has been deprecated and will be removed. Use ``var_func`` instead.
 
 .. _changes_1.5.2:
