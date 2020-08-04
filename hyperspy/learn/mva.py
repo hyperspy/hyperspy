@@ -536,7 +536,11 @@ class MVA:
                     to_return = estim
 
             else:
-                raise ValueError("'algorithm' not recognised")
+                raise ValueError(
+                    f"algorithm={algorithm}' not recognised. Expected one of: "
+                     '"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", '
+                     '"mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object.'
+                    )
 
             # We must calculate the ratio here because otherwise the sum
             # information can be lost if the user subsequently calls

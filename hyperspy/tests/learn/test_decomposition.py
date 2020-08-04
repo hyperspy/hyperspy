@@ -362,7 +362,7 @@ class TestDecompositionAlgorithm:
             self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
     def test_algorithm_error(self):
-        with pytest.raises(ValueError, match="'algorithm' not recognised"):
+        with pytest.raises(ValueError, match="not recognised. Expected"):
             self.s.decomposition(algorithm="uniform")
 
 
