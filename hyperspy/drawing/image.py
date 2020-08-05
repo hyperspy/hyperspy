@@ -225,7 +225,8 @@ class ImagePlot(BlittedFigure):
                         yaxis.axis[0] - yaxis.scale / 2.]
         self._calculate_aspect()
         if self.saturated_pixels is not None:
-            _logger.warning("`saturated_pixels` is deprecated and will be "
+            from hyperspy.exceptions import VisibleDeprecationWarning
+            VisibleDeprecationWarning("`saturated_pixels` is deprecated and will be "
                             "removed in 2.0. Please use `vmin` and `vmax` "
                             "instead.")
             self._vmin_percentile = self.saturated_pixels / 2

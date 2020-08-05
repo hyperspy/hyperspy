@@ -116,6 +116,7 @@ linear ramp is at the origin and the slopes are given in units of the axis
 with the according scale taken into account. Both are available via the
 :py:class:`~.axes.AxesManager` of the signal.
 
+.. _peak_finding-label:
 
 Peak finding
 ------------
