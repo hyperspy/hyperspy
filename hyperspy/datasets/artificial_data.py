@@ -238,7 +238,7 @@ def get_core_loss_eels_line_scan_signal(add_powerlaw=False, random_state=None):
         data[i] += arctan_fe.function(x) * fe_intensity[i]
         data[i] += fe_l3_g.function(x) * fe_intensity[i]
         data[i] += fe_l2_g.function(x) * fe_intensity[i]
-        data[i] += random_state.random(size=len(x)) * 0.7
+        data[i] += random_state.uniform(size=len(x)) * 0.7
 
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
