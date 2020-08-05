@@ -300,3 +300,11 @@ def test_plot_navigator_plot_signal(ndim):
     assert s._plot.navigator_plot is None
     s._plot.close()
     check_closing_plot(s)
+
+
+@pytest.mark.parametrize("sdim", [1, 2])
+def test_plot_autoscale(sdim):
+    test_plot_nav1d = _TestPlot(ndim=1, sdim=sdim, data_type="real")
+    s = test_plot_nav1d.signal
+    with pytest.raises(ValueError):
+        s.plot(autoscale='xa')

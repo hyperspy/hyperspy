@@ -349,6 +349,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
         %s
 
         """
+        for c in autoscale:
+            if c not in ['x', 'y', 'v']:
+                raise ValueError("`autoscale` only accepts 'x', 'y', 'v' as "
+                                 "valid characters.")
         super().plot(
             navigator=navigator,
             plot_markers=plot_markers,
