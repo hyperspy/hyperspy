@@ -19,7 +19,6 @@
 import logging
 import functools
 import copy
-import itertools
 
 import numpy as np
 import scipy as sp
@@ -39,8 +38,6 @@ from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
-from hyperspy.misc.elements import elements as elements_db
-from hyperspy.drawing.marker import markers
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import numba_histogram
 
