@@ -85,6 +85,9 @@ Enhancements
   ``vmin`` and ``vmax`` keywords now take values like ``vmin="30th"`` to
   clip the minimum value to the 30th percentile. See :ref:`signal.fft`
   for an example.
+* The :py:meth:`~._signals.signal1d.Signal1D.plot` and
+  :py:meth:`~._signals.signal2d.Signal2D.plot` methods take a new keyword
+  argument ``autoscale``. See :ref:`plot.customize_images` for details.
 * The contrast editor and the decomposition methods can now operate on
   complex signals.
 * The default colormap can now be set in
