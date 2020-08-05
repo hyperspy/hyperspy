@@ -55,5 +55,5 @@ If you use HyperSpy in a scientific publication, please cite the following DOI:
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.3396791.svg
-.. _DOI: https://doi.org/10.5281/zenodo.3396791
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.3973513.svg
+.. _DOI: https://doi.org/10.5281/zenodo.3973513
