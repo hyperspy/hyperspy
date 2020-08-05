@@ -207,41 +207,32 @@ arguments are supported as well:
 .. versionadded:: 1.4
    ``norm`` keyword argument
 
-The ``norm`` keyword argument can be used to select between linear, logarithmic or
-custom (using a matplotlib norm) intensity scale. The default, "auto", automatically
-selects a logarithmic scale when plotting a power spectrum.
+The ``norm`` keyword argument can be used to select between linear, logarithmic
+or custom (using a matplotlib norm) intensity scale. The default, "auto",
+automatically selects a logarithmic scale when plotting a power spectrum.
 
-.. versionadded:: 1.1.2
-   Passing keyword arguments to the navigator plot.
+.. versionadded:: 1.6
+   ``autoscale`` keyword argument
 
-The same options can be passed to the navigator, albeit separately, by specifying
-them as a dictionary in ``navigator_kwds`` argument when plotting:
+The ``autoscale`` keyword argument can be used to specify which axis limits are
+reset when the data or navigation indices change. It can take any combinations
+of the following characters:
+* 'x' or 'y': to reset the horizontal or vertical axes
+* 'v': to reset the contrast of the image  according to `vmin` and `vmax`
+
+By default (`autoscale='v'`), only the contrast of the image will be reset
+automatically. For example, to reset the extent of the image (x, y) to their
+maxima but not the contrast, use `autoscale='xy'`; To reset all limits, use
+`autoscale='xyv'`:
 
 .. code-block:: python
 
     >>> import numpy as np
-    >>> import scipy
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
-    >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
-    >>> ims.metadata.General.title = 'My Images'
-    >>> ims.plot(colorbar=False,
-    ...          scalebar=False,
-    ...          axes_ticks=False,
-    ...          cmap='viridis',
-    ...          navigator_kwds=dict(colorbar=True,
-    ...                              scalebar_color='red',
-    ...                              cmap='Blues',
-    ...                              axes_ticks=False)
-    ...          )
+    >>> img = hs.signals.Signal2D(np.arange(10*10*10).reshape(10, 10, 10))
+    >>> img.plot(autoscale='xyv')
 
-.. figure::  images/custom_nav_opts.png
-   :align:   center
-   :height:   250
-
-   Custom different options for both signal and navigator image plots
 
 .. _plot.divergent_colormaps-label:
-
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
@@ -293,6 +284,37 @@ The same example with the feature disabled:
 
 Customizing the "navigator"
 ===========================
+
+.. versionadded:: 1.1.2
+   Passing keyword arguments to the navigator plot.
+
+The navigator can be customised by using the ``navigator_kwds`` argument. For
+example, in case of a image navigator, all image plot arguments mentioned in
+the section :ref:`plot.customize_images` can be passed as a dictionary to the
+``navigator_kwds`` argument:
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import scipy
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
+    >>> ims.metadata.General.title = 'My Images'
+    >>> ims.plot(colorbar=False,
+    ...          scalebar=False,
+    ...          axes_ticks=False,
+    ...          cmap='viridis',
+    ...          navigator_kwds=dict(colorbar=True,
+    ...                              scalebar_color='red',
+    ...                              cmap='Blues',
+    ...                              axes_ticks=False)
+    ...          )
+
+.. figure::  images/custom_nav_opts.png
+   :align:   center
+   :height:   250
+
+   Custom different options for both signal and navigator image plots
 
 Data files used in the following examples can be downloaded using
 
