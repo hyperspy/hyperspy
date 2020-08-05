@@ -39,16 +39,10 @@ class TestCluster1d:
         self.signal_mask = np.zeros((7,), dtype=bool)
         self.signal_mask[2:6] = True
 
-    @pytest.mark.parametrize("algorithm",
-                             (None, "kmeans", "agglomerative",
-                              "spectralclustering",
-                              "minibatchkmeans"))
-    @pytest.mark.parametrize("cluster_source",
-                             ("signal", "bss", "decomposition"))
-    @pytest.mark.parametrize("source_for_centers",
-                             (None, "signal", "bss", "decomposition"))
-    @pytest.mark.parametrize("preprocessing",
-                             (None, "standard", "norm", "minmax", None))
+    @pytest.mark.parametrize("algorithm", (None, "agglomerative", "spectralclustering"))
+    @pytest.mark.parametrize("cluster_source", ("signal", "bss", "decomposition"))
+    @pytest.mark.parametrize("source_for_centers", (None, "signal", "bss", "decomposition"))
+    @pytest.mark.parametrize("preprocessing", (None, "standard", "norm", "minmax"))
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_combinations(self, algorithm,
                           cluster_source,
