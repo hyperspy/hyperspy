@@ -173,7 +173,7 @@ def get_low_loss_eels_line_scan_signal(random_state=None):
     data = np.zeros((12, len(x)))
     for i in range(12):
         data[i] += data_signal
-        data[i] += random_state.random(size=len(x)) * 0.7
+        data[i] += random_state.uniform(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
