@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from distutils.version import LooseVersion
 import numpy as np
 import pytest
+import scipy
 
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
@@ -75,6 +77,9 @@ class TestSVDPCA:
         elif centre == "samples":
             np.testing.assert_allclose(mean, self.X_mean_0)
 
+    @pytest.mark.xfail(LooseVersion(scipy.__version__) < LooseVersion("1.4.0"),
+                       raises=ValueError,
+                       reason="This test requires Scipy >= 1.4.0")
     @pytest.mark.parametrize("output_dimension", [None, 3])
     @pytest.mark.parametrize("auto_transpose", [True, False])
     @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
@@ -149,6 +154,8 @@ class TestSVDPCA:
         normX = np.linalg.norm(X - Y)
         assert normX < self.tol
 
+    @pytest.mark.skipif(LooseVersion(scipy.__version__) < LooseVersion("1.4.0"),
+                        reason="This test requires Scipy >= 1.4.0")
     def test_arpack_error(self):
         with pytest.raises(
             ValueError, match="requires output_dimension to be strictly"

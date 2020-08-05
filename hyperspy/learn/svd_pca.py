@@ -18,8 +18,10 @@
 
 import logging
 import warnings
+from distutils.version import LooseVersion
 
 import numpy as np
+import scipy
 from scipy.linalg import svd
 from scipy.sparse.linalg import svds
 
@@ -149,6 +151,8 @@ def svd_solve(
             )
         U, S, V = randomized_svd(data, n_components=output_dimension, **kwargs)
     elif svd_solver == "arpack":
+        if LooseVersion(scipy.__version__) < LooseVersion("1.4.0"):
+            raise ValueError('`svd_solver="arpack"` requires scipy >= 1.4.0')
         if output_dimension >= min(m, n):
             raise ValueError(
                 "svd_solver='arpack' requires output_dimension "
