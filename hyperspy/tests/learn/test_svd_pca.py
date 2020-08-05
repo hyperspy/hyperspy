@@ -154,9 +154,8 @@ class TestSVDPCA:
         normX = np.linalg.norm(X - Y)
         assert normX < self.tol
 
-    @pytest.mark.skipif(LooseVersion(scipy.__version__) < LooseVersion("1.4.0"),
-                        reason="This test requires Scipy >= 1.4.0")
     def test_arpack_error(self):
+        pytest.importorskip("scipy", minversion="1.4.0")
         with pytest.raises(
             ValueError, match="requires output_dimension to be strictly"
         ):
