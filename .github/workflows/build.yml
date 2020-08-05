@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
+    name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: docker://quay.io/pypa/manylinux2010_x86_64
+        if: startsWith(matrix.os, 'ubuntu')
 
       - uses: actions/setup-python@v2
         name: Install Python
