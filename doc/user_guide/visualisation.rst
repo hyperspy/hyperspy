@@ -217,13 +217,15 @@ automatically selects a logarithmic scale when plotting a power spectrum.
 The ``autoscale`` keyword argument can be used to specify which axis limits are
 reset when the data or navigation indices change. It can take any combinations
 of the following characters:
-* 'x' or 'y': to reset the horizontal or vertical axes
-* 'v': to reset the contrast of the image  according to `vmin` and `vmax`
 
-By default (`autoscale='v'`), only the contrast of the image will be reset
-automatically. For example, to reset the extent of the image (x, y) to their
-maxima but not the contrast, use `autoscale='xy'`; To reset all limits, use
-`autoscale='xyv'`:
+* ``'x'``: to reset the horizontal axes
+* ``'y'``: to reset the vertical axes
+* ``'v'``: to reset the contrast of the image  according to ``vmin`` and ``vmax``
+
+By default (``autoscale='v'``), only the contrast of the image will be reset
+automatically. For example, to reset the extent of the image (x and y) to their
+maxima but not the contrast, use ``autoscale='xy'``; To reset all limits,
+including the contrast of the image, use ``autoscale='xyv'``:
 
 .. code-block:: python
 
