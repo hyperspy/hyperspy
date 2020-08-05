@@ -347,11 +347,24 @@ class TestIterPathScanPattern:
         s = Signal1D(zeros((3, 3, 3, 2)))
         self.am = s.axes_manager
 
-    def test_wrong_iterpath(self):
-        with pytest.raises(ValueError):
-            self.am.iterpath = "blahblah"
+    def test_iterpath_property(self):
+        self.am._iterpath = "abc" # with underscore
+        assert self.am.iterpath == "abc"
 
-    def test_wrong_iterpath2(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = "blahblah" # w/o underscore
+        
+        path = "flyback"
+        self.am.iterpath = path
+        assert self.am.iterpath == path
+        assert self.am._iterpath == path
+
+        path = "serpentine"
+        self.am.iterpath = path
+        assert self.am.iterpath == path
+        assert self.am._iterpath == path
+            
+    def test_wrong_iterpath(self):
         with pytest.raises(ValueError):
             self.am.iterpath = ""
 
@@ -368,10 +381,7 @@ class TestIterPathScanPattern:
                 pass
 
     def test_flyback(self):
-        iterpath = "flyback"
-        self.am.iterpath = iterpath
-        assert self.am._iterpath == iterpath
-        assert self.am.iterpath == iterpath
+        self.am.iterpath = "flyback"
         for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (0, 1, 0)
@@ -381,10 +391,7 @@ class TestIterPathScanPattern:
             break
 
     def test_serpentine(self):
-        iterpath = "serpentine"
-        self.am.iterpath = iterpath
-        assert self.am._iterpath == iterpath
-        assert self.am.iterpath == iterpath
+        self.am.iterpath = "serpentine"
         for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (2, 1, 0)
