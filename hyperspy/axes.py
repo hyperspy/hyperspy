@@ -1466,8 +1466,8 @@ class AxesManager(t.HasTraits):
             self._iterpath = path
             try:
                 self._iterpath_generator = iter(self._iterpath)
-            except (TypeError, AttributeError):
-                 raise TypeError(
+            except TypeError:
+                raise TypeError(
                 f"The iterpath '{self._iterpath}' is not a correct iterpath. "
                 "Ensure it is an iterable delivering incides with length equal "
                 f"to the navigation dimension, which is {self.navigation_dimension}.")

@@ -355,8 +355,23 @@ class TestIterPathScanPattern:
         with pytest.raises(ValueError):
             self.am.iterpath = ""
 
+    def test_wrong_custom_iterpath(self):
+        class A:
+            pass
+        with pytest.raises(TypeError):
+            self.am.iterpath = A()
+
+    def test_wrong_custom_iterpath(self):
+        self.am.iterpath = [(0,)] # not enough dimensions
+        with pytest.raises(AttributeError):
+            for i in self.am:
+                pass
+
     def test_flyback(self):
-        self.am.iterpath = "flyback"
+        iterpath = "flyback"
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
         for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (0, 1, 0)
@@ -366,7 +381,10 @@ class TestIterPathScanPattern:
             break
 
     def test_serpentine(self):
-        self.am.iterpath = "serpentine"
+        iterpath = "serpentine"
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
         for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (2, 1, 0)
@@ -376,15 +394,45 @@ class TestIterPathScanPattern:
             break
 
     def test_custom_iterpath(self):
+        iterpath = [(0,1,1), (1,1,1)]
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == iterpath[0]
+            if i == 1:
+                assert self.am.indices == iterpath[1]
+            break
+
+class TestIterPathScanPatternSignal2D:
+    def setup_method(self, method):
+        s = Signal2D(zeros((3, 3, 3, 2, 1)))
+        self.am = s.axes_manager
+
+    def test_wrong_iterpath_signal2D(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = "blahblah"
+
+    def test_custom_iterpath_signal2D(self):
         indices = [(0,1,1), (1,1,1)]
         self.am.iterpath = indices
         for i, _ in enumerate(self.am):
             if i == 0:
                 assert self.am.indices == indices[0]
-            # Hits a new layer on index 9
             if i == 1:
                 assert self.am.indices == indices[1]
-            break 
+            break
+
+    def test_serpentine_signal2D(self):
+        self.am.iterpath = "serpentine"
+        for i, _ in enumerate(self.am):
+            if i == 3:
+                assert self.am.indices == (2, 1, 0)
+            # Hits a new layer on index 9
+            if i == 9:
+                assert self.am.indices == (2, 2, 1)
+            break
 
 def test_iterpath_function_flyback():
     for i, indices in enumerate(flyback_iter((3,3,3))):
