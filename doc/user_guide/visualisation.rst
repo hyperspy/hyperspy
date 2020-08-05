@@ -194,7 +194,7 @@ arguments are supported as well:
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.misc.ascent())
     >>> img.plot(colorbar=True, scalebar=False,
-    ... 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
+    ... 	 axes_ticks=True, cmap='RdYlBu_r')
 
 
 .. figure::  images/custom_cmap.png
@@ -601,7 +601,7 @@ which is used to call subplots_adjust method of matplotlib
     >>> im = si_EDS.get_lines_intensity()
     >>> hs.plot.plot_images(im,
     ...     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
-    ...     colorbar='single', saturated_pixels=2, scalebar='all',
+    ...     colorbar='single', vmin='1th', vmax='99th', scalebar='all',
     ...     scalebar_color='black', suptitle_fontsize=16,
     ...     padding={'top':0.8, 'bottom':0.10, 'left':0.05,
     ...              'right':0.85, 'wspace':0.20, 'hspace':0.10})
@@ -632,7 +632,7 @@ generator:
     >>> im = si_EDS.get_lines_intensity()
     >>> hs.plot.plot_images(im,
     >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
-    >>>    colorbar='multi', saturated_pixels=2, scalebar=[0],
+    >>>    colorbar='multi', vmin='1th', vmax='99th', scalebar=[0],
     >>>    scalebar_color='white', suptitle_fontsize=16)
 
 .. figure::  images/plot_images_eds_cmap_list.png

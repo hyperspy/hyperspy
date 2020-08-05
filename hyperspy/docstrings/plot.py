@@ -122,6 +122,9 @@ PLOT2D_DOCSTRING = \
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
             If None (default value), the value from the preferences is used.
+        .. deprecated:: 1.6.0
+           `saturated_pixels` will be removed in HyperSpy 2.0.0, it is replaced
+            by `vmin`, `vmax` and `autoscale`.
         norm : {"auto", "linear", "power", "log", "symlog" or a subclass of
                 :py:class:`matplotlib.colors.Normalise`}
             Set the norm of the image to display. If "auto", a linear scale is
