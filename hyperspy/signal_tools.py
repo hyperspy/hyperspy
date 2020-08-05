@@ -1988,9 +1988,9 @@ class PeaksFinder2D(t.HasTraits):
 
     def _find_peaks_current_index(self, method):
         method = self._normalise_method_name(method)
-        self.peaks = self.signal.find_peaks(method, current_index=True,
-                                            interactive=False,
-                                            **self._get_parameters(method))
+        self.peaks.data = self.signal.find_peaks(method, current_index=True,
+                                                 interactive=False,
+                                                 **self._get_parameters(method))
 
     def _plot_markers(self):
         if self.signal._plot is not None and self.signal._plot.is_active:
@@ -2010,14 +2010,14 @@ class PeaksFinder2D(t.HasTraits):
                              y=y_axis.index2value(y),
                              color=color,
                              size=markersize)
-            for x, y in zip(self.peaks[:, 1], self.peaks[:, 0])]
+            for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
 
         return marker_list
 
     def compute_navigation(self):
         method = self._normalise_method_name(self.method)
         with self.signal.axes_manager.events.indices_changed.suppress():
-            self.signal.peaks = self.signal.find_peaks(
+            self.peaks.data = self.signal.find_peaks(
                 method, interactive=False, current_index=False,
                 **self._get_parameters(method))
 
