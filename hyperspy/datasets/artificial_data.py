@@ -68,7 +68,7 @@ def get_low_loss_eels_signal(add_noise=True, random_state=None):
     data = zero_loss.function(x)
     data += plasmon.function(x)
     if add_noise:
-        data += random_state.random(size=len(x)) * 0.7
+        data += random_state.uniform(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -139,7 +139,7 @@ def get_core_loss_eels_signal(add_powerlaw=False, add_noise=True, random_state=N
     data += mn_l3_g.function(x)
     data += mn_l2_g.function(x)
     if add_noise:
-        data += random_state.random(size=len(x)) * 0.7
+        data += random_state.uniform(size=len(x)) * 0.7
 
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
@@ -197,7 +197,7 @@ def get_low_loss_eels_line_scan_signal(add_noise=True, random_state=None):
     for i in range(12):
         data[i] += data_signal
         if add_noise:
-            data[i] += random_state.random(size=len(x)) * 0.7
+            data[i] += random_state.uniform(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -262,7 +262,7 @@ def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True, rand
         data[i] += fe_l3_g.function(x) * fe_intensity[i]
         data[i] += fe_l2_g.function(x) * fe_intensity[i]
         if add_noise:
-            data[i] += random_state.random(size=len(x)) * 0.7
+            data[i] += random_state.uniform(size=len(x)) * 0.7
 
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
