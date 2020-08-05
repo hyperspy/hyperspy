@@ -56,7 +56,8 @@ from hyperspy.docstrings.signal import (
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
     CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
-                                      KWARGS_DOCSTRING)
+                                      BASE_PLOT_DOCSTRING_PARAMETERS,
+                                      PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -307,7 +308,7 @@ class MVATools(object):
         vector_scale : integer or None
             Scales the quiver plot arrows. The vector is defined as one data
             unit along the X axis. If shifts are small, set vector_scale so
-            that when they are multiplied by vector_scale, they are on the 
+            that when they are multiplied by vector_scale, they are on the
             scale of the image plot. If None, uses matplotlib's autoscaling.
 
         Returns
@@ -1392,7 +1393,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
-            
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -2536,19 +2537,16 @@ class BaseSignal(FancySlicing,
         """%s
         %s
         %s
+        %s
         """
         if self._plot is not None:
-            try:
-                self._plot.close()
-            except BaseException:
-                # If it was already closed it will raise an exception,
-                # but we want to carry on...
-                pass
-        if ('power_spectrum' in kwargs and
-                not self.metadata.Signal.get_item('FFT', False)):
-            _logger.warning('The option `power_spectrum` is considered only '
-                            'for signals in Fourier space.')
-            del kwargs['power_spectrum']
+            self._plot.close()
+        if 'power_spectrum' in kwargs:
+            from hyperspy._signals.complex_signal import ComplexSignal
+            if not isinstance(self, ComplexSignal):
+                raise ValueError('The parameter `power_spectrum` required a '
+                                 'signal with complex data type.')
+                del kwargs['power_spectrum']
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -2664,8 +2662,8 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
-                    "navigator must be one of \"spectrum\",\"auto\","
-                    " \"slider\", None, a Signal instance")
+                    'navigator must be one of "spectrum","auto", '
+                    '"slider", None, a Signal instance')
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
@@ -2678,7 +2676,8 @@ class BaseSignal(FancySlicing,
             if self.metadata.has_item('Markers'):
                 self._plot_permanent_markers()
 
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -4457,7 +4456,7 @@ class BaseSignal(FancySlicing,
         """
         # Sepate ndkwargs
         ndkwargs = ()
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 

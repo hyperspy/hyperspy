@@ -204,13 +204,13 @@ class Signal1DLine(object):
         self.data_function_kwargs = {}
         self.axis = None
         self.axes_manager = None
-        self.auto_update = True
         self._plot_imag = False
         self.norm = 'linear'
 
         # Properties
+        self.auto_update = True
+        self.autoscale = 'v'
         self.line = None
-        self.autoscale = False
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
@@ -306,13 +306,16 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1, data_function_kwargs={}, norm='linear'):
-        self.data_function_kwargs = data_function_kwargs
-        self.norm = norm
+    def plot(self, data=1, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
         data = self._get_data()
         if self.line is not None:
             self.line.remove()
 
+        norm = self.norm
         if norm == 'log':
             plot = self.ax.semilogy
         elif (isinstance(norm, mpl.colors.Normalize) or
@@ -374,12 +377,14 @@ class Signal1DLine(object):
         old_xaxis = self.line.get_xdata()
         if len(old_xaxis) != self.axis.size or \
                 np.any(np.not_equal(old_xaxis, self.axis.axis)):
-            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
             self.line.set_data(self.axis.axis, ydata)
         else:
             self.line.set_ydata(ydata)
 
-        if self.autoscale is True:
+        if 'x' in self.autoscale:
+            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
+
+        if 'v' in self.autoscale:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())
@@ -407,8 +412,10 @@ class Signal1DLine(object):
             if not np.isfinite(y_max):
                 y_max = None  # data are inf or all NaN
             self.ax.set_ylim(y_min, y_max)
+
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
+
         if render_figure:
             if self.ax.figure.canvas.supports_blit:
                 self.ax.hspy_fig._update_animated()

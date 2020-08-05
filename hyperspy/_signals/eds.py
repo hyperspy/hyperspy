@@ -849,6 +849,12 @@ class EDS_mixin:
              only_one=False,
              background_windows=None,
              integration_windows=None,
+             navigator="auto",
+             plot_markers=True,
+             autoscale='v',
+             norm="auto",
+             axes_manager=None,
+             navigator_kwds={},
              **kwargs):
         """Plot the EDS spectrum. The following markers can be added
 
@@ -917,7 +923,13 @@ class EDS_mixin:
         set_elements, add_elements, estimate_integration_windows,
         get_lines_intensity, estimate_background_windows
         """
-        super().plot(**kwargs)
+        super().plot(navigator=navigator,
+                     plot_markers=plot_markers,
+                     autoscale=autoscale,
+                     norm=norm,
+                     axes_manager=axes_manager,
+                     navigator_kwds=navigator_kwds,
+                     **kwargs)
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
 
