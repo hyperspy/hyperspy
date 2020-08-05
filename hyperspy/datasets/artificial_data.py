@@ -46,7 +46,7 @@ def get_low_loss_eels_signal(random_state=None):
 
     data = zero_loss.function(x)
     data += plasmon.function(x)
-    data += random_state.random(size=len(x)) * 0.7
+    data += random_state.uniform(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -117,7 +117,7 @@ def get_core_loss_eels_signal(add_powerlaw=False, random_state=None):
     data = arctan.function(x)
     data += mn_l3_g.function(x)
     data += mn_l2_g.function(x)
-    data += random_state.random(size=len(x)) * 0.7
+    data += random_state.uniform(size=len(x)) * 0.7
 
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
