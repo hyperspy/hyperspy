@@ -39,7 +39,8 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.signal_tools import PeaksFinder2D
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
@@ -320,41 +321,63 @@ class Signal2D(BaseSignal, CommonSignal2D):
             self.axes_manager.set_signal_dimension(2)
 
     def plot(self,
-             colorbar=True,
+             navigator="auto",
+             plot_markers=True,
+             autoscale='v',
+             saturated_pixels=None,
+             norm="auto",
+             vmin=None,
+             vmax=None,
+             gamma=1.0,
+             linthresh=0.01,
+             linscale=0.1,
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
              axes_off=False,
-             saturated_pixels=None,
-             vmin=None,
-             vmax=None,
-             gamma=1.0,
+             axes_manager=None,
              no_nans=False,
+             colorbar=True,
              centre_colormap="auto",
              min_aspect=0.1,
+             navigator_kwds={},
              **kwargs
              ):
         """%s
         %s
         %s
+        %s
 
         """
-        super(Signal2D, self).plot(
-            colorbar=colorbar,
+        for c in autoscale:
+            if c not in ['x', 'y', 'v']:
+                raise ValueError("`autoscale` only accepts 'x', 'y', 'v' as "
+                                 "valid characters.")
+        super().plot(
+            navigator=navigator,
+            plot_markers=plot_markers,
+            autoscale=autoscale,
+            saturated_pixels=saturated_pixels,
+            norm=norm,
+            vmin=vmin,
+            vmax=vmax,
+            gamma=gamma,
+            linthresh=linthresh,
+            linscale=linscale,
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
             axes_off=axes_off,
-            saturated_pixels=saturated_pixels,
-            vmin=vmin,
-            vmax=vmax,
-            gamma=gamma,
+            axes_manager=axes_manager,
             no_nans=no_nans,
+            colorbar=colorbar,
             centre_colormap=centre_colormap,
             min_aspect=min_aspect,
+            navigator_kwds=navigator_kwds,
             **kwargs
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal
