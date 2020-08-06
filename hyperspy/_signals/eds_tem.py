@@ -457,9 +457,11 @@ class EDSTEM_mixin:
                                                                 thickness)
                         mass_thickness.metadata.General.title = 'Mass thickness'
                     else:
-                        warnings.warn('Thickness is required for absorption '
-                        'correction with k-factor method. Results will contain '
-                        'no correction for absorption.')
+                        raise ValueError(
+                            'Thickness is required for absorption '
+                            'correction with k-factor method. Results will contain '
+                            'no correction for absorption.'
+                        )
 
             elif method == 'zeta':
                 composition.data = results[0] * 100

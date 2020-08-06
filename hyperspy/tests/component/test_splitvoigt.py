@@ -20,7 +20,6 @@
 import itertools
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
 from hyperspy.components1d import SplitVoigt
@@ -37,8 +36,8 @@ def test_function():
     g.centre.value = 0
     g.sigma1.value = 2
     g.sigma2.value = 2
-    assert_allclose(g.function(0), 0.49867785, rtol=1e-3)
-    assert_allclose(g.function(6), 0.00553981, rtol=1e-3)
+    np.testing.assert_allclose(g.function(0), 0.49867785, rtol=1e-3)
+    np.testing.assert_allclose(g.function(6), 0.00553981, rtol=1e-3)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -58,7 +57,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.2)
+    np.testing.assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.2)
     assert abs(g2.centre.value - g1.centre.value) <= 0.1
     assert abs(g2.sigma1.value - g1.sigma1.value) <= 0.1
     assert abs(g2.sigma2.value - g1.sigma2.value) <= 0.1
@@ -86,4 +85,4 @@ def test_function_nd(lazy):
     g2.fraction.map['values'] = [fraction] * 2
     g2.centre.map['values'] = [centre] * 2
 
-    assert_allclose(g2.function_nd(axis.axis), s2.data)
+    np.testing.assert_allclose(g2.function_nd(axis.axis), s2.data)

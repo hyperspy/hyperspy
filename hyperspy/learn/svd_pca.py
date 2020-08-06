@@ -145,14 +145,15 @@ def svd_solve(
             svd_solver = "full"
 
     if svd_solver == "randomized":
-        if not sklearn_installed:
+        if not sklearn_installed:  # pragma: no cover
             raise ImportError(
                 "svd_solver='randomized' requires scikit-learn to be installed"
             )
         U, S, V = randomized_svd(data, n_components=output_dimension, **kwargs)
     elif svd_solver == "arpack":
-        if LooseVersion(scipy.__version__) < LooseVersion("1.4.0"):
+        if LooseVersion(scipy.__version__) < LooseVersion("1.4.0"):  # pragma: no cover
             raise ValueError('`svd_solver="arpack"` requires scipy >= 1.4.0')
+
         if output_dimension >= min(m, n):
             raise ValueError(
                 "svd_solver='arpack' requires output_dimension "

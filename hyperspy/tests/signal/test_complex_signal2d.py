@@ -18,8 +18,6 @@
 
 
 import numpy as np
-import numpy.testing as nt
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 
@@ -28,7 +26,7 @@ def test_add_phase_ramp():
     s = hs.signals.ComplexSignal2D(
         np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4)))
     s.add_phase_ramp(-1, -1, -4)
-    assert_allclose(s.phase.data, np.zeros_like(s.phase.data),
+    np.testing.assert_allclose(s.phase.data, np.zeros_like(s.phase.data),
                     atol=np.finfo(float).eps * 1.5)
 
 
@@ -36,4 +34,4 @@ def test_lazy_add_phase_ramp():
     s = hs.signals.ComplexSignal2D(
         np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4))).as_lazy()
     s.add_phase_ramp(-1, -1, -4)
-    nt.assert_almost_equal(s.phase.data.compute(), 0)
+    np.testing.assert_almost_equal(s.phase.data.compute(), 0)

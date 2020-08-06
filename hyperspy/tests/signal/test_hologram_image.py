@@ -27,6 +27,28 @@ import hyperspy.api as hs
 from hyperspy.datasets.example_signals import reference_hologram
 from hyperspy.decorators import lazifyTestClass
 
+# Set parameters outside the tests
+img_size = 256
+IMG_SIZE3X = 128
+IMG_SIZE3Y = 64
+FRINGE_DIRECTION = -np.pi / 6
+FRINGE_SPACING = 5.23
+FRINGE_DIRECTION3 = np.pi / 3
+FRINGE_SPACING3 = 6.11
+LS = np.linspace(-img_size / 2, img_size / 2 - 1, img_size)
+X_START = int(IMG_SIZE3X / 9)
+# larger fringes require larger crop
+X_STOP = IMG_SIZE3X - 1 - int(IMG_SIZE3X / 9)
+Y_START = int(IMG_SIZE3Y / 9)
+Y_STOP = IMG_SIZE3Y - 1 - int(IMG_SIZE3Y / 9)
+
+
+# Create this stack outside the TestStatistics class, otherwise
+# the number of parametrizations leads to an unnecessary amount
+# of computation (ca. 50% increase in runtime)
+ref_holo_stack = hs.stack([reference_hologram()] * 2)
+ref_holo_stack = hs.stack([ref_holo_stack] * 3)
+
 
 @pytest.mark.parametrize("lazy", [True, False])
 def test_set_microscope_parameters(lazy):
@@ -76,21 +98,6 @@ def calc_holo(x, y, phase_ref, FRINGE_SPACING, FRINGE_DIRECTION):
 
 def calc_phaseref(x, y, z, img_sizex, img_sizey):
     return np.pi * x * (1 - z) / img_sizex + np.pi * y * z / img_sizey
-
-
-img_size = 256
-IMG_SIZE3X = 128
-IMG_SIZE3Y = 64
-FRINGE_DIRECTION = -np.pi / 6
-FRINGE_SPACING = 5.23
-FRINGE_DIRECTION3 = np.pi / 3
-FRINGE_SPACING3 = 6.11
-LS = np.linspace(-img_size / 2, img_size / 2 - 1, img_size)
-X_START = int(IMG_SIZE3X / 9)
-# larger fringes require larger crop
-X_STOP = IMG_SIZE3X - 1 - int(IMG_SIZE3X / 9)
-Y_START = int(IMG_SIZE3Y / 9)
-Y_STOP = IMG_SIZE3Y - 1 - int(IMG_SIZE3Y / 9)
 
 
 @pytest.mark.parametrize("lazy", [True, False])
@@ -314,6 +321,9 @@ def test_reconstruct_phase_multi(lazy):
 
 class TestStatistics:
     def setup_method(self, method):
+        # Copy the stack
+        self.ref_holo = ref_holo_stack.deepcopy()
+
         # Parameters measured using Gatan HoloWorks:
         self.REF_FRINGE_SPACING = 3.48604
         self.REF_FRINGE_SAMPLING = 3.7902
@@ -324,10 +334,6 @@ class TestStatistics:
         # Prepare test data and derived statistical parameters
         self.ref_carrier_freq = 1.0 / self.REF_FRINGE_SAMPLING
         self.ref_carrier_freq_nm = 1.0 / self.REF_FRINGE_SPACING
-
-        # 3x2 stack
-        self.ref_holo = hs.stack([reference_hologram()] * 2)
-        self.ref_holo = hs.stack([self.ref_holo] * 3)
 
         ht = self.ref_holo.metadata.Acquisition_instrument.TEM.beam_energy
         momentum = (

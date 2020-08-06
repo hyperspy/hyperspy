@@ -66,7 +66,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
 
         while not converged:
             S = 0.0
-            for _ in range(max_iter):
+            for _ in range(max_iter):  # pragma: no branch
                 Sold = S
                 Bsq = B ** 2
                 U, S, V = svd(
@@ -86,7 +86,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
         # someone with more knowledge can either fix
         # or remove this?
         # Use a sequence of bivariate rotations
-        for _ in range(max_iter):
+        for _ in range(max_iter):  # pragma: no branch
             maxTheta = 0.0
 
             for i in range(m - 1):

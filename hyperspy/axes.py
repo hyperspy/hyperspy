@@ -646,7 +646,7 @@ def serpentine_iter(shape):
                 idx[j] += drc[j]
                 break
             drc[j] *= -1
-        else:
+        else:  # pragma: no cover
             break
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
