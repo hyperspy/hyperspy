@@ -104,7 +104,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          path: ./dist/*.whl
+          path: ./dist/*-manylinux*.whl
 
       #- name: Upload Release Asset
       #  uses: actions/upload-release-asset@v1
