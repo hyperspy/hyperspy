@@ -7,14 +7,7 @@ import pytest
 
 from hyperspy import api as hs
 
-try:
-    import pyUSID as usid
-    pyusid_installed = True
-except BaseException:
-    pyusid_installed = False
-
-pytestmark = pytest.mark.skipif(not pyusid_installed,
-                                reason="pyUSID not installed")
+usid = pytest.importorskip("pyUSID", reason="pyUSID not installed")
 
 
 # ##################### HELPER FUNCTIONS ######################################
