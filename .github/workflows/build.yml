@@ -1,14 +1,34 @@
 name: Release
 
-on: [push, pull_request]
-#  push:
-#    # Sequence of patterns matched against refs/tags
-#    tags:
-#    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs: 
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+  
   build_wheels:
     name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
+    needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -34,7 +54,7 @@ jobs:
         run: |
           choco install vcpython27 -f -y
 
-      - name: install pep517
+      - name: install pep517 and cython
         run: |
           python -m pip install --upgrade pip
           python -m pip install pep517 cython
@@ -47,8 +67,27 @@ jobs:
         with:
           path: ./dist/*.whl
 
+      #- name: Upload Release Asset
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #  with:
+      #    upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #    asset_path: ./dist/*.whl
+      #    asset_name: 
+      #    asset_content_type: 
+
+      #- name: Publish wheels to PyPI
+      #  env:
+      #    TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+      #    TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      #  run: |
+      #    python -m pip install twine
+      #    python -m twine upload dist/*.whl
+
   build_wheels_linux:
     name: Wheels on ubuntu-latest
+    needs: create_release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -66,3 +105,23 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           path: ./dist/*.whl
+
+      #- name: Upload Release Asset
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #  with:
+      #    upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #    asset_path: ./dist/*-manylinux*.whl
+      #    asset_name: 
+      #    asset_content_type: 
+
+      #- name: Publish wheels to PyPI
+      #  env:
+      #    TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+      #    TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      #  run: |
+      #    python -m pip install --upgrade setuptools twine
+      #    python setup.py sdist
+      #    twine upload dist/*-manylinux*.whl
+      #    twine upload dist/*.tar.gz
