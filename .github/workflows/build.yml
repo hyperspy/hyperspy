@@ -1,10 +1,10 @@
 name: Release
 
-on:
-  push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+on: [push, pull_request]
+#  push:
+#    # Sequence of patterns matched against refs/tags
+#    tags:
+#    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   build_wheels:
@@ -12,18 +12,25 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, windows-latest, macos-latest]
+        #os: [ubuntu-18.04, windows-latest, macos-latest]
+        os: [ubuntu-16.04]
         python-version: [3.6, 3.7, 3.8]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: docker://quay.io/pypa/manylinux2010_x86_64
+      - uses: docker://quay.io/pypa/manylinux1_x86_64
         if: runner.os == 'Linux'
 
       - uses: actions/setup-python@v2
         name: Install Python
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: What OS and Python version
+        run: |
+          uname -a
+          python --version
+          which python
 
       - name: install pep517
         run: |
@@ -39,10 +46,10 @@ jobs:
         run: |
           python -m pep517.build --binary --out-dir dist/ .
 
-      #- name: auditwheel
-      #  if: runner.os == 'Linux'
-      #  run: |
-      #    auditwheel repair dist/*.whl
+      - name: auditwheel
+        if: runner.os == 'Linux'
+        run: |
+          auditwheel repair dist/*.whl
 
       - uses: actions/upload-artifact@v2
         with:
