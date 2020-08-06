@@ -32,7 +32,6 @@ import h5py
 import numpy as np
 import pytest
 from dateutil import tz
-from numpy.testing import assert_allclose
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -342,11 +341,11 @@ class TestFeiEMD():
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].units == 'µm'
-        assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].units == 'µm'
-        assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
-        assert_allclose(signal.data, fei_image)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
+        np.testing.assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
         assert isinstance(signal, Signal2D)
 
@@ -386,15 +385,15 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'X-ray energy'
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
-        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
 
         signal0 = s[0]
         if lazy:
@@ -404,7 +403,7 @@ class TestFeiEMD():
         assert signal0.axes_manager[0].name == 'x'
         assert signal0.axes_manager[0].size == 10
         assert signal0.axes_manager[0].units == 'nm'
-        assert_allclose(signal0.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal0.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal0.axes_manager[1].name == 'y'
         assert signal0.axes_manager[1].size == 50
         assert signal0.axes_manager[1].units == 'nm'
@@ -424,19 +423,19 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'Time'
         assert signal.axes_manager[2].size == 10
         assert signal.axes_manager[2].units == 's'
-        assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
         assert signal.axes_manager[3].name == 'X-ray energy'
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
-        assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
@@ -454,19 +453,19 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'Time'
         assert signal.axes_manager[2].size == 5
         assert signal.axes_manager[2].units == 's'
-        assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
         assert signal.axes_manager[3].name == 'X-ray energy'
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
-        assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
@@ -484,19 +483,19 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'Time'
         assert signal.axes_manager[2].size == 6
         assert signal.axes_manager[2].units == 's'
-        assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
         assert signal.axes_manager[3].name == 'X-ray energy'
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
-        assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames(self, lazy):
@@ -512,15 +511,15 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'X-ray energy'
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
-        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames_2eV(self, lazy):
@@ -536,15 +535,15 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'X-ray energy'
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
-        assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_frame_range(self, lazy):
@@ -578,7 +577,7 @@ class TestFeiEMD():
             os.path.join(
                 self.fei_files_path,
                 '1532 Camera Ceta.emd'))
-        assert_allclose(signal.data, np.zeros((64, 64)))
+        np.testing.assert_allclose(signal.data, np.zeros((64, 64)))
         assert isinstance(signal, Signal2D)
         date, time = self._convert_datetime(1512055942.914275).split('T')
         assert signal.metadata.General.date == date
@@ -589,7 +588,7 @@ class TestFeiEMD():
             os.path.join(
                 self.fei_files_path,
                 '1854 Camera Ceta.emd'))
-        assert_allclose(signal.data, np.zeros((64, 64)))
+        np.testing.assert_allclose(signal.data, np.zeros((64, 64)))
         assert isinstance(signal, Signal2D)
 
     def _convert_datetime(self, unix_time):

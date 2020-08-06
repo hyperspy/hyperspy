@@ -59,11 +59,12 @@ class TestRemoveBackground1DGaussian:
         if return_model:
             s1 = out[0]
             model = out[1]
-            assert np.allclose(model.chisq.data, 0.0)
-            assert np.allclose(model.as_signal().data, signal.data)
+            np.testing.assert_allclose(model.chisq.data, 0.0, atol=1e-12)
+            np.testing.assert_allclose(model.as_signal().data, signal.data, atol=1e-12)
         else:
             s1 = out
-        assert np.allclose(s1.data, np.zeros_like(s1.data))
+
+        np.testing.assert_allclose(s1.data, 0.0, atol=1e-12)
 
     def test_background_remove_navigation(self):
         # Check it calculate the chisq
@@ -73,9 +74,9 @@ class TestRemoveBackground1DGaussian:
             background_type='Gaussian',
             fast=True,
             return_model=True)
-        assert np.allclose(model.chisq.data, np.array([0.0, 0.0]))
-        assert np.allclose(model.as_signal().data, s2.data)
-        assert np.allclose(s.data, np.zeros_like(s.data))
+        np.testing.assert_allclose(model.chisq.data, np.array([0.0, 0.0]), atol=1e-12)
+        np.testing.assert_allclose(model.as_signal().data, s2.data)
+        np.testing.assert_allclose(s.data, 0.0, atol=1e-12)
 
 
 @lazifyTestClass
@@ -96,14 +97,14 @@ class TestRemoveBackground1DLorentzian:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Lorentzian')
-        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
+        np.testing.assert_allclose(s1.data, 0.0, atol=0.2)
 
     def test_background_remove_lorentzian_full_fit(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Lorentzian',
             fast=False)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+        np.testing.assert_allclose(s1.data, 0.0, atol=1e-12)
 
 
 @lazifyTestClass
@@ -127,8 +128,7 @@ class TestRemoveBackground1DPowerLaw:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='PowerLaw')
-        # since we compare to zero, rtol can't be used (see np.allclose doc)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=self.atol)
+        np.testing.assert_allclose(s1.data, 0.0, atol=self.atol)
         assert s1.axes_manager.navigation_dimension == 0
 
     def test_background_remove_pl_zero(self):
@@ -136,18 +136,15 @@ class TestRemoveBackground1DPowerLaw:
             signal_range=(110.0, 190.0),
             background_type='PowerLaw',
             zero_fill=True)
-        # since we compare to zero, rtol can't be used (see np.allclose doc)
-        assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
-                           atol=self.atol_zero_fill)
-        assert np.allclose(s1.data[:10], np.zeros(10))
+        np.testing.assert_allclose(s1.isig[10:], 0.0, atol=self.atol_zero_fill)
+        np.testing.assert_allclose(s1.data[:10], np.zeros(10))
 
     def test_background_remove_pl_int(self):
         self.signal.change_dtype("int")
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='PowerLaw')
-        # since we compare to zero, rtol can't be used (see np.allclose doc)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=self.atol)
+        np.testing.assert_allclose(s1.data, 0.0, atol=self.atol)
 
     def test_background_remove_pl_int_zero(self):
         self.signal_noisy.change_dtype("int")
@@ -155,10 +152,8 @@ class TestRemoveBackground1DPowerLaw:
             signal_range=(110.0, 190.0),
             background_type='PowerLaw',
             zero_fill=True)
-        # since we compare to zero, rtol can't be used (see np.allclose doc)
-        assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
-                           atol=self.atol_zero_fill)
-        assert np.allclose(s1.data[:10], np.zeros(10))
+        np.testing.assert_allclose(s1.isig[10:], 0.0, atol=self.atol_zero_fill)
+        np.testing.assert_allclose(s1.data[:10], np.zeros(10))
 
 
 @lazifyTestClass
@@ -180,14 +175,14 @@ class TestRemoveBackground1DSkewNormal:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='SkewNormal')
-        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=0.2)
+        np.testing.assert_allclose(s1.data, 0.0, atol=0.2)
 
     def test_background_remove_skewnormal_full_fit(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='SkewNormal',
             fast=False)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+        np.testing.assert_allclose(s1.data, 0.0, atol=1e-12)
 
 
 @lazifyTestClass
@@ -210,14 +205,14 @@ class TestRemoveBackground1DVoigt:
             signal_range=(None, None),
             background_type='Voigt',
             fast=False)
-        assert np.allclose(np.zeros(len(s1.data)), s1.data)
+        np.testing.assert_allclose(s1.data, 0.0, atol=1e-12)
 
     def test_background_remove_voigt_full_fit(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Voigt',
             fast=False)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+        np.testing.assert_allclose(s1.data, 0.0, atol=1e-12)
 
 
 @lazifyTestClass
@@ -238,14 +233,14 @@ class TestRemoveBackground1DExponential:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Exponential')
-        assert np.allclose(np.zeros(len(s1.data)), s1.data, atol=self.atol)
+        np.testing.assert_allclose(s1.data, 0.0, atol=self.atol)
 
     def test_background_remove_exponential_full_fit(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Exponential',
             fast=False)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)))
+        np.testing.assert_allclose(s1.data, 0.0, atol=self.atol)
 
 
 def compare_axes_manager_metadata(s0, s1):

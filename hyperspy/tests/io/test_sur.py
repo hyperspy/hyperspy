@@ -18,8 +18,7 @@
 
 import os
 
-from numpy import dtype
-from numpy.testing import assert_allclose
+import numpy as np
 
 from hyperspy.io import load
 
@@ -141,9 +140,9 @@ def test_load_profile():
 
     #Verifying signal shape and axes dimensions, navigation (not data themselves)
     assert s.data.shape == (128,)
-    assert s.data.dtype == dtype(float)
-    assert_allclose(s.axes_manager[0].scale,8.252197e-05)
-    assert_allclose(s.axes_manager[0].offset,0.0)
+    assert s.data.dtype == np.dtype(float)
+    np.testing.assert_allclose(s.axes_manager[0].scale,8.252197e-05)
+    np.testing.assert_allclose(s.axes_manager[0].offset,0.0)
     assert s.axes_manager[0].name == 'Width'
     assert s.axes_manager[0].units == 'mm'
     assert s.axes_manager[0].size == 128
@@ -166,12 +165,12 @@ def test_load_RGB():
                          "test_RGB.sur")
     s = load(fname)
     assert s.data.shape == (200, 200)
-    assert s.data.dtype == dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
+    assert s.data.dtype == np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
 
-    assert_allclose(s.axes_manager[0].scale,0.35277777)
-    assert_allclose(s.axes_manager[0].offset,208.8444519)
-    assert_allclose(s.axes_manager[1].scale,0.35277777)
-    assert_allclose(s.axes_manager[1].offset,210.608337)
+    np.testing.assert_allclose(s.axes_manager[0].scale,0.35277777)
+    np.testing.assert_allclose(s.axes_manager[0].offset,208.8444519)
+    np.testing.assert_allclose(s.axes_manager[1].scale,0.35277777)
+    np.testing.assert_allclose(s.axes_manager[1].offset,210.608337)
     assert s.axes_manager[0].name == 'X'
     assert s.axes_manager[0].units == 'mm'
     assert s.axes_manager[1].name == 'Y'
@@ -197,14 +196,14 @@ def test_load_spectra():
     s = load(fname)
 
     assert s.data.shape == (65, 512)
-    assert s.data.dtype == dtype('float64')
+    assert s.data.dtype == np.dtype('float64')
 
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity (a.u.)'
-    assert_allclose(s.axes_manager[0].scale,0.00011458775406936184)
-    assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[1].scale,1.084000246009964e-06)
-    assert_allclose(s.axes_manager[1].offset,0.00017284281784668565)
+    np.testing.assert_allclose(s.axes_manager[0].scale,0.00011458775406936184)
+    np.testing.assert_allclose(s.axes_manager[0].offset,0.0)
+    np.testing.assert_allclose(s.axes_manager[1].scale,1.084000246009964e-06)
+    np.testing.assert_allclose(s.axes_manager[1].offset,0.00017284281784668565)
     assert s.axes_manager[0].name == 'Spectrum positi'
     assert s.axes_manager[0].units == 'mm'
     assert s.axes_manager[1].name == 'Wavelength'
@@ -226,16 +225,16 @@ def test_load_spectral_map_compressed():
     s = load(fname)
 
     assert s.data.shape == (12, 10, 281)
-    assert s.data.dtype == dtype('float64')
+    assert s.data.dtype == np.dtype('float64')
 
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity (a.u.)'
-    assert_allclose(s.axes_manager[0].scale,8.252198e-05)
-    assert_allclose(s.axes_manager[0].offset,0.005694016348570585)
-    assert_allclose(s.axes_manager[1].scale,8.252198e-05)
-    assert_allclose(s.axes_manager[1].offset,0.0054464503191411495)
-    assert_allclose(s.axes_manager[2].scale,1.084000246009964e-06)
-    assert_allclose(s.axes_manager[2].offset,0.00034411484375596046)
+    np.testing.assert_allclose(s.axes_manager[0].scale,8.252198e-05)
+    np.testing.assert_allclose(s.axes_manager[0].offset,0.005694016348570585)
+    np.testing.assert_allclose(s.axes_manager[1].scale,8.252198e-05)
+    np.testing.assert_allclose(s.axes_manager[1].offset,0.0054464503191411495)
+    np.testing.assert_allclose(s.axes_manager[2].scale,1.084000246009964e-06)
+    np.testing.assert_allclose(s.axes_manager[2].offset,0.00034411484375596046)
     assert s.axes_manager[0].name == 'Width'
     assert s.axes_manager[0].units == 'mm'
     assert s.axes_manager[1].name == 'Height'
@@ -271,16 +270,16 @@ def test_load_spectral_map():
     s = load(fname)
 
     assert s.data.shape == (12, 10, 310)
-    assert s.data.dtype == dtype('float64')
+    assert s.data.dtype == np.dtype('float64')
 
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity (a.u.)'
-    assert_allclose(s.axes_manager[0].scale,8.252197585534304e-05)
-    assert_allclose(s.axes_manager[0].offset,0.00701436772942543)
-    assert_allclose(s.axes_manager[1].scale,8.252197585534304e-05)
-    assert_allclose(s.axes_manager[1].offset,0.003053313121199608)
-    assert_allclose(s.axes_manager[2].scale,1.084000246009964e-6)
-    assert_allclose(s.axes_manager[2].offset,0.0003332748601678759)
+    np.testing.assert_allclose(s.axes_manager[0].scale,8.252197585534304e-05)
+    np.testing.assert_allclose(s.axes_manager[0].offset,0.00701436772942543)
+    np.testing.assert_allclose(s.axes_manager[1].scale,8.252197585534304e-05)
+    np.testing.assert_allclose(s.axes_manager[1].offset,0.003053313121199608)
+    np.testing.assert_allclose(s.axes_manager[2].scale,1.084000246009964e-6)
+    np.testing.assert_allclose(s.axes_manager[2].offset,0.0003332748601678759)
     assert s.axes_manager[0].name == 'Width'
     assert s.axes_manager[0].units == 'mm'
     assert s.axes_manager[1].name == 'Height'
@@ -317,10 +316,10 @@ def test_load_spectrum_compressed():
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity (a.u.)'
     assert s.data.shape == (512,)
-    #assert_allclose(s.axes_manager[0].scale,1.0)
-    #assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[0].scale,1.084000246009964e-6)
-    assert_allclose(s.axes_manager[0].offset,172.84281784668565e-6)
+    #np.testing.assert_allclose(s.axes_manager[0].scale,1.0)
+    #np.testing.assert_allclose(s.axes_manager[0].offset,0.0)
+    np.testing.assert_allclose(s.axes_manager[0].scale,1.084000246009964e-6)
+    np.testing.assert_allclose(s.axes_manager[0].offset,172.84281784668565e-6)
 
     #assert s.axes_manager[0].name == 'T'
     #assert s.axes_manager[0].units == ''
@@ -345,10 +344,10 @@ def test_load_spectrum():
 
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity (a.u.)'
-    #assert_allclose(s.axes_manager[0].scale,1.0)
-    #assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[0].scale,1.084000246009964e-6)
-    assert_allclose(s.axes_manager[0].offset,172.84281784668565e-6)
+    #np.testing.assert_allclose(s.axes_manager[0].scale,1.0)
+    #np.testing.assert_allclose(s.axes_manager[0].offset,0.0)
+    np.testing.assert_allclose(s.axes_manager[0].scale,1.084000246009964e-6)
+    np.testing.assert_allclose(s.axes_manager[0].offset,172.84281784668565e-6)
 
     #assert s.axes_manager[0].name == 'T'
     #assert s.axes_manager[0].units == ''
@@ -372,10 +371,10 @@ def test_load_surface():
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity (a.u.)'
     assert s.data.shape == (128,128)
-    assert_allclose(s.axes_manager[0].scale,8.252198e-05)
-    assert_allclose(s.axes_manager[0].offset,0.0)
-    assert_allclose(s.axes_manager[1].scale,8.252198e-05)
-    assert_allclose(s.axes_manager[1].offset,0.0)
+    np.testing.assert_allclose(s.axes_manager[0].scale,8.252198e-05)
+    np.testing.assert_allclose(s.axes_manager[0].offset,0.0)
+    np.testing.assert_allclose(s.axes_manager[1].scale,8.252198e-05)
+    np.testing.assert_allclose(s.axes_manager[1].offset,0.0)
 
     assert s.axes_manager[0].name == 'Width'
     assert s.axes_manager[0].units == 'mm'

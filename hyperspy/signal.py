@@ -3404,7 +3404,8 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.navigation_size < 2:
             while True:
                 yield self()
-            return
+            return  # pragma: no cover
+
         self._make_sure_data_is_contiguous()
         axes = [axis.index_in_array for
                 axis in self.axes_manager.signal_axes]
@@ -3430,8 +3431,7 @@ class BaseSignal(FancySlicing,
             getitem[unfolded_axis] = i
             yield(data[tuple(getitem)])
             i += 1
-            if i == Ni:
-                i = 0
+            i = 0 if i == Ni else i
 
     def _remove_axis(self, axes):
         am = self.axes_manager

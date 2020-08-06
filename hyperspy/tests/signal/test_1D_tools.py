@@ -62,7 +62,7 @@ class TestAlignTools:
                   self.scale)
         assert m.data_changed.called
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert np.allclose(s.data[:, i_zlp], 12)
+        np.testing.assert_allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
@@ -76,7 +76,7 @@ class TestAlignTools:
         s = self.signal
         s.align1D()
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert np.allclose(s.data[:, i_zlp], 12)
+        np.testing.assert_allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
@@ -100,7 +100,7 @@ class TestAlignTools:
 
         # Check actual alignment of zlp
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert np.allclose(s.data[:, i_zlp], 12)
+        np.testing.assert_allclose(s.data[:, i_zlp], 12)
 
 
 @lazifyTestClass
@@ -142,22 +142,22 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.signal.inav[0].find_peaks1D_ohaver()[0]
-        assert np.allclose(
+        np.testing.assert_allclose(
             peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4)
 
     def test_two_spectra(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        assert np.allclose(
+        np.testing.assert_allclose(
             peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4)
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        assert np.allclose(
+        np.testing.assert_allclose(
             peaks['height'], 1.0, rtol=1e-5, atol=1e-4)
 
     def test_width(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        assert np.allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
 
     def test_n_peaks(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]

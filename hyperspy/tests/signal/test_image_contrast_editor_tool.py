@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.signal_tools import ImageContrastEditor
@@ -16,15 +15,15 @@ class TestContrastEditorTool:
         s.plot(vmin='10th', vmax='99th')
         ceditor = ImageContrastEditor(s._plot.signal_plot)
 
-        assert_allclose(ceditor._vmin, 9.9)
-        assert_allclose(ceditor._vmax, 98.01)
+        np.testing.assert_allclose(ceditor._vmin, 9.9)
+        np.testing.assert_allclose(ceditor._vmax, 98.01)
 
         ceditor._vmin = 20
         ceditor._vmax = 90
         ceditor._reset_original_settings()
 
-        assert_allclose(ceditor._vmin, 9.9)
-        assert_allclose(ceditor._vmax, 98.01)
+        np.testing.assert_allclose(ceditor._vmin, 9.9)
+        np.testing.assert_allclose(ceditor._vmax, 98.01)
 
     def test_reset_span_selector(self):
         s = self.s
@@ -35,21 +34,21 @@ class TestContrastEditorTool:
         ceditor.update_span_selector()
         ax_image = s._plot.signal_plot.ax.images[0]
 
-        assert_allclose(ax_image.norm.vmin, 20)
-        assert_allclose(ax_image.norm.vmax, 90)
+        np.testing.assert_allclose(ax_image.norm.vmin, 20)
+        np.testing.assert_allclose(ax_image.norm.vmax, 90)
 
         ceditor._reset_span_selector()
 
-        assert_allclose(ax_image.norm.vmin, 9.9)
-        assert_allclose(ax_image.norm.vmax, 98.01)
+        np.testing.assert_allclose(ax_image.norm.vmin, 9.9)
+        np.testing.assert_allclose(ax_image.norm.vmax, 98.01)
 
     def test_change_navigation_coordinate(self):
         s = self.s
         s.plot(vmin='10th', vmax='99th')
         ceditor = ImageContrastEditor(s._plot.signal_plot)
 
-        assert_allclose(ceditor._vmin, 9.9)
-        assert_allclose(ceditor._vmax, 98.01)
+        np.testing.assert_allclose(ceditor._vmin, 9.9)
+        np.testing.assert_allclose(ceditor._vmax, 98.01)
         try:
             # Convenience to be able to run test on systems using backends
             # supporting blit
@@ -57,16 +56,16 @@ class TestContrastEditorTool:
         except TypeError:
             pass
 
-        assert_allclose(ceditor._vmin, 409.9)
-        assert_allclose(ceditor._vmax, 498.01)
+        np.testing.assert_allclose(ceditor._vmin, 409.9)
+        np.testing.assert_allclose(ceditor._vmax, 498.01)
 
     def test_vmin_vmax_changed(self):
         s = self.s
         s.plot(vmin='0th', vmax='100th')
         ceditor = ImageContrastEditor(s._plot.signal_plot)
 
-        assert_allclose(ceditor._vmin, 0.0)
-        assert_allclose(ceditor._vmax, 99.0)
+        np.testing.assert_allclose(ceditor._vmin, 0.0)
+        np.testing.assert_allclose(ceditor._vmax, 99.0)
         try:
             # Convenience to be able to run test on systems using backends
             # supporting blit
@@ -80,5 +79,5 @@ class TestContrastEditorTool:
         except TypeError:
             pass
 
-        assert_allclose(ceditor._vmin, 9.9)
-        assert_allclose(ceditor._vmax, 98.01)
+        np.testing.assert_allclose(ceditor._vmin, 9.9)
+        np.testing.assert_allclose(ceditor._vmax, 98.01)

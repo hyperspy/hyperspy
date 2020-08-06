@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from numpy.testing import assert_allclose
+import numpy as np
 
 from hyperspy.components1d import Logistic
 
@@ -27,6 +27,6 @@ def test_function():
     g.b.value = 2
     g.c.value = 3
     g.origin.value = 4
-    assert_allclose(g.function(10), 1)
-    assert_allclose(g.function(4), 1/3)
-    assert_allclose(g.function(0), 3.07209674e-06)
+    np.testing.assert_allclose(g.function(10), 1)
+    np.testing.assert_allclose(g.function(4), 1/3)
+    np.testing.assert_allclose(g.function(0), 3.07209674e-06)

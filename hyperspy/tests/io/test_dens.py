@@ -21,7 +21,6 @@ import os
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 
@@ -38,8 +37,8 @@ ref_t = np.array([15.091, 16.828, 13.232, 50.117, 49.927, 49.986, 49.981])
 def test_read1():
     s = hs.load(file1)
     np.testing.assert_allclose(s.data, ref_T)
-    assert_allclose(s.axes_manager[0].scale, 0.33)
-    assert_allclose(s.axes_manager[0].offset, 50077.68)
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.33)
+    np.testing.assert_allclose(s.axes_manager[0].offset, 50077.68)
     assert s.axes_manager[0].units == 's'
     ref_date, ref_time = "2015-04-16", "13:53:00"
     assert s.metadata.General.date == ref_date
@@ -51,19 +50,19 @@ def test_read1():
 def test_read_convert_units():
     s = hs.load(file1, convert_units=None)
     np.testing.assert_allclose(s.data, ref_T)
-    assert_allclose(s.axes_manager[0].scale, 0.33)
-    assert_allclose(s.axes_manager[0].offset, 50077.68)
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.33)
+    np.testing.assert_allclose(s.axes_manager[0].offset, 50077.68)
     assert s.axes_manager[0].units == 's'
 
     s = hs.load(file1, convert_units=False)
-    assert_allclose(s.axes_manager[0].scale, 0.33)
-    assert_allclose(s.axes_manager[0].offset, 50077.68)
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.33)
+    np.testing.assert_allclose(s.axes_manager[0].offset, 50077.68)
     assert s.axes_manager[0].units == 's'
 
     s = hs.load(file1, convert_units=True)
     np.testing.assert_allclose(s.data, ref_T)
-    assert_allclose(s.axes_manager[0].scale, 330.0)
-    assert_allclose(s.axes_manager[0].offset, 50077680.0)
+    np.testing.assert_allclose(s.axes_manager[0].scale, 330.0)
+    np.testing.assert_allclose(s.axes_manager[0].offset, 50077680.0)
     assert s.axes_manager[0].units == 'ms'
 
 

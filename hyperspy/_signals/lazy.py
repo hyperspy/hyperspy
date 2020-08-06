@@ -902,7 +902,7 @@ class LazySignal(BaseSignal):
                     if len(this_data):
                         thedata = np.concatenate(this_data, axis=0)
                         method(thedata)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # pragma: no cover
                     pass
 
             # GET ALREADY CALCULATED RESULTS
@@ -952,7 +952,7 @@ class LazySignal(BaseSignal):
                 try:
                     for thing in progressbar(_map, total=nblocks, desc="Project"):
                         H.append(thing)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # pragma: no cover
                     pass
                 loadings = post(H)
 

@@ -258,7 +258,7 @@ class Samfire:
                     # last one just finished running
                     break
                 self.change_strategy(self._active_strategy_ind + 1)
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             if self.pool is not None:
                 _logger.warning(
                     'Collecting already started pixels, please wait')

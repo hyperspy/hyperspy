@@ -271,8 +271,8 @@ class TestReverseBSS:
 class TestBSS1D:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        ics = rng.laplace(size=(3, 1000))
-        mixing_matrix = rng.random((100, 3))
+        ics = rng.laplace(size=(3, 500))
+        mixing_matrix = rng.uniform(size=(100, 3))
         s = Signal1D(mixing_matrix @ ics)
         s.decomposition()
 
@@ -321,9 +321,9 @@ class TestBSS1D:
 class TestBSS2D:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        ics = rng.laplace(size=(3, 1024))
+        ics = rng.laplace(size=(3, 256))
         mixing_matrix = rng.random((100, 3))
-        s = Signal2D((mixing_matrix @ ics).reshape((100, 32, 32)))
+        s = Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
         for (axis, name) in zip(s.axes_manager._axes, ("z", "y", "x")):
             axis.name = name
         s.decomposition()
@@ -365,7 +365,7 @@ class TestBSS2D:
             mask=self.mask_sig,
         )
         np.testing.assert_allclose(
-            matrix, self.s.learning_results.unmixing_matrix, atol=1e-6
+            matrix, self.s.learning_results.unmixing_matrix, atol=1e-5
         )
 
     def test_diff_axes_string_without_mask(self):
