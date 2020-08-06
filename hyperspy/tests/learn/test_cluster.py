@@ -20,11 +20,11 @@ import numpy as np
 import pytest
 
 from hyperspy import signals
-from hyperspy.misc.machine_learning import import_sklearn
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
-pytestmark = pytest.mark.skipif(
-    not import_sklearn.sklearn_installed, reason="sklearn not installed"
-)
+pytestmark = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+
+import hyperspy.misc.machine_learning.import_sklearn  as import_sklearn
 
 
 # Create the data once, since the parametrizations
