@@ -174,10 +174,17 @@ API changes
   * The ``polyfit`` argument has been deprecated and will be removed.
     Use ``var_func`` instead.
 
-.. _changes_1.5.2:
+
+
+
+Changelog
+*********
 
 Previous Versions
 =================
+
+.. _changes_1.5.2:
+
 
 v1.5.2
 ++++++
@@ -254,8 +261,6 @@ For developers
 * New extension mechanism that enables external packages to register HyperSpy
   objects. See :ref:`writing_extensions-label` for details.
 
-Changelog
-*********
 
 .. _changes_1.4.2:
 
