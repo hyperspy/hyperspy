@@ -20,25 +20,27 @@ import numpy as np
 import pytest
 
 from hyperspy import signals
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+from hyperspy.misc.machine_learning import import_sklearn
 
-pytestmark = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+sklearn = pytest.importorskip("sklearn", reason="sklearn not installed")
 
-import hyperspy.misc.machine_learning.import_sklearn  as import_sklearn
+if import_sklearn.sklearn_installed:
+    # Create the data once, since the parametrizations
+    # will repeat the decomposition and BSS unnecessarily
+    rng1 = np.random.RandomState(123)
+    signal1 = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
+    signal1.decomposition()
+    signal1.blind_source_separation(number_of_components=3)
 
-
-# Create the data once, since the parametrizations
-# will repeat the decomposition and BSS unnecessarily
-rng1 = np.random.RandomState(123)
-signal1 = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
-signal1.decomposition()
-signal1.blind_source_separation(number_of_components=3)
-
-rng2 = np.random.RandomState(123)
-signal2 = signals.Signal2D(rng2.uniform(size=(7, 5, 7)))
-signal2.decomposition()
-signal2.blind_source_separation(number_of_components=3)
-
+    rng2 = np.random.RandomState(123)
+    signal2 = signals.Signal2D(rng2.uniform(size=(7, 5, 7)))
+    signal2.decomposition()
+    signal2.blind_source_separation(number_of_components=3)
+else:
+    # No need to create the data, since BSS will fail
+    # if sklearn is missing, and the pytest.importorskip
+    # will skip the rest of the file anyway
+    pass
 
 class TestCluster1D:
     def setup_method(self):
