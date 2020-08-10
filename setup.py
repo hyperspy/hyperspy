@@ -38,6 +38,7 @@ if v[0] != 3:
     print(error, file=sys.stderr)
     sys.exit(1)
 
+
 # stuff to check presence of compiler:
 
 
@@ -298,7 +299,7 @@ with update_version_when_dev() as version:
         python_requires='~=3.6',
         install_requires=install_req,
         setup_requires=["pytest-runner"],
-        tests_require=extras_require["test"],
+        tests_require=extras_require["tests"],
         extras_require=extras_require,
         package_data={
             'hyperspy':
