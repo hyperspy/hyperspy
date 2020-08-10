@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright 2010 Stefano Mazzucco
-# Copyright 2011-2016 The HyperSpy developers
+# Copyright 2011-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy. It is a fork of the original PIL dm3 plugin
 # written by Stefano Mazzucco.
@@ -27,6 +27,7 @@ import dateutil.parser
 
 import numpy as np
 import traits.api as t
+from copy import deepcopy
 
 import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
@@ -46,7 +47,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
-
 # Writing features
 writes = False
 # ----------------------
@@ -95,8 +95,7 @@ class DigitalMicrographReader(object):
                 "Currently we only support reading DM versions 3 and 4 but "
                 "this file "
                 "seems to be version %s " % self.dm_version)
-        self.skipif4()
-        filesizeB = iou.read_long(self.f, "big")
+        filesizeB = self.read_l_or_q(self.f, "big")
         is_little_endian = iou.read_long(self.f, "big")
 
         _logger.info('DM version: %i', self.dm_version)
@@ -133,17 +132,15 @@ class DigitalMicrographReader(object):
                 # Start reading the data
                 # Raises IOError if it is wrong
                 self.check_data_tag_delimiter()
-                self.skipif4()
-                infoarray_size = iou.read_long(self.f, 'big')
+                infoarray_size = self.read_l_or_q(self.f, 'big')
                 _logger.debug("Infoarray size: %s", infoarray_size)
-                self.skipif4()
                 if infoarray_size == 1:  # Simple type
                     _logger.debug("Reading simple data")
-                    etype = iou.read_long(self.f, "big")
+                    etype = self.read_l_or_q(self.f, "big")
                     data = self.read_simple_data(etype)
                 elif infoarray_size == 2:  # String
                     _logger.debug("Reading string")
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype != 18:
                         raise IOError("Expected 18 (string), got %i" % enctype)
                     string_length = self.parse_string_definition()
@@ -151,13 +148,13 @@ class DigitalMicrographReader(object):
                 elif infoarray_size == 3:  # Array of simple type
                     _logger.debug("Reading simple array")
                     # Read array header
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype != 20:  # Should be 20 if it is an array
                         raise IOError("Expected 20 (string), got %i" % enctype)
                     size, enc_eltype = self.parse_array_definition()
                     data = self.read_array(size, enc_eltype, skip=skip)
                 elif infoarray_size > 3:
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype == 15:  # It is a struct
                         _logger.debug("Reading struct")
                         definition = self.parse_struct_definition()
@@ -168,13 +165,11 @@ class DigitalMicrographReader(object):
                         # The structure is
                         # 20 <4>, ?  <4>, enc_dtype <4>, definition <?>,
                         # size <4>
-                        self.skipif4()
-                        enc_eltype = iou.read_long(self.f, "big")
+                        enc_eltype = self.read_l_or_q(self.f, "big")
                         if enc_eltype == 15:  # Array of structs
                             _logger.debug("Reading array of structs")
                             definition = self.parse_struct_definition()
-                            self.skipif4()  # Padding?
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             _logger.debug("Struct definition: %s", definition)
                             _logger.debug("Array size: %s", size)
                             data = self.read_array(
@@ -186,7 +181,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of strings")
                             string_length = \
                                 self.parse_string_definition()
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -196,7 +191,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of arrays")
                             el_length, enc_eltype = \
                                 self.parse_array_definition()
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -215,7 +210,7 @@ class DigitalMicrographReader(object):
                 _logger.debug(
                     'Reading Tag group at address: %s',
                     self.f.tell())
-                ntags = self.parse_tag_group(skip4=3)[2]
+                ntags = self.parse_tag_group(size=True)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
                     ntags=ntags,
@@ -242,8 +237,9 @@ class DigitalMicrographReader(object):
             # dm3 uses chars for 1-Byte signed integers
             9: (iou.read_char, 1, 'b'),
             10: (iou.read_byte, 1, 'b'),   # 0x0a
-            11: (iou.read_double, 8, 'l'),  # Unknown, new in DM4
-            12: (iou.read_double, 8, 'l'),  # Unknown, new in DM4
+            11: (iou.read_long_long, 8, 'q'),  # long long, new in DM4
+            # unsigned long long, new in DM4
+            12: (iou.read_ulong_long, 8, 'Q'),
             15: (self.read_struct, None, 'struct',),  # 0x0f
             18: (self.read_string, None, 'c'),  # 0x12
             20: (self.read_array, None, 'array'),  # 0x14
@@ -254,6 +250,13 @@ class DigitalMicrographReader(object):
         if self.dm_version == 4:
             self.f.seek(4 * n, 1)
 
+    @property
+    def read_l_or_q(self):
+        if self.dm_version == 4:
+            return iou.read_long_long
+        else:
+            return iou.read_long
+
     def parse_array_definition(self):
         """Reads and returns the element type and length of the array.
 
@@ -261,10 +264,8 @@ class DigitalMicrographReader(object):
         array encoded dtype.
 
         """
-        self.skipif4()
-        enc_eltype = iou.read_long(self.f, "big")
-        self.skipif4()
-        length = iou.read_long(self.f, "big")
+        enc_eltype = self.read_l_or_q(self.f, "big")
+        length = self.read_l_or_q(self.f, "big")
         return length, enc_eltype
 
     def parse_string_definition(self):
@@ -273,8 +274,7 @@ class DigitalMicrographReader(object):
         The position in the file must be just after the
         string encoded dtype.
         """
-        self.skipif4()
-        return iou.read_long(self.f, "big")
+        return self.read_l_or_q(self.f, "big")
 
     def parse_struct_definition(self):
         """Reads and returns the struct definition tuple.
@@ -283,14 +283,12 @@ class DigitalMicrographReader(object):
         struct encoded dtype.
 
         """
-        self.f.seek(4, 1)  # Skip the name length
-        self.skipif4(2)
-        nfields = iou.read_long(self.f, "big")
+        length = self.read_l_or_q(self.f, "big")
+        nfields = self.read_l_or_q(self.f, "big")
         definition = ()
         for ifield in range(nfields):
-            self.f.seek(4, 1)
-            self.skipif4(2)
-            definition += (iou.read_long(self.f, "big"),)
+            length2 = self.read_l_or_q(self.f, "big")
+            definition += (self.read_l_or_q(self.f, "big"),)
 
         return definition
 
@@ -309,9 +307,8 @@ class DigitalMicrographReader(object):
         return data
 
     def read_string(self, length, skip=False):
-        """Read a string defined by the infoArray iarray from
-         file f with a given endianness (byte order).
-        endian can be either 'big' or 'little'.
+        """Read a string defined by the infoArray iarray from file f with a
+        given endianness (byte order). endian can be either 'big' or 'little'.
 
         If it's a tag name, each char is 1-Byte;
         if it's a tag data, each char is 2-Bytes Unicode,
@@ -399,15 +396,17 @@ class DigitalMicrographReader(object):
                         for element in range(size)]
         return data
 
-    def parse_tag_group(self, skip4=1):
+    def parse_tag_group(self, size=False):
         """Parse the root TagGroup of the given DM3 file f.
         Returns the tuple (is_sorted, is_open, n_tags).
         endian can be either 'big' or 'little'.
         """
         is_sorted = iou.read_byte(self.f, "big")
         is_open = iou.read_byte(self.f, "big")
-        self.skipif4(n=skip4)
-        n_tags = iou.read_long(self.f, "big")
+        if self.dm_version == 4 and size:
+            # Just guessing that this is the size
+            size = self.read_l_or_q(self.f, "big")
+        n_tags = self.read_l_or_q(self.f, "big")
         return bool(is_sorted), bool(is_open), n_tags
 
     def find_next_tag(self):
@@ -548,10 +547,11 @@ class ImageObject(object):
 
     @property
     def title(self):
-        if "Name" in self.imdict:
-            return self.imdict.Name
-        else:
-            return ''
+        title = self.imdict.get_item("Name", "")
+        # ``if title else ""`` below is there to account for when Name
+        # contains an empty list.
+        # See https://github.com/hyperspy/hyperspy/issues/1937
+        return title if title else ""
 
     @property
     def record_by(self):
@@ -913,7 +913,15 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
             })
-
+        if "SI" in self.imdict.ImageTags.keys():
+            mapping.update({
+                "{}.SI.Acquisition.Date".format(tags_path): (
+                    "General.date",
+                    self._get_date),
+                "{}.SI.Acquisition.Start time".format(tags_path): (
+                    "General.time",
+                    self._get_time),
+            })
         if self.signal_type == "EELS":
             if is_scanning:
                 mapped_attribute = 'dwell_time'
@@ -1043,11 +1051,17 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
                                     dtype=image.dtype)
             else:
                 data = image.get_data()
+            # in the event there are multiple signals contained within this
+            # DM file, it is important to make a "deepcopy" of the metadata
+            # and original_metadata, since they are changed in each iteration
+            # of the "for image in images" loop, and using shallow copies
+            # will result in the final signal's metadata being used for all
+            # of the contained signals
             imd.append(
                 {'data': data,
                  'axes': axes,
-                 'metadata': mp,
-                 'original_metadata': dm.tags_dict,
+                 'metadata': deepcopy(mp),
+                 'original_metadata': deepcopy(dm.tags_dict),
                  'post_process': post_process,
                  'mapping': image.get_mapping(),
                  })

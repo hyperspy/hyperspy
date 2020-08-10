@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,57 +17,58 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import logging
 
-from hyperspy.component import Component
+
+from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import ordinal
 
 
-class Polynomial(Component):
+_logger = logging.getLogger(__name__)
+
+
+
+class Polynomial(Expression):
 
     """n-order polynomial component.
 
-    Polynomial component defined by the coefficients parameters which is an
-    array of len the order of the polynomial.
+    Polynomial component consisting of order + 1 parameters.
+    The parameters are named "a" followed by the corresponding order, 
+    i.e.
 
-    For example, the [1,2,3] coefficients define the following 3rd order
-    polynomial: f(x) = 1x² + 2x + 3
+    .. math::
 
-    Attributes
+        f(x) = a_{2} x^{2} + a_{1} x^{1} + a_{0}
+
+    Zero padding is used for polynomial of order > 10.
+
+    Parameters
     ----------
-
-    coeffcients : array
+    order : int
+        Order of the polynomial, must be different from 0.
+    **kwargs
+        Keyword arguments can be used to initialise the value of the
+        parameters, i.e. a2=2, a1=3, a0=1.
 
     """
 
-    def __init__(self, order=2):
-        Component.__init__(self, ['coefficients', ])
-        self._whitelist['order'] = ('init', order)
-        self.coefficients._number_of_elements = order + 1
-        self.coefficients.value = np.zeros((order + 1,))
-        self.coefficients.grad = self.grad_coefficients
+    def __init__(self, order=2, module="numexpr", **kwargs):
+        # Not to break scripts once we remove the legacy Polynomial
+        if "legacy" in kwargs:
+            del kwargs["legacy"]
+        if order == 0:
+            raise ValueError("Polynomial of order 0 is not supported.")
+        coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
+                      range(order, -1, -1)]
+        expr = "+".join(["a{}*x**{}".format(c, o) for c, o in 
+                         zip(coeff_list, range(order, -1, -1))])
+        name = "{} order Polynomial".format(ordinal(order))
+        super().__init__(expression=expr, name=name, module=module, 
+             autodoc=False, **kwargs)
+        self._id_name = "eab91275-88db-4855-917a-cdcbe7209592"
 
     def get_polynomial_order(self):
-        return len(self.coefficients.value) - 1
-
-    def function(self, x):
-        return np.polyval(self.coefficients.value, x)
-
-    def grad_one_coefficient(self, x, index):
-        """Returns the gradient of one coefficient"""
-        values = np.array(self.coefficients.value)
-        values[index] = 1
-        return np.polyval(values, x)
-
-    def grad_coefficients(self, x):
-        return np.vstack([self.grad_one_coefficient(x, i) for i in
-                          range(self.coefficients._number_of_elements)])
-
-    def __repr__(self):
-        text = "%s order Polynomial component" % ordinal(
-            self.get_polynomial_order())
-        if self.name:
-            text = "%s (%s)" % (self.name, text)
-        return "<%s>" % text
+        return len(self.parameters) - 1
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
@@ -90,37 +91,68 @@ class Polynomial(Component):
         bool
 
         """
-        super(Polynomial, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
+
         axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if binned is True:
-                self.coefficients.value = estimation / axis.scale
+            if self.binned:
+                for para, estim in zip(self.parameters[::-1], estimation):
+                    para.value = estim / axis.scale
             else:
-                self.coefficients.value = estimation
+                for para, estim in zip(self.parameters[::-1], estimation):
+                    para.value = estim
             return True
         else:
-            if self.coefficients.map is None:
+            if self.a0.map is None:
                 self._create_arrays()
+
             nav_shape = signal.axes_manager._navigation_shape_in_array
             with signal.unfolded():
-                dc = signal.data
+                data = signal.data
                 # For polyfit the spectrum goes in the first axis
                 if axis.index_in_array > 0:
-                    dc = dc.T             # Unfolded, so simply transpose
-                cmaps = np.polyfit(axis.axis[i1:i2], dc[i1:i2, ...],
+                    data = data.T             # Unfolded, so simply transpose
+                fit = np.polyfit(axis.axis[i1:i2], data[i1:i2, ...],
                                    self.get_polynomial_order())
                 if axis.index_in_array > 0:
-                    cmaps = cmaps.T       # Transpose back if needed
-                # Shape needed to fit coefficients.map:
+                    fit = fit.T       # Transpose back if needed
+                # Shape needed to fit parameter.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
-                self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
-                if binned is True:
-                    self.coefficients.map["values"] /= axis.scale
-                self.coefficients.map['is_set'][:] = True
+                fit = fit.reshape(cmap_shape)
+
+                if self.binned:
+                    for i, para in enumerate(self.parameters[::-1]):
+                        para.map['values'][:] = fit[..., i] / axis.scale
+                        para.map['is_set'][:] = True
+                else:
+                    for i, para in enumerate(self.parameters[::-1]):
+                        para.map['values'][:] = fit[..., i]
+                        para.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+
+def convert_to_polynomial(poly_dict):
+    """
+    Convert the dictionary from the old to the new polynomial definition
+    """
+    _logger.info("Converting the polynomial to the new definition")
+    poly_order = poly_dict['order']
+    coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order'])))) 
+                  for o in range(poly_dict['order'], -1, -1)]
+    poly2_dict = dict(poly_dict)
+    coefficient_dict = poly_dict['parameters'][0]
+    poly2_dict['parameters'] = []
+    poly2_dict['_id_name'] = "eab91275-88db-4855-917a-cdcbe7209592"
+    for i, coeff in enumerate(coeff_list):
+        param_dict = dict(coefficient_dict)
+        param_dict['_id_name'] = 'a{}'.format(coeff)
+        for v in ['value', '_bounds']:
+            param_dict[v] = coefficient_dict[v][i]
+        poly2_dict['parameters'].append(param_dict)
+
+    return poly2_dict

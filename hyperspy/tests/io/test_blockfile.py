@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,21 +17,19 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import warnings
-import os
 import gc
+import os
 import tempfile
+import warnings
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
-import hyperspy.api as hs
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
-
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 try:
     WindowsError
@@ -51,6 +49,7 @@ def save_path():
         yield filepath
         # Force files release (required in Windows)
         gc.collect()
+
 
 ref_data2 = np.array(
     [[[[20, 23, 25, 25, 27],
@@ -118,6 +117,20 @@ axes2 = {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
         'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'}}
 
+axes2_converted = {
+    'axis-0': {
+        'name': 'y', 'navigate': True, 'offset': 0.0,
+        'scale': 64.0, 'size': 2, 'units': 'nm'},
+    'axis-1': {
+        'name': 'x', 'navigate': True, 'offset': 0.0,
+        'scale': 64.0, 'size': 3, 'units': 'nm'},
+    'axis-2': {
+        'name': 'dy', 'navigate': False, 'offset': 0.0,
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'},
+    'axis-3': {
+        'name': 'dx', 'navigate': False, 'offset': 0.0,
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'}}
+
 
 def test_load1():
     s = hs.load(FILE1)
@@ -125,16 +138,19 @@ def test_load1():
     assert s.axes_manager.as_dictionary() == axes1
 
 
-def test_load2():
-    s = hs.load(FILE2)
+@pytest.mark.parametrize(("convert_units"), (True, False))
+def test_load2(convert_units):
+    s = hs.load(FILE2, convert_units=convert_units)
     assert s.data.shape == (2, 3, 5, 5)
-    np.testing.assert_equal(s.axes_manager.as_dictionary(), axes2)
+    axes = axes2_converted if convert_units else axes2
+    np.testing.assert_equal(s.axes_manager.as_dictionary(), axes)
     np.testing.assert_allclose(s.data, ref_data2)
 
 
-def test_save_load_cycle(save_path):
+@pytest.mark.parametrize(("convert_units"), (True, False))
+def test_save_load_cycle(save_path, convert_units):
     sig_reload = None
-    signal = hs.load(FILE2)
+    signal = hs.load(FILE2, convert_units=convert_units)
     serial = signal.original_metadata['blockfile_header']['Acquisition_time']
     date, time, timezone = serial_date_to_ISO_format(serial)
     assert signal.metadata.General.original_filename == 'test2.blo'
@@ -145,7 +161,7 @@ def test_save_load_cycle(save_path):
         signal.metadata.General.notes ==
         "Precession angle : \r\nPrecession Frequency : \r\nCamera gamma : on")
     signal.save(save_path, overwrite=True)
-    sig_reload = hs.load(save_path)
+    sig_reload = hs.load(save_path, convert_units=convert_units)
     np.testing.assert_equal(signal.data, sig_reload.data)
     assert (signal.axes_manager.as_dictionary() ==
             sig_reload.axes_manager.as_dictionary())
@@ -172,12 +188,12 @@ def test_different_x_y_scale_units(save_path):
     signal.axes_manager[0].scale = 50.0
     signal.save(save_path, overwrite=True)
     sig_reload = hs.load(save_path)
-    assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
-                    atol=1E-2)
-    assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
-                    atol=1E-2)
-    assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
-                    atol=1E-5)
+    np.testing.assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
+                    rtol=1E-5)
+    np.testing.assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
+                    rtol=1E-5)
+    np.testing.assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
+                    rtol=1E-5)
 
 
 def test_default_header():

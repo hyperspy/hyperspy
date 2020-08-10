@@ -1,6 +1,24 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
 
-from hyperspy.misc.eds.utils import get_xray_lines_near_energy
+from hyperspy.misc.eds.utils import get_xray_lines_near_energy, take_off_angle
 
 
 def test_xray_lines_near_energy():
@@ -28,3 +46,9 @@ def test_xray_lines_near_energy():
     assert (
         lines ==
         ['Cr_Ka', 'Pm_La'])
+
+def test_takeoff_angle():
+    np.testing.assert_allclose(40.,take_off_angle(30.,0.,10.))
+    np.testing.assert_allclose(40.,take_off_angle(0.,90.,10.,beta_tilt=30.))
+    np.testing.assert_allclose(73.15788376370121,take_off_angle(45.,45.,45.,
+                               45.))

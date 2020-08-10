@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,13 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-# custom exceptions
 from functools import wraps
-
-from hyperspy.exceptions import NoInteractiveError
-from hyperspy.defaults_parser import preferences
-from hyperspy.signal_tools import Signal1DRangeSelector
-from hyperspy.ui_registry import get_gui
 
 
 def lazify(func, **kwargs):
@@ -99,11 +93,16 @@ def simple_decorator(decorator):
 
 @simple_decorator
 def interactive_range_selector(cm):
+    from hyperspy.ui_registry import get_gui
+    from hyperspy.signal_tools import Signal1DRangeSelector
+
     def wrapper(self, *args, **kwargs):
         if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
-            get_gui(range_selector, toolkey="interactive_range_selector")
+            get_gui(
+                range_selector,
+                toolkey="hyperspy.interactive_range_selector")
         else:
             cm(self, *args, **kwargs)
     return wrapper

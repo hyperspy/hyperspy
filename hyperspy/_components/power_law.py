@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,40 +17,65 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import logging
 
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 
-class PowerLaw(Component):
+_logger = logging.getLogger(__name__)
 
-    """Power law component
 
-    f(x) = A*(x-x0)^-r
+class PowerLaw(Expression):
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     r      |     r     |
-    +------------+-----------+
-    |    x0      |  origin   |
-    +------------+-----------+
+    r"""Power law component.
 
-    The left_cutoff parameter can be used to set a lower threshold from which
+    .. math::
+
+        f(x) = A\cdot(x-x_0)^{-r}
+
+    ============= =============
+     Variable      Parameter
+    ============= =============
+     :math:`A`     A
+     :math:`r`     r
+     :math:`x_0`   origin
+    ============= =============
+
+
+    Parameters
+    ----------
+    A : float
+        Height parameter.
+    r : float
+        Power law coefficient.
+    origin : float
+        Location parameter.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
+
+    The `left_cutoff` parameter can be used to set a lower threshold from which
     the component will return 0.
-
-
     """
 
-    def __init__(self, A=10e5, r=3., origin=0.):
-        Component.__init__(self, ('A', 'r', 'origin'))
-        self.A.value = A
-        self.r.value = r
-        self.origin.value = origin
+    def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0,
+                 module="numexpr", compute_gradients=False, **kwargs):
+        super().__init__(
+            expression="where(left_cutoff<x, A*(-origin + x)**-r, 0)",
+            name="PowerLaw",
+            A=A,
+            r=r,
+            origin=origin,
+            left_cutoff=left_cutoff,
+            position="origin",
+            module=module,
+            autodoc=False,
+            compute_gradients=compute_gradients,
+            **kwargs,
+        )
+
         self.origin.free = False
-        self.left_cutoff = 0.
+        self.left_cutoff.free = False
 
         # Boundaries
         self.A.bmin = 0.
@@ -61,26 +86,10 @@ class PowerLaw(Component):
         self.isbackground = True
         self.convolved = False
 
-    def function(self, x):
-        return np.where(x > self.left_cutoff, self.A.value *
-                        (x - self.origin.value) ** (-self.r.value), 0)
-
-    def grad_A(self, x):
-        return self.function(x) / self.A.value
-
-    def grad_r(self, x):
-        return np.where(x > self.left_cutoff, -self.A.value *
-                        np.log(x - self.origin.value) *
-                        (x - self.origin.value) ** (-self.r.value), 0)
-
-    def grad_origin(self, x):
-        return np.where(x > self.left_cutoff, self.r.value *
-                        (x - self.origin.value) ** (-self.r.value - 1) *
-                        self.A.value, 0)
-
     def estimate_parameters(self, signal, x1, x2, only_current=False,
                             out=False):
-        """Estimate the parameters by the two area method
+        """Estimate the parameters for the power law component by the two area
+        method.
 
         Parameters
         ----------
@@ -91,7 +100,6 @@ class PowerLaw(Component):
         x2 : float
             Defines the right limit of the spectral range to use for the
             estimation.
-
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool
@@ -118,25 +126,37 @@ class PowerLaw(Component):
             s = signal.get_current_signal()
         else:
             s = signal
-        I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
-        I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
         if s._lazy:
             import dask.array as da
             log = da.log
+            I1 = s.isig[i1:i3].integrate1D(2j).data
+            I2 = s.isig[i3:i2].integrate1D(2j).data
         else:
+            from hyperspy.signal import BaseSignal
+            shape = s.data.shape[:-1]
+            I1_s = BaseSignal(np.empty(shape, dtype='float'))
+            I2_s = BaseSignal(np.empty(shape, dtype='float'))
+            # Use the `out` parameters to avoid doing the deepcopy
+            s.isig[i1:i3].integrate1D(2j, out=I1_s)
+            s.isig[i3:i2].integrate1D(2j, out=I2_s)
+            I1 = I1_s.data
+            I2 = I2_s.data
             log = np.log
-        try:
-            r = 2 * log(I1 / I2) / log(x2 / x1)
-            k = 1 - r
-            A = k * I2 / (x2 ** k - x3 ** k)
-            if s._lazy:
-                r = r.map_blocks(np.nan_to_num)
-                A = A.map_blocks(np.nan_to_num)
-            else:
-                r = np.nan_to_num(r)
-                A = np.nan_to_num(A)
-        except BaseException:
-            return False
+        with np.errstate(divide='raise'):
+            try:
+                r = 2 * (log(I1) - log(I2)) / (log(x2) - log(x1))
+                k = 1 - r
+                A = k * I2 / (x2 ** k - x3 ** k)
+                if s._lazy:
+                    r = r.map_blocks(np.nan_to_num)
+                    A = A.map_blocks(np.nan_to_num)
+                else:
+                    r = np.nan_to_num(r)
+                    A = np.nan_to_num(A)
+            except (RuntimeWarning, FloatingPointError):
+                _logger.warning('Power-law parameter estimation failed '
+                                'because of a "divide-by-zero" error.')
+                return False
         if only_current is True:
             self.r.value = r
             self.A.value = A
@@ -152,3 +172,16 @@ class PowerLaw(Component):
             self.r.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+    def grad_A(self, x):
+        return self.function(x) / self.A.value
+
+    def grad_r(self, x):
+        return np.where(x > self.left_cutoff.value, -self.A.value *
+                        np.log(x - self.origin.value) *
+                        (x - self.origin.value) ** (-self.r.value), 0)
+
+    def grad_origin(self, x):
+        return np.where(x > self.left_cutoff.value, self.r.value *
+                        (x - self.origin.value) ** (-self.r.value - 1) *
+                        self.A.value, 0)

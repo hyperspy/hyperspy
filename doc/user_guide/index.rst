@@ -14,7 +14,8 @@ HyperSpy User Guide
     what_is_new.rst
     install.rst
     getting_started.rst
-    tools.rst
+    signal.rst
+    interactive_operations_ROIs.rst
     signal1d.rst
     signal2d.rst
     visualisation.rst
@@ -29,5 +30,3 @@ HyperSpy User Guide
     big_data.rst
     metadata_structure.rst
     bibliography.rst
-..  samfire.rst
-    credits.rst

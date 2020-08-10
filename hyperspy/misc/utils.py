@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,14 +23,19 @@ import copy
 import types
 from io import StringIO
 import codecs
-import collections
-import tempfile
+from collections.abc import Iterable
 import unicodedata
 from contextlib import contextmanager
+import importlib
+
+import numpy as np
+
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 
-import numpy as np
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 def attrsetter(target, attrs, value):
@@ -133,6 +138,44 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
+def parse_quantity(quantity, opening='(', closing=')'):
+    """Parse quantity of the signal outputting quantity and units separately. 
+    It looks for the last matching opening and closing separator.
+
+    Parameters
+    ----------
+    quantity : string
+    opening : string
+        Separator used to define the beginning of the units
+    closing : string
+        Separator used to define the end of the units
+
+    Returns
+    -------
+    quantity_name : string
+    quantity_units : string
+    """
+
+    # open_bracket keep track of the currently open brackets
+    open_bracket = 0
+    for index, c in enumerate(quantity.strip()[::-1]):
+        if c == closing:
+            # we find an closing, increment open_bracket
+            open_bracket += 1
+        if c == opening:
+            # we find a opening, decrement open_bracket
+            open_bracket -= 1
+            if open_bracket == 0:
+                # we found the matching bracket and we will use the index
+                break
+    if index + 1 == len(quantity):
+        return quantity, ""
+    else:
+        quantity_name = quantity[:-index-1].strip()
+        quantity_units = quantity[-index:-1].strip()
+        return quantity_name, quantity_units
+
+
 _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
@@ -152,15 +195,14 @@ def slugify(value, valid_variable_name=False):
         try:
             # Convert to unicode using the default encoding
             value = str(value)
-        except:
+        except BaseException:
             # Try latin1. If this does not work an exception is raised.
             value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
-    if valid_variable_name is True:
-        if value[:1].isdigit():
-            value = 'Number_' + value
+    if valid_variable_name and not value.isidentifier():
+        value = 'Number_' + value
     return value
 
 
@@ -257,18 +299,7 @@ class DictionaryTreeBrowser(object):
         """
         from hyperspy.defaults_parser import preferences
 
-        def check_long_string(value, max_len):
-            if not isinstance(value, (str, np.string_)):
-                value = repr(value)
-            value = ensure_unicode(value)
-            strvalue = str(value)
-            _long = False
-            if max_len is not None and len(strvalue) > 2 * max_len:
-                right_limit = min(max_len, len(strvalue) - max_len)
-                strvalue = '%s ... %s' % (
-                    strvalue[:max_len], strvalue[-right_limit:])
-                _long = True
-            return _long, strvalue
+
 
         string = ''
         eoi = len(self)
@@ -322,8 +353,60 @@ class DictionaryTreeBrowser(object):
             j += 1
         return string
 
+    def _get_html_print_items(self, padding='', max_len=78, recursive_level=0):
+        """Recursive method that creates a html string for fancy display
+        of metadata.
+        """
+        recursive_level += 1
+        from hyperspy.defaults_parser import preferences
+
+        string = '' # Final return string
+        
+        for key_, value in iter(sorted(self.__dict__.items())):
+            if key_.startswith("_"): # Skip any private attributes
+                continue
+            if not isinstance(key_, types.MethodType): # If it isn't a method, then continue
+                key = ensure_unicode(value['key'])
+                value = value['_dtb_value_']
+                
+                # dtb_expand_structures is a setting that sets whether to fully expand long strings
+                if preferences.General.dtb_expand_structures:
+                    if isinstance(value, list) or isinstance(value, tuple):
+                        iflong, strvalue = check_long_string(value, max_len)
+                        if iflong:
+                            key += (" <list>"
+                                    if isinstance(value, list)
+                                    else " <tuple>")
+                            value = DictionaryTreeBrowser(
+                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True)
+                        else:
+                            string += add_key_value(key, strvalue)
+                            continue # skips the next if-else
+
+                # If DTB, then add a details html tag
+                if isinstance(value, DictionaryTreeBrowser):
+                    string += """<ul style="margin: 0px; list-style-position: outside;">
+                    <details {}>
+                    <summary style="display: list-item;">
+                    <li style="display: inline;">
+                    {}
+                    </li></summary>
+                    """.format("open" if recursive_level < 2 else "closed", replace_html_symbols(key))
+                    string += value._get_html_print_items(recursive_level=recursive_level)
+                    string += '</details></ul>'
+
+                # Otherwise just add value
+                else:
+                    _, strvalue = check_long_string(value, max_len)
+                    string += add_key_value(key, strvalue)
+        return string
+
     def __repr__(self):
         return self._get_print_items()
+    
+    def _repr_html_(self):
+        return self._get_html_print_items()
 
     def __getitem__(self, key):
         return self.__getattribute__(key)
@@ -594,20 +677,49 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
         string = stuff
     try:
         string = string.decode(encoding)
-    except:
+    except BaseException:
         string = string.decode(encoding2, errors='ignore')
     return string
 
+def check_long_string(value, max_len):
+    "Checks whether string is too long for printing in html metadata"
+    if not isinstance(value, (str, np.string_)):
+        value = repr(value)
+    value = ensure_unicode(value)
+    strvalue = str(value)
+    _long = False
+    if max_len is not None and len(strvalue) > 2 * max_len:
+        right_limit = min(max_len, len(strvalue) - max_len)
+        strvalue = '%s ... %s' % (
+            strvalue[:max_len], strvalue[-right_limit:])
+        _long = True
+    return _long, strvalue
+
+def replace_html_symbols(str_value):
+    "Escapes any &, < and > tags that would become invisible when printing html"
+    str_value = str_value.replace("&", "&amp")
+    str_value = str_value.replace("<", "&lt;")
+    str_value = str_value.replace(">", "&gt;")
+    return str_value
+
+def add_key_value(key, value):
+    "Returns the metadata value as a html string"
+    return """
+    <ul style="margin: 0px; list-style-position: outside;">
+    <li style='margin-left:1em; padding-left: 0.5em'>{} = {}</li></ul>
+    """.format(replace_html_symbols(key), replace_html_symbols(value))
+
 
 def swapelem(obj, i, j):
-    """Swaps element having index i with
-    element having index j in object obj IN PLACE.
+    """Swaps element having index i with element having index j in object obj 
+    IN PLACE.
 
-    E.g.
+    Example
+    -------
     >>> L = ['a', 'b', 'c']
     >>> spwapelem(L, 1, 2)
     >>> print(L)
-        ['a', 'c', 'b']
+    ['a', 'c', 'b']
 
     """
     if len(obj) > 1:
@@ -681,7 +793,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    return isinstance(obj, collections.Iterable)
+    return isinstance(obj, Iterable)
 
 
 def ordinal(value):
@@ -792,7 +904,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from itertools import zip_longest
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
@@ -947,7 +1058,7 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._iterate_signal()
+    iterators = tuple(signal[1]._cycle_signal()
                       if isinstance(signal[1], BaseSignal) else signal[1]
                       for signal in iterating_kwargs)
     # make all kwargs iterating for simplicity:
@@ -986,12 +1097,12 @@ def map_result_construction(signal,
         sig = signal
     else:
         res = sig = signal._deepcopy_with_new_data()
+
     if ragged:
         sig.data = result
         sig.axes_manager.remove(sig.axes_manager.signal_axes)
         sig.__class__ = LazySignal if lazy else BaseSignal
         sig.__init__(**sig._to_dictionary(add_models=True))
-
     else:
         if not sig._lazy and sig.data.shape == result.shape and np.can_cast(
                 result.dtype, sig.data.dtype):
@@ -1005,9 +1116,10 @@ def map_result_construction(signal,
         for ind in range(
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
-    sig.get_dimensions_from_data()
+    if not ragged:
+        sig.get_dimensions_from_data()
     if not sig.axes_manager._axes:
-        add_scalar_axis(sig)
+        add_scalar_axis(sig, lazy=lazy)
     return res
 
 
@@ -1029,29 +1141,80 @@ def multiply(iterable):
 
 
 def iterable_not_string(thing):
-    return isinstance(thing, collections.Iterable) and \
-        not isinstance(thing, str)
-
-
-def signal_range_from_roi(signal_range):
-    from hyperspy.roi import SpanROI
-    if isinstance(signal_range, SpanROI):
-        return (signal_range.left, signal_range.right)
-    else:
-        return signal_range
+    return isinstance(thing, Iterable) and not isinstance(thing, str)
 
 
 def deprecation_warning(msg):
     warnings.warn(msg, VisibleDeprecationWarning)
 
 
-def add_scalar_axis(signal):
+def add_scalar_axis(signal, lazy=None):
     am = signal.axes_manager
     from hyperspy.signal import BaseSignal
-    signal.__class__ = BaseSignal
+    from hyperspy._signals.lazy import LazySignal
+    if lazy is None:
+        lazy = signal._lazy
+    signal.__class__ = LazySignal if lazy else BaseSignal
     am.remove(am._axes)
     am._append_axis(size=1,
                     scale=1,
                     offset=0,
                     name="Scalar",
                     navigate=False)
+
+
+def get_object_package_info(obj):
+    """Get info about object package
+
+    Returns
+    -------
+    dic: dict
+        Dictionary containing ``package`` and ``package_version`` (if available)
+    """
+    dic = {}
+    # Note that the following can be "__main__" if the component was user
+    # defined
+    dic["package"] = obj.__module__.split(".")[0]
+    if dic["package"] != "__main__":
+        try:
+            dic["package_version"] = importlib.import_module(
+                dic["package"]).__version__
+        except AttributeError:
+            dic["package_version"] = ""
+            _logger.warning(
+                "The package {package} does not set its version in " +
+                "{package}.__version__. Please report this issue to the " +
+                "{package} developers.".format(package=dic["package"]))
+    else:
+        dic["package_version"] = ""
+    return dic
+
+
+def print_html(f_text, f_html):
+    """Print html version when in Jupyter Notebook"""
+    class PrettyText:
+        def __repr__(self):
+            return f_text()
+
+        def _repr_html_(self):
+            return f_html()
+    return PrettyText()
+
+
+def is_hyperspy_signal(input_object):
+    """
+    Check if an object is a Hyperspy Signal
+
+    Parameters
+    ----------
+    input_object : object
+        Object to be tests
+
+    Returns
+    -------
+    bool
+        If true the object is a subclass of hyperspy.signal.BaseSignal
+
+    """
+    from hyperspy.signals import BaseSignal
+    return isinstance(input_object,BaseSignal)

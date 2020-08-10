@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,77 +16,53 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import math
 
-import numpy as np
-
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 
-class Arctan(Component):
+class Arctan(Expression):
 
-    """Arctan function component
+    r"""Arctan function component.
 
-    f(x) = A*arctan{k*(x-x0)}
+    .. math::
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     k      |     k     |
-    +------------+-----------+
-    |     x      |     x     |
-    +------------+-----------+
-    |     x0     |     x0    |
-    +------------+-----------+
+        f(x) = A \cdot \arctan \left[ k \left( x-x_0 \right) \right]
+
+
+    ============ =============
+    Variable      Parameter
+    ============ =============
+    :math:`A`     A
+    :math:`k`     k
+    :math:`x_0`   x0
+    ============ =============
+
+
+    Parameters
+    -----------
+    A : float
+        Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=-A` and
+        :math:`\lim_{x\to\infty}f(x)=A`
+    k : float
+        Slope (steepness of the step). The larger :math:`k`, the sharper the
+        step.
+    x0 : float
+        Center parameter (position of zero crossing :math:`f(x_0)=0`).
 
     """
 
-    def __init__(self, A=1., k=1., x0=1., minimum_at_zero=False):
-        Component.__init__(self, ['A', 'k', 'x0'])
-        self.A.value = A
-        self.A.grad = self.grad_A
-
-        self.k.value = k
-        self.k.grad = self.grad_k
-
-        self.x0.value = x0
-        self.x0.grad = self.grad_x0
-
-        self.minimum_at_zero = minimum_at_zero
-        self._whitelist['minimum_at_zero'] = ('init', minimum_at_zero)
-
-        self.isbackground = False
-        self.convolved = False
-        self._position = self.x0
-
-    def function(self, x):
-        A = self.A.value
-        k = self.k.value
-        x0 = self.x0.value
-        if self.minimum_at_zero:
-            return A * (math.pi / 2 + np.arctan(k * (x - x0)))
-        else:
-            return A * np.arctan(k * (x - x0))
-
-    def grad_A(self, x):
-        k = self.k.value
-        x0 = self.x0.value
-        if self.minimum_at_zero:
-            return offset + np.arctan(k * (x - x0))
-        else:
-            return np.arctan(k * (x - x0))
-
-    def grad_k(self, x):
-        A = self.A.value
-        k = self.k.value
-        x0 = self.x0.value
-        return A * (x - x0) / (1 + (k * (x - x0)) ** 2)
-
-    def grad_x0(self, x):
-        A = self.A.value
-        k = self.k.value
-        x0 = self.x0.value
-        return -A * k / (1 + (k * (x - x0)) ** 2)
+    def __init__(self, A=1., k=1., x0=1., module=["numpy", "scipy"], **kwargs):
+        # Not to break scripts once we remove the legacy Arctan
+        if "minimum_at_zero" in kwargs:
+            del kwargs["minimum_at_zero"]
+        super(Arctan, self).__init__(
+            expression="A * arctan(k * (x - x0))",
+            name="Arctan",
+            A=A,
+            k=k,
+            x0=x0,
+            position="x0",
+            module=module,
+            autodoc=False,
+            **kwargs,
+        )

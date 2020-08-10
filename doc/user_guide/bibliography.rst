@@ -11,14 +11,14 @@ Bibliography
    M. Rappaz, and M. Cantoni, "Three-dimensional chemical analysis of
    laser-welded NiTi–stainless steel wires using a dual-beam FIB,"
    *Acta Materialia* 61 (2013): 3090–3098
-   [`link <https://doi.org/10.1016/j.actamat.2013.01.069>`_].
+   [`<https://doi.org/10.1016/j.actamat.2013.01.069>`_].
 
 .. _Candes2011:
 
 :ref:`[Candes2011] <Candes2011>`
    E. Candes, X. Li, Y. Ma and J. Wright,
-   "Robust principal component analysis?" *J. ACM* 58(3) (2011): 1–37 [`link
-   <https://arxiv.org/pdf/0912.3599.pdf>`_].
+   "Robust principal component analysis?" *J. ACM* 58(3) (2011): 1–37
+   [`<https://arxiv.org/pdf/0912.3599.pdf>`_].
 
 .. _Chantler2005:
 
@@ -28,27 +28,27 @@ Bibliography
    of Atomic Form Factors, Photoelectric Absorption and Scattering Cross
    Section, and Mass Attenuation Coefficients for Z = 1-92 from E = 1-10 eV
    to E = 0.4-1.0 MeV" *NIST Standard Reference Data*
-   [`link <http://physics.nist.gov/ffast>`_].
+   [`<http://physics.nist.gov/ffast>`_].
 
 .. _Egerton2011:
 
 :ref:`[Egerton2011] <Egerton2011>`
    R. Egerton, "Electron Energy-Loss
-   Spectroscopy in the Electron Microscope," Springer-Verlag, 2011 [`link
-   <https://doi.org/10.1007/978-1-4419-9583-4>`_].
+   Spectroscopy in the Electron Microscope," Springer-Verlag, 2011
+   [`<https://doi.org/10.1007/978-1-4419-9583-4>`_].
 
 .. _Feng2013:
 
 :ref:`[Feng2013] <Feng2013>`
    J. Feng, H. Xu and S. Yan, "Online Robust PCA
-   via Stochastic Optimization," *NIPS 2013*, 2013 [`link
-   <https://papers.nips.cc/paper/5131-online-robust-pca-via-stochastic-optimization>`_].
+   via Stochastic Optimization," *NIPS 2013*, 2013
+   [`<https://papers.nips.cc/paper/5131-online-robust-pca-via-stochastic-optimization>`_].
 
 .. _Gabor1948:
 
 :ref:`[Gabor1948] <Gabor1948>`
    D. Gabor, "A new microscopic principle,"
-   *Nature* 161 (1948): 777-778 [`link <https://doi.org/10.1038/161777a0>`_].
+   *Nature* 161 (1948): 777-778 [`<https://doi.org/10.1038/161777a0>`_].
 
 .. _Herraez:
 
@@ -56,22 +56,22 @@ Bibliography
    M. Herráez, D. Burton, M. Lalor, and M. Gdeisat,
    "Fast two-dimensional phase-unwrapping algorithm based on sorting by
    reliability following a noncontinuous path," *Applied Optics*, 41(35)
-   (2002): 7437-7444 [`link <https://doi.org/10.1364/AO.41.007437>`_].
+   (2002): 7437-7444 [`<https://doi.org/10.1364/AO.41.007437>`_].
 
 .. _Hyvarinen2000:
 
 :ref:`[Hyvarinen2000] <Hyvarinen2000>`
    A. Hyvarinen and E. Oja, "Independent
    component analysis: algorithms and applications," *Neural Networks* 13
-   (2000): 411–430 [`link <https://doi.org/10.1016/S0893-6080(00)00026-5>`_].
+   (2000): 411–430 [`<https://doi.org/10.1016/S0893-6080(00)00026-5>`_].
 
 .. _Joy1993:
 
 :ref:`[Joy1993] <Joy1993>`
    D.Joy, Y.-S. Zhang, X. Zhang, T.Hashimoto, R. Bunn,
    L.Allard, and T. Nolan, "Practical aspects of electron holography,"
-   *Ultramicroscopy* 51.1-4 (1993): 1-14 [`link
-   <https://doi.org/10.1016/0304-3991(93)90130-P>`_].
+   *Ultramicroscopy* 51.1-4 (1993): 1-14
+   [`<https://doi.org/10.1016/0304-3991(93)90130-P>`_].
 
 .. _Keenan2004:
 
@@ -79,7 +79,7 @@ Bibliography
    M. Keenan and P. Kotula, "Accounting for Poisson noise in
    the multivariate analysis of ToF-SIMS spectrum images," *Surf.
    Interface Anal* 36(3) (2004): 203–212
-   [`link <https://doi.org/10.1002/sia.1657>`_].
+   [`<https://doi.org/10.1002/sia.1657>`_].
 
 .. _MacArthur2016:
 
@@ -88,7 +88,7 @@ Bibliography
    D. Ozkaya, P. Nellist, and S. Lozano-Perez, "Quantitative Energy-Dispersive
    X-Ray Analysis of Catalyst Nanoparticles Using a Partial Cross Section
    Approach," *Microsc. Microanal.* 22 (2016): 71–81
-   [`link <https://doi.org/10.1017/S1431927615015494>`_].
+   [`<https://doi.org/10.1017/S1431927615015494>`_].
 
 .. _McCartney2007:
 
@@ -96,7 +96,7 @@ Bibliography
    M. McCartney and D. Smith, "Electron
    holography: phase imaging with nanometer resolution," *Annu. Rev. Mater.
    Res.* 37 (2007): 729-767
-   [`link <https://doi.org/10.1146/annurev.matsci.37.052506.084219>`_].
+   [`<https://doi.org/10.1146/annurev.matsci.37.052506.084219>`_].
 
 .. _[Nicoletti2013]:
 
@@ -104,7 +104,7 @@ Bibliography
    O. Nicoletti, F. de la Peña, R. Leary,
    D. Holland, C. Ducati, and P. Midgley, "Three-dimensional imaging of
    localized surface plasmon resonances of metal nanoparticles," *Nature* 502
-   (2013): 80-84 [`link <https://doi.org/10.1038/nature12469>`_].
+   (2013): 80-84 [`<https://doi.org/10.1038/nature12469>`_].
 
 .. _Pena2010:
 
@@ -113,7 +113,7 @@ Bibliography
    F. Dynys, O. Stephan, and M. Walls, "Mapping titanium and tin oxide phases
    using EELS: An application of independent component analysis,"
    *Ultramicroscopy* 111 (2010): 169–176
-   [`link <https://doi.org/10.1016/j.ultramic.2010.10.001>`_].
+   [`<https://doi.org/10.1016/j.ultramic.2010.10.001>`_].
 
 .. _Rossouw2015:
 
@@ -122,14 +122,14 @@ Bibliography
    C. Ducati, B. Knappett, A. Wheatley, and P. Midgley, "Multicomponent Signal
    Unmixing from Nanoheterostructures: Overcoming the Traditional Challenges of
    Nanoscale X-ray Analysis via Machine Learning," *Nano Lett.* 15(4) (2015):
-   2716–2720 [`link <https://doi.org/10.1021/acs.nanolett.5b00449>`_].
+   2716–2720 [`<https://doi.org/10.1021/acs.nanolett.5b00449>`_].
 
 .. _Tonomura1999:
 
 :ref:`[Tonomura1999] <Tonomura1999>`
    A. Tonomura, "Electron Holography,"
    Springer Berlin Heidelberg, 1999. 78-132
-   [`link <https://doi.org/10.1007/978-3-540-37204-2>`_].
+   [`<https://doi.org/10.1007/978-3-540-37204-2>`_].
 
 .. _Watanabe1996:
 
@@ -137,7 +137,7 @@ Bibliography
    M. Watanabe, Z. Horita, and M. Nemoto,
    "Absorption correction and thickness determination using the zeta factor in
    quantitative X-ray microanalysis," *Ultramicroscopy* 65 (1996): 187–198
-   [`link <https://doi.org/10.1016/S0304-3991(96)00070-8>`_].
+   [`<https://doi.org/10.1016/S0304-3991(96)00070-8>`_].
 
 .. _Watanabe2006:
 
@@ -145,7 +145,7 @@ Bibliography
    M. Watanabe and D. Williams, "The
    quantitative analysis of thin specimens: a review of progress from the
    Cliff-Lorimer to the new zeta-factor methods," *J. Microsc.* 221 (2006):
-   89–109 [`link <https://doi.org/10.1111/j.1365-2818.2006.01549.x>`_].
+   89–109 [`<https://doi.org/10.1111/j.1365-2818.2006.01549.x>`_].
 
 .. _Williams2009:
 
@@ -153,23 +153,78 @@ Bibliography
    D. Williams and B Carter, "Transmission
    Electron Microscopy: A Textbook for Materials Science (Part 4)," Second Ed.,
    Springer, New York, 2009
-   [`link <https://doi.org/10.1007/978-0-387-76501-3>`_].
+   [`<https://doi.org/10.1007/978-0-387-76501-3>`_].
 
 .. _Zhao2016:
 
 :ref:`[Zhao2016] <Zhao2016>`
    R. Zhao and V. Tan, "Online nonnegative matrix
    factorization with outliers." *2016 IEEE International Conference on
-   Acoustics, Speech and Signal Processing (ICASSP)*, IEEE, 2016 [`link
-   <https://doi.org/10.1109/TSP.2016.2620967>`_,
-   `arXiv <https://arxiv.org/pdf/1604.02634.pdf>`_].
+   Acoustics, Speech and Signal Processing (ICASSP)*, IEEE, 2016
+   [`<https://doi.org/10.1109/TSP.2016.2620967>`_,
+   `<https://arxiv.org/pdf/1604.02634.pdf>`_].
 
 .. _Zhou2011:
 
 :ref:`[Zhou2011] <Zhou2011>`
    T. Zhou and D. Tao, "GoDec: Randomized Low-rank
    & Sparse Matrix Decomposition in Noisy Case", *ICML-11* (2011): 33–40
-   [`link <http://www.icml-2011.org/papers/41_icmlpaper.pdf>`_].
+   [`<http://www.icml-2011.org/papers/41_icmlpaper.pdf>`_].
+
+.. _Schaffer2004:
+
+:ref:`[Schaffer2004] <Schaffer2004>`
+   Bernhard Schaffer, Werner Grogger and Gerald
+   Kothleitner. “Automated Spatial Drift Correction for EFTEM
+   Image Series.” Ultramicroscopy 102, no. 1 (December 2004): 27–36
+   [`<https://doi.org/10.1016/j.ultramic.2004.08.003>`_].
+
+.. _Guizar2008:
+
+:ref:`[Guizar2008] <Guizar2008>`
+   Manuel Guizar-Sicairos, Samuel T. Thurman, and James R. Fienup,
+   “Efficient subpixel image registration algorithms",
+   Optics Letters 33, 156-158 (2008). DOI:10.1364/OL.33.000156
+   [`<https://doi.org/10.1364/OL.33.000156>`_].
+
+.. _Satopää2011:
+
+:ref:`[Satopää2011] <Satopää2011>`
+   Ville Satopää, Jeannie Albrecht, David Irwin, Barath Raghavan.
+   "Finding a "Kneedle" in a Haystack: Detecting Knee Points in System Behavior.
+   31st International Conference on Distributed Computing Systems Workshops",
+   pp. 166-171, Minneapolis, Minnesota, USA, June 2011
+   [`<https://doi.org/10.1109/ICDCSW.2011.20>`_].
+
+.. _Lerotic2004:
+
+:ref:`[Lerotic2004] <Lerotic2004>`
+   M Lerotic, C Jacobsen, T Schafer, S Vogt 
+   "Cluster analysis of soft X-ray spectromicroscopy data".
+   Ultramicroscopy 100 (2004) 35–57 
+   [`<https://doi.org/10.1016/j.ultramic.2004.01.008>`_]
+
+.. _Iakoubovskii2008:
+
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`
+    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+      [`<https://doi.org/10.1002/jemt.20597>`_].
+
+.. _White2009:
+
+:ref:`[White2009] <White2009>`
+    - T.A. White, “Structure solution using precession electron diffraction and
+      diffraction tomography” PhD Thesis, University of Cambridge, 2009.
+
+.. _Zaefferer2000:
+
+:ref:`[Zaefferer2000] <Zaefferer2000>`
+    - S. Zaefferer, “New developments of computer-aided crystallographic
+      analysis in transmission electron microscopy” J. Appl. Crystallogr.,
+      vol. 33, no. v, pp. 10–25, 2000.
+      [`<https://doi.org/10.1107/S0021889899010894>`_].
 
 
 Peer-review articles with results obtained using HyperSpy

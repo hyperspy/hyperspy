@@ -1,32 +1,32 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of HyperSpy.
+# This file is part of  HyperSpy.
 #
-# HyperSpy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HyperSpy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import gc
 from os import remove
 from unittest import mock
-import gc
 
 import numpy as np
-
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Expression, Gaussian, GaussianHF
 from hyperspy.io import load
-from hyperspy.components1d import Gaussian, Expression, GaussianHF
 
 
 def clean_model_dictionary(d):
@@ -148,7 +148,7 @@ class TestModelSaving:
         m[-1].name = 'something'
         m.append(GaussianHF(module="numpy"))
         m[-1].height.value = 3
-        m.append(Expression(name="Line", expression="a * x + b", a=1, b=0))
+        m.append(Expression(name="Line", expression="a * x + b", a=1, c=0, rename_pars={"b": "c"}))
         self.m = m
 
     def test_save_and_load_model(self):
@@ -160,6 +160,7 @@ class TestModelSaving:
         assert mr.components.something.A.value == 13
         assert mr.components.GaussianHF.height.value == 3
         assert mr.components.Line.a.value == 1
+        assert mr.components.Line.c.value == 0
         assert mr.components.Line.function(10) == 10
 
     def teardown_method(self, method):

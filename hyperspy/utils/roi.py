@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 import hyperspy.roi
+from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
+                          RectangularROI, SpanROI)
+
 __doc__ = hyperspy.roi.__doc__
-from hyperspy.roi import (Point1DROI,
-                          Point2DROI,
-                          SpanROI,
-                          RectangularROI,
-                          CircleROI,
-                          Line2DROI)

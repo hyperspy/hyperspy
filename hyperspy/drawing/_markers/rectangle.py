@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -54,6 +54,7 @@ class Rectangle(MarkerBase):
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
+
     >>> im = hs.signals.Signal2D(np.random.random((50, 50))
     >>> m = hs.plot.markers.rectangle(x1=20, y1=30, x2=40, y2=49)
     >>> im.add_marker(m, permanent=True)

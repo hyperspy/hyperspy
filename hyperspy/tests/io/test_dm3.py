@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,16 +17,18 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import json
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
+from hyperspy.io import load
+from hyperspy.io_plugins.digital_micrograph import (DigitalMicrographReader,
+                                                    ImageObject)
+from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.tests.io.generate_dm_testing_files import (dm3_data_types,
                                                          dm4_data_types)
-from hyperspy.io import load
-from hyperspy.io_plugins.digital_micrograph import DigitalMicrographReader, ImageObject
 
 MY_PATH = os.path.dirname(__file__)
 
@@ -66,7 +68,7 @@ class TestImageObject():
 
     def test_parse_string(self):
         assert self.imageobject._parse_string("") is None
-        assert self.imageobject._parse_string("string") is "string"
+        assert self.imageobject._parse_string("string") == "string"
 
 
 def test_missing_tag():
@@ -74,8 +76,8 @@ def test_missing_tag():
                          "test_diffraction_pattern_tags_removed.dm3")
     s = load(fname)
     md = s.metadata
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
     assert md.General.date == "2014-07-09"
     assert md.General.time == "18:56:37"
     assert md.General.title == "test_diffraction_pattern_tags_removed"
@@ -86,9 +88,9 @@ def test_read_TEM_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.5)
-    assert_allclose(md.Acquisition_instrument.TEM.magnification, 51.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.5)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.magnification, 51.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
     assert md.General.date == "2015-07-20"
     assert md.General.original_filename == "test_dm_image_um_unit.dm3"
@@ -106,9 +108,9 @@ def test_read_Diffraction_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 320.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 320.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
     assert md.General.date == "2014-07-09"
     assert (
@@ -125,10 +127,10 @@ def test_read_STEM_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.dwell_time, 3.5E-6)
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    assert_allclose(
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.dwell_time, 3.5E-6)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.magnification,
         225000.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
@@ -145,28 +147,28 @@ def test_read_EELS_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    assert_allclose(
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.magnification,
         640000.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.x, -0.478619,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.x, -0.478619,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.y, 0.0554612,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.y, 0.0554612,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.z, 0.036348,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.z, 0.036348,
                     atol=1E-2)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.convergence_angle, 21.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 0.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.exposure,
         0.0035)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 50)
     assert (
         md.Acquisition_instrument.TEM.Detector.EELS.spectrometer ==
@@ -180,12 +182,32 @@ def test_read_EELS_metadata():
     assert md.General.time == "19:35:17"
     assert md.Signal.quantity == "Electrons (Counts)"
     assert md.Signal.signal_type == "EELS"
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_factor,
         0.1285347)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
+
+
+def test_read_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_3D_data", "EELS_SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
+    assert md.General.date == "2019-05-14"
+    assert md.General.time == "20:50:13"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.aperture_size, 5.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.convergence_angle, 21.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 62.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 1)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.dwell_time,
+        1.9950125E-2)
 
 
 def test_read_EDS_metadata():
@@ -193,22 +215,22 @@ def test_read_EDS_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.azimuth_angle, 45.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.elevation_angle, 18.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa, 130.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.live_time, 3.806)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.real_time, 4.233)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    assert_allclose(
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.magnification,
         320000.0)
     assert md.General.date == "2016-08-08"
@@ -217,10 +239,10 @@ def test_read_EDS_metadata():
     assert md.General.time == "21:46:19"
     assert md.Signal.quantity == "X-rays (Counts)"
     assert md.Signal.signal_type == "EDS_TEM"
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_factor,
         1.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
 
@@ -240,6 +262,92 @@ def test_location():
     s = load(os.path.join(MY_PATH, "dm3_locale", fname_list[3]))
     assert s.metadata.General.date == "2016-08-27"
     assert s.metadata.General.time == "20:52:30"
+
+
+def test_multi_signal():
+    fname = os.path.join(MY_PATH, "dm3_2D_data", "multi_signal.dm3")
+    s = load(fname)
+
+    # Make sure file is read as a list, and exactly two signals are found
+    assert isinstance(s, list)
+    assert len(s) == 2
+
+    s1, s2 = s
+
+    # First signal is an image, second is a plot
+    assert isinstance(s1, Signal2D)
+    assert isinstance(s2, Signal1D)
+
+    s1_md_truth = {
+        '_HyperSpy': {
+            'Folding': {
+                'unfolded': False,
+                'signal_unfolded': False,
+                'original_shape': None,
+                'original_axes_manager': None}},
+        'General': {'title': 'HAADF',
+                    'original_filename': 'multi_signal.dm3',
+                    'date': '2019-12-10',
+                    'time': '15:32:41',
+                    'authors': 'JohnDoe'},
+        'Signal': {'binned': False,
+                   'signal_type': '',
+                   'quantity': 'Intensity',
+                   'Noise_properties': {
+                       'Variance_linear_model': {
+                           'gain_factor': 1.0,
+                           'gain_offset': 0.0}}},
+        'Acquisition_instrument': {
+            'TEM': {
+                'beam_energy': 300.0,
+                'Stage': {
+                    'tilt_alpha': 0.001951998453075299,
+                    'x': 0.07872150000000001,
+                    'y': 0.100896,
+                    'z': -0.0895279},
+                'acquisition_mode': 'STEM',
+                'beam_current': 0.0,
+                'camera_length': 77.0,
+                'magnification': 10000000.0,
+                'microscope': 'Example Microscope',
+                'dwell_time': 3.2400001525878905e-05}},
+        'Sample': {
+            'description': 'PrecipitateA'}
+    }
+
+    s2_md_truth = {
+        '_HyperSpy': {
+            'Folding': {
+                'unfolded': False,
+                'signal_unfolded': False,
+                'original_shape': None,
+                'original_axes_manager': None}},
+        'General': {
+            'title': 'Plot',
+            'original_filename': 'multi_signal.dm3'},
+        'Signal': {
+            'binned': False,
+            'signal_type': '',
+            'quantity': 'Intensity',
+            'Noise_properties': {
+                'Variance_linear_model': {
+                    'gain_factor': 1.0,
+                    'gain_offset': 0.0}}}
+    }
+
+    # make sure the metadata dictionaries are as we expect
+    assert s1.metadata.as_dictionary() == s1_md_truth
+    assert s2.metadata.as_dictionary() == s2_md_truth
+
+    # rather than testing all of original metadata (huge), use length as a proxy
+    assert len(json.dumps(s1.original_metadata.as_dictionary())) == 17779
+    assert len(json.dumps(s2.original_metadata.as_dictionary())) == 15024
+
+    # simple tests on the data itself:
+    assert s1.data.sum() == 949490255
+    assert s1.data.shape == (512, 512)
+    assert s2.data.sum() == pytest.approx(28.085794, 0.01)
+    assert s2.data.shape == (512,)
 
 
 def generate_parameters():

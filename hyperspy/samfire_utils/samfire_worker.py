@@ -1,19 +1,20 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of HyperSpy.
+# This file is part of  HyperSpy.
 #
-# HyperSpy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HyperSpy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
@@ -115,7 +116,7 @@ class Worker:
                     try:
                         getattr(self.model[comp_name],
                                 parameter_name).value = value
-                    except:
+                    except BaseException:
                         e = sys.exc_info()[0]
                         to_send = ('Error',
                                    (self.identity,
@@ -165,6 +166,13 @@ class Worker:
         self.value_dict = value_dict
 
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
+        if 'min_function' in self.fitting_kwargs:
+            self.fitting_kwargs['min_function'] = dill.loads(
+                self.fitting_kwargs['min_function'])
+        if 'min_function_grad' in self.fitting_kwargs and isinstance(
+                self.fitting_kwargs['min_function_grad'], bytes):
+            self.fitting_kwargs['min_function_grad'] = dill.loads(
+                self.fitting_kwargs['min_function_grad'])
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
         if self.model.signal.metadata.has_item(

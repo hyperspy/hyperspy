@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,7 +20,7 @@
 import numpy as np
 
 from hyperspy.component import Component
-from .gaussian import Gaussian
+from hyperspy._components.gaussian import Gaussian
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -59,7 +59,7 @@ class SEE(Component):
 
         # Resolution functions
         self.gaussian = Gaussian()
-        self.gaussian.origin.free, self.gaussian.A.free = False, False
+        self.gaussian.centre.free, self.gaussian.A.free = False, False
         self.gaussian.sigma.free = True
         self.gaussian.A.value = 1.
 

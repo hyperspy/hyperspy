@@ -1,6 +1,25 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from operator import attrgetter
 import numpy as np
 from dask.array import Array as dArray
+
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
 from hyperspy import roi
@@ -146,6 +165,27 @@ def copy_slice_from_whitelist(
 class SpecialSlicers(object):
 
     def __init__(self, obj, isNavigation):
+        """Create a slice of the signal. The indexing supports integer,
+        decimal numbers or strings (containing a decimal number and an units).
+
+        >>> s = hs.signals.Signal1D(np.arange(10))
+        >>> s
+        <Signal1D, title: , dimensions: (|10)>
+        >>> s.data
+        array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        >>> s.axes_manager[0].scale = 0.5
+        >>> s.axes_manager[0].axis
+        array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5])
+        >>> s.isig[0.5:4.].data
+        array([1, 2, 3, 4, 5, 6, 7])
+        >>> s.isig[0.5:4].data
+        array([1, 2, 3])
+        >>> s.isig[0.5:4:2].data
+        array([1, 3])
+        >>> s.axes_manager[0].units = 'µm'
+        >>> s.isig[:'2000 nm'].data
+        array([0, 1, 2, 3])
+        """
         self.isNavigation = isNavigation
         self.obj = obj
 
@@ -296,5 +336,3 @@ class FancySlicing(object):
             return _obj
         else:
             out.events.data_changed.trigger(obj=out)
-
-# vim: textwidth=80

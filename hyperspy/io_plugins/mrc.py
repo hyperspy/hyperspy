@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -39,7 +39,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0
-
 # Writing capabilities
 writes = False
 
@@ -150,7 +149,7 @@ def file_reader(filename, endianess='<', **kwds):
     if f.tell() == 1024 + std_header['NEXT']:
         _logger.debug("The FEI header was correctly loaded")
     else:
-        _logger.warn("There was a problem reading the extended header")
+        _logger.warning("There was a problem reading the extended header")
         f.seek(1024 + std_header['NEXT'])
         fei_header = None
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']

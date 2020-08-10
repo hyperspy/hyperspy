@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,7 +22,7 @@ import logging
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
-from hyperspy.ui_registry import get_gui
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -36,6 +37,8 @@ class MPL_HyperExplorer(object):
     def __init__(self):
         self.signal_data_function = None
         self.navigator_data_function = None
+        # args to pass to `__call__`
+        self.signal_data_function_kwargs = {}
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
@@ -49,32 +52,35 @@ class MPL_HyperExplorer(object):
     def plot_signal(self):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.
-        return
+        if self.axes_manager.signal_dimension == 0:
+            return
+        if self.signal_data_function_kwargs.get('fft_shift', False):
+            self.axes_manager = self.axes_manager.deepcopy()
+            for axis in self.axes_manager.signal_axes:
+                axis.offset = -axis.high_value / 2.
 
-    def plot_navigator(self,
-                       colorbar=True,
-                       scalebar=True,
-                       scalebar_color="white",
-                       axes_ticks=None,
-                       saturated_pixels=0,
-                       vmin=None,
-                       vmax=None,
-                       no_nans=False,
-                       centre_colormap="auto",
-                       title=None,
-                       **kwds):
+    def plot_navigator(self, title=None, **kwargs):
+        """
+        Parameters
+        ----------
+        title : str, optional
+            Title of the navigator. The default is None.
+        **kwargs : dict
+            The kwargs are passed to plot method of
+            :py:meth:`hyperspy.drawing.image.ImagePlot` or
+            :py:meth:`hyperspy.drawing.signal1d.Signal1DLine`.
+
+        """
         if self.axes_manager.navigation_dimension == 0:
             return
         if self.navigator_data_function is None:
             return
-        if self.navigator_data_function is "slider":
+        if self.navigator_data_function == "slider":
             self._get_navigation_sliders()
             return
         title = title or self.signal_title + " Navigator" if self.signal_title else ""
-        if self.navigator_plot is not None:
-            self.navigator_plot.plot()
-            return
-        elif len(self.navigator_data_function().shape) == 1:
+
+        if len(self.navigator_data_function().shape) == 1:
             # Create the figure
             sf = signal1d.Signal1DFigure(title=title)
             axis = self.axes_manager.navigation_axes[0]
@@ -85,12 +91,19 @@ class MPL_HyperExplorer(object):
             sf.axis = axis
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
-            # Create a line to the left axis with the default
-            # indices
+
+            # Create a line to the left axis with the default indices
             sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
+
+            # Set all kwargs value to the image figure before passing the rest
+            # of the kwargs to plot method of the image figure
+            for key in list(kwargs.keys()):
+                if hasattr(sl, key):
+                    setattr(sl, key, kwargs.pop(key))
             sl.set_line_properties(color='blue',
                                    type='step')
+
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()
@@ -104,17 +117,16 @@ class MPL_HyperExplorer(object):
                                 sf.update), [])
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
-            imf = image.ImagePlot()
+            # Create the figure
+            imf = image.ImagePlot(title=title)
             imf.data_function = self.navigator_data_function
-            imf.colorbar = colorbar
-            imf.scalebar = scalebar
-            imf.scalebar_color = scalebar_color
-            imf.axes_ticks = axes_ticks
-            imf.saturated_pixels = saturated_pixels
-            imf.vmin = vmin
-            imf.vmax = vmax
-            imf.no_nans = no_nans
-            imf.centre_colormap = centre_colormap
+
+            # Set all kwargs value to the image figure before passing the rest
+            # of the kwargs to plot method of the image figure
+            for key, value in list(kwargs.items()):
+                if hasattr(imf, key):
+                    setattr(imf, key, kwargs.pop(key))
+
             # Navigator labels
             if self.axes_manager.navigation_dimension == 1:
                 imf.yaxis = self.axes_manager.navigation_axes[0]
@@ -130,10 +142,15 @@ class MPL_HyperExplorer(object):
                             partial(axis.events.index_changed.disconnect,
                                     imf.update), [])
 
-            imf.title = title
-            imf.plot(**kwds)
+            if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
+                kwargs["cmap"] = preferences.Plot.cmap_navigator
+            imf.plot(**kwargs)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
+
+        if self.navigator_plot is not None:
+            self.navigator_plot.events.closed.connect(
+                self._on_navigator_plot_closing, [])
 
     def _get_navigation_sliders(self):
         try:
@@ -148,12 +165,22 @@ class MPL_HyperExplorer(object):
 
     @property
     def is_active(self):
-        if self.signal_plot and self.signal_plot.figure is not None:
+        """A plot is active when it has the figure open meaning that it has
+        either one of 'signal_plot' or 'navigation_plot' is not None and it
+        has a attribute 'figure' which is not None.
+        """
+        if self.signal_plot and self.signal_plot.figure:
+            return True
+        elif self.navigator_plot and self.navigator_plot.figure:
             return True
         else:
             return False
 
     def plot(self, **kwargs):
+        # Parse the kwargs for plotting complex data
+        for key in ['power_spectrum', 'fft_shift']:
+            if key in kwargs:
+                self.signal_data_function_kwargs[key] = kwargs.pop(key)
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:
@@ -161,12 +188,15 @@ class MPL_HyperExplorer(object):
                 self.pointer.color = 'red'
                 self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
+            if pointer is not None:
+                self.navigator_plot.events.closed.connect(
+                    self.pointer.disconnect, [])
         self.plot_signal(**kwargs)
 
     def assign_pointer(self):
         if self.navigator_data_function is None:
             nav_dim = 0
-        elif self.navigator_data_function is "slider":
+        elif self.navigator_data_function == "slider":
             nav_dim = 0
         else:
             nav_dim = len(self.navigator_data_function().shape)
@@ -186,8 +216,16 @@ class MPL_HyperExplorer(object):
     def _on_navigator_plot_closing(self):
         self.navigator_plot = None
 
+    def _on_signal_plot_closing(self):
+        self.signal_plot = None
+
     def close(self):
-        if self.signal_plot:
-            self.signal_plot.close()
-        if self.navigator_plot:
-            self.navigator_plot.close()
+        """When closing, we make sure:
+        - close the matplotlib figure
+        - drawing events are disconnected
+        - the attribute 'signal_plot' and 'navigation_plot' are set to None
+        """
+        if self.is_active:
+            if self.signal_plot:
+                self.signal_plot.close()
+            self.close_navigator_plot()

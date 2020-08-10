@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -37,8 +37,8 @@ class SquareWidget(Widget2DBase):
     bounds only correspond to pure indices for odd sizes.
     """
 
-    def __init__(self, axes_manager):
-        super(SquareWidget, self).__init__(axes_manager)
+    def __init__(self, axes_manager, **kwargs):
+        super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
     def _set_patch(self):
         """Sets the patch to a matplotlib Rectangle with the correct geometry.
@@ -52,6 +52,7 @@ class SquareWidget(Widget2DBase):
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
+            alpha=self.alpha,
             picker=True,)]
         super(SquareWidget, self)._set_patch()
 
@@ -111,12 +112,16 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         """
         Set bounds by indices. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, top, width, height)
-         OR
-         * 'x'/'left'
-         * 'y'/'top'
-         * 'w'/'width', alternatively 'right'
-         * 'h'/'height', alternatively 'bottom'
+
+        * 'bounds': tuple (left, top, width, height)
+
+        OR
+
+        * 'x'/'left'
+        * 'y'/'top'
+        * 'w'/'width', alternatively 'right'
+        * 'h'/'height', alternatively 'bottom'
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """
@@ -137,12 +142,16 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         """
         Set bounds by values. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, top, width, height)
-         OR
-         * 'x'/'left'
-         * 'y'/'top'
-         * 'w'/'width', alternatively 'right' (x+w)
-         * 'h'/'height', alternatively 'bottom' (y+h)
+
+        * 'bounds': tuple (left, top, width, height)
+
+        OR
+
+        * 'x'/'left'
+        * 'y'/'top'
+        * 'w'/'width', alternatively 'right' (x+w)
+        * 'h'/'height', alternatively 'bottom' (y+h)
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """

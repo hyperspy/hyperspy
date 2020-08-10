@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -45,7 +45,7 @@ class WidgetBase(object):
     needed.
     """
 
-    def __init__(self, axes_manager=None, **kwargs):
+    def __init__(self, axes_manager=None, color='red', alpha=1.0, **kwargs):
         self.axes_manager = axes_manager
         self._axes = list()
         self.ax = None
@@ -53,11 +53,12 @@ class WidgetBase(object):
         self.selected = False
         self._selected_artist = None
         self._size = 1.
-        self._pos = 0.
-        self.color = 'red'
+        self._pos = np.array([0.])
         self.__is_on = True
         self.background = None
         self.patch = []
+        self.color = color
+        self.alpha = alpha
         self.cids = list()
         self.blit = True
         self.events = Events()
@@ -131,6 +132,26 @@ class WidgetBase(object):
             if value is False:
                 self.ax = None
         self.__is_on = value
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, color):
+        self._color = color
+        for p in self.patch:
+            p.set_color(self._color)
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha):
+        self._alpha = alpha
+        for p in self.patch:
+            p.set_alpha(self._alpha)
 
     def _set_patch(self):
         """Create the matplotlib patch(es), and store it in self.patch
@@ -794,19 +815,19 @@ class ResizersMixin(object):
     boundaries. By default, the handles are only displayed when the widget is
     selected (`picked` in matplotlib terminology).
 
-    Attributes:
-    -----------
-        resizers : {bool}
-            Property that determines whether the resizer handles should be used
-        resize_color : {matplotlib color}
-            The color of the resize handles.
-        resize_pixel_size : {tuple | None}
-            Size of the resize handles in screen pixels. If None, it is set
-            equal to the size of one 'data-pixel' (image pixel size).
-        resizer_picked : {False | int}
-            Inidcates which, if any, resizer was selected the last time the
-            widget was picked. `False` if another patch was picked, or the
-            index of the resizer handle that was picked.
+    Attributes
+    ----------
+    resizers : bool
+        Property that determines whether the resizer handles should be used
+    resize_color : matplotlib color
+        The color of the resize handles.
+    resize_pixel_size : tuple or None
+        Size of the resize handles in screen pixels. If None, it is set
+        equal to the size of one 'data-pixel' (image pixel size).
+    resizer_picked : False or int
+        Inidcates which, if any, resizer was selected the last time the
+        widget was picked. `False` if another patch was picked, or the
+        index of the resizer handle that was picked.
 
     """
 

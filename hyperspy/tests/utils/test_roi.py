@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,9 +19,9 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import Signal2D, Signal1D
-from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
-                          Line2DROI, CircleROI)
+from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
+                          RectangularROI, SpanROI)
+from hyperspy.signals import Signal1D, Signal2D
 
 
 class TestROIs():
@@ -36,6 +36,13 @@ class TestROIs():
 
         # 4D dataset
         self.s_i = Signal2D(np.random.rand(100, 100, 4, 4))
+
+        # Generate ROI for test of angle measurements
+        self.r = []
+        t = np.tan(30. / 180. * np.pi)
+        for x in [-1., -t, t, 1]:
+            for y in [-1., -t, t, 1]:
+                self.r.append(Line2DROI(x1=0., x2=x, y1=0., y2=y))
 
     def test_point1d_spectrum(self):
         s = self.s_s
@@ -69,6 +76,10 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
+    def test_point1d_getitem(self):
+        r = Point1DROI(35)
+        assert (35,) == tuple(r)
+
     def test_point2d_image(self):
         s = self.s_i
         r = Point2DROI(35, 40)
@@ -89,6 +100,10 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[..., int(2 / scale), int(1 / scale)])
 
+    def test_point2d_getitem(self):
+        r = Point2DROI(1, 2)
+        assert tuple(r) == (1, 2)
+
     def test_span_spectrum_nav(self):
         s = self.s_s
         r = SpanROI(15, 30)
@@ -100,7 +115,7 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
-    def test_span_spectrum_nav_boundary_roi(self, mpl_cleanup):
+    def test_span_spectrum_nav_boundary_roi(self):
         s = Signal1D(np.random.rand(60, 4))
         r = SpanROI(0, 60)
         # Test adding roi to plot
@@ -122,7 +137,8 @@ class TestROIs():
         w2.set_bounds(width=30.0)  # above max width
         assert w2._size[0] == 12
 
-        w2.set_bounds(x=10, width=20) # the combination of the two is not valid
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
         assert w2._pos[0] == 0
         assert w2._size[0] == 12
 
@@ -131,7 +147,11 @@ class TestROIs():
         assert w2._pos[0] == 0
         assert w2._size[0] == 12
 
-    def test_widget_initialisation(self, mpl_cleanup):
+    def test_spanroi_getitem(self):
+        r = SpanROI(15, 30)
+        assert tuple(r) == (15, 30)
+
+    def test_widget_initialisation(self):
         s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         s.axes_manager[0].scale = 0.5
         s.axes_manager[1].scale = 1.0
@@ -165,7 +185,11 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
 
-    def test_rect_image_boundary_roi(self, mpl_cleanup):
+    def test_rectroi_getitem(self):
+        r = RectangularROI(left=2.3, top=5.6, right=3.5, bottom=12.2)
+        assert tuple(r) == (2.3, 3.5, 5.6, 12.2)
+
+    def test_rect_image_boundary_roi(self):
         s = self.s_i
         r = RectangularROI(0, 0, 100, 100)
         # Test adding roi to plot
@@ -211,11 +235,13 @@ class TestROIs():
         with pytest.raises(ValueError):
             w2.height = 101
 
-        w2.set_bounds(x=10, width=20) # the combination of the two is not valid
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
         assert w2._pos[0] == 0.0
         assert w2._size[0] == 20.0
 
-        w2.set_bounds(y=40, height=60) # the combination of the two is not valid
+        # the combination of the two is not valid
+        w2.set_bounds(y=40, height=60)
         assert w2._pos[1] == 0
         assert w2._size[1] == 80
 
@@ -269,6 +295,18 @@ class TestROIs():
 
         assert np.sum(r_signal.sum().data) == (n**2 - 3 * 4) * 4
         assert np.sum(r_ann_signal.sum().data) == 4 * 5 * 4
+
+    def test_circle_getitem(self):
+        r = CircleROI(20, 25, 20)
+        assert tuple(r) == (20, 25, 20)
+
+    def test_annulus_getitem(self):
+        r_ann = CircleROI(20, 25, 20, 15)
+        assert tuple(r_ann) == (20, 25, 20, 15)
+
+    def test_2d_line_getitem(self):
+        r = Line2DROI(10, 10, 150, 50, 5)
+        assert tuple(r) == (10, 10, 150, 50, 5)
 
     def test_2d_line_spec_plot(self):
         r = Line2DROI(10, 10, 150, 50, 5)
@@ -347,7 +385,7 @@ class TestROIs():
         s = self.s_i
         r = Line2DROI(0, 0, 4, 4, 1)
         s2 = r(s)
-        assert np.allclose(s2.data, np.array(
+        np.testing.assert_allclose(s2.data, np.array(
             [[[0.5646904, 0.83974605, 0.37688365, 0.499676],
               [0.08130241, 0.3241552, 0.91565131, 0.85345237],
               [0.5941565, 0.90536555, 0.42692772, 0.93761072],
@@ -385,7 +423,7 @@ class TestROIs():
         ))
         r.linewidth = 10
         s3 = r(s)
-        assert np.allclose(s3.data, np.array(
+        np.testing.assert_allclose(s3.data, np.array(
             [[[0., 0., 0., 0.],
               [0., 0., 0., 0.],
               [0., 0., 0., 0.],
@@ -421,6 +459,32 @@ class TestROIs():
               [0.56463766, 0.73848284, 0.41183566, 0.37515417],
               [0.48426503, 0.23582684, 0.45947953, 0.49322732]]]
         ))
+
+    def test_line2droi_angle(self):
+        # 1. Testing quantitative measurement for different quadrants:
+        r = self.r
+        r_angles = np.array([rr.angle() for rr in r])
+        angles_h = np.array([-135., -150., 150., 135.,
+                             -120., -135., 135., 120.,
+                             -60., -45., 45., 60.,
+                             -45., -30, 30., 45.])
+        angles_v = np.array([-135., -120., -60., -45.,
+                             -150., -135., -45., -30.,
+                             150., 135., 45., 30.,
+                             135., 120., 60., 45.])
+        np.testing.assert_allclose(r_angles, angles_h)
+        r_angles = np.array([rr.angle(axis='vertical') for rr in r])
+        np.testing.assert_allclose(r_angles, angles_v)
+
+        # 2. Testing unit conversation
+        r = Line2DROI(np.random.rand(), np.random.rand(), np.random.rand(), np.random.rand())
+        assert r.angle(units='degrees') == (r.angle(units='radians') / np.pi * 180.)
+
+        # 3. Testing raises:
+        with pytest.raises(ValueError):
+            r.angle(units='meters')
+        with pytest.raises(ValueError):
+            r.angle(axis='z')
 
 
 class TestInteractive:

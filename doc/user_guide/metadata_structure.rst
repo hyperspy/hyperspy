@@ -21,6 +21,7 @@ in the following sections of this chapter.
     ├── Acquisition_instrument
     │   ├── SEM
     │   │   ├── Detector
+    │   │   │   ├── detector_type
     │   │   │   └── EDS
     │   │   │       ├── azimuth_angle (º)
     │   │   │       ├── elevation_angle (º)
@@ -91,6 +92,8 @@ in the following sections of this chapter.
     │   ├── thickness
     │   └── xray_lines
     └── Signal
+        ├── FFT
+        │   └── shifted
         ├── Noise_properties
         │   ├── Variance_linear_model
         │   │   ├── correlation_factor
@@ -127,12 +130,13 @@ time_zone
 time
     type: Str
 
-    The acquisition or creation time in ISO 8601 time format.
+    The acquisition or creation time in ISO 8601 time format, e.g. '13:29:10'.
 
 date
     type: Str
 
-    The acquisition or creation date in ISO 8601 date format
+    The acquisition or creation date in ISO 8601 date format, e.g.
+    '2018-01-28'.
 
 
 authors
@@ -288,6 +292,11 @@ All instruments can contain a "Detector" node with information about the
 detector used to acquire the signal. EDX and EELS detectors should follow the
 following structure:
 
+detector_type
+    type: Str
+
+    The type of the detector, e.g. SE for SEM
+
 EELS
 ^^^^
 
@@ -435,6 +444,7 @@ signal_origin
 
 record_by
     .. deprecated:: 1.2
+
     type: Str
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
@@ -445,6 +455,17 @@ quantity
 
     The name of the quantity of the "intensity axis" with the units in round
     brackets if required, for example Temperature (K).
+
+
+FFT
+---
+
+shifted
+    type: bool.
+
+    Specify if the FFT has the zero-frequency component shifted to the center of 
+    the signal.
+
 
 Noise_properties
 ----------------

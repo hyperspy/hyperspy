@@ -22,6 +22,8 @@ many useful feature from its parent class that are documented in previous
 chapters.
 
 
+.. _eels_elemental_composition-label:
+
 Elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -33,12 +35,85 @@ information is stored in the :py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). This information is saved to file
 when saving in the hspy format (HyperSpy's HDF5 specification).
 
+An utility function :py:meth:`~.misc.eels.tools.get_edges_near_energy` can be
+helpful to identify possible elements in the sample.
+:py:meth:`~.misc.eels.tools.get_edges_near_energy` returns a list of edges
+arranged in the order closest to the specified energy within a window, both
+measured in eV. The size of the window can be controlled by the argument
+`width` (default as 10)--- If the specified energy is 849 eV and the width is
+6 eV, it returns a list of edges with onset energy between 846 eV to 852 eV and
+they are arranged in the order closest to 849 eV.
+
+.. code-block:: python
+
+    >>> from hyperspy.misc.eels.tools import get_edges_near_energy
+    >>> get_edges_near_energy(532)
+    ['O_K', 'Pd_M3', 'Sb_M5', 'Sb_M4']
+    >>> get_edges_near_energy(849, width=6)
+    ['La_M4', 'Fe_L1']
+
+
+`
+The static method :py:meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy`
+in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing
+more information about the edges.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.print_edges_near_energy(401, width=20)
+    +-------+-------------------+-----------+-----------------------------+
+    |  edge | onset energy (eV) | relevance |         description         |
+    +-------+-------------------+-----------+-----------------------------+
+    |  N_K  |       401.0       |   Major   |         Abrupt onset        |
+    | Sc_L3 |       402.0       |   Major   | Sharp peak. Delayed maximum |
+    | Cd_M5 |       404.0       |   Major   |       Delayed maximum       |
+    | Sc_L2 |       407.0       |   Major   | Sharp peak. Delayed maximum |
+    | Mo_M2 |       410.0       |   Minor   |          Sharp peak         |
+    | Mo_M3 |       392.0       |   Minor   |          Sharp peak         |
+    | Cd_M4 |       411.0       |   Major   |       Delayed maximum       |
+    +-------+-------------------+-----------+-----------------------------+
+
+The method :py:meth:`~._signals.eels.EELSSpectrum_mixin.edges_at_energy` allows
+inspecting different sections of the signal for interactive edge 
+identification (the default). A region can be selected by dragging the mouse 
+across the signal and after clicking the `Update` button, edges with onset 
+energies within the selected energy range will be displayed. By toggling the 
+edge buttons, it will put or remove the corresponding edges on the signal. When 
+the `Complementary edge` box is ticked, edges outside the selected range with 
+the same element of edges within the selected energy range will be shown as well 
+to aid identification of edges.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.edges_at_energy()
+
+.. figure::  images/EELS_edges_at_energy.png
+   :align:   center
+   :width:   500
+
+   Labels of edges can be put or remove by toggling the edge buttons.
+    
+
+.. _eels_thickness-label:
+
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can
-estimate the thickness from a low-loss EELS spectrum using the Log-Ratio
-method.
+.. versionadded:: 1.6
+    Option to compute the absolute thickness, including the angular corrections
+    and mean free path estimation.
+
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method can
+estimate the thickness from a low-loss EELS spectrum using the log-ratio
+method. If the beam energy, collection angle, convergence angle and sample
+density are known, the absolute thickness is computed using the method in
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`. This includes the estimation of
+the inelastic mean free path (iMFP). For more accurate results, it is possible
+to input the iMFP of the material if known.  If the density and/or the iMFP are
+not known, the output is the thickness relative to the (unknown) iMFP without
+any angular corrections.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -94,8 +169,6 @@ the npoints keyword.
 Kramers-Kronig Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.7
-
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
 The :py:meth:`~._signals.eels.EELSSpectrum_mixin.kramers_kronig_analysis`
@@ -106,15 +179,15 @@ the refractive index is known and approximately correct for surface
 plasmon excitations in layers.
 
 
-
+.. _eels.fitting:
 
 EELS curve fitting
 ------------------
 
 HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
-EELS spectrum from the `The EELS Data Base
-<https://eelsdb.eu/>`_ (see :ref:`example-data-label`).
+EELS spectrum from the `EELS Data Base
+<https://eelsdb.eu/>`__ (see :ref:`example-data-label`).
 
 Load the core-loss and low-loss spectra
 
@@ -171,6 +244,7 @@ Conveniently, all the EELS core-loss components of the added elements are added
 automatically, names after its element symbol.
 
 .. code-block:: python
+
     >>> m.components.N_K
     <N_K (EELSCLEdge component)>
     >>> m.components.B_K
@@ -200,6 +274,14 @@ image
 
     >>> m.multifit(kind='smart')
 
+.. NOTE::
+
+    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.
+    The fitting procedure acts in iterative manner along the energy-loss-axis.
+    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit.
+    Then it only activates the the first two, fits, and repeats this until all edges are fitted simultanously.
+
+    Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
 
 Print the result of the fit
 
@@ -223,8 +305,8 @@ Visualize the result
    :align:   center
    :width:   500
 
-   Curve fitting quantification of a boron nitride EELS core-loss spectrum from
-   `The EELS Data Base <https://eelsdb.eu>`_
+   Curve fitting quantification of a boron nitride EELS core-loss spectrum
+   from the `EELS Data Base <https://eelsdb.eu>`__.
 
 
 There are several methods that are only available in
@@ -271,10 +353,8 @@ overlapping. This method is executed automatically when e.g. components are
 added or removed from the model, but sometimes is necessary to call it
 manually.
 
-.. versionadded:: 0.7.1
-
-   Sometimes it is desirable to disable the automatic adjustment of the fine
-   structure width. It is possible to suspend this feature by calling
-   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`.
-   To resume it use
-   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`
+Sometimes it is desirable to disable the automatic adjustment of the fine
+structure width. It is possible to suspend this feature by calling
+:py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`.
+To resume it use
+:py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`

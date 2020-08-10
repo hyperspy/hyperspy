@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -25,14 +25,13 @@ class EDSTEMModel(EDSModel):
 
     Parameters
     ----------
-    spectrum : an EDSTEMSpectrum instance
+    spectrum : EDSTEMSpectrum
 
-    auto_add_lines : boolean
+    auto_add_lines : bool
         If True, automatically add Gaussians for all X-rays generated
         in the energy range by an element, using the edsmodel.add_family_lines
         method.
-
-    auto_background : boolean
+    auto_background : bool
         If True, adds automatically a polynomial order 6 to the model,
         using the edsmodel.add_polynomial_background method.
 

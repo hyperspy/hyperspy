@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,68 +16,39 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.drawing import image, utils
+from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
+from hyperspy.defaults_parser import preferences
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
-    def plot_signal(self,
-                    colorbar=True,
-                    scalebar=True,
-                    scalebar_color="white",
-                    axes_ticks=None,
-                    saturated_pixels=0,
-                    vmin=None,
-                    vmax=None,
-                    no_nans=False,
-                    centre_colormap="auto",
-                    **kwargs
-                    ):
-        """Plot image.
-
+    def plot_signal(self, **kwargs):
+        """
         Parameters
         ----------
-        colorbar : bool, optional
-             If true, a colorbar is plotted for non-RGB images.
-        scalebar : bool, optional
-            If True and the units and scale of the x and y axes are the same a
-            scale bar is plotted.
-        scalebar_color : str, optional
-            A valid MPL color string; will be used as the scalebar color.
-        axes_ticks : {None, bool}, optional
-            If True, plot the axes ticks. If None axes_ticks are only
-            plotted when the scale bar is not plotted. If False the axes ticks
-            are never plotted.
-        saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds. For
-            example, the low and high bounds of a value of 1 are the
-            0.5% and 99.5% percentiles. It must be in the [0, 100] range.
-        vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data.
-        no_nans : bool, optional
-            If True, set nans to zero for plotting.
-        **kwargs, optional
-            Additional key word arguments passed to matplotlib.imshow()
+        **kwargs : dict
+            The kwargs are passed to plot method of the image figure.
 
         """
-        if self.signal_plot is not None:
-            self.signal_plot.plot(**kwargs)
-            return
+        super().plot_signal()
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
-        imf.colorbar = colorbar
+
+        # Set all kwargs value to the image figure before passing the rest
+        # of the kwargs to plot method of the image figure
+        for key, value in list(kwargs.items()):
+            if hasattr(imf, key):
+                setattr(imf, key, kwargs.pop(key))
+
         imf.quantity_label = self.quantity_label
-        imf.scalebar = scalebar
-        imf.axes_ticks = axes_ticks
-        imf.vmin, imf.vmax = vmin, vmax
-        imf.saturated_pixels = saturated_pixels
-        imf.no_nans = no_nans
-        imf.scalebar_color = scalebar_color
-        imf.centre_colormap = centre_colormap
+
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
+        if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
+            kwargs["cmap"] = preferences.Plot.cmap_signal
         imf.plot(**kwargs)
         self.signal_plot = imf
 
@@ -88,6 +59,5 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             if self.navigator_plot is not None:
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
-                self.navigator_plot.events.closed.connect(
-                    self._on_navigator_plot_closing, [])
                 imf.events.closed.connect(self.close_navigator_plot, [])
+            imf.events.closed.connect(self._on_signal_plot_closing, [])

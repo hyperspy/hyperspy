@@ -1,31 +1,367 @@
 What's new
 **********
 
+We only cover here the main highlights, for a detailed list of all the changes
+see `the commits in the GITHUB milestones
+<https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
+
 Current Version
 ===============
 
-We only cover here the main highlights, for a detailed list of all the changes
-see `the commits in the GITHUB milestones
-<https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
+.. _changes_1.6:
+
+v1.6
+++++
+
+NEW
+---
+
+* Support for the following file formats:
+
+  * :ref:`sur-format`
+  * :ref:`elid_format-label`
+  * :ref:`nexus-format`
+  * :ref:`usid-format`
+  * :ref:`empad-format`
+  * Prismatic EMD format, see :ref:`emd-format`
+* :meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` method
+  that, if the `hyperspy-gui-ipywidgets package
+  <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
+  is installed, includes an
+  awesome interactive mode. See :ref:`eels_elemental_composition-label`.
+* Model asymmetric line shape components:
+
+  * :py:class:`~._components.doniach.Doniach`
+  * :py:class:`~._components.split_pvoigt.SplitVoigt`
+* :ref:`EDS absorption correction <eds_absorption-label>`.
+* :ref:`Argand diagram for complex signals <complex.argand>`.
+* :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
+* :ref:`cluster_analysis-label`.
+
+Enhancements
+------------
+
+* The :py:meth:`~.signal.BaseSignal.get_histogram` now uses numpy's
+  `np.histogram_bin_edges()
+  <https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html>`_
+  and supports all of its ``bins`` keyword values.
+* Further improvements to the contrast adjustment tool.
+  Test it by pressing the ``h`` key on any image.
+* The following components have been rewritten using
+  :py:class:`hyperspy._components.expression.Expression`, boosting their
+  speeds among other benefits.
+
+  * :py:class:`hyperspy._components.arctan.Arctan`
+  * :py:class:`hyperspy._components.voigt.Voigt`
+  * :py:class:`hyperspy._components.heaviside.HeavisideStep`
+* The model fitting :py:meth:`~.model.BaseModel.fit` and
+  :py:meth:`~.model.BaseModel.multifit` methods have been vastly improved. See
+  :ref:`model.fitting` and the API changes section below.
+* New serpentine iteration path for multi-dimensional fitting.
+  See :ref:`model.multidimensional-label`.
+* The :py:func:`~.drawing.utils.plot_spectra`  function now listens to
+  events to update the figure automatically.
+  See :ref:`this example <plot_profiles_interactive-label>`.
+* Improve thread-based parallelism. Add ``max_workers`` argument to the
+  :py:meth:`~.signal.BaseSignal.map` method, such that the user can directly
+  control how many threads they launch.
+* Many improvements to the :py:meth:`~.mva.MVA.decomposition` and
+  :py:meth:`~.mva.MVA.blind_source_separation` methods, including support for
+  scikit-learn like algorithms, better API and much improved documentation.
+  See :ref:`ml-label` and the API changes section below.
+* Add option to calculate the absolute thickness to the EELS
+  :meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method.
+  See :ref:`eels_thickness-label`.
+* Vastly improved performance and memory footprint of the
+  :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` method.
+* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
+  now remove Doniach, exponential, Lorentzian, skew normal,
+  split Voigt and Voigt functions. Furthermore, it can return the background
+  model that includes an estimation of the reduced chi-squared.
+* The performance of the maximum-likelihood PCA method was greatly improved.
+* All ROIs now have a ``__getitem__`` method, enabling e.g. using them with the
+  unpack ``*`` operator. See :ref:`roi-slice-label` for an example.
+* New syntax to set the contrast when plotting images. In particular, the
+  ``vmin`` and ``vmax`` keywords now take values like ``vmin="30th"`` to
+  clip the minimum value to the 30th percentile. See :ref:`signal.fft`
+  for an example.
+* The :py:meth:`~._signals.signal1d.Signal1D.plot` and
+  :py:meth:`~._signals.signal2d.Signal2D.plot` methods take a new keyword
+  argument ``autoscale``. See :ref:`plot.customize_images` for details.
+* The contrast editor and the decomposition methods can now operate on
+  complex signals.
+* The default colormap can now be set in
+  :ref:`preferences <configuring-hyperspy-label>`.
+
+
+API changes
+-----------
+
+* The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
+  ``saturated_pixels`` is deprecated. Please use
+  ``vmin`` and/or ``vmax`` instead.
+* The :py:func:`~.io.load` keyword argument ``dataset_name`` has been
+  renamed to ``dataset_path``.
+* The :py:meth:`~.signal.BaseSignal.set_signal_type` method no longer takes
+  ``None``. Use the empty string ``""`` instead.
+* The :py:meth:`~.signal.BaseSignal.get_histogram` ``bins`` keyword values
+  have been renamed as follows for consistency with numpy:
+
+    * ``"scotts"`` -> ``"scott"``,
+    * ``"freedman"`` -> ``"fd"``
+*  Multiple changes to the syntax of the :py:meth:`~.model.BaseModel.fit`
+   and :py:meth:`~.model.BaseModel.multifit` methods:
+
+  * The ``fitter`` keyword has been renamed to ``optimizer``.
+  * The values that the ``optimizer`` keyword take have been renamed
+    for consistency with scipy:
+
+    * ``"fmin"`` -> ``"Nelder-Mead"``,
+    * ``"fmin_cg"`` -> ``"CG"``,
+    * ``"fmin_ncg"`` -> ``"Newton-CG"``,
+    * ``"fmin_bfgs"`` -> ``"BFGS"``,
+    * ``"fmin_l_bfgs_b"`` -> ``"L-BFGS-B"``,
+    * ``"fmin_tnc"`` -> ``"TNC"``,
+    * ``"fmin_powell"`` -> ``"Powell"``,
+    * ``"mpfit"`` -> ``"lm"`` (in combination with ``"bounded=True"``),
+    * ``"leastsq"`` -> ``"lm"``,
+
+  * Passing integer arguments to ``parallel`` to select the number of
+    workers is now deprecated. Use ``parallel=True, max_workers={value}``
+    instead.
+  * The ``method`` keyword has been renamed to ``loss_function``.
+  * The ``loss_function`` value ``"ml"`` has been renamed to ``"ML-poisson"``.
+  * The ``grad`` keyword no longer takes boolean values. It takes the
+    following values instead: ``"fd"``, ``"analytical"``, callable or ``None``.
+  * The ``ext_bounding`` keyword has been deprecated and will be removed. Use
+    ``bounded=True`` instead.
+  * The ``min_function`` keyword argument has been deprecated and will
+    be removed. Use ``loss_function`` instead.,
+  * The ``min_function_grad`` keyword arguments has been deprecated and will be
+    removed. Use ``grad`` instead.
+  * The ``iterpath`` default will change from ``'flyback'`` to
+    ``'serpentine'`` in HyperSpy version 2.0.
+
+* The following :py:class:`~.model.BaseModel` methods are now private:
+
+  * :py:meth:`~.model.BaseModel.set_boundaries`
+  * :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
+  * :py:meth:`~.model.BaseModel.set_boundaries`
+
+* The ``comp_label`` keyword of the machine learning plotting functions
+  has been renamed to ``title``.
+* The :py:class:`~.learn.rpca.orpca` constructor's ``learning_rate``
+  keyword has been renamed to ``subspace_learning_rate``
+* The :py:class:`~.learn.rpca.orpca` constructor's ``momentum``
+  keyword has been renamed to ``subspace_momentum``
+* The :py:class:`~.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
+  values have been renamed as follows:
+
+    * ``"trials"`` -> ``"navigation"``
+    * ``"variables"`` -> ``"signal"``
+* The ``bounds`` keyword argument of the
+  :py:meth:`~._signals.lazy.decomposition` is deprecated and will be removed.
+* Several syntax changes in the :py:meth:`~.learn.mva.decomposition` method:
+
+  * Several ``algorithm`` keyword values have been renamed as follows:
+
+    * ``"svd"``: ``"SVD"``,
+    * ``"fast_svd"``: ``"SVD"``,
+    * ``"nmf"``: ``"NMF"``,
+    * ``"fast_mlpca"``: ``"MLPCA"``,
+    * ``"mlpca"``: ``"MLPCA"``,
+    * ``"RPCA_GoDec"``: ``"RPCA"``,
+  * The ``polyfit`` argument has been deprecated and will be removed.
+    Use ``var_func`` instead.
+
+
+
+
+Changelog
+*********
+
+Previous Versions
+=================
+
+.. _changes_1.5.2:
+
+
+v1.5.2
+++++++
+
+This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
+2.3.0 and fixes a bug in the Bruker reader. See `the issue tracker
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.2>`__
+for details.
+
+
+.. _changes_1.5.1:
+
+v1.5.1
+++++++
+
+This is a maintenance release that fixes some regressions introduced in v1.5.
+Follow the following links for details on all the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.1>`__.
+
+.. _changes_1.5:
+
+v1.5
+++++
+
+NEW
+---
+
+* New method :py:meth:`hyperspy.component.Component.print_current_values`. See
+  :ref:`the User Guide for details <Component.print_current_values>`.
+* New :py:class:`hyperspy._components.skew_normal.SkewNormal` component.
+* New :py:meth:`hyperspy.signal.BaseSignal.apply_apodization` method and
+  ``apodization`` keyword for :py:meth:`hyperspy.signal.BaseSignal.fft`. See
+  :ref:`signal.fft` for details.
+* Estimation of number of significant components by the elbow method.
+  See :ref:`mva.scree_plot`.
+
+Enhancements
+------------
+
+* The contrast adjustment tool has been hugely improved. Test it by pressing the ``h`` key on any image.
+* The :ref:`Developer Guide <dev_guide-label>` has been extended, enhanced and divided into
+  chapters.
+* Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
+  automatically transposed when using
+  :py:func:`hyperspy.drawing.utils.plot_images`
+  or :py:func:`hyperspy.drawing.utils.plot_spectra` respectively. This is
+  specially relevant when plotting the result of EDS quantification. See
+  :ref:`eds-label` for examples.
+* The following components have been rewritten using
+  :py:class:`hyperspy._components.expression.Expression`, boosting their
+  speeds among other benefits. Multiple issues have been fixed on the way.
+
+  * :py:class:`hyperspy._components.lorentzian.Lorentzian`
+  * :py:class:`hyperspy._components.exponential.Exponential`
+  * :py:class:`hyperspy._components.bleasdale.Bleasdale`
+  * :py:class:`hyperspy._components.rc.RC`
+  * :py:class:`hyperspy._components.logistic.Logistic`
+  * :py:class:`hyperspy._components.error_function.Erf`
+  * :py:class:`hyperspy._components.gaussian2d.Gaussian2D`
+  * :py:class:`hyperspy._components.volume_plasmon_drude.VolumePlasmonDrude`
+  * :py:class:`hyperspy._components.eels_double_power_law.DoublePowerLaw`
+  * The :py:class:`hyperspy._components.polynomial_deprecated.Polynomial`
+    component will be deprecated in HyperSpy 2.0 in favour of the new
+    :py:class:`hyperspy._components.polynomial.Polynomial` component, that is based on
+    :py:class:`hyperspy._components.expression.Expression` and has an improved API. To
+    start using the new component pass the ``legacy=False`` keyword to the
+    the :py:class:`hyperspy._components.polynomial_deprecated.Polynomial` component
+    constructor.
+
+
+For developers
+--------------
+* Drop support for python 3.5
+* New extension mechanism that enables external packages to register HyperSpy
+  objects. See :ref:`writing_extensions-label` for details.
+
+
+.. _changes_1.4.2:
+
+v1.4.2
+++++++
+
+This is a maintenance release. Among many other fixes and enhancements, this
+release fixes compatibility issues with Matplotlib v 3.1. Follow the
+following links for details on all the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.2>`__
+and `enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.2+label%3A"type%3A+enhancement">`__.
+
+
+.. _changes_1.4.1:
+
+v1.4.1
+++++++
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.1>`__
+and `enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.1+label%3A"type%3A+enhancement">`__.
+
+This release fixes compatibility issues with Python 3.7.
+
+
+.. _changes_1.4:
+
+v1.4
+++++
+
+This is a minor release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3Av1.4+label%3A%22type%3A+bug%22+>`__,
+`enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4+label%3A%22type%3A+enhancement%22>`__
+and `new features
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4+label%3A%22type%3A+New+feature%22>`__.
+
+NEW
+---
+
+* Support for three new file formats:
+
+    * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :ref:`emd_fei-format`.
+    * Reading Bruker's SPX format. See :ref:`spx-format`.
+    * Reading and writing the mrcz open format. See :ref:`mrcz-format`.
+* New :mod:`~.datasets.artificial_data` module which contains functions for generating
+  artificial data, for use in things like docstrings or for people to test
+  HyperSpy functionalities. See :ref:`example-data-label`.
+* New :meth:`~.signal.BaseSignal.fft` and :meth:`~.signal.BaseSignal.ifft` signal methods. See :ref:`signal.fft`.
+* New :meth:`~._signals.hologram_image.HologramImage.statistics` method to compute useful hologram parameters. See :ref:`holography.stats-label`.
+* Automatic axes units conversion and better units handling using `pint <https://pint.readthedocs.io/en/latest/>`__.
+  See :ref:`quantity_and_converting_units`.
+* New :class:`~.roi.Line2DROI` :meth:`~.roi.Line2DROI.angle` method. See :ref:`roi-label` for details.
+
+Enhancements
+------------
+
+* :py:func:`~.drawing.utils.plot_images` improvements (see :ref:`plot.images` for details):
+
+    * The ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
+      supports iterable types, allowing the user to specify different colormaps
+      for the different images that are plotted by providing a list or other
+      generator.
+    * Clicking on an individual image updates it.
+* New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization-label`.
+* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method now operates much faster
+  in multi-dimensional datasets and adds the options to interatively plot the remainder of the operation and
+  to set the removed background to zero. See :ref:`signal1D.remove_background` for details.
+* The  :py:meth:`~._signals.Signal2D.plot` method now takes a ``norm`` keyword that can be "linear", "log",
+  "auto"  or a matplotlib norm. See :ref:`plot.customize_images` for details.
+  Moreover, there are three new extra keyword
+  arguments, ``fft_shift`` and ``power_spectrum``, that are useful when plotting fourier transforms. See
+  :ref:`signal.fft`.
+* The :py:meth:`~._signals.signal2d.Signal2D.align2D` and :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+  can operate with sub-pixel accuracy using skimage's upsampled matrix-multiplication DFT. See :ref:`signal2D.align`.
+
 
 .. _changes_1.3.2:
+
 v1.3.2
 ++++++
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.2>`_
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.2+label%3A"type%3A+enhancement">`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.2>`__
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.2+label%3A"type%3A+enhancement">`__.
 
 
 .. _changes_1.3.1:
+
 v1.3.1
 ++++++
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.1>`_
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.1+label%3A"type%3A+enhancement">`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.1>`__
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.1+label%3A"type%3A+enhancement">`__.
 
 Starting with this version, the HyperSpy WinPython Bundle distribution is
 no longer released in sync with HyperSpy. For HyperSpy WinPython Bundle
@@ -39,21 +375,21 @@ v1.3
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3>`_,
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3>`__,
 `feature
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+enhancement">`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+enhancement">`__
 and `documentation
-<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed%20milestone%3Av1.3%20label%3A%22affects%3A%20documentation%22%20>`_ enhancements,
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed%20milestone%3Av1.3%20label%3A%22affects%3A%20documentation%22%20>`__ enhancements,
 and `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+New+feature">`_.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+New+feature">`__.
 
 NEW
 ---
 * :py:meth:`~.signal.BaseSignal.rebin` supports upscaling and rebinning to
-  arbitrary sizes through linear interpolation. See :ref:`rebin-label`. It also runs faster if `numba <http://numba.pydata.org/>`_ is installed.
+  arbitrary sizes through linear interpolation. See :ref:`rebin-label`. It also runs faster if `numba <http://numba.pydata.org/>`__ is installed.
 * :py:attr:`~.axes.AxesManager.signal_extent` and :py:attr:`~.axes.AxesManager.navigation_extent` properties to easily get the extent of each space.
-* New IPywidgets Graphical User Interface (GUI) elements for the `Jupyter Notebook <http://jupyter.org>`_.
-  See the new `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ package.
+* New IPywidgets Graphical User Interface (GUI) elements for the `Jupyter Notebook <http://jupyter.org>`__.
+  See the new `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`__ package.
   It is not installed by default, see :ref:`install-label` for details.
 * All the :ref:`roi-label` now have a :meth:`gui` method to display a GUI if
   at least one of HyperSpy's GUI packgages are installed.
@@ -65,8 +401,8 @@ Enhancements
 * The Brucker file reader now supports the new version of the format. See :ref:`bcf-format`.
 * HyperSpy is now compatible with all matplotlib backends, including the nbagg which is
   particularly convenient for interactive data analysis in the
-  `Jupyter Notebook <http://jupyter.org>`_ in combination with the new
-  `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ package.
+  `Jupyter Notebook <http://jupyter.org>`__ in combination with the new
+  `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`__ package.
   See :ref:`importing_hyperspy-label`.
 * The ``vmin`` and ``vmax`` arguments of the
   :py:func:`~.drawing.utils.plot_images` function now accept lists to enable
@@ -134,18 +470,12 @@ For developers
 --------------
 * In addition to adding ipywidgets GUI elements, the traitsui GUI elements have
   been splitted into a separate package. See the new
-  `hyperspy_gui_traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
+  `hyperspy_gui_traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`__
   package.
 * The new :py:mod:`~.ui_registry` enables easy connection of external
   GUI elements to HyperSpy. This is the mechanism used to split the traitsui
   and ipywidgets GUI elements.
 
-
-Changelog
-*********
-
-Previous Versions
-=================
 
 .. _changes_1.2:
 
@@ -154,11 +484,11 @@ v1.2
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.2>`_,
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.2>`__,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+enhancement">`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+enhancement">`__
 and `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+New+feature">`_.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+New+feature">`__.
 
 NEW
 ---
@@ -182,41 +512,42 @@ Enhancements
   :ref:`User Guide for details <expression_component-label>`.
 * Better support for EMD files.
 * The scree plot got a beauty treatment and some extra features. See
-  :ref:`scree-plot`.
+  :ref:`mva.scree_plot`.
 * :py:meth:`~.signal.BaseSignal.map` can now take functions that return
   differently-shaped arrays or arbitrary objects, see :ref:`map-label`.
 * Add support for stacking multi-signal files. See :ref:`load-multiple-label`.
 * Markers can now be saved to hdf5 and creating many markers is easier and
   faster. See :ref:`plot.markers`.
 * Add option to save to HDF5 file using the ".hspy" extension instead of
-  ".hdf5". See :ref:`hdf5-format`. This will be the default extension in
+  ".hdf5". See :ref:`hspy-format`. This will be the default extension in
   HyperSpy 1.3.
 
 For developers
 --------------
 * Most of HyperSpy plotting features are now covered by unittests. See
   :ref:`plot-test-label`.
-* unittests migrated from nose to pytest. See :ref:`tests-label`.
-
+* unittests migrated from nose to pytest. See :ref:`testing-label`.
 
 
 .. _changes_1.1.2:
+
 v1.1.2
 ++++++
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.1.2>`_
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3A"type%3A+enhancement">`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.1.2>`__
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3A"type%3A+enhancement">`__.
 
 
 .. _changes_1.1.1:
+
 v1.1.1
 ++++++
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1.1>`__.
 
 Enhancements
 ------------
@@ -232,12 +563,13 @@ Enhancements
   supported file formats when available.
 
 .. _changes_1.1:
+
 v1.1
 ++++
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1>`__.
 
 NEW
 ---
@@ -263,7 +595,7 @@ v1.0.1
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`__.
 
 
 v1.0
@@ -271,17 +603,17 @@ v1.0
 
 This is a major release. Here we only list the highlist. A detailed list of
 changes `is available in github
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A1.0.0>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A1.0.0>`__.
 
 NEW
 ---
 
 * :ref:`roi-label`.
-* :ref:`Robust PCA <rpca-label>` (RPCA) and online RPCA algorithms.
+* :ref:`Robust PCA <mva.rpca>` (RPCA) and online RPCA algorithms.
 * Numpy ufuncs can now :ref:`operate on HyperSpy's signals <ufunc-label>`.
 * ComplexSignal and specialised subclasses to :ref:`operate on complex data <complex_data-label>`.
 * Events :ref:`logging <logger-label>`.
-* Query and :ref:`fetch spectra <eelsdb-label>` from `The EELS Database <https://eelsdb.eu/>`_.
+* Query and :ref:`fetch spectra <eelsdb-label>` from `The EELS Database <https://eelsdb.eu/>`__.
 * :ref:`interactive-label`.
 * :ref:`events-label`.
 
@@ -312,7 +644,7 @@ IO
 Enhancements
 ------------
 * More useful ``AxesManager`` repr string with html repr for Jupyter Notebook.
-* Better progress bar (`tqdm <https://github.com/noamraph/tqdm>`_).
+* Better progress bar (`tqdm <https://github.com/noamraph/tqdm>`__).
 * Add support for :ref:`writing/reading scale and unit to tif files
   <tiff-format>` to be read with ImageJ or DigitalMicrograph.
 
@@ -345,10 +677,10 @@ v0.8.5
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3A"type%3A+bug"+is%3Aclosed>`_,
-`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3A"type%3A+enhancement"+>`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3A"type%3A+bug"+is%3Aclosed>`__,
+`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3A"type%3A+enhancement"+>`__
 and `documentation
-<https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3A0.8.5+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
+<https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3A0.8.5+label%3Adocumentation+is%3Aclosed+>`__ enhancements.
 
 
 It also includes a new feature and introduces an important API change that
@@ -359,7 +691,7 @@ New feature
 
 * Widgets to interact with the model components in the Jupyter Notebook.
   See :ref:`here <notebook_interaction-label>` and
-  `#1007 <https://github.com/hyperspy/hyperspy/pull/1007>`_ .
+  `#1007 <https://github.com/hyperspy/hyperspy/pull/1007>`__ .
 
 API changes
 -----------
@@ -370,8 +702,8 @@ The new :py:class:`~.signal.BaseSignal`,
 :py:class:`~._signals.signal1D.Signal1D` and :py:class:`~._signals.image.Signal2D`
 respectively. Also `as_signal1D`, `as_signal2D`, `to_signal1D` and `to_signal2D`
 deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
-<https://github.com/hyperspy/hyperspy/pull/963>`_ and `#943
-<https://github.com/hyperspy/hyperspy/issues/943>`_ for details.
+<https://github.com/hyperspy/hyperspy/pull/963>`__ and `#943
+<https://github.com/hyperspy/hyperspy/issues/943>`__ for details.
 
 
 v0.8.4
@@ -394,15 +726,15 @@ The broadcasting rules have also changed. See :ref:`signal.operations`
 for details.
 
 Follow the following links for details on all the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+bug"&utf8=%E2%9C%93>`_,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+bug"&utf8=%E2%9C%93>`__,
 `documentation enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Adocumentation>`_,
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Adocumentation>`__,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+enhancement">`_,
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+enhancement">`__,
 `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3ANew>`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3ANew>`__
 `and API changes
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"Api+change">`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"Api+change">`__
 
 
 .. _changes_0.8.2:
@@ -419,11 +751,11 @@ v0.8.1
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3A"type%3A+bug"&utf8=%E2%9C%93>`_,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3A"type%3A+bug"&utf8=%E2%9C%93>`__,
 `feature
-<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3A"type%3A+enhancement"+>`_
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3A"type%3A+enhancement"+>`__
 and `documentation
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`_ enhancements.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`__ enhancements.
 
 Importantly, the way to start HyperSpy changes in this release. Read :ref:`importing_hyperspy-label` for details.
 
@@ -433,7 +765,7 @@ will be fully enforced in Hyperspy 1.0.
 New features
 ------------
 * Support for IPython 3.0.
-* ``%hyperspy`` :ref:`IPython magic <magic-label>` to easily and transparently import HyperSpy, matplotlib and numpy when using IPython.
+* ``%hyperspy`` IPython magic to easily and transparently import HyperSpy, matplotlib and numpy when using IPython.
 * :py:class:`~._components.expression.Expression` model component to easily create analytical function components. More details
   :ref:`here <expression_component-label>`.
 * :py:meth:`~.signal.Signal.unfolded` context manager.
@@ -486,8 +818,7 @@ Core
 IO
 ^^
 
-* HDF5 file format now supports saving lists, tuples, binary strings and signals in metadata (see
-  :ref:`hdf5-format` )
+* HDF5 file format now supports saving lists, tuples, binary strings and signals in metadata.
 
 
 Plotting
@@ -531,7 +862,7 @@ v0.7.3
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.3 milestone
-<https://github.com/hyperspy/hyperspy/issues?milestone=6&page=1&state=closed>`_
+<https://github.com/hyperspy/hyperspy/issues?milestone=6&page=1&state=closed>`__
 in the github repository.
 
 .. _changes_0.7.2:
@@ -541,7 +872,7 @@ v0.7.2
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.2 milestone
-<https://github.com/hyperspy/hyperspy/issues?milestone=5&page=1&state=closed>`_
+<https://github.com/hyperspy/hyperspy/issues?milestone=5&page=1&state=closed>`__
 in the github repository.
 
 .. _changes_0.7.1:
@@ -551,13 +882,12 @@ v0.7.1
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.1 milestone
-<https://github.com/hyperspy/hyperspy/issues?milestone=4&page=1&state=closed>`_
+<https://github.com/hyperspy/hyperspy/issues?milestone=4&page=1&state=closed>`__
 in the github repository.
 
 
 New features
 ------------
-.. _changes_0.7.1:
 
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
@@ -588,8 +918,7 @@ Core
 * Added full compatibility with the Qt toolkit that is now the default.
 * Added compatibility witn the the GTK and TK toolkits, although with no GUI
   features.
-* It is now possible to run HyperSpy in
-  :ref:`a headless system <headless-label>`.
+* It is now possible to run HyperSpy in a headless system.
 * Added a CLI to :py:meth:`~.signal.Signal1DTools.remove_background`.
 * New :py:meth:`~.signal.Signal1DTools.estimate_peak_width` method to estimate
   peak width.
@@ -623,8 +952,7 @@ Plotting
   speed up the plotting of images.
 * Added several extra options to the Signal :py:meth:`~.signal.Signal.plot`
   method to customize the navigator. See :ref:`visualization-label`.
-* Add compatibility with IPython's matplotlib inline plotting. See
-  :ref:`inline_plotting`.
+* Add compatibility with IPython's matplotlib inline plotting.
 * New function, :py:func:`~.drawing.utils.plot_spectra`, to plot several
   spectra in the same figure. See :ref:`plot.spectra`.
 * New function, :py:func:`~.drawing.utils.plot_signals`, to plot several
@@ -646,7 +974,7 @@ Machine learning
 ^^^^^^^^^^^^^^^^
 
 * The PCA scree plot can now be easily obtained as a Signal. See
-  :ref:`scree-plot`.
+  :ref:`mva.scree_plot`.
 * The decomposition and blind source separation components can now be obtained
   as :py:class:`~.signal.Signal` instances. See :ref:`mva.get_results`.
 * New methods to plot the decomposition and blind source separation results
@@ -891,7 +1219,7 @@ v0.4.1
 New features
 ------------
 
- * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_.
+ * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`__.
  * Improved UTF8 support.
  * Reduce the number of required libraries by making mdp and hdf5 not mandatory.
  * Improve the information returned by __repr__ of several objects.

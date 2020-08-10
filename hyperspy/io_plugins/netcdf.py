@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -45,8 +45,6 @@ description = ''
 full_support = True
 file_extensions = ('nc', 'NC')
 default_extension = 0
-
-
 # Writing features
 writes = False
 
@@ -130,8 +128,8 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 calibration_dict[attrib[0]] = value
         else:
-            _logger.warn("Warning: the attribute '%s' is not defined in the "
-                         "file '%s'", attrib[0], filename)
+            _logger.warning("Warning: the attribute '%s' is not defined in "
+                            "the file '%s'", attrib[0], filename)
     for attrib in acquisition2netcdf.items():
         if hasattr(dc, attrib[1]):
             value = eval('dc.' + attrib[1])
@@ -140,14 +138,14 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 acquisition_dict[attrib[0]] = value
         else:
-            _logger.warn("Warning: the attribute '%s' is not defined in the "
-                         "file '%s'", attrib[0], filename)
+            _logger.warning("Warning: the attribute '%s' is not defined in "
+                            "the file '%s'", attrib[0], filename)
     for attrib in treatments2netcdf.items():
         if hasattr(dc, attrib[1]):
             treatments_dict[attrib[0]] = eval('dc.' + attrib[1])
         else:
-            _logger.warn("Warning: the attribute '%s' is not defined in the "
-                         "file '%s'", attrib[0], filename)
+            _logger.warning("Warning: the attribute '%s' is not defined in "
+                            "the file '%s'", attrib[0], filename)
     original_metadata = {'record_by': ncfile.type,
                          'calibration': calibration_dict,
                          'acquisition': acquisition_dict,
