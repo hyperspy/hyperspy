@@ -182,7 +182,7 @@ class TestLazyDecomposition:
 class TestPrintInfo:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.random((20, 100))).as_lazy()
+        self.s = Signal1D(rng.random_sample(size=(20, 100))).as_lazy()
 
     @pytest.mark.parametrize("algorithm", ["SVD", "ORPCA", "ORNMF"])
     def test_decomposition(self, algorithm, capfd):
