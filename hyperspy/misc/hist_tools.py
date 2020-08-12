@@ -169,15 +169,16 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
     if a.ndim != 1:
         a = a.flatten()
 
-    _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
-    new_bins = _deprecated_bins.get(bins, None)
-    if new_bins:
-        warnings.warn(
+    if isinstance(bins,str):
+        _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
+        new_bins = _deprecated_bins.get(bins, None)
+        if new_bins:
+            warnings.warn(
             f"`bins='{bins}'` has been deprecated and will be removed "
             f"in HyperSpy 2.0. Please use `bins='{new_bins}'` instead.",
             VisibleDeprecationWarning,
-        )
-        bins = new_bins
+            )
+            bins = new_bins
 
     _old_bins = bins
 
