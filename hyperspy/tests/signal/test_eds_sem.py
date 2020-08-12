@@ -16,9 +16,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_raises
 
 from hyperspy import utils
 from hyperspy.components1d import Gaussian
@@ -186,7 +186,7 @@ class Test_metadata:
 
     def test_take_off_angle(self):
         s = self.signal
-        assert_allclose(s.get_take_off_angle(), 12.886929785732487,
+        np.testing.assert_allclose(s.get_take_off_angle(), 12.886929785732487,
                         atol=10**-(sys.float_info.dig - 2))
 
 
@@ -208,27 +208,34 @@ class Test_get_lines_intensity:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 15.0
         self.signal = s
 
-    def test(self):
-        s = self.signal
-
+    @pytest.mark.parametrize("bad_iter", ["Al_Kb", {"A" : "Al_Kb", "B" : "Ca_Ka"}])
+    def test_bad_iter(self, bad_iter):
         # get_lines_intensity() should raise TypeError when
         # xray_lines is a string or a dictionary
-        for bad_iter in ["Al_Kb", {"A" : "Al_Kb", "B" : "Ca_Ka"}]:
-                assert_raises(TypeError,
-                        s.get_lines_intensity,
-                        xray_lines=bad_iter,
-                        plot_result=False)
+        s = self.signal
+
+        with pytest.raises(TypeError):
+            s.get_lines_intensity(xray_lines=bad_iter, plot_result=False)
+
+    @pytest.mark.parametrize("good_iter", [("Al_Kb", "Ca_Ka"),
+                                           ["Al_Kb", "Ca_Ka"],
+                                           set(["Al_Kb", "Ca_Ka"])
+                                          ])
+    def test_good_iter(self, good_iter):
+        s = self.signal
 
         # get_lines_intensity() should succeed and return a list
         # when xray_lines is an iterable (other than a str or dict)
-        good_iter = {"tuple" : ("Al_Kb", "Ca_Ka"),
-                      "list" : ["Al_Kb", "Ca_Ka"],
-                      "set" : set(["Al_Kb", "Ca_Ka"])}
-        for itr in good_iter:
-                assert isinstance(s.get_lines_intensity(
-                                xray_lines=good_iter[itr],
-                                plot_result=False), list), \
-                                "get_lines_intensity() trouble with {}".format( itr )
+        assert isinstance(
+            s.get_lines_intensity(
+                xray_lines=good_iter,
+                plot_result=False
+            ),
+            list
+        )
+
+    def test(self):
+        s = self.signal
 
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,

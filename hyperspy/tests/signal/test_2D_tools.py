@@ -133,7 +133,7 @@ class TestAlignTools:
         shifts = s.estimate_shift2D()
         print(shifts)
         print(self.ishifts)
-        assert np.allclose(shifts, self.ishifts)
+        np.testing.assert_allclose(shifts, self.ishifts)
 
     def test_align_no_shift(self):
         s = self.signal

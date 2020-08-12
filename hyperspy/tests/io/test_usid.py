@@ -7,14 +7,7 @@ import pytest
 
 from hyperspy import api as hs
 
-try:
-    import pyUSID as usid
-    pyusid_installed = True
-except BaseException:
-    pyusid_installed = False
-
-pytestmark = pytest.mark.skipif(not pyusid_installed,
-                                reason="pyUSID not installed")
+usid = pytest.importorskip("pyUSID", reason="pyUSID not installed")
 
 
 # ##################### HELPER FUNCTIONS ######################################
@@ -59,7 +52,7 @@ def _compare_axes(hs_axes, dim_descriptors, usid_val_func, axes_defined=True,
                                   axis.offset + axis.size * axis.scale,
                                   axis.scale)
             usid_vals = usid_val_func(usid_descriptors[real_dim_ind][0])
-            assert np.allclose(axis_vals, usid_vals)
+            np.testing.assert_allclose(axis_vals, usid_vals)
 
 
 def _assert_empty_dims(hs_axes, usid_labels, usid_val_func):
@@ -125,7 +118,7 @@ def compare_usid_from_signal(sig, h5_path, empty_pos=False, empty_spec=False,
 
         usid_data = h5_main.get_n_dim_form().squeeze()
         # 2. Validate that raw data has been written correctly:
-        assert np.allclose(sig.data, usid_data)
+        np.testing.assert_allclose(sig.data, usid_data)
         # 3. Validate that axes / dimensions have been translated correctly:
         if empty_pos:
             _assert_empty_dims(sig.axes_manager.navigation_axes,
@@ -156,7 +149,7 @@ def compare_signal_from_usid(file_path, ndata, new_sig, axes_to_spec=[],
         new_sig = new_sig.as_signal2D(axes_to_spec)
 
     # 2. Validate that data has been read in correctly:
-    assert np.allclose(new_sig.data, ndata)
+    np.testing.assert_allclose(new_sig.data, ndata)
     with h5py.File(file_path, mode='r') as h5_f:
         if dataset_path is None:
             h5_main = usid.hdf_utils.get_all_main(h5_f)[0]

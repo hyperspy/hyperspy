@@ -56,7 +56,7 @@ class TestNdAxes:
         Where s12 data is transposed in respect to s2
         """
         rng = np.random.RandomState(123)
-        dc1 = rng.random((2, 3, 4, 3, 2))
+        dc1 = rng.random_sample(size=(2, 3, 4, 3, 2))
         dc2 = np.rollaxis(np.rollaxis(dc1, -1), -1)
         s1 = signals.BaseSignal(dc1.copy())
         s2 = signals.BaseSignal(dc2)
@@ -199,7 +199,7 @@ class TestEstimateElbowPosition:
 
     def test_elbow_position_log(self):
         variance = self.s.learning_results.explained_variance_ratio
-        elbow = self.s.estimate_elbow_position(variance,log=False)
+        elbow = self.s.estimate_elbow_position(variance, log=False)
         assert elbow == 1
 
     def test_elbow_position_none(self):
@@ -492,8 +492,8 @@ class TestLoadDecompositionResults:
 class TestComplexSignalDecomposition:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        real = rng.random((8, 8))
-        imag = rng.random((8, 8))
+        real = rng.random_sample(size=(8, 8))
+        imag = rng.random_sample(size=(8, 8))
         s_complex_dtype = signals.ComplexSignal1D(real + 1j * imag - 1j * imag)
         s_real_dtype = signals.ComplexSignal1D(real)
         s_complex_dtype.decomposition()
@@ -518,8 +518,8 @@ class TestComplexSignalDecomposition:
         m, n, r = 32, 32, 3
         rng = np.random.RandomState(123)
 
-        A = rng.random((m, r)) + 1j * rng.random((m, r))
-        B = rng.random((n, r)) + 1j * rng.random((n, r))
+        A = rng.random_sample(size=(m, r)) + 1j * rng.random_sample(size=(m, r))
+        B = rng.random_sample(size=(n, r)) + 1j * rng.random_sample(size=(n, r))
 
         s = signals.ComplexSignal1D(A @ B.T)
         s.decomposition()

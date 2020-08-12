@@ -16,24 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
-from distutils.version import LooseVersion
-
-import pytest
-import sympy
 import numpy as np
 
-from hyperspy.components1d import Erf
+from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.signals import Signal1D
 
-pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
-                                LooseVersion("1.3"),
-                                reason="This test requires SymPy >= 1.3")
 
-def test_function():
-    g = Erf()
-    g.A.value = 1
-    g.sigma.value = 2
-    g.origin.value = 3
-    assert g.function(3) == 0.
-    np.testing.assert_allclose(g.function(15),0.5)
-    np.testing.assert_allclose(g.function(1.951198),-0.2,rtol=1e-6)
+@lazifyTestClass
+class Test1D:
+    def setup_method(self, method):
+        gaussian = Gaussian()
+        gaussian.A.value = 20
+        gaussian.sigma.value = 10
+        gaussian.centre.value = 50
+        self.signal = Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
+        self.signal.axes_manager[0].scale = 0.01
+
+    def test_integrate1D(self):
+        integrated_signal = self.signal.integrate1D(axis=0)
+        np.testing.assert_allclose(integrated_signal.data, 20, rtol=1e-6)

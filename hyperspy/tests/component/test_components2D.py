@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 
@@ -43,11 +42,11 @@ class TestGaussian2D:
     def test_values(self):
         gt = self.gt
         g = self.g
-        assert_allclose(g.fwhm_x, 2.35482004503)
-        assert_allclose(g.fwhm_y, 4.70964009006)
-        assert_allclose(gt.max(), 0.0795774715459)
-        assert_allclose(gt.argmax(axis=0)[0], 500)
-        assert_allclose(gt.argmax(axis=1)[0], 500)
+        np.testing.assert_allclose(g.fwhm_x, 2.35482004503)
+        np.testing.assert_allclose(g.fwhm_y, 4.70964009006)
+        np.testing.assert_allclose(gt.max(), 0.0795774715459)
+        np.testing.assert_allclose(gt.argmax(axis=0)[0], 500)
+        np.testing.assert_allclose(gt.argmax(axis=1)[0], 500)
 
 
 class TestExpression2D:
@@ -76,7 +75,7 @@ class TestExpression2D:
         g.y0.value = 1
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        assert_allclose(
+        np.testing.assert_allclose(
             g.function(x, y),
             np.array([[6.68025544e-06, 8.55249949e-04, 6.49777231e-03,
                        2.92959352e-03, 7.83829650e-05],
@@ -89,7 +88,7 @@ class TestExpression2D:
                       [1.73553850e-07, 4.22437802e-04, 6.10186705e-02,
                        5.23039095e-01, 2.66058420e-01]])
         )
-        assert_allclose(
+        np.testing.assert_allclose(
             g.grad_sx(x, y),
             np.array([[1.20880828e-04, 3.17536657e-03, 1.04030848e-03,
                        2.17878745e-02, 2.00221335e-03],
@@ -115,7 +114,7 @@ class TestExpression2D:
         g.y0.value = 0
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        assert_allclose(
+        np.testing.assert_allclose(
             g.function(x, y),
             np.array([[1.77220718e-208, 1.97005871e-181, 1.00498099e-181,
                        2.35261319e-209, 2.52730239e-264],
@@ -139,7 +138,7 @@ class TestExpression2D:
         g.y0.value = 0
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        assert_allclose(
+        np.testing.assert_allclose(
             g.function(x, y),
             np.array([[9.64172248e-175, 5.46609733e-099, 5.03457536e-045,
                        7.53374790e-013, 1.83156389e-002],
@@ -159,7 +158,7 @@ class TestExpression2D:
             sx=.5, sy=.1, x0=0, y0=0, rotation_angle=np.radians(45))
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        assert_allclose(
+        np.testing.assert_allclose(
             g.function(x, y),
             np.array([[9.64172248e-175, 5.46609733e-099, 5.03457536e-045,
                        7.53374790e-013, 1.83156389e-002],
@@ -184,8 +183,8 @@ class TestExpression2D:
         g.y0.value = 1
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        assert_allclose(g.function(x, y), self.array0)
-        assert_allclose(
+        np.testing.assert_allclose(g.function(x, y), self.array0)
+        np.testing.assert_allclose(
             g.grad_sx(x, y),
             np.array([[1.21816650e-08, 1.19252902e-04, 1.20275135e-02,
                        0.00000000e+00, 1.20275135e-02],
@@ -211,7 +210,7 @@ class TestExpression2D:
         g.y0.value = 1
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        assert_allclose(g.function_nd(x, y), self.array0)
+        np.testing.assert_allclose(g.function_nd(x, y), self.array0)
 
     def test_no_function_nd_signal(self):
         g = hs.model.components2D.Expression(
@@ -232,4 +231,4 @@ class TestExpression2D:
         m.multifit(iterpath='serpentine')
         res = g.function_nd(x, y)
         assert res.shape == (2, 3, 3)
-        assert_allclose(res, s2.data)
+        np.testing.assert_allclose(res, s2.data)

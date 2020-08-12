@@ -25,7 +25,11 @@ from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
 
 def test_hann_nth_order():
-    assert np.allclose(np.hanning(1000), hann_window_nth_order(1000, order=1))
+    np.testing.assert_allclose(
+        np.hanning(1000),
+        hann_window_nth_order(1000, order=1),
+        rtol=1e-5,
+    )
     with pytest.raises(ValueError):
         hann_window_nth_order(-1000, order=1)
     with pytest.raises(ValueError):
@@ -102,26 +106,26 @@ def test_apodization(lazy, window_type, inplace):
             signal3d_a = signal3d.apply_apodization(window=window_type, inplace=inplace)
         data3_a = data3 * window3d[np.newaxis, :, :, :]
 
-        assert np.allclose(signal1d_a.data, data_a)
-        assert np.allclose(signal2d_a.data, data2_a)
-        assert np.allclose(signal3d_a.data, data3_a)
+        np.testing.assert_allclose(signal1d_a.data, data_a)
+        np.testing.assert_allclose(signal2d_a.data, data2_a)
+        np.testing.assert_allclose(signal3d_a.data, data3_a)
 
         for hann_order in 9 * (np.random.rand(5)) + 1:
             window = hann_window_nth_order(SIZE_SIG0, order=int(hann_order))
             signal1d_a = signal1d.apply_apodization(window=window_type, hann_order=int(hann_order))
             data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
-            assert np.allclose(signal1d_a.data, data_a)
+            np.testing.assert_allclose(signal1d_a.data, data_a)
     elif window_type == 'hamming':
         window = np.hamming(SIZE_SIG0)
         signal1d_a = signal1d.apply_apodization(window=window_type)
         data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
-        assert np.allclose(signal1d_a.data, data_a)
+        np.testing.assert_allclose(signal1d_a.data, data_a)
     elif window_type == 'tukey':
         for tukey_alpha in np.random.rand(5):
             window = tukey(SIZE_SIG0, alpha=tukey_alpha)
             signal1d_a = signal1d.apply_apodization(window=window_type, tukey_alpha=tukey_alpha)
             data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
-            assert np.allclose(signal1d_a.data, data_a)
+            np.testing.assert_allclose(signal1d_a.data, data_a)
 
     # 2. Test raises:
     with pytest.raises(ValueError):

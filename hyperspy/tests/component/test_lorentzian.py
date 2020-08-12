@@ -20,7 +20,6 @@ import itertools
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from hyperspy.components1d import Lorentzian
 from hyperspy.signals import Signal1D
@@ -34,8 +33,8 @@ def test_function():
     g.A.value = 1.5 * np.pi
     g.gamma.value = 1
     g.centre.value = 2
-    assert_allclose(g.function(2), 1.5)
-    assert_allclose(g.function(4), 0.3)
+    np.testing.assert_allclose(g.function(2), 1.5)
+    np.testing.assert_allclose(g.function(4), 0.3)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -55,7 +54,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g1.A.value, g2.A.value * factor,0.1)
+    np.testing.assert_allclose(g1.A.value, g2.A.value * factor,0.1)
     assert abs(g2.centre.value - g1.centre.value) <= 0.2
     assert abs(g2.gamma.value - g1.gamma.value) <= 0.1
 
@@ -77,48 +76,48 @@ def test_function_nd(binned, lazy):
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
-    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data,0.16)
+    np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data,0.16)
 
 
 def test_util_gamma_getset():
     g1 = Lorentzian()
     g1.gamma.value = 3.0
-    assert_allclose(g1.gamma.value, 3.0)
+    np.testing.assert_allclose(g1.gamma.value, 3.0)
 
 
 def test_util_fwhm_set():
     g1 = Lorentzian()
     g1.fwhm = 1.0
-    assert_allclose(g1.gamma.value, 0.5)
+    np.testing.assert_allclose(g1.gamma.value, 0.5)
 
 
 def test_util_fwhm_get():
     g1 = Lorentzian()
     g1.gamma.value = 2.0
-    assert_allclose(g1.fwhm, 4.0)
+    np.testing.assert_allclose(g1.fwhm, 4.0)
 
 
 def test_util_fwhm_getset():
     g1 = Lorentzian()
     g1.fwhm = 4.0
-    assert_allclose(g1.fwhm, 4.0)
+    np.testing.assert_allclose(g1.fwhm, 4.0)
 
 
 def test_util_height_set():
     g1 = Lorentzian()
     g1.gamma.value = 4.0
     g1.height = 2.0/np.pi
-    assert_allclose(g1.A.value, 8)
+    np.testing.assert_allclose(g1.A.value, 8)
 
 
 def test_util_height_get():
     g1 = Lorentzian()
     g1.gamma.value = 3.0
     g1.A.value = np.pi*1.5
-    assert_allclose(g1.height, 0.5)
+    np.testing.assert_allclose(g1.height, 0.5)
 
 
 def test_util_height_getset():
     g1 = Lorentzian()
     g1.height = 4.0
-    assert_allclose(g1.height, 4.0)
+    np.testing.assert_allclose(g1.height, 4.0)

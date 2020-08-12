@@ -223,7 +223,7 @@ class TestSamfireEmpty:
         from multiprocessing import cpu_count
         samf = m.create_samfire(setup=False)
         assert samf._workers == cpu_count() - 1
-        assert np.allclose(samf.metadata.marker, np.zeros(self.shape))
+        np.testing.assert_allclose(samf.metadata.marker, np.zeros(self.shape))
         samf.stop()
         del samf
 

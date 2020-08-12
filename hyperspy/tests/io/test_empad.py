@@ -3,7 +3,6 @@ import os
 import struct
 
 import numpy as np
-import numpy.testing as nt
 import pytest
 import traits.api as t
 
@@ -37,7 +36,7 @@ def test_read_stack(lazy):
     s = hs.load(os.path.join(DATA_DIR, 'stack_images.xml'), lazy=lazy)
     assert s.data.dtype == 'float32'
     ref_data = np.arange(166400).reshape((10, 130, 128))[..., :128, :]
-    nt.assert_allclose(s.data, ref_data.astype('float32'))
+    np.testing.assert_allclose(s.data, ref_data.astype('float32'))
     signal_axes = s.axes_manager.signal_axes
     assert signal_axes[0].name == 'width'
     assert signal_axes[1].name == 'height'
@@ -63,21 +62,21 @@ def test_read_map(lazy):
     s = hs.load(os.path.join(DATA_DIR, 'map4x4.xml'), lazy=lazy)
     assert s.data.dtype == 'float32'
     ref_data = np.arange(266240).reshape((4, 4, 130, 128))[..., :128, :]
-    nt.assert_allclose(s.data, ref_data.astype('float32'))
+    np.testing.assert_allclose(s.data, ref_data.astype('float32'))
     signal_axes = s.axes_manager.signal_axes
     assert signal_axes[0].name == 'width'
     assert signal_axes[1].name == 'height'
     for axis in signal_axes:
         assert axis.units == '1/nm'
-        nt.assert_allclose(axis.scale, 0.1826537)
-        nt.assert_allclose(axis.offset, -11.689837)
+        np.testing.assert_allclose(axis.scale, 0.1826537)
+        np.testing.assert_allclose(axis.offset, -11.689837)
     navigation_axes = s.axes_manager.navigation_axes
     assert navigation_axes[0].name == 'scan_y'
     assert navigation_axes[1].name == 'scan_x'
     for axis in navigation_axes:
         assert axis.units == 'µm'
-        nt.assert_allclose(axis.scale, 1.1415856)
-        nt.assert_allclose(axis.offset, 0.0)
+        np.testing.assert_allclose(axis.scale, 1.1415856)
+        np.testing.assert_allclose(axis.offset, 0.0)
 
     assert s.metadata.General.date == '2019-06-06'
     assert s.metadata.General.time == '13:30:00.164675'

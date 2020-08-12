@@ -18,7 +18,6 @@
 
 import pytest
 import numpy as np
-import numpy.testing as nt
 from scipy.stats import norm
 
 from hyperspy.signals import Signal2D, BaseSignal
@@ -125,7 +124,7 @@ class TestFindPeaks2D:
         assert not isinstance(peaks, LazySignal)
 
         # Check navigation shape
-        nt.assert_equal(dataset.axes_manager.navigation_shape,
+        np.testing.assert_equal(dataset.axes_manager.navigation_shape,
                         peaks.axes_manager.navigation_shape)
         if dataset.axes_manager.navigation_size == 0:
             shape = (1,)
@@ -139,12 +138,12 @@ class TestFindPeaks2D:
         peaks = self.sparse_nav2d_shifted.find_peaks(parallel=parallel,
                                                      interactive=False)
 
-        nt.assert_equal(peaks.inav[0, 0].data,
+        np.testing.assert_equal(peaks.inav[0, 0].data,
                         np.array([[27,  1],
                                   [10, 17],
                                   [22, 23],
                                   [33, 29]]))
-        nt.assert_equal(peaks.inav[0, 1].data,
+        np.testing.assert_equal(peaks.inav[0, 1].data,
                         np.array([[35,  3],
                                   [ 6, 13],
                                   [18, 19],
@@ -166,7 +165,7 @@ class TestFindPeaks2D:
         else:
             peaks = self.ref.find_peaks(method=method, parallel=parallel,
                                         interactive=False)
-        nt.assert_allclose(peaks.data[0], ans[0])
+        np.testing.assert_allclose(peaks.data[0], ans[0])
 
     def test_return_peaks(self):
         sig = self.sparse_nav2d_shifted
@@ -175,12 +174,12 @@ class TestFindPeaks2D:
         peaks = BaseSignal(np.empty(sig.axes_manager.navigation_shape),
                            axes=axes_dict)
         pf2D = PeaksFinder2D(sig, method='local_max', peaks=peaks)
-        nt.assert_allclose(peaks.data, np.array([[22, 23]]))
+        np.testing.assert_allclose(peaks.data, np.array([[22, 23]]))
 
         pf2D.local_max_threshold = 2
         pf2D._update_peak_finding()
         result_index0 = np.array([[10, 17], [22, 23], [33, 29]])
-        nt.assert_allclose(peaks.data, result_index0)
+        np.testing.assert_allclose(peaks.data, result_index0)
         pf2D.compute_navigation()
         pf2D.close()
 
