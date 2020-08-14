@@ -26,21 +26,29 @@ from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
 
 
+# Create this outside the test class to
+# reduce computation in test suite by ~10seconds
+s = utils_eds.xray_lines_model(
+    elements=["Fe", "Cr", "Zn"],
+    beam_energy=200,
+    weight_percents=[20, 50, 30],
+    energy_resolution_MnKa=130,
+    energy_axis={
+        "units": "keV",
+        "size": 400,
+        "scale": 0.01,
+        "name": "E",
+        "offset": 5.0,
+    },
+)
+s = s + 0.002
+
+
 @lazifyTestClass
 class TestlineFit:
 
     def setup_method(self, method):
-        s = utils_eds.xray_lines_model(elements=['Fe', 'Cr', 'Zn'],
-                                       beam_energy=200,
-                                       weight_percents=[20, 50, 30],
-                                       energy_resolution_MnKa=130,
-                                       energy_axis={'units': 'keV',
-                                                    'size': 400,
-                                                    'scale': 0.01,
-                                                    'name': 'E',
-                                                    'offset': 5.})
-        s = s + 0.002
-        self.s = s
+        self.s = s.deepcopy()
 
     def test_fit(self):
         s = self.s

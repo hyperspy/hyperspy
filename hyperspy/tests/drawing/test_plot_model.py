@@ -19,7 +19,6 @@
 import os
 
 import numpy as np
-import numpy.testing as nt
 import pytest
 
 import hyperspy.api as hs
@@ -124,13 +123,13 @@ def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
             return component.A.value
 
     if convolved:
-        nt.assert_almost_equal(A_value(s, m[0], binned), 0.014034, decimal=5)
-        nt.assert_almost_equal(A_value(s, m[1], binned), 0.008420, decimal=5)
-        nt.assert_almost_equal(A_value(s, m[2], binned), 0.028068, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[0], binned), 0.014034, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[1], binned), 0.008420, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[2], binned), 0.028068, decimal=5)
     else:
-        nt.assert_almost_equal(A_value(s, m[0], binned), 100.0, decimal=5)
-        nt.assert_almost_equal(A_value(s, m[1], binned), 60.0, decimal=5)
-        nt.assert_almost_equal(A_value(s, m[2], binned), 200.0, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[0], binned), 100.0, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[1], binned), 60.0, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[2], binned), 200.0, decimal=5)
 
     return m._plot.signal_plot.figure
 

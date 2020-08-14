@@ -200,7 +200,7 @@ class TestAlignZLP:
         # Max value in the original spectrum is 12, but due to the aligning
         # the peak is split between two different channels. So 8 is the
         # maximum value for the aligned spectrum
-        assert np.allclose(zlp_max, 8)
+        np.testing.assert_allclose(zlp_max, 8)
 
     def test_align_zero_loss_peak_crop_false(self):
         s = self.signal

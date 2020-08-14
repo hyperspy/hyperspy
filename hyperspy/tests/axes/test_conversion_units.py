@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy.testing as nt
+import numpy as np
 import pytest
 import traits.api as t
 
@@ -62,65 +62,65 @@ class TestUnitConversion:
                 category=UserWarning):
             self.uc._convert_compact_units()
         assert self.uc.units == 'toto'
-        nt.assert_almost_equal(self.uc.scale, 1.0E-3)
+        np.testing.assert_almost_equal(self.uc.scale, 1.0E-3)
 
     def test_convert_to_units(self):
         self._set_units_scale_size(t.Undefined, 1.0)
         out = self.uc._convert_units('nm')
         assert out is None
         assert self.uc.units == t.Undefined
-        nt.assert_almost_equal(self.uc.scale, 1.0)
+        np.testing.assert_almost_equal(self.uc.scale, 1.0)
 
         self._set_units_scale_size('m', 1.0E-3)
         out = self.uc._convert_units('µm')
         assert out is None
         assert self.uc.units == 'µm'
-        nt.assert_almost_equal(self.uc.scale, 1E3)
+        np.testing.assert_almost_equal(self.uc.scale, 1E3)
 
         self._set_units_scale_size('µm', 0.5)
         out = self.uc._convert_units('nm')
         assert out is None
         assert self.uc.units == 'nm'
-        nt.assert_almost_equal(self.uc.scale, 500)
+        np.testing.assert_almost_equal(self.uc.scale, 500)
 
         self._set_units_scale_size('µm', 5)
         out = self.uc._convert_units('cm')
         assert out is None
         assert self.uc.units == 'cm'
-        nt.assert_almost_equal(self.uc.scale, 0.0005)
+        np.testing.assert_almost_equal(self.uc.scale, 0.0005)
 
         self._set_units_scale_size('1/µm', 5)
         out = self.uc._convert_units('1/nm')
         assert out is None
         assert self.uc.units == '1 / nm'
-        nt.assert_almost_equal(self.uc.scale, 0.005)
+        np.testing.assert_almost_equal(self.uc.scale, 0.005)
 
         self._set_units_scale_size('eV', 5)
         out = self.uc._convert_units('keV')
         assert out is None
         assert self.uc.units == 'keV'
-        nt.assert_almost_equal(self.uc.scale, 0.005)
+        np.testing.assert_almost_equal(self.uc.scale, 0.005)
 
     def test_convert_to_units_not_in_place(self):
         self._set_units_scale_size(t.Undefined, 1.0)
         out = self.uc.convert_to_units('nm', inplace=False)
         assert out is None  # unit conversion is ignored
         assert self.uc.units == t.Undefined
-        nt.assert_almost_equal(self.uc.scale, 1.0)
+        np.testing.assert_almost_equal(self.uc.scale, 1.0)
 
         self._set_units_scale_size('m', 1.0E-3)
         out = self.uc.convert_to_units('µm', inplace=False)
         assert out == (1E3, 0.0, 'µm')
         assert self.uc.units == 'm'
-        nt.assert_almost_equal(self.uc.scale, 1.0E-3)
-        nt.assert_almost_equal(self.uc.offset, 0.0)
+        np.testing.assert_almost_equal(self.uc.scale, 1.0E-3)
+        np.testing.assert_almost_equal(self.uc.offset, 0.0)
 
         self._set_units_scale_size('µm', 0.5)
         out = self.uc.convert_to_units('nm', inplace=False)
         assert out[1:] == (0.0, 'nm')
-        nt.assert_almost_equal(out[0], 500.0)
+        np.testing.assert_almost_equal(out[0], 500.0)
         assert self.uc.units == 'µm'
-        nt.assert_almost_equal(self.uc.scale, 0.5)
+        np.testing.assert_almost_equal(self.uc.scale, 0.5)
 
     def test_get_compact_unit(self):
         ##### Imaging #####
@@ -128,56 +128,56 @@ class TestUnitConversion:
         self._set_units_scale_size('m', 12E-12, 2048, 2E-9)
         self.uc._convert_compact_units()
         assert self.uc.units == 'nm'
-        nt.assert_almost_equal(self.uc.scale, 0.012)
-        nt.assert_almost_equal(self.uc.offset, 2.0)
+        np.testing.assert_almost_equal(self.uc.scale, 0.012)
+        np.testing.assert_almost_equal(self.uc.offset, 2.0)
 
         # typical setting for nm resolution image
         self._set_units_scale_size('m', 0.5E-9, 1024)
         self.uc._convert_compact_units()
         assert self.uc.units == 'nm'
-        nt.assert_almost_equal(self.uc.scale, 0.5)
-        nt.assert_almost_equal(self.uc.offset, 0.0)
+        np.testing.assert_almost_equal(self.uc.scale, 0.5)
+        np.testing.assert_almost_equal(self.uc.offset, 0.0)
 
         ##### Diffraction #####
         # typical TEM diffraction
         self._set_units_scale_size('1/m', 0.1E9, 1024)
         self.uc._convert_compact_units()
         assert self.uc.units == '1 / nm'
-        nt.assert_almost_equal(self.uc.scale, 0.1)
+        np.testing.assert_almost_equal(self.uc.scale, 0.1)
 
         # typical TEM diffraction
         self._set_units_scale_size('1/m', 0.01E9, 256)
         self.uc._convert_compact_units()
         assert self.uc.units == '1 / µm'
-        nt.assert_almost_equal(self.uc.scale, 10.0)
+        np.testing.assert_almost_equal(self.uc.scale, 10.0)
 
         # high camera length diffraction
         self._set_units_scale_size('1/m', 0.1E9, 4096)
         self.uc._convert_compact_units()
         assert self.uc.units == '1 / nm'
-        nt.assert_almost_equal(self.uc.scale, 0.1)
+        np.testing.assert_almost_equal(self.uc.scale, 0.1)
 
         # typical EDS resolution
         self._set_units_scale_size('eV', 50, 4096, 0.0)
         self.uc._convert_compact_units()
         assert self.uc.units == 'keV'
-        nt.assert_almost_equal(self.uc.scale, 0.05)
-        nt.assert_almost_equal(self.uc.offset, 0.0)
+        np.testing.assert_almost_equal(self.uc.scale, 0.05)
+        np.testing.assert_almost_equal(self.uc.offset, 0.0)
 
         ##### Spectroscopy #####
         # typical EELS resolution
         self._set_units_scale_size('eV', 0.2, 2048, 200.0)
         self.uc._convert_compact_units()
         assert self.uc.units == 'eV'
-        nt.assert_almost_equal(self.uc.scale, 0.2)
-        nt.assert_almost_equal(self.uc.offset, 200.0)
+        np.testing.assert_almost_equal(self.uc.scale, 0.2)
+        np.testing.assert_almost_equal(self.uc.offset, 200.0)
 
         # typical EELS resolution
         self._set_units_scale_size('eV', 1.0, 2048, 500.0)
         self.uc._convert_compact_units()
         assert self.uc.units == 'eV'
-        nt.assert_almost_equal(self.uc.scale, 1.0)
-        nt.assert_almost_equal(self.uc.offset, 500)
+        np.testing.assert_almost_equal(self.uc.scale, 1.0)
+        np.testing.assert_almost_equal(self.uc.offset, 500)
 
         # typical high resolution EELS resolution
         self._set_units_scale_size('eV', 0.05, 100)
@@ -198,17 +198,17 @@ class TestDataAxis:
     def test_scale_as_quantity_setter_string(self):
         self.axis.scale_as_quantity = '2.5 nm'
         assert self.axis.scale == 2.5
-        nt.assert_almost_equal(self.axis.offset, 5.0)
+        np.testing.assert_almost_equal(self.axis.offset, 5.0)
         assert self.axis.units == 'nm'
         # Test that the axis array has been recomputed
-        nt.assert_almost_equal(self.axis.axis[1], 7.5)
+        np.testing.assert_almost_equal(self.axis.axis[1], 7.5)
 
     def test_scale_as_quantity_setter_string_no_previous_units(self):
         axis = DataAxis(size=2048, scale=12E-12, offset=5.0)
         axis.scale_as_quantity = '2.5 nm'
         assert axis.scale == 2.5
         # the units haven't been set previously, so the offset is not converted
-        nt.assert_almost_equal(axis.offset, 5.0)
+        np.testing.assert_almost_equal(axis.offset, 5.0)
         assert axis.units == 'nm'
 
     def test_offset_as_quantity_setter_string(self):
@@ -239,15 +239,15 @@ class TestDataAxis:
 
     def test_convert_to_compact_units(self):
         self.axis.convert_to_units(units=None)
-        nt.assert_almost_equal(self.axis.scale, 0.012)
+        np.testing.assert_almost_equal(self.axis.scale, 0.012)
         assert self.axis.units == 'nm'
-        nt.assert_almost_equal(self.axis.offset, 5.0)
+        np.testing.assert_almost_equal(self.axis.offset, 5.0)
 
     def test_convert_to_units(self):
         self.axis.convert_to_units(units='µm')
-        nt.assert_almost_equal(self.axis.scale, 12E-6)
+        np.testing.assert_almost_equal(self.axis.scale, 12E-6)
         assert self.axis.units == 'µm'
-        nt.assert_almost_equal(self.axis.offset, 0.005)
+        np.testing.assert_almost_equal(self.axis.offset, 0.005)
 
     def test_units_not_supported_by_pint_warning_raised(self):
         # raising a warning, not converting scale
@@ -256,7 +256,7 @@ class TestDataAxis:
                 message="not supported for conversion.",
                 category=UserWarning):
             self.axis.convert_to_units('m')
-        nt.assert_almost_equal(self.axis.scale, 12E-12)
+        np.testing.assert_almost_equal(self.axis.scale, 12E-12)
         assert self.axis.units == 'toto'
 
     def test_units_not_supported_by_pint_warning_raised2(self):
@@ -266,7 +266,7 @@ class TestDataAxis:
                 message="not supported for conversion.",
                 category=UserWarning):
             self.axis.convert_to_units('toto')
-        nt.assert_almost_equal(self.axis.scale, 12E-12)
+        np.testing.assert_almost_equal(self.axis.scale, 12E-12)
         assert self.axis.units == 'µm'
 
 
@@ -319,56 +319,56 @@ class TestAxesManager:
     def test_compact_unit(self):
         self.am.convert_units()
         assert self.am['x'].units == 'nm'
-        nt.assert_almost_equal(self.am['x'].scale, 1.5)
+        np.testing.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['y'].units == 'nm'
-        nt.assert_almost_equal(self.am['y'].scale, 0.5)
+        np.testing.assert_almost_equal(self.am['y'].scale, 0.5)
         assert self.am['energy'].units == 'keV'
-        nt.assert_almost_equal(self.am['energy'].scale, 0.005)
+        np.testing.assert_almost_equal(self.am['energy'].scale, 0.005)
 
     def test_convert_to_navigation_units(self):
         self.am.convert_units(axes='navigation', units='mm')
-        nt.assert_almost_equal(self.am['x'].scale, 1.5E-6)
+        np.testing.assert_almost_equal(self.am['x'].scale, 1.5E-6)
         assert self.am['x'].units == 'mm'
-        nt.assert_almost_equal(self.am['y'].scale, 0.5E-6)
+        np.testing.assert_almost_equal(self.am['y'].scale, 0.5E-6)
         assert self.am['y'].units == 'mm'
-        nt.assert_almost_equal(self.am['energy'].scale,
+        np.testing.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'])
 
     def test_convert_units_axes_integer(self):
         # convert only the first axis
         self.am.convert_units(axes=0, units='nm', same_units=False)
-        nt.assert_almost_equal(self.am[0].scale, 0.5)
+        np.testing.assert_almost_equal(self.am[0].scale, 0.5)
         assert self.am[0].units == 'nm'
-        nt.assert_almost_equal(self.am['x'].scale, 1.5E-9)
+        np.testing.assert_almost_equal(self.am['x'].scale, 1.5E-9)
         assert self.am['x'].units == 'm'
-        nt.assert_almost_equal(self.am['energy'].scale,
+        np.testing.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'])
 
         self.am.convert_units(axes=0, units='nm', same_units=True)
-        nt.assert_almost_equal(self.am[0].scale, 0.5)
+        np.testing.assert_almost_equal(self.am[0].scale, 0.5)
         assert self.am[0].units == 'nm'
-        nt.assert_almost_equal(self.am['x'].scale, 1.5)
+        np.testing.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['x'].units == 'nm'
 
     def test_convert_to_navigation_units_list(self):
         self.am.convert_units(axes='navigation', units=['mm', 'nm'],
                               same_units=False)
-        nt.assert_almost_equal(self.am['x'].scale, 1.5)
+        np.testing.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['x'].units == 'nm'
-        nt.assert_almost_equal(self.am['y'].scale, 0.5E-6)
+        np.testing.assert_almost_equal(self.am['y'].scale, 0.5E-6)
         assert self.am['y'].units == 'mm'
-        nt.assert_almost_equal(self.am['energy'].scale,
+        np.testing.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'])
 
     def test_convert_to_navigation_units_list_same_units(self):
         self.am.convert_units(axes='navigation', units=['mm', 'nm'],
                               same_units=True)
         assert self.am['x'].units == 'mm'
-        nt.assert_almost_equal(self.am['x'].scale, 1.5e-6)
+        np.testing.assert_almost_equal(self.am['x'].scale, 1.5e-6)
         assert self.am['y'].units == 'mm'
-        nt.assert_almost_equal(self.am['y'].scale, 0.5e-6)
+        np.testing.assert_almost_equal(self.am['y'].scale, 0.5e-6)
         assert self.am['energy'].units == 'eV'
-        nt.assert_almost_equal(self.am['energy'].scale, 5)
+        np.testing.assert_almost_equal(self.am['energy'].scale, 5)
 
     def test_convert_to_navigation_units_different(self):
         # Don't convert the units since the units of the navigation axes are
@@ -383,61 +383,61 @@ class TestAxesManager:
         am = AxesManager(self.axes_list)
         am.convert_units(axes='navigation', same_units=True)
         assert am['time'].units == 's'
-        nt.assert_almost_equal(am['time'].scale, 1.5)
+        np.testing.assert_almost_equal(am['time'].scale, 1.5)
         assert am['x'].units == 'nm'
-        nt.assert_almost_equal(am['x'].scale, 1.5)
+        np.testing.assert_almost_equal(am['x'].scale, 1.5)
         assert am['y'].units == 'nm'
-        nt.assert_almost_equal(am['y'].scale, 0.5)
+        np.testing.assert_almost_equal(am['y'].scale, 0.5)
         assert am['energy'].units == 'eV'
-        nt.assert_almost_equal(am['energy'].scale, 5)
+        np.testing.assert_almost_equal(am['energy'].scale, 5)
 
     def test_convert_to_navigation_units_Undefined(self):
         self.axes_list[0]['units'] = t.Undefined
         am = AxesManager(self.axes_list)
         am.convert_units(axes='navigation', same_units=True)
         assert am['x'].units == t.Undefined
-        nt.assert_almost_equal(am['x'].scale, 1.5E-9)
+        np.testing.assert_almost_equal(am['x'].scale, 1.5E-9)
         assert am['y'].units == 'm'
-        nt.assert_almost_equal(am['y'].scale, 0.5E-9)
+        np.testing.assert_almost_equal(am['y'].scale, 0.5E-9)
         assert am['energy'].units == 'eV'
-        nt.assert_almost_equal(am['energy'].scale, 5)
+        np.testing.assert_almost_equal(am['energy'].scale, 5)
 
     def test_convert_to_signal_units(self):
         self.am.convert_units(axes='signal', units='keV')
-        nt.assert_almost_equal(self.am['x'].scale, self.axes_list[0]['scale'])
+        np.testing.assert_almost_equal(self.am['x'].scale, self.axes_list[0]['scale'])
         assert self.am['x'].units == self.axes_list[0]['units']
-        nt.assert_almost_equal(self.am['y'].scale, self.axes_list[1]['scale'])
+        np.testing.assert_almost_equal(self.am['y'].scale, self.axes_list[1]['scale'])
         assert self.am['y'].units == self.axes_list[1]['units']
-        nt.assert_almost_equal(self.am['energy'].scale, 0.005)
+        np.testing.assert_almost_equal(self.am['energy'].scale, 0.005)
         assert self.am['energy'].units == 'keV'
 
     def test_convert_to_units_list(self):
         self.am.convert_units(units=['µm', 'nm', 'meV'], same_units=False)
-        nt.assert_almost_equal(self.am['x'].scale, 1.5)
+        np.testing.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['x'].units == 'nm'
-        nt.assert_almost_equal(self.am['y'].scale, 0.5E-3)
+        np.testing.assert_almost_equal(self.am['y'].scale, 0.5E-3)
         assert self.am['y'].units == 'µm'
-        nt.assert_almost_equal(self.am['energy'].scale, 5E3)
+        np.testing.assert_almost_equal(self.am['energy'].scale, 5E3)
         assert self.am['energy'].units == 'meV'
 
     def test_convert_to_units_list_same_units(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=True)
-        nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
+        np.testing.assert_almost_equal(self.am2['x'].scale, 0.0015)
         assert self.am2['x'].units == 'µm'
-        nt.assert_almost_equal(self.am2['energy'].scale,
+        np.testing.assert_almost_equal(self.am2['energy'].scale,
                                self.axes_list2[1]['scale'])
         assert self.am2['energy'].units == self.axes_list2[1]['units']
-        nt.assert_almost_equal(self.am2['energy2'].scale,
+        np.testing.assert_almost_equal(self.am2['energy2'].scale,
                                self.axes_list2[2]['scale'])
         assert self.am2['energy2'].units == self.axes_list2[2]['units']
 
     def test_convert_to_units_list_signal2D(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=False)
-        nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
+        np.testing.assert_almost_equal(self.am2['x'].scale, 0.0015)
         assert self.am2['x'].units == 'µm'
-        nt.assert_almost_equal(self.am2['energy'].scale, 2500)
+        np.testing.assert_almost_equal(self.am2['energy'].scale, 2500)
         assert self.am2['energy'].units == 'meV'
-        nt.assert_almost_equal(self.am2['energy2'].scale, 5.0)
+        np.testing.assert_almost_equal(self.am2['energy2'].scale, 5.0)
         assert self.am2['energy2'].units == 'eV'
 
     @pytest.mark.parametrize("same_units", (True, False))

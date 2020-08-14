@@ -21,7 +21,6 @@ import itertools
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 #Legacy test, to be removed in v2.0
 from hyperspy.components1d import PESVoigt, Voigt
@@ -37,8 +36,8 @@ def test_function():
     g.FWHM.value = 0.5
     g.gamma.value = 0.2
     g.centre.value = 1
-    assert_allclose(g.function(0), 0.35380168)
-    assert_allclose(g.function(1), 5.06863535)
+    np.testing.assert_allclose(g.function(0), 0.35380168)
+    np.testing.assert_allclose(g.function(1), 5.06863535)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -62,9 +61,9 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g2.FWHM.value, 1, 0.5)
-    assert_allclose(g1.area.value, g2.area.value * factor, 0.04)
-    assert_allclose(g2.centre.value, 1, 1e-3)
+    np.testing.assert_allclose(g2.FWHM.value, 1, 0.5)
+    np.testing.assert_allclose(g1.area.value, g2.area.value * factor, 0.04)
+    np.testing.assert_allclose(g2.centre.value, 1, 1e-3)
 
 
 def test_legacy():
@@ -78,5 +77,5 @@ def test_legacy():
         g.FWHM.value = 0.5
         g.gamma.value = 0.2
         g.centre.value = 1
-        assert_allclose(g.function(0), 0.35380168)
-        assert_allclose(g.function(1), 5.06863535)
+        np.testing.assert_allclose(g.function(0), 0.35380168)
+        np.testing.assert_allclose(g.function(1), 5.06863535)

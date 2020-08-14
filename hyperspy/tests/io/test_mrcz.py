@@ -29,7 +29,7 @@ from hyperspy.io import load, save
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
-mrcz = pytest.importorskip("mrcz", reason="skipping test_mrcz tests, requires mrcz")
+mrcz = pytest.importorskip("mrcz", reason="mrcz not installed")
 
 
 #==============================================================================

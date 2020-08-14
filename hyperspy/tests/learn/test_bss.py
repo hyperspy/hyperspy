@@ -74,7 +74,7 @@ def test_bss_FastICA_object():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 1000))
-    A = rng.random((3, 3))
+    A = rng.random_sample(size=(3, 3))
     s = Signal1D(A @ S)
     s.decomposition()
 
@@ -92,7 +92,7 @@ def test_bss_pipeline():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 1000))
-    A = rng.random((3, 3))
+    A = rng.random_sample(size=(3, 3))
     s = Signal1D(A @ S)
     s.decomposition()
 
@@ -113,7 +113,7 @@ def test_bss_pipeline():
 def test_orthomax(whiten_method):
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 500))
-    A = rng.random((3, 3))
+    A = rng.random_sample(size=(3, 3))
     s = Signal1D(A @ S)
     s.decomposition()
     s.blind_source_separation(3, algorithm="orthomax", whiten_method=whiten_method)
@@ -188,7 +188,7 @@ def test_algorithm_error():
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 def test_normalize_components_errors():
     rng = np.random.RandomState(123)
-    s = Signal1D(rng.random((20, 100)))
+    s = Signal1D(rng.random_sample(size=(20, 100)))
     s.decomposition()
 
     with pytest.raises(ValueError, match="called after s.blind_source_separation"):
@@ -207,7 +207,7 @@ def test_sklearn_convergence_warning():
 
     rng = np.random.RandomState(123)
     ics = rng.laplace(size=(3, 1000))
-    mixing_matrix = rng.random((100, 3))
+    mixing_matrix = rng.random_sample(size=(100, 3))
     s = Signal1D(mixing_matrix @ ics)
     s.decomposition()
 
@@ -227,7 +227,7 @@ def test_sklearn_convergence_warning():
 def test_fastica_whiten_method(whiten_method):
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 1000))
-    A = rng.random((3, 3))
+    A = rng.random_sample(size=(3, 3))
     s = Signal1D(A @ S)
     s.decomposition()
     s.blind_source_separation(
@@ -243,7 +243,7 @@ class TestReverseBSS:
         rng = np.random.RandomState(123)
         S = rng.laplace(size=(3, 500))
         S -= 2 * S.min()  # Required to give us a positive dataset
-        A = rng.random((3, 3))
+        A = rng.random_sample(size=(3, 3))
         s = Signal1D(A @ S)
         s.decomposition()
         s.blind_source_separation(2)
@@ -271,8 +271,8 @@ class TestReverseBSS:
 class TestBSS1D:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        ics = rng.laplace(size=(3, 1000))
-        mixing_matrix = rng.random((100, 3))
+        ics = rng.laplace(size=(3, 500))
+        mixing_matrix = rng.random_sample(size=(100, 3))
         s = Signal1D(mixing_matrix @ ics)
         s.decomposition()
 
@@ -321,9 +321,9 @@ class TestBSS1D:
 class TestBSS2D:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        ics = rng.laplace(size=(3, 1024))
-        mixing_matrix = rng.random((100, 3))
-        s = Signal2D((mixing_matrix @ ics).reshape((100, 32, 32)))
+        ics = rng.laplace(size=(3, 256))
+        mixing_matrix = rng.random_sample(size=(100, 3))
+        s = Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
         for (axis, name) in zip(s.axes_manager._axes, ("z", "y", "x")):
             axis.name = name
         s.decomposition()
@@ -365,7 +365,7 @@ class TestBSS2D:
             mask=self.mask_sig,
         )
         np.testing.assert_allclose(
-            matrix, self.s.learning_results.unmixing_matrix, atol=1e-6
+            matrix, self.s.learning_results.unmixing_matrix, atol=1e-5
         )
 
     def test_diff_axes_string_without_mask(self):
@@ -442,7 +442,7 @@ class TestBSS2D:
 class TestPrintInfo:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.random((20, 100)))
+        self.s = Signal1D(rng.random_sample(size=(20, 100)))
         self.s.decomposition(output_dimension=2)
 
     def test_bss(self, capfd):
@@ -461,7 +461,7 @@ class TestPrintInfo:
 class TestReturnInfo:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.random((20, 100)))
+        self.s = Signal1D(rng.random_sample(size=(20, 100)))
         self.s.decomposition(output_dimension=2)
 
     def test_bss_not_supported(self):
