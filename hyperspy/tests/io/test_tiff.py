@@ -576,3 +576,27 @@ def test_read_TVIPS_metadata():
     np.testing.assert_allclose(s.axes_manager[0].scale, 1.42080, rtol=1E-5)
     np.testing.assert_allclose(s.axes_manager[1].scale, 1.42080, rtol=1E-5)
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+
+
+def test_axes_metadata():
+    data = np.arange(2*5*10).reshape((2, 5, 10))
+    s = hs.signals.Signal2D(data)
+    nav_unit = 's'
+    s.axes_manager.navigation_axes[0].units = nav_unit
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'axes_metadata_default.tif')
+        s.save(fname)
+        s2 = hs.load(fname)
+        assert s2.axes_manager.navigation_axes[0].name == 'image series'
+        assert s2.axes_manager.navigation_axes[0].units == nav_unit
+
+        fname2 = os.path.join(tmpdir, 'axes_metadata_IYX.tif')
+        s.save(fname2, metadata={'axes':'IYX'})
+        s3 = hs.load(fname2)
+        assert s3.axes_manager.navigation_axes[0].name == 'image series'
+        assert s3.axes_manager.navigation_axes[0].units == nav_unit
+
+        fname2 = os.path.join(tmpdir, 'axes_metadata_ZYX.tif')
+        s.save(fname2, metadata={'axes':'ZYX'})
+        s3 = hs.load(fname2)
+        assert s3.axes_manager.navigation_axes[0].units == nav_unit
