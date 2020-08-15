@@ -18,7 +18,6 @@
 
 from unittest import mock
 
-import dask.array as da
 import numpy as np
 import pytest
 from scipy.signal import savgol_filter
@@ -199,9 +198,7 @@ class TestInterpolateInBetween:
     def test_delta_int(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        tmp = np.zeros_like(s.data)
-        if isinstance(tmp, da.Array):
-            tmp = np.asarray(np.zeros_like(s.data))
+        tmp = np.zeros(s.data.shape)
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
@@ -212,9 +209,7 @@ class TestInterpolateInBetween:
     def test_delta_float(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        tmp = np.zeros_like(s.data)
-        if isinstance(tmp, da.Array):
-            tmp = np.asarray(np.zeros_like(s.data))
+        tmp = np.zeros(s.data.shape)
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
