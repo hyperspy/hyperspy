@@ -21,8 +21,8 @@ matrix:
     env: PIP_SELECTOR="tests"
     python: 3.7
   - name: "Linux, 3.6, pip, mininum version"
-    env: MINIMUM_VERSION="true"
-    python: 3.7
+    env: MINIMUM_VERSION=true
+    python: 3.6
   - name: "Linux, 3.7, pip, doc"
     env: PIP_SELECTOR="all, build-doc"
     python: 3.7
@@ -37,7 +37,7 @@ install:
   # manually
   - pip install --upgrade pytest
   - if [ "$MINIMUM_VERSION" == true ]; then
-      pip install matplotlib==2.2.3 numpy==1.13 scipy==1.0.1;
+      pip install matplotlib==2.2.3 numpy==1.14 scipy==1.0.1 numba==0.40;
       pip install -e .["${PIP_SELECTOR}"];
     else
       pip install --upgrade -e .["${PIP_SELECTOR}"];
@@ -49,7 +49,7 @@ script:
   - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
-      echo "py.test arguments $PYTEST_ARGS";
+      echo "pytest arguments $PYTEST_ARGS";
       pytest $PYTEST_ARGS;
     fi
 
