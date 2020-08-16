@@ -36,8 +36,10 @@ install:
   # Because of https://github.com/pypa/pip/issues/4391, we need to update pytest
   # manually
   - pip install --upgrade pytest
+  # Test against the oldest supported version of matplotlib, numpy and scipy
+  # Use old version numba and imagecodecs to work around incompatibilities
   - if [ "$MINIMUM_VERSION" == true ]; then
-      pip install matplotlib==2.2.3 numpy==1.15 scipy==1.0.1 numba==0.46 imagecodecs==2018.10.10;
+      pip install matplotlib==2.2.3 numpy==1.15 scipy==1.0.1 numba==0.40 imagecodecs==2018.10.10;
       pip install -e .["${PIP_SELECTOR}"];
     else
       pip install --upgrade -e .["${PIP_SELECTOR}"];
