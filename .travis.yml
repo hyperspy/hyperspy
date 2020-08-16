@@ -37,7 +37,7 @@ install:
   # manually
   - pip install --upgrade pytest
   - if [ "$MINIMUM_VERSION" == true ]; then
-      pip install matplotlib==2.2.3 numpy==1.14 scipy==1.0.1 numba==0.40;
+      pip install matplotlib==2.2.3 numpy==1.15 scipy==1.0.1 numba==0.46 imagecodecs==2018.10.10;
       pip install -e .["${PIP_SELECTOR}"];
     else
       pip install --upgrade -e .["${PIP_SELECTOR}"];
