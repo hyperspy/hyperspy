@@ -116,6 +116,15 @@ def get_hspy_format_version(f):
 
 def file_reader(filename, backing_store=False,
                 lazy=False, **kwds):
+    """Read data from hdf5 files saved with the hyperspy hdf5 format specification
+
+    Parameters
+    ----------
+    filename: str
+    lazy: bool
+        Load image lazily using dask
+    **kwds, optional
+    """
     mode = kwds.pop('mode', 'r')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
@@ -403,6 +412,8 @@ def hdfgroup2signaldict(group, lazy=False):
 
 
 def dict2hdfgroup(dictionary, group, **kwds):
+    "Recursive writer of dicts and signals"
+
     from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import BaseSignal
 
@@ -684,6 +695,8 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
 
 
 def write_signal(signal, group, **kwds):
+    "Writes a hyperspy signal to a hdf5 group"
+
     group.attrs.update(get_object_package_info(signal))
     if default_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
@@ -691,8 +704,13 @@ def write_signal(signal, group, **kwds):
     else:
         metadata = "metadata"
         original_metadata = "original_metadata"
+
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
+    elif kwds['compression'] == 'blosc':
+        kwds['compression'] = 32001
+    if kwds['compression'] == 32001:
+        import_pytables_for_blosc(kwds['compression'])
 
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
@@ -727,10 +745,26 @@ def write_signal(signal, group, **kwds):
         for model in model_group.values():
             model.attrs['_signal'] = group.name
 
+def import_pytables_for_blosc(compression_algorithm=None):
+    try:
+        import tables
+    except ImportError:
+        if compression_algorithm:
+            raise ValueError(
+        f'The compression algorithm {compression_algorithm} requires pytables to be installed.')
+        else:
+            raise ImportError('This functionality requires pytables, but it is not installed.')
 
-def file_writer(filename,
-                signal,
-                *args, **kwds):
+def file_writer(filename, signal, *args, **kwds):
+    """Writes data to hyperspy's hdf5 format
+
+    Parameters
+    ----------
+    filename: str
+    signal: a BaseSignal instance
+    *args, optional
+    **kwds, optional
+    """
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
@@ -743,6 +777,10 @@ def file_writer(filename,
         expg = exps.create_group(group_name)
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
+        elif kwds['compression'] == 'blosc':
+            kwds['compression'] = 32001
+        if kwds['compression'] == 32001:
+            import_pytables_for_blosc(kwds['compression'])
         # Add record_by metadata for backward compatibility
         smd = signal.metadata.Signal
         if signal.axes_manager.signal_dimension == 1:

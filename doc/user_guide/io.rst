@@ -27,9 +27,15 @@ information.
 If the loaded file contains several datasets, the :py:func:`~.io.load`
 functions will return a list of the corresponding signal.
 
+<<<<<<< HEAD
 .. NOTE::
 
     Note for Python programmers: the data is stored in a numpy array
+=======
+.. note::
+
+    Note for python programmers: the data is stored in a numpy array
+>>>>>>> 3f7d647c0... @ericpre comments
     in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
@@ -343,24 +349,16 @@ This feature is particularly useful when using
 .. versionadded:: 1.3.1
     ``chunks`` keyword argument
 
-Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory, 
-allowing lazy loading. Chunk size can dramatically affect the speed of various HyperSpy algorithms, so chunk size is
-worth careful consideration when saving a signal. HyperSpy's default chunking sizes are probably not optimal
-for a given data analysis technique. For more comprehensible documentation on chunking,
-see the dask `array chunks
-<https://docs.dask.org/en/latest/array-chunks.html>`_ and `best practices
-<https://docs.dask.org/en/latest/array-best-practices.html>`_ docs. The chunks saved into HDF5 will
-match the dask array chunks in ``s.data.chunks`` when lazy loading.
-Chunk shape should follow the axes order of the numpy shape (``s.data.shape``), not the hyperspy shape.
-
-By default, the data is saved in chunks that are optimised to contain at least one full signal shape. It is
-possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
-``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
+The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
+of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
+full signal shape. It is possible to customise the chunk shape using the ``chunks`` keyword. 
+For example, to save the data with ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks
+for this signal:
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
-    >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
+    >>> s.save("test_chunks", chunks=(20, 20, 256))
 
 Note that currently it is not possible to pass different customised chunk shapes to all signals and
 arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving
@@ -371,20 +369,23 @@ what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`
 constrain of storing at least one signal per chunks. For example, for the signal in the example above
 passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
+Choosing the correct chunk-size can significantly affect the speed of reading, writing and performance of many hyperspy algorithms.
+See the `chunking section <big_data.html#Chunking>`__ under `Working with big data <big_data.html>`__ for more information.
+
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 `compression`:
-  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
-  Optionally, if ``pytables`` is available by ``import tables``, the blosc compressor
-  can be used by ``compression=32001``. This can significantly improve the speed of saving with very
+  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'``, ``'blosc'`` (default is ``'gzip'``). 
+  The ``'blosc'`` compressor requires ``pytables`` to be installed. It can significantly improve the speed of saving with very
   good compression.
 
 .. note::
-    Compression can significantly increase the saving speed. If storage space 
-    is not an issue, it can be disabled by setting ``compression = None``.
-    Only ``compression = None/'gzip'`` is guaranteed to be compatible for reading with
-    other HDF5 readers.
 
+    Compression can significantly increase the saving speed. If file size
+    is not an issue, it can be disabled by setting ``compression = None``.
+    Only ``compression = None/'gzip'`` is guaranteed to be compatible for reading
+    with hyperspy on all platforms, see the `h5py documentation
+    <https://docs.h5py.org/en/stable/faq.html>`_ for more details.
 
 
 .. _netcdf-format:

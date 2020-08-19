@@ -651,6 +651,17 @@ class Test_permanent_markers_io:
             "test_marker_point_y2_data_deleted.hdf5"))
         assert len(s.metadata.Markers) == 5
 
+class TestSaveReadWithCompression():
+    def setup_method(self):
+        self.s = Signal1D(np.ones((3,3)))
+    
+    @pytest.mark.parametrize("compression", (None, "gzip", "szip", "lzf", "blosc", ))
+    def test_compression(self, compression):
+        if sys.platform == "win32" and compression == "szip":
+            return
+        self.s.save('test_compression.hspy', overwrite=True, compression=compression)
+
+        s = load('test_compression.hspy')
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
