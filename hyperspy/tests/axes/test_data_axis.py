@@ -127,10 +127,6 @@ class TestDataAxis:
         assert (
             self.axis.value2index(["rel0.0", "rel0.5", "rel1.0"]).tolist() == [0, 4, 9])
 
-    def test_relative_value2index_fail_list_in(self):
-        with pytest.raises(ValueError):
-            self.axis.value2index(["rela0.0", "rela0.5", "rela1.0"])
-
     def test_value2index_array_out(self):
         with pytest.raises(ValueError):
             self.axis.value2index(np.array([10, 11]))
@@ -180,30 +176,24 @@ class TestDataAxis:
         ax.index += 1
         assert m.trigger_me.called
 
-    def test_parse_string_for_slice(self):
+    def test_parse_entry_to_calibrated_value(self):
         ax = self.axis
         # slicing by index
-        assert ax._parse_string_for_slice(5) == 5
-        assert type(ax._parse_string_for_slice(5)) is int
+        assert ax._parse_entry_to_calibrated_value(5) == 5
+        assert type(ax._parse_entry_to_calibrated_value(5)) is int
         # slicing by calibrated value
-        assert ax._parse_string_for_slice(10.5) == 10.5
-        assert type(ax._parse_string_for_slice(10.5)) is float
+        assert ax._parse_entry_to_calibrated_value(10.5) == 10.5
+        assert type(ax._parse_entry_to_calibrated_value(10.5)) is float
         # slicing by unit
-        assert ax._parse_string_for_slice('10.5nm') == 5
-        assert ax._parse_string_for_slice('10500pm') == 5
-        # slicing by ratio
-        assert ax._parse_string_for_slice('rel0.5') == 4
-        assert ax._parse_string_for_slice('rel0') == 0
-        assert ax._parse_string_for_slice('rel1') == 9
+        assert ax._parse_entry_to_calibrated_value('10.5nm') == 10.5
+        np.testing.assert_almost_equal(ax._parse_entry_to_calibrated_value('10500pm'), 10.5)
 
-    def test_get_index_from_relative_string(self):
+    def test_get_value_from_relative_string(self):
         ax = self.axis
         assert ax._get_value_from_relative_string('rel0.5') == 10.45
-        with pytest.raises(AssertionError):
-            ax._get_value_from_relative_string('r0.5') == 10.45
         with pytest.raises(ValueError):
-            ax._get_value_from_relative_string('relative0.5') == 10.45
-        with pytest.raises(AssertionError):
+            ax._get_value_from_relative_string('rela0.5') == 10.45
+        with pytest.raises(ValueError):
             ax._get_value_from_relative_string('abcd') == 10.45
 
     def test_get_value_from_relative_value(self):

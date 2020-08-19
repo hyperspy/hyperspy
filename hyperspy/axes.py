@@ -112,39 +112,6 @@ class UnitConversion:
 
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
 
-    def _get_value_from_value_with_units(self, value):
-        "Get axes value by passing a calibrated value with a unit, like '20nm'"
-        if isinstance(value, (np.ndarray, list, tuple)):
-            value = np.asarray([_ureg.parse_expression(val).to(self.units).magnitude for val in value])
-        else:
-            value = _ureg.parse_expression(value)
-            if not hasattr(value, 'units'):
-                raise ValueError('"{}" should contain a unit.'.format(value))
-            value = value.to(self.units).magnitude
-        return value
-
-    def _get_index_from_value_with_units(self, value):
-        "Get axes index by passing a calibrated value with a unit, like '20nm'"
-        return self.value2index(self._get_value_from_value_with_units(value))
-
-    def _get_value_from_relative_string(self, relative_string):
-        "Get axes index by relative indexing using string like 'rel0.5'"
-        try:
-            assert relative_string.startswith('rel')
-            relative_value = float(relative_string[3:])
-        except (ValueError, AssertionError):
-           print(f"Expected relative units of kind 'rel0.2' but '{relative_string}' could not be interpreted this way.")
-           raise
-        return self._get_value_from_relative_value(relative_value)
-
-    def _get_value_from_relative_value(self, relative_value):
-        '''
-        Gets the value of a position along the axis by relative or fractional value. The value is 
-        not necessarily in the .axis array.
-        '''
-        value = self.low_value + relative_value * (self.high_value - self.low_value)
-        return value
-
     def _convert_units(self, converted_units, inplace=True):
         if self._ignore_conversion(converted_units) or \
                 self._ignore_conversion(self.units):
@@ -368,19 +335,6 @@ class DataAxis(t.HasTraits, UnitConversion):
         else:
             return value
 
-    def _parse_string_for_slice(self, value):
-        '''
-        Parses one of the start/stop/step parts of the slice
-        syntax. Returns integer if index, float if calibrated axis value.
-        '''
-        if isinstance(value, str):
-            # these are always returned as integers
-            if value.startswith('rel'): # Slicing using relative syntax
-                value = self.value2index(self._get_value_from_relative_string(value))
-            else: # Slicing using unit syntax
-                value = self._get_index_from_value_with_units(value)
-        return value
-
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis without
         changing the offset and scale of the DataAxis.
@@ -408,9 +362,9 @@ class DataAxis(t.HasTraits, UnitConversion):
             stop = start + 1
             step = None
 
-        start = self._parse_string_for_slice(start)
-        stop = self._parse_string_for_slice(stop)
-        step = self._parse_string_for_slice(step)
+        start = self._parse_entry_to_calibrated_value(start)
+        stop = self._parse_entry_to_calibrated_value(stop)
+        step = self._parse_entry_to_calibrated_value(step)
 
         if isfloat(step):
             step = int(round(step / self.scale))
@@ -535,6 +489,68 @@ class DataAxis(t.HasTraits, UnitConversion):
         cp = self.copy()
         return cp
 
+    def _parse_value_from_string(self, value):
+        test_value = value if type(value) == str else value[0] # else array-like, and test first entry
+        if test_value == "":
+            raise ValueError("Cannot index with an empty string")
+            # if first character is a digit, try unit conversion
+            # otherwise try relative (fractional) indexing
+        elif test_value[0].isdigit():
+            try:
+                value = self._get_value_from_value_with_units(value)
+            except pint.errors.UndefinedUnitError:
+                raise ValueError(f"Expected calibrated value with units like ['20nm'] (or iterable of this) but '{value}' could not be interpreted this way.")
+        elif test_value.startswith('rel'):
+            value = self._get_value_from_relative_string(value)
+        else:
+            raise ValueError(f"Cannot index with string {value}")
+        return value
+
+    def _get_value_from_value_with_units(self, value):
+        "Get axes value by passing a calibrated value with a unit, like '20nm'"
+        if isinstance(value, (np.ndarray, list, tuple)):
+            value = np.asarray([_ureg.parse_expression(val).to(self.units).magnitude for val in value])
+        else:
+            value = _ureg.parse_expression(value)
+            if not hasattr(value, 'units'):
+                raise ValueError('"{}" should contain a unit.'.format(value))
+            value = value.to(self.units).magnitude
+        return value
+
+    def _get_index_from_value_with_units(self, value):
+        "Get axes index by passing a calibrated value with a unit, like '20nm'"
+        return self.value2index(self._get_value_from_value_with_units(value))
+
+    def _get_value_from_relative_string(self, relative_string):
+        "Get axes index by relative indexing using string like 'rel0.5'"
+        relative_index_error = "Can only index with relative indexing between rel0.0 and rel1.0, got {}"
+        try:
+            relative_value = float(relative_string[3:])
+        except ValueError:
+            raise ValueError(relative_index_error.format(relative_string))
+        except TypeError:
+            relative_value = np.char.replace(relative_string, 'rel', '').astype(float)
+        if not (np.all(0.0 <= relative_value) and np.all(relative_value <= 1.0)):
+            raise ValueError(relative_index_error.format(relative_string))
+        return self._get_value_from_relative_value(relative_value)
+
+    def _get_value_from_relative_value(self, relative_value):
+        '''
+        Gets the value of a position along the axis by relative or fractional value. The value is 
+        not necessarily in the .axis array.
+        '''
+        value = self.low_value + relative_value * (self.high_value - self.low_value)
+        return value
+
+    def _parse_entry_to_calibrated_value(self, value):
+        if isinstance(value, str):
+            value = self._parse_value_from_string(value)
+        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+            value = np.asarray(value)
+            if value.dtype.type is np.str_:
+                value = self._parse_value_from_string(value)
+        return value
+
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the axis limits.
 
@@ -558,27 +574,8 @@ class DataAxis(t.HasTraits, UnitConversion):
         if value is None:
             return None
 
-        if isinstance(value, str):
-            if value == "":
-                raise ValueError("Cannot slice with an empty string")
-            # if first character is a digit, try unit conversion
-            # otherwise try relative (fractional) indexing
-            if value[0].isdigit():
-                try:
-                    value = self._get_value_from_value_with_units(value)
-                except:
-                    raise ValueError(f"Expected calibrated value with units like '20nm' but '{value}' could not be interpreted this way.")
-            else:
-                try:
-                    assert value.startswith('rel')
-                    relative_value = float(value[3:])
-                except (AssertionError, ValueError):
-                    raise ValueError(f"Expected relative units of kind 'rel0.2' but '{value}' could not be interpreted this way.")
-                value = self._get_value_from_relative_value(relative_value)
+        value = self._parse_entry_to_calibrated_value(value)
 
-        if isinstance(value, (list, tuple)):
-            value = np.asarray(value)
-            
         if isinstance(value, (np.ndarray, da.Array)):
             if rounding is round:
                 rounding = np.round
@@ -586,20 +583,6 @@ class DataAxis(t.HasTraits, UnitConversion):
                 rounding = np.ceil
             elif rounding is math.floor:
                 rounding = np.floor
-
-            if value.dtype.type is np.str_:
-                if value[0][0].isdigit():
-                    try:
-                        value = self._get_value_from_value_with_units(value)
-                    except pint.errors.UndefinedUnitError:
-                        raise ValueError(f"Expected iterable of calibrated value with units like ['20nm'] but '{value}' could not be interpreted this way.")
-                else:
-                    try:
-                        assert value[0].startswith('rel')
-                        relative_value = np.char.replace(value, 'rel', '').astype(float)
-                    except (AssertionError, ValueError):
-                        raise ValueError(f"Expected array of relative units of kind ['rel0.2', 'rel0.3] but '{value}' could not be interpreted this way.")
-                    value = self._get_value_from_relative_value(relative_value)
 
         index = rounding((value - self.offset) / self.scale)
 
