@@ -186,8 +186,31 @@ class Test_metadata:
 
     def test_take_off_angle(self):
         s = self.signal
-        np.testing.assert_allclose(s.get_take_off_angle(), 12.886929785732487,
-                        atol=10**-(sys.float_info.dig - 2))
+        np.testing.assert_allclose(s.get_take_off_angle(), 12.886929785732487)
+
+    def test_take_off_angle_beta(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Stage.tilt_beta = 15.5
+        np.testing.assert_allclose(s.get_take_off_angle(), 24.202671071140102)
+
+    def test_take_off_angle_azimuth(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Stage.tilt_alpha = None
+        with pytest.raises(ValueError, match="alpha"):
+            s.get_take_off_angle()
+
+    def test_take_off_angle_azimuth(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.azimuth_angle = None
+        with pytest.raises(ValueError, match="azimuth"):
+            s.get_take_off_angle()
+
+    def test_take_off_angle_elevation(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.elevation_angle = None
+        with pytest.raises(ValueError, match="elevation"):
+            s.get_take_off_angle()
+
 
 
 @lazifyTestClass
