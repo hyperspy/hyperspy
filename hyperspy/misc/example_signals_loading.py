@@ -31,7 +31,7 @@ def load_1D_EDS_SEM_spectrum():
     """
     from hyperspy.io import load
     file_path = os.sep.join([os.path.dirname(__file__), 'eds',
-                             'example_signals', '1D_EDS_SEM_Spectrum.hdf5'])
+                             'example_signals', '1D_EDS_SEM_Spectrum.hspy'])
     return load(file_path)
 
 
@@ -47,7 +47,7 @@ def load_1D_EDS_TEM_spectrum():
     """
     from hyperspy.io import load
     file_path = os.sep.join([os.path.dirname(__file__), 'eds',
-                             'example_signals', '1D_EDS_TEM_Spectrum.hdf5'])
+                             'example_signals', '1D_EDS_TEM_Spectrum.hspy'])
     return load(file_path)
 
 
