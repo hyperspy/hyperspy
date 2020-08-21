@@ -713,18 +713,17 @@ class EDS_mixin:
         elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
-        tilt_stage = mp.Stage.tilt_alpha
-        azimuth_angle = mp.Detector.EDS.azimuth_angle
-        elevation_angle = mp.Detector.EDS.elevation_angle
-        if 'beta_tilt' not in mp:
-            beta_tilt = 0.0
-        else:
-            beta_tilt = mp.Stage.tilt_beta
+        tilt_stage = mp.get_item('Stage.tilt_alpha', None)
+        azimuth_angle = mp.get_item('Detector.EDS.azimuth_angle', None)
+        elevation_angle = mp.get_item('Detector.EDS.elevation_angle', None)
+        beta_tilt = mp.get_item('Stage.tilt_beta', 0.0)
 
-        TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
-                                       elevation_angle,beta_tilt)
-
-        return TOA
+        return utils.eds.take_off_angle(
+            tilt_stage,
+            azimuth_angle,
+            elevation_angle,
+            beta_tilt
+        )
 
     def estimate_integration_windows(self,
                                      windows_width=2.,
