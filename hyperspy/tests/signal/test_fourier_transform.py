@@ -20,13 +20,18 @@ import numpy as np
 import pytest
 
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.signals import (BaseSignal, ComplexSignal1D, ComplexSignal2D,
-                              Signal1D, Signal2D)
+from hyperspy.signals import (
+    BaseSignal,
+    ComplexSignal1D,
+    ComplexSignal2D,
+    Signal1D,
+    Signal2D,
+)
 
 
 def test_null_signal():
     rng = np.random.RandomState(123)
-    s = BaseSignal(rng.uniform())
+    s = BaseSignal(rng.random_sample())
     with pytest.raises(AttributeError):
         s.T.fft()
     with pytest.raises(AttributeError):
@@ -37,7 +42,7 @@ def test_null_signal():
 class TestFFTSignal2D:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        self.im = Signal2D(rng.uniform(size=(2, 3, 4, 5)))
+        self.im = Signal2D(rng.random_sample(size=(2, 3, 4, 5)))
         self.im.axes_manager.signal_axes[0].units = "nm"
         self.im.axes_manager.signal_axes[1].units = "nm"
         self.im.axes_manager.signal_axes[0].scale = 10.0
@@ -113,7 +118,7 @@ class TestFFTSignal2D:
 class TestFFTSignal1D:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.uniform(size=(2, 3, 4, 5)))
+        self.s = Signal1D(rng.random_sample(size=(2, 3, 4, 5)))
         self.s.axes_manager.signal_axes[0].scale = 6.0
 
     def test_fft(self):

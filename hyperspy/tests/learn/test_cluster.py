@@ -42,6 +42,7 @@ else:
     # will skip the rest of the file anyway
     pass
 
+
 class TestCluster1D:
     def setup_method(self):
         self.signal = signal1.deepcopy()
@@ -270,7 +271,7 @@ class DummyScalingAlgorithm:
 class TestClusterExceptions:
     def setup_method(self):
         self.rng = np.random.RandomState(123)
-        self.s = signals.Signal1D(self.rng.uniform(size=(20, 100)))
+        self.s = signals.Signal1D(self.rng.random_sample(size=(20, 100)))
 
     def test_cluster_source_error(self):
         with pytest.raises(
@@ -282,7 +283,7 @@ class TestClusterExceptions:
             self.s.cluster_analysis("randtest", n_clusters=2)
 
     def test_cluster_source_size_error(self):
-        x2 = self.rng.uniform(size=(10, 80))
+        x2 = self.rng.random_sample(size=(10, 80))
         s2 = signals.Signal1D(x2)
         with pytest.raises(
             ValueError,
@@ -292,7 +293,7 @@ class TestClusterExceptions:
             self.s.cluster_analysis(s2, n_clusters=2)
 
     def test_cluster_source_center_size_error(self):
-        x2 = self.rng.uniform(size=(10, 80))
+        x2 = self.rng.random_sample(size=(10, 80))
         s2 = signals.Signal1D(x2)
         with pytest.raises(
             ValueError,
@@ -424,7 +425,7 @@ class TestClusterExceptions:
 
 def test_get_methods():
     rng = np.random.RandomState(123)
-    signal = signals.Signal1D(rng.uniform(size=(11, 5, 7)))
+    signal = signals.Signal1D(rng.random_sample(size=(11, 5, 7)))
     signal.decomposition()
     signal.cluster_analysis("signal", n_clusters=2)
     signal.unfold()
