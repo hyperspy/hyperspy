@@ -288,8 +288,8 @@ def take_off_angle(tilt_stage,
     28.865971201155283
     """
 
-    alpha = math.radians(tilt_stage)
-    beta = -math.radians(beta_tilt)
+    alpha = math.radians(float(tilt_stage))
+    beta = -math.radians(float(beta_tilt))
     phi = math.radians(azimuth_angle)
     theta = -math.radians(elevation_angle)
 

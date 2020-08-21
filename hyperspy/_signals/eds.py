@@ -716,10 +716,7 @@ class EDS_mixin:
         tilt_stage = mp.Stage.tilt_alpha
         azimuth_angle = mp.Detector.EDS.azimuth_angle
         elevation_angle = mp.Detector.EDS.elevation_angle
-        if 'beta_tilt' not in mp:
-            beta_tilt = 0.0
-        else:
-            beta_tilt = mp.Stage.tilt_beta
+        beta_tilt = mp.get_item('Stage.tilt_beta', 0.0)
 
         TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
                                        elevation_angle,beta_tilt)
