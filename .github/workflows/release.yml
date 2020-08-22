@@ -77,13 +77,10 @@ jobs:
       #    asset_name: 
       #    asset_content_type: 
 
-      #- name: Publish wheels to PyPI
-      #  env:
-      #    TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      #    TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      #  run: |
-      #    python -m pip install twine
-      #    python -m twine upload dist/*.whl
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+           password: ${{ secrets.pypi_password }}
 
   build_wheels_linux:
     name: Wheels on ubuntu-latest
@@ -116,12 +113,8 @@ jobs:
       #    asset_name: 
       #    asset_content_type: 
 
-      #- name: Publish wheels to PyPI
-      #  env:
-      #    TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      #    TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      #  run: |
-      #    python -m pip install --upgrade setuptools twine
-      #    python setup.py sdist
-      #    twine upload dist/*-manylinux*.whl
-      #    twine upload dist/*.tar.gz
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+           password: ${{ secrets.pypi_password }}
+
