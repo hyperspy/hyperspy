@@ -6,6 +6,7 @@ env:
     - ENV=pip
     - PIP_SELECTOR="all, tests, coverage"
     - PYTEST_ARGS="--pyargs hyperspy"
+    - MINIMUM_VERSION=false
 
 matrix:
   include:
@@ -19,6 +20,9 @@ matrix:
   - name: "Linux, 3.7, pip, minimum requirement"
     env: PIP_SELECTOR="tests"
     python: 3.7
+  - name: "Linux, 3.6, pip, mininum version"
+    env: MINIMUM_VERSION=true
+    python: 3.6
   - name: "Linux, 3.7, pip, doc"
     env: PIP_SELECTOR="all, build-doc"
     python: 3.7
@@ -31,9 +35,15 @@ before_install:
 install:
   # Because of https://github.com/pypa/pip/issues/4391, we need to update pytest
   # manually
-  - pip install -U pytest
-  # Install the package
-  - pip install --upgrade -e .["${PIP_SELECTOR}"]
+  - pip install --upgrade pytest
+  # Test against the oldest supported version of matplotlib, numpy and scipy
+  # Use old version numba and imagecodecs to work around incompatibilities
+  - if [ "$MINIMUM_VERSION" == true ]; then
+      pip install matplotlib==2.2.3 numpy==1.15 scipy==1.0.1 numba==0.40 imagecodecs==2018.10.10;
+      pip install -e .["${PIP_SELECTOR}"];
+    else
+      pip install --upgrade -e .["${PIP_SELECTOR}"];
+    fi
 
 script:
   - which python
@@ -41,7 +51,7 @@ script:
   - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
-      echo "py.test arguments $PYTEST_ARGS";
+      echo "pytest arguments $PYTEST_ARGS";
       pytest $PYTEST_ARGS;
     fi
 
