@@ -89,6 +89,7 @@ jobs:
       #    asset_content_type: 
 
       - name: Publish distribution 📦 to PyPI
+        if: github.repository_owner == 'hyperspy'
         uses: pypa/gh-action-pypi-publish@master
         with:
            password: ${{ secrets.pypi_password }}
@@ -144,6 +145,7 @@ jobs:
       #    asset_content_type: 
 
       - name: Publish distribution 📦 to PyPI
+        if: github.repository_owner == 'hyperspy'
         uses: pypa/gh-action-pypi-publish@master
         with:
            password: ${{ secrets.pypi_password }}
