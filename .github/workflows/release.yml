@@ -1,4 +1,7 @@
 name: Release
+# This workflow builds the wheels "on tag".
+# If run from the hyperspy/hyperspy repository, the wheels will be uploaded to pypi ;
+# otherwise, the wheels will be available as a github artifact.
 
 on:
   push:
@@ -78,20 +81,12 @@ jobs:
         with:
           path: ./dist/*.whl
 
-      #- name: Upload Release Asset
-      #  uses: actions/upload-release-asset@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #  with:
-      #    upload_url: ${{ needs.create_release.outputs.upload_url }}
-      #    asset_path: ./dist/*.whl
-      #    asset_name: 
-      #    asset_content_type: 
-
       - name: Publish distribution 📦 to PyPI
         if: github.repository_owner == 'hyperspy'
         uses: pypa/gh-action-pypi-publish@master
         with:
+           # Github secret set in the hyperspy/hyperspy repository
+           # not available from fork
            password: ${{ secrets.pypi_password }}
 
   build_wheels_linux:
@@ -134,19 +129,11 @@ jobs:
             ./dist/*-manylinux*.whl
             ./sdist/*.tar.gz
 
-      #- name: Upload Release Asset
-      #  uses: actions/upload-release-asset@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #  with:
-      #    upload_url: ${{ needs.create_release.outputs.upload_url }}
-      #    asset_path: ./dist/*-manylinux*.whl
-      #    asset_name: 
-      #    asset_content_type: 
-
       - name: Publish distribution 📦 to PyPI
         if: github.repository_owner == 'hyperspy'
         uses: pypa/gh-action-pypi-publish@master
         with:
+           # Github secret set in the hyperspy/hyperspy repository
+           # not available from fork
            password: ${{ secrets.pypi_password }}
 
