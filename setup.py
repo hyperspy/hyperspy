@@ -139,7 +139,7 @@ def count_c_extensions(extensions):
 def cythonize_extensions(extensions):
     try:
         from Cython.Build import cythonize
-        return cythonize(extensions)
+        return cythonize(extensions, compiler_directives={'language_level' : "3"})
     except ImportError:
         warnings.warn("""WARNING: cython required to generate fast c code is not found on this system.
 Only slow pure python alternative functions will be available.
