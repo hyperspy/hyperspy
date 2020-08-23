@@ -25,7 +25,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-  
+
   build_wheels:
     name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
     needs: create_release
@@ -63,6 +63,17 @@ jobs:
         run: |
           python -m pep517.build --binary --out-dir dist/ .
 
+      - name: Display content dist folder
+        run: |
+          ls dist/
+
+      - name: Install and test distribution
+        env:
+          MPLBACKEND: agg
+        run: |
+          pip install --pre --find-links dist hyperspy[tests]
+          pytest --pyargs hyperspy
+
       - uses: actions/upload-artifact@v2
         with:
           path: ./dist/*.whl
@@ -99,9 +110,28 @@ jobs:
         with:
           build-requirements: 'cython'
 
+      - name: Build source distribution
+        run: |
+          pip install pep517
+          python -m pep517.build --source --out-dir sdist/ .
+
+      - name: Display content dist folder
+        run: |
+          ls dist/
+          ls sdist/
+
+      - name: Install and test distribution
+        env:
+          MPLBACKEND: agg
+        run: |
+          pip install --pre --find-links dist hyperspy[tests]
+          pytest --pyargs hyperspy
+
       - uses: actions/upload-artifact@v2
         with:
-          path: ./dist/*-manylinux*.whl
+          path: |
+            ./dist/*-manylinux*.whl
+            ./sdist/*.tar.gz
 
       #- name: Upload Release Asset
       #  uses: actions/upload-release-asset@v1
