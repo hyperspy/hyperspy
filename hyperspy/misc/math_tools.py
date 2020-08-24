@@ -162,14 +162,14 @@ def optimal_fft_size(target, real=False):
 
         support_real = True
 
-    except ImportError:
+    except ImportError:  # pragma: no cover
         from scipy.fftpack import next_fast_len
 
         support_real = False
 
     if support_real:
         return next_fast_len(target, real)
-    else:
+    else:  # pragma: no cover
         return next_fast_len(target)
 
 
