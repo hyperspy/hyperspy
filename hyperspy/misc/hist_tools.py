@@ -74,7 +74,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
     if isinstance(a, da.Array):
         return histogram_dask(a, bins=bins, max_num_bins=max_num_bins, **kwargs)
 
-    if isinstance(bins,str):
+    if isinstance(bins, str):
         _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
         new_bins = _deprecated_bins.get(bins, None)
         if new_bins:
@@ -87,7 +87,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
 
     _old_bins = bins
 
-    if bins in ["knuth", "blocks"]:
+    if isinstance(bins, str) and bins in ["knuth", "blocks"]:
         # if range is specified, we need to truncate
         # the data for these bin-finding routines
         if range is not None:
@@ -169,7 +169,7 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
     if a.ndim != 1:
         a = a.flatten()
 
-    if isinstance(bins,str):
+    if isinstance(bins, str):
         _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
         new_bins = _deprecated_bins.get(bins, None)
         if new_bins:
@@ -182,12 +182,13 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
 
     _old_bins = bins
 
-    if bins == "scott":
-        _, bins = _scott_bw_dask(a, True)
-    elif bins == "fd":
-        _, bins = _freedman_bw_dask(a, True)
-    elif isinstance(bins, str):
-        raise ValueError(f"Unrecognized 'bins' argument: got {bins}")
+    if isinstance(bins, str):
+        if bins == "scott":
+            _, bins = _scott_bw_dask(a, True)
+        elif bins == "fd":
+            _, bins = _freedman_bw_dask(a, True)
+        else:
+            raise ValueError(f"Unrecognized 'bins' argument: got {bins}")
     elif not np.iterable(bins):
         kwargs["range"] = da.compute(a.min(), a.max())
 
