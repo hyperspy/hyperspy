@@ -1363,19 +1363,8 @@ class BaseModel(list):
                         **kwargs,
                     )
 
-                    self.fit_output = OptimizeResult(
-                        x=res.params,
-                        covar=res.covar,
-                        perror=res.perror,
-                        nit=res.niter,
-                        nfev=res.nfev,
-                        success=(res.status > 0) and (res.status != 5),
-                        status=res.status,
-                        message=res.errmsg,
-                        debug=res.debug,
-                        dof=res.dof,
-                        fnorm=res.fnorm,
-                    )
+                    # Return as an OptimizeResult object
+                    self.fit_output = res.optimize_result
 
                     self.p0 = self.fit_output.x
                     ysize = len(self.fit_output.x) + self.fit_output.dof
