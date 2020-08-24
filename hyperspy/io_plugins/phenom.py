@@ -488,7 +488,7 @@ class ElidReader:
         dict = {
             'data': data,
             'axes': axes,
-            'metadata': self._make_metadata_dict('image', title, self._get_datetime(om)),
+            'metadata': self._make_metadata_dict('', title, self._get_datetime(om)),
             'original_metadata': om,
             'mapping': self._make_mapping()
         }
