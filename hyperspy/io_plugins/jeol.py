@@ -19,6 +19,7 @@
 import os
 from datetime import datetime, timedelta
 import numpy as np
+import numba
 
 # Plugin characteristics
 # ----------------------
@@ -291,7 +292,7 @@ def parsejeol(fd):
 	return final_dict
 
 
-
+@numba.jit
 def readcube(fd, w, h, e):
 	rawdata = np.fromfile(fd, dtype='u2')
 	hypermap = np.zeros([h,w,e])
