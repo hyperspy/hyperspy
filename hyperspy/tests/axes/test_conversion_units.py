@@ -17,12 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import traits.api as t
 import pytest
+import traits.api as t
 
 from hyperspy.axes import (DataAxis, UniformDataAxis, AxesManager,
                            UnitConversion, _ureg)
-from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
+from hyperspy.misc.test_utils import assert_deep_almost_equal, assert_warns
 
 
 class TestUnitConversion:

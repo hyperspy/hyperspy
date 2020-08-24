@@ -17,10 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
-import matplotlib.pyplot as plt
 
 from hyperspy.components1d import Exponential
 from hyperspy.signals import Signal1D
@@ -36,8 +35,8 @@ def test_function():
 
     test_value = 200.
     test_result = g.A.value * np.exp(-test_value / g.tau.value)
-    assert_allclose(g.function(0.), g.A.value)
-    assert_allclose(g.function(test_value), test_result)
+    np.testing.assert_allclose(g.function(0.), g.A.value)
+    np.testing.assert_allclose(g.function(test_value), test_result)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -57,8 +56,8 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.05)
-    assert_allclose(g1.tau.value, g2.tau.value)
+    np.testing.assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.05)
+    np.testing.assert_allclose(g1.tau.value, g2.tau.value)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -81,4 +80,4 @@ def test_function_nd(binned, lazy):
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
 
     assert g2.binned == binned
-    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)
+    np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)

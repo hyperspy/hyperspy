@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from unittest import mock
+
 import numpy as np
 
-from hyperspy.component import Component
 from hyperspy.axes import AxesManager
-from unittest import mock
+from hyperspy.component import Component
 
 
 class TestMultidimensionalActive:

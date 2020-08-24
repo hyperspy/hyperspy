@@ -1,18 +1,16 @@
-import os.path
-import os
-import tempfile
 import gc
-import zipfile
 import hashlib
+import os
+import os.path
+import tempfile
+import zipfile
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 import pytest
 import requests
 
-from hyperspy.io import load
 from hyperspy import signals
-
+from hyperspy.io import load
 
 MY_PATH = os.path.dirname(__file__)
 ZIPF = os.path.join(MY_PATH, "edax_files.zip")
@@ -95,15 +93,15 @@ class TestSpcSpectrum_v061_xrf:
             'Signal']
 
         # Testing SEM parameters
-        assert_allclose(30, sem_dict['beam_energy'])
-        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        np.testing.assert_allclose(30, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        assert_allclose(45, eds_dict['azimuth_angle'])
-        assert_allclose(35, eds_dict['elevation_angle'])
-        assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
+        np.testing.assert_allclose(45, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(35, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        assert_allclose(2561.0, eds_dict['live_time'], atol=1E-6)
+        np.testing.assert_allclose(2561.0, eds_dict['live_time'], atol=1E-6)
 
         # Testing elements
         assert ({'Al', 'Ca', 'Cl', 'Cr', 'Fe', 'K', 'Mg', 'Mn', 'Si', 'Y'} ==
@@ -128,13 +126,13 @@ class TestSpcSpectrum_v061_xrf:
         spc_header = TestSpcSpectrum_v061_xrf.spc_loadAll.original_metadata[
             'spc_header']
 
-        assert_allclose(4, spc_header['analysisType'])
-        assert_allclose(4, spc_header['analyzerType'])
-        assert_allclose(2013, spc_header['collectDateYear'])
-        assert_allclose(9, spc_header['collectDateMon'])
-        assert_allclose(26, spc_header['collectDateDay'])
-        assert_equal(b'Garnet1.', spc_header['fileName'].view('|S8')[0])
-        assert_allclose(45, spc_header['xRayTubeZ'])
+        np.testing.assert_allclose(4, spc_header['analysisType'])
+        np.testing.assert_allclose(4, spc_header['analyzerType'])
+        np.testing.assert_allclose(2013, spc_header['collectDateYear'])
+        np.testing.assert_allclose(9, spc_header['collectDateMon'])
+        np.testing.assert_allclose(26, spc_header['collectDateDay'])
+        np.testing.assert_equal(b'Garnet1.', spc_header['fileName'].view('|S8')[0])
+        np.testing.assert_allclose(45, spc_header['xRayTubeZ'])
 
 
 class TestSpcSpectrum_v070_eds:
@@ -171,15 +169,15 @@ class TestSpcSpectrum_v070_eds:
             'Signal']
 
         # Testing SEM parameters
-        assert_allclose(22, sem_dict['beam_energy'])
-        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        np.testing.assert_allclose(22, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        assert_allclose(0, eds_dict['azimuth_angle'])
-        assert_allclose(34, eds_dict['elevation_angle'])
-        assert_allclose(129.31299, eds_dict['energy_resolution_MnKa'],
+        np.testing.assert_allclose(0, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(34, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(129.31299, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        assert_allclose(50.000004, eds_dict['live_time'], atol=1E-6)
+        np.testing.assert_allclose(50.000004, eds_dict['live_time'], atol=1E-6)
 
         # Testing elements
         assert ({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'} ==
@@ -204,15 +202,15 @@ class TestSpcSpectrum_v070_eds:
         spc_header = TestSpcSpectrum_v070_eds.spc_loadAll.original_metadata[
             'spc_header']
 
-        assert_allclose(4, spc_header['analysisType'])
-        assert_allclose(5, spc_header['analyzerType'])
-        assert_allclose(2016, spc_header['collectDateYear'])
-        assert_allclose(4, spc_header['collectDateMon'])
-        assert_allclose(19, spc_header['collectDateDay'])
-        assert_equal(b'C:\\ProgramData\\EDAX\\jtaillon\\Cole\\Mapping\\Lsm\\'
+        np.testing.assert_allclose(4, spc_header['analysisType'])
+        np.testing.assert_allclose(5, spc_header['analyzerType'])
+        np.testing.assert_allclose(2016, spc_header['collectDateYear'])
+        np.testing.assert_allclose(4, spc_header['collectDateMon'])
+        np.testing.assert_allclose(19, spc_header['collectDateDay'])
+        np.testing.assert_equal(b'C:\\ProgramData\\EDAX\\jtaillon\\Cole\\Mapping\\Lsm\\'
                      b'GFdCr\\950\\Area 1\\spectrum20160419153851427_0.spc',
                      spc_header['longFileName'].view('|S256')[0])
-        assert_allclose(0, spc_header['xRayTubeZ'])
+        np.testing.assert_allclose(0, spc_header['xRayTubeZ'])
 
 
 class TestSpdMap_070_eds:
@@ -268,15 +266,15 @@ class TestSpdMap_070_eds:
         signal_dict = TestSpdMap_070_eds.spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
-        assert_allclose(22, sem_dict['beam_energy'])
-        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        np.testing.assert_allclose(22, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        assert_allclose(0, eds_dict['azimuth_angle'])
-        assert_allclose(34, eds_dict['elevation_angle'])
-        assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
+        np.testing.assert_allclose(0, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(34, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
+        np.testing.assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
 
         # Testing elements
         assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
@@ -311,8 +309,8 @@ class TestSpdMap_070_eds:
 
     def test_ipr_reading(self):
         ipr_header = TestSpdMap_070_eds.spd.original_metadata['ipr_header']
-        assert_allclose(0.014235896, ipr_header['mppX'])
-        assert_allclose(0.014227346, ipr_header['mppY'])
+        np.testing.assert_allclose(0.014235896, ipr_header['mppX'])
+        np.testing.assert_allclose(0.014227346, ipr_header['mppY'])
 
     def test_spc_reading(self):
         # Test to make sure that spc metadata matches spd metadata
@@ -324,19 +322,19 @@ class TestSpdMap_070_eds:
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
-        assert_allclose(spc_header.azimuth,
+        np.testing.assert_allclose(spc_header.azimuth,
                         eds_dict['azimuth_angle'])
-        assert_allclose(spc_header.detReso,
+        np.testing.assert_allclose(spc_header.detReso,
                         eds_dict['energy_resolution_MnKa'])
-        assert_allclose(spc_header.elevation,
+        np.testing.assert_allclose(spc_header.elevation,
                         eds_dict['elevation_angle'])
-        assert_allclose(spc_header.liveTime,
+        np.testing.assert_allclose(spc_header.liveTime,
                         eds_dict['live_time'])
-        assert_allclose(spc_header.evPerChan,
+        np.testing.assert_allclose(spc_header.evPerChan,
                         TestSpdMap_070_eds.spd.axes_manager[2].scale * 1000)
-        assert_allclose(spc_header.kV,
+        np.testing.assert_allclose(spc_header.kV,
                         sem_dict['beam_energy'])
-        assert_allclose(spc_header.numElem,
+        np.testing.assert_allclose(spc_header.numElem,
                         len(elements))
 
 
@@ -393,15 +391,15 @@ class TestSpdMap_061_xrf:
         signal_dict = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
-        assert_allclose(30, sem_dict['beam_energy'])
-        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        np.testing.assert_allclose(30, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        assert_allclose(45, eds_dict['azimuth_angle'])
-        assert_allclose(35, eds_dict['elevation_angle'])
-        assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
+        np.testing.assert_allclose(45, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(35, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        assert_allclose(2561.0, eds_dict['live_time'], atol=1E-4)
+        np.testing.assert_allclose(2561.0, eds_dict['live_time'], atol=1E-4)
 
         # Testing elements
         assert {'Al', 'Ca', 'Cl', 'Cr', 'Fe', 'K', 'Mg', 'Mn', 'Si',
@@ -436,8 +434,8 @@ class TestSpdMap_061_xrf:
 
     def test_ipr_reading(self):
         ipr_header = TestSpdMap_061_xrf.spd.original_metadata['ipr_header']
-        assert_allclose(565.1920166015625, ipr_header['mppX'])
-        assert_allclose(565.1920166015625, ipr_header['mppY'])
+        np.testing.assert_allclose(565.1920166015625, ipr_header['mppX'])
+        np.testing.assert_allclose(565.1920166015625, ipr_header['mppY'])
 
     def test_spc_reading(self):
         # Test to make sure that spc metadata matches spd_061_xrf metadata
@@ -449,17 +447,17 @@ class TestSpdMap_061_xrf:
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
-        assert_allclose(spc_header.azimuth,
+        np.testing.assert_allclose(spc_header.azimuth,
                         eds_dict['azimuth_angle'])
-        assert_allclose(spc_header.detReso,
+        np.testing.assert_allclose(spc_header.detReso,
                         eds_dict['energy_resolution_MnKa'])
-        assert_allclose(spc_header.elevation,
+        np.testing.assert_allclose(spc_header.elevation,
                         eds_dict['elevation_angle'])
-        assert_allclose(spc_header.liveTime,
+        np.testing.assert_allclose(spc_header.liveTime,
                         eds_dict['live_time'])
-        assert_allclose(spc_header.evPerChan,
+        np.testing.assert_allclose(spc_header.evPerChan,
                         TestSpdMap_061_xrf.spd.axes_manager[2].scale * 1000)
-        assert_allclose(spc_header.kV,
+        np.testing.assert_allclose(spc_header.kV,
                         sem_dict['beam_energy'])
-        assert_allclose(spc_header.numElem,
+        np.testing.assert_allclose(spc_header.numElem,
                         len(elements))

@@ -18,8 +18,8 @@
 
 import numpy as np
 
-from hyperspy.signal import BaseSignal
 from hyperspy import utils
+from hyperspy.signal import BaseSignal
 
 
 class TestUtilsStack:
@@ -41,6 +41,18 @@ class TestUtilsStack:
         test_axis = s.axes_manager[0].index_in_array
         result_signal = utils.stack([s, s1, s2])
         result_list = result_signal.split()
+        assert test_axis == s.axes_manager[0].index_in_array
+        assert len(result_list) == 3
+        np.testing.assert_array_almost_equal(
+            result_list[0].data, result_signal.inav[:, :, 0].data)
+
+    def test_stack_number_of_parts(self):
+        s = self.signal
+        s1 = s.deepcopy() + 1
+        s2 = s.deepcopy() * 4
+        test_axis = s.axes_manager[0].index_in_array
+        result_signal = utils.stack([s, s1, s2])
+        result_list = result_signal.split(number_of_parts=3)
         assert test_axis == s.axes_manager[0].index_in_array
         assert len(result_list) == 3
         np.testing.assert_array_almost_equal(

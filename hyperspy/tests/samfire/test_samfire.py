@@ -16,18 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import gc
+
+import dill
 import numpy as np
 import pytest
 
-import dill
-import copy
-
 import hyperspy.api as hs
-from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.samfire_utils.samfire_worker import create_worker
-
 
 N_WORKERS = 1
 
@@ -106,7 +104,7 @@ def generate_test_model():
         gs03.A.map['values'][mask] *= 0.
         gs03.A.map['is_set'][:] = True
 
-        s11 = m0.as_signal(show_progressbar=False, parallel=False)
+        s11 = m0.as_signal(parallel=False)
         if total is None:
             total = s11.data.copy()
             lor_map = gs01.centre.map['values'].copy()
@@ -225,7 +223,7 @@ class TestSamfireEmpty:
         from multiprocessing import cpu_count
         samf = m.create_samfire(setup=False)
         assert samf._workers == cpu_count() - 1
-        assert np.allclose(samf.metadata.marker, np.zeros(self.shape))
+        np.testing.assert_allclose(samf.metadata.marker, np.zeros(self.shape))
         samf.stop()
         del samf
 

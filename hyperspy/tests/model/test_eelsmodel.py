@@ -17,14 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-
 import pytest
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
 
+# Dask does not always work nicely with np.errstate,
+# see: https://github.com/dask/dask/issues/3245, so
+# filter out divide-by-zero warnings that only appear
+# when the test is lazy. When the test is not lazy,
+# internal use of np.errstate means the warnings never
+# appear in the first place.
+@pytest.mark.filterwarnings("ignore:invalid value encountered in subtract:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered in log:RuntimeWarning")
 @lazifyTestClass
 class TestCreateEELSModel:
 
@@ -133,10 +139,10 @@ class TestEELSModel:
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        assert_allclose(
+        np.testing.assert_allclose(
             self.m._background_components[0].A.value,
             2.1451237089380295)
-        assert_allclose(
+        np.testing.assert_allclose(
             self.m._background_components[0].r.value,
             3.0118980767392736)
 
@@ -145,10 +151,10 @@ class TestEELSModel:
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        assert_allclose(
+        np.testing.assert_allclose(
             self.m._background_components[0].A.value,
             2.3978438900878087)
-        assert_allclose(
+        np.testing.assert_allclose(
             self.m._background_components[0].r.value,
             3.031884021065014)
 
@@ -158,10 +164,10 @@ class TestEELSModel:
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        assert_allclose(
+        np.testing.assert_allclose(
             self.m._background_components[0].A.value,
             2.6598803469440986)
-        assert_allclose(
+        np.testing.assert_allclose(
             self.m._background_components[0].r.value,
             3.0494030409062058)
 
@@ -195,7 +201,7 @@ class TestFitBackground:
 
     def test_fit_background_B_C(self):
         self.m.fit_background()
-        assert_allclose(self.m["Offset"].offset.value,
+        np.testing.assert_allclose(self.m["Offset"].offset.value,
                         1)
         assert self.m["B_K"].active
         assert self.m["C_K"].active
@@ -203,7 +209,7 @@ class TestFitBackground:
     def test_fit_background_C(self):
         self.m["B_K"].active = False
         self.m.fit_background()
-        assert_allclose(self.m["Offset"].offset.value,
+        np.testing.assert_allclose(self.m["Offset"].offset.value,
                         1.71212121212)
         assert not self.m["B_K"].active
         assert self.m["C_K"].active
@@ -212,7 +218,7 @@ class TestFitBackground:
         self.m["B_K"].active = False
         self.m["C_K"].active = False
         self.m.fit_background()
-        assert_allclose(self.m["Offset"].offset.value,
+        np.testing.assert_allclose(self.m["Offset"].offset.value,
                         2.13567839196)
         assert not self.m["B_K"].active
         assert not self.m["C_K"].active

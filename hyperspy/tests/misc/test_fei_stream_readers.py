@@ -25,11 +25,11 @@ in order to mimic the usage in the FEI EMD reader.
 
 """
 import numpy as np
-import dask.array as da
 import pytest
 
-from hyperspy.misc.io.fei_stream_readers import (
-    array_to_stream, stream_to_array, stream_to_sparse_COO_array)
+from hyperspy.misc.io.fei_stream_readers import (array_to_stream,
+                                                 stream_to_array,
+                                                 stream_to_sparse_COO_array)
 
 
 @pytest.mark.parametrize("lazy", (True, False))

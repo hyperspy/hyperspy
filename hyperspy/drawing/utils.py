@@ -18,8 +18,9 @@
 
 import copy
 import itertools
+from distutils.version import LooseVersion
 import textwrap
-from traits import trait_base
+import traits.api as t
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -27,6 +28,7 @@ from matplotlib.backend_bases import key_press_handler
 import warnings
 import numpy as np
 import logging
+from functools import partial
 
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
@@ -35,17 +37,21 @@ from hyperspy.defaults_parser import preferences
 _logger = logging.getLogger(__name__)
 
 
-def contrast_stretching(data, saturated_pixels):
-    """Calculate bounds that leave out a given percentage of the data.
+def contrast_stretching(data, vmin=None, vmax=None):
+    """Estimate bounds of the data to display.
 
     Parameters
     ----------
     data: numpy array
-    saturated_pixels: scalar, None
-        The percentage of pixels that are left out of the bounds.  For example,
-        the low and high bounds of a value of 1 are the 0.5% and 99.5%
-        percentiles. It must be in the [0, 100] range. If None, set the value
-        to 0.
+    vmin, vmax: scalar, str, None
+        If str, formatted as 'xth', use this value to calculate the percentage
+        of pixels that are left out of the lower and upper bounds.
+        For example, for a vmin of '1th', 1% of the lowest will be ignored to
+        estimate the minimum value. Similarly, for a vmax value of '1th', 1%
+        of the highest value will be ignored in the estimation of the maximum
+        value. See :py:func:`numpy.percentile` for more explanation.
+        If None, use the percentiles value set in the preferences.
+        If float of integer, keep this value as bounds.
 
     Returns
     -------
@@ -55,20 +61,33 @@ def contrast_stretching(data, saturated_pixels):
     Raises
     ------
     ValueError
-        If the value of `saturated_pixels` is out of the valid range.
+        if the value of `vmin` `vmax` is out of the valid range for percentile
+        calculation (in case of string values).
 
     """
-    # Sanity check
-    if saturated_pixels is None:
-        saturated_pixels = 0
-    if not 0 <= saturated_pixels <= 100:
-        raise ValueError(
-            "saturated_pixels must be a scalar in the range[0, 100]")
+    def _parse_value(value, value_name):
+        if value is None:
+            if value_name == "vmin":
+                value = f'{preferences.Plot.saturated_pixels / 2}th'
+            elif value_name == "vmax":
+                value = f'{100 -  preferences.Plot.saturated_pixels / 2}th'
+        if isinstance(value, str):
+            value = float(value.split("th")[0])
+        if not 0 <= value <= 100:
+            raise ValueError(f"{value_name} must be in the range[0, 100].")
+        return value
+
     if np.ma.is_masked(data):
         # If there is a mask, compressed the data to remove the masked data
         data = np.ma.masked_less_equal(data, 0).compressed()
-    vmin = np.nanpercentile(data, saturated_pixels / 2.)
-    vmax = np.nanpercentile(data, 100 - saturated_pixels / 2.)
+
+    # If vmin, vmax are float or int, we keep the value, if not we calculate
+    # the precentile value
+    if not isinstance(vmin, (float, int)):
+        vmin = np.nanpercentile(data, _parse_value(vmin, 'vmin'))
+    if not isinstance(vmax, (float, int)):
+        vmax = np.nanpercentile(data, _parse_value(vmax, 'vmax'))
+
     return vmin, vmax
 
 
@@ -123,7 +142,7 @@ def create_figure(window_title=None,
     window_title : {None, string}, optional
     _on_figure_window_close : {None, function}, optional
     disable_xyscale_keys : bool, optional
-        Disable the `k`, `l` and `L` shortcuts which toggle the x or y axis 
+        Disable the `k`, `l` and `L` shortcuts which toggle the x or y axis
         between linear and log scale. Default False.
 
     Returns
@@ -458,7 +477,6 @@ def plot_images(images,
                 suptitle_fontsize=18,
                 colorbar='multi',
                 centre_colormap="auto",
-                saturated_pixels=None,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -470,7 +488,6 @@ def plot_images(images,
                 fig=None,
                 vmin=None,
                 vmax=None,
-                *args,
                 **kwargs):
     """Plot multiple images as sub-images in one figure.
 
@@ -532,12 +549,6 @@ def plot_images(images,
         If True, the centre of the color scheme is set to zero. This is
         particularly useful when using diverging color schemes. If "auto"
         (default), diverging color schemes are automatically centred.
-    saturated_pixels: {None, scalar or list of scalar}, optional, default: 0
-        If list of scalar, the length should match the number of images to
-        show. If provided in the list, set the value to 0.
-        The percentage of pixels that are left out of the bounds.  For
-        example, the low and high bounds of a value of 1 are the 0.5% and
-        99.5% percentiles. It must be in the [0, 100] range.
     scalebar : {None, 'all', list of ints}, optional
         If None (or False), no scalebars will be added to the images.
         If 'all', scalebars will be added to all images.
@@ -555,9 +566,9 @@ def plot_images(images,
         If None, default options will be used.
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values.
-        Values should be supplied as used in 
+        Values should be supplied as used in
         :py:func:`matplotlib.pyplot.subplots_adjust`,
-        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and 
+        and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and
         'hspace' (height).
     tight_layout : bool, optional
         If true, hyperspy will attempt to improve image placement in
@@ -579,17 +590,19 @@ def plot_images(images,
         values will require more overlap in titles before activing the
         auto-label code.
     fig : mpl figure, optional
-        If set, the images will be plotted to an existing MPL figure.
-    vmin, vmax : {scalar, list of scalar}, optional, default: None
-        If list of scalar, the length should match the number of images to
-        show.
-        A list of scalar is not compatible with a single colorbar.
-        See vmin, vmax of :py:func:`matplotlib.pyplot.imshow` for more details.
-    *args
-        Additional list arguments passed to
-        :py:func:`matplotlib.pyplot.imshow`.
+        If set, the images will be plotted to an existing MPL figure
+    vmin, vmax: scalar, str, None
+        If str, formatted as 'xth', use this value to calculate the percentage
+        of pixels that are left out of the lower and upper bounds.
+        For example, for a vmin of '1th', 1% of the lowest will be ignored to
+        estimate the minimum value. Similarly, for a vmax value of '1th', 1%
+        of the highest value will be ignored in the estimation of the maximum
+        value. It must be in the range [0, 100]
+        See :py:func:`numpy.percentile` for more explanation.
+        If None, use the percentiles value set in the preferences.
+        If float of integer, keep this value as bounds.
     **kwargs, optional
-        Keywords arguments passed to :py:func:`matplotlib.pyplot.imshow`.
+        Additional keyword arguments passed to matplotlib.imshow()
 
     Returns
     -------
@@ -699,24 +712,6 @@ def plot_images(images,
     # finally, convert lists to cycle generators for adaptive length:
     centre_colormaps = itertools.cycle(centre_colormaps)
     cmap = itertools.cycle(cmap)
-
-    def _check_arg(arg, default_value, arg_name):
-        if isinstance(arg, list):
-            if len(arg) != n:
-                _logger.warning('The provided {} values are ignored because the '
-                                'length of the list does not match the number of '
-                                'images'.format(arg_name))
-                arg = [default_value] * n
-        else:
-            arg = [arg] * n
-        return arg
-    vmin = _check_arg(vmin, None, 'vmin')
-    vmax = _check_arg(vmax, None, 'vmax')
-    if saturated_pixels is None:
-        saturated_pixels = preferences.Plot.saturated_pixels
-    saturated_pixels = _check_arg(saturated_pixels,
-                                  preferences.Plot.saturated_pixels,
-                                  'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -836,39 +831,11 @@ def plot_images(images,
         if rgb_tools.is_rgbx(img.data):
             isrgb[i] = True
 
-    # Determine how many non-rgb Images there are
+    # Determine how many non-rgb images there are
     non_rgb = list(itertools.compress(images, [not j for j in isrgb]))
     if len(non_rgb) == 0 and colorbar is not None:
         colorbar = None
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
-
-    # Find global min and max values of all the non-rgb images for use with
-    # 'single' scalebar
-    if colorbar == 'single':
-        # get a g_saturated_pixels from saturated_pixels
-        print(saturated_pixels)
-        if isinstance(saturated_pixels, list):
-            g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
-        else:
-            g_saturated_pixels = saturated_pixels
-
-        # estimate a g_vmin and g_max from saturated_pixels
-        g_vmin, g_vmax = contrast_stretching(np.concatenate(
-            [i.data.flatten() for i in non_rgb]), g_saturated_pixels)
-
-        # if vmin and vmax are provided, override g_min and g_max
-        if isinstance(vmin, list):
-            _logger.warning('vmin have to be a scalar to be compatible with a '
-                            'single colorbar')
-        else:
-            g_vmin = vmin if vmin is not None else g_vmin
-        if isinstance(vmax, list):
-            _logger.warning('vmax have to be a scalar to be compatible with a '
-                            'single colorbar')
-        else:
-            g_vmax = vmax if vmax is not None else g_vmax
-        if next(centre_colormaps):
-            g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int)
@@ -876,6 +843,35 @@ def plot_images(images,
         scalelist = True
     else:
         scalelist = False
+
+    def check_list_length(arg, arg_name):
+        if isinstance(arg, (list, tuple)):
+            if len(arg) != n:
+                _logger.warning(f'The provided {arg_name} values are ignored '
+                                'because the length of the list does not '
+                                'match the number of images')
+                arg = [None] * n
+        return arg
+
+    # Find global min and max values of all the non-rgb images for use with
+    # 'single' scalebar, otherwise define this value later.
+    if colorbar == 'single':
+        # check that vmin and vmax are not list
+        if any([isinstance(v, (tuple, list)) for v in [vmin, vmax]]):
+            _logger.warning('The provided vmin or vmax value are ignored '
+                            'because it needs to be a scalar or a str '
+                            'to be compatible with a single colorbar. '
+                            'The default values are used instead.')
+            vmin, vmax = None, None
+        vmin_max = np.array(
+            [contrast_stretching(i.data, vmin, vmax) for i in non_rgb])
+        _vmin, _vmax = vmin_max[:, 0].min(), vmin_max[:, 1].max()
+        if next(centre_colormaps):
+            _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+
+    else:
+        vmin = check_list_length(vmin, "vmin")
+        vmax = check_list_length(vmax, "vmax")
 
     idx = 0
     ax_im_list = [0] * len(isrgb)
@@ -898,16 +894,13 @@ def plot_images(images,
             # Enable RGB plotting
             if rgb_tools.is_rgbx(data):
                 data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-                l_vmin, l_vmax = None, None
-            else:
-                data = im.data
-                # Find min and max for contrast
-                l_vmin, l_vmax = contrast_stretching(
-                    data, saturated_pixels[idx])
-                l_vmin = vmin[idx] if vmin[idx] is not None else l_vmin
-                l_vmax = vmax[idx] if vmax[idx] is not None else l_vmax
+                _vmin, _vmax = None, None
+            elif colorbar != 'single':
+                _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
+                _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
+                _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
                 if centre:
-                    l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
+                    _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
 
             # Remove NaNs (if requested)
             if no_nans:
@@ -951,35 +944,16 @@ def plot_images(images,
             if 'interpolation' not in kwargs.keys():
                 kwargs['interpolation'] = 'nearest'
 
-            # Get colormap for this image:
-            cm = next(cmap)
-
-            # Plot image data, using vmin and vmax to set bounds,
+            # Plot image data, using _vmin and _vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
-            if colorbar == 'single' and not isrgb[i]:
-                axes_im = ax.imshow(data,
-                                    cmap=cm,
-                                    extent=extent,
-                                    vmin=g_vmin, vmax=g_vmax,
-                                    aspect=asp,
-                                    *args, **kwargs)
-                ax_im_list[i] = axes_im
-            else:
-                axes_im = ax.imshow(data,
-                                    cmap=cm,
-                                    extent=extent,
-                                    vmin=l_vmin,
-                                    vmax=l_vmax,
-                                    aspect=asp,
-                                    *args, **kwargs)
-                ax_im_list[i] = axes_im
+            kwargs.update({'cmap':next(cmap), 'extent':extent, 'aspect':asp})
+            axes_im = ax.imshow(data, vmin=_vmin, vmax=_vmax, **kwargs)
+            ax_im_list[i] = axes_im
 
             # If an axis trait is undefined, shut off :
-            if isinstance(xaxis.units, trait_base._Undefined) or  \
-                    isinstance(yaxis.units, trait_base._Undefined) or \
-                    isinstance(xaxis.name, trait_base._Undefined) or \
-                    isinstance(yaxis.name, trait_base._Undefined):
+            if (xaxis.units == t.Undefined or yaxis.units == t.Undefined or
+                xaxis.name == t.Undefined or yaxis.name == t.Undefined):
                 if axes_decor == 'all':
                     _logger.warning(
                         'Axes labels were requested, but one '
@@ -1072,7 +1046,7 @@ def plot_images(images,
         pass
     else:
         raise ValueError("Did not understand scalebar input. Must be None, "
-                         "\'all\', or list of ints.")
+                         "'all', or list of ints.")
 
     # Adjust subplot spacing according to user's specification
     if padding is not None:
@@ -1197,6 +1171,7 @@ def plot_spectra(
         legend_loc='upper right',
         fig=None,
         ax=None,
+        auto_update=None,
         **kwargs):
     """Plot several spectra in the same figure.
 
@@ -1242,6 +1217,10 @@ def plot_spectra(
     ax : {none, matplotlib ax (subplot)}, optional
         If None, a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
+    auto_update : bool or None
+        If True, the plot will update when the data are changed. Only supported
+        with style='overlap' and a list of signal with navigation dimension 0.
+        If None (default), update the plot only for style='overlap'.
     **kwargs, optional
         Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
         :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
@@ -1305,9 +1284,9 @@ def plot_spectra(
         elif hasattr(line_style, "__iter__"):
             line_style = itertools.cycle(line_style)
         else:
-            raise ValueError("line_style must be None, a valid matplotlib"
-                             " line_style string, or a list of valid matplotlib"
-                             " line_styles.")
+            raise ValueError("line_style must be None, a valid matplotlib "
+                             "line_style string or a list of valid matplotlib "
+                             "line_style.")
     else:
         line_style = ['-'] * len(spectra)
 
@@ -1316,11 +1295,8 @@ def plot_spectra(
             if legend == 'auto':
                 legend = [spec.metadata.General.title for spec in spectra]
             else:
-                raise ValueError("legend must be None, 'auto', or a list of"
-                                 " strings")
-
-        elif hasattr(legend, "__iter__"):
-            legend = itertools.cycle(legend)
+                raise ValueError("legend must be None, 'auto' or a list of "
+                                 "strings.")
 
     if style == 'overlap':
         if fig is None:
@@ -1380,6 +1356,31 @@ def plot_spectra(
             ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 
+    def update_line(spectrum, line):
+        x_axis = spectrum.axes_manager[-1].axis
+        line.set_data(x_axis, spectrum.data)
+        fig = line.get_figure()
+        ax = fig.get_axes()[0]
+        # `relim` needs to be called before `autoscale_view`
+        ax.relim()
+        ax.autoscale_view()
+        fig.canvas.draw()
+
+    if auto_update is None and style == 'overlap':
+        auto_update = True
+
+    if auto_update:
+        if style != 'overlap':
+            raise ValueError("auto_update=True is only supported with "
+                             "style='overlap'.")
+
+        for spectrum, line in zip(spectra, ax.get_lines()):
+            f = partial(update_line, spectrum, line)
+            spectrum.events.data_changed.connect(f, [])
+            # disconnect event when closing figure
+            disconnect = partial(spectrum.events.data_changed.disconnect, f)
+            on_figure_window_close(fig, disconnect)
+
     return ax
 
 
@@ -1410,7 +1411,8 @@ def animate_legend(fig=None, ax=None):
     lined = dict()
     leg = ax.get_legend()
     for legline, origline in zip(leg.get_lines(), lines):
-        legline.set_picker(5)  # 5 pts tolerance
+        legline.set_pickradius(5)  # 5 pts tolerance
+        legline.set_picker(True)
         lined[legline] = origline
 
     def onpick(event):
@@ -1433,7 +1435,7 @@ def animate_legend(fig=None, ax=None):
 
 
 def plot_histograms(signal_list,
-                    bins='freedman',
+                    bins='fd',
                     range_bins=None,
                     color=None,
                     line_style=None,
@@ -1453,8 +1455,8 @@ def plot_histograms(signal_list,
     bins : {int, list, str}, optional
         If bins is a string, then it must be one of:
         'knuth' : use Knuth's rule to determine bins,
-        'scotts' : use Scott's rule to determine bins,
-        'freedman' : use the Freedman-diaconis rule to determine bins,
+        'scott' : use Scott's rule to determine bins,
+        'fd' : use the Freedman-diaconis rule to determine bins,
         'blocks' : use bayesian blocks for dynamic bin widths.
     range_bins : {None, tuple}, optional
         The minimum and maximum range for the histogram. If not specified,
@@ -1463,7 +1465,7 @@ def plot_histograms(signal_list,
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
         If `None`, use default matplotlib color cycle.
-    line_style: {None, valid matplotlib line style, list of line styles}, 
+    line_style: {None, valid matplotlib line style, list of line styles},
     optional
         The main line styles are '-','--','steps','-.',':'.
         For a list, if its length is less than the number of
@@ -1503,3 +1505,14 @@ def plot_histograms(signal_list,
         line_style = 'steps'
     return plot_spectra(hists, style='overlap', color=color,
                         line_style=line_style, legend=legend, fig=fig)
+
+
+def picker_kwargs(value, kwargs={}):
+    # picker is deprecated in favor of pickradius
+    if LooseVersion(mpl.__version__) >= LooseVersion("3.3.0"):
+        kwargs.update({'pickradius': value, 'picker':True})
+    else:
+        kwargs['picker'] = value
+
+    return kwargs
+

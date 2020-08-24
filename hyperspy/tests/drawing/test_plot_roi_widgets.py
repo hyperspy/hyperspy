@@ -22,7 +22,6 @@ import pytest
 from hyperspy.signals import Signal2D
 from hyperspy.utils import roi
 
-
 BASELINE_DIR = 'plot_roi'
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = 'default'
@@ -146,5 +145,5 @@ def test_error_message():
     im.plot()
     im._plot.close()
     p = roi.Point1DROI(0.5)
-    with pytest.raises(RuntimeError, match='The signal needs to be plotted'):
+    with pytest.raises(Exception, match='does not have an active plot.'):
         p.add_widget(signal=im, axes=[0, ], color="cyan")

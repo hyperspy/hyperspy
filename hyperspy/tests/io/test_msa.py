@@ -1,6 +1,6 @@
+import copy
 import os.path
 import tempfile
-import copy
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal

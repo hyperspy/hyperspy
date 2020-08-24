@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.utils import slugify, parse_quantity
-from hyperspy import roi
+from hyperspy.misc.utils import slugify, parse_quantity, is_hyperspy_signal
+from hyperspy import signals
+import numpy as np
 
 
 def test_slugify():
@@ -43,3 +44,10 @@ def test_parse_quantity():
     assert parse_quantity('a (c) (b/(c))') == ('a (c)', 'b/(c)')
     assert parse_quantity('a [b]') == ('a [b]', '')
     assert parse_quantity('a [b]', opening = '[', closing = ']') == ('a', 'b')
+
+
+def test_is_hyperspy_signal():
+    s = signals.Signal1D(np.zeros((5, 5, 5)))
+    p = object()
+    assert is_hyperspy_signal(s) is True
+    assert is_hyperspy_signal(p) is False

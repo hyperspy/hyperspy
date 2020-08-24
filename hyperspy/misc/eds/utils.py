@@ -253,10 +253,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
 
-def take_off_angle(tilt_stage,
-                   azimuth_angle,
-                   elevation_angle,
-                   beta_tilt=0.):
+def take_off_angle(tilt_stage, azimuth_angle, elevation_angle, beta_tilt=0.0):
     """Calculate the take-off-angle (TOA).
 
     TOA is the angle with which the X-rays leave the surface towards
@@ -288,17 +285,36 @@ def take_off_angle(tilt_stage,
     28.865971201155283
     """
 
+    if tilt_stage is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Stage.tilt_alpha` is not set."
+        )
+
+    if azimuth_angle is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Detector.EDS.azimuth_angle` is not set."
+        )
+
+    if elevation_angle is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Detector.EDS.elevation_angle` is not set."
+        )
+
     alpha = math.radians(tilt_stage)
     beta = -math.radians(beta_tilt)
     phi = math.radians(azimuth_angle)
     theta = -math.radians(elevation_angle)
 
-    return(90-math.degrees(np.arccos(math.sin(alpha)*math.cos(beta)*
-                                     math.cos(phi)*math.cos(theta)-
-                                     math.sin(beta)*math.sin(phi)*
-                                     math.cos(theta)-math.cos(alpha)*
-                                     math.cos(beta)*math.sin(theta))))
-
+    return 90 - math.degrees(
+        np.arccos(
+            math.sin(alpha) * math.cos(beta) * math.cos(phi) * math.cos(theta)
+            - math.sin(beta) * math.sin(phi) * math.cos(theta)
+            - math.cos(alpha) * math.cos(beta) * math.sin(theta)
+        )
+    )
 
 def xray_lines_model(elements,
                      beam_energy=200,

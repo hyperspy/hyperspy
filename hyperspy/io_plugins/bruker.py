@@ -1122,7 +1122,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
                 switched_i2 = np.frombuffer(data1,
                                             dtype='<u2'
                                             ).copy().byteswap(True)
-                data2 = np.frombuffer(switched_i2.tostring(),
+                data2 = np.frombuffer(switched_i2.tobytes(),
                                       dtype=np.uint8
                                       ).copy().repeat(2)
                 mask = np.ones_like(data2, dtype=bool)
@@ -1130,7 +1130,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
                 # Reinterpret expanded as 16-bit:
                 # string representation of array after switch will have
                 # always BE independently from endianess of machine
-                exp16 = np.frombuffer(data2[mask].tostring(),
+                exp16 = np.frombuffer(data2[mask].tobytes(),
                                       dtype='>u2', count=n_of_pulses).copy()
                 exp16[0::2] >>= 4           # Shift every second short by 4
                 exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit

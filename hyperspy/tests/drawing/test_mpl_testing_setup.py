@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import matplotlib
 from distutils.version import LooseVersion
+
+import matplotlib
 import pytest
 
 from hyperspy.misc.test_utils import check_running_tests_in_CI

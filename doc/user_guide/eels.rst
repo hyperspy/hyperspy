@@ -22,6 +22,8 @@ many useful feature from its parent class that are documented in previous
 chapters.
 
 
+.. _eels_elemental_composition-label:
+
 Elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -50,6 +52,51 @@ they are arranged in the order closest to 849 eV.
     >>> get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
+
+`
+The static method :py:meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy`
+in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing
+more information about the edges.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.print_edges_near_energy(401, width=20)
+    +-------+-------------------+-----------+-----------------------------+
+    |  edge | onset energy (eV) | relevance |         description         |
+    +-------+-------------------+-----------+-----------------------------+
+    |  N_K  |       401.0       |   Major   |         Abrupt onset        |
+    | Sc_L3 |       402.0       |   Major   | Sharp peak. Delayed maximum |
+    | Cd_M5 |       404.0       |   Major   |       Delayed maximum       |
+    | Sc_L2 |       407.0       |   Major   | Sharp peak. Delayed maximum |
+    | Mo_M2 |       410.0       |   Minor   |          Sharp peak         |
+    | Mo_M3 |       392.0       |   Minor   |          Sharp peak         |
+    | Cd_M4 |       411.0       |   Major   |       Delayed maximum       |
+    +-------+-------------------+-----------+-----------------------------+
+
+The method :py:meth:`~._signals.eels.EELSSpectrum_mixin.edges_at_energy` allows
+inspecting different sections of the signal for interactive edge 
+identification (the default). A region can be selected by dragging the mouse 
+across the signal and after clicking the `Update` button, edges with onset 
+energies within the selected energy range will be displayed. By toggling the 
+edge buttons, it will put or remove the corresponding edges on the signal. When 
+the `Complementary edge` box is ticked, edges outside the selected range with 
+the same element of edges within the selected energy range will be shown as well 
+to aid identification of edges.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.edges_at_energy()
+
+.. figure::  images/EELS_edges_at_energy.png
+   :align:   center
+   :width:   500
+
+   Labels of edges can be put or remove by toggling the edge buttons.
+    
+
+.. _eels_thickness-label:
 
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
@@ -132,7 +179,7 @@ the refractive index is known and approximately correct for surface
 plasmon excitations in layers.
 
 
-
+.. _eels.fitting:
 
 EELS curve fitting
 ------------------

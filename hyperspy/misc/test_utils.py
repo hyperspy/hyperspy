@@ -187,12 +187,20 @@ def assert_warns(message=None, category=None):
             raise ValueError(msg)
 
 
+def check_closing_plot(s):
+    assert s._plot.signal_plot is None
+    assert s._plot.navigator_plot is None
+    # Ideally we should check all events
+    assert len(s.axes_manager.events.indices_changed.connected) == 0
+
+
 @simple_decorator
 def update_close_figure(function):
     def wrapper():
         signal = function()
         p = signal._plot
         p.close()
+        check_closing_plot(signal)
 
     return wrapper
 
