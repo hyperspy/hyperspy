@@ -45,7 +45,7 @@ when writing the code.
 Note that the "cythonized" .c or .cpp files are not welcome in the git source
 repository because they are typically very large.
 
-Once you have written you Cython files, add them to ``raw_extensions`` in
+Once you have written your Cython files, add them to ``raw_extensions`` in
 ``setup.py``.
 
 Compiling Cython code
@@ -65,5 +65,5 @@ example
 
 will recythonize all Cython code and compile it.
 
-Cythonization and compilation also take place during continous
+Cythonization and compilation will also take place during continous
 integration (CI).

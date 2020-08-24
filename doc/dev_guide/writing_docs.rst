@@ -17,6 +17,13 @@ specification <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT
 .rst.txt>`_, as shown in `this example
 <https://github.com/numpy/numpy/blob/master/doc/example.py>`_.
 
+As a general rule, any code that is part of the public API (i.e. any function
+or class that an end-user might access) should have a clear and comprehensive
+docstring explaining how to use it. Private methods that are never intended to
+be exposed to the end-user (usually a function or class starting with an underscore)
+should still be documented to the extent that future developers can understand
+what the function does.
+
 You can check your docstrings follow the convention by using the
 ``flake8-docstrings`` `extension <https://pypi.org/project/flake8-docstrings/>`_,
 like this:
@@ -32,6 +39,7 @@ like this:
    # Example output
    /path/to/your/file.py:46:1: D103 Missing docstring in public function
    /path/to/your/file.py:59:1: D205 1 blank line required between summary line and description
+
 
 User-guide documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^
