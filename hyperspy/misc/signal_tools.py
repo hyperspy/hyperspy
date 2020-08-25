@@ -16,10 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.array_tools import are_aligned
+import logging
 from itertools import zip_longest
-import numpy as np
+
 import dask.array as da
+import numpy as np
+
+from hyperspy.misc.array_tools import are_aligned
+
+_logger = logging.getLogger(__name__)
 
 
 def _get_shapes(am, ignore_axis):
@@ -41,7 +46,9 @@ def _get_shapes(am, ignore_axis):
 def are_signals_aligned(*args, ignore_axis=None):
     if len(args) < 2:
         raise ValueError(
-            "This function requires at least two signal instances")
+            "This function requires at least two signal instances"
+        )
+
     args = list(args)
     am = args.pop().axes_manager
 
@@ -56,11 +63,83 @@ def are_signals_aligned(*args, ignore_axis=None):
     return True
 
 
+def _check_axes_calibration(ax1, ax2):
+    """Check if the calibration of two axes matches.
+
+    Raises a logger warning if there is a mismatch.
+    ``scale`` and ``offset`` are compared as floats
+    using np.allclose, while ``units`` is compared
+    with a simple inequality (!=).
+
+    Parameters
+    ----------
+    ax1, ax2 : DataAxis objects
+
+    Returns
+    -------
+    bool
+        If the two axes have identical calibrations.
+
+    """
+    # Exit early if not DataAxis objects - None is used
+    # in broadcast_signals() below as a filler so we
+    # skip it here.
+    if ax1 is None or ax2 is None:
+        return True
+
+    if not np.allclose(ax1.scale, ax2.scale, atol=0, rtol=1e-7):
+        return False
+
+    if not np.allclose(ax1.offset, ax2.offset, atol=0, rtol=1e-7):
+        return False
+
+    if ax1.units != ax2.units:
+        return False
+
+    return True
+
+
+def _check_and_get_longest_axis(axes):
+    """Return the longest axis from a list of axes.
+
+    In the case of ties, the first element in the list
+    will be returned. Logs a warning if the axes have
+    different calibrations.
+    """
+    only_left = filter(lambda x: x is not None, axes)
+    longest_idx, longest = sorted(
+        enumerate(only_left),
+        key=lambda x: x[1].size,
+        reverse=True,
+    )[0]
+
+    # Returns a list of bools, where False
+    # indicates an axis with a different
+    # calibration to the longest axis
+    axes_check = [
+        _check_axes_calibration(axes[longest_idx], axes[i])
+        for i in range(len(axes))
+        if i != longest_idx
+    ]
+
+    if not all(axes_check):
+        _logger.warning(
+            "Axis calibration mismatch detected along axis "
+            f"{longest.index_in_axes_manager}. The "
+            f"calibration of signal {longest_idx} along "
+            "this axis will be applied to all signals "
+            "after stacking."
+        )
+
+    return longest
+
+
 def broadcast_signals(*args, ignore_axis=None):
-    """Broadcasts all passed signals according to the HyperSpy broadcasting
-    rules: signal and navigation spaces are each separately broadcasted
-    according to the numpy broadcasting rules. One axis can be ignored and
-    left untouched (or set to be size 1) across all signals.
+    """Broadcasts signals according to the HyperSpy broadcasting rules.
+
+    signal and navigation spaces are each separately broadcasted according to
+    the numpy broadcasting rules. One axis can be ignored and left untouched
+    (or set to be size 1) across all signals.
 
     Parameters
     ----------
@@ -72,10 +151,10 @@ def broadcast_signals(*args, ignore_axis=None):
     Returns
     -------
     list of signals
+
     """
     if len(args) < 2:
-        raise ValueError(
-            "This function requires at least two signal instances")
+        raise ValueError("This function requires at least two signal instances")
     args = list(args)
     if not are_signals_aligned(*args, ignore_axis=ignore_axis):
         raise ValueError("The signals cannot be broadcasted")
@@ -89,26 +168,28 @@ def broadcast_signals(*args, ignore_axis=None):
                     pass
         new_nav_axes = []
         new_nav_shapes = []
-        for axes in zip_longest(*[s.axes_manager.navigation_axes
-                                  for s in args], fillvalue=None):
-            only_left = filter(lambda x: x is not None, axes)
-            longest = sorted(only_left, key=lambda x: x.size, reverse=True)[0]
+        for axes in zip_longest(
+            *[s.axes_manager.navigation_axes for s in args], fillvalue=None
+        ):
+            longest = _check_and_get_longest_axis(axes)
             new_nav_axes.append(longest)
-            new_nav_shapes.append(longest.size if (ignore_axis is None or
-                                                   ignore_axis not in
-                                                   axes)
-                                  else None)
+            new_nav_shapes.append(
+                longest.size
+                if (ignore_axis is None or ignore_axis not in axes)
+                else None
+            )
         new_sig_axes = []
         new_sig_shapes = []
-        for axes in zip_longest(*[s.axes_manager.signal_axes
-                                  for s in args], fillvalue=None):
-            only_left = filter(lambda x: x is not None, axes)
-            longest = sorted(only_left, key=lambda x: x.size, reverse=True)[0]
+        for axes in zip_longest(
+            *[s.axes_manager.signal_axes for s in args], fillvalue=None
+        ):
+            longest = _check_and_get_longest_axis(axes)
             new_sig_axes.append(longest)
-            new_sig_shapes.append(longest.size if (ignore_axis is None or
-                                                   ignore_axis not in
-                                                   axes)
-                                  else None)
+            new_sig_shapes.append(
+                longest.size
+                if (ignore_axis is None or ignore_axis not in axes)
+                else None
+            )
 
         results = []
         new_axes = new_nav_axes[::-1] + new_sig_axes[::-1]

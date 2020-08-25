@@ -863,8 +863,7 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def stack(signal_list, axis=None, new_axis_name='stack_element',
-          lazy=None, **kwargs):
+def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -907,23 +906,21 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
-    # TODO: remove next time
-    deprecated = ['mmap', 'mmap_dir']
-    warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
-    for k in deprecated:
-        if k in kwargs:
-            lazy = True
-            warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
+
+    if lazy is None:
+        lazy = any(_s._lazy for _s in signal_list)
+    if not isinstance(lazy, bool):
+        raise ValueError("'lazy' argument has to be None, True or False")
 
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
+
     # Get the real signal with the most axes to get metadata/class/etc
     # first = sorted(filter(lambda _s: isinstance(_s, BaseSignal), signal_list),
     #                key=lambda _s: _s.data.ndim)[-1]
     first = next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list))
 
-    # Cast numbers as signals. Will broadcast later
-
+    # Cast numbers as signals. Will broadcast later.
     for i, _s in enumerate(signal_list):
         if isinstance(_s, BaseSignal):
             pass
@@ -931,78 +928,73 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             sig = BaseSignal(_s)
             signal_list[i] = sig
         else:
-            raise ValueError("{} type cannot be stacked.".format(type(_s)))
+            raise ValueError(f"Objects of type {type(_s)} cannot be stacked")
 
-    if lazy is None:
-        lazy = any(_s._lazy for _s in signal_list)
-    if not isinstance(lazy, bool):
-        raise ValueError("'lazy' argument has to be None, True or False")
-
-    # Cast all as lazy if required
-    for i, _s in enumerate(signal_list):
+        # Cast all as lazy if required
         if not _s._lazy:
             signal_list[i] = _s.as_lazy()
+
     if len(signal_list) > 1:
+        # Matching axis calibration is checked here
         newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
+
         if axis is not None:
             step_sizes = [s.axes_manager[axis].size for s in newlist]
             axis = newlist[0].axes_manager[axis]
+
         datalist = [s.data for s in newlist]
-        newdata = da.stack(datalist, axis=0) if axis is None else \
-            da.concatenate(datalist, axis=axis.index_in_array)
+        newdata = (
+            da.stack(datalist, axis=0)
+            if axis is None
+            else da.concatenate(datalist, axis=axis.index_in_array)
+        )
         if axis_input is None:
             signal = first.__class__(newdata)
             signal._lazy = True
             signal._assign_subclass()
-            signal.axes_manager._axes[1:] = copy.deepcopy(
-                newlist[0].axes_manager._axes)
+            signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
             axis_name = new_axis_name
-            axis_names = [
-                axis_.name for axis_ in signal.axes_manager._axes[
-                    1:]]
+            axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
             j = 1
             while axis_name in axis_names:
-                axis_name = new_axis_name + "_%i" % j
+                axis_name = f"{new_axis_name}_{j}"
                 j += 1
             eaxis = signal.axes_manager._axes[0]
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
             signal.metadata = copy.deepcopy(first.metadata)
             # Get the title from 1st object
-            signal.metadata.General.title = (
-                "Stack of " + first.metadata.General.title)
+            signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
             signal.original_metadata = DictionaryTreeBrowser({})
         else:
             signal = newlist[0]._deepcopy_with_new_data(newdata)
             signal._lazy = True
             signal._assign_subclass()
         signal.get_dimensions_from_data()
-        signal.original_metadata.add_node('stack_elements')
+        signal.original_metadata.add_node("stack_elements")
 
         for i, obj in enumerate(signal_list):
-            signal.original_metadata.stack_elements.add_node('element%i' % i)
-            node = signal.original_metadata.stack_elements['element%i' % i]
-            node.original_metadata = \
-                obj.original_metadata.as_dictionary()
-            node.metadata = \
-                obj.metadata.as_dictionary()
+            signal.original_metadata.stack_elements.add_node(f"element{i}")
+            node = signal.original_metadata.stack_elements[f"element{i}"]
+            node.original_metadata = obj.original_metadata.as_dictionary()
+            node.metadata = obj.metadata.as_dictionary()
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
             step_sizes = 1
 
-        signal.metadata._HyperSpy.set_item('Stacking_history.axis', axis_input)
-        signal.metadata._HyperSpy.set_item('Stacking_history.step_sizes',
-                                           step_sizes)
-        if np.all([
-                s.metadata.has_item('Signal.Noise_properties.variance')
+        signal.metadata._HyperSpy.set_item("Stacking_history.axis", axis_input)
+        signal.metadata._HyperSpy.set_item("Stacking_history.step_sizes", step_sizes)
+        if np.all(
+            [
+                s.metadata.has_item("Signal.Noise_properties.variance")
                 for s in signal_list
-        ]):
-            variance = stack([
-                s.metadata.Signal.Noise_properties.variance for s in signal_list
-            ], axis)
-            signal.metadata.set_item(
-                'Signal.Noise_properties.variance', variance)
+            ]
+        ):
+            variance = stack(
+                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis
+            )
+            signal.metadata.set_item("Signal.Noise_properties.variance", variance)
     else:
         signal = signal_list[0]
 
@@ -1013,7 +1005,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         signal.compute(False)
 
     return signal
-
 
 def shorten_name(name, req_l):
     if len(name) > req_l:
