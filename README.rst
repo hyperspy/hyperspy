@@ -51,9 +51,4 @@ Contributing
 Everyone is welcome to contribute. Please read our
 `contributing guidelines <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md>`_ and get started!
 
-Cite
-----
-
-If you use HyperSpy in a scientific publication, please cite the following DOI:
-
 
