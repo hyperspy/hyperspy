@@ -125,8 +125,10 @@ def _check_calibration_is_ok(s, calibration):
 
     if not _calibration_ok:
         _calibration_msg = ", ".join(_calibration_msg)
-        _logger.warning(f"Mismatched calibration when stacking signals: {_calibration_msg}")
-        _logger.warning("The calibration of the first signal will be applied to all signals")
+        _logger.warning(
+            f"Mismatched calibration when stacking signals: {_calibration_msg}. "
+            "The calibration of the first signal will be applied to all signals"
+        )
 
     return _calibration_ok
 
