@@ -61,6 +61,7 @@ file_extensions = ('sur', 'SUR','pro','PRO')
 default_extension = 0
 # Writing features
 writes = False #First we will check with the load
+non_uniform_axis = False
 # ----------------------
 
 class DigitalSurfHandler(object):
