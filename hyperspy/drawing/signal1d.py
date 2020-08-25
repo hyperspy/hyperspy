@@ -188,7 +188,7 @@ class Signal1DFigure(BlittedFigure):
             marker.update()
 
         # Left and right axis needs to be updated separetely to set the
-        # correct y limits
+        # correct y limits of each axes
         update_lines(self.ax, self.ax_lines)
         if self.right_ax is not None:
             update_lines(self.right_ax, self.right_ax_lines)
@@ -397,7 +397,7 @@ class Signal1DLine(object):
                                        **self.data_function_kwargs).real
         return ydata
 
-    def _auto_update_line(self, *args, **kwargs):
+    def _auto_update_line(self, update_ylimits=True, **kwargs):
         """Updates the line plot only if `auto_update` is `True`.
 
         This is useful to connect to events that automatically update the line.
@@ -409,10 +409,10 @@ class Signal1DLine(object):
                 # once the markers have been updated
                 kwargs['render_figure'] = (
                     len(self.ax.hspy_fig.ax_markers) == 0)
-            self.update(self, *args, **kwargs)
+            self.update(self, update_ylimits=update_ylimits, **kwargs)
 
     def update(self, force_replot=False, render_figure=True,
-               update_ylimits=True):
+               update_ylimits=False):
         """Update the current spectrum figure
 
         Parameters:
@@ -423,7 +423,10 @@ class Signal1DLine(object):
             If True, render the figure. Useful to avoid firing matplotlib
             drawing events too event. Default is True.
         update_ylimits : bool
-            If True, update the y-limits. Default is True.
+            If True, update the y-limits. This is useful to avoid the figure
+            flickering when different lines update the y-limits consecutively,
+            in which case, this is done in `Signal1DFigure.update`.
+            Default is False.
 
         """
         if force_replot is True:
@@ -475,6 +478,9 @@ class Signal1DLine(object):
             if y_max is not None:
                 self._y_max = y_max
             if update_ylimits:
+                # Most of the time, we don't want to call `set_ylim` now to
+                # avoid flickering of the figure. However, we use the values
+                # `self._y_min` and `self._y_max` in `Signal1DFigure.update`
                 self.ax.set_ylim(self._y_min, self._y_max)
 
         if self.plot_indices is True:
