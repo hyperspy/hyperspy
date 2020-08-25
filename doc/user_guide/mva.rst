@@ -115,23 +115,23 @@ links to the appropriate documentation for more information on each one.
    +--------------------------+----------------------------------------------------------------+
    | Algorithm                | Method                                                         |
    +==========================+================================================================+
-   | "svd" (default)          | :py:func:`~.learn.svd_pca.svd_pca`                             |
+   | "SVD" (default)          | :py:func:`~.learn.svd_pca.svd_pca`                             |
    +--------------------------+----------------------------------------------------------------+
-   | "mlpca"                  | :py:func:`~.learn.mlpca.mlpca`                                 |
+   | "MLPCA"                  | :py:func:`~.learn.mlpca.mlpca`                                 |
    +--------------------------+----------------------------------------------------------------+
    | "sklearn_pca"            | :py:class:`sklearn.decomposition.PCA`                          |
    +--------------------------+----------------------------------------------------------------+
-   | "nmf"                    | :py:class:`sklearn.decomposition.NMF`                          |
+   | "NMF"                    | :py:class:`sklearn.decomposition.NMF`                          |
    +--------------------------+----------------------------------------------------------------+
    | "sparse_pca"             | :py:class:`sklearn.decomposition.SparsePCA`                    |
    +--------------------------+----------------------------------------------------------------+
    | "mini_batch_sparse_pca"  | :py:class:`sklearn.decomposition.MiniBatchSparsePCA`           |
    +--------------------------+----------------------------------------------------------------+
-   | "rpca"                   | :py:func:`~.learn.rpca.rpca_godec`                             |
+   | "RPCA"                   | :py:func:`~.learn.rpca.rpca_godec`                             |
    +--------------------------+----------------------------------------------------------------+
-   | "orpca"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
+   | "ORPCA"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
    +--------------------------+----------------------------------------------------------------+
-   | "ornmf"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
+   | "ORNMF"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
    +--------------------------+----------------------------------------------------------------+
    | custom object            | An object implementing  ``fit()`` and  ``transform()`` methods |
    +--------------------------+----------------------------------------------------------------+
@@ -141,7 +141,7 @@ links to the appropriate documentation for more information on each one.
 Singular value decomposition (SVD)
 ----------------------------------
 
-The default algorithm in HyperSpy is ``"svd"``, which uses an approach called
+The default algorithm in HyperSpy is ``"SVD"``, which uses an approach called
 "singular value decomposition" to decompose the data in the form
 :math:`X = U \Sigma V^T`. The factors are given by :math:`U \Sigma`, and the
 loadings are given by :math:`V^T`. For more information, please read the method
@@ -162,9 +162,9 @@ documentation for :py:func:`~.learn.svd_pca.svd_pca`.
    However, in the classical definition of PCA, the SVD should be applied to data that has
    first been "centered" by subtracting the mean, i.e. :math:`\mathrm{SVD}(X - \bar X)`.
 
-   The ``"svd"`` algorithm in HyperSpy **does not** apply this
+   The ``"SVD"`` algorithm in HyperSpy **does not** apply this
    centering step by default. As a result, you may observe differences between
-   the output of the ``"svd"`` algorithm and, for example,
+   the output of the ``"SVD"`` algorithm and, for example,
    :py:class:`sklearn.decomposition.PCA`, which **does** apply centering.
 
 .. _mva.pca:
@@ -183,16 +183,16 @@ If you have `scikit-learn <https://scikit-learn.org/>`_ installed:
 
    >>> s.decomposition(algorithm="sklearn_pca")
 
-You can also turn on centering with the default ``"svd"`` algorithm via
+You can also turn on centering with the default ``"SVD"`` algorithm via
 the ``"centre"`` argument:
 
 .. code-block:: python
 
    # Subtract the mean along the navigation axis
-   >>> s.decomposition(algorithm="svd", centre="navigation")
+   >>> s.decomposition(algorithm="SVD", centre="navigation")
 
    # Subtract the mean along the signal axis
-   >>> s.decomposition(algorithm="svd", centre="signal")
+   >>> s.decomposition(algorithm="SVD", centre="signal")
 
 You can also use :py:class:`sklearn.decomposition.PCA` directly:
 
@@ -239,7 +239,7 @@ robust statistical treatment of non-Gaussian "heteroskedastic noise".
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="mlpca")
+   >>> s.decomposition(algorithm="MLPCA")
 
 For more information, please read the method documentation for :py:func:`~.learn.mlpca.mlpca`.
 
@@ -280,7 +280,7 @@ that you explore the behaviour of different values.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="rpca", output_dimension=3, lambda1=0.1)
+   >>> s.decomposition(algorithm="RPCA", output_dimension=3, lambda1=0.1)
 
 HyperSpy also implements an *online* algorithm for RPCA developed by Feng et
 al. :ref:`[Feng2013] <Feng2013>`. This minimizes memory usage, making it
@@ -289,7 +289,7 @@ algorithm.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="orpca", output_dimension=3)
+   >>> s.decomposition(algorithm="ORPCA", output_dimension=3)
 
 The online RPCA implementation sets several default parameters that are
 usually suitable for most datasets, including the regularization parameter
@@ -300,7 +300,7 @@ the following code will train ORPCA using the first 32 samples of the data.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="orpca", output_dimension=3, training_samples=32)
+   >>> s.decomposition(algorithm="ORPCA", output_dimension=3, training_samples=32)
 
 Finally, online RPCA includes two alternatives methods to the default
 block-coordinate descent solver, which can again improve both the convergence
@@ -314,7 +314,7 @@ finding the correct minima. Usually a value between 1 and 2 works well:
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="rpca",
+   >>> s.decomposition(algorithm="RPCA",
    ...                 output_dimension=3,
    ...                 method="SGD",
    ...                 subspace_learning_rate=1.1)
@@ -326,7 +326,7 @@ fraction between 0 and 1.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="rpca",
+   >>> s.decomposition(algorithm="RPCA",
    ...                 output_dimension=3,
    ...                 method="MomentumSGD",
    ...                 subspace_learning_rate=1.1,
@@ -347,7 +347,7 @@ Another popular decomposition method is non-negative matrix factorization
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='nmf')
+   >>> s.decomposition(algorithm='NMF')
 
 Unlike PCA, NMF forces the components to be strictly non-negative, which can
 aid the physical interpretation of components for count data such as images,
@@ -378,14 +378,14 @@ As before, you can control the regularization applied via the parameter "lambda1
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="ornmf", output_dimension=3, lambda1=0.1)
+   >>> s.decomposition(algorithm="ORNMF", output_dimension=3, lambda1=0.1)
 
 The MomentumSGD method  is useful for scenarios where the subspace, i.e. the
 underlying low-rank component, is changing over time.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="ornmf",
+   >>> s.decomposition(algorithm="ORNMF",
    ...                 output_dimension=3,
    ...                 method="MomentumSGD",
    ...                 subspace_learning_rate=1.1,
@@ -397,7 +397,7 @@ alternative is available, although it is typically much slower.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="ornmf", output_dimension=3, method="RobustPGD")
+   >>> s.decomposition(algorithm="ORNMF", output_dimension=3, method="RobustPGD")
 
 .. _mva.custom_decomposition:
 
@@ -417,13 +417,13 @@ You can access the fitted estimator by passing ``return_info=True``.
    >>> from sklearn.pipeline import Pipeline
    >>> from sklearn.decomposition import PCA
 
-   >>> pipe = Pipeline([("scaler", MinMaxScaler()), ("pca", PCA())])
+   >>> pipe = Pipeline([("scaler", MinMaxScaler()), ("PCA", PCA())])
    >>> out = s.decomposition(algorithm=pipe, return_info=True)
 
    >>> out
    Pipeline(memory=None,
             steps=[('scaler', MinMaxScaler(copy=True, feature_range=(0, 1))),
-                   ('pca', PCA(copy=True, iterated_power='auto', n_components=None,
+                   ('PCA', PCA(copy=True, iterated_power='auto', n_components=None,
                                random_state=None, svd_solver='auto', tol=0.0,
                                whiten=False))],
             verbose=False)
@@ -566,6 +566,9 @@ You can access the fitted estimator by passing ``return_info=True``.
 
 .. _mva.visualization:
 
+.. include:: cluster.rst
+
+
 Visualizing results
 ===================
 
@@ -579,7 +582,7 @@ Scree plots
 -----------
 
 .. note::
-   Scree plots are only available for the ``"svd"`` and ``"pca"`` algorithms.
+   Scree plots are only available for the ``"SVD"`` and ``"PCA"`` algorithms.
 
 PCA will sort the components in the dataset in order of decreasing
 variance. It is often useful to estimate the dimensionality of the data by
@@ -692,6 +695,18 @@ or instead:
 
 .. _mva.get_results:
 
+Clustering plots
+----------------
+
+Visualizing cluster results is much the same as decomposition.
+You can use :py:meth:`~.signal.MVATools.plot_bss_results` for a compact display,
+or instead:
+
+* :py:meth:`~.signal.MVATools.plot_cluster_results`.
+* :py:meth:`~.signal.MVATools.plot_cluster_signals`.
+* :py:meth:`~.signal.MVATools.plot_cluster_labels`.
+
+
 Obtaining the results as BaseSignal instances
 =============================================
 
@@ -755,4 +770,3 @@ saving figures instead of data and more.
 .. warning::
    Data exported in this way cannot be easily loaded into HyperSpy's
    machine learning structure.
-

@@ -11,23 +11,21 @@
 #  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.from hyperspy.utils import stack
+# GNU General Public License for more details.
 
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
-from hyperspy.signals import Signal1D
-from hyperspy.components1d import PESVoigt
-from hyperspy.utils import stack
-
 #Legacy test, to be removed in v2.0
-from hyperspy.components1d import Voigt
+from hyperspy.components1d import PESVoigt, Voigt
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.signals import Signal1D
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
@@ -38,8 +36,8 @@ def test_function():
     g.FWHM.value = 0.5
     g.gamma.value = 0.2
     g.centre.value = 1
-    assert_allclose(g.function(0), 0.35380168)
-    assert_allclose(g.function(1), 5.06863535)
+    np.testing.assert_allclose(g.function(0), 0.35380168)
+    np.testing.assert_allclose(g.function(1), 5.06863535)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -63,18 +61,21 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g2.FWHM.value, 1, 0.5)
-    assert_allclose(g1.area.value, g2.area.value * factor, 0.04)
-    assert_allclose(g2.centre.value, 1, 1e-3)
+    np.testing.assert_allclose(g2.FWHM.value, 1, 0.5)
+    np.testing.assert_allclose(g1.area.value, g2.area.value * factor, 0.04)
+    np.testing.assert_allclose(g2.centre.value, 1, 1e-3)
 
 
-#Legacy test, to be removed in v2.0
 def test_legacy():
-    g = Voigt(legacy=True)
-    g.area.value = 5
-    g.FWHM.value = 0.5
-    g.gamma.value = 0.2
-    g.centre.value = 1
-    assert_allclose(g.function(0), 0.35380168)
-    assert_allclose(g.function(1), 5.06863535)
-
+    """Legacy test, to be removed in v2.0."""
+    with pytest.warns(
+        VisibleDeprecationWarning,
+        match="API of the `Voigt` component will change",
+    ):
+        g = Voigt(legacy=True)
+        g.area.value = 5
+        g.FWHM.value = 0.5
+        g.gamma.value = 0.2
+        g.centre.value = 1
+        np.testing.assert_allclose(g.function(0), 0.35380168)
+        np.testing.assert_allclose(g.function(1), 5.06863535)

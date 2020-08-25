@@ -324,7 +324,8 @@ Initializing ``x`` with ``offset`` and ``scale``:
 
 .. code-block:: python
 
-    >>> dict0 = {'expression': 'a / x + b', 'a': 100, 'b': 10, 'x': {'size': 10, 'offset': 10, 'scale': 0.1}}
+    >>> from hyperspy.axes import UniformDataAxis
+    >>> dict0 = {'expression': 'a / x + b', 'a': 100, 'b': 10, 'x': UniformDataAxis(size=10,offset=10,scale=0.1)}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> # the x array
     >>> s.axes_manager[0].x.axis
@@ -339,7 +340,8 @@ Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
 
 .. code-block:: python
 
-    >>> dict0 = {'expression': 'a / x + b', 'a': 100, 'b': 10, 'x': {'axis': np.arange(1,10)**2}}
+    >>> from hyperspy.axes import DataAxis
+    >>> dict0 = {'expression': 'a / x + b', 'a': 100, 'b': 10, 'x': DataAxis(axis=np.arange(1,10)**2)}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> # the x array
     >>> s.axes_manager[0].x.axis
@@ -349,6 +351,8 @@ Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
     array([110.        ,  35.        ,  21.11111111,  16.25      ,
         14.        ,  12.77777778,  12.04081633,  11.5625    ,
         11.2345679 ])
+
+Initializing ``x`` with ``offset`` and ``scale``:
 
 
 (non-uniform) Data axis

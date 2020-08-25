@@ -16,17 +16,16 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import pytest
 
 import numpy as np
 
-from numpy.testing import assert_allclose
-
-from hyperspy.signals import EDSSEMSpectrum
-from hyperspy.defaults_parser import preferences
-from hyperspy.components1d import Gaussian
 from hyperspy import utils
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
+from hyperspy.misc.test_utils import assert_warns
+from hyperspy.signals import EDSSEMSpectrum
 
 
 @lazifyTestClass
@@ -187,12 +186,35 @@ class Test_metadata:
 
     def test_take_off_angle(self):
         s = self.signal
-        assert_allclose(s.get_take_off_angle(), 12.886929785732487,
-                        atol=10**-(sys.float_info.dig - 2))
+        np.testing.assert_allclose(s.get_take_off_angle(), 12.886929785732487)
+
+    def test_take_off_angle_beta(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Stage.tilt_beta = 15.5
+        np.testing.assert_allclose(s.get_take_off_angle(), 24.202671071140102)
+
+    def test_take_off_angle_azimuth(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Stage.tilt_alpha = None
+        with pytest.raises(ValueError, match="alpha"):
+            s.get_take_off_angle()
+
+    def test_take_off_angle_azimuth(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.azimuth_angle = None
+        with pytest.raises(ValueError, match="azimuth"):
+            s.get_take_off_angle()
+
+    def test_take_off_angle_elevation(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.elevation_angle = None
+        with pytest.raises(ValueError, match="elevation"):
+            s.get_take_off_angle()
+
 
 
 @lazifyTestClass
-class Test_get_lines_intentisity:
+class Test_get_lines_intensity:
 
     def setup_method(self, method):
         # Create an empty spectrum
@@ -209,8 +231,35 @@ class Test_get_lines_intentisity:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 15.0
         self.signal = s
 
+    @pytest.mark.parametrize("bad_iter", ["Al_Kb", {"A" : "Al_Kb", "B" : "Ca_Ka"}])
+    def test_bad_iter(self, bad_iter):
+        # get_lines_intensity() should raise TypeError when
+        # xray_lines is a string or a dictionary
+        s = self.signal
+
+        with pytest.raises(TypeError):
+            s.get_lines_intensity(xray_lines=bad_iter, plot_result=False)
+
+    @pytest.mark.parametrize("good_iter", [("Al_Kb", "Ca_Ka"),
+                                           ["Al_Kb", "Ca_Ka"],
+                                           set(["Al_Kb", "Ca_Ka"])
+                                          ])
+    def test_good_iter(self, good_iter):
+        s = self.signal
+
+        # get_lines_intensity() should succeed and return a list
+        # when xray_lines is an iterable (other than a str or dict)
+        assert isinstance(
+            s.get_lines_intensity(
+                xray_lines=good_iter,
+                plot_result=False
+            ),
+            list
+        )
+
     def test(self):
         s = self.signal
+
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_windows=5)[0]

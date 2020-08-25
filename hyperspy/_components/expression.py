@@ -287,7 +287,7 @@ class Expression(Component):
                                 self,
                                 Expression)
                             )
-            except SyntaxError:
+            except (SyntaxError, AttributeError):
                 warnings.warn("The gradients can not be computed with sympy.",
                               UserWarning)
 

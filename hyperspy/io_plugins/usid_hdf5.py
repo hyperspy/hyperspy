@@ -279,8 +279,8 @@ def _usidataset_to_signal(h5_main, ignore_non_uniform_dims=True, lazy=True,
                     group_attrs.update(temp)
 
     """
-    Normally, we might have been done but the order of the dimensions may be 
-    different in N-dim form and 
+    Normally, we might have been done but the order of the dimensions may be
+    different in N-dim form and
     attributes in ancillary dataset
     """
     num_pos_dims = len(h5_main.pos_dim_labels)
@@ -383,7 +383,8 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
 # ####### REQUIRED FUNCTIONS FOR AN IO PLUGIN #################################
 
 
-def file_reader(filename, dset_path=None, ignore_non_uniform_dims=True, **kwds):
+def file_reader(filename, dataset_path=None, ignore_non_uniform_dims=True,
+                **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
 
@@ -391,7 +392,7 @@ def file_reader(filename, dset_path=None, ignore_non_uniform_dims=True, **kwds):
     ----------
     filename : str
         path to HDF5 file
-    dset_path : str, Optional
+    dataset_path : str, Optional
         Absolute path of USID Main HDF5 dataset.
         Default - None - all Main Datasets will be read. Given that HDF5 files
         can accommodate very large datasets, lazy reading is strongly
@@ -411,13 +412,13 @@ def file_reader(filename, dset_path=None, ignore_non_uniform_dims=True, **kwds):
     if not isinstance(filename, str):
         raise TypeError('filename should be a string')
     if not os.path.isfile(filename):
-        raise FileNotFoundError('No file found at: {}'.format(filename))
+        raise FileNotFoundError(f'No file found at: {filename}')
 
     # Need to keep h5 file handle open indefinitely if lazy
     # Using "with" will cause the file to be closed
     # with h5py.File(filename, mode='r') as h5_f:
     h5_f = h5py.File(filename, mode='r')
-    if dset_path is None:
+    if dataset_path is None:
         """
         if not kwds.get('lazy', True):
             warn('In order to safely load multiple large datasets to memory, '
@@ -433,9 +434,9 @@ def file_reader(filename, dset_path=None, ignore_non_uniform_dims=True, **kwds):
                                              ignore_non_uniform_dims, **kwds)
         return signals
     else:
-        if not isinstance(dset_path, str):
-            raise TypeError('dset_path should be a string')
-        h5_dset = h5_f[dset_path]
+        if not isinstance(dataset_path, str):
+            raise TypeError("'dataset_path' should be a string")
+        h5_dset = h5_f[dataset_path]
         return _usidataset_to_signal(h5_dset,
                                      ignore_non_uniform_dims=
                                      ignore_non_uniform_dims, **kwds)
@@ -472,7 +473,7 @@ def file_writer(filename, object2save, **kwds):
     parm_dict = _flatten_dict(object2save.metadata.as_dictionary())
     temp = object2save.original_metadata.as_dictionary()
     parm_dict.update(_flatten_dict(temp, parent_key='Original'))
-    
+
     num_pos_dims = object2save.axes_manager.navigation_dimension
     nav_axes = object2save.axes_manager.navigation_axes
     sig_axes = object2save.axes_manager.signal_axes

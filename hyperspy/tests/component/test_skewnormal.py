@@ -18,10 +18,10 @@
 
 
 import itertools
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 from distutils.version import LooseVersion
+
+import numpy as np
+import pytest
 import sympy
 
 from hyperspy.components1d import SkewNormal
@@ -41,14 +41,14 @@ def test_function():
     g.x0.value = 0
     g.scale.value = 1
     g.shape.value = 0
-    assert_allclose(g.function(0), 1, rtol=3e-3)
-    assert_allclose(g.function(6), 1.52e-8, rtol=1e-3)
+    np.testing.assert_allclose(g.function(0), 1, rtol=3e-3)
+    np.testing.assert_allclose(g.function(6), 1.52e-8, rtol=1e-3)
     g.A.value = 5
     g.x0.value = 4
     g.scale.value = 3
     g.shape.value = 2
-    assert_allclose(g.function(0), 6.28e-3, rtol=1e-3)
-    assert_allclose(g.function(g.mean), 2.855, rtol=1e-3)
+    np.testing.assert_allclose(g.function(0), 6.28e-3, rtol=1e-3)
+    np.testing.assert_allclose(g.function(g.mean), 2.855, rtol=1e-3)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -68,7 +68,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g1.A.value, g2.A.value * factor)
+    np.testing.assert_allclose(g1.A.value, g2.A.value * factor)
     assert abs(g2.x0.value - g1.x0.value) <= 0.002
     assert abs(g2.shape.value - g1.shape.value) <= 0.01
     assert abs(g2.scale.value - g1.scale.value) <= 0.01
@@ -91,7 +91,7 @@ def test_function_nd(binned, lazy):
     factor = axis.scale if binned else 1
     assert g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
-    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, 0.06)
+    np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, 0.06)
 
 
 def test_util_mean_get():
@@ -99,7 +99,7 @@ def test_util_mean_get():
     g1.shape.value = 0
     g1.scale.value = 1
     g1.x0.value = 1
-    assert_allclose(g1.mean, 1.0)
+    np.testing.assert_allclose(g1.mean, 1.0)
 
 
 def test_util_variance_get():
@@ -107,7 +107,7 @@ def test_util_variance_get():
     g1.shape.value = 0
     g1.scale.value = 2
     g1.x0.value = 1
-    assert_allclose(g1.variance, 4.0)
+    np.testing.assert_allclose(g1.variance, 4.0)
 
 
 def test_util_skewness_get():
@@ -115,7 +115,7 @@ def test_util_skewness_get():
     g1.shape.value = 30
     g1.scale.value = 1
     g1.x0.value = 1
-    assert_allclose(g1.skewness, 0.99, rtol=1e-3)
+    np.testing.assert_allclose(g1.skewness, 0.99, rtol=1e-3)
 
 
 def test_util_mode_get():
@@ -123,4 +123,4 @@ def test_util_mode_get():
     g1.shape.value = 0
     g1.scale.value = 1
     g1.x0.value = 1
-    assert_allclose(g1.mode, 1.0)
+    np.testing.assert_allclose(g1.mode, 1.0)

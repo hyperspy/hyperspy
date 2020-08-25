@@ -22,6 +22,6 @@ from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
 
 class HistogramStrategy(GlobalStrategy):
 
-    def __init__(self, bins='freedman'):
+    def __init__(self, bins='fd'):
         super().__init__('Histogram global strategy')
         self.segmenter = HistogramSegmenter(bins)

@@ -17,7 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numbers
 import numpy as np
+import dask.array as da
+
 from functools import reduce
 
 
@@ -168,3 +171,39 @@ def optimal_fft_size(target, real=False):
         return next_fast_len(target, real)
     else:
         return next_fast_len(target)
+
+
+def check_random_state(seed, lazy=False):
+    """Turn a random seed into a np.random.RandomState instance.
+
+    Parameters
+    ----------
+    seed : None or int or np.random.RandomState or dask.array.random.RandomState
+        If None:
+            Return the RandomState singleton used by
+            np.random or dask.array.random
+        If int:
+            Return a new RandomState instance seeded with ``seed``.
+        If np.random.RandomState:
+            Return it.
+        If dask.array.random.RandomState:
+            Return it.
+    lazy : bool, default False
+        If True, and seed is ``None`` or ``int``, return
+        a dask.array.random.RandomState instance instead.
+
+    """
+    # Derived from `sklearn.utils.check_random_state`.
+    # Copyright (c) 2007-2020 The scikit-learn developers.
+    # All rights reserved.
+
+    if seed is None or seed is np.random:
+        return da.random._state if lazy else np.random.mtrand._rand
+
+    if isinstance(seed, numbers.Integral):
+        return da.random.RandomState(seed) if lazy else np.random.RandomState(seed)
+
+    if isinstance(seed, (da.random.RandomState, np.random.RandomState)):
+        return seed
+
+    raise ValueError(f"{seed} cannot be used to seed a RandomState instance")

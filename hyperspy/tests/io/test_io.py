@@ -16,16 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import hashlib
-import numpy as np
-import pytest
+import os
+import tempfile
 from unittest.mock import patch
 
+import numpy as np
+import pytest
+
+import hyperspy.api as hs
 from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
 from hyperspy.io_plugins import io_plugins
-
 
 DIRPATH = os.path.dirname(__file__)
 FILENAME = 'test_io_overwriting.hspy'
@@ -115,3 +117,57 @@ class TestNonUniformAxisCheck:
         if os.path.exists('tmp.msa'):
             os.remove('tmp.msa')
             
+
+def test_glob_wildcards():
+    s = Signal1D(np.arange(10))
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        fnames = [os.path.join(dirpath, f"temp[1x{x}].hspy")
+                  for x in range(2)]
+
+        for f in fnames:
+            s.save(f)
+
+        with pytest.raises(
+            ValueError,
+            match="No filename matches this pattern"
+        ):
+            _ = hs.load(fnames[0])
+
+        t = hs.load([fnames[0]])
+        assert len(t) == 1
+
+        t = hs.load(fnames)
+        assert len(t) == 2
+
+        t = hs.load(os.path.join(dirpath, "temp*.hspy"))
+        assert len(t) == 2
+
+        t = hs.load(
+            os.path.join(dirpath, "temp[*].hspy"),
+            escape_square_brackets=True,
+        )
+        assert len(t) == 2
+
+        with pytest.raises(
+            ValueError,
+            match="No filename matches this pattern"
+        ):
+            _ = hs.load(os.path.join(dirpath, "temp[*].hspy"))
+
+
+def test_file_not_found_error():
+    with tempfile.TemporaryDirectory() as dirpath:
+        temp_fname = os.path.join(dirpath, "temp.hspy")
+
+        if os.path.exists(temp_fname):
+            os.remove(temp_fname)
+
+        with pytest.raises(
+            ValueError,
+            match="No filename matches this pattern"
+        ):
+            _ = hs.load(temp_fname)
+
+        with pytest.raises(FileNotFoundError):
+            _ = hs.load([temp_fname])

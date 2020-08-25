@@ -25,7 +25,8 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, COMPLEX_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 from hyperspy.misc.utils import parse_quantity
 
@@ -102,7 +103,7 @@ class ComplexSignal_mixin:
         # original plot
         self._plot_kwargs = {}
         if not np.issubdtype(self.data.dtype, np.complexfloating):
-            self.data = self.data.astype(np.complexfloating)
+            self.data = self.data.astype(np.complex128)
 
     def change_dtype(self, dtype):
         """Change the data type.
@@ -192,9 +193,15 @@ class ComplexSignal_mixin:
             value = np.abs(value)**2
         return value
 
-    def plot(self, power_spectrum=False, navigator="auto", axes_manager=None,
-             representation='cartesian', norm="auto", fft_shift=False,
-             same_axes=True, **kwargs):
+    def plot(self,
+             power_spectrum=False,
+             representation='cartesian',
+             same_axes=True,
+             fft_shift=False,
+             navigator="auto",
+             axes_manager=None,
+             norm="auto",
+             **kwargs):
         """%s
         %s
         %s
@@ -234,8 +241,8 @@ class ComplexSignal_mixin:
                              'norm': norm,
                              'fft_shift': fft_shift,
                              'same_axes': same_axes}
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, COMPLEX_DOCSTRING,
-                     KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
+                     BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_KWARGS_DOCSTRING)
 
 
 class ComplexSignal(ComplexSignal_mixin, BaseSignal):

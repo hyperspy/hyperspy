@@ -19,12 +19,12 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import EDSTEMSpectrum
-from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
-from hyperspy.decorators import lazifyTestClass
+from hyperspy.signals import EDSTEMSpectrum
 
 
 @lazifyTestClass
@@ -213,6 +213,17 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
 
+    def test_quant_lorimer_warning(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        with pytest.raises(ValueError, match="Thickness is required for absorption"):
+            _ = s.quantification(intensities, method, kfactors,
+                                 composition_units,
+                                 absorption_correction=True,
+                                 thickness=None)
 
     def test_quant_lorimer_ac(self):
         s = self.signal
@@ -370,6 +381,14 @@ class Test_quantification:
             [[49.4889, 49.4889],
              [49.4889, 49.4889]]), atol=1e-3)
 
+
+    def test_method_error(self):
+        s = self.signal
+        method = 'random_method'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        with pytest.raises(ValueError, match="Please specify method for quantification"):
+            _ = s.quantification(intensities, method, factors)
 
     def test_quant_cross_section_ac(self):
         s = self.signal

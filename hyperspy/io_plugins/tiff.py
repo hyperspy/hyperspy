@@ -89,7 +89,7 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         photometric = "RGB"
     else:
         photometric = "MINISBLACK"
-    if 'description' in kwds and export_scale:
+    if 'description' in kwds.keys() and export_scale:
         kwds.pop('description')
         _logger.warning(
             "Description and export scale cannot be used at the same time, "
@@ -97,6 +97,13 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
     if export_scale:
         kwds.update(_get_tags_dict(signal, extratags=extratags))
         _logger.debug("kwargs passed to tifffile.py imsave: {0}".format(kwds))
+
+        if 'metadata' not in kwds.keys():
+            # Because we write the calibration to the ImageDescription tag
+            # for imageJ, we need to disable tiffile from also writing JSON
+            # metadata if not explicitely requested
+            # (https://github.com/cgohlke/tifffile/issues/21)
+            kwds['metadata'] = None
 
     if 'date' in signal.metadata['General']:
         dt = get_date_time_from_metadata(signal.metadata,

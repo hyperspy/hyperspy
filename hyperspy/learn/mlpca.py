@@ -119,7 +119,7 @@ def mlpca(
 
     # Loop for alternating least squares
     _logger.info("Optimization iteration loop")
-    for itr in range(max_iter):
+    for itr in range(max_iter):  # pragma: no branch
         s_obj = 0.0
 
         for i in range(n):

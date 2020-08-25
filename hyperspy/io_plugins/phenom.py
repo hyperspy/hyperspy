@@ -108,7 +108,7 @@ class ElidReader:
         (id, version) = struct.unpack('<4si', self._read(8))
         if id != b'EID2':
             raise Exception('not an ELID file')
-        if version > 1:
+        if version > 2:
             raise Exception('unsupported ELID format')
         self._version = version
         self.dictionaries = self._read_Project()
@@ -253,6 +253,15 @@ class ElidReader:
         n = self._read_uint32()
         return [self._read_element_family() for _ in range(n)]
 
+    def _read_drift_correction(self):
+        dc = self._read_uint8()
+        if dc == 1:
+            return 'on'
+        elif dc == 2:
+            return 'off'
+        else:
+            return 'unknown'
+
     def _read_eds_metadata(self, om):
         metadata = {}
         metadata['high_tension'] = self._read_float64()
@@ -294,6 +303,10 @@ class ElidReader:
         eds_metadata['auto_id'] = self._read_bool()
         eds_metadata['order_nr'] = self._read_int32()
         eds_metadata['family_overrides'] = self._read_element_families()
+        if self._version >= 2:
+            eds_metadata['drift_correction'] = self._read_drift_correction()
+        else:
+            eds_metadata['drift_correction'] = 'unknown'
         if metadata:
             metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
         else:

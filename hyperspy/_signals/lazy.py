@@ -27,13 +27,14 @@ from dask import threaded
 from dask.diagnostics import ProgressBar
 from itertools import product
 
-from ..signal import BaseSignal
-from ..misc.utils import multiply, dummy_context_manager
-from ..external.progressbar import progressbar
-from ..external.astroML.histtools import dasky_histogram
-from hyperspy.misc.array_tools import _requires_linear_rebin
+
+from hyperspy.signal import BaseSignal
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.external.progressbar import progressbar
+from hyperspy.misc.array_tools import _requires_linear_rebin
+from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
+from hyperspy.misc.utils import multiply, dummy_context_manager
 
 _logger = logging.getLogger(__name__)
 
@@ -121,7 +122,7 @@ class LazySignal(BaseSignal):
         if arrkey:
             try:
                 self.data.dask[arrkey].file.close()
-            except AttributeError as e:
+            except AttributeError:
                 _logger.exception("Failed to close lazy Signal file")
 
     def _get_dask_chunks(self, axis=None, dtype=None):
@@ -421,14 +422,14 @@ class LazySignal(BaseSignal):
 
     valuemin.__doc__ = BaseSignal.valuemin.__doc__
 
-    def get_histogram(self, bins='freedman', out=None, rechunk=True, **kwargs):
+    def get_histogram(self, bins='fd', out=None, rechunk=True, **kwargs):
         if 'range_bins' in kwargs:
             _logger.warning("'range_bins' argument not supported for lazy "
                             "signals")
             del kwargs['range_bins']
         from hyperspy.signals import Signal1D
         data = self._lazy_data(rechunk=rechunk).flatten()
-        hist, bin_edges = dasky_histogram(data, bins=bins, **kwargs)
+        hist, bin_edges = histogram_dask(data, bins=bins, **kwargs)
         if out is None:
             hist_spec = Signal1D(hist)
             hist_spec._lazy = True
@@ -522,28 +523,61 @@ class LazySignal(BaseSignal):
         all_delayed = [dd(func)(data) for data in zip(*iterators)]
 
         if ragged:
+            if inplace:
+                raise ValueError("In place computation is not compatible with "
+                                  "ragged array for lazy signal.")
+            # Shape of the signal dimension will change for the each nav. 
+            # index, which means we can't predict the shape and the dtype needs
+            # to be python object to support numpy ragged array
             sig_shape = ()
             sig_dtype = np.dtype('O')
         else:
             one_compute = all_delayed[0].compute()
-            sig_shape = one_compute.shape
-            sig_dtype = one_compute.dtype
+            # No signal dimension for scalar
+            if np.isscalar(one_compute):
+                sig_shape = ()
+                sig_dtype = type(one_compute)
+            else:
+                sig_shape = one_compute.shape
+                sig_dtype = one_compute.dtype
         pixels = [
             da.from_delayed(
                 res, shape=sig_shape, dtype=sig_dtype) for res in all_delayed
         ]
-
-        for step in reversed(res_shape):
-            _len = len(pixels)
-            starts = range(0, _len, step)
-            ends = range(step, _len + step, step)
-            pixels = [
-                da.stack(
-                    pixels[s:e], axis=0) for s, e in zip(starts, ends)
-            ]
-        result = pixels[0]
+        if ragged:
+            if show_progressbar is None:
+                from hyperspy.defaults_parser import preferences
+                show_progressbar = preferences.General.show_progressbar
+            # We compute here because this is not sure if this is possible
+            # to make a ragged dask array: we need to provide a chunk size...
+            res_data = np.empty(res_shape, dtype=sig_dtype)
+            _logger.info("Lazy signal is computed to make the ragged array.")
+            if show_progressbar:
+                cm = ProgressBar
+            else:
+                cm = dummy_context_manager
+            with cm():
+                try:
+                    for i, pixel in enumerate(pixels):
+                        res_data.flat[i] = pixel.compute()
+                except MemoryError:
+                    raise MemoryError("The use of 'ragged' array requires the "
+                                      "computation of the lazy signal.")
+        else:
+            if len(pixels) > 0:
+                for step in reversed(res_shape):
+                    _len = len(pixels)
+                    starts = range(0, _len, step)
+                    ends = range(step, _len + step, step)
+                    pixels = [
+                        da.stack(
+                            pixels[s:e], axis=0) for s, e in zip(starts, ends)
+                    ]
+            res_data = pixels[0]
+    
         res = map_result_construction(
-            self, inplace, result, ragged, sig_shape, lazy=True)
+            self, inplace, res_data, ragged, sig_shape, lazy=not ragged)
+
         return res
 
     def _iterate_signal(self):
@@ -644,7 +678,7 @@ class LazySignal(BaseSignal):
     def decomposition(
         self,
         normalize_poissonian_noise=False,
-        algorithm="svd",
+        algorithm="SVD",
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
@@ -665,11 +699,11 @@ class LazySignal(BaseSignal):
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [KeenanKotula2004]_.
-        algorithm : {'svd', 'pca', 'orpca', 'ornmf'}, default 'svd'
+        algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF'}, default 'SVD'
             The decomposition algorithm to use.
         output_dimension : int or None, default None
             Number of components to keep/calculate. If None, keep all
-            (only valid for 'svd' algorithm)
+            (only valid for 'SVD' algorithm)
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
@@ -679,7 +713,7 @@ class LazySignal(BaseSignal):
             increased to contain at least ``output_dimension`` signals.
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not used in the
-            decompostion.
+            decomposition.
         signal_mask : {BaseSignal, numpy array, dask array}
             The signal locations marked as True are not used in the
             decomposition.
@@ -718,26 +752,15 @@ class LazySignal(BaseSignal):
         # Deprecate 'ONMF' for 'ORNMF'
         if algorithm == "ONMF":
             warnings.warn(
-                "The argument `algorithm='ONMF'` has been deprecated and may "
-                "be removed in future. Please use `algorithm='ornmf'` instead.",
+                "The argument `algorithm='ONMF'` has been deprecated and will "
+                "be removed in future. Please use `algorithm='ORNMF'` instead.",
                 VisibleDeprecationWarning,
             )
-            algorithm = "ornmf"
+            algorithm = "ORNMF"
 
-        # Deprecate uppercase to favour lowercase (consistent
-        # with non-lazy decomposition)
-        if algorithm in ["PCA", "ORPCA", "ORNMF"]:
-            warnings.warn(
-                "The argument `algorithm='{}'` has been deprecated and may "
-                "be removed in future. Please use `algorithm='{}'` instead.".format(
-                    algorithm, algorithm.lower()
-                ),
-                VisibleDeprecationWarning,
-            )
-            algorithm = algorithm.lower()
 
         # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["pca", "orpca", "ornmf"]
+        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
@@ -769,30 +792,30 @@ class LazySignal(BaseSignal):
         ]
 
         # LEARN
-        if algorithm == "pca":
+        if algorithm == "PCA":
             if not import_sklearn.sklearn_installed:
-                raise ImportError("algorithm='pca' requires scikit-learn")
+                raise ImportError("algorithm='PCA' requires scikit-learn")
 
             obj = import_sklearn.sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
             reproject = True
             to_print.extend(["scikit-learn estimator:", obj])
 
-        elif algorithm == "orpca":
+        elif algorithm == "ORPCA":
             from hyperspy.learn.rpca import ORPCA
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORPCA(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm == "ornmf":
+        elif algorithm == "ORNMF":
             from hyperspy.learn.ornmf import ORNMF
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm != "svd":
+        elif algorithm != "SVD":
             raise ValueError("'algorithm' not recognised")
 
         original_data = self.data
@@ -834,7 +857,7 @@ class LazySignal(BaseSignal):
                 self.data = data
 
             # LEARN
-            if algorithm == "svd":
+            if algorithm == "SVD":
                 reproject = False
                 from dask.array.linalg import svd
 
@@ -884,38 +907,38 @@ class LazySignal(BaseSignal):
                     if len(this_data):
                         thedata = np.concatenate(this_data, axis=0)
                         method(thedata)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # pragma: no cover
                     pass
 
             # GET ALREADY CALCULATED RESULTS
-            if algorithm == "pca":
+            if algorithm == "PCA":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
 
-            elif algorithm == "orpca":
+            elif algorithm == "ORPCA":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
-            elif algorithm == "ornmf":
+            elif algorithm == "ORNMF":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
             # REPROJECT
             if reproject:
-                if algorithm == "pca":
+                if algorithm == "PCA":
                     method = obj.transform
 
                     def post(a):
                         return np.concatenate(a, axis=0)
 
-                elif algorithm == "orpca":
+                elif algorithm == "ORPCA":
                     method = obj.project
 
                     def post(a):
                         return np.concatenate(a, axis=1).T
 
-                elif algorithm == "ornmf":
+                elif algorithm == "ORNMF":
                     method = obj.project
 
                     def post(a):
@@ -934,7 +957,7 @@ class LazySignal(BaseSignal):
                 try:
                     for thing in progressbar(_map, total=nblocks, desc="Project"):
                         H.append(thing)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # pragma: no cover
                     pass
                 loadings = post(H)
 
@@ -943,7 +966,7 @@ class LazySignal(BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "svd":  # Only needed for online algorithms
+            if algorithm != "SVD":  # Only needed for online algorithms
                 try:
                     loadings = _reshuffle_mixed_blocks(
                         loadings, ndim, (output_dimension,), nav_chunks
@@ -958,7 +981,7 @@ class LazySignal(BaseSignal):
         target = self.learning_results
         target.decomposition_algorithm = algorithm
         target.output_dimension = output_dimension
-        if algorithm != "svd":
+        if algorithm != "SVD":
             target._object = obj
         target.factors = factors
         target.loadings = loadings

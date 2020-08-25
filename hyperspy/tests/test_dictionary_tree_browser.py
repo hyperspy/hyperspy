@@ -18,7 +18,8 @@
 
 import numpy as np
 
-from hyperspy.misc.utils import DictionaryTreeBrowser, check_long_string, replace_html_symbols, add_key_value
+from hyperspy.misc.utils import (DictionaryTreeBrowser, check_long_string,
+                                 replace_html_symbols)
 from hyperspy.signal import BaseSignal
 
 
