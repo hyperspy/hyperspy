@@ -78,6 +78,59 @@ def _escape_square_brackets(text):
     return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
 
 
+def _get_calibration_as_dict(s):
+    """Returns calibration data (scale, offset, units) of signal."""
+    a = s.axes_manager.as_dictionary()["axis-0"]
+    return {"scale": a["scale"], "offset": a["offset"], "units": a["units"]}
+
+
+def _check_calibration_is_ok(s, calibration):
+    """Check if calibration data of signal matches `calibration`.
+
+    Parameters
+    ----------
+    s : signal
+        The signal to be checked.
+    calibration : dict
+        Calibration data dict, {offset, scale, units}.
+
+    Returns
+    -------
+    bool
+        If the calibration matches.
+
+    """
+    a0 = s.axes_manager.as_dictionary()["axis-0"]
+
+    _calibration_ok = True
+    _calibration_msg = []
+
+    if not np.allclose(calibration["scale"], a0["scale"], atol=0, rtol=1e-7):
+        _calibration_ok = False
+        _calibration_msg.append(
+            f"scale ({calibration['scale']} != {a0['scale']})"
+        )
+
+    if not np.allclose(calibration["offset"], a0["offset"], atol=0, rtol=1e-7):
+        _calibration_ok = False
+        _calibration_msg.append(
+            f"offset ({calibration['offset']} != {a0['offset']})"
+        )
+
+    if calibration["units"] != a0["units"]:
+        _calibration_ok = False
+        _calibration_msg.append(
+            f"units ({calibration['units']} != {a0['units']})"
+        )
+
+    if not _calibration_ok:
+        _calibration_msg = ", ".join(_calibration_msg)
+        _logger.warning(f"Mismatched calibration when stacking signals: {_calibration_msg}")
+        _logger.warning("The calibration of the first signal will be applied to all signals")
+
+    return _calibration_ok
+
+
 def load(filenames=None,
          signal_type=None,
          stack=False,
@@ -245,39 +298,6 @@ def load(filenames=None,
     >>> s = hs.load('file*.blo', lazy=True, stack=True)
 
     """
-    def calibration_is_ok(obj, calibration):
-        """
-        Check if calibration data of `obj` matches `calibration`
-
-        Parameters
-        ----------
-        obj : signal
-            The signal to be checked
-        calibration : tuple
-            calibration data (offset, scale, units)
-
-        Returns
-        -------
-        True :
-            calbration data matches
-        False :
-            otherwise
-        """
-        this_axis0 = obj.axes_manager.as_dictionary()["axis-0"]
-        if calibration[0] != this_axis0["scale"] or \
-           calibration[1] != this_axis0["offset"] or \
-           calibration[2] != this_axis0["units"]:
-            return False
-        else:
-            return True
-
-    def get_calibration(obj):
-        """
-        Returns calibration data (`scale`, `offset`, `units`) of signal `obj`
-        """
-        a = obj.axes_manager.as_dictionary()["axis-0"]
-        return (a["scale"], a["offset"], a["units"])
-
     deprecated = ['mmap_dir', 'load_to_memory']
     warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
     for k in deprecated:
@@ -331,7 +351,7 @@ def load(filenames=None,
                     else:
                         n = 1
                         # read calibration of first signal
-                        cal = get_calibration(obj)
+                        cal = _get_calibration_as_dict(obj)
                     # Initialize signal 2D list:
                     signals = [[] for j in range(n)]
                 else:
@@ -350,18 +370,19 @@ def load(filenames=None,
                             "match:\n" +
                             (f_error_fmt % (1, n, filenames[0])) +
                             (f_error_fmt % (i, len(obj), filename)))
+
                 # Append loaded signals to 2D list:
                 if n == 1:
                     if i == 0:
                         signals[0].append(obj)
-                    else: # check if calibration is same as in first signal
-                        if calibration_is_ok(obj, cal):
-                            signals[0].append(obj)
-                        else: # warn and dont append
-                            _logger.warning('wrong calibration encountered while loading signals from ' + filename)
+                    else:
+                        # check if calibration is same as in first signal, will warn if not
+                        _check_calibration_is_ok(obj, cal)
+                        signals[0].append(obj)
                 else:
                     for j in range(n):
                         signals[j].append(obj[j])
+
             # Next, merge the signals in the `stack_axis` direction:
             # When each file had N signals, we create N stacks!
             objects = []
