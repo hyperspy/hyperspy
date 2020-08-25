@@ -21,8 +21,7 @@
 .. _python_version: https://pypi.python.org/pypi/hyperspy
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
-.. _gitter:
-https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+.. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 .. |DOI| image:: https://zenodo.org/badge/2233998.svg
 .. _DOI: https://zenodo.org/badge/latestdoi/2233998
