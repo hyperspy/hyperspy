@@ -307,6 +307,8 @@ def test_plot_add_line_events():
     assert len(s.axes_manager.events.indices_changed.connected) == 2
 
     line.close()
+    figure.close_right_axis()
+
     assert len(line.events.closed.connected) == 0
     assert len(s.axes_manager.events.indices_changed.connected) == 1
 
