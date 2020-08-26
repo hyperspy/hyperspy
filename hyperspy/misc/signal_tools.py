@@ -22,6 +22,7 @@ from itertools import zip_longest
 import dask.array as da
 import numpy as np
 
+from hyperspy.misc.axis_tools import check_axes_calibration
 from hyperspy.misc.array_tools import are_aligned
 
 _logger = logging.getLogger(__name__)
@@ -63,42 +64,6 @@ def are_signals_aligned(*args, ignore_axis=None):
     return True
 
 
-def _check_axes_calibration(ax1, ax2):
-    """Check if the calibration of two axes matches.
-
-    Raises a logger warning if there is a mismatch.
-    ``scale`` and ``offset`` are compared as floats
-    using np.allclose, while ``units`` is compared
-    with a simple inequality (!=).
-
-    Parameters
-    ----------
-    ax1, ax2 : DataAxis objects
-
-    Returns
-    -------
-    bool
-        If the two axes have identical calibrations.
-
-    """
-    # Exit early if not DataAxis objects - None is used
-    # in broadcast_signals() below as a filler so we
-    # skip it here.
-    if ax1 is None or ax2 is None:
-        return True
-
-    if not np.allclose(ax1.scale, ax2.scale, atol=0, rtol=1e-7):
-        return False
-
-    if not np.allclose(ax1.offset, ax2.offset, atol=0, rtol=1e-7):
-        return False
-
-    if ax1.units != ax2.units:
-        return False
-
-    return True
-
-
 def _check_and_get_longest_axis(axes):
     """Return the longest axis from a list of axes.
 
@@ -113,11 +78,20 @@ def _check_and_get_longest_axis(axes):
         reverse=True,
     )[0]
 
+    # Exit early if not DataAxis objects - None is used
+    # in broadcast_signals() below as a filler so we
+    # skip it here.
+    def _check_wrapper(ax1, ax2):
+        if ax1 is None or ax2 is None:
+            return True
+
+        return check_axes_calibration(ax1, ax2)
+
     # Returns a list of bools, where False
     # indicates an axis with a different
     # calibration to the longest axis
     axes_check = [
-        _check_axes_calibration(axes[longest_idx], axes[i])
+        _check_wrapper(axes[longest_idx], axes[i])
         for i in range(len(axes))
         if i != longest_idx
     ]
