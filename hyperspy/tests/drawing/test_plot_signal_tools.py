@@ -36,15 +36,17 @@ def test_plot_BackgroundRemoval():
     pl.r.value = 3
     s = signals.Signal1D(pl.function(np.arange(100, 200)))
     s.axes_manager[0].offset = 100
+    s.add_poissonian_noise(random_state=1)
 
     br = BackgroundRemoval(s,
                            background_type='Power Law',
                            polynomial_order=2,
-                           fast=True,
+                           fast=False,
                            plot_remainder=True)
 
-    br.span_selector.set_initial((105, 115))
+    br.span_selector.set_initial((105, 150))
     br.span_selector.onmove_callback()
+    br.span_selector_changed()
 
     return br.signal._plot.signal_plot.figure
 
