@@ -43,8 +43,7 @@ from scipy.optimize import (
 from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
-from hyperspy.docstrings.signal import (MAX_WORKERS_ARG, PARALLEL_ARG,
-                                        SHOW_PROGRESSBAR_ARG)
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.events import Event, Events, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
@@ -457,7 +456,7 @@ class BaseModel(list):
             self.update_plot(render_figure=True, update_ylimits=False)
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None, out=None, parallel=None, max_workers=None):
+                  show_progressbar=None, out=None, **kwargs):
         """Returns a recreation of the dataset using the model.
         The spectral range that is not fitted is filled with nans.
 
@@ -475,8 +474,6 @@ class BaseModel(list):
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        %s
-        %s
 
         Returns
         -------
@@ -496,17 +493,12 @@ class BaseModel(list):
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
-        if parallel is None:
-            parallel = preferences.General.parallel
 
-        if not isinstance(parallel, bool):
+        if "parallel" in kwargs:
             warnings.warn(
-                "Passing integer arguments to 'parallel' has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use 'parallel=True, max_workers={parallel}' instead.",
+                "`parallel` argument has been deprecated and will be removed in HyperSpy 2.0",
                 VisibleDeprecationWarning,
             )
-            max_workers = parallel
-            parallel = True
 
         if out is None:
             data = np.empty(self.signal.data.shape, dtype='float')
@@ -525,60 +517,18 @@ class BaseModel(list):
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
 
-        # We set this value to equal cpu_count, with a maximum
-        # of 32 cores, since the earlier default value was inappropriate
-        # for many-core machines.
-        if max_workers is None:
-            max_workers = min(32, os.cpu_count())
-
-        # Avoid any overhead of additional threads
-        if max_workers < 2:
-            parallel = False
-
-        if not parallel:
-            self._as_signal_iter(component_list=component_list,
-                                 show_progressbar=show_progressbar, data=data)
-        else:
-            am = self.axes_manager
-            nav_shape = am.navigation_shape
-            if len(nav_shape):
-                ind = np.argmax(nav_shape)
-                size = nav_shape[ind]
-            if not len(nav_shape) or size < 4:
-                # no or not enough navigation, just run without threads
-                return self.as_signal(component_list=component_list,
-                                      show_progressbar=show_progressbar,
-                                      out=signal, parallel=False)
-            max_workers = min(max_workers, size / 2)
-            splits = [len(sp) for sp in np.array_split(np.arange(size),
-                                                       max_workers)]
-            models = []
-            data_slices = []
-            slices = [slice(None), ] * len(nav_shape)
-            for sp, csm in zip(splits, np.cumsum(splits)):
-                slices[ind] = slice(csm - sp, csm)
-                models.append(self.inav[tuple(slices)])
-                array_slices = self.signal._get_array_slices(tuple(slices),
-                                                             True)
-                data_slices.append(data[array_slices])
-
-            from concurrent.futures import ThreadPoolExecutor
-            with ThreadPoolExecutor(max_workers=max_workers) as exe:
-                _map = exe.map(
-                    lambda thing: thing[0]._as_signal_iter(
-                        data=thing[1],
-                        component_list=component_list,
-                        show_progressbar=thing[2] + 1 if show_progressbar else False),
-                    zip(models, data_slices, range(int(max_workers))))
-
-            _ = next(_map)
+        self._as_signal_iter(
+            component_list=component_list,
+            show_progressbar=show_progressbar,
+            data=data
+        )
 
         if out_of_range_to_nan is True:
             self.channel_switches[:] = channel_switches_backup
 
         return signal
 
-    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    as_signal.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def _as_signal_iter(self, component_list=None, show_progressbar=None,
                         data=None):
