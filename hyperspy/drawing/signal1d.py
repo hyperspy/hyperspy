@@ -429,7 +429,7 @@ class Signal1DLine(object):
             If True, close and open the figure. Default is False.
         render_figure : bool
             If True, render the figure. Useful to avoid firing matplotlib
-            drawing events too event. Default is True.
+            drawing events too often. Default is True.
         update_ylimits : bool
             If True, update the y-limits. This is useful to avoid the figure
             flickering when different lines update the y-limits consecutively,
