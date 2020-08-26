@@ -318,7 +318,7 @@ class TestFeiEMD():
                           'time': '09:56:41',
                           'time_zone': 'BST',
                           'title': 'HAADF'},
-              'Signal': {'binned': False, 'signal_type': 'image'},
+              'Signal': {'binned': False, 'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
                                         'signal_unfolded': False,

@@ -314,23 +314,24 @@ class ElidReader:
             metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
         return (metadata, data)
 
-    def _make_metadata_dict(self, signal_type, title, datetime):
-        dict = {
+    def _make_metadata_dict(self, signal_type=None, title="", datetime=None):
+        metadata_dict = {
             'General': {
                 'original_filename': os.path.split(self._pathname)[1],
                 'title': title
-            },
-            'Signal': {
-                'signal_type': signal_type
             }
         }
+        if signal_type:
+            metadata_dict['Signal'] = {
+                'signal_type': signal_type
+                }
         if datetime:
-            dict['General'].update({
+            metadata_dict['General'].update({
                 'date': datetime[0],
                 'time': datetime[1],
                 'time_zone': self._get_local_time_zone()
             })
-        return dict
+        return metadata_dict
 
     def _get_local_time_zone(self):
         return tz.tzlocal().tzname(datetime.today())
@@ -487,7 +488,7 @@ class ElidReader:
         dict = {
             'data': data,
             'axes': axes,
-            'metadata': self._make_metadata_dict('image', title, self._get_datetime(om)),
+            'metadata': self._make_metadata_dict('', title, self._get_datetime(om)),
             'original_metadata': om,
             'mapping': self._make_mapping()
         }
