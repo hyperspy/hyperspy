@@ -907,11 +907,6 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kw
     import dask.array as da
     from numbers import Number
 
-    if lazy is None:
-        lazy = any(_s._lazy for _s in signal_list)
-    if not isinstance(lazy, bool):
-        raise ValueError("'lazy' argument has to be None, True or False")
-
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
 
@@ -930,6 +925,13 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kw
         else:
             raise ValueError(f"Objects of type {type(_s)} cannot be stacked")
 
+
+    if lazy is None:
+        lazy = any(_s._lazy for _s in signal_list)
+    if not isinstance(lazy, bool):
+        raise ValueError("'lazy' argument has to be None, True or False")
+
+    for i, _s in enumerate(signal_list):
         # Cast all as lazy if required
         if not _s._lazy:
             signal_list[i] = _s.as_lazy()
