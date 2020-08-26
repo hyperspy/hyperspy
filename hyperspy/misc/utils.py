@@ -907,7 +907,6 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kw
     import dask.array as da
     from numbers import Number
 
-    deprecated = ['mmap', 'mmap_dir']
     for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:
         lazy = True
         warnings.warn(
