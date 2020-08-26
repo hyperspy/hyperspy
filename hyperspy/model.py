@@ -494,9 +494,9 @@ class BaseModel(list):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        if "parallel" in kwargs:
+        for k in [k for k in ["parallel", "max_workers"] if k in kwargs]:
             warnings.warn(
-                "`parallel` argument has been deprecated and will be removed in HyperSpy 2.0",
+                f"`{k}` argument has been deprecated and will be removed in HyperSpy 2.0",
                 VisibleDeprecationWarning,
             )
 
