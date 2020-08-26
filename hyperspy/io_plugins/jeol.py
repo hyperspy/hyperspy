@@ -54,7 +54,7 @@ def file_reader(filename, *args, **kwds):
 		if (file_magic == 0):
 			fd.seek(12)
 			filetree = parsejeol(fd)
-			filepath = filename[:filename.rfind('/')+1]
+			filepath, filen = os.path.split(os.path.abspath(filename))
 			if 'SampleInfo' in filetree.keys():
 				for i in sorted(filetree['SampleInfo'].keys(), key=float):
 					if 'ViewInfo' in filetree['SampleInfo'][i].keys():
@@ -62,14 +62,15 @@ def file_reader(filename, *args, **kwds):
 							if 'ViewData' in filetree['SampleInfo'][i]['ViewInfo'][j].keys():
 								scale = filetree['SampleInfo'][i]['ViewInfo'][j]['PositionMM']*1000
 								for k in sorted(filetree['SampleInfo'][i]['ViewInfo'][j]['ViewData'].keys(), key=float): 
-									subfile = filetree['SampleInfo'][i]['ViewInfo'][j]['ViewData'][k]['Filename'].replace('\\','/')
+									root, sample_folder, view_folder, data_file = filetree['SampleInfo'][i]['ViewInfo'][j]['ViewData'][k]['Filename'].split('\\')
+									subfile = os.path.join(root, sample_folder, view_folder, data_file)
 									sub_ext = os.path.splitext(subfile)[-1][1:]
 									if sub_ext == 'img' or sub_ext == 'map':
-										dictionary.append(read_img(filepath+subfile, scale))
+										dictionary.append(read_img(os.path.join(filepath,subfile), scale))
 									elif sub_ext == 'pts':
-										dictionary.append(read_pts(filepath+subfile, scale))
+										dictionary.append(read_pts(os.path.join(filepath,subfile), scale))
 									elif sub_ext == 'eds':
-										dictionary.append(read_eds(filepath+subfile))
+										dictionary.append(read_eds(os.path.join(filepath,subfile)))
 									else:
 										print('Unknow extension')
 		else:
@@ -161,7 +162,7 @@ def read_pts(filename, scale=None):
 		width, height = header['PTTD Data']['AnalyzableMap MeasData']['Meas Cond']['Pixels'].split('x')
 		width = int(width)
 		height = int(height)
-		energy = 1536 #2146, 4096 total
+		energy = 4096
 		fd.seek(data_pos)
 		data = readcube(fd, width, height, energy)
 		if scale is not None: 
@@ -257,7 +258,7 @@ def parsejeol(fd):
 				if (c_type == 'c'):
 					value = fd.read(val_len).rstrip(b'\x00')
 					value = value.decode("utf-8")
-					value = os.path.normpath(value.replace('\\','/')).split('\x00')
+					#value = os.path.normpath(value.replace('\\','/')).split('\x00')
 				else:
 					value = np.fromfile(fd, c_type, arr_len)
 				if (len(value)==1):
@@ -295,13 +296,13 @@ def parsejeol(fd):
 @numba.jit
 def readcube(fd, w, h, e):
 	rawdata = np.fromfile(fd, dtype='u2')
-	hypermap = np.zeros([h,w,e])
+	hypermap = np.zeros([h,w,e], dtype=np.uint8)
 	for value in rawdata:
 		if (value>=32768) and (value<36864):
 			y = int((value-32768)/8-1)
 		elif (value>=36864) and (value<40960):
 			x = int((value-36864)/8-1)
-		elif (value>=45056) and (value<45056+e): #49152 max but memory prob
+		elif (value>=45056) and (value<49152):
 			z = int(value-45056)
 			hypermap[x,y,z] = hypermap[x,y,z]+1
 	return hypermap
