@@ -726,6 +726,13 @@ class TestAsSignal:
             s.data, np.array([np.zeros((2, 5)), np.ones((2, 5)) * 2])
         )
 
+    @pytest.mark.parametrize("kw", [{"parallel": True}, {"max_workers": 1}])
+    def test_warnings(self, kw):
+        with pytest.warns(
+            VisibleDeprecationWarning, match=r".* has been deprecated",
+        ):
+            _ = self.m.as_signal(**kw)
+
 
 @lazifyTestClass
 class TestCreateModel:
