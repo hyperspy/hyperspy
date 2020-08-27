@@ -163,7 +163,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')
         self.signal_plot.create_right_axis()
-        self.signal_plot.add_line(rl, ax='right')
+        self.signal_plot.add_line(rl, ax='right', connect_navigation=True)
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
         rl.plot(**kwargs)

@@ -407,7 +407,7 @@ class BaseModel(list):
                                          valid_variable_name=True), thing)
         if self._plot_active is True:
             self._connect_parameters2update_plot(components=[thing])
-        self.update_plot()
+        self.update_plot(render_figure=True, update_ylimits=True)
 
     def extend(self, iterable):
         for object in iterable:
@@ -454,7 +454,7 @@ class BaseModel(list):
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:
-            self.update_plot()
+            self.update_plot(render_figure=True, update_ylimits=False)
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, parallel=None, max_workers=None):
@@ -639,7 +639,7 @@ class BaseModel(list):
                 parameter.events.value_changed.disconnect(
                     self._model_line._auto_update_line)
 
-    def update_plot(self, *args, **kwargs):
+    def update_plot(self, render_figure=False, update_ylimits=False, **kwargs):
         """Update model plot.
 
         The updating can be suspended using `suspend_update`.
@@ -652,7 +652,8 @@ class BaseModel(list):
         if self._plot_active is True and self._suspend_update is False:
             try:
                 if self._model_line is not None:
-                    self._model_line.update()
+                    self._model_line.update(render_figure=render_figure,
+                                            update_ylimits=update_ylimits)
                 for component in [component for component in self if
                                   component.active is True]:
                     self._update_component_line(component)
@@ -690,7 +691,7 @@ class BaseModel(list):
         self._suspend_update = old
 
         if update_on_resume is True:
-            self.update_plot()
+            self.update_plot(render_figure=True, update_ylimits=False)
 
     def _close_plot(self):
         if self._plot_components is True:
@@ -727,7 +728,8 @@ class BaseModel(list):
     @staticmethod
     def _update_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update()
+            component._model_plot_line.update(render_figure=False,
+                                              update_ylimits=False)
 
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
