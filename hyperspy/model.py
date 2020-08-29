@@ -458,8 +458,8 @@ class BaseModel(list):
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, parallel=None, max_workers=None):
-        """Returns a recreation of the dataset using the model.
-        The spectral range that is not fitted is filled with nans.
+        """Returns a recreation of the dataset using the model. By default, the
+        signal range outside of the fitted range is filled with nans.
 
         Parameters
         ----------
@@ -468,8 +468,8 @@ class BaseModel(list):
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
-            If True the spectral range that is not fitted is filled with nans.
-            Default True.
+            If True the signal range outside of the fitted range is filled with
+            nans. Default True.
         %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
