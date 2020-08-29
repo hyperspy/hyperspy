@@ -764,6 +764,13 @@ class TestAsSignal:
         np.testing.assert_allclose(s1.isig[index:],
                                    np.ones_like(s1.isig[index:].data) * 2)
 
+    def test_out_argument(self):
+        out = self.m.as_signal()
+        out.data.fill(0)
+        s = self.m.as_signal(out=out)
+        assert np.all(s.data == 4.0)
+
+
 def test_as_signal_parallel():
     np.random.seed(1)
     s = hs.signals.Signal1D(np.random.random((50, 10)))

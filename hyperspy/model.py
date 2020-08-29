@@ -583,14 +583,12 @@ class BaseModel(list):
 
     as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def _as_signal_iter(self, component_list=None, show_progressbar=None,
-                        data=None):
+    def _as_signal_iter(self, data, component_list=None,
+                        show_progressbar=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
-        if data is None:
-            raise ValueError('No data supplied')
-        if show_progressbar is None:
+        if show_progressbar is None:  # pragma: no cover
             show_progressbar = preferences.General.show_progressbar
 
         with stash_active_state(self if component_list else []):
