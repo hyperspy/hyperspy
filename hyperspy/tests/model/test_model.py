@@ -733,6 +733,32 @@ class TestAsSignal:
         ):
             _ = self.m.as_signal(**kw)
 
+    def test_out_of_range_to_nan(self):
+        index = 2
+        self.m.channel_switches[:index] = False
+        s1 = self.m.as_signal(component_list=[0], out_of_range_to_nan=True)
+
+        s2 = self.m.as_signal(component_list=[0], out_of_range_to_nan=False)
+
+        np.testing.assert_allclose(
+            self.m.channel_switches, [False, False, True, True, True]
+        )
+
+        np.testing.assert_allclose(s2.data, np.ones_like(s2) * 2)
+        np.testing.assert_allclose(s1.isig[index:], s2.isig[index:])
+        np.testing.assert_allclose(
+            s1.isig[:index], np.ones_like(s1.isig[:index].data) * np.nan
+        )
+        np.testing.assert_allclose(
+            s1.isig[index:], np.ones_like(s1.isig[index:].data) * 2
+        )
+
+    def test_out_argument(self):
+        out = self.m.as_signal()
+        out.data.fill(0)
+        s = self.m.as_signal(out=out)
+        assert np.all(s.data == 4.0)
+
 
 @lazifyTestClass
 class TestCreateModel:
