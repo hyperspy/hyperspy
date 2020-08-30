@@ -66,7 +66,7 @@ install_req = ['scipy>=1.0.1',
                'imageio',
                'pyyaml',
                'PTable',
-               'tifffile[all]>=2018.10.18',
+               'tifffile>=2018.10.18',
                'numba',
                ]
 
@@ -75,7 +75,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["cython"],
+    "speed": ["cython", "imagecodecs"],
     "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
