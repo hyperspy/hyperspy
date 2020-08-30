@@ -21,7 +21,9 @@ matrix:
     env: PIP_SELECTOR="tests"
     python: 3.7
   - name: "Linux, 3.6, pip, mininum version"
-    env: MINIMUM_VERSION=true
+    env:
+      - MINIMUM_VERSION=true
+      - PIP_SELECTOR="tests"
     python: 3.6
   - name: "Linux, 3.7, pip, doc"
     env: PIP_SELECTOR="all, build-doc"
@@ -39,7 +41,7 @@ install:
   # Test against the oldest supported version of matplotlib, numpy and scipy
   # Use old version numba and imagecodecs to work around incompatibilities
   - if [ "$MINIMUM_VERSION" == true ]; then
-      pip install matplotlib==2.2.3 numpy==1.15 scipy==1.0.1 numba==0.40 imagecodecs==2018.10.10;
+      pip install matplotlib==2.2.3 numpy==1.15 scipy==1.0.1 numba==0.40;
       pip install -e .["${PIP_SELECTOR}"];
     else
       pip install --upgrade -e .["${PIP_SELECTOR}"];
