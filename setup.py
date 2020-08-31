@@ -45,9 +45,9 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=1.0.1',
+install_req = ['scipy>=1.1',
                'matplotlib>=2.2.3',
-               'numpy>=1.15.0',
+               'numpy>=1.15.4',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -60,13 +60,12 @@ install_req = ['scipy>=1.0.1',
                'dask[array]>2.0',
                'scikit-image>=0.15',
                'pint>=0.10',
-               'statsmodels',
                'numexpr',
                'sparse',
                'imageio',
                'pyyaml',
                'PTable',
-               'tifffile[all]>=2018.10.18',
+               'tifffile>=2018.10.18',
                'numba',
                ]
 
@@ -75,7 +74,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["cython"],
+    "speed": ["cython", "imagecodecs"],
     "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.

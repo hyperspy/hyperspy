@@ -59,10 +59,10 @@ First ensure pytest and its plugins are installed by:
 .. code:: bash
 
    # If using a standard hyperspy install
-   pip install hyperspy[test]
+   pip install hyperspy[tests]
 
    # Or, from a hyperspy local development directory
-   pip install -e .[test]
+   pip install -e .[tests]
 
    # Or just installing the dependencies using conda
    conda install -c conda-forge pytest pytest-mpl

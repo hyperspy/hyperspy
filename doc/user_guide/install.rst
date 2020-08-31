@@ -47,7 +47,7 @@ manager:
    If you are not familiar with Anaconda please refer to their
    `User Guide <https://docs.continuum.io/anaconda/>`_ for details.
 
-#. Then install HyperSpy executing the following 
+#. Then install HyperSpy executing the following
    `conda <https://docs.conda.io/en/latest/>`_ commands in the
    Anaconda Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt.
    This depends on your OS and how you have installed Anaconda, see the
@@ -69,7 +69,7 @@ and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use
 .. note::
 
     Using ``-c conda-forge`` is only necessary when the conda-forge is not
-    already added to the conda configuration, see the 
+    already added to the conda configuration, see the
     `conda-forge documentation <https://conda-forge.org/docs/user/introduction.html>`_
     for more details.
 
@@ -141,14 +141,13 @@ use:
 See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
 
-* ``learning`` to install required libraries for some machine learning features,
-* ``gui-jupyter`` to install required libraries to use the
-  `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
-  GUI elementsm
-* ``gui-traitsui`` to install required libraries to use the GUI elements based
-  on `traitsui <http://docs.enthought.com/traitsui/>`_,
-* ``mrcz`` to install the mrcz plugin,
-* ``speed`` install optional libraries that speed up some functionalities,
+* ``learning`` for some machine learning features,
+* ``gui-jupyter`` to use the `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
+  GUI elements,
+* ``gui-traitsui`` to use the GUI elements based on `traitsui <http://docs.enthought.com/traitsui/>`_,
+* ``mrcz`` to read mrcz file,
+* ``speed`` to speed up some functionalities,
+* ``usid`` to read usid file,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
 * ``build-doc`` to install required libraries to build HyperSpy's documentation,
 * ``dev`` to install all the above,
@@ -161,7 +160,7 @@ For example:
 
     $ pip install hyperspy[learning, gui-jupyter]
 
-Finally, be aware that HyperSpy depends on a number of libraries that usually 
+Finally, be aware that HyperSpy depends on a number of libraries that usually
 need to be compiled and therefore installing HyperSpy may require development
 tools installed in the system. If the above does not work for you remember that
 the easiest way to install HyperSpy is
@@ -203,7 +202,7 @@ Install the runtime and development dependencies requirements using conda:
 The package ``hyperspy-dev`` will install the development dependencies required
 for testing and building the documentation.
 
-From the root folder of your hyperspy repository (folder containing the 
+From the root folder of your hyperspy repository (folder containing the
 ``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
 
 .. code-block:: bash
@@ -213,7 +212,7 @@ From the root folder of your hyperspy repository (folder containing the
 Installation in other (non-system) Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-From the root folder of your hyperspy repository (folder containing the 
+From the root folder of your hyperspy repository (folder containing the
 ``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
 
 .. code-block:: bash
@@ -237,7 +236,7 @@ Installation in a system Python distribution
 When using a system Python distribution, it is recommanded to install the
 dependencies using your system package manager.
 
-From the root folder of your hyperspy repository (folder containing the 
+From the root folder of your hyperspy repository (folder containing the
 ``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode.
 
 .. code-block:: bash
