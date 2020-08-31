@@ -1158,7 +1158,6 @@ class FeiEMDReader(object):
                      ])
 
         md = self._get_metadata_dict(original_metadata)
-        md['Signal']['signal_type'] = 'image'
         if self.detector_name is not None:
             original_metadata['DetectorMetadata'] = _get_detector_metadata_dict(
                 original_metadata,

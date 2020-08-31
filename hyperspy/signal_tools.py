@@ -1283,6 +1283,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.rm_line is not None:
             self.rm_line.close()
             self.rm_line = None
+            self.signal._plot.signal_plot.close_right_axis()
 
     def set_background_estimator(self):
         if self.model is not None:
@@ -1338,8 +1339,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             color='green',
             type='line',
             scaley=False)
-        self.signal._plot.signal_plot.add_line(self.rm_line)
-        self.rm_line.autoscale = ''
+        self.signal._plot.signal_plot.create_right_axis(color='green')
+        self.signal._plot.signal_plot.add_line(self.rm_line, ax='right')
         self.rm_line.plot()
 
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
@@ -1399,12 +1400,13 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.bg_line is None:
             self.create_background_line()
         else:
-            self.bg_line.update()
+            self.bg_line.update(render_figure=False, update_ylimits=False)
         if self.plot_remainder:
             if self.rm_line is None:
                 self.create_remainder_line()
             else:
-                self.rm_line.update()
+                self.rm_line.update(render_figure=True,
+                                    update_ylimits=True)
 
     def apply(self):
         if not self.is_span_selector_valid:

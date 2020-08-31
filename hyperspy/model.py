@@ -407,7 +407,7 @@ class BaseModel(list):
                                          valid_variable_name=True), thing)
         if self._plot_active is True:
             self._connect_parameters2update_plot(components=[thing])
-        self.update_plot()
+        self.update_plot(render_figure=True, update_ylimits=True)
 
     def extend(self, iterable):
         for object in iterable:
@@ -454,12 +454,12 @@ class BaseModel(list):
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:
-            self.update_plot()
+            self.update_plot(render_figure=True, update_ylimits=False)
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, parallel=None, max_workers=None):
-        """Returns a recreation of the dataset using the model.
-        The spectral range that is not fitted is filled with nans.
+        """Returns a recreation of the dataset using the model. By default, the
+        signal range outside of the fitted range is filled with nans.
 
         Parameters
         ----------
@@ -468,8 +468,8 @@ class BaseModel(list):
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
-            If True the spectral range that is not fitted is filled with nans.
-            Default True.
+            If True the signal range outside of the fitted range is filled with
+            nans. Default True.
         %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
@@ -521,7 +521,9 @@ class BaseModel(list):
             signal = out
             data = signal.data
 
-        if out_of_range_to_nan is True:
+        if not out_of_range_to_nan:
+            # we want the full signal range, including outside the fitted
+            # range, we need to set all the channel_switches to True
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
 
@@ -573,21 +575,20 @@ class BaseModel(list):
 
             _ = next(_map)
 
-        if out_of_range_to_nan is True:
+        if not out_of_range_to_nan:
+            # Restore the channel_switches, previously set
             self.channel_switches[:] = channel_switches_backup
 
         return signal
 
     as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def _as_signal_iter(self, component_list=None, show_progressbar=None,
-                        data=None):
+    def _as_signal_iter(self, data, component_list=None,
+                        show_progressbar=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
-        if data is None:
-            raise ValueError('No data supplied')
-        if show_progressbar is None:
+        if show_progressbar is None:  # pragma: no cover
             show_progressbar = preferences.General.show_progressbar
 
         with stash_active_state(self if component_list else []):
@@ -639,7 +640,7 @@ class BaseModel(list):
                 parameter.events.value_changed.disconnect(
                     self._model_line._auto_update_line)
 
-    def update_plot(self, *args, **kwargs):
+    def update_plot(self, render_figure=False, update_ylimits=False, **kwargs):
         """Update model plot.
 
         The updating can be suspended using `suspend_update`.
@@ -652,7 +653,8 @@ class BaseModel(list):
         if self._plot_active is True and self._suspend_update is False:
             try:
                 if self._model_line is not None:
-                    self._model_line.update()
+                    self._model_line.update(render_figure=render_figure,
+                                            update_ylimits=update_ylimits)
                 for component in [component for component in self if
                                   component.active is True]:
                     self._update_component_line(component)
@@ -690,7 +692,7 @@ class BaseModel(list):
         self._suspend_update = old
 
         if update_on_resume is True:
-            self.update_plot()
+            self.update_plot(render_figure=True, update_ylimits=False)
 
     def _close_plot(self):
         if self._plot_components is True:
@@ -727,7 +729,8 @@ class BaseModel(list):
     @staticmethod
     def _update_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update()
+            component._model_plot_line.update(render_figure=False,
+                                              update_ylimits=False)
 
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)

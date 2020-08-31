@@ -50,7 +50,7 @@ def test_elid(pathname):
     assert s[0].metadata['General']['time'] == '09:37:31'
     assert s[0].metadata['General']['title'] == 'Image 1'
     assert s[0].metadata['Signal']['binned'] == False
-    assert s[0].metadata['Signal']['signal_type'] == 'image'
+    assert s[0].metadata['Signal']['signal_type'] == ''
     assert s[0].original_metadata['acquisition']['scan']['dwellTime']['value'] == '200'
     assert s[0].original_metadata['acquisition']['scan']['dwellTime']['unit'] == 'ns'
     assert s[0].original_metadata['acquisition']['scan']['fieldSize'] == 0.000019515585197840245

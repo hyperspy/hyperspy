@@ -451,6 +451,8 @@ class Model1D(BaseModel):
 
         self.backup_channel_switches = copy.copy(self.channel_switches)
         self.channel_switches[:] = False
+        if i2 is not None:
+            i2 += 1
         self.channel_switches[i1:i2] = True
         self.update_plot()
 
@@ -482,6 +484,8 @@ class Model1D(BaseModel):
         x1 : None or float
         x2 : None or float
         """
+        if i2 is not None:
+            i2 += 1
         self.channel_switches[i1:i2] = False
         self.update_plot()
 
@@ -517,6 +521,8 @@ class Model1D(BaseModel):
         x1 : None or float
         x2 : None or float
         """
+        if i2 is not None:
+            i2 += 1
         self.channel_switches[i1:i2] = True
         self.update_plot()
 
@@ -965,7 +971,7 @@ class Model1D(BaseModel):
         %s
         **kwargs : dict
             All extra keyword arguments are passed to the
-            py:meth:`~hyperspy.model.BaseModel.fit` or 
+            py:meth:`~hyperspy.model.BaseModel.fit` or
             py:meth:`~hyperspy.model.BaseModel.multifit`
             method, depending if ``only_current`` is True or False.
 
