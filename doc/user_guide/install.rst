@@ -17,7 +17,7 @@ To enable context-menu (right-click) shortcut in a chosen folder, use the
 .. note::
 
     If you want to be notified about new releases, please *Watch (Releases only)* 
-    the `hyperspy repositorium on GitHub <https://github.com/hyperspy/hyperspy/>`_ 
+    the `hyperspy repository on GitHub <https://github.com/hyperspy/hyperspy/>`_ 
     (requires a `GitHub account <https://github.com/login>`_).
 
 .. warning::
