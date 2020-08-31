@@ -981,7 +981,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             self.map(lowess,
                      x=self.axes_manager[-1].axis,
                      f=smoothing_parameter,
-                     iter=number_of_iterations,
+                     n_iter=number_of_iterations,
                      show_progressbar=show_progressbar,
                      ragged=False,
                      parallel=parallel,

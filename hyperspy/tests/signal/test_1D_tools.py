@@ -290,17 +290,17 @@ class TestSmoothing:
     def test_lowess(self, parallel):
         from hyperspy.misc.lowess_smooth import lowess
         f = 0.5
-        iter = 1
+        n_iter = 1
         data = np.asanyarray(self.s.data, dtype='float')
         for i in range(data.shape[0]):
             data[i, :] = lowess(
                 x=self.s.axes_manager[-1].axis,
                 y=data[i, :],
                 f=f,
-                iter=iter,
+                n_iter=n_iter,
                 )
         self.s.smooth_lowess(smoothing_parameter=f,
-                             number_of_iterations=iter,
+                             number_of_iterations=n_iter,
                              parallel=parallel)
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
