@@ -89,7 +89,7 @@ class TestCreateEELSModel:
         ll.axes_manager[-1].offset = -20
         ll.axes_manager.navigation_shape = (123,)
         with pytest.raises(ValueError):
-            m = self.s.create_model(ll=ll)
+            _ = self.s.create_model(ll=ll)
 
 
 @lazifyTestClass
@@ -210,7 +210,7 @@ class TestFitBackground:
         self.m["B_K"].active = False
         self.m.fit_background()
         np.testing.assert_allclose(self.m["Offset"].offset.value,
-                        1.71212121212)
+                        1.7142857)
         assert not self.m["B_K"].active
         assert self.m["C_K"].active
 
@@ -219,6 +219,6 @@ class TestFitBackground:
         self.m["C_K"].active = False
         self.m.fit_background()
         np.testing.assert_allclose(self.m["Offset"].offset.value,
-                        2.13567839196)
+                        2.14)
         assert not self.m["B_K"].active
         assert not self.m["C_K"].active
