@@ -174,6 +174,20 @@ the easiest way to install HyperSpy is
 
 .. _install-dev:
 
+Rolling release Linux distributions
+-----------------------------------
+
+Due to the requirement of up to date versions for dependencies such as *numpy*,
+*scipy*, etc., binary packages of HyperSpy are not provided for most linux
+distributions and the installation via :ref:`Anaconda/Miniconda <anaconda-install>`
+or :ref:`Pip <install-with-pip>` is recommended.
+
+However, packages of the latest HyperSpy release and the related
+*hyperpy-gui-ipywidgets/traitsui* packages are
+maintained for the rolling release distributions **Arch-Linux** (`Arch User Repository 
+<https://aur.archlinux.org/packages/hyperspy/>`_) and **openSUSE** (`Community Package 
+<https://software.opensuse.org/package/python-hyperspy>`_).
+
 Install development version
 ---------------------------
 
