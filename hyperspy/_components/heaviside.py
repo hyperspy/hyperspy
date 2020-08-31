@@ -44,10 +44,10 @@ class HeavisideStep(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
     """
 
-    def __init__(self, A=1., n=0., module="numpy", compute_gradients=False,
+    def __init__(self, A=1., n=0., module="numpy", compute_gradients=True,
                  **kwargs):
         super(HeavisideStep, self).__init__(
-            expression="where(x < n, 0, A)",
+            expression="A*heaviside(x-n,0.5)",
             name="HeavisideStep",
             A=A,
             n=n,
@@ -60,13 +60,3 @@ class HeavisideStep(Expression):
         self.isbackground = True
         self.convolved = False
 
-        # Gradients
-        self.A.grad = self.grad_A
-
-    def grad_A(self, x):
-        x = np.asanyarray(x)
-        return np.ones(x.shape)
-
-    def grad_n(self, x):
-        x = np.asanyarray(x)
-        return np.where(x < self.n.value, 0, 1)
