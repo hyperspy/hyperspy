@@ -29,18 +29,19 @@ class HeavisideStep(Expression):
     .. math::
 
         f(x) =
-        \\begin{cases}
-        0 & x<n\\\\
-        A/2 & x=n\\\\
+        \begin{cases}
+        0 & x<n\\
+        A/2 & x=n\\
         A & x>n
-        \\end{cases}
+        \end{cases}
+
 
     Parameters
     -----------
     n : float
         Location parameter defining the x position of the step.
     A : float
-        Height parameter for x>n.
+        Height parameter for x>=n.
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
     """
