@@ -25,6 +25,10 @@ from hyperspy._components.expression import Expression
 class HeavisideStep(Expression):
 
     r"""The Heaviside step function.
+    
+    Based on the corresponding `numpy function 
+    <https://numpy.org/doc/stable/reference/generated/numpy.heaviside.html>`_
+    using the half maximum definition for the central point:
 
     .. math::
 
@@ -36,12 +40,20 @@ class HeavisideStep(Expression):
         \end{cases}
 
 
+    ============== =============
+    Variable        Parameter
+    ============== =============
+    :math:`n`       centre
+    :math:`A`       height
+    ============== =============
+
+
     Parameters
     -----------
     n : float
         Location parameter defining the x position of the step.
     A : float
-        Height parameter for x>=n.
+        Height parameter for x>n.
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
     """
