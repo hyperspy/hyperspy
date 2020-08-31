@@ -14,6 +14,12 @@ see the :ref:`anaconda-install` section.
 To enable context-menu (right-click) shortcut in a chosen folder, use the
 `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ library.
 
+.. note::
+
+    If you want to be notified about new releases, please *Watch (Releases only)* 
+    the `hyperspy repository on GitHub <https://github.com/hyperspy/hyperspy/>`_ 
+    (requires a `GitHub account <https://github.com/login>`_).
+
 .. warning::
 
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
