@@ -382,7 +382,6 @@ class BaseInteractiveROI(BaseROI):
                                 axes=kwargs.get("axes", None))
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
-            print('using interactive roi')
             signal.axes_manager.events.any_axis_changed.connect(
                 self.update,
                 [])
@@ -485,7 +484,6 @@ class BaseInteractiveROI(BaseROI):
         widget.events.closed.disconnect(self._remove_widget)
         widget.events.changed.disconnect(self._on_widget_change)
         widget.close()
-        print('removing widget')
         for signal, w in self.signal_map.items():
             if w[0] == widget:
                 self.signal_map.pop(signal)

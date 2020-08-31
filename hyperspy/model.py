@@ -458,8 +458,8 @@ class BaseModel(list):
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, parallel=None, max_workers=None):
-        """Returns a recreation of the dataset using the model.
-        The spectral range that is not fitted is filled with nans.
+        """Returns a recreation of the dataset using the model. By default, the
+        signal range outside of the fitted range is filled with nans.
 
         Parameters
         ----------
@@ -468,8 +468,8 @@ class BaseModel(list):
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
-            If True the spectral range that is not fitted is filled with nans.
-            Default True.
+            If True the signal range outside of the fitted range is filled with
+            nans. Default True.
         %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
@@ -521,7 +521,9 @@ class BaseModel(list):
             signal = out
             data = signal.data
 
-        if out_of_range_to_nan is True:
+        if not out_of_range_to_nan:
+            # we want the full signal range, including outside the fitted
+            # range, we need to set all the channel_switches to True
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
 
@@ -573,21 +575,20 @@ class BaseModel(list):
 
             _ = next(_map)
 
-        if out_of_range_to_nan is True:
+        if not out_of_range_to_nan:
+            # Restore the channel_switches, previously set
             self.channel_switches[:] = channel_switches_backup
 
         return signal
 
     as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def _as_signal_iter(self, component_list=None, show_progressbar=None,
-                        data=None):
+    def _as_signal_iter(self, data, component_list=None,
+                        show_progressbar=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
-        if data is None:
-            raise ValueError('No data supplied')
-        if show_progressbar is None:
+        if show_progressbar is None:  # pragma: no cover
             show_progressbar = preferences.General.show_progressbar
 
         with stash_active_state(self if component_list else []):

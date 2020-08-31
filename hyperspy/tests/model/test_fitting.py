@@ -351,7 +351,7 @@ class TestModelScalarVariance:
         self.m.fit()
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
-    @pytest.mark.parametrize("std, expected", [(1, 0.86206965), (10, 0.86206965)])
+    @pytest.mark.parametrize("std, expected", [(1, 0.84233497), (10, 0.84233497)])
     def test_std1_red_chisq_in_range(self, std, expected):
         self.m.set_signal_range(10, 50)
         np.random.seed(1)
