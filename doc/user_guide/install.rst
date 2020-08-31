@@ -148,7 +148,6 @@ dependencies required by specific functionalities:
 * ``mrcz`` to read mrcz file,
 * ``speed`` to speed up some functionalities,
 * ``usid`` to read usid file,
-* ``lowess-smoothing`` to perform lowess smoothing,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
 * ``build-doc`` to install required libraries to build HyperSpy's documentation,
 * ``dev`` to install all the above,

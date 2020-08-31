@@ -76,7 +76,6 @@ extras_require = {
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["cython", "imagecodecs"],
     "usid": ["pyUSID>=0.0.7"],
-    "lowess-smoothing": ["statsmodels"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],

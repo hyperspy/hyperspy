@@ -26,16 +26,12 @@ import scipy.interpolate
 import scipy as sp
 from scipy.signal import savgol_filter
 from scipy.ndimage.filters import gaussian_filter1d
-try:
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    statsmodels_installed = True
-except BaseException:
-    statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.signal_tools import SpikesRemoval
 from hyperspy.models.model1d import Model1D
+from hyperspy.misc.lowess_smooth import lowess
 
 
 from hyperspy.defaults_parser import preferences
@@ -971,17 +967,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
-        ImportError
-            If statsmodels is not installed.
 
-        Notes
-        -----
-        This method uses the lowess algorithm from the `statsmodels` library,
-        which needs to be installed to use this method.
         """
-        if not statsmodels_installed:
-            raise ImportError("statsmodels is not installed. This package is "
-                              "required for this feature.")
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None or number_of_iterations is None:
             smoother = SmoothingLowess(self)
@@ -992,11 +979,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return smoother.gui(display=display, toolkit=toolkit)
         else:
             self.map(lowess,
-                     exog=self.axes_manager[-1].axis,
-                     frac=smoothing_parameter,
-                     it=number_of_iterations,
-                     is_sorted=True,
-                     return_sorted=False,
+                     x=self.axes_manager[-1].axis,
+                     f=smoothing_parameter,
+                     iter=number_of_iterations,
                      show_progressbar=show_progressbar,
                      ragged=False,
                      parallel=parallel,
