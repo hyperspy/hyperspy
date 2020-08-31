@@ -18,8 +18,10 @@ Statistical Association, September 1988, volume 83, number 403, pp. 596-610.
 # https://gist.github.com/agramfort/850437
 
 import numpy as np
-from scipy.linalg import lstsq
+from numba import jit
 
+
+@jit(nopython=True, cache=True, nogil=True)
 def lowess(y, x, f=2.0 / 3.0, n_iter=3):
     """Lowess smoother (robust locally weighted regression).
 
@@ -47,11 +49,12 @@ def lowess(y, x, f=2.0 / 3.0, n_iter=3):
     """
     n = len(x)
     r = int(np.ceil(f * n))
-    h = [np.sort(np.abs(x - x[i]))[r] for i in range(n)]
-    w = np.clip(np.abs((x[:, None] - x[None, :]) / h), 0.0, 1.0)
+    h = np.array([np.sort(np.abs(x - x[i]))[r] for i in range(n)])
+    w = np.minimum(1.0, np.maximum(np.abs((x.reshape((-1, 1)) - x.reshape((1, -1))) / h), 0.0))
     w = (1 - w ** 3) ** 3
     yest = np.zeros(n)
     delta = np.ones(n)
+
     for _ in range(n_iter):
         for i in range(n):
             weights = delta * w[:, i]
@@ -63,12 +66,13 @@ def lowess(y, x, f=2.0 / 3.0, n_iter=3):
                 ]
             )
 
-            beta = lstsq(A, b)[0]
+            beta = np.linalg.lstsq(A, b)[0]
             yest[i] = beta[0] + beta[1] * x[i]
 
         residuals = y - yest
         s = np.median(np.abs(residuals))
-        delta = np.clip(residuals / (6.0 * s), -1.0, 1.0)
+        #delta = np.clip(residuals / (6.0 * s), -1.0, 1.0)
+        delta = np.minimum(1.0, np.maximum(residuals / (6.0 * s), -1.0))
         delta = (1 - delta ** 2) ** 2
 
     return yest
