@@ -285,8 +285,7 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_lowess(self, parallel):
         from hyperspy.misc.lowess_smooth import lowess
         f = 0.5
@@ -305,8 +304,7 @@ class TestSmoothing:
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_tv(self, parallel):
         weight = 1
         data = np.asanyarray(self.s.data, dtype='float')

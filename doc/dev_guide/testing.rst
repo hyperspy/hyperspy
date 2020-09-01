@@ -85,6 +85,21 @@ Or, from HyperSpy's project folder, simply:
   ``[tool:pytest]`` section. See the `pytest configuration documentation
   <https://docs.pytest.org/en/latest/customize.html>`_ for more details.
 
+The HyperSpy test suite can also be run in parallel if you have multiple CPUs
+available, using the ```pytest-xdist`` plugin <https://pypi.org/project/pytest-xdist/>`_.
+
+.. code:: bash
+
+   # To run on all the cores of your machine
+   pytest -n auto --dist loadfile
+
+   # To run on 2 cores
+   pytest -n 2 --dist loadfile
+
+The ``--dist loadfile`` argument will group tests by their containing file. The 
+groups are then distributed to available workers as whole units, thus guaranteeing 
+that all tests in a file run in the same worker. 
+
 
 Test coverage
 ^^^^^^^^^^^^^

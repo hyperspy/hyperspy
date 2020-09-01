@@ -9,4 +9,4 @@ dependencies:
 - cython
 - pytest
 - pytest-mpl
-
+- pytest-xdist

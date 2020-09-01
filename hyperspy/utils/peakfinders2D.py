@@ -16,20 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import scipy.ndimage as ndi
-from numba import jit
-
-from skimage.feature import (
-        peak_local_max, blob_dog, blob_log, corner_peaks, match_template)
 import copy
 
+import numpy as np
+import scipy.ndimage as ndi
+from numba import njit
+from skimage.feature import (
+    blob_dog, 
+    blob_log, 
+    corner_peaks,
+    match_template,
+    peak_local_max,
+)
+
+from hyperspy.misc.machine_learning import import_sklearn
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
 
-@jit(nopython=True, cache=True)
-def _fast_mean(X):
+@njit(cache=True)
+def _fast_mean(X):  # pragma: no cover
     """JIT-compiled mean of array.
 
     Parameters
@@ -51,8 +57,8 @@ def _fast_mean(X):
     return np.mean(X)
 
 
-@jit(nopython=True, cache=True)
-def _fast_std(X):
+@njit(cache=True)
+def _fast_std(X):  # pragma: no cover
     """JIT-compiled standard deviation of array.
 
     Parameters
@@ -353,9 +359,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
     8. Repeat #4-7 until the number of peaks found in the previous step
        converges to within the user defined convergence_ratio.
     """
-    try:
-        from sklearn.cluster import DBSCAN
-    except ImportError:
+    if not import_sklearn.sklearn_installed:
         raise ImportError("This method requires scikit-learn.")
 
     def normalize(image):
@@ -408,7 +412,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         """Identify adjacent 'on' coordinates via DBSCAN."""
         bi = binarised_image.astype("bool")
         coordinates = np.indices(bi.shape).reshape(2, -1).T[bi.flatten()]
-        db = DBSCAN(2, 3)
+        db = import_sklearn.sklearn.cluster.DBSCAN(2, 3)
         peaks = []
         if coordinates.shape[0] > 0:  # we have at least some peaks
             labeled_points = db.fit_predict(coordinates)
