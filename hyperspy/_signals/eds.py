@@ -174,14 +174,16 @@ class EDS_mixin:
                np.prod([ax.size for ax in self.axes_manager.navigation_axes])
                / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
             )
-        aimd = s.metadata.Acquisition_instrument
-        if "SEM.Detector.EDS.live_time" in aimd:
-            aimd.SEM.Detector.EDS.live_time *= time_factor
-        elif "TEM.Detector.EDS.live_time" in aimd:
-            aimd.TEM.Detector.EDS.live_time *= time_factor
-        else:
-            _logger.info("Live_time could not be found in the metadata and "
-                         "has not been updated.")
+        aimd = s.metadata.get_item('Acquisition_instrument', None)
+        if aimd is not None:
+            aimd = s.metadata.Acquisition_instrument
+            if "SEM.Detector.EDS.live_time" in aimd:
+                aimd.SEM.Detector.EDS.live_time *= time_factor
+            elif "TEM.Detector.EDS.live_time" in aimd:
+                aimd.TEM.Detector.EDS.live_time *= time_factor
+            else:
+                _logger.info("Live_time could not be found in the metadata and "
+                             "has not been updated.")
 
         if out is None:
             return s
