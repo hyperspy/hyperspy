@@ -116,8 +116,7 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
             **kwds)
 
 
-def file_reader(filename, record_by='image', force_read_resolution=False,
-                **kwds):
+def file_reader(filename, force_read_resolution=False, lazy=False, **kwds):
     """
     Read data from tif files using Christoph Gohlke's tifffile library.
     The units and the scale of images saved with ImageJ or Digital
@@ -127,100 +126,108 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     Parameters
     ----------
     filename: str
-    record_by: {'image'}
-        Has no effect because this format only supports recording by
-        image.
-    force_read_resolution: Bool
-        Default: False.
+        Name of the file to read
+    force_read_resolution: bool
         Force reading the x_resolution, y_resolution and the resolution_unit
         of the tiff tags.
         See http://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html
+        Default is False.
+    lazy : bool
+        Load the data lazily. Default is False
     **kwds, optional
     """
 
-    lazy = kwds.pop('lazy', False)
-    memmap = kwds.pop('memmap', None)
 
     with TiffFile(filename, **kwds) as tiff:
+        dict_list = [_read_serie(tiff, serie, filename, force_read_resolution,
+                                 lazy=lazy, **kwds)
+            for serie in tiff.series]
 
-        series = tiff.series[0]
-        axes = series.axes
-        if hasattr(series, 'shape'):
-            shape = series.shape
-            dtype = series.dtype
-        else:
-            shape = series['shape']
-            dtype = series['dtype']
+    return dict_list
 
-        is_rgb = tiff.pages[0].photometric == TIFF.PHOTOMETRIC.RGB
-        _logger.debug("Is RGB: %s" % is_rgb)
-        if is_rgb:
-            axes = axes[:-1]
-            names = ['R', 'G', 'B', 'A']
-            lastshape = shape[-1]
-            dtype = np.dtype({'names': names[:lastshape],
-                              'formats': [dtype] * lastshape})
-            shape = shape[:-1]
 
-        if LooseVersion(tifffile.__version__) >= LooseVersion("2020.2.16"):
-            op = {tag.name: tag.value for tag in tiff.pages[0].tags}
-        else:
-            op = {key: tag.value for key, tag in tiff.pages[0].tags.items()}
 
-        names = [axes_label_codes[axis] for axis in axes]
+def _read_serie(tiff, serie, filename, force_read_resolution=False,
+                lazy=False, memmap=None, **kwds):
 
-        _logger.debug('Tiff tags list: %s' % op)
-        _logger.debug("Photometric: %s" % op['PhotometricInterpretation'])
-        _logger.debug('is_imagej: {}'.format(tiff.pages[0].is_imagej))
+    axes = serie.axes
+    page = serie.pages[0]
+    if hasattr(serie, 'shape'):
+        shape = serie.shape
+        dtype = serie.dtype
+    else:
+        shape = serie['shape']
+        dtype = serie['dtype']
 
-        scales = [1.0] * len(names)
-        offsets = [0.0] * len(names)
-        units = [t.Undefined] * len(names)
-        intensity_axis = {}
-        try:
-            scales_d, units_d, offsets_d, intensity_axis = _parse_scale_unit(
-                tiff, op, shape, force_read_resolution)
-            for i, name in enumerate(names):
-                if name == 'height':
-                    scales[i], units[i] = scales_d['x'], units_d['x']
-                    offsets[i] = offsets_d['x']
-                elif name == 'width':
-                    scales[i], units[i] = scales_d['y'], units_d['y']
-                    offsets[i] = offsets_d['y']
-                elif name in ['depth', 'image series', 'time']:
-                    scales[i], units[i] = scales_d['z'], units_d['z']
-                    offsets[i] = offsets_d['z']
-        except BaseException:
-            _logger.info("Scale and units could not be imported")
+    is_rgb = page.photometric == TIFF.PHOTOMETRIC.RGB
+    _logger.debug("Is RGB: %s" % is_rgb)
+    if is_rgb:
+        axes = axes[:-1]
+        names = ['R', 'G', 'B', 'A']
+        lastshape = shape[-1]
+        dtype = np.dtype({'names': names[:lastshape],
+                          'formats': [dtype] * lastshape})
+        shape = shape[:-1]
 
-        axes = [{'size': size,
-                 'name': str(name),
-                 'scale': scale,
-                 'offset': offset,
-                 'units': unit,
-                 }
-                for size, name, scale, offset, unit in zip(shape, names,
-                                                           scales, offsets,
-                                                           units)]
+    if LooseVersion(tifffile.__version__) >= LooseVersion("2020.2.16"):
+        op = {tag.name: tag.value for tag in page.tags}
+    else:
+        op = {key: tag.value for key, tag in page.tags.items()}
 
-        md = {'General': {'original_filename': os.path.split(filename)[1]},
-              'Signal': {'signal_type': "",
-                         'record_by': "image",
-                         },
-              }
+    names = [axes_label_codes[axis] for axis in axes]
 
-        if 'DateTime' in op:
-            dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
-            md['General']['date'] = dt.date().isoformat()
-            md['General']['time'] = dt.time().isoformat()
-        if 'units' in intensity_axis:
-            md['Signal']['quantity'] = intensity_axis['units']
-        if 'scale' in intensity_axis and 'offset' in intensity_axis:
-            dic = {'gain_factor': intensity_axis['scale'],
-                   'gain_offset': intensity_axis['offset']}
-            md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
+    _logger.debug('Tiff tags list: %s' % op)
+    _logger.debug("Photometric: %s" % op['PhotometricInterpretation'])
+    _logger.debug('is_imagej: {}'.format(page.is_imagej))
 
-    data_args = TiffFile, filename, is_rgb
+    scales = [1.0] * len(names)
+    offsets = [0.0] * len(names)
+    units = [t.Undefined] * len(names)
+    intensity_axis = {}
+    try:
+        scales_d, units_d, offsets_d, intensity_axis = _parse_scale_unit(
+            tiff, page, op, shape, force_read_resolution)
+        for i, name in enumerate(names):
+            if name == 'height':
+                scales[i], units[i] = scales_d['x'], units_d['x']
+                offsets[i] = offsets_d['x']
+            elif name == 'width':
+                scales[i], units[i] = scales_d['y'], units_d['y']
+                offsets[i] = offsets_d['y']
+            elif name in ['depth', 'image series', 'time']:
+                scales[i], units[i] = scales_d['z'], units_d['z']
+                offsets[i] = offsets_d['z']
+    except BaseException:
+        _logger.info("Scale and units could not be imported")
+
+    axes = [{'size': size,
+             'name': str(name),
+             'scale': scale,
+             'offset': offset,
+             'units': unit,
+             }
+            for size, name, scale, offset, unit in zip(shape, names,
+                                                       scales, offsets,
+                                                       units)]
+
+    md = {'General': {'original_filename': os.path.split(filename)[1]},
+          'Signal': {'signal_type': "",
+                     'record_by': "image",
+                     },
+          }
+
+    if 'DateTime' in op:
+        dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
+        md['General']['date'] = dt.date().isoformat()
+        md['General']['time'] = dt.time().isoformat()
+    if 'units' in intensity_axis:
+        md['Signal']['quantity'] = intensity_axis['units']
+    if 'scale' in intensity_axis and 'offset' in intensity_axis:
+        dic = {'gain_factor': intensity_axis['scale'],
+               'gain_offset': intensity_axis['offset']}
+        md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
+
+    data_args = filename, is_rgb
     if lazy:
         from dask import delayed
         from dask.array import from_delayed
@@ -231,18 +238,18 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     else:
         dc = _load_data(*data_args, memmap=memmap, **kwds)
 
-    metadata_mapping = get_metadata_mapping(tiff.pages[0], op)
+    metadata_mapping = get_metadata_mapping(page, op)
 
-    return [{'data': dc,
-             'original_metadata': op,
-             'axes': axes,
-             'metadata': md,
-             'mapping': metadata_mapping,
-             }]
+    return {'data': dc,
+            'original_metadata': op,
+            'axes': axes,
+            'metadata': md,
+            'mapping': metadata_mapping,
+            }
 
 
-def _load_data(TF, filename, is_rgb, sl=None, memmap=None, **kwds):
-    with TF(filename, **kwds) as tiff:
+def _load_data(filename, is_rgb, sl=None, memmap=None, **kwds):
+    with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray(out=memmap)
         _logger.debug("data shape: {0}".format(dc.shape))
         if is_rgb:
@@ -252,7 +259,7 @@ def _load_data(TF, filename, is_rgb, sl=None, memmap=None, **kwds):
         return dc
 
 
-def _parse_scale_unit(tiff, op, shape, force_read_resolution):
+def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
     axes_l = ['x', 'y', 'z']
     scales = {axis: 1.0 for axis in axes_l}
     offsets = {axis: 0.0 for axis in axes_l}
@@ -277,7 +284,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
 
         return scales, units, offsets, intensity_axis
 
-    # for files created with FEI, ZEISS or TVIPS (no DM or ImageJ metadata)
+    # for files created with FEI, ZEISS, TVIPS or Olympus (no DM or ImageJ metadata)
     if 'fei' in tiff.flags:
         _logger.debug("Reading FEI tif metadata")
         op['fei_metadata'] = tiff.fei_metadata
@@ -320,6 +327,20 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                 op, factor=1e-2)
             units.update({'x': 'm', 'y': 'm'})
         return scales, units, offsets, intensity_axis
+
+    elif page.is_sis:
+        _logger.debug("Reading Olympus SIS tif metadata")
+        for tag_number in [33471, 33560]:
+            try:
+                sis_metadata = page.tags[tag_number].value
+            except Exception:
+                pass
+
+        op['Olympus_SIS_metadata'] = sis_metadata
+        scales['x'] = round(float(sis_metadata['pixelsizex']), 15)
+        scales['y'] = round(float(sis_metadata['pixelsizey']), 15)
+        units.update({'x': 'm', 'y': 'm'})
+
 
     # for files containing DM metadata
     if '65003' in op:
@@ -617,6 +638,13 @@ def get_tvips_mapping(mapped_magnification):
     return mapping_tvips
 
 
+mapping_olympus_sis = {
+        'Olympus_SIS_metadata.magnification':
+        ("Acquisition_instrument.TEM.magnification", None),
+        'Olympus_SIS_metadata.cameraname':
+        ("Acquisition_instrument.TEM.Detector.Camera.name", None),
+    }
+
 def get_metadata_mapping(tiff_page, op):
     if tiff_page.is_fei:
         return mapping_fei
@@ -633,5 +661,7 @@ def get_metadata_mapping(tiff_page, op):
         except KeyError:
             mapped_magnification = 'magnification'
         return get_tvips_mapping(mapped_magnification)
+    elif tiff_page.is_sis:
+        return mapping_olympus_sis
     else:
         return {}
