@@ -3,10 +3,14 @@ language: python
 
 env:
   global:
+    # The default environment variable are defined here and overwritten
+    # in the matrix when necessary
     - ENV=pip
+    - PIP_ARGS="--upgrade --use-feature=2020-resolver -e"
     - PIP_SELECTOR="all, tests, coverage"
     - PYTEST_ARGS="--pyargs hyperspy"
-    - MINIMUM_VERSION=false
+    - OLDEST_SUPPORTED_VERSION=false
+    - MPLBACKEND="agg"
 
 matrix:
   include:
@@ -20,8 +24,11 @@ matrix:
   - name: "Linux, 3.7, pip, minimum requirement"
     env: PIP_SELECTOR="tests"
     python: 3.7
-  - name: "Linux, 3.6, pip, mininum version"
-    env: MINIMUM_VERSION=true
+  - name: "Linux, 3.6, pip, oldest supported versions"
+    env:
+      - OLDEST_SUPPORTED_VERSION=true
+      - PIP_ARGS="-e"
+      - PIP_SELECTOR="tests"
     python: 3.6
   - name: "Linux, 3.7, pip, doc"
     env: PIP_SELECTOR="all, build-doc"
@@ -37,13 +44,10 @@ install:
   # manually
   - pip install --upgrade pytest
   # Test against the oldest supported version of matplotlib, numpy and scipy
-  # Use old version numba and imagecodecs to work around incompatibilities
-  - if [ "$MINIMUM_VERSION" == true ]; then
-      pip install matplotlib==2.2.3 numpy==1.15 scipy==1.0.1 numba==0.40 imagecodecs==2018.10.10;
-      pip install -e .["${PIP_SELECTOR}"];
-    else
-      pip install --upgrade -e .["${PIP_SELECTOR}"];
+  - if [ "$OLDEST_SUPPORTED_VERSION" == true ]; then
+      pip install matplotlib==2.2.3 numpy==1.15.4 scipy==1.1;
     fi
+  - pip install $PIP_ARGS .["${PIP_SELECTOR}"];
 
 script:
   - which python
