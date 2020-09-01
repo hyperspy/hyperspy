@@ -665,9 +665,9 @@ class SmoothingSavitzkyGolay(Smoothing):
 
 @add_gui_method(toolkey="hyperspy.Signal1D.smooth_lowess")
 class SmoothingLowess(Smoothing):
-    smoothing_parameter = t.Range(low=0.,
-                                  high=1.,
-                                  value=0.5,
+    smoothing_parameter = t.Range(low=0.001,
+                                  high=0.99,
+                                  value=0.1,
                                   )
     number_of_iterations = t.Range(low=1,
                                    value=1)
