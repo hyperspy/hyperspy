@@ -81,7 +81,7 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         Export the scale and the units (compatible with DM and ImageJ) to
         appropriate tags.
     """
-    _logger.debug('************* Saving *************')
+
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
@@ -138,29 +138,22 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     **kwds, optional
     """
 
-    _logger.debug('************* Loading *************')
-    # For testing the use of local and skimage tifffile library
-
     lazy = kwds.pop('lazy', False)
     memmap = kwds.pop('memmap', None)
+
     with TiffFile(filename, **kwds) as tiff:
 
-        # change in the Tifffiles API
-        if hasattr(tiff.series[0], 'axes'):
-            # in newer version the axes is an attribute
-            axes = tiff.series[0].axes
-        else:
-            # old version
-            axes = tiff.series[0]['axes']
-        is_rgb = tiff.pages[0].photometric == TIFF.PHOTOMETRIC.RGB
-        _logger.debug("Is RGB: %s" % is_rgb)
         series = tiff.series[0]
+        axes = series.axes
         if hasattr(series, 'shape'):
             shape = series.shape
             dtype = series.dtype
         else:
             shape = series['shape']
             dtype = series['dtype']
+
+        is_rgb = tiff.pages[0].photometric == TIFF.PHOTOMETRIC.RGB
+        _logger.debug("Is RGB: %s" % is_rgb)
         if is_rgb:
             axes = axes[:-1]
             names = ['R', 'G', 'B', 'A']
@@ -168,6 +161,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
             dtype = np.dtype({'names': names[:lastshape],
                               'formats': [dtype] * lastshape})
             shape = shape[:-1]
+
         if LooseVersion(tifffile.__version__) >= LooseVersion("2020.2.16"):
             op = {tag.name: tag.value for tag in tiff.pages[0].tags}
         else:
