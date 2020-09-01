@@ -80,7 +80,8 @@ def load_object_hologram():
     """
     from hyperspy.io import load
     file_path = os.sep.join([os.path.dirname(__file__), 'holography',
-                             'example_signals', '01_holo_Vbp_130V_0V_bin2_crop.hdf5'])
+                             'example_signals', 
+                             '01_holo_Vbp_130V_0V_bin2_crop.hdf5'])
     return load(file_path, signal_type='hologram', mode='r')
 
 
@@ -109,5 +110,6 @@ def load_reference_hologram():
     """
     from hyperspy.io import load
     file_path = os.sep.join([os.path.dirname(__file__), 'holography',
-                             'example_signals', '00_ref_Vbp_130V_0V_bin2_crop.hdf5'])
+                             'example_signals', 
+                             '00_ref_Vbp_130V_0V_bin2_crop.hdf5'])
     return load(file_path, signal_type='hologram', mode='r')
