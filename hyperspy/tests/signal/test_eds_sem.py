@@ -262,6 +262,9 @@ class Test_get_lines_intensity:
                                     plot_result=False,
                                     integration_windows=5)[0]
         assert sAl.axes_manager.signal_dimension == 0
+        np.testing.assert_allclose(
+            sAl.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)
         np.testing.assert_allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3)
         sAl = s.inav[0].get_lines_intensity(
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]
