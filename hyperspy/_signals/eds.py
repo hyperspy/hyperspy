@@ -171,8 +171,8 @@ class EDS_mixin:
 
         # Update live time by the change in navigation axes dimensions
         time_factor = (
-               np.prod([ax.size for ax in s.axes_manager.navigation_axes])
-               / np.prod([ax.size for ax in self.axes_manager.navigation_axes])
+               np.prod([ax.size for ax in self.axes_manager.navigation_axes])
+               / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
             )
         aimd = s.metadata.Acquisition_instrument
         if "SEM.Detector.EDS.live_time" in aimd:

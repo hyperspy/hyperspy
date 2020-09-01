@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import pytest
 
 import numpy as np
@@ -50,7 +49,7 @@ class Test_metadata:
         sSum = s.sum(0)
         assert (
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
-            3.1 * 2)
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -62,7 +61,7 @@ class Test_metadata:
         sSum = s.sum((0, 1))
         assert (
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
-            3.1 *
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time *
             2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
@@ -72,19 +71,18 @@ class Test_metadata:
     def test_sum_live_time_out_arg(self):
         s = self.signal
         sSum = s.sum(0)
-        s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
+        sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
         assert r is None
         assert (
             s_resum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
-            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time * 2)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
-        dim = s.axes_manager.shape
         s = s.rebin(scale=[2, 2, 1])
         assert (
             s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
@@ -193,7 +191,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.Stage.tilt_beta = 15.5
         np.testing.assert_allclose(s.get_take_off_angle(), 24.202671071140102)
 
-    def test_take_off_angle_azimuth(self):
+    def test_take_off_angle_alpha(self):
         s = self.signal
         s.metadata.Acquisition_instrument.SEM.Stage.tilt_alpha = None
         with pytest.raises(ValueError, match="alpha"):
