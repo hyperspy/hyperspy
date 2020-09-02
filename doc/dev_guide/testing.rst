@@ -102,6 +102,13 @@ The ``--dist loadfile`` argument will group tests by their containing file. The
 groups are then distributed to available workers as whole units, thus guaranteeing 
 that all tests in a file run in the same worker. 
 
+.. note::
+
+    Running tests in parallel using ``pytest-xdist`` will change the content
+    and format of the output of ``pytest`` to the console. We recommend installing
+    ```pytest-sugar` <https://pypi.org/project/pytest-sugar/>`_ to produce 
+    nicer-looking output including an animated progressbar.
+
 
 Flaky tests
 ^^^^^^^^^^^
