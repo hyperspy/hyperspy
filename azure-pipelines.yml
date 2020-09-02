@@ -60,9 +60,11 @@ steps:
     conda list
   displayName: Install package
 
+# Note we must use `-n 2` argument for pytest-xdist due to
+# https://github.com/pytest-dev/pytest-xdist/issues/9.
 - bash: |
     source activate $ENV_NAME
-    pytest --mpl --pyargs hyperspy --mpl-results-path $RESULT_IMAGES_FOLDER
+    pytest --mpl --pyargs hyperspy --reruns 3 --instafail --mpl-results-path $RESULT_IMAGES_FOLDER
   displayName: Run test suite
 
 - publish: $(System.DefaultWorkingDirectory)/$(RESULT_IMAGES_FOLDER)

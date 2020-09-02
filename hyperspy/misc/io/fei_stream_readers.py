@@ -20,7 +20,7 @@ import numpy as np
 import dask.array as da
 import sparse
 
-from numba import jit
+from numba import njit
 
 
 class DenseSliceCOO(sparse.COO):
@@ -35,9 +35,15 @@ class DenseSliceCOO(sparse.COO):
             return obj
 
 
-@jit(nopython=True, cache=True)
+@njit(cache=True)
 def _stream_to_sparse_COO_array_sum_frames(
-        stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
+        stream_data,
+        last_frame,
+        shape,
+        channels,
+        rebin_energy=1,
+        first_frame=0
+    ):  # pragma: no cover
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -116,9 +122,15 @@ def _stream_to_sparse_COO_array_sum_frames(
     return coords, data, final_shape
 
 
-@jit(nopython=True, cache=True)
+@njit(cache=True)
 def _stream_to_sparse_COO_array(
-        stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
+        stream_data,
+        last_frame,
+        shape,
+        channels,
+        rebin_energy=1,
+        first_frame=0
+    ):  # pragma: no cover
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -242,9 +254,14 @@ def stream_to_sparse_COO_array(
     return dask_sparse
 
 
-@jit(nopython=True, cache=True)
-def _fill_array_with_stream_sum_frames(spectrum_image, stream,
-                                       first_frame, last_frame, rebin_energy=1):
+@njit(cache=True)
+def _fill_array_with_stream_sum_frames(
+        spectrum_image,
+        stream,
+        first_frame,
+        last_frame,
+        rebin_energy=1
+    ):  # pragma: no cover
     # jit speeds up this function by a factor of ~ 30
     navigation_index = 0
     frame_number = 0
@@ -267,9 +284,14 @@ def _fill_array_with_stream_sum_frames(spectrum_image, stream,
             navigation_index += 1
 
 
-@jit(nopython=True, cache=True)
-def _fill_array_with_stream(spectrum_image, stream, first_frame,
-                            last_frame, rebin_energy=1):
+@njit(cache=True)
+def _fill_array_with_stream(
+        spectrum_image,
+        stream,
+        first_frame,
+        last_frame,
+        rebin_energy=1
+    ):  # pragma: no cover
     navigation_index = 0
     frame_number = 0
     shape = spectrum_image.shape
@@ -346,8 +368,8 @@ def stream_to_array(
     return spectrum_image
 
 
-@jit(nopython=True, cache=True)
-def array_to_stream(array):
+@njit(cache=True)
+def array_to_stream(array):  # pragma: no cover
     """Convert an array to a FEI stream
 
     Parameters

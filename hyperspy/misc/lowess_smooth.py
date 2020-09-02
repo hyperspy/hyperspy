@@ -18,11 +18,11 @@ Statistical Association, September 1988, volume 83, number 403, pp. 596-610.
 # https://gist.github.com/agramfort/850437
 
 import numpy as np
-from numba import jit
+from numba import njit
 
 
-@jit(nopython=True, cache=True, nogil=True)
-def lowess(y, x, f=2.0 / 3.0, n_iter=3):
+@njit(cache=True, nogil=True)
+def lowess(y, x, f=2.0 / 3.0, n_iter=3):  # pragma: no cover
     """Lowess smoother (robust locally weighted regression).
 
     Fits a nonparametric regression curve to a scatterplot.
