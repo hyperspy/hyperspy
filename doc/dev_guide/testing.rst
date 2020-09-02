@@ -59,25 +59,25 @@ First ensure pytest and its plugins are installed by:
 .. code:: bash
 
    # If using a standard hyperspy install
-   pip install hyperspy[tests]
+   $ pip install hyperspy[tests]
 
    # Or, from a hyperspy local development directory
-   pip install -e .[tests]
+   $ pip install -e .[tests]
 
    # Or just installing the dependencies using conda
-   conda install -c conda-forge pytest pytest-mpl
+   $ conda install -c conda-forge pytest pytest-mpl
 
 To run them:
 
 .. code:: bash
 
-   pytest --mpl --pyargs hyperspy
+   $ pytest --mpl --pyargs hyperspy
 
 Or, from HyperSpy's project folder, simply:
 
 .. code:: bash
 
-   pytest
+   $ pytest
 
 .. note::
 
@@ -91,14 +91,36 @@ available, using the ```pytest-xdist`` plugin <https://pypi.org/project/pytest-x
 .. code:: bash
 
    # To run on all the cores of your machine
-   pytest -n auto --dist loadfile
+   $ pytest -n auto --dist loadfile
 
    # To run on 2 cores
-   pytest -n 2 --dist loadfile
+   $ pytest -n 2 --dist loadfile
 
 The ``--dist loadfile`` argument will group tests by their containing file. The 
 groups are then distributed to available workers as whole units, thus guaranteeing 
 that all tests in a file run in the same worker. 
+
+
+Flaky tests
+^^^^^^^^^^^
+
+Test functions can sometimes exhibit intermittent or sporadic failure, with seemingly
+random or non-deterministic behaviour. They may sometimes pass or sometimes fail, and 
+it won't always be clear why. These are usually known as "flaky" tests.
+
+One way to approach flaky tests is to rerun them, to see if the failure was a one-off.
+This can be achieved using the ```pytest-rerunfailures`` plugin <https://pypi.org/project/pytest-rerunfailures/>`_.
+
+.. code:: bash
+
+    # To re-run all test suite failures a maximum of 3 times
+    $ pytest --reruns 3
+
+    # To wait 1 second before the next retry
+    $ pytest --reruns 3 --reruns-delay 1
+
+You can read more about flaky tests in the `pytest documentation 
+<https://docs.pytest.org/en/stable/flaky.html>`_.
 
 
 Test coverage
@@ -116,7 +138,7 @@ you can run (from HyperSpy's project folder):
 
 .. code:: bash
 
-   pytest --cov=hyperspy
+    $ pytest --cov=hyperspy
 
 Configuration options for code coverage are also set in the ``setup.cfg`` file,
 under the ``[coverage:run]`` and ``[coverage:report]`` sections. See the `coverage
@@ -192,7 +214,7 @@ To run plot tests, you simply need to add the option ``--mpl``:
 
 :: code:: bash
 
-    pytest --mpl
+    $ pytest --mpl
 
 If you don't use ``--mpl``, the test functions will be executed, but the
 images will not be compared to the reference images.
@@ -231,13 +253,13 @@ for easier viewing. It can be installed by conda:
 
 .. code:: bash
 
-   conda install pytest-html
+    $ conda install pytest-html
 
 and run by:
 
 .. code:: bash
 
-   pytest --mpl --html=report.html
+    $ pytest --mpl --html=report.html
 
 See `pytest-mpl <https://pypi.python.org/pypi/pytest-mpl>`_ for more details.
 

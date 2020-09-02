@@ -8,9 +8,7 @@ env:
     - ENV=pip
     - PIP_ARGS="--upgrade --use-feature=2020-resolver -e"
     - PIP_SELECTOR="all, tests, coverage"
-    # Note we must use `-n 2` argument for pytest-xdist due to
-    # https://github.com/pytest-dev/pytest-xdist/issues/9.
-    - PYTEST_ARGS="--pyargs hyperspy -n 2 --dist loadfile --reruns 3"
+    - PYTEST_ARGS="--pyargs hyperspy --reruns 3"
     - OLDEST_SUPPORTED_VERSION=false
     - MPLBACKEND="agg"
 
