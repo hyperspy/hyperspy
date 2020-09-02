@@ -10,7 +10,7 @@ env:
     - PIP_SELECTOR="all, tests, coverage"
     # Note we must use `-n 2` argument for pytest-xdist due to
     # https://github.com/pytest-dev/pytest-xdist/issues/9.
-    - PYTEST_ARGS="--pyargs hyperspy -n 2 --dist loadfile"
+    - PYTEST_ARGS="--pyargs hyperspy -n 2 --dist loadfile --reruns 3"
     - OLDEST_SUPPORTED_VERSION=false
     - MPLBACKEND="agg"
 
@@ -20,7 +20,7 @@ matrix:
     python: 3.8
   - name: "Linux, 3.7, pip"
     python: 3.7
-    env: PYTEST_ARGS="--pyargs hyperspy -n 2 --dist loadfile --cov=hyperspy"
+    env: PYTEST_ARGS="$PYTEST_ARGS --cov=hyperspy"
   - name: "Linux, 3.6, pip"
     python: 3.6
   - name: "Linux, 3.7, pip, minimum requirement"
