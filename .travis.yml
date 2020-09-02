@@ -8,7 +8,7 @@ env:
     - ENV=pip
     - PIP_ARGS="--upgrade --use-feature=2020-resolver -e"
     - PIP_SELECTOR="all, tests, coverage"
-    - PYTEST_ARGS="--pyargs hyperspy --reruns 3"
+    - PYTEST_ARGS="--pyargs hyperspy --reruns 3 -n 2"
     - OLDEST_SUPPORTED_VERSION=false
     - MPLBACKEND="agg"
 
