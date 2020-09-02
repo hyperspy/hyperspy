@@ -185,8 +185,8 @@ or :ref:`Pip <install-with-pip>` is recommended.
 However, packages of the latest HyperSpy release and the related
 *hyperpy-gui-ipywidgets/traitsui* packages are
 maintained for the rolling release distributions **Arch-Linux** (`Arch User Repository 
-<https://aur.archlinux.org/packages/hyperspy/>`_) and **openSUSE** (`Community Package 
-<https://software.opensuse.org/package/python-hyperspy>`_).
+<https://aur.archlinux.org/packages/python-hyperspy/>`_) and **openSUSE** (`Community
+Package <https://software.opensuse.org/package/python-hyperspy>`_).
 
 Install development version
 ---------------------------

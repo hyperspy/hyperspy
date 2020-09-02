@@ -45,6 +45,7 @@ hyperspy/misc/etc/test_compilers.obj
 /.spyproject/
 *nbc
 *nbi
+hyperspy/tests/io/edax_files.zip
 
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/
