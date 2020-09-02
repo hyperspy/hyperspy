@@ -70,6 +70,15 @@ class TestFEIReader():
         assert not hasattr(s.metadata.General, 'time')
         assert 'AcquireDate not found in metadata' in caplog.text
 
+    def test_load_more_ser_than_metadata(self, caplog):
+        fname = os.path.join(
+            self.dirpathold, 'more_ser_then_emi_metadata.emi')
+        s0, s1 = load(fname, only_valid_data=True)
+        assert hasattr(s0.original_metadata, 'ObjectInfo')
+        assert not hasattr(s1.original_metadata, 'ObjectInfo')
+        assert 'more_ser_then_emi_metadata.emi did not contain any metadata' \
+               in caplog.text
+
     def test_load_diffraction_point(self):
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s0 = load(fname0)
