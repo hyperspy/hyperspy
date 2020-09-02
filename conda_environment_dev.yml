@@ -11,3 +11,5 @@ dependencies:
 - pytest-mpl
 - pytest-xdist
 - pytest-rerunfailures
+- pytest-instafail
+

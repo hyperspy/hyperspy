@@ -87,6 +87,8 @@ Or, from HyperSpy's project folder, simply:
 
 The HyperSpy test suite can also be run in parallel if you have multiple CPUs
 available, using the ```pytest-xdist`` plugin <https://pypi.org/project/pytest-xdist/>`_.
+If you have the plugin installed, HyperSpy will automatically run the test suite in
+parallel on your machine.
 
 .. code:: bash
 
