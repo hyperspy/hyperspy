@@ -266,6 +266,7 @@ def emi_reader(filename, dump_xml=False, **kwds):
     # generated then, it will possible to match to the corresponding ser file
     # and add the detector information in the metadata
     objects = get_xml_info_from_emi(filename)
+    orig_fname = filename
     filename = os.path.splitext(filename)[0]
     if dump_xml is True:
         for i, obj in enumerate(objects):
@@ -283,7 +284,14 @@ def emi_reader(filename, dump_xml=False, **kwds):
 
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
         op = DictionaryTreeBrowser(sers[-1]['original_metadata'])
-        emixml2dtb(ET.fromstring(objects[index]), op)
+
+        # defend against condition where more ser files are present than object
+        # metadata defined in emi
+        if index < len(objects):
+            emixml2dtb(ET.fromstring(objects[index]), op)
+        else:
+            _logger.warning(f'{orig_fname} did not contain any metadata for '
+                            f'{f}, so only .ser header information was read')
         sers[-1]['original_metadata'] = op.as_dictionary()
     return sers
 
