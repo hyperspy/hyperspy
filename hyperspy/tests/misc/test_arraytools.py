@@ -20,9 +20,24 @@
 import numpy as np
 import pytest
 
-from hyperspy.misc.array_tools import dict2sarray
+from hyperspy.misc.array_tools import dict2sarray, get_array_memory_size_in_GiB
 
-dt = [('x', np.uint8), ('y', np.uint16), ('text', (bytes, 6))]
+dt = [("x", np.uint8), ("y", np.uint16), ("text", (bytes, 6))]
+
+
+@pytest.mark.parametrize(
+    "dtype, size",
+    [
+        ("int32", 4.470348e-7),
+        ("float64", 8.940697e-7),
+        ("uint8", 1.117587e-7),
+        (np.dtype(np.int16), 2.235174e-7),
+    ],
+)
+def test_get_memory_size(dtype, size):
+    mem = get_array_memory_size_in_GiB((2, 3, 4, 5), dtype=dtype)
+    print(mem)
+    np.testing.assert_allclose(mem, size)
 
 
 def test_d2s_fail():

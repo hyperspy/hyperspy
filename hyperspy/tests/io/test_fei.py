@@ -62,6 +62,14 @@ class TestFEIReader():
         header1, data1 = load_ser_file(fname1)
         assert header1['SeriesVersion'] == 544
 
+    def test_load_no_acquire_date(self, caplog):
+        fname = os.path.join(
+            self.dirpathold, 'no_AcquireDate.emi')
+        s = load(fname)
+        assert not hasattr(s.metadata.General, 'date')
+        assert not hasattr(s.metadata.General, 'time')
+        assert 'AcquireDate not found in metadata' in caplog.text
+
     def test_load_diffraction_point(self):
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s0 = load(fname0)

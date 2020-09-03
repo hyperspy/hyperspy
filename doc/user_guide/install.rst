@@ -183,10 +183,19 @@ distributions and the installation via :ref:`Anaconda/Miniconda <anaconda-instal
 or :ref:`Pip <install-with-pip>` is recommended.
 
 However, packages of the latest HyperSpy release and the related
-*hyperpy-gui-ipywidgets/traitsui* packages are
-maintained for the rolling release distributions **Arch-Linux** (`Arch User Repository 
-<https://aur.archlinux.org/packages/python-hyperspy/>`_) and **openSUSE** (`Community
-Package <https://software.opensuse.org/package/python-hyperspy>`_).
+GUI packages are maintained for the rolling release distributions 
+**Arch-Linux** (in the `Arch User Repository 
+<https://aur.archlinux.org/packages/python-hyperspy/>`_) (AUR) and 
+**openSUSE** (`Community Package <https://software.opensuse.org/package/python-hyperspy>`_)
+as ``python-hyperspy`` and ``python-hyperspy-gui-traitsui`` /
+``python-hyperspy-gui-ipywidgets``.
+
+A more up-to-date package that contains all updates to be included
+in the next minor version release (likely including new features compared to
+the stable release) is also available in the AUR as |python-hyperspy-git|_.
+
+.. |python-hyperspy-git| replace:: ``python-hyperspy-git``
+.. _python-hyperspy-git: https://aur.archlinux.org/packages/python-hyperspy-git 
 
 Install development version
 ---------------------------

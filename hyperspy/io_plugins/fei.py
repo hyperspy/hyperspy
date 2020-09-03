@@ -479,7 +479,12 @@ def ser_reader(filename, objects=None, lazy=False, only_valid_data=False):
     date, time = None, None
     if objects is not None:
         objects_dict = convert_xml_to_dict(objects[0])
-        date, time = _get_date_time(objects_dict.ObjectInfo.AcquireDate)
+        try:
+            acq_date = objects_dict.ObjectInfo.AcquireDate
+            date, time = _get_date_time(acq_date)
+        except AttributeError:
+            _logger.warning(f'AcquireDate not found in metadata of {filename};'
+                            ' Not setting metadata date or time')
     if "PositionY" in data.dtype.names and len(data['PositionY']) > 1 and \
             (data['PositionY'][0] == data['PositionY'][1]):
         # The spatial dimensions are stored in F order i.e. X, Y, ...
