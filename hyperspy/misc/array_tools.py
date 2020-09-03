@@ -21,7 +21,7 @@ import math as math
 import logging
 
 import numpy as np
-from numba import jit
+from numba import njit
 
 from hyperspy.misc.math_tools import anyfloatin
 
@@ -39,9 +39,9 @@ def get_array_memory_size_in_GiB(shape, dtype):
     dtype : data-type
         The desired data-type for the array.
     """
-    if isinstance(dtype, str):
+    if not isinstance(dtype, np.dtype):
         dtype = np.dtype(dtype)
-    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2. ** 30
+    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2.0 ** 30
 
 
 def are_aligned(shape1, shape2):
@@ -154,11 +154,10 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     if new_shape is None and scale is None:
         raise ValueError("One of new_shape, or scale must be specified")
     elif new_shape is not None and scale is not None:
-        raise ValueError("Only one out of new_shape or scale should be specified.\
-                        Not both.")
+        raise ValueError("Only one out of new_shape or scale should be specified")
     elif new_shape is not None:
         scale = []
-        for i, axis in enumerate(a.shape):
+        for i, _ in enumerate(a.shape):
             scale.append(a.shape[i] / new_shape[i])
     else:
         new_shape = new_shape
@@ -182,9 +181,11 @@ def rebin(a, new_shape=None, scale=None, crop=True):
         # check function wont bin to zero.
         for item in new_shape:
             if item == 0:
-                raise ValueError("One of your dimensions collapses to zero.\
-                Re-adjust your scale values or run code with crop=False to\
-                avoid this.")
+                raise ValueError(
+                    "One of your dimensions collapses to zero. "
+                    "Re-adjust your scale values or run code with "
+                    "crop=False to avoid this error."
+                )
         scale = np.asarray(a.shape) // np.asarray(new_shape)
         if scale.max() < 2:
             return a.copy()
@@ -197,18 +198,20 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                 2 * i + 1 for i in range(lenShape)))
         else:
             import dask.array as da
+
             try:
                 return da.coarsen(np.sum, a, {i: int(f)
                                               for i, f in enumerate(scale)})
             # we provide slightly better error message in hyperspy context
             except ValueError:
-                raise ValueError("Rebinning does not align with data dask chunks."
-                                 " Rebin fewer dimensions at a time to avoid this"
-                                 " error")
+                raise ValueError(
+                    "Rebinning does not align with data dask chunks. "
+                    "Rebin fewer dimensions at a time to avoid this error"
+                )
 
 
-@jit(nopython=True, cache=True)
-def _linear_bin_loop(result, data, scale):
+@njit(cache=True)
+def _linear_bin_loop(result, data, scale):  # pragma: no cover
     for j in range(result.shape[0]):
         # Begin by determining the upper and lower limits of a given new pixel.
         x1 = j * scale
@@ -250,8 +253,7 @@ def _linear_bin_loop(result, data, scale):
 
 
 def _linear_bin(dat, scale, crop=True):
-    """
-    Binning of the spectrum image by a non-integer pixel value.
+    """Binning of the spectrum image by a non-integer pixel value.
 
     Parameters
     ----------
@@ -282,9 +284,10 @@ def _linear_bin(dat, scale, crop=True):
     """
     if len(dat.shape) != len(scale):
         raise ValueError(
-            'The list of bins must match the number of dimensions, including',
-            'the energy dimension. In order to not bin in any of these ',
-            'dimensions specifically, simply set the value in shape to 1')
+            "The list of bins must match the number of dimensions, including "
+            "the energy dimension. In order to not bin in any of these "
+            "dimensions specifically, simply set the value in shape to 1."
+        )
 
     for axis, s in enumerate(scale):
         # For each iteration of linear_bin the axis being interated over has to
@@ -300,9 +303,11 @@ def _linear_bin(dat, scale, crop=True):
                else math.ceil(dat.shape[0] / s))
         # check function wont bin to zero.
         if dim == 0:
-            raise ValueError("One of your dimensions collapses to zero.\
-            Re-adjust your scale values or run code with crop=False to\
-            avoid this.")
+            raise ValueError(
+                "One of your dimensions collapses to zero. "
+                "Re-adjust your scale values or run code with "
+                "crop=False to avoid this error."
+            )
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
         result = np.zeros((dim,) + dat.shape[1:])
@@ -334,8 +339,7 @@ def sarray2dict(sarray, dictionary=None):
     if dictionary is None:
         dictionary = OrderedDict()
     for name in sarray.dtype.names:
-        dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 \
-            else sarray[name]
+        dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 else sarray[name]
     return dictionary
 
 
@@ -369,7 +373,7 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
     return sarray
 
 
-@jit(nopython=True, cache=True)
+@njit(cache=True)
 def numba_histogram(data, bins, ranges):
     """
     Parameters
@@ -388,7 +392,7 @@ def numba_histogram(data, bins, ranges):
     """
     # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
     hist = np.zeros((bins,), dtype=np.intp)
-    delta = 1/((ranges[1] - ranges[0]) / bins)
+    delta = 1 / ((ranges[1] - ranges[0]) / bins)
 
     for x in data.flat:
         i = (x - ranges[0]) * delta

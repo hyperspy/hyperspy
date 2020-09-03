@@ -33,8 +33,7 @@ class TestSignal2D:
         self.im = hs.signals.Signal2D(np.arange(0., 18).reshape((2, 3, 3)))
         self.ragged = None
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_constant_sigma(self, parallel):
         s = self.im
         s.map(gaussian_filter, sigma=1, parallel=parallel, ragged=self.ragged)
@@ -47,8 +46,7 @@ class TestSignal2D:
               [12.42207377, 13., 13.57792623],
               [14.15585247, 14.7337787, 15.31170493]]]))
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_constant_sigma_navdim0(self, parallel):
         s = self.im.inav[0]
         s.map(gaussian_filter, sigma=1, parallel=parallel, ragged=self.ragged)
@@ -57,8 +55,7 @@ class TestSignal2D:
              [3.42207377, 4., 4.57792623],
              [5.15585247, 5.7337787, 6.31170493]]))
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_variable_sigma(self, parallel):
         s = self.im
 
@@ -76,8 +73,7 @@ class TestSignal2D:
               [12.42207377, 13., 13.57792623],
               [14.15585247, 14.7337787, 15.31170493]]]))
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_variable_sigma_navdim0(self, parallel):
         s = self.im
 
@@ -95,8 +91,7 @@ class TestSignal2D:
               [12.42207377, 13., 13.57792623],
               [14.15585247, 14.7337787, 15.31170493]]]))
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_axes_argument(self, parallel):
         s = self.im
         s.map(rotate, angle=45, reshape=False, parallel=parallel,
@@ -110,8 +105,7 @@ class TestSignal2D:
               [9.46446609, 13., 16.53553391],
               [0., 14.76776695, 0.]]]))
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_different_shapes(self, parallel):
         s = self.im
         angles = hs.signals.BaseSignal([0, 45])
@@ -170,8 +164,7 @@ class TestSignal1D:
         self.s = hs.signals.Signal1D(np.arange(0., 6).reshape((2, 3)))
         self.ragged = None
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_constant_sigma(self, parallel):
         s = self.s
         m = mock.Mock()
@@ -183,8 +176,7 @@ class TestSignal1D:
               [3.42207377, 4., 4.57792623]])))
         assert m.data_changed.called
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_variable_signal_parameter(self, parallel):
         s = self.s
         m = mock.Mock()
@@ -193,8 +185,7 @@ class TestSignal1D:
         np.testing.assert_allclose(s.data, np.zeros_like(s.data))
         assert m.data_changed.called
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_constant_signal_parameter(self, parallel):
         s = self.s
         m = mock.Mock()
@@ -206,8 +197,7 @@ class TestSignal1D:
               [3., 3., 3.]])))
         assert m.data_changed.called
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_dtype(self, parallel):
         s = self.s
         s.map(lambda data: np.sqrt(np.complex128(data)),
@@ -232,8 +222,7 @@ class TestSignal0D:
         self.s.axes_manager.set_signal_dimension(0)
         self.ragged = None
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test(self, parallel):
         s = self.s
         m = mock.Mock()
@@ -243,8 +232,7 @@ class TestSignal0D:
             s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
         assert m.data_changed.called
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_nav_dim_1(self, parallel):
         s = self.s.inav[1, 1]
         m = mock.Mock()
@@ -266,8 +254,7 @@ class TestChangingAxes:
         for ax, name in zip(self.base.axes_manager._axes, _alphabet):
             ax.name = name
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_one_nav_reducing(self, parallel):
         s = self.base.transpose(signal_axes=4).inav[0, 0]
         s.map(np.mean, axis=1, parallel=parallel, ragged=self.ragged)
@@ -278,8 +265,7 @@ class TestChangingAxes:
         assert ['f'] == [ax.name for ax in s.axes_manager._axes]
         assert 0 == len(s.axes_manager.navigation_axes)
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_one_nav_increasing(self, parallel):
         s = self.base.transpose(signal_axes=4).inav[0, 0]
         s.map(np.tile, reps=(2, 1, 1, 1, 1),
@@ -290,8 +276,7 @@ class TestChangingAxes:
         assert 0 == len(s.axes_manager.navigation_axes)
         assert s.data.shape == (2, 4, 5, 6, 7)
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_reducing(self, parallel):
         s = self.base.transpose(signal_axes=4)
         s.map(np.mean, axis=1, parallel=parallel, ragged=self.ragged)
@@ -305,8 +290,7 @@ class TestChangingAxes:
                               s.axes_manager.navigation_axes]
         assert 2 == len(s.axes_manager.navigation_axes)
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_increasing(self, parallel):
         s = self.base.transpose(signal_axes=4)
         s.map(np.tile, reps=(2, 1, 1, 1, 1),
@@ -320,8 +304,7 @@ class TestChangingAxes:
         assert s.data.shape == (2, 3, 2, 4, 5, 6, 7)
 
 
-@pytest.mark.parametrize('parallel',
-                         [pytest.param(True, marks=pytest.mark.parallel), False])
+@pytest.mark.parametrize('parallel', [True, False])
 def test_new_axes(parallel):
     s = hs.signals.Signal1D(np.empty((10, 10)))
     s.axes_manager.navigation_axes[0].name = 'a'

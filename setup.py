@@ -78,10 +78,10 @@ extras_require = {
     "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],
+    "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov", "codecov"],
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt"],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be

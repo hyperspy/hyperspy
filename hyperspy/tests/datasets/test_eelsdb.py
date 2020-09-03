@@ -74,6 +74,10 @@ def test_eelsdb_eels():
             order_direction='DESC',
             monochromated=False,
             verify_certificate=False)
+    except Exception as e:
+        # e.g. failures such as ConnectionError or MaxRetryError
+        pytest.skip(f"Skipping eelsdb test due to {e}")
+
     assert len(ss) == 2
     md = ss[0].metadata
     assert md.General.author == "Odile Stephan"
@@ -96,6 +100,10 @@ def test_eelsdb_xas():
     except SSLError:
         ss = eelsdb(
             spectrum_type="xrayabs", max_n=1, verify_certificate=False)
+    except Exception as e:
+        # e.g. failures such as ConnectionError or MaxRetryError
+        pytest.skip(f"Skipping eelsdb test due to {e}")
+
     assert len(ss) == 1
     md = ss[0].metadata
     assert md.Signal.signal_type == "XAS"
