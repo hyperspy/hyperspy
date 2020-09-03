@@ -70,6 +70,29 @@ class TestFEIReader():
         assert not hasattr(s.metadata.General, 'time')
         assert 'AcquireDate not found in metadata' in caplog.text
 
+    @pytest.fixture(scope="function")
+    def prepare_non_zero_float(self):
+        import tarfile
+        tgz_fname = os.path.join(
+            self.dirpathold, 'non_float_meta_value_zeroed.tar.gz')
+        with tarfile.open(tgz_fname, 'r:gz') as tar:
+            tar.extractall(path=os.path.dirname(tgz_fname))
+
+        yield True
+
+        # teardown code
+        os.remove(os.path.join(
+            self.dirpathold, 'non_float_meta_value_zeroed.emi'))
+        os.remove(os.path.join(
+            self.dirpathold, 'non_float_meta_value_zeroed_1.ser'))
+
+    def test_load_non_zero_float(self, prepare_non_zero_float, caplog):
+        fname = os.path.join(self.dirpathold, 'non_float_meta_value_zeroed.emi')
+        s = load(fname)
+        assert s.original_metadata.ObjectInfo.ExperimentalDescription\
+            .as_dictionary()['OBJ Aperture_um'] == 'V'
+        assert 'Expected decimal value for OBJ Aperture' in caplog.text
+
     def test_load_diffraction_point(self):
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s0 = load(fname0)

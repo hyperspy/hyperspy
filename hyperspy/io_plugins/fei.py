@@ -226,7 +226,12 @@ def parse_ExperimentalDescription(et, dictree):
         value = data.find("Value").text
         units = data.find("Unit").text
         item = label if not units else label + "_%s" % units
-        value = float(value) if units else value
+        try:
+            # try to coerce value to decimal representation
+            value = float(value) if units else value
+        except ValueError:
+            _logger.warning(f'Expected decimal value for {label}, '
+                            f'but received {value} instead')
         dictree[item] = value
 
 
