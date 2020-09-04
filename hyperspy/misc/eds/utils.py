@@ -580,7 +580,7 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
     return acf
 
 
-def detetector_efficiency_from_layers(energies,
+def detector_efficiency_from_layers(energies,
                                       elements,
                                       thicknesses_layer,
                                       thickness_detector,
@@ -633,6 +633,7 @@ def detetector_efficiency_from_layers(energies,
                                               thickness_detector * 1e-1))))
     efficiency[energies < cutoff_energy] = 0.0
     return efficiency
+
 
 def quantification_cross_section(intensities,
                                  cross_sections,

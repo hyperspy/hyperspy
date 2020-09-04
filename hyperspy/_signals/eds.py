@@ -1165,7 +1165,7 @@ class EDS_mixin:
                 f"The energy unit {units} is not supported. Should be keV"
             )
         eng = efficiency.axes_manager.signal_axes[0].axis / units_factor
-        efficiency.data = utils_eds.detetector_efficiency_from_layers(
+        efficiency.data = utils_eds.detector_efficiency_from_layers(
             energies=eng,
             elements=elements,
             thicknesses_layer=thicknesses_layer,

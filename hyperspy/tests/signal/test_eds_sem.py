@@ -394,7 +394,7 @@ class TestDetectorEfficiency:
 
     def test_beam_energy(self):
         s = self.signal
-        det = s.detetector_efficiency_from_layers(
+        det = s.detector_efficiency_from_layers(
             elements=["C", "Al", "Si", "O"],
             thicknesses_layer=[50.0, 30.0, 40.0, 40.0],
             thickness_detector=0.45,
