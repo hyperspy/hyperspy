@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,28 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 name = 'hyperspy'
 
 # The commit following to a release must update the version number
-# to the version number of the release followed by "+dev", e.g.
+# to the version number of the release followed by ".dev", e.g.
 # if the version of the last release is 0.4.1 the version of the
-# next development version afterwards must be 0.4.1+dev.
-# When running setup.py the "+dev" string will be replaced (if possible)
+# next development version afterwards must be 0.4.1.dev.
+# When running setup.py the ".dev" string will be replaced (if possible)
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
-version = "0.8+dev"
+version = "1.7.0.dev0"
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
 authors = {
-    'all': ('The HyperSpy developers',
-            'hyperspy-devel@googlegroups.com'), }
+    'all': ('The HyperSpy developers',), }
 
 url = 'http://hyperspy.org'
 
 download_url = 'http://www.hyperspy.org'
 documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
+
+PROJECT_URLS = {
+    'Bug Tracker': 'https://github.com/hyperspy/hyperspy/issues',
+    'Documentation': 'https://hyperspy.org/hyperspy-doc/current/index.html',
+    'Source Code': 'https://github.com/hyperspy/hyperspy',
+    'Support' : 'https://gitter.im/hyperspy/hyperspy'
+}
 
 platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME']
 
@@ -74,7 +79,7 @@ keywords = ['EDX',
             'spectroscopy',
             'spectrum image']
 
-info = u"""
+info = """
     H y p e r S p y
     Version %s
 

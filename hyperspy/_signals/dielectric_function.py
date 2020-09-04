@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2013 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,44 +20,44 @@ import numpy as np
 from scipy import constants
 from scipy.integrate import simps, cumtrapz
 
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.complex_signal1d import (ComplexSignal1D,
+                                                LazyComplexSignal1D)
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction(Spectrum):
-    _signal_type = "DielectricFunction"
+class DielectricFunction_mixin:
 
-    def __init__(self, *args, **kwards):
-        Spectrum.__init__(self, *args, **kwards)
-        self.metadata.Signal.binned = False
+    _signal_type = "DielectricFunction"
+    _alias_signal_types = ["dielectric function"]
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
-        """Compute the number of effective electrons using the Bethe f-sum
+        r"""Compute the number of effective electrons using the Bethe f-sum
         rule.
 
         The Bethe f-sum rule gives rise to two definitions of the effective
-        number (see [Egerton2011]_):
-        $n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)$ that
-        we'll call neff1 and
-        $n_{\mathrm{eff}}\left(\epsilon_{2}\right)$ that we'll call neff2. This
-        method computes both.
+        number (see [*]_), neff1 and neff2:
+
+        .. math::
+
+            n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
+
+        and:
+
+        .. math::
+
+            n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
+
+        This method computes and return both.
 
         Parameters
         ----------
         nat: float
-            Number of atoms (or molecules) per unit volume of the
-            sample.
-        cumulative : bool
-            If False calculate the number of effective electrons up to the
-            higher energy-loss of the spectrum. If True, calculate the
-            number of effective electrons as a function of the energy-loss up
-            to the higher energy-loss of the spectrum. *True is only supported
-            by SciPy newer than 0.13.2*.
+            Number of atoms (or molecules) per unit volume of the sample.
 
         Returns
         -------
-        neff1, neff2: Signal
-            Signal instances containing neff1 and neff2. The signal and
+        neff1, neff2: Signal1D
+            Signal1D instances containing neff1 and neff2. The signal and
             navigation dimensions are the same as the current signal if
             `cumulative` is True, otherwise the signal dimension is 0
             and the navigation dimension is the same as the current
@@ -65,8 +65,8 @@ class DielectricFunction(Spectrum):
 
         Notes
         -----
-        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
-        Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
+        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy 
+           in the Electron Microscope", Springer-Verlag, 2011.
 
         """
 
@@ -83,10 +83,8 @@ class DielectricFunction(Spectrum):
             dneff2 = k * simps(self.data.imag * axis.axis,
                                x=axis.axis,
                                axis=axis.index_in_array)
-            neff1 = self._get_navigation_signal()
-            neff2 = self._get_navigation_signal()
-            neff1.data = dneff1
-            neff2.data = dneff2
+            neff1 = self._get_navigation_signal(data=dneff1)
+            neff2 = self._get_navigation_signal(data=dneff2)
         else:
             neff1 = self._deepcopy_with_new_data(
                 k * cumtrapz((-1. / self.data).imag * axis.axis,
@@ -117,7 +115,16 @@ class DielectricFunction(Spectrum):
         data = ((-1 / self.data).imag * eels_constant(self, zlp, t).data *
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)
+        s.data = s.data.real
         s.set_signal_type("EELS")
         s.metadata.General.title = ("EELS calculated from " +
                                     self.metadata.General.title)
         return s
+
+
+class DielectricFunction(DielectricFunction_mixin, ComplexSignal1D):
+    pass
+
+
+class LazyDielectricFunction(DielectricFunction, LazyComplexSignal1D):
+    pass

@@ -1,95 +1,172 @@
-from nose.tools import assert_equal
+import copy
 import os.path
+import tempfile
 
 from hyperspy.io import load
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 my_path = os.path.dirname(__file__)
 
+example1_TEM = {'Detector': {'EELS': {'collection_angle': 3.4,
+                                      'collection_angle_units': "mR",
+                                      'dwell_time': 100.0,
+                                      'dwell_time_units': "ms"}},
+                'beam_current': 12.345,
+                'beam_current_units': "nA",
+                'beam_energy': 120.0,
+                'beam_energy_units': "kV",
+                'convergence_angle': 1.5,
+                'convergence_angle_units': "mR"}
+
+example1_metadata = {'Acquisition_instrument': {'TEM': example1_TEM},
+                     'General': {'original_filename': "example1.msa",
+                                 'title': "NIO EELS OK SHELL",
+                                 'date': "1991-10-01",
+                                 'time': "12:00:00"},
+                     'Sample': {'thickness': 50.0,
+                                'thickness_units': "nm"},
+                     'Signal': {'binned': True,
+                                # bit silly...
+                                'quantity': "Counts (Intensity)",
+                                'signal_type': 'EELS'},
+                     '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                               'unfolded': False,
+                                               'original_shape': None,
+                                               'signal_unfolded': False}}}
+minimum_md_om = {
+    'COMMENT': 'File created by HyperSpy version 1.1.2+dev',
+    'DATATYPE': 'Y',
+    'DATE': '',
+    'FORMAT': 'EMSA/MAS Spectral Data File',
+    'NCOLUMNS': 1.0,
+    'NPOINTS': 1.0,
+    'OFFSET': 0.0,
+    'OWNER': '',
+    'SIGNALTYPE': '',
+    'TIME': '',
+    'TITLE': '',
+    'VERSION': '1.0',
+    'XLABEL': '',
+    'XPERCHAN': 1.0,
+    'XUNITS': ''}
+
+
 example1_parameters = {
-    u'BEAMDIAM -nm': 100.0,
-    u'BEAMKV   -kV': 120.0,
-    u'CHOFFSET': -168.0,
-    u'COLLANGLE-mR': 3.4,
-    u'CONVANGLE-mR': 1.5,
-    u'DATATYPE': u'XY',
-    u'DATE': u'01-OCT-1991',
-    u'DWELLTIME-ms': 100.0,
-    u'ELSDET': u'SERIAL',
-    u'EMISSION -uA': 5.5,
-    u'FORMAT': u'EMSA/MAS Spectral Data File',
-    u'MAGCAM': 100.0,
-    u'NCOLUMNS': 1.0,
-    u'NPOINTS': 20.0,
-    u'OFFSET': 520.13,
-    u'OPERMODE': u'IMAG',
-    u'OWNER': u'EMSA/MAS TASK FORCE',
-    u'PROBECUR -nA': 12.345,
-    u'SIGNALTYPE': u'ELS',
-    u'THICKNESS-nm': 50.0,
-    u'TIME': u'12:00',
-    u'TITLE': u'NIO EELS OK SHELL',
-    u'VERSION': u'1.0',
-    u'XLABEL': u'Energy',
-    u'XPERCHAN': 3.1,
-    u'XUNITS': u'eV',
-    u'YLABEL': u'Counts',
-    u'YUNITS': u'Intensity'}
+    'BEAMDIAM -nm': 100.0,
+    'BEAMKV   -kV': 120.0,
+    'CHOFFSET': -168.0,
+    'COLLANGLE-mR': 3.4,
+    'CONVANGLE-mR': 1.5,
+    'DATATYPE': 'XY',
+    'DATE': '01-OCT-1991',
+    'DWELLTIME-ms': 100.0,
+    'ELSDET': 'SERIAL',
+    'EMISSION -uA': 5.5,
+    'FORMAT': 'EMSA/MAS Spectral Data File',
+    'MAGCAM': 100.0,
+    'NCOLUMNS': 1.0,
+    'NPOINTS': 20.0,
+    'OFFSET': 520.13,
+    'OPERMODE': 'IMAG',
+    'OWNER': 'EMSA/MAS TASK FORCE',
+    'PROBECUR -nA': 12.345,
+    'SIGNALTYPE': 'ELS',
+    'THICKNESS-nm': 50.0,
+    'TIME': '12:00',
+    'TITLE': 'NIO EELS OK SHELL',
+    'VERSION': '1.0',
+    'XLABEL': 'Energy',
+    'XPERCHAN': 3.1,
+    'XUNITS': 'eV',
+    'YLABEL': 'Counts',
+    'YUNITS': 'Intensity'}
+
+example2_TEM = {'Detector': {'EDS': {'EDS_det': "SIWLS",
+                                     'azimuth_angle': 90.0,
+                                     'azimuth_angle_units': "dg",
+                                     'elevation_angle': 20.0,
+                                     'elevation_angle_units': 'dg',
+                                     'live_time': 100.0,
+                                     'live_time_units': "s",
+                                     'real_time': 150.0,
+                                     'real_time_units': "s"}},
+                'beam_current': 12.345,
+                'beam_current_units': "nA",
+                'beam_energy': 120.0,
+                'beam_energy_units': "kV",
+                'Stage': {'tilt_alpha': 45.0,
+                          'tilt_alpha_units': "dg"}}
+
+example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
+                     'General': {'original_filename': "example2.msa",
+                                 'title': "NIO Windowless Spectra OK NiL",
+                                 'date': "1991-10-01",
+                                 'time': "12:00:00"},
+                     'Sample': {'thickness': 50.0,
+                                'thickness_units': "nm"},
+                     'Signal': {'binned': False,
+                                'quantity': "X-RAY INTENSITY (Intensity)",
+                                'signal_type': 'EDS'},
+                     '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                               'unfolded': False,
+                                               'original_shape': None,
+                                               'signal_unfolded': False}}}
 
 example2_parameters = {
-    u'ALPHA-1': u'3.1415926535',
-    u'AZIMANGLE-dg': 90.0,
-    u'BEAMDIAM -nm': 100.0,
-    u'BEAMKV   -kV': 120.0,
-    u'CHOFFSET': -20.0,
-    u'COMMENT': u'The next two lines are User Defined Keywords and values',
-    u'DATATYPE': u'Y',
-    u'DATE': u'01-OCT-1991',
-    u'EDSDET': u'SIWLS',
-    u'ELEVANGLE-dg': 20.0,
-    u'EMISSION -uA': 5.5,
-    u'FORMAT': u'EMSA/MAS Spectral Data File',
-    u'LIVETIME  -s': 100.0,
-    u'MAGCAM': 100.0,
-    u'NCOLUMNS': 5.0,
-    u'NPOINTS': 80.0,
-    u'OFFSET': 200.0,
-    u'OPERMODE': u'IMAG',
-    u'OWNER': u'EMSA/MAS TASK FORCE',
-    u'PROBECUR -nA': 12.345,
-    u'REALTIME  -s': 150.0,
-    u'RESTMASS': u'511.030',
-    u'SIGNALTYPE': u'EDS',
-    u'SOLIDANGL-sR': u'0.13',
-    u'TACTLYR  -cm': 0.3,
-    u'TAUWIND  -cm': 2e-06,
-    u'TBEWIND  -cm': 0.0,
-    u'TDEADLYR -cm': 1e-06,
-    u'THICKNESS-nm': 50.0,
-    u'TIME': u'12:00',
-    u'TITLE': u'NIO Windowless Spectra OK NiL',
-    u'VERSION': u'1.0',
-    u'XLABEL': u'X-RAY ENERGY',
-    u'XPERCHAN': 10.0,
-    u'XPOSITION': 123.0,
-    u'XTILTSTGE-dg': 45.0,
-    u'XUNITS': u'eV',
-    u'YLABEL': u'X-RAY INTENSITY',
-    u'YPOSITION': 456.0,
-    u'YTILTSTGE-dg': 20.0,
-    u'YUNITS': u'Intensity',
-    u'ZPOSITION': 0.0}
+    'ALPHA-1': '3.1415926535',
+    'AZIMANGLE-dg': 90.0,
+    'BEAMDIAM -nm': 100.0,
+    'BEAMKV   -kV': 120.0,
+    'CHOFFSET': -20.0,
+    'COMMENT': 'The next two lines are User Defined Keywords and values',
+    'DATATYPE': 'Y',
+    'DATE': '01-OCT-1991',
+    'EDSDET': 'SIWLS',
+    'ELEVANGLE-dg': 20.0,
+    'EMISSION -uA': 5.5,
+    'FORMAT': 'EMSA/MAS Spectral Data File',
+    'LIVETIME  -s': 100.0,
+    'MAGCAM': 100.0,
+    'NCOLUMNS': 5.0,
+    'NPOINTS': 80.0,
+    'OFFSET': 200.0,
+    'OPERMODE': 'IMAG',
+    'OWNER': 'EMSA/MAS TASK FORCE',
+    'PROBECUR -nA': 12.345,
+    'REALTIME  -s': 150.0,
+    'RESTMASS': '511.030',
+    'SIGNALTYPE': 'EDS',
+    'SOLIDANGL-sR': '0.13',
+    'TACTLYR  -cm': 0.3,
+    'TAUWIND  -cm': 2e-06,
+    'TBEWIND  -cm': 0.0,
+    'TDEADLYR -cm': 1e-06,
+    'THICKNESS-nm': 50.0,
+    'TIME': '12:00',
+    'TITLE': 'NIO Windowless Spectra OK NiL',
+    'VERSION': '1.0',
+    'XLABEL': 'X-RAY ENERGY',
+    'XPERCHAN': 10.0,
+    'XPOSITION': 123.0,
+    'XTILTSTGE-dg': 45.0,
+    'XUNITS': 'eV',
+    'YLABEL': 'X-RAY INTENSITY',
+    'YPOSITION': 456.0,
+    'YTILTSTGE-dg': 20.0,
+    'YUNITS': 'Intensity',
+    'ZPOSITION': 0.0}
 
 
-class TestExample1():
+class TestExample1:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",
             "example1.msa"))
 
     def test_data(self):
-        assert_equal(
+        assert (
             [4066.0,
              3996.0,
              3932.0,
@@ -110,24 +187,57 @@ class TestExample1():
              4613.0,
              4637.0,
              4429.0,
-             4217.0], self.s.data.tolist())
+             4217.0] == self.s.data.tolist())
 
     def test_parameters(self):
-        assert_equal(
-            example1_parameters,
+        assert (
+            example1_parameters ==
             self.s.original_metadata.as_dictionary())
 
+    def test_metadata(self):
+        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                 example1_metadata)
 
-class TestExample2():
+    def test_write_load_cycle(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname2 = os.path.join(tmpdir, "example1-export.msa")
+            self.s.save(fname2)
+            s2 = load(fname2)
+            assert (s2.metadata.General.original_filename ==
+                    "example1-export.msa")
+            s2.metadata.General.original_filename = "example1.msa"
+            assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                     s2.metadata.as_dictionary())
 
-    def setUp(self):
+class TestExample1WrongDate:
+
+    def setup_method(self, method):
+        self.s = load(os.path.join(
+            my_path,
+            "msa_files",
+            "example1_wrong_date.msa"))
+
+    def test_metadata(self):
+        md = copy.copy(example1_metadata)
+        del md["General"]["date"]
+        del md["General"]["time"]
+        md["General"]["original_filename"] = "example1_wrong_date.msa"
+        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                 md)
+
+
+
+
+class TestExample2:
+
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",
             "example2.msa"))
 
     def test_data(self):
-        assert_equal(
+        assert (
             [65.82,
              67.872,
              65.626,
@@ -207,9 +317,29 @@ class TestExample2():
              101.59,
              80.107,
              58.657,
-             49.442], self.s.data.tolist())
+             49.442] == self.s.data.tolist())
 
     def test_parameters(self):
-        assert_equal(
-            example2_parameters,
+        assert (
+            example2_parameters ==
             self.s.original_metadata.as_dictionary())
+
+    def test_metadata(self):
+        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                 example2_metadata)
+
+    def test_write_load_cycle(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname2 = os.path.join(tmpdir, "example2-export.msa")
+            self.s.save(fname2)
+            s2 = load(fname2)
+            assert (s2.metadata.General.original_filename ==
+                    "example2-export.msa")
+            s2.metadata.General.original_filename = "example2.msa"
+            assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                     s2.metadata.as_dictionary())
+
+
+def test_minimum_metadata_example():
+    s = load(os.path.join(my_path, "msa_files", "minimum_metadata.msa"))
+    assert minimum_md_om == s.original_metadata.as_dictionary()

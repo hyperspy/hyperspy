@@ -1,6 +1,24 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+from collections.abc import Iterable
 import numpy as np
 import numbers
-import warnings
 import copy
 
 from hyperspy.misc.elements import elements as elements_db
@@ -25,7 +43,7 @@ def _weight_to_atomic(weight_percent, elements):
         Composition in atomic percent.
 
     Calculate the atomic percent of modern bronze given its weight percent:
-    >>> utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
+    >>> hs.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
@@ -36,12 +54,11 @@ def _weight_to_atomic(weight_percent, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    atomic_percent = np.array(map(np.divide, weight_percent, atomic_weights))
-    sum_weight = atomic_percent.sum(axis=0)/100.
+    atomic_percent = np.array(
+        list(map(np.divide, weight_percent, atomic_weights)))
+    sum_weight = atomic_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
-        warnings.simplefilter("ignore")
         atomic_percent[i] /= sum_weight
-        warnings.simplefilter('default')
         atomic_percent[i] = np.where(sum_weight == 0.0, 0.0, atomic_percent[i])
     return atomic_percent
 
@@ -66,19 +83,21 @@ def weight_to_atomic(weight_percent, elements='auto'):
     Examples
     --------
     Calculate the atomic percent of modern bronze given its weight percent:
-    >>> utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
+    >>> hs.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
 
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         atomic_percent = stack(weight_percent)
         atomic_percent.data = _weight_to_atomic(
             atomic_percent.data, elements)
         atomic_percent.data = np.nan_to_num(atomic_percent.data)
         atomic_percent = atomic_percent.split()
+        for i, el in enumerate(elements):
+            atomic_percent[i].metadata.General.title = 'atomic percent of ' + el
         return atomic_percent
     else:
         return _weight_to_atomic(weight_percent, elements)
@@ -102,7 +121,7 @@ def _atomic_to_weight(atomic_percent, elements):
     Examples
     --------
     Calculate the weight percent of modern bronze given its atomic percent:
-    >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
+    >>> hs.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
 
     """
@@ -113,12 +132,11 @@ def _atomic_to_weight(atomic_percent, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    weight_percent = np.array(map(np.multiply, atomic_percent, atomic_weights))
-    sum_atomic = weight_percent.sum(axis=0)/100.
+    weight_percent = np.array(
+        list(map(np.multiply, atomic_percent, atomic_weights)))
+    sum_atomic = weight_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
-        warnings.simplefilter("ignore")
         weight_percent[i] /= sum_atomic
-        warnings.simplefilter('default')
         weight_percent[i] = np.where(sum_atomic == 0.0, 0.0, weight_percent[i])
     return weight_percent
 
@@ -143,23 +161,27 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     Examples
     --------
     Calculate the weight percent of modern bronze given its atomic percent:
-    >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
+    >>> hs.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(atomic_percent, elements)
-    if isinstance(atomic_percent[0], Signal):
+    if isinstance(atomic_percent[0], BaseSignal):
         weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
         weight_percent = weight_percent.split()
+        for i, el in enumerate(elements):
+            atomic_percent[i].metadata.General.title = 'weight percent of ' + el
         return weight_percent
     else:
         return _atomic_to_weight(atomic_percent, elements)
 
 
-def _density_of_mixture_of_pure_elements(weight_percent, elements):
+def _density_of_mixture(weight_percent,
+                        elements,
+                        mean='harmonic'):
     """Calculate the density a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -174,6 +196,8 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
         of the list (normalization).
     elements: list of str
         A list of element symbols, e.g. ['Al', 'Zn']
+    mean: 'harmonic' or 'weighted'
+        The type of mean use to estimate the density
 
     Returns
     -------
@@ -182,8 +206,7 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> utils.material.density_of_mixture_of_pure_elements(
-            (88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture([88, 12],['Cu', 'Sn'])
     8.6903187973131466
 
     """
@@ -195,16 +218,24 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
         [elements_db[element]['Physical_properties']['density (g/cm^3)']
             for element in elements])
     sum_densities = np.zeros_like(weight_percent, dtype='float')
-    for i, weight in enumerate(weight_percent):
-        sum_densities[i] = weight / densities[i]
-    sum_densities = sum_densities.sum(axis=0)
-    warnings.simplefilter("ignore")
-    density = np.sum(weight_percent, axis=0) / sum_densities
-    warnings.simplefilter('default')
-    return np.where(sum_densities == 0.0, 0.0, density)
+    if mean == 'harmonic':
+        for i, weight in enumerate(weight_percent):
+            sum_densities[i] = weight / densities[i]
+        sum_densities = sum_densities.sum(axis=0)
+        density = np.sum(weight_percent, axis=0) / sum_densities
+        return np.where(sum_densities == 0.0, 0.0, density)
+    elif mean == 'weighted':
+        for i, weight in enumerate(weight_percent):
+            sum_densities[i] = weight * densities[i]
+        sum_densities = sum_densities.sum(axis=0)
+        sum_weight = np.sum(weight_percent, axis=0)
+        density = sum_densities / sum_weight
+        return np.where(sum_weight == 0.0, 0.0, density)
 
 
-def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
+def density_of_mixture(weight_percent,
+                       elements='auto',
+                       mean='harmonic'):
     """Calculate the density of a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -221,6 +252,8 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
         A list of element symbols, e.g. ['Al', 'Zn']. If elements is 'auto',
         take the elements in en each signal metadata of the weight_percent
         list.
+    mean: 'harmonic' or 'weighted'
+        The type of mean use to estimate the density
 
     Returns
     -------
@@ -229,20 +262,19 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> utils.material.density_of_mixture_of_pure_elements(
-            (88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture([88, 12],['Cu', 'Sn'])
     8.6903187973131466
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         density = weight_percent[0]._deepcopy_with_new_data(
-            _density_of_mixture_of_pure_elements(
-                stack(weight_percent).data, elements))
+            _density_of_mixture(stack(weight_percent).data,
+                                elements, mean=mean))
         return density
     else:
-        return _density_of_mixture_of_pure_elements(weight_percent, elements)
+        return _density_of_mixture(weight_percent, elements, mean=mean)
 
 
 def mass_absorption_coefficient(element, energies):
@@ -266,13 +298,13 @@ def mass_absorption_coefficient(element, energies):
 
     Examples
     --------
-    >>> utils.material.mass_absorption_coefficient(
+    >>> hs.material.mass_absorption_coefficient(
     >>>     element='Al', energies=['C_Ka','Al_Ka'])
     array([ 26330.38933818,    372.02616732])
 
     See also
     --------
-    utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements
+    :py:func:`~hs.material.mass_absorption_mixture`
 
     Note
     ----
@@ -281,27 +313,26 @@ def mass_absorption_coefficient(element, energies):
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).
     """
-
     energies_db = np.array(ffast_mac[element].energies_keV)
     macs = np.array(ffast_mac[element].mass_absorption_coefficient_cm2g)
     energies = copy.copy(energies)
     if isinstance(energies, str):
         energies = utils_eds._get_energy_xray_line(energies)
-    elif hasattr(energies, '__iter__'):
+    elif isinstance(energies, Iterable):
         for i, energy in enumerate(energies):
             if isinstance(energy, str):
                 energies[i] = utils_eds._get_energy_xray_line(energy)
     index = np.searchsorted(energies_db, energies)
-    mac_res = np.exp(np.log(macs[index - 1])
-                     + np.log(macs[index] / macs[index - 1])
-                     * (np.log(energies / energies_db[index - 1])
-                     / np.log(energies_db[index] / energies_db[index - 1])))
+    mac_res = np.exp(np.log(macs[index - 1]) +
+                     np.log(macs[index] / macs[index - 1]) *
+                     (np.log(energies / energies_db[index - 1]) /
+                      np.log(energies_db[index] / energies_db[index - 1])))
     return np.nan_to_num(mac_res)
 
 
-def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
-                                                             elements,
-                                                             energies):
+def _mass_absorption_mixture(weight_percent,
+                             elements,
+                             energies):
     """Calculate the mass absorption coefficient for X-ray absorbed in a
     mixture of elements.
 
@@ -321,7 +352,7 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     Examples
     --------
-    >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>> hs.material.mass_absorption_mixture(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
@@ -332,7 +363,7 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     See also
     --------
-    utils.material.mass_absorption_coefficient
+    :py:func:`~hs.material.mass_absorption`
 
     Note
     ----
@@ -343,11 +374,11 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
     """
     if len(elements) != len(weight_percent):
         raise ValueError(
-            "Elements and weight_fraction should have the same lenght")
-    if hasattr(weight_percent[0], '__iter__'):
+            "Elements and weight_fraction should have the same length")
+    if isinstance(weight_percent[0], Iterable):
         weight_fraction = np.array(weight_percent)
         weight_fraction /= np.sum(weight_fraction, 0)
-        mac_res = np.zeros([len(energies)]+list(weight_fraction.shape[1:]))
+        mac_res = np.zeros([len(energies)] + list(weight_fraction.shape[1:]))
         for element, weight in zip(elements, weight_fraction):
             mac_re = mass_absorption_coefficient(element, energies)
             mac_res += np.array([weight * ma for ma in mac_re])
@@ -359,9 +390,9 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
         return mac_res
 
 
-def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
-                                                            elements='auto',
-                                                            energies='auto'):
+def mass_absorption_mixture(weight_percent,
+                            elements='auto',
+                            energies='auto'):
     """Calculate the mass absorption coefficient for X-ray absorbed in a
     mixture of elements.
 
@@ -384,7 +415,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     Examples
     --------
-    >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>> hs.material.mass_absorption_mixture(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.41616439
 
@@ -395,7 +426,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     See also
     --------
-    utils.material.mass_absorption_coefficient
+    :py:func:`~hs.material.mass_absorption_coefficient`
 
     Note
     ----
@@ -405,15 +436,14 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
     Scattering Tables (version 2.1).
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
     energies = _lines_auto(weight_percent, energies)
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         weight_per = np.array([wt.data for wt in weight_percent])
-        mac_res = stack([weight_percent[0].deepcopy()]*len(energies))
+        mac_res = stack([weight_percent[0].deepcopy()] * len(energies))
         mac_res.data = \
-            _mass_absorption_coefficient_of_mixture_of_pure_elements(
-                weight_per, elements, energies)
+            _mass_absorption_mixture(weight_per, elements, energies)
         mac_res = mac_res.split()
         for i, energy in enumerate(energies):
             mac_res[i].metadata.set_item("Sample.xray_lines", ([energy]))
@@ -424,8 +454,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
                 del mac_res[i].metadata.Sample.elements
         return mac_res
     else:
-        return _mass_absorption_coefficient_of_mixture_of_pure_elements(
-            weight_percent, elements, energies)
+        return _mass_absorption_mixture(weight_percent, elements, energies)
 
 
 def _lines_auto(composition, xray_lines):

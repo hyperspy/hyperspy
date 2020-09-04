@@ -1,45 +1,47 @@
-"""
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+import logging
+
+_logger = logging.getLogger(__name__)
+
+
+from hyperspy import docstrings
+
+__doc__ = """
 HyperSpy: a multi-dimensional data analysis package for Python
 ==============================================================
 
 Documentation is available in the docstrings and online at
 http://hyperspy.org/hyperspy-doc/current/index.html.
 
-All public packages, functions and classes are in :mod:`~hyperspy.hspy`. All
-other packages are for internal consumption.
+All public packages, functions and classes are in :mod:`~hyperspy.api`. All
+other packages and modules are for internal consumption and should not be
+needed for data analysis.
 
-When starting HyperSpy using the starting script e.g. by typing ``hyperspy`` in
-a console, using the context menu entries or using the links in the
-``Start Menu``, the :mod:`~hyperspy.hspy` package is imported in the user
-namespace. When using HyperSpy as a library, it is reccommended to import
-the :mod:`~hyperspy.hspy` package as follows:
+%s
 
-    from hyperspy import hspy as hs
+More details in the :mod:`~hyperspy.api` docstring.
 
-The :mod:`~hyperspy.hspy` package contains the following subpackages:
-
-    :mod:`~hyperspy.hspy.signals`
-        Specialized Signal instances.
-
-    :mod:`~hyperspy.hspy.utils`
-        Functions that operate of Signal instances and other goodies.
-
-    :mod:`~hyperspy.hspy.components`
-        Components that can be used to create a model for curve fitting.
-
-More details in the :mod:`~hyperspy.hspy` docstring.
-
-"""
-# -*- coding: utf-8 -*-
-
-import os
-
-os.environ['QT_API'] = "pyqt"
+""" % docstrings.START_HSPY
 
 
-import Release
+from . import Release
 
+__all__ = ["api"]
 __version__ = Release.version
-
-
-

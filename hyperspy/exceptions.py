@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,6 +18,13 @@
 
 # custom exceptions
 
+class MountainsMapFileError(Exception):
+
+    def __init__(self, msg = "Corrupt Mountainsmap file"):
+        self.error =  msg
+
+    def __str__(self):
+        return repr(self.error)
 
 class ByteOrderError(Exception):
 
@@ -188,3 +195,13 @@ class NavigationSizeError(Exception):
         self.expected_navigation_size = expected_navigation_size
         self.msg = 'navigation_size =%i, %i expected' % (
             self.navigation_size, self.expected_navigation_size)
+
+
+class VisibleDeprecationWarning(UserWarning):
+
+    """Visible deprecation warning.
+    By default, python will not show deprecation warnings, so this class
+    provides a visible one.
+
+    """
+    pass

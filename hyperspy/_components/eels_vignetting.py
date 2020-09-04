@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,7 +18,7 @@
 
 import numpy as np
 from hyperspy.component import Component
-from .gaussian import Gaussian
+from hyperspy._components.gaussian import Gaussian
 
 
 class Vignetting(Component):
@@ -29,16 +29,24 @@ class Vignetting(Component):
     """
 
     def __init__(self):
-        Component.__init__(self, ['optical_center', 'height', 'period',
-                                  'left_slope', 'right_slope', 'left', 'right', 'sigma'])
+        Component.__init__(self,
+                           ['optical_center',
+                            'height',
+                            'period',
+                            'left_slope',
+                            'right_slope',
+                            'left',
+                            'right',
+                            'sigma'])
         self.left.value = np.nan
         self.right.value = np.nan
         self.side_vignetting = False
         self.fix_side_vignetting()
         self.gaussian = Gaussian()
-        self.gaussian.origin.free, self.gaussian.A.free = False, False
+        self.gaussian.centre.free, self.gaussian.A.free = False, False
         self.sigma.value = 1.
         self.gaussian.A.value = 1.
+        self.period.value = 1.
         self.extension_nch = 100
         self._position = self.optical_center
 
@@ -53,10 +61,10 @@ class Vignetting(Component):
         r = self.right.value
         ex = self.extension_nch
         if self.side_vignetting is True:
-            original_nch = len(x)
 
             x = x.tolist()
-            x = range(-ex, 0) + x + range(int(x[-1]) + 1, int(x[-1]) + ex + 1)
+            x = list(range(-ex, 0)) + x + \
+                list(range(int(x[-1]) + 1, int(x[-1]) + ex + 1))
             x = np.array(x)
             v1 = A * np.cos((x - x0) / (2 * np.pi * period)) ** 4
             v2 = np.where(x < l,

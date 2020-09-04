@@ -1,0 +1,82 @@
+variables:
+  MPLBACKEND: agg # Necessary when running test which generate matplotlib figure
+  ENV_NAME: test_env
+  RESULT_IMAGES_FOLDER: 'result_images'
+
+trigger:
+  tags:
+    include:
+    # build on any tag
+    - '*'
+  branches:
+    include:
+    # build on all branches
+    - '*'
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: hyperspy/ci-scripts
+      # For more details on service connection endpoint, see
+      # https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints
+      endpoint: hyperspy # Azure DevOps service connection
+
+strategy:
+  matrix:
+    Linux_Python38:
+      vmImage: 'ubuntu-latest'
+      PYTHON_VERSION: '3.8'
+    Linux_Python37:
+      vmImage: 'ubuntu-latest'
+      PYTHON_VERSION: '3.7'
+    Linux_Python36:
+      vmImage: 'ubuntu-latest'
+      PYTHON_VERSION: '3.6'
+    MacOS_Python38:
+      vmImage: 'macOS-latest'
+      PYTHON_VERSION: '3.8'
+    MacOS_Python36:
+      vmImage: 'macOS-latest'
+      PYTHON_VERSION: '3.6'
+    Windows_Python38:
+      vmImage: 'windows-latest'
+      PYTHON_VERSION: '3.8'
+    Windows_Python36:
+      vmImage: 'windows-latest'
+      PYTHON_VERSION: '3.6'
+
+pool:
+  vmImage: '$(vmImage)'
+
+steps:
+- template: azure_pipelines/clone_ci-scripts_repo.yml@templates
+- template: azure_pipelines/activate_conda.yml@templates
+- template: azure_pipelines/setup_anaconda_packages.yml@templates
+
+- bash: |
+    source activate $ENV_NAME
+    pip install --no-deps -e .
+    conda list
+  displayName: Install package
+
+# Note we must use `-n 2` argument for pytest-xdist due to
+# https://github.com/pytest-dev/pytest-xdist/issues/9.
+- bash: |
+    source activate $ENV_NAME
+    pytest --mpl --pyargs hyperspy --reruns 3 --instafail --mpl-results-path $RESULT_IMAGES_FOLDER
+  displayName: Run test suite
+
+- publish: $(System.DefaultWorkingDirectory)/$(RESULT_IMAGES_FOLDER)
+  artifact: $(Agent.JobName)-result_images
+  displayName: Publish Image Comparison
+  condition: failed()
+
+- template: azure_pipelines/generate_distribution.yml@templates
+- template: azure_pipelines/publish_distribution.yml@templates
+# - template: azure_pipelines/update_github_release.yml@templates
+#   parameters:
+#     # Set the token generated with github from the developer settings/personal
+#     # access tokens menu in azure pipeline
+#     github_token_name: ''
+

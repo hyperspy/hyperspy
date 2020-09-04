@@ -1,10 +1,35 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import os
-from hyperspy.messages import information
+import logging
+import xml.etree.ElementTree as ET
+
+from hyperspy.misc.utils import DictionaryTreeBrowser
+
+
+_logger = logging.getLogger(__name__)
 
 
 def dump_dictionary(file, dic, string='root', node_separator='.',
                     value_separator=' = '):
-    for key in dic.keys():
+    for key in list(dic.keys()):
         if isinstance(dic[key], dict):
             dump_dictionary(file, dic[key], string + node_separator + key)
         else:
@@ -64,22 +89,41 @@ def overwrite(fname):
     if os.path.isfile(fname):
         message = "Overwrite '%s' (y/n)?\n" % fname
         try:
-            answer = raw_input(message)
+            answer = input(message)
             answer = answer.lower()
             while (answer != 'y') and (answer != 'n'):
                 print('Please answer y or n.')
-                answer = raw_input(message)
+                answer = input(message)
             if answer.lower() == 'y':
                 return True
             elif answer.lower() == 'n':
-                # print('Operation canceled.')
                 return False
         except:
             # We are running in the IPython notebook that does not
             # support raw_input
-            information("Your terminal does not support raw input. "
-                        "Not overwriting. "
-                        "To overwrite the file use `overwrite=True`")
+            _logger.info("Your terminal does not support raw input. "
+                         "Not overwriting. "
+                         "To overwrite the file use `overwrite=True`")
             return False
     else:
         return True
+
+
+def xml2dtb(et, dictree):
+    if et.text:
+        dictree[et.tag] = et.text
+        return  
+    else:
+        dictree.add_node(et.tag)
+        if et.attrib:
+            dictree[et.tag].add_dictionary(et.attrib)   
+        for child in et:
+            xml2dtb(child, dictree[et.tag])
+
+
+def convert_xml_to_dict(xml_object):
+    if isinstance(xml_object, str):
+        xml_object = ET.fromstring(xml_object)
+    op = DictionaryTreeBrowser()
+    xml2dtb(xml_object, op)
+    return op

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,33 +16,48 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.drawing import image, utils
+from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
+from hyperspy.defaults_parser import preferences
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
-    def plot_signal(self):
-        if self.signal_plot is not None:
-            self.signal_plot.plot()
-            return
+    def plot_signal(self, **kwargs):
+        """
+        Parameters
+        ----------
+        **kwargs : dict
+            The kwargs are passed to plot method of the image figure.
+
+        """
+        super().plot_signal()
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
-        imf.plot_colorbar = True
-        imf.plot()
+
+        # Set all kwargs value to the image figure before passing the rest
+        # of the kwargs to plot method of the image figure
+        for key, value in list(kwargs.items()):
+            if hasattr(imf, key):
+                setattr(imf, key, kwargs.pop(key))
+
+        imf.quantity_label = self.quantity_label
+
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
+        if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
+            kwargs["cmap"] = preferences.Plot.cmap_signal
+        imf.plot(**kwargs)
         self.signal_plot = imf
 
-        if self.navigator_plot is not None and imf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self.close_navigator_plot)
-            utils.on_figure_window_close(
-                imf.figure, self.close_navigator_plot)
-            self._key_nav_cid = \
+        if imf.figure is not None:
+            if self.axes_manager.navigation_axes:
                 self.signal_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
-            self._key_nav_cid = \
+            if self.navigator_plot is not None:
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
+                imf.events.closed.connect(self.close_navigator_plot, [])
+            imf.events.closed.connect(self._on_signal_plot_closing, [])

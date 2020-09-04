@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,22 +21,24 @@
 # and http://ami.scripps.edu/software/mrctools/mrc_specification.php
 
 import os
+import logging
 
 import numpy as np
 from traits.api import Undefined
 
 from hyperspy.misc.array_tools import sarray2dict
 
+_logger = logging.getLogger(__name__)
+
 
 # Plugin characteristics
 # ----------------------
 format_name = 'MRC'
 description = ''
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0
-
 # Writing capabilities
 writes = False
 
@@ -85,11 +87,11 @@ def get_std_dtype_list(endianess='<'):
             ('XORIGIN', end + 'f4'),
             ('YORIGIN', end + 'f4'),
             ('ZORIGIN', end + 'f4'),
-            ('CMAP', (str, 4)),
-            ('STAMP', (str, 4)),
+            ('CMAP', (bytes, 4)),
+            ('STAMP', (bytes, 4)),
             ('RMS', end + 'f4'),
             ('NLABL', end + 'u4'),
-            ('LABELS', (str, (800))),
+            ('LABELS', (bytes, 800)),
         ]
 
     return dtype_list
@@ -106,9 +108,9 @@ def get_fei_dtype_list(endianess='<'):
         ('y_stage', end + 'f4'),
         # Stage z position (Unit=m. But if value>1, unit=???m)
         ('z_stage', end + 'f4'),
-        # Image shift x (Unit=m. But if value>1, unit=???m)
+        # Signal2D shift x (Unit=m. But if value>1, unit=???m)
         ('x_shift', end + 'f4'),
-        # Image shift y (Unit=m. But if value>1, unit=???m)
+        # Signal2D shift y (Unit=m. But if value>1, unit=???m)
         ('y_shift', end + 'f4'),
         ('defocus', end + 'f4'),  # Defocus Unit=m. But if value>1, unit=???m)
         ('exp_time', end + 'f4'),  # Exposure time (s)
@@ -125,9 +127,9 @@ def get_fei_dtype_list(endianess='<'):
 def get_data_type(index, endianess='<'):
     end = endianess
     data_type = [
-        end + 'u2',         # 0 = Image     unsigned bytes
-        end + 'i2',         # 1 = Image     signed short integer (16 bits)
-        end + 'f4',         # 2 = Image     float
+        end + 'u2',         # 0 = Signal2D     unsigned bytes
+        end + 'i2',         # 1 = Signal2D     signed short integer (16 bits)
+        end + 'f4',         # 2 = Signal2D     float
         (end + 'i2', 2),    # 3 = Complex   short*2
         end + 'c8',         # 4 = Complex   float*2
     ]
@@ -141,21 +143,29 @@ def file_reader(filename, endianess='<', **kwds):
                              count=1)
     fei_header = None
     if std_header['NEXT'] / 1024 == 128:
-        print "It seems to contain an extended FEI header"
+        _logger.info("%s seems to contain an extended FEI header", filename)
         fei_header = np.fromfile(f, dtype=get_fei_dtype_list(endianess),
                                  count=1024)
     if f.tell() == 1024 + std_header['NEXT']:
-        print "The FEI header was correctly loaded"
+        _logger.debug("The FEI header was correctly loaded")
     else:
-        print "There was a problem reading the extended header"
+        _logger.warning("There was a problem reading the extended header")
         f.seek(1024 + std_header['NEXT'])
         fei_header = None
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
-    data = np.memmap(f, mode='c', offset=f.tell(),
-                     dtype=get_data_type(std_header['MODE'], endianess)
-                     ).squeeze().reshape((NX, NY, NZ), order='F').T
+    mmap_mode = kwds.pop('mmap_mode', 'c')
+    lazy = kwds.pop('lazy', False)
+    if lazy:
+        mmap_mode = 'r'
+    data = np.memmap(f, mode=mmap_mode, offset=f.tell(),
+                     dtype=get_data_type(std_header['MODE'][0], endianess)
+                     ).squeeze().reshape((NX[0], NY[0], NZ[0]), order='F').T
 
     original_metadata = {'std_header': sarray2dict(std_header)}
+    # Convert bytes to unicode
+    for key in ["CMAP", "STAMP", "LABELS"]:
+        original_metadata["std_header"][key] = \
+            original_metadata["std_header"][key].decode()
     if fei_header is not None:
         fei_dict = sarray2dict(fei_header,)
         del fei_dict['empty']
@@ -196,11 +206,30 @@ def file_reader(filename, endianess='<', **kwds):
             'scale': scales[i + 3 - dim],
             'offset': offsets[i + 3 - dim],
             'units': units[i + 3 - dim], }
-        for i in xrange(dim)]
+        for i in range(dim)]
 
     dictionary = {'data': data,
                   'axes': axes,
                   'metadata': metadata,
-                  'original_metadata': original_metadata, }
+                  'original_metadata': original_metadata,
+                  'mapping': mapping}
 
     return [dictionary, ]
+
+
+mapping = {
+    'fei_header.a_tilt':
+    ("Acquisition_instrument.TEM.Stage.tilt_alpha", None),
+    'fei_header.b_tilt':
+    ("Acquisition_instrument.TEM.Stage.tilt_beta", None),
+    'fei_header.x_stage':
+    ("Acquisition_instrument.TEM.Stage.x", None),
+    'fei_header.y_stage':
+    ("Acquisition_instrument.TEM.Stage.y", None),
+    'fei_header.z_stage':
+    ("Acquisition_instrument.TEM.Stage.z", None),
+    'fei_header.exp_time':
+    ("Acquisition_instrument.TEM.Detector.Camera.exposure", None),
+    'fei_header.magnification':
+    ("Acquisition_instrument.TEM.magnification", None),
+}

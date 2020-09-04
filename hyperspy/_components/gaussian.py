@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,86 +19,123 @@
 import math
 
 import numpy as np
+import dask.array as da
 
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class Gaussian(Component):
+def _estimate_gaussian_parameters(signal, x1, x2, only_current):
+    axis = signal.axes_manager.signal_axes[0]
+    i1, i2 = axis.value_range_to_indices(x1, x2)
+    X = axis.axis[i1:i2]
+    if only_current is True:
+        data = signal()[i1:i2]
+        X_shape = (len(X),)
+        i = 0
+        centre_shape = (1,)
+    else:
+        i = axis.index_in_array
+        data_gi = [slice(None), ] * len(signal.data.shape)
+        data_gi[axis.index_in_array] = slice(i1, i2)
+        data = signal.data[tuple(data_gi)]
+        X_shape = [1, ] * len(signal.data.shape)
+        X_shape[axis.index_in_array] = data.shape[i]
+        centre_shape = list(data.shape)
+        centre_shape[i] = 1
 
-    """Normalized gaussian function component
+    if isinstance(data, da.Array):
+        _sum = da.sum
+        _sqrt = da.sqrt
+        _abs = abs
+    else:
+        _sum = np.sum
+        _sqrt = np.sqrt
+        _abs = np.abs
+
+    centre = _sum(X.reshape(X_shape) * data, i) / _sum(data, i)
+
+    sigma = _sqrt(_abs(_sum((X.reshape(X_shape) - centre.reshape(
+        centre_shape)) ** 2 * data, i) / _sum(data, i)))
+    height = data.max(i)
+    if isinstance(data, da.Array):
+        return da.compute(centre, height, sigma)
+    else:
+        return centre, height, sigma
+
+
+class Gaussian(Expression):
+
+    r"""Normalized Gaussian function component.
 
     .. math::
 
-        f(x) = \\frac{a}{\sqrt{2\pi c^{2}}}e^{-\\frac{\left(x-b\\right)^{2}}{2c^{2}}}
+        f(x) = \frac{A}{\sigma \sqrt{2\pi}}\exp\left[
+               -\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     a      |     A     |
-    +------------+-----------+
-    |     b      |  centre   |
-    +------------+-----------+
-    |     c      |   sigma   |
-    +------------+-----------+
+    ============== ===========
+    Variable        Parameter
+    ============== ===========
+    :math:`A`       A
+    :math:`\sigma`  sigma
+    :math:`x_0`     centre
+    ============== ===========
 
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
 
+    Parameters
+    -----------
+    A : float
+        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` 
+        implements the Gaussian function with a height parameter 
+        corresponding to the peak height.
+    sigma : float
+        Scale parameter of the Gaussian distribution. 
+    centre : float
+        Location of the Gaussian maximum (peak position).
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
+
+    For convenience the `fwhm` and `height` attributes can be used to get and set
+    the full-with-half-maximum and height of the distribution, respectively.
+
+
+    See also
+    --------
+    hyperspy._components.gaussianhf.GaussianHF
     """
 
-    def __init__(self, A=1., sigma=1., centre=0.):
-        Component.__init__(self, ['A', 'sigma', 'centre'])
-        self.A.value = A
-        self.sigma.value = sigma
-        self.centre.value = centre
-        self._position = self.centre
+    def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
+        super(Gaussian, self).__init__(
+            expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
+                        / (2 * sigma**2))",
+            name="Gaussian",
+            A=A,
+            sigma=sigma,
+            centre=centre,
+            position="centre",
+            module=module,
+            autodoc=False,
+            **kwargs)
 
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
 
-        self.sigma.bmin = None
+        self.sigma.bmin = 0.
         self.sigma.bmax = None
 
         self.isbackground = False
         self.convolved = True
 
-        # Gradients
-        self.A.grad = self.grad_A
-        self.sigma.grad = self.grad_sigma
-        self.centre.grad = self.grad_centre
-
-    def function(self, x):
-        A = self.A.value
-        sigma = self.sigma.value
-        centre = self.centre.value
-        return A * (1 / (sigma * sqrt2pi)) * np.exp(
-            -(x - centre) ** 2 / (2 * sigma ** 2))
-
-    def grad_A(self, x):
-        return self.function(x) / self.A.value
-
-    def grad_sigma(self, x):
-        return ((x - self.centre.value) ** 2 * np.exp(-(x - self.centre.value) ** 2
-                                                      / (2 * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi *
-                                                                                                        self.sigma.value ** 4) - (np.exp(-(x - self.centre.value) ** 2 / (2 *
-                                                                                                                                                                          self.sigma.value ** 2)) * self.A.value) / (sqrt2pi * self.sigma.value ** 2)
-
-    def grad_centre(self, x):
-        return ((x - self.centre.value) * np.exp(-(x - self.centre.value) ** 2 / (2
-                                                                                  * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi *
-                                                                                                                               self.sigma.value ** 3)
-
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the gaussian by calculating the momenta.
+        """Estimate the Gaussian by calculating the momenta.
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -120,52 +157,25 @@ class Gaussian(Component):
         Examples
         --------
 
-        >>> import numpy as np
-        >>> from hyperspy.hspy import *
-        >>> from hyperspy.signals import Spectrum
-        >>> g = components.Gaussian()
-        >>> x = np.arange(-10,10, 0.01)
-        >>> data = np.zeros((32,32,2000))
-        >>> data[:] = g.function(x).reshape((1,1,2000))
-        >>> s = Spectrum(data)
-        >>> s.axes_manager._axes[-1].offset = -10
-        >>> s.axes_manager._axes[-1].scale = 0.01
-        >>> g.estimate_parameters(s, -10,10, False)
-
+        >>> g = hs.model.components1D.Gaussian()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
         """
-        axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
-        axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
-        i1, i2 = axis.value_range_to_indices(x1, x2)
-        X = axis.axis[i1:i2]
-        if only_current is True:
-            data = signal()[i1:i2]
-            X_shape = (len(X),)
-            i = 0
-            center_shape = (1,)
-        else:
-            # TODO: write the rest of the code to estimate the parameters of
-            # the full dataset
-            i = axis.index_in_array
-            data_gi = [slice(None), ] * len(signal.data.shape)
-            data_gi[axis.index_in_array] = slice(i1, i2)
-            data = signal.data[data_gi]
-            X_shape = [1, ] * len(signal.data.shape)
-            X_shape[axis.index_in_array] = data.shape[i]
-            center_shape = list(data.shape)
-            center_shape[i] = 1
 
-        center = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-
-        sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - center.reshape(
-            center_shape)) ** 2 * data, i) / np.sum(data, i)))
-        height = data.max(i)
+        super(Gaussian, self)._estimate_parameters(signal)
+        axis = signal.axes_manager.signal_axes[0]
+        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
+                                                              only_current)
         if only_current is True:
-            self.centre.value = center
+            self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if binned is True:
+            if self.binned:
                 self.A.value /= axis.scale
             return True
         else:
@@ -173,12 +183,12 @@ class Gaussian(Component):
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
 
-            if binned is True:
+            if self.binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True
-            self.centre.map['values'][:] = center
+            self.centre.map['values'][:] = centre
             self.centre.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
@@ -190,3 +200,11 @@ class Gaussian(Component):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+
+    @property
+    def height(self):
+        return self.A.value / (self.sigma.value * sqrt2pi)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * self.sigma.value * sqrt2pi

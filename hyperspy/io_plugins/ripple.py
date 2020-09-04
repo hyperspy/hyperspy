@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,13 +23,17 @@
 
 import codecs
 import os.path
-from StringIO import StringIO
+from io import StringIO
+import logging
+import traits.api as t
 
 import numpy as np
 
-from hyperspy.misc.io.utils_readfile import *
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
+
 
 # Plugin characteristics
 # ----------------------
@@ -38,7 +42,7 @@ description = 'RPL file contains the information on how to read\n'
 description += 'the RAW file with the same name.'
 description += '\nThis format may not provide information on the calibration.'
 description += '\nIf so, you should add that after loading the file.'
-full_suport = False  # but maybe True
+full_support = False  # but maybe True
 # Recognised file extension
 file_extensions = ['rpl', 'RPL']
 default_extension = 0
@@ -64,41 +68,48 @@ endianess2rpl = {
     '<': 'little-endian',
     '>': 'big-endian'}
 
+# Warning: for selection lists use tuples not lists.
 rpl_keys = {
     # spectrum/image keys
     'width': int,
     'height': int,
     'depth': int,
     'offset': int,
-    'data-length': ['1', '2', '4', '8'],
-    'data-type': ['signed', 'unsigned', 'float'],
-    'byte-order': ['little-endian', 'big-endian', 'dont-care'],
-    'record-by': ['image', 'vector', 'dont-care'],
+    'data-length': ('1', '2', '4', '8'),
+    'data-type': ('signed', 'unsigned', 'float'),
+    'byte-order': ('little-endian', 'big-endian', 'dont-care'),
+    'record-by': ('image', 'vector', 'dont-care'),
     # X-ray keys
     'ev-per-chan': float,    # usually 5 or 10 eV
     'detector-peak-width-ev': float,  # usually 150 eV
     # HyperSpy-specific keys
     'depth-origin': float,
     'depth-scale': float,
-    'depth-units': unicode,
+    'depth-units': str,
     'width-origin': float,
     'width-scale': float,
-    'width-units': unicode,
+    'width-units': str,
     'height-origin': float,
     'height-scale': float,
-    'height-units': unicode,
-    'signal': unicode,
+    'height-units': str,
+    'signal': str,
     # EELS HyperSpy keys
     'collection-angle': float,
-    # TEM Hyperespy keys
+    # TEM HyperSpy keys
     'convergence-angle': float,
     'beam-energy': float,
-    # EDS Hyperespy keys
+    # EDS HyperSpy keys
     'elevation-angle': float,
     'azimuth-angle': float,
     'live-time': float,
+    # From 0.8.5 energy-resolution is deprecated as it is a duplicate of
+    # detector-peak-width-ev of the ripple standard format. We keep it here
+    # to keep compatibility with rpl file written by HyperSpy < 0.8.4
     'energy-resolution': float,
     'tilt-stage': float,
+    'date': str,
+    'time': str,
+    'title': str,
 }
 
 
@@ -141,32 +152,30 @@ def parse_ripple(fp):
 
     rpl_info = {}
     for line in fp.readlines():
-        line = line.replace(' ', '')
         # correct_brucker_format
         line = line.replace('data-Length', 'data-length')
         if line[:2] not in newline and line[0] != comment:
             line = line.strip('\r\n')
-            #line = line.lower()
             if comment in line:
                 line = line[:line.find(comment)]
-            if not sep in line:
+            if sep not in line:
                 err = 'Separator in line "%s" is wrong, ' % line
                 err += 'it should be a <TAB> ("\\t")'
                 raise IOError(err)
-            line = line.split(sep)  # now it's a list
+            line = [seg.strip() for seg in line.split(sep)]  # now it's a list
             if (line[0] in rpl_keys) is True:
-                # is rpl_keys[line[0]] an iterable?
-                if hasattr(rpl_keys[line[0]], '__iter__'):
-                    if line[1] not in rpl_keys[line[0]]:
+                value_type = rpl_keys[line[0]]
+                if isinstance(value_type, tuple):  # is selection list
+                    if line[1] not in value_type:
                         err = \
                             'Wrong value for key %s.\n' \
                             'Value read is %s'  \
                             ' but it should be one of %s' % \
-                            (line[0], line[1], str(rpl_keys[line[0]]))
+                            (line[0], line[1], str(value_type))
                         raise IOError(err)
                 else:
                     # rpl_keys[line[0]] must then be a type
-                    line[1] = rpl_keys[line[0]](line[1])
+                    line[1] = value_type(line[1])
 
             rpl_info[line[0]] = line[1]
 
@@ -180,10 +189,11 @@ def parse_ripple(fp):
         err = '"data-length" for float "data-type" must be "4" or "8".\n'
         err += 'Check %s' % fp.name
         raise IOError(err)
-    if rpl_info['data-length'] == '1' and rpl_info['byte-order'] != 'dont-care':
+    if (rpl_info['data-length'] == '1' and
+            rpl_info['byte-order'] != 'dont-care'):
         err = '"data-length" and "byte-order" mismatch.\n'
-        err += '"data-length" cannot be "1" if "byte-order" is not "dont-care" '
-        err += 'and vice versa.'
+        err += '"data-length" cannot be "1" if "byte-order" is not "dont-care"'
+        err += ' and vice versa.'
         err += 'Check %s' % fp.name
         raise IOError(err)
     return rpl_info
@@ -235,7 +245,7 @@ def read_raw(rpl_info, fp, mmap_mode='c'):
     else:
         endian = '='
 
-    data_type = data_type + str(int(data_length) * 8)
+    data_type += str(int(data_length) * 8)
     data_type = np.dtype(data_type)
     data_type = data_type.newbyteorder(endian)
 
@@ -286,45 +296,50 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     RPL stands for "Raw Parameter List", an ASCII text, tab delimited file in
     which HyperSpy reads the image parameters for a raw file.
 
-                    TABLE OF RPL PARAMETERS
-        key             type     description
-      ----------   ------------ --------------------
-      # Mandatory      keys:
-      width            int      # pixels per row
-      height           int      # number of rows
-      depth            int      # number of images or spectral pts
-      offset           int      # bytes to skip
-      data-type        str      # 'signed', 'unsigned', or 'float'
-      data-length      str      # bytes per pixel  '1', '2', '4', or '8'
-      byte-order       str      # 'big-endian', 'little-endian', or 'dont-care'
-      record-by        str      # 'image', 'vector', or 'dont-care'
-      # X-ray keys:
-      ev-per-chan      int      # optional, eV per channel
-      detector-peak-width-ev  int   # optional, FWHM for the Mn K-alpha line
-      # HyperSpy-specific keys
-      depth-origin    int      # energy offset in pixels
-      depth-scale     float    # energy scaling (units per pixel)
-      depth-units     str      # energy units, usually eV
-      depth-name      str      # Name of the magnitude stored as depth
-      width-origin         int      # column offset in pixels
-      width-scale          float    # column scaling (units per pixel)
-      width-units          str      # column units, usually nm
-      width-name      str           # Name of the magnitude stored as width
-      height-origin         int      # row offset in pixels
-      height-scale          float    # row scaling (units per pixel)
-      height-units          str      # row units, usually nm
-      height-name      str           # Name of the magnitude stored as height
-      signal            str        # Name of the signal stored, e.g. HAADF
-      convergence-angle float   # TEM convergence angle in mrad
-      collection-angle  float   # EELS spectrometer collection angle in mrad
-      beam-energy       float   # TEM beam energy in keV
-      elevation-angle   float   # Elevation angle of the EDS detector
-      azimuth-angle     float   # Elevation angle of the EDS detector
-      live-time         float   # Live time per spectrum
-      energy-resolution float   # Resolution of the EDS (FHWM of MnKa)
-      tilt-stage       float   # The tilt of the stage
+    ========================  =======  =================================================
+    Key                       Type     Description 
+    ========================  =======  =================================================
+    width                     int      pixels per row
+    height                    int      number of rows
+    depth                     int      number of images or spectral pts
+    offset                    int      bytes to skip
+    data-type                 str      'signed', 'unsigned', or 'float'
+    data-length               str      bytes per pixel  '1', '2', '4', or '8'
+    byte-order                str      'big-endian', 'little-endian', or 'dont-care'
+    record-by                 str      'image', 'vector', or 'dont-care'
+    # X-ray keys:
+    ev-per-chan               int      optional, eV per channel
+    detector-peak-width-ev    int      optional, FWHM for the Mn K-alpha line
+    # HyperSpy-specific keys
+    depth-origin              int      energy offset in pixels
+    depth-scale               float    energy scaling (units per pixel)
+    depth-units               str      energy units, usually eV
+    depth-name                str      Name of the magnitude stored as depth
+    width-origin              int      column offset in pixels
+    width-scale               float    column scaling (units per pixel)
+    width-units               str      column units, usually nm
+    width-name                str      Name of the magnitude stored as width
+    height-origin             int      row offset in pixels
+    height-scale              float    row scaling (units per pixel)
+    height-units              str      row units, usually nm
+    height-name               str      Name of the magnitude stored as height
+    signal                    str      Type of the signal stored, e.g. EDS_SEM
+    convergence-angle         float    TEM convergence angle in mrad
+    collection-angle          float    EELS spectrometer collection semi-angle in mrad
+    beam-energy               float    TEM beam energy in keV
+    elevation-angle           float    Elevation angle of the EDS detector
+    azimuth-angle             float    Elevation angle of the EDS detector
+    live-time                 float    Live time per spectrum
+    energy-resolution         float    Resolution of the EDS (FHWM of MnKa)
+    tilt-stage                float    The tilt of the stage
+    date                      str      date in ISO 8601
+    time                      str      time in ISO 8601
+    title                     str      title of the signal to be stored 
+    ========================  =======  =================================================
 
-    NOTES
+
+    NOTE
+    ----
 
     When 'data-length' is 1, the 'byte order' is not relevant as there is only
     one byte per datum, and 'byte-order' should be 'dont-care'.
@@ -374,20 +389,23 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if not rawfname:
         raise IOError('RAW file "%s" does not exists' % rawfname)
     else:
+        lazy = kwds.pop('lazy', False)
+        if lazy:
+            mmap_mode = 'r'
         data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':
-        print 'Loading as spectrum'
+        _logger.info('Loading as Signal1D')
         record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
-        print 'Loading as Image'
+        _logger.info('Loading as Signal2D')
         record_by = 'image'
     else:
         if len(data.shape) == 1:
-            print 'Loading as spectrum'
+            _logger.info('Loading as Signal1D')
             record_by = 'spectrum'
         else:
-            print 'Loading as image'
+            _logger.info('Loading as Signal2D')
             record_by = 'image'
 
     if rpl_info['record-by'] == 'vector':
@@ -400,14 +418,19 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     scales = [1, 1, 1]
     origins = [0, 0, 0]
     units = ['', '', '']
-    sizes = [rpl_info[names[i]] for i in xrange(3)]
+    sizes = [rpl_info[names[i]] for i in range(3)]
+
+    if 'date' not in rpl_info:
+        rpl_info['date'] = ""
+
+    if 'time' not in rpl_info:
+        rpl_info['time'] = ""
 
     if 'signal' not in rpl_info:
         rpl_info['signal'] = ""
 
-    if 'detector-peak-width-ev' in rpl_info:
-        original_metadata['detector-peak-width-ev'] = \
-            rpl_info['detector-peak-width-ev']
+    if 'title' not in rpl_info:
+        rpl_info['title'] = ""
 
     if 'depth-scale' in rpl_info:
         scales[idepth] = rpl_info['depth-scale']
@@ -450,20 +473,23 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         names[iheight] = rpl_info['height-name']
 
     mp = DictionaryTreeBrowser({
-
-        'General': {'original_filename': os.path.split(filename)[1]},
+        'General': {'original_filename': os.path.split(filename)[1],
+                    'date': rpl_info['date'],
+                    'time': rpl_info['time'],
+                    'title': rpl_info['title']
+                    },
         "Signal": {'signal_type': rpl_info['signal'],
-                   'record_by': record_by, },
+                   'record_by': record_by},
     })
-
     if 'convergence-angle' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.convergence_angle',
                     rpl_info['convergence-angle'])
     if 'tilt-stage' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.tilt_stage',
+        mp.set_item('Acquisition_instrument.TEM.Stage.tilt_alpha',
                     rpl_info['tilt-stage'])
     if 'collection-angle' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.Detector.EELS.collection_angle',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EELS.' +
+                    'collection_angle',
                     rpl_info['collection-angle'])
     if 'beam-energy' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.beam_energy',
@@ -475,15 +501,22 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.azimuth_angle',
                     rpl_info['azimuth-angle'])
     if 'energy-resolution' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.' +
+                    'energy_resolution_MnKa',
                     rpl_info['energy-resolution'])
+    if 'detector-peak-width-ev' in rpl_info:
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.' +
+                    'energy_resolution_MnKa',
+                    rpl_info['detector-peak-width-ev'])
     if 'live-time' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.live_time',
                     rpl_info['live-time'])
 
+    units = [t.Undefined if unit == '<undefined>' else unit for unit in units]
+
     axes = []
     index_in_array = 0
-    for i in xrange(3):
+    for i in range(3):
         if sizes[i] > 1:
             axes.append({
                 'size': sizes[i],
@@ -531,6 +564,18 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         signal_type = signal.metadata.Signal.signal_type
     else:
         signal_type = ""
+    if signal.metadata.has_item("General.date"):
+        date = signal.metadata.General.date
+    else:
+        date = ""
+    if signal.metadata.has_item("General.time"):
+        time = signal.metadata.General.time
+    else:
+        time = ""
+    if signal.metadata.has_item("General.title"):
+        title = signal.metadata.General.title
+    else:
+        title = ""
     if signal.axes_manager.signal_dimension == 1:
         record_by = 'vector'
         depth_axis = signal.axes_manager.signal_axes[0]
@@ -562,7 +607,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             record_by = 'dont-care'
             depth, width, height = width_axis.size, 1, 1
     else:
-        print("Only Spectrum and Image objects can be saved")
+        _logger.info("Only Signal1D and Signal2D objects can be saved")
         return
 
     # Fill the keys dictionary
@@ -575,7 +620,10 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         'data-length': data_length,
         'byte-order': byte_order,
         'record-by': record_by,
-        'signal': signal_type
+        'signal': signal_type,
+        'date': date,
+        'time': time,
+        'title': title
     }
     if ev_per_chan is not None:
         keys_dictionary['ev-per-chan'] = ev_per_chan
@@ -590,33 +638,36 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
                 '%s_axis.units' % key)
             keys_dictionary['%s-name' % key] = eval(
                 '%s_axis.name' % key)
-
+    if signal.metadata.Signal.signal_type == "EELS":
+        if "Acquisition_instrument.TEM" in signal.metadata:
+            mp = signal.metadata.Acquisition_instrument.TEM
+            if mp.has_item('beam_energy'):
+                keys_dictionary['beam-energy'] = mp.beam_energy
+            if mp.has_item('convergence_angle'):
+                keys_dictionary['convergence-angle'] = mp.convergence_angle
+            if mp.has_item('Detector.EELS.collection_angle'):
+                keys_dictionary[
+                    'collection-angle'] = mp.Detector.EELS.collection_angle
     if "EDS" in signal.metadata.Signal.signal_type:
         if signal.metadata.Signal.signal_type == "EDS_SEM":
             mp = signal.metadata.Acquisition_instrument.SEM
         elif signal.metadata.Signal.signal_type == "EDS_TEM":
             mp = signal.metadata.Acquisition_instrument.TEM
-
         if mp.has_item('beam_energy'):
             keys_dictionary['beam-energy'] = mp.beam_energy
-        if mp.has_item('convergence_angle'):
-            keys_dictionary['convergence-angle'] = mp.convergence_angle
-        if mp.has_item('Detector.EELS.collection_angle'):
-            keys_dictionary[
-                'collection-angle'] = mp.Detector.EELS.collection_angle
-
         if mp.has_item('Detector.EDS.elevation_angle'):
             keys_dictionary[
                 'elevation-angle'] = mp.Detector.EDS.elevation_angle
-        if mp.has_item('tilt_stage'):
-            keys_dictionary['tilt-stage'] = mp.tilt_stage
+        if mp.has_item('Stage.tilt_alpha'):
+            keys_dictionary['tilt-stage'] = mp.Stage.tilt_alpha
         if mp.has_item('Detector.EDS.azimuth_angle'):
             keys_dictionary['azimuth-angle'] = mp.Detector.EDS.azimuth_angle
         if mp.has_item('Detector.EDS.live_time'):
             keys_dictionary['live-time'] = mp.Detector.EDS.live_time
         if mp.has_item('Detector.EDS.energy_resolution_MnKa'):
             keys_dictionary[
-                'energy-resolution'] = mp.Detector.EDS.energy_resolution_MnKa
+                'detector-peak-width-ev'] = \
+                mp.Detector.EDS.energy_resolution_MnKa
 
     write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)
@@ -629,8 +680,8 @@ def write_rpl(filename, keys_dictionary, encoding='ascii'):
     f.write('key\tvalue\n')
     # Even if it is not necessary, we sort the keywords when writing
     # to make the rpl file more human friendly
-    for key, value in iter(sorted(keys_dictionary.iteritems())):
-        if not isinstance(value, basestring):
+    for key, value in iter(sorted(keys_dictionary.items())):
+        if not isinstance(value, str):
             value = str(value)
         f.write(key + '\t' + value + '\n')
     f.close()
@@ -639,12 +690,12 @@ def write_rpl(filename, keys_dictionary, encoding='ascii'):
 def write_raw(filename, signal, record_by):
     """Writes the raw file object
 
-    Parameters:
-    -----------
-    filename : string
+    Parameters
+    ----------
+    filename : str
         the filename, either with the extension or without it
-    record_by : string
-     'vector' or 'image'
+    record_by : str
+         'vector' or 'image'
 
         """
     filename = os.path.splitext(filename)[0] + '.raw'

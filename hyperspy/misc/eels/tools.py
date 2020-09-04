@@ -1,14 +1,34 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import math
 import numbers
+import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
-from hyperspy.misc.utils import unfold_if_multidim
-from hyperspy.gui import messages as messagesui
+from hyperspy.misc.elements import elements as elements_db
 import hyperspy.defaults_parser
+
+_logger = logging.getLogger(__name__)
 
 
 def _estimate_gain(ns, cs,
@@ -45,12 +65,12 @@ def _estimate_gain(ns, cs,
 
     fit = np.polyfit(average2fit, variance2fit, pol_order)
     if weighted is True:
-        from hyperspy._signals.spectrum import Spectrum
-        from hyperspy.model import Model
-        from hyperspy.components import Line
-        s = Spectrum(variance2fit)
+        from hyperspy._signals.signal1D import Signal1D
+        from hyperspy.models.model1d import Model1D
+        from hyperspy.components1d import Line
+        s = Signal1D(variance2fit)
         s.axes_manager.signal_axes[0].axis = average2fit
-        m = Model(s)
+        m = Model1D(s)
         l = Line()
         l.a.value = fit[1]
         l.b.value = fit[0]
@@ -86,7 +106,8 @@ def estimate_variance_parameters(
         higher_than=None,
         return_results=False,
         plot_results=True,
-        weighted=False):
+        weighted=False,
+        store_results="ask"):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA),
@@ -97,17 +118,17 @@ def estimate_variance_parameters(
 
     Parameters
     ----------
-    noisy_SI, clean_SI : spectrum.Spectrum instances
+    noisy_SI, clean_SI : signal1D.Signal1D instances
     mask : numpy bool array
         To define the channels that will be used in the calculation.
     pol_order : int
         The order of the polynomy.
     higher_than: float
         To restrict the fit to counts over the given value.
-
     return_results : Bool
-
     plot_results : Bool
+    store_results: {True, False, "ask"}, default "ask"
+        If True, it stores the result in the signal metadata
 
     Returns
     -------
@@ -115,60 +136,62 @@ def estimate_variance_parameters(
     and scale factor
 
     """
-    fold_back_noisy = unfold_if_multidim(noisy_signal)
-    fold_back_clean = unfold_if_multidim(clean_signal)
+    with noisy_signal.unfolded(), clean_signal.unfolded():
+        # The rest of the code assumes that the first data axis
+        # is the navigation axis. We transpose the data if that is not the
+        # case.
+        ns = (noisy_signal.data.copy()
+              if noisy_signal.axes_manager[0].index_in_array == 0
+              else noisy_signal.data.T.copy())
+        cs = (clean_signal.data.copy()
+              if clean_signal.axes_manager[0].index_in_array == 0
+              else clean_signal.data.T.copy())
 
-    # The rest of the code assumes that the first data axis
-    # is the navigation axis. We transpose the data if that is not the
-    # case.
-    ns = (noisy_signal.data.copy()
-          if noisy_signal.axes_manager[0].index_in_array == 0
-          else noisy_signal.data.T.copy())
-    cs = (clean_signal.data.copy()
-          if clean_signal.axes_manager[0].index_in_array == 0
-          else clean_signal.data.T.copy())
+        if mask is not None:
+            _slice = [slice(None), ] * len(ns.shape)
+            _slice[noisy_signal.axes_manager.signal_axes[0].index_in_array]\
+                = ~mask
+            ns = ns[_slice]
+            cs = cs[_slice]
 
-    if mask is not None:
-        _slice = [slice(None), ] * len(ns.shape)
-        _slice[noisy_signal.axes_manager.signal_axes[0].index_in_array]\
-            = ~mask
-        ns = ns[_slice]
-        cs = cs[_slice]
+        results0 = _estimate_gain(
+            ns, cs, weighted=weighted, higher_than=higher_than,
+            plot_results=plot_results, binning=0, pol_order=pol_order)
 
-    results0 = _estimate_gain(ns, cs, weighted=weighted,
-                              higher_than=higher_than, plot_results=plot_results, binning=0,
-                              pol_order=pol_order)
+        results2 = _estimate_gain(
+            ns, cs, weighted=weighted, higher_than=higher_than,
+            plot_results=False, binning=2, pol_order=pol_order)
 
-    results2 = _estimate_gain(ns, cs, weighted=weighted,
-                              higher_than=higher_than, plot_results=False, binning=2,
-                              pol_order=pol_order)
+        c = _estimate_correlation_factor(results0['fit'][0],
+                                         results2['fit'][0], 4)
 
-    c = _estimate_correlation_factor(results0['fit'][0],
-                                     results2['fit'][0], 4)
-
-    message = ("Gain factor: %.2f\n" % results0['fit'][0] +
-               "Gain offset: %.2f\n" % results0['fit'][1] +
-               "Correlation factor: %.2f\n" % c)
-    is_ok = True
-    if hyperspy.defaults_parser.preferences.General.interactive is True:
-        is_ok = messagesui.information(
-            message + "Would you like to store the results?")
-    else:
-        print message
-    if is_ok:
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_factor",
-                                       results0['fit'][0])
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_offset",
-                                       results0['fit'][1])
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.correlation_factor",
-                                       c)
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.parameters_estimation_method",
-                                       'HyperSpy')
-
-    if fold_back_noisy is True:
-        noisy_signal.fold()
-    if fold_back_clean is True:
-        clean_signal.fold()
+        message = ("Gain factor: %.2f\n" % results0['fit'][0] +
+                   "Gain offset: %.2f\n" % results0['fit'][1] +
+                   "Correlation factor: %.2f\n" % c)
+        if store_results == "ask":
+            while is_ok not in ("Yes", "No"):
+                is_ok = input(
+                    message +
+                    "Would you like to store the results (Yes/No)?")
+            is_ok = is_ok == "Yes"
+        else:
+            is_ok = store_results
+            _logger.info(message)
+        if is_ok:
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                results0['fit'][0])
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                results0['fit'][1])
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model."
+                "correlation_factor",
+                c)
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model." +
+                "parameters_estimation_method",
+                'HyperSpy')
 
     if return_results is True:
         return results0
@@ -195,28 +218,30 @@ def ratio(edge_A, edge_B):
     std_b = edge_B.intensity.std
     ratio = a / b
     ratio_std = ratio * rel_std_of_fraction(a, std_a, b, std_b)
-    print "Ratio %s/%s %1.3f +- %1.3f " % (
-        edge_A.name,
-        edge_B.name,
-        a / b,
-        1.96 * ratio_std)
+    _logger.info("Ratio %s/%s %1.3f +- %1.3f ",
+                 edge_A.name,
+                 edge_B.name,
+                 a / b,
+                 1.96 * ratio_std)
     return ratio, ratio_std
 
 
 def eels_constant(s, zlp, t):
-    """Calculate the constant of proportionality (k) in the relationship
+    r"""Calculate the constant of proportionality (k) in the relationship
     between the EELS signal and the dielectric function.
     dielectric function from a single scattering distribution (SSD) using
     the Kramers-Kronig relations.
 
-    $S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
-    {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
-    k\Im(\frac{-1}{\epsilon(E)})$
+        .. math::
+
+            S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
+            {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
+            k\Im(\frac{-1}{\epsilon(E)})
 
 
     Parameters
     ----------
-    zlp: {number, Signal}
+    zlp: {number, BaseSignal}
         If the ZLP is the same for all spectra, the intengral of the ZLP
         can be provided as a number. Otherwise, if the ZLP intensity is not
         the same for all spectra, it can be provided as i) a Signal
@@ -224,7 +249,7 @@ def eels_constant(s, zlp, t):
         spectra for each location ii) a Signal of signal dimension 0
         and navigation_dimension equal to the current signal containing the
         integrated ZLP intensity.
-    t: {None, number, Signal}
+    t: {None, number, BaseSignal}
         The sample thickness in nm. If the thickness is the same for all
         spectra it can be given by a number. Otherwise, it can be provided
         as a Signal with signal dimension 0 and navigation_dimension equal
@@ -243,14 +268,15 @@ def eels_constant(s, zlp, t):
     # Mapped parameters
     try:
         e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-    except:
+    except BaseException:
         raise AttributeError("Please define the beam energy."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
-        beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle
-    except:
-        raise AttributeError("Please define the collection angle."
+        beta = s.metadata.Acquisition_instrument.\
+            TEM.Detector.EELS.collection_angle
+    except BaseException:
+        raise AttributeError("Please define the collection semi-angle."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
 
@@ -260,25 +286,28 @@ def eels_constant(s, zlp, t):
         # Avoid singularity at E=0
         eaxis[0] = 1e-10
 
-    if isinstance(zlp, hyperspy.signal.Signal):
+    if isinstance(zlp, hyperspy.signal.BaseSignal):
         if (zlp.axes_manager.navigation_dimension ==
                 s.axes_manager.navigation_dimension):
             if zlp.axes_manager.signal_dimension == 0:
                 i0 = zlp.data
             else:
-                i0 = zlp.data.sum(axis.index_in_array)
+                i0 = zlp.integrate1D(axis.index_in_axes_manager).data
         else:
             raise ValueError('The ZLP signal dimensions are not '
                              'compatible with the dimensions of the '
                              'low-loss signal')
-        i0 = i0.reshape(
-            np.insert(i0.shape, axis.index_in_array, 1))
+        # The following prevents errors if the signal is a single spectrum
+        if len(i0) != 1:
+            i0 = i0.reshape(
+                np.insert(i0.shape, axis.index_in_array, 1))
     elif isinstance(zlp, numbers.Number):
         i0 = zlp
     else:
-        raise ValueError('The zero-loss peak input is not valid.')
+        raise ValueError('The zero-loss peak input is not valid, it must be\
+                         in the BaseSignal class or a Number.')
 
-    if isinstance(t, hyperspy.signal.Signal):
+    if isinstance(t, hyperspy.signal.BaseSignal):
         if (t.axes_manager.navigation_dimension ==
                 s.axes_manager.navigation_dimension) and (
                 t.axes_manager.signal_dimension == 0):
@@ -293,7 +322,94 @@ def eels_constant(s, zlp, t):
     # Kinetic definitions
     ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2
     tgt = e0 * (2 * me + e0) / (me + e0)
-    k = s._get_navigation_signal()
-    k.data = (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2)
+    k = s.__class__(
+        data=(t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2))
     k.metadata.General.title = "EELS proportionality constant K"
     return k
+
+def get_edges_near_energy(energy, width=10, only_major=False, order='closest'):
+    """Find edges near a given energy that are within the given energy 
+    window.
+    
+    Parameters
+    ----------
+    energy : float
+        Energy to search, in eV
+    width : float
+        Width of window, in eV, around energy in which to find nearby 
+        energies, i.e. a value of 10 eV (the default) means to 
+        search +/- 5 eV. The default is 10.
+    only_major : bool
+        Whether to show only the major edges. The default is False.
+    order : str
+        Sort the edges, if 'closest', return in the order of energy difference,
+        if 'ascending', return in ascending order, similarly for 'descending'
+
+    Returns
+    -------
+    edges : list
+        All edges that are within the given energy window, sorted by 
+        energy difference to the given energy.
+    """        
+    
+    if width < 0:
+        raise ValueError("Provided width needs to be >= 0.")
+    if order not in ('closest', 'ascending', 'descending'):
+        raise ValueError("order needs to be 'closest', 'ascending' or "
+                         "'descending'")
+    
+    Emin, Emax = energy - width/2, energy + width/2            
+
+    # find all subshells that have its energy within range
+    valid_edges = []
+    for element, element_info in elements_db.items():
+        try:
+            for shell, shell_info in element_info[
+                'Atomic_properties']['Binding_energies'].items():
+                if only_major:
+                    if shell_info['relevance'] != 'Major':
+                        continue
+                if shell[-1] != 'a' and \
+                    Emin <= shell_info['onset_energy (eV)'] <= Emax:
+                    subshell = '{}_{}'.format(element, shell)
+                    Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
+                    valid_edges.append((subshell, 
+                                        shell_info['onset_energy (eV)'], 
+                                        Ediff))           
+        except KeyError:
+            continue 
+        
+    # Sort according to 'order' and return only the edges
+    if order == 'closest':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[2])]
+    elif order == 'ascending':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[1])]
+    elif order == 'descending':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[1], 
+                                               reverse=True)]
+        
+    return edges
+
+def get_info_from_edges(edges):
+    """Return the information of a sequence of edges as a list of dictionaries
+
+    Parameters
+    ----------
+    edges : str or iterable
+        the sequence of edges, each entry in the format of 'element_subshell'.
+
+    Returns
+    -------
+    info : list
+        a list of dictionaries with information corresponding to the provided 
+        edges.
+    """
+    
+    edges = np.atleast_1d(edges)
+    info = []
+    for edge in edges:
+        element, subshell = edge.split('_')
+        d = elements_db[element]['Atomic_properties']['Binding_energies'][subshell]
+        info.append(d)
+
+    return info

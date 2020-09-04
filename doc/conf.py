@@ -11,10 +11,12 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from hyperspy import Release
 import sys
 import os
+from datetime import datetime
+
 sys.path.append('../')
-from hyperspy import Release
 sys.path.append(os.path.abspath('sphinxext'))
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -31,17 +33,18 @@ sys.path.append(os.path.abspath('sphinxext'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'gen_rst',
-    'numpydoc',
-    'matplotlib.sphinxext.only_directives',
+    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.pngmath',
+    'sphinx.ext.imgmath',
+    'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
-    'ipython_console_highlighting']  # , 'rst2pdf.pdfbuilder']
+    'sphinx_toggleprompt',
+]
+
 try:
     import sphinxcontrib.spelling
     extensions.append('sphinxcontrib.spelling')
-except:
+except BaseException:
     pass
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -56,8 +59,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'HyperSpy'
-copyright = u'2012, The HyperSpy development team'
+project = 'HyperSpy'
+copyright = f'2011-{datetime.today().year}, The HyperSpy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -107,12 +110,12 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {'collapsiblesidebar': True}
+# html_theme_options = {'collapsiblesidebar': True}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -131,7 +134,7 @@ html_logo = '_static/hyperspy_logo.png'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = 'hyperspy_logo.ico'
+html_favicon = '_static/hyperspy.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -182,6 +185,9 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'HyperSpydoc'
 
+# Add the documentation for __init__() methods and the class docstring to the
+# built documentation
+autoclass_content = 'both'
 
 # -- Options for LaTeX output --------------------------------------------
 
@@ -194,8 +200,8 @@ htmlhelp_basename = 'HyperSpydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'HyperSpy.tex', u'HyperSpy Documentation',
-     u'The HyperSpy Developers', 'manual'),
+    ('index', 'HyperSpy.tex', 'HyperSpy Documentation',
+     'The HyperSpy Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -227,13 +233,40 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'hyperspy', u'HyperSpy Documentation',
-     [u'The HyperSpy developers'], 1)
+    ('index', 'hyperspy', 'HyperSpy Documentation',
+     ['The HyperSpy developers'], 1)
 ]
 
 # Add the hyperspy website to the intersphinx domains
-intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'hyperspyweb': ('https://hyperspy.org/', None),
+                       'matplotlib': ('https://matplotlib.org', None),
+                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
+                       'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+                       'dask': ('https://docs.dask.org/en/latest', None),
+                       'astroML': ('https://www.astroml.org/', None),
+                       'sklearn': ('https://scikit-learn.org/stable', None),
+                       'skimage': ('https://scikit-image.org/docs/stable', None),
+                       }
+
+graphviz_output_format = "svg"
+
+
+# -- Options for Sphinx API doc ----------------------------------------------
+# Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py
+# run api doc
+
+
+def run_apidoc(_):
+    from sphinx.ext.apidoc import main
+
+    cur_dir = os.path.normpath(os.path.dirname(__file__))
+    output_path = os.path.join(cur_dir, 'api')
+    modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
+    exclude_pattern = "../hyperspy/tests"
+    exclude_pattern2 = "../hyperspy/external"
+    main(['-e', '-f', '-P', '-o', output_path, modules, exclude_pattern, exclude_pattern2])
 
 
 def setup(app):
-    app.add_javascript('copybutton.js')
+    app.connect('builder-inited', run_apidoc)
