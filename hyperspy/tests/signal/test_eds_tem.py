@@ -47,7 +47,7 @@ class Test_metadata:
         sSum = s.sum(0)
         assert (
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            3.1 * 2)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -59,7 +59,8 @@ class Test_metadata:
         sSum = s.sum((0, 1))
         assert (
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            3.1 * 2 * 4)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time
+            * 2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -74,7 +75,7 @@ class Test_metadata:
         assert r is None
         assert (
             s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time * 2)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):

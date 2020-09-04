@@ -166,19 +166,25 @@ class EDS_mixin:
     def sum(self, axis=None, out=None):
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        # modify time spend per spectrum
         s = super().sum(axis=axis, out=out)
         s = out or s
-        mp = None
-        if s.metadata.get_item("Acquisition_instrument.SEM"):
-            mp = s.metadata.Acquisition_instrument.SEM
-            mp_old = self.metadata.Acquisition_instrument.SEM
-        elif s.metadata.get_item("Acquisition_instrument.TEM"):
-            mp = s.metadata.Acquisition_instrument.TEM
-            mp_old = self.metadata.Acquisition_instrument.TEM
-        if mp is not None and mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
-                self.data.size / s.data.size
+
+        # Update live time by the change in navigation axes dimensions
+        time_factor = (
+               np.prod([ax.size for ax in self.axes_manager.navigation_axes])
+               / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
+            )
+        aimd = s.metadata.get_item('Acquisition_instrument', None)
+        if aimd is not None:
+            aimd = s.metadata.Acquisition_instrument
+            if "SEM.Detector.EDS.live_time" in aimd:
+                aimd.SEM.Detector.EDS.live_time *= time_factor
+            elif "TEM.Detector.EDS.live_time" in aimd:
+                aimd.TEM.Detector.EDS.live_time *= time_factor
+            else:
+                _logger.info("Live_time could not be found in the metadata and "
+                             "has not been updated.")
+
         if out is None:
             return s
     sum.__doc__ = Signal1D.sum.__doc__
