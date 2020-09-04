@@ -500,6 +500,28 @@ class TestScalableFixedPattern:
             m.fit()
         assert abs(fp.yscale.value - 10) <= .1
 
+    def test_function(self):
+        s = self.s
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1, interpolate=False)
+        m = s.create_model()
+        m.append(fp)
+        m.fit()
+        np.testing.assert_allclose(s.data, fp.function(s.axes_manager[0].axis))
+
+    def test_function_nd(self):
+        s = self.s
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
+        s_multi = hs.stack([s] * 3)
+        m = s_multi.create_model()
+        m.append(fp)
+        fp.yscale.map['values'] = [1.0, 0.5, 1.0]
+        fp.xscale.map['values'] = [1.0, 1.0, 0.75]
+        results = fp.function_nd(s.axes_manager[0].axis)
+        expected = np.array([s1.data * v for v in [1, 0.5, 0.75]])
+        np.testing.assert_allclose(results, expected)
+
 
 class TestHeavisideStep:
 

@@ -71,7 +71,7 @@ class SEE(Component):
         """
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
-            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            self.gaussian.centre.value = (x[-1] + x[0]) / 2
             return np.convolve(
                 self.gaussian.function(x),
                 np.where(
@@ -94,7 +94,7 @@ class SEE(Component):
         """
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
-            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            self.gaussian.centre.value = (x[-1] + x[0]) / 2
             return np.convolve(
                 self.gaussian.function(x),
                 np.where(
