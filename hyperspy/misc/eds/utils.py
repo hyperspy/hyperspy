@@ -403,9 +403,9 @@ def quantification_cliff_lorimer(intensities,
     mask: array of bool
         The mask with the dimension of intensities[0]. If a pixel is True,
         the composition is set to zero.
-    min_intensity: float
-        The lowest value an element can be in order to calculate its fraction.
-        Must be above zero to prevent dividing by zero.
+    min_intensity: float, default=0.1
+        The minimum peak integrated intensity allowed for a peak to
+        be included in quantification. Must be greater than zero.
 
     Return
     ------
