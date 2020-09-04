@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,6 +20,7 @@ import logging
 
 import numpy as np
 import warnings
+from collections.abc import Iterable
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
@@ -165,19 +166,25 @@ class EDS_mixin:
     def sum(self, axis=None, out=None):
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        # modify time spend per spectrum
         s = super().sum(axis=axis, out=out)
         s = out or s
-        mp = None
-        if s.metadata.get_item("Acquisition_instrument.SEM"):
-            mp = s.metadata.Acquisition_instrument.SEM
-            mp_old = self.metadata.Acquisition_instrument.SEM
-        elif s.metadata.get_item("Acquisition_instrument.TEM"):
-            mp = s.metadata.Acquisition_instrument.TEM
-            mp_old = self.metadata.Acquisition_instrument.TEM
-        if mp is not None and mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
-                self.data.size / s.data.size
+
+        # Update live time by the change in navigation axes dimensions
+        time_factor = (
+               np.prod([ax.size for ax in self.axes_manager.navigation_axes])
+               / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
+            )
+        aimd = s.metadata.get_item('Acquisition_instrument', None)
+        if aimd is not None:
+            aimd = s.metadata.Acquisition_instrument
+            if "SEM.Detector.EDS.live_time" in aimd:
+                aimd.SEM.Detector.EDS.live_time *= time_factor
+            elif "TEM.Detector.EDS.live_time" in aimd:
+                aimd.TEM.Detector.EDS.live_time *= time_factor
+            else:
+                _logger.info("Live_time could not be found in the metadata and "
+                             "has not been updated.")
+
         if out is None:
             return s
     sum.__doc__ = Signal1D.sum.__doc__
@@ -550,7 +557,7 @@ class EDS_mixin:
 
         Parameters
         ----------
-        xray_lines: {None, list of string}
+        xray_lines: {None, Iterable* of strings}
             If None,
             if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
@@ -560,6 +567,8 @@ class EDS_mixin:
             for the operation.
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
+            * Note that while dictionaries and strings are iterable,
+            their use is ambiguous and specifically not allowed.
         integration_windows: Float or array
             If float, the width of the integration windows is the
             'integration_windows_width' times the calculated FWHM of the line.
@@ -616,6 +625,13 @@ class EDS_mixin:
         plot
 
         """
+        if xray_lines is not None and \
+            (not isinstance(xray_lines, Iterable) or \
+            isinstance(xray_lines, (str, dict))):
+
+            raise TypeError(
+                "xray_lines must be a compatible iterable, but was "
+                "mistakenly provided as a %s." % type(xray_lines))
 
         xray_lines = self._parse_xray_lines(xray_lines, only_one, only_lines)
         if hasattr(integration_windows, '__iter__') is False:
@@ -677,7 +693,8 @@ class EDS_mixin:
         TOA is the angle with which the X-rays leave the surface towards
         the detector. Parameters are read in 'SEM.Stage.tilt_alpha',
         'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle' and
-        'SEM.Detector.EDS.elevation_angle' in 'metadata'.
+        'SEM.Detector.EDS.elevation_angle' and 'SEM.Stage.tilt_beta in
+        'metadata'.
 
         Returns
         -------
@@ -696,25 +713,23 @@ class EDS_mixin:
         See also
         --------
         hs.eds.take_off_angle
-
-        Notes
-        -----
-        Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597
-        (2007)
         """
         if self.metadata.Signal.signal_type == "EDS_SEM":
             mp = self.metadata.Acquisition_instrument.SEM
         elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
-        tilt_stage = mp.Stage.tilt_alpha
-        azimuth_angle = mp.Detector.EDS.azimuth_angle
-        elevation_angle = mp.Detector.EDS.elevation_angle
+        tilt_stage = mp.get_item('Stage.tilt_alpha', None)
+        azimuth_angle = mp.get_item('Detector.EDS.azimuth_angle', None)
+        elevation_angle = mp.get_item('Detector.EDS.elevation_angle', None)
+        beta_tilt = mp.get_item('Stage.tilt_beta', 0.0)
 
-        TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
-                                       elevation_angle)
-
-        return TOA
+        return utils.eds.take_off_angle(
+            tilt_stage,
+            azimuth_angle,
+            elevation_angle,
+            beta_tilt
+        )
 
     def estimate_integration_windows(self,
                                      windows_width=2.,
@@ -839,6 +854,12 @@ class EDS_mixin:
              only_one=False,
              background_windows=None,
              integration_windows=None,
+             navigator="auto",
+             plot_markers=True,
+             autoscale='v',
+             norm="auto",
+             axes_manager=None,
+             navigator_kwds={},
              **kwargs):
         """Plot the EDS spectrum. The following markers can be added
 
@@ -907,7 +928,13 @@ class EDS_mixin:
         set_elements, add_elements, estimate_integration_windows,
         get_lines_intensity, estimate_background_windows
         """
-        super().plot(**kwargs)
+        super().plot(navigator=navigator,
+                     plot_markers=plot_markers,
+                     autoscale=autoscale,
+                     norm=norm,
+                     axes_manager=axes_manager,
+                     navigator_kwds=navigator_kwds,
+                     **kwargs)
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
 

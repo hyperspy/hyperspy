@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,8 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import numpy as np
 import tempfile
+
+import numpy as np
 import pytest
 
 import hyperspy.api as hs
@@ -51,4 +52,3 @@ def test_save_load_cycle_color(color, ext):
         filename = os.path.join(tmpdir, 'test_image.'+ext)
         s.save(filename)
         hs.load(filename)
-

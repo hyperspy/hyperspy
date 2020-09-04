@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -45,6 +45,39 @@ f_error_fmt = (
     "\t\tPath: %s")
 
 
+def _escape_square_brackets(text):
+    """Escapes pairs of square brackets in strings for glob.glob().
+
+    Parameters
+    ----------
+    text : str
+        The text to escape
+
+    Returns
+    -------
+    str
+        The escaped string
+
+    Example
+    -------
+    >>> # Say there are two files like this:
+    >>> # /home/data/afile[1x1].txt
+    >>> # /home/data/afile[1x2].txt
+    >>>
+    >>> path = "/home/data/afile[*].txt"
+    >>> glob.glob(path)
+    []
+    >>> glob.glob(_escape_square_brackets(path))
+    ['/home/data/afile[1x2].txt', '/home/data/afile[1x1].txt']
+
+    """
+    import re
+
+    rep = dict((re.escape(k), v) for k, v in {"[": "[[]", "]": "[]]"}.items())
+    pattern = re.compile("|".join(rep.keys()))
+    return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
+
+
 def load(filenames=None,
          signal_type=None,
          stack=False,
@@ -52,6 +85,7 @@ def load(filenames=None,
          new_axis_name="stack_element",
          lazy=False,
          convert_units=False,
+         escape_square_brackets=False,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure.
@@ -59,6 +93,9 @@ def load(filenames=None,
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
     Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
     tif, and a number of image formats.
+
+    Depending on the number of datasets to load in the file, this function will
+    return a HyperSpy signal instance or list of HyperSpy signal instances.
 
     Any extra keyword is passed to the corresponding reader. For
     available options see their individual documentation.
@@ -113,6 +150,11 @@ def load(filenames=None,
     convert_units : {bool}
         If True, convert the units using the `convert_to_units` method of
         the `axes_manager`. If False, does nothing. The default is False.
+    escape_square_brackets : bool, default False
+        If True, and ``filenames`` is a str containing square brackets,
+        then square brackets are escaped before wildcard matching with
+        ``glob.glob()``. If False, square brackets are used to represent
+        character classes (e.g. ``[a-z]`` matches lowercase letters.
     print_info: bool
         For SEMPER unf- and EMD (Berkeley)-files, if True (default is False)
         additional information read during loading is printed for a quick
@@ -156,16 +198,24 @@ def load(filenames=None,
     load_SI_image_stack : bool (default False)
         Only for Velox emd files: if True, load the stack of STEM images
         acquired simultaneously as the EDS spectrum image.
-    dataset_name : string or list, optional
+    dataset_path : None, str or list of str, optional
         For filetypes which support several datasets in the same file, this
         will only load the specified dataset. Several datasets can be loaded
-        by using a list of strings. Only for EMD (NCEM) files.
+        by using a list of strings. Only for EMD (NCEM) and hdf5 (USID) files.
+    stack_group : bool, optional
+        Only for EMD NCEM. Stack datasets of groups with common name. Relevant
+        for emd file version >= 0.5 where groups can be named 'group0000',
+        'group0001', etc.
+    ignore_non_linear_dims : bool, default is True
+        Only for HDF5 USID. If True, parameters that were varied non-linearly
+        in the desired dataset will result in Exceptions.
+        Else, all such non-linearly varied parameters will be treated as
+        linearly varied parameters and a Signal object will be generated.
     only_valid_data : bool, optional
         Only for FEI emi/ser file in case of series or linescan with the
         acquisition stopped before the end: if True, load only the acquired
         data. If False, fill empty data with zeros. Default is False and this
         default value will change to True in version 2.0.
-
 
     Returns
     -------
@@ -184,6 +234,10 @@ def load(filenames=None,
     Loading multiple files matching the pattern:
 
     >>> d = hs.load('file*.dm3')
+
+    Loading multiple files containing square brackets:
+
+    >>> d = hs.load('file[*].dm3', escape_square_brackets=True)
 
     Loading (potentially larger than the available memory) files lazily and
     stacking:
@@ -211,10 +265,15 @@ def load(filenames=None,
             raise ValueError("No file provided to reader")
 
     if isinstance(filenames, str):
+        if escape_square_brackets:
+            filenames = _escape_square_brackets(filenames)
+
         filenames = natsorted([f for f in glob.glob(filenames)
                                if os.path.isfile(f)])
+
         if not filenames:
-            raise ValueError('No file name matches this pattern')
+            raise ValueError('No filename matches this pattern')
+
     elif not isinstance(filenames, (list, tuple)):
         raise ValueError(
             'The filenames parameter must be a list, tuple, string or None')
@@ -229,7 +288,8 @@ def load(filenames=None,
             # files are required to contain the same number of signals. We
             # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
-                obj = load_single_file(filename, lazy=lazy,
+                obj = load_single_file(filename, 
+                                        lazy=lazy,
                                        **kwds)
                 if i == 0:
                     # First iteration, determine number of signals, if several:
@@ -296,14 +356,19 @@ def load_single_file(filename, **kwds):
 
     filename : string
         File name (including the extension)
+        
 
     """
-    extension = os.path.splitext(filename)[1][1:]
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"File: {filename} not found!")
 
+    extension = os.path.splitext(filename)[1][1:]
     i = 0
+    
     while extension.lower() not in io_plugins[i].file_extensions and \
             i < len(io_plugins) - 1:
         i += 1
+
     if i == len(io_plugins):
         # Try to load it with the python imaging library
         try:
@@ -348,18 +413,22 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
     return objects
 
 
-def assign_signal_subclass(dtype,
-                           signal_dimension,
-                           signal_type="",
-                           lazy=False):
-    """Given record_by and signal_type return the matching Signal subclass.
+def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
+    """Given dtype, signal_dimension and signal_type, return the matching Signal subclass.
+
+    See `hs.print_known_signal_types()` for a list of known signal_types,
+    and the developer guide for details on how to add new signal_types.
 
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
-    signal_dimension: int
-    signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
-    lazy: bool
+        Signal dtype
+    signal_dimension : int
+        Signal dimension
+    signal_type : str, default ""
+        Signal type. Optional. Will log a warning if it is unknown to HyperSpy.
+    lazy : bool, default False
+        If True, returns the matching LazySignal subclass.
 
     Returns
     -------
@@ -374,7 +443,7 @@ def assign_signal_subclass(dtype,
           'object' in dtype.name):
         dtype = 'real'
     else:
-        raise ValueError('Data type "{}" not understood!'.format(dtype.name))
+        raise ValueError(f'Data type "{dtype.name}" not understood!')
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
 
@@ -388,10 +457,27 @@ def assign_signal_subclass(dtype,
                               if signal_type == value["signal_type"] or
                               "signal_type_aliases" in value and
                               signal_type in value["signal_type_aliases"]}
+
+    valid_signal_types = [v["signal_type"] for v in signals.values()]
+    valid_signal_aliases = [
+        v["signal_type_aliases"]
+        for v in signals.values()
+        if "signal_type_aliases" in v
+    ]
+    valid_signal_aliases = [i for j in valid_signal_aliases for i in j]
+    valid_signal_types.extend(valid_signal_aliases)
+
     if dtype_dim_type_matches:
         # Perfect match found
         signal_dict = dtype_dim_type_matches
     else:
+        if signal_type not in set(valid_signal_types):
+            _logger.warning(
+                f"`signal_type='{signal_type}'` not understood. "
+                f"See `hs.print_known_signal_types()` for a list of known signal types, "
+                f"and the developer guide for details on how to add new signal_types."
+            )
+
         # If the following dict is not empty, only signal_dimension and dtype match.
         # The dict should contain a general class for the given signal
         # dimension.
@@ -406,16 +492,18 @@ def assign_signal_subclass(dtype,
     # Sanity check
     if len(signal_dict) > 1:
         _logger.warning(
-            "There is more than one kind of signal that match the current specifications, "
-            "which is not expected."
-            "Please report this issue to the HyperSpy developers.")
+            "There is more than one kind of signal that matches "
+            "the current specifications. This is unexpected behaviour. "
+            "Please report this issue to the HyperSpy developers."
+        )
+
     # Regardless of the number of signals in the dict we assign one.
     # The following should only raise an error if the base classes
     # are not correctly registered.
     for key, value in signal_dict.items():
         signal_class = getattr(importlib.import_module(value["module"]), key)
-        return signal_class
 
+        return signal_class
 
 def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary
@@ -496,6 +584,29 @@ def dict2signal(signal_dict, lazy=False):
 
 
 def save(filename, signal, overwrite=None, **kwds):
+    """
+    Save hyperspy signal to a file.
+
+    A list of plugins supporting file saving can be found here: 
+    http://hyperspy.org/hyperspy-doc/current/user_guide/io.html#supported-formats
+
+    Any extra keyword is passed to the corresponding save method in the
+    io_plugin. 
+    For available options see their individual documentation.
+
+    Parameters
+    ----------
+    filename :  None or str
+        The filename to save the signal to. 
+    signal :  Hyperspy signal
+        The signal to be saved to file     
+    overwrite : None or Bool (default, None)
+        If None and a file exists the user will be prompted to on whether to 
+        overwrite. If False and a file exists the file will not be written.
+        If True and a file exists the file will be overwritten without 
+        prompting
+    
+    """
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
         extension = "hspy"

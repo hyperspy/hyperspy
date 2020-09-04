@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,18 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import pytest
 
 import numpy as np
 
-from numpy.testing import assert_allclose
-
-from hyperspy.signals import EDSSEMSpectrum
-from hyperspy.defaults_parser import preferences
-from hyperspy.components1d import Gaussian
 from hyperspy import utils
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
+from hyperspy.misc.test_utils import assert_warns
+from hyperspy.signals import EDSSEMSpectrum
 
 
 @lazifyTestClass
@@ -51,7 +49,7 @@ class Test_metadata:
         sSum = s.sum(0)
         assert (
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
-            3.1 * 2)
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -63,7 +61,7 @@ class Test_metadata:
         sSum = s.sum((0, 1))
         assert (
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
-            3.1 *
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time *
             2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
@@ -73,19 +71,18 @@ class Test_metadata:
     def test_sum_live_time_out_arg(self):
         s = self.signal
         sSum = s.sum(0)
-        s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
+        sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
         assert r is None
         assert (
             s_resum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
-            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time * 2)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
-        dim = s.axes_manager.shape
         s = s.rebin(scale=[2, 2, 1])
         assert (
             s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
@@ -187,12 +184,35 @@ class Test_metadata:
 
     def test_take_off_angle(self):
         s = self.signal
-        assert_allclose(s.get_take_off_angle(), 12.886929785732487,
-                        atol=10**-(sys.float_info.dig - 2))
+        np.testing.assert_allclose(s.get_take_off_angle(), 12.886929785732487)
+
+    def test_take_off_angle_beta(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Stage.tilt_beta = 15.5
+        np.testing.assert_allclose(s.get_take_off_angle(), 24.202671071140102)
+
+    def test_take_off_angle_alpha(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Stage.tilt_alpha = None
+        with pytest.raises(ValueError, match="alpha"):
+            s.get_take_off_angle()
+
+    def test_take_off_angle_azimuth(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.azimuth_angle = None
+        with pytest.raises(ValueError, match="azimuth"):
+            s.get_take_off_angle()
+
+    def test_take_off_angle_elevation(self):
+        s = self.signal
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.elevation_angle = None
+        with pytest.raises(ValueError, match="elevation"):
+            s.get_take_off_angle()
+
 
 
 @lazifyTestClass
-class Test_get_lines_intentisity:
+class Test_get_lines_intensity:
 
     def setup_method(self, method):
         # Create an empty spectrum
@@ -209,12 +229,42 @@ class Test_get_lines_intentisity:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 15.0
         self.signal = s
 
+    @pytest.mark.parametrize("bad_iter", ["Al_Kb", {"A" : "Al_Kb", "B" : "Ca_Ka"}])
+    def test_bad_iter(self, bad_iter):
+        # get_lines_intensity() should raise TypeError when
+        # xray_lines is a string or a dictionary
+        s = self.signal
+
+        with pytest.raises(TypeError):
+            s.get_lines_intensity(xray_lines=bad_iter, plot_result=False)
+
+    @pytest.mark.parametrize("good_iter", [("Al_Kb", "Ca_Ka"),
+                                           ["Al_Kb", "Ca_Ka"],
+                                           set(["Al_Kb", "Ca_Ka"])
+                                          ])
+    def test_good_iter(self, good_iter):
+        s = self.signal
+
+        # get_lines_intensity() should succeed and return a list
+        # when xray_lines is an iterable (other than a str or dict)
+        assert isinstance(
+            s.get_lines_intensity(
+                xray_lines=good_iter,
+                plot_result=False
+            ),
+            list
+        )
+
     def test(self):
         s = self.signal
+
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_windows=5)[0]
         assert sAl.axes_manager.signal_dimension == 0
+        np.testing.assert_allclose(
+            sAl.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)
         np.testing.assert_allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3)
         sAl = s.inav[0].get_lines_intensity(
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]

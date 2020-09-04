@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,12 +18,12 @@
 import numpy as np
 import pytest
 
-from hyperspy.misc.test_utils import update_close_figure, sanitize_dict
-from hyperspy.signals import Signal2D, Signal1D, BaseSignal
-from hyperspy.utils import markers, stack
-from hyperspy.drawing.marker import dict2marker
+from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-
+from hyperspy.drawing.marker import dict2marker
+from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
+from hyperspy.utils import markers, stack
 
 default_tol = 2.0
 baseline_dir = 'plot_markers'
@@ -536,3 +536,20 @@ def test_plot_eds_markers_no_energy():
     s = EDS_TEM_Spectrum()
     del s.metadata.Acquisition_instrument.TEM.beam_energy
     s.plot(True)
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_eels_labels():
+    s = get_core_loss_eels_line_scan_signal(True, random_state=10)
+    s.add_elements(['Cr'])
+    s.plot(plot_edges=True)
+    return s._plot.signal_plot.figure
+
+
+def test_plot_eels_labels_nav():
+    s = get_core_loss_eels_line_scan_signal(True)
+    s.add_elements(['Cr', 'Fe'])
+    s.plot(plot_edges=True)
+    s.axes_manager.indices = (10, )
+    s._plot.close()

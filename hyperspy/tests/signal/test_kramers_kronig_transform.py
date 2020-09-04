@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,12 +17,11 @@
 
 
 import numpy as np
-
 import pytest
 
-from hyperspy.components1d import VolumePlasmonDrude, Lorentzian
-from hyperspy.misc.eels.tools import eels_constant
 import hyperspy.api as hs
+from hyperspy.components1d import Lorentzian, VolumePlasmonDrude
+from hyperspy.misc.eels.tools import eels_constant
 
 
 class Test2D:
@@ -63,7 +62,7 @@ class Test2D:
         vpm.intensity.map['is_set'][:] = True
         vpm.plasmon_energy.map['is_set'][:] = True
         vpm.fwhm.map['is_set'][:] = True
-        s.data = (m.as_signal(show_progressbar=None) * k).data
+        s.data = (m.as_signal() * k).data
 
         # Create ZLP
         z = s.deepcopy()
@@ -91,7 +90,7 @@ class Test2D:
                                              iterations=1,
                                              n=1000.)
         s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
-        assert np.allclose(s.data,
+        np.testing.assert_allclose(s.data,
                            self.s.data[..., 1:],
                            rtol=0.01)
 
@@ -105,7 +104,7 @@ class Test2D:
                                              iterations=1,
                                              t=self.thickness)
         s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
-        assert np.allclose(s.data,
+        np.testing.assert_allclose(s.data,
                            self.s.data[..., 1:],
                            rtol=0.01)
 
@@ -115,12 +114,14 @@ class Test2D:
                                             n=1000.)
         neff1, neff2 = df.get_number_of_effective_electrons(nat=50e27,
                                                             cumulative=False)
-        assert np.allclose(neff1.data,
+        np.testing.assert_allclose(neff1.data,
                            np.array([[0.91187657, 4.72490711, 3.60594653],
-                                     [3.88077047, 0.26759741, 0.19813647]]))
-        assert np.allclose(neff2.data,
+                                     [3.88077047, 0.26759741, 0.19813647]]),
+                           rtol=1e-6)
+        np.testing.assert_allclose(neff2.data,
                            np.array([[0.91299039, 4.37469112, 3.41580094],
-                                     [3.64866394, 0.15693674, 0.11146413]]))
+                                     [3.64866394, 0.15693674, 0.11146413]]),
+                           rtol=1e-6)
 
     def test_thickness_estimation(self):
         """Kramers kronig analysis gives a rough estimation of sample
@@ -132,7 +133,7 @@ class Test2D:
                                                      iterations=1,
                                                      n=1000.,
                                                      full_output=True)
-        assert np.allclose(
+        np.testing.assert_allclose(
             self.thickness.data,
             output['thickness'].data,
             rtol=0.01)
@@ -149,4 +150,4 @@ class Test2D:
         t = self.thickness.data[0, 0]
         cdf = s_in.kramers_kronig_analysis(zlp=z, iterations=1, n=1000.)
         s_out = cdf.get_electron_energy_loss_spectrum(z, t)
-        assert np.allclose(s_out.data, s_in.data[1:], rtol=0.01)
+        np.testing.assert_allclose(s_out.data, s_in.data[1:], rtol=0.01)

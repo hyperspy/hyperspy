@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,21 +17,19 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import warnings
-import os
 import gc
+import os
 import tempfile
+import warnings
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
-import hyperspy.api as hs
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
-
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 try:
     WindowsError
@@ -128,10 +126,10 @@ axes2_converted = {
         'scale': 64.0, 'size': 3, 'units': 'nm'},
     'axis-2': {
         'name': 'dy', 'navigate': False, 'offset': 0.0,
-        'scale': 160.61676839061997, 'size': 5, 'units': 'um'},
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'},
     'axis-3': {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
-        'scale': 160.61676839061997, 'size': 5, 'units': 'um'}}
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'}}
 
 
 def test_load1():
@@ -190,11 +188,11 @@ def test_different_x_y_scale_units(save_path):
     signal.axes_manager[0].scale = 50.0
     signal.save(save_path, overwrite=True)
     sig_reload = hs.load(save_path)
-    assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
+    np.testing.assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
                     rtol=1E-5)
-    assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
+    np.testing.assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
                     rtol=1E-5)
-    assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
+    np.testing.assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
                     rtol=1E-5)
 
 

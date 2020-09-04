@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,10 +18,9 @@
 
 
 import os
+import numpy as np
 
 from hyperspy.io import load
-from numpy.testing import assert_allclose
-
 
 my_path = os.path.dirname(__file__)
 
@@ -37,12 +36,12 @@ class TestStackBuilder:
         assert data_dimensions == axes_dimensions
         md = image_stack.metadata
         assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
-        assert_allclose(md.Acquisition_instrument.TEM.beam_current, 0.0)
-        assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-        assert_allclose(md.Acquisition_instrument.TEM.camera_length, 15.0)
-        assert_allclose(
+        np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_current, 0.0)
+        np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+        np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 15.0)
+        np.testing.assert_allclose(
             md.Acquisition_instrument.TEM.dwell_time, 0.03000005078125)
-        assert_allclose(md.Acquisition_instrument.TEM.magnification, 200000.0)
+        np.testing.assert_allclose(md.Acquisition_instrument.TEM.magnification, 200000.0)
         assert md.Acquisition_instrument.TEM.microscope == "JEM-ARM200F"
         assert md.General.date == "2015-05-17"
         assert md.General.original_filename == "test_stackbuilder_imagestack.dm3"
@@ -52,7 +51,7 @@ class TestStackBuilder:
         assert md.Signal.quantity == "Electrons (Counts)"
         assert md.Signal.signal_type == ""
         assert md.Signal.binned == False
-        assert_allclose(md.Signal.Noise_properties.Variance_linear_model.gain_factor,
+        np.testing.assert_allclose(md.Signal.Noise_properties.Variance_linear_model.gain_factor,
                         0.15674974)
-        assert_allclose(md.Signal.Noise_properties.Variance_linear_model.gain_offset,
+        np.testing.assert_allclose(md.Signal.Noise_properties.Variance_linear_model.gain_offset,
                         2228741.5)

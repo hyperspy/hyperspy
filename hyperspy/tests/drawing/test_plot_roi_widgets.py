@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,13 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import numpy.testing as nt
 import pytest
-import matplotlib
 
-from hyperspy.signals import Signal2D, Signal1D
+from hyperspy.signals import Signal2D
 from hyperspy.utils import roi
-
 
 BASELINE_DIR = 'plot_roi'
 DEFAULT_TOL = 2.0
@@ -141,3 +138,12 @@ class TestPlotROI():
         p = roi.Line2DROI(x1=0.01, y1=0.01, x2=0.1, y2=0.03)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
         return objs["figure"]
+
+
+def test_error_message():
+    im = Signal2D(np.arange(50000).reshape([10, 50, 100]))
+    im.plot()
+    im._plot.close()
+    p = roi.Point1DROI(0.5)
+    with pytest.raises(Exception, match='does not have an active plot.'):
+        p.add_widget(signal=im, axes=[0, ], color="cyan")

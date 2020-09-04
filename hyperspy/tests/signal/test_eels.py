@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,13 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 
 import numpy as np
 import pytest
 
-from hyperspy import signals, model
+
+from hyperspy import signals, datasets
 from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.io import load
+
+MYPATH = os.path.dirname(__file__)
 
 
 @lazifyTestClass
@@ -146,8 +151,7 @@ class TestAlignZLP:
         s = self.signal
         s.align_zero_loss_peak(
             calibrate=True,
-            print_stats=False,
-            show_progressbar=None)
+            print_stats=False)
         zlpc = s.estimate_zero_loss_peak_centre()
         np.testing.assert_allclose(zlpc.data.mean(), 0)
         np.testing.assert_allclose(zlpc.data.std(), 0)
@@ -159,7 +163,6 @@ class TestAlignZLP:
         s.align_zero_loss_peak(
             calibrate=True,
             print_stats=False,
-            show_progressbar=None,
             mask=mask)
         zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
         np.testing.assert_allclose(np.nanmean(zlpc.data), 0,
@@ -171,8 +174,7 @@ class TestAlignZLP:
         s = self.signal
         s.align_zero_loss_peak(
             calibrate=False,
-            print_stats=False,
-            show_progressbar=None)
+            print_stats=False)
         zlpc = s.estimate_zero_loss_peak_centre()
         np.testing.assert_allclose(zlpc.data.std(), 0, atol=10e-3)
 
@@ -181,8 +183,7 @@ class TestAlignZLP:
         s2 = s.deepcopy()
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,
-                               also_align=[s2],
-                               show_progressbar=None)
+                               also_align=[s2])
         zlpc = s2.estimate_zero_loss_peak_centre()
         assert zlpc.data.mean() == 0
         assert zlpc.data.std() == 0
@@ -199,15 +200,14 @@ class TestAlignZLP:
         # Max value in the original spectrum is 12, but due to the aligning
         # the peak is split between two different channels. So 8 is the
         # maximum value for the aligned spectrum
-        assert np.allclose(zlp_max, 8)
+        np.testing.assert_allclose(zlp_max, 8)
 
     def test_align_zero_loss_peak_crop_false(self):
         s = self.signal
         original_size = s.axes_manager.signal_axes[0].size
         s.align_zero_loss_peak(
             crop=False,
-            print_stats=False,
-            show_progressbar=None)
+            print_stats=False)
         assert original_size == s.axes_manager.signal_axes[0].size
 
 
@@ -286,3 +286,207 @@ class TestRebin:
         assert s2.axes_manager[0].offset == 1.5
         assert s2.axes_manager[1].offset == 2.5
         assert s2.axes_manager[2].offset == s.axes_manager[2].offset
+
+@lazifyTestClass
+class Test_Estimate_Thickness:
+
+    def setup_method(self, method):
+        # Create an empty spectrum
+        self.s = load(os.path.join(
+            MYPATH,
+            "data/EELS_LL_linescan_simulated_thickness_variation.hspy"))
+        self.zlp = load(os.path.join(
+            MYPATH,
+            "data/EELS_ZLP_linescan_simulated_thickness_variation.hspy"))
+
+    def test_relative_thickness(self):
+        t = self.s.estimate_thickness(zlp=self.zlp)
+        np.testing.assert_allclose(t.data, np.arange(0.3,2,0.1), atol=4e-3)
+        assert t.metadata.Signal.quantity == "$\\frac{t}{\\lambda}$"
+
+    def test_thickness_mfp(self):
+        t = self.s.estimate_thickness(zlp=self.zlp, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 120 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_thickness_density(self):
+        t = self.s.estimate_thickness(zlp=self.zlp, density=3.6)
+        np.testing.assert_allclose(t.data, 142 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_thickness_density_and_mfp(self):
+        t = self.s.estimate_thickness(zlp=self.zlp, density=3.6, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_threshold(self):
+        t = self.s.estimate_thickness(threshold=4.5, density=3.6, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_threshold_nd(self):
+        threshold = self.s._get_navigation_signal()
+        threshold.data[:] = 4.5
+        t = self.s.estimate_thickness(threshold=threshold, density=3.6, mean_free_path=120)
+        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
+        assert t.metadata.Signal.quantity == "thickness (nm)"
+
+    def test_no_zlp_or_threshold(self):
+        with pytest.raises(ValueError):
+            self.s.estimate_thickness()
+
+    def test_no_metadata(self):
+        del self.s.metadata.Acquisition_instrument
+        with pytest.raises(RuntimeError):
+            self.s.estimate_thickness(zlp=self.zlp, density=3.6)
+
+class Test_Print_Edges_Near_Energy:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_at_532eV(self):
+        s = self.signal
+        table_ascii = s.print_edges_near_energy(532)
+
+        assert table_ascii.__repr__() == ('+-------+-------------------+------'
+        '-----+-----------------+\n|  edge | onset energy (eV) | relevance '
+        '|   description   |\n+-------+-------------------+-----------+'
+        '-----------------+\n|  O_K  |       532.0       |   Major   '
+        '|   Abrupt onset  |\n| Pd_M3 |       531.0       |   Minor   '
+        '|                 |\n| Sb_M5 |       528.0       |   Major   '
+        '| Delayed maximum |\n| Sb_M4 |       537.0       |   Major   '
+        '| Delayed maximum |\n+-------+-------------------+-----------+'
+        '-----------------+')
+
+    def test_sequence_edges(self):
+        s = self.signal
+        table_ascii = s.print_edges_near_energy(123,
+                                                edges=['Mn_L2', 'O_K', 'Fe_L2'])
+
+        assert table_ascii.__repr__() == ('+-------+-------------------+------'
+        '-----+-----------------------------+\n|  edge | onset energy (eV) '
+        '| relevance |         description         |\n+-------+------------'
+        '-------+-----------+-----------------------------+\n| Mn_L2 |     '
+        '  651.0       |   Major   | Sharp peak. Delayed maximum |\n|  O_K  |'
+        '       532.0       |   Major   |         Abrupt onset        '
+        '|\n| Fe_L2 |       721.0       |   Major   | Sharp peak. '
+        'Delayed maximum |\n+-------+-------------------+-----------+---------'
+        '--------------------+')
+
+    def test_no_energy_and_edges(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.print_edges_near_energy()
+
+class Test_Edges_At_Energy:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_at_532eV(self):
+        s = self.signal
+        table_ascii = s.edges_at_energy(532, width=20, only_major=True,
+                                        order='ascending')
+
+        assert table_ascii.__repr__() == ('+-------+-------------------+------'
+        '-----+-----------------+\n|  edge | onset energy (eV) | relevance |  '
+        ' description   |\n+-------+-------------------+-----------+----------'
+        '-------+\n| Sb_M5 |       528.0       |   Major   | Delayed maximum '
+        '|\n|  O_K  |       532.0       |   Major   |   Abrupt onset  |\n| '
+        'Sb_M4 |       537.0       |   Major   | Delayed maximum |\n+-------+'
+        '-------------------+-----------+-----------------+')
+
+class Test_Get_Complementary_Edges:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_Fe_O(self):
+        s = self.signal
+        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'])
+
+        assert complementary == ['Fe_L1', 'Fe_L3', 'Fe_M3', 'Fe_M2']
+
+    def test_Fe_O_only_major(self):
+        s = self.signal
+        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'],
+                                                  only_major=True)
+
+        assert complementary == ['Fe_L3', 'Fe_M3', 'Fe_M2']
+
+class Test_Plot_EELS:
+    def setup_method(self, method):
+        s = datasets.artificial_data.get_core_loss_eels_signal()
+        self.signal = s
+
+    def test_plot_no_markers(self):
+        s = self.signal
+        s.add_elements(('Mn','Cr'))
+        s.plot()
+
+        assert len(s._edge_markers) == 0
+
+    def test_plot_edges_True(self):
+        s = self.signal
+        s.add_elements(('Mn','Cr'))
+        s.plot(plot_edges=True)
+
+        assert len(s._edge_markers) == 6
+        assert set(s._edge_markers.keys()) == set(['Mn_L2', 'Mn_L3', 'Mn_L1',
+                                                   'Cr_L2', 'Cr_L3', 'Cr_L1'])
+
+    def test_plot_edges_True_without_elements(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.plot(plot_edges=True)
+
+    def test_plot_edges_from_element_family_specific(self):
+        s = self.signal
+        s.plot(plot_edges=['Mn', 'Ti_L', 'Cr_L3'], only_edges=('Major'))
+
+        assert len(s._edge_markers) == 5
+        assert set(s._edge_markers.keys()) == set(['Cr_L3', 'Mn_L2', 'Mn_L3',
+                                                   'Ti_L2', 'Ti_L3'])
+
+    def test_unsupported_edge_family(self):
+        s = self.signal
+        with pytest.raises(AttributeError):
+            s.plot(plot_edges=['Cr_P'])
+
+    def test_unsupported_edge(self):
+        s = self.signal
+        with pytest.raises(AttributeError):
+            s.plot(plot_edges=['Xe_P4'])
+
+    def test_unsupported_element(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.plot(plot_edges=['ABC_L1'])
+
+    def test_remove_edge_labels(self):
+        s = self.signal
+        s.plot(plot_edges=['Cr_L', 'Fe_L2'])
+        s.remove_EELS_edges_markers(['Cr_L1', 'Fe_L2'])
+
+        assert len(s._edge_markers) == 2
+        assert set(s._edge_markers.keys()) == set(['Cr_L2', 'Cr_L3'])
+
+    def test_unequal_edges_and_markers(self):
+        s = self.signal
+        s.plot()
+        with pytest.raises(ValueError):
+            s.plot_edges_label(['Cr_L3', 'Fe_L2'],
+                               vertical_line_marker=['vl1', 'vl2'],
+                               text_marker=['tx1'])
+
+    def test_plot_edges_without_markers_provided(self):
+        s = self.signal
+        s.plot()
+        s.plot_edges_label({'Fe_L2': 721.0, 'O_K': 532.0})
+
+        assert len(s._edge_markers) == 2
+        assert set(s._edge_markers.keys()) == set(['Fe_L2', 'O_K'])

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy.testing import assert_allclose
 
 from hyperspy.components1d import VolumePlasmonDrude
 
@@ -28,6 +27,6 @@ def test_function():
     g.plasmon_energy.value = 8.0
     g.fwhm.value = 2.0
     assert g.function(0) == 0
-    assert_allclose(g.function(8), 12)
-    assert_allclose(g.function(1), 9.66524e-2, rtol=1e-6)
-    assert_allclose(g.function(30), 1.639867e-2, rtol=1e-6)
+    np.testing.assert_allclose(g.function(8), 12)
+    np.testing.assert_allclose(g.function(1), 9.66524e-2, rtol=1e-6)
+    np.testing.assert_allclose(g.function(30), 1.639867e-2, rtol=1e-6)

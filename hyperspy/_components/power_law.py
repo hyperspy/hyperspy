@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -144,7 +144,7 @@ class PowerLaw(Expression):
             log = np.log
         with np.errstate(divide='raise'):
             try:
-                r = 2 * log(I1 / I2) / log(x2 / x1)
+                r = 2 * (log(I1) - log(I2)) / (log(x2) - log(x1))
                 k = 1 - r
                 A = k * I2 / (x2 ** k - x3 ** k)
                 if s._lazy:
@@ -154,8 +154,8 @@ class PowerLaw(Expression):
                     r = np.nan_to_num(r)
                     A = np.nan_to_num(A)
             except (RuntimeWarning, FloatingPointError):
-                _logger.warning('Power law paramaters estimation failed '
-                                'because of a "divide by zero" error.')
+                _logger.warning('Power-law parameter estimation failed '
+                                'because of a "divide-by-zero" error.')
                 return False
         if only_current is True:
             self.r.value = r

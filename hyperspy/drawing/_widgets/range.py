@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -131,10 +131,14 @@ class RangeWidget(ResizableDraggableWidgetBase):
         """
         Set bounds by indices. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, width)
-         OR
-         * 'x'/'left'
-         * 'w'/'width', alternatively 'right'
+
+        * 'bounds': tuple (left, width)
+
+        OR
+
+        * 'x'/'left'
+        * 'w'/'width', alternatively 'right'
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width will be kept, not right).
         """
@@ -152,10 +156,14 @@ class RangeWidget(ResizableDraggableWidgetBase):
         """
         Set bounds by values. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, width)
-         OR
-         * 'x'/'left'
-         * 'w'/'width', alternatively 'right' (x+w)
+
+        * 'bounds': tuple (left, width)
+
+        OR
+
+        * 'x'/'left'
+        * 'w'/'width', alternatively 'right' (x+w)
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width will be kept, not right).
         """

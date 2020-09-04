@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,8 +20,6 @@ import os
 
 import numpy as np
 import pytest
-
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.io_plugins.protochips import ProtochipsCSV, invalid_file_error
@@ -102,7 +100,7 @@ class TestProtochipsGasCellCSV():
             assert s.metadata.General.date == date
             assert s.metadata.General.time == time
             assert s.axes_manager[0].units == 's'
-            assert_allclose(s.axes_manager[0].scale, 0.25995, atol=1E-5)
+            np.testing.assert_allclose(s.axes_manager[0].scale, 0.25995, atol=1E-5)
             assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):
@@ -133,7 +131,7 @@ class TestProtochipsGasCellCSVNoUser():
             assert s.metadata.General.date == date
             assert s.metadata.General.time == time
             assert s.axes_manager[0].units == 's'
-            assert_allclose(s.axes_manager[0].scale, 0.26029, atol=1E-5)
+            np.testing.assert_allclose(s.axes_manager[0].scale, 0.26029, atol=1E-5)
             assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):

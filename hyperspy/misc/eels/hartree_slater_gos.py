@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import math
@@ -7,13 +24,16 @@ import numpy as np
 import scipy as sp
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.physical_constants import R, a0
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
 
 _logger = logging.getLogger(__name__)
+
+
+R = sp.constants.value("Rydberg constant times hc in eV")
+a0 = sp.constants.value("Bohr radius")
 
 
 class HartreeSlaterGOS(GOSBase):

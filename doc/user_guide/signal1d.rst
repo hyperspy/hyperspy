@@ -10,7 +10,7 @@ signals in the Signal1D class.
 Cropping
 --------
 
-The :py:meth:`~.signal.Signal1D.crop_signal1D` crops the
+The :py:meth:`~._signals.signal1d.Signal1D.crop_signal1D` crops the
 spectral energy range *in-place*. If no parameter is passed, a user interface
 appears in which to crop the one dimensional signal. For example:
 
@@ -44,7 +44,6 @@ It is possible to crop interactively using :ref:`roi-label`. For example:
 
    Interactive spectrum cropping using a ROI.
 
-
 .. _signal1D.remove_background:
 
 Background removal
@@ -56,11 +55,15 @@ Background removal
 
 The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method provides
 background removal capabilities through both a CLI and a GUI. The GUI displays
-an interactive preview of the remainder after background subtraction. Current
-background type supported are power law, offset, polynomial and gaussian.
-By default the background parameters are estimated using analytical approximations
-(keyword argument ``fast=True``). For better accuracy, but higher processing
-time, the parameters can be estimated by curve fitting by setting ``fast=False``.
+an interactive preview of the remainder after background subtraction. Currently,
+the following background types are supported: Doniach, Exponential, Gaussian,
+Lorentzian, Polynomial, Power law (default), Offset, Skew normal, Split Voigt 
+and Voigt. By default, the background parameters are estimated using analytical
+approximations (keyword argument ``fast=True``). The fast option is not accurate
+for most background types - except Gaussian, Offset and Power law -
+but it is useful to estimate the initial fitting parameters before performing a
+full fit. For better accuracy, but higher processing time, the parameters can
+be estimated using curve fitting by setting ``fast=False``.
 
 Example of usage:
 
@@ -80,7 +83,7 @@ Example of usage:
 Calibration
 -----------
 
-The :py:meth:`~.signal.Signal1D.calibrate` method provides a user
+The :py:meth:`~._signals.signal1d.Signal1D.calibrate` method provides a user
 interface to calibrate the spectral axis.
 
 Alignment
@@ -105,7 +108,6 @@ Integration
     is required.
 
 
-
 Data smoothing
 --------------
 
@@ -121,15 +123,14 @@ Spike removal
 --------------
 
 :py:meth:`~._signals.signal1d.Signal1D.spikes_removal_tool` provides an user
-interface to remove spikes from spectra.
-
+interface to remove spikes from spectra. The ``derivative histogram`` allows to
+identify the appropriate threshold.
 
 .. figure::  images/spikes_removal_tool.png
    :align:   center
    :width:   500
 
    Spikes removal tool.
-
 
 Peak finding
 ------------

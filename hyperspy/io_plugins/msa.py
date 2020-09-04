@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime as dt
-import warnings
 import codecs
 import os
 import logging
@@ -25,7 +24,6 @@ import logging
 import numpy as np
 from traits.api import Undefined
 
-from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
