@@ -227,7 +227,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
                'gain_offset': intensity_axis['offset']}
         md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
 
-    data_args = filename, is_rgb
+    data_args = serie, is_rgb
     if lazy:
         from dask import delayed
         from dask.array import from_delayed
@@ -248,15 +248,14 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
             }
 
 
-def _load_data(filename, is_rgb, sl=None, memmap=None, **kwds):
-    with TiffFile(filename, **kwds) as tiff:
-        dc = tiff.asarray(out=memmap)
-        _logger.debug("data shape: {0}".format(dc.shape))
-        if is_rgb:
-            dc = rgb_tools.regular_array2rgbx(dc)
-        if sl is not None:
-            dc = dc[tuple(sl)]
-        return dc
+def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
+    dc = serie.asarray(out=memmap)
+    _logger.debug("data shape: {0}".format(dc.shape))
+    if is_rgb:
+        dc = rgb_tools.regular_array2rgbx(dc)
+    if sl is not None:
+        dc = dc[tuple(sl)]
+    return dc
 
 
 def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
