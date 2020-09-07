@@ -600,3 +600,24 @@ def test_axes_metadata():
         s.save(fname2, metadata={'axes':'ZYX'})
         s3 = hs.load(fname2)
         assert s3.axes_manager.navigation_axes[0].units == nav_unit
+
+
+def test_olympus_SIS():
+    pytest.importorskip("imagecodecs", reason="imagecodecs is required")
+    fname = os.path.join(MY_PATH2, 'olympus_SIS.tif')
+    s = hs.load(fname)
+    # This olympus SIS contains two images:
+    # - the first one is a RGB 8-bits (used for preview purposes)
+    # - the second one is the raw data
+    # only the second one is calibrated.
+    assert len(s) == 2
+    am = s[1].axes_manager
+    for axis in am._axes:
+        assert axis.units == 'm'
+        np.testing.assert_allclose(axis.scale, 2.3928e-11)
+        np.testing.assert_allclose(axis.offset, 0.0)
+
+    for ima in s:
+        assert ima.data.shape == (101, 112)
+
+    assert s[1].data.dtype is np.dtype('uint16')
