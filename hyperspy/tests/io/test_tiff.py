@@ -603,6 +603,7 @@ def test_axes_metadata():
 
 
 def test_olympus_SIS():
+    pytest.importorskip("imagecodecs", reason="imagecodecs is required")
     fname = os.path.join(MY_PATH2, 'olympus_SIS.tif')
     s = hs.load(fname)
     # This olympus SIS contains two images:
