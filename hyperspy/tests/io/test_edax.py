@@ -31,7 +31,6 @@ if not TEST_FILES_OK:
 
         SHA256SUM_GOT = hashlib.sha256(r.content).hexdigest()
         if SHA256SUM_GOT == SHA256SUM:
-            ZIPF = os.path.join(TMP_DIR.name, "edax_files.zip")
             with open(ZIPF, 'wb') as f:
                 f.write(r.content)
             TEST_FILES_OK = True

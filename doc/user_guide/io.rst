@@ -539,7 +539,7 @@ Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of tiff
 files is compatible with ImageJ/Fiji and Gatan Digital Micrograph software.
 HyperSpy can also import the scale and the units from tiff files saved using
-FEI and Zeiss SEM software.
+FEI, Zeiss SEM and Olympus SIS software.
 
 .. code-block:: python
 
@@ -588,7 +588,7 @@ Extra loading arguments
     It has been reported that in some versions of Gatan Digital Micrograph,
     any binned data stores the _averages_ of the binned channels or pixels,
     rather than the _sum_, which would be required for proper statistical
-    analysis. We therefore strongly recommend that all binning is performed 
+    analysis. We therefore strongly recommend that all binning is performed
     using Hyperspy where possible.
 
     See the original `bug report here <https://github.com/hyperspy/hyperspy/issues/1624>`_.

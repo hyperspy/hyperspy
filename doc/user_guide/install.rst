@@ -14,6 +14,12 @@ see the :ref:`anaconda-install` section.
 To enable context-menu (right-click) shortcut in a chosen folder, use the
 `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ library.
 
+.. note::
+
+    If you want to be notified about new releases, please *Watch (Releases only)* 
+    the `hyperspy repository on GitHub <https://github.com/hyperspy/hyperspy/>`_ 
+    (requires a `GitHub account <https://github.com/login>`_).
+
 .. warning::
 
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
@@ -47,7 +53,7 @@ manager:
    If you are not familiar with Anaconda please refer to their
    `User Guide <https://docs.continuum.io/anaconda/>`_ for details.
 
-#. Then install HyperSpy executing the following 
+#. Then install HyperSpy executing the following
    `conda <https://docs.conda.io/en/latest/>`_ commands in the
    Anaconda Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt.
    This depends on your OS and how you have installed Anaconda, see the
@@ -69,7 +75,7 @@ and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use
 .. note::
 
     Using ``-c conda-forge`` is only necessary when the conda-forge is not
-    already added to the conda configuration, see the 
+    already added to the conda configuration, see the
     `conda-forge documentation <https://conda-forge.org/docs/user/introduction.html>`_
     for more details.
 
@@ -141,14 +147,13 @@ use:
 See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
 
-* ``learning`` to install required libraries for some machine learning features,
-* ``gui-jupyter`` to install required libraries to use the
-  `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
-  GUI elementsm
-* ``gui-traitsui`` to install required libraries to use the GUI elements based
-  on `traitsui <http://docs.enthought.com/traitsui/>`_,
-* ``mrcz`` to install the mrcz plugin,
-* ``speed`` install optional libraries that speed up some functionalities,
+* ``learning`` for some machine learning features,
+* ``gui-jupyter`` to use the `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
+  GUI elements,
+* ``gui-traitsui`` to use the GUI elements based on `traitsui <http://docs.enthought.com/traitsui/>`_,
+* ``mrcz`` to read mrcz file,
+* ``speed`` to speed up some functionalities,
+* ``usid`` to read usid file,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
 * ``build-doc`` to install required libraries to build HyperSpy's documentation,
 * ``dev`` to install all the above,
@@ -161,13 +166,36 @@ For example:
 
     $ pip install hyperspy[learning, gui-jupyter]
 
-Finally, be aware that HyperSpy depends on a number of libraries that usually 
+Finally, be aware that HyperSpy depends on a number of libraries that usually
 need to be compiled and therefore installing HyperSpy may require development
 tools installed in the system. If the above does not work for you remember that
 the easiest way to install HyperSpy is
 :ref:`using Anaconda or Miniconda <anaconda-install>`.
 
 .. _install-dev:
+
+Rolling release Linux distributions
+-----------------------------------
+
+Due to the requirement of up to date versions for dependencies such as *numpy*,
+*scipy*, etc., binary packages of HyperSpy are not provided for most linux
+distributions and the installation via :ref:`Anaconda/Miniconda <anaconda-install>`
+or :ref:`Pip <install-with-pip>` is recommended.
+
+However, packages of the latest HyperSpy release and the related
+GUI packages are maintained for the rolling release distributions 
+**Arch-Linux** (in the `Arch User Repository 
+<https://aur.archlinux.org/packages/python-hyperspy/>`_) (AUR) and 
+**openSUSE** (`Community Package <https://software.opensuse.org/package/python-hyperspy>`_)
+as ``python-hyperspy`` and ``python-hyperspy-gui-traitsui`` /
+``python-hyperspy-gui-ipywidgets``.
+
+A more up-to-date package that contains all updates to be included
+in the next minor version release (likely including new features compared to
+the stable release) is also available in the AUR as |python-hyperspy-git|_.
+
+.. |python-hyperspy-git| replace:: ``python-hyperspy-git``
+.. _python-hyperspy-git: https://aur.archlinux.org/packages/python-hyperspy-git 
 
 Install development version
 ---------------------------
@@ -203,7 +231,7 @@ Install the runtime and development dependencies requirements using conda:
 The package ``hyperspy-dev`` will install the development dependencies required
 for testing and building the documentation.
 
-From the root folder of your hyperspy repository (folder containing the 
+From the root folder of your hyperspy repository (folder containing the
 ``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
 
 .. code-block:: bash
@@ -213,7 +241,7 @@ From the root folder of your hyperspy repository (folder containing the
 Installation in other (non-system) Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-From the root folder of your hyperspy repository (folder containing the 
+From the root folder of your hyperspy repository (folder containing the
 ``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
 
 .. code-block:: bash
@@ -237,7 +265,7 @@ Installation in a system Python distribution
 When using a system Python distribution, it is recommanded to install the
 dependencies using your system package manager.
 
-From the root folder of your hyperspy repository (folder containing the 
+From the root folder of your hyperspy repository (folder containing the
 ``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode.
 
 .. code-block:: bash

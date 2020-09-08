@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
+    'sphinx_toggleprompt',
 ]
 
 try:
@@ -269,4 +270,3 @@ def run_apidoc(_):
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
-    app.add_javascript('copybutton.js')
