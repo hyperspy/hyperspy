@@ -20,6 +20,7 @@ import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.components1d import SEE
+from hyperspy.misc.test_utils import ignore_warning
 
 
 def test_see():
@@ -31,6 +32,8 @@ def test_see():
                   0.0236279967, 0.010861538, 0.005860978, 0.003514161])
         )
     np.testing.assert_allclose(see.function(x), see.function_nd(x))
+
+    _ = SEE(A=10, Phi=1.5, B=0.5, sigma=0)
 
 
 def test_see_fit():
@@ -48,7 +51,9 @@ def test_see_fit():
     m = s.create_model()
     see = SEE(A=1, Phi=1.5, B=0.5)
     m.append(see)
-    m.fit(optimizer="trf")
+    with ignore_warning(message="divide by zero",
+                        category=RuntimeWarning):
+        m.fit(grad='analytical')
     np.testing.assert_allclose(see.A.value, A, rtol=0.1)
     np.testing.assert_allclose(see.Phi.value, Phi, rtol=0.1)
     np.testing.assert_allclose(see.B.value, B, rtol=0.1)

@@ -25,6 +25,12 @@ from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 sqrt2pi = np.sqrt(2 * np.pi)
 
 
+def _calculate_shirley_background(values):
+    cf = np.cumsum(values, axis=-1)
+    # necessary to work with `function_nd`
+    return cf[..., -1][np.newaxis].T - cf
+
+
 class PESCoreLineShape(Component):
 
     """
@@ -75,10 +81,7 @@ class PESCoreLineShape(Component):
         """
         f = A * np.exp(-1 * math.log(2) * ((x - (origin - ab)) / FWHM) ** 2)
         if self.Shirley:
-            cf = np.cumsum(f, axis=-1)
-            # necessary to work with `function_nd`
-            shirley_background = cf[..., -1][np.newaxis].T - cf
-            return shirley_background * shirley + f
+            return _calculate_shirley_background(f) * shirley + f
         else:
             return f
 
@@ -127,3 +130,11 @@ class PESCoreLineShape(Component):
 
     def grad_ab(self, x):
         return -self.grad_origin(x)
+
+    def grad_shirley(self, x):
+        a0 = self.A.value
+        a1 = self.origin.value
+        a2 = self.FWHM.value
+        a3 = self.ab.value
+        f = a0 * np.exp(-1 * math.log(2) * ((x - (a1 - a3)) / a2) ** 2)
+        return _calculate_shirley_background(f)

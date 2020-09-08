@@ -70,7 +70,7 @@ def test_PESCoreLineShape_fit(Shirley):
     core_line = PESCoreLineShape(A=1, FWHM=1.5, origin=0.5)
     core_line.Shirley = Shirley
     m.append(core_line)
-    m.fit()
+    m.fit(grad='analytical')
     np.testing.assert_allclose(core_line.A.value, A, rtol=0.1)
     np.testing.assert_allclose(abs(core_line.FWHM.value), FWHM, rtol=0.1)
     np.testing.assert_allclose(core_line.origin.value, origin, rtol=0.1)
