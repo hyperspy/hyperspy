@@ -441,7 +441,7 @@ the right number of axes of the right dimensions. Most functions will however
 fail if you pass a signal object where the axes do not match the data 
 dimensions and shape.
 
-You can **add a set of axes** to the `AxesManager` by passing either a list of
+You can *add a set of axes* to the `AxesManager` by passing either a list of
 axes dictionaries to ``axes_manager.create_axes()``:
 
 .. code-block:: python
@@ -459,7 +459,7 @@ or a list of axes objects:
     >>> axis1 = DataAxis(axis=np.arange(12)**2)
     >>> s.axes_manager.create_axes([axis0,axis1])
 
-**Remove an axis** from the `AxesManager` using ``remove()``, e.g. for the last axis:
+*Remove an axis* from the `AxesManager` using ``remove()``, e.g. for the last axis:
 
 .. code-block:: python
 
