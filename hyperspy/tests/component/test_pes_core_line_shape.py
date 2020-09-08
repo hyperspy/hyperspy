@@ -53,7 +53,7 @@ def test_see_fit(Shirley):
     A = 10
     FWHM = 0.5
     origin = 5.0
-    shirley = 0.01
+    shirley = 0.01 if Shirley else 0.0
 
     offset, scale, size = 0, 0.1, 100
     x = np.linspace(offset, scale*size, size)
@@ -68,11 +68,22 @@ def test_see_fit(Shirley):
     m = s.create_model()
     see = PESCoreLineShape(A=1, FWHM=1.5, origin=0.5)
     see.Shirley = Shirley
-    see.shirley.free = True
     m.append(see)
     m.fit()
     np.testing.assert_allclose(see.A.value, A, rtol=0.1)
-    np.testing.assert_allclose(see.FWHM.value, FWHM, rtol=0.1)
+    np.testing.assert_allclose(abs(see.FWHM.value), FWHM, rtol=0.1)
     np.testing.assert_allclose(see.origin.value, origin, rtol=0.1)
     np.testing.assert_allclose(see.shirley.value, shirley, rtol=0.1)
 
+
+@pytest.mark.parametrize('Shirley', [False, True])
+def test_PESCoreLineShape_function_nd(Shirley):
+    core_line = PESCoreLineShape(A=10, FWHM=1.5, origin=0.5)
+    core_line.Shirley = Shirley
+    core_line.shirley.value = 0.01 if Shirley else 0.0
+    x = np.linspace(-5, 15, 10)
+    np.testing.assert_allclose(core_line.function_nd(x), core_line.function(x))
+    values = core_line.function_nd(np.array([x]*2))
+    assert values.shape == (2, 10)
+    for v in values:
+        np.testing.assert_allclose(v, core_line.function(x))
