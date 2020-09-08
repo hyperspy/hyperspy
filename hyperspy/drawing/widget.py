@@ -576,7 +576,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         """ Use to determine the size of the widget with support for non 
         uniform axis.
         """
-        if axis.index == axis.size - 1:
+        if axis.index >= axis.size - 1:
             return axis.index2value(axis.index) - axis.index2value(axis.index - 1)
         else:
             return axis.index2value(axis.index + 1) - axis.index2value(axis.index)
