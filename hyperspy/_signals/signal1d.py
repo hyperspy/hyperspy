@@ -1467,6 +1467,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
         background must be previously substracted.
         The estimation is performed by interpolation using cubic splines.
 
+        Warning: `parallel=True` is not currently supported on
+        Windows platforms.
+
         Parameters
         ----------
         factor : 0 < float < 1
