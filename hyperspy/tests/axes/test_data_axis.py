@@ -26,7 +26,7 @@ import traits.api as t
 import pytest
 
 from hyperspy.axes import (BaseDataAxis, DataAxis, FunctionalDataAxis,
-                           UniformDataAxis, _create_axis)
+                           UniformDataAxis, create_axis)
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -69,7 +69,7 @@ class TestDataAxis:
         self._test_initialisation_parameters(self.axis)
 
     def test_create_axis(self):
-        axis = _create_axis(**self.axis.get_axis_dictionary())
+        axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, DataAxis)
         self._test_initialisation_parameters(axis)
 
@@ -197,7 +197,7 @@ class TestFunctionalDataAxis:
             np.arange(10)**2)
 
     def test_create_axis(self):
-        axis = _create_axis(**self.axis.get_axis_dictionary())
+        axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
 
     @pytest.mark.parametrize("use_indices", (True, False))
@@ -230,7 +230,7 @@ class TestReciprocalDataAxis:
         self._test_initialisation_parameters(self.axis)
 
     def test_create_axis(self):
-        axis = _create_axis(**self.axis.get_axis_dictionary())
+        axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
         self._test_initialisation_parameters(axis)
 
@@ -263,7 +263,7 @@ class TestUniformDataAxis:
         self._test_initialisation_parameters(self.axis)
 
     def test_create_axis(self):
-        axis = _create_axis(**self.axis.get_axis_dictionary())
+        axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, UniformDataAxis)
         self._test_initialisation_parameters(axis)
 
