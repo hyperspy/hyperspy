@@ -17,21 +17,19 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
 import importlib
 import copy
 import pkgutil
-
-
 import pkg_resources
 import yaml
+
+from pathlib import Path
 
 import hyperspy.misc.config_dir
 
 _logger = logging.getLogger(__name__)
 
-_ext_f = os.path.join(
-    os.path.abspath(os.path.dirname(__file__)), "hyperspy_extension.yaml")
+_ext_f = Path(__file__).resolve().parent.joinpath("hyperspy_extension.yaml")
 with open(_ext_f, 'r') as stream:
     EXTENSIONS = yaml.safe_load(stream)
 EXTENSIONS["GUI"]["widgets"] = {}
@@ -46,11 +44,11 @@ _external_extensions = [
 
 for _external_extension_mod in _external_extensions:
     _logger.info("Enabling extension %s" % _external_extension_mod)
-    _path = os.path.join(
-        os.path.dirname(pkgutil.get_loader(_external_extension_mod).get_filename()),
-        "hyperspy_extension.yaml")
+    _path = Path(
+        pkgutil.get_loader(_external_extension_mod).get_filename()
+    ).resolve().parent.joinpath("hyperspy_extension.yaml")
 
-    if os.path.isfile(_path):
+    if _path.is_file():
         with open(_path, 'r') as stream:
             _external_extension = yaml.safe_load(stream)
             if "signals" in _external_extension:
