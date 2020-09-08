@@ -56,7 +56,7 @@ class TestNdAxes:
         Where s12 data is transposed in respect to s2
         """
         rng = np.random.RandomState(123)
-        dc1 = rng.random((2, 3, 4, 3, 2))
+        dc1 = rng.random_sample(size=(2, 3, 4, 3, 2))
         dc2 = np.rollaxis(np.rollaxis(dc1, -1), -1)
         s1 = signals.BaseSignal(dc1.copy())
         s2 = signals.BaseSignal(dc2)
@@ -139,7 +139,7 @@ class TestGetModel:
     @pytest.mark.parametrize("centre", [None, "signal"])
     def test_get_decomposition_model(self, centre):
         s = self.s
-        s.decomposition(algorithm="svd", centre=centre)
+        s.decomposition(algorithm="SVD", centre=centre)
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         assert rms < 5e-7
@@ -147,7 +147,7 @@ class TestGetModel:
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_get_bss_model(self):
         s = self.s
-        s.decomposition(algorithm="svd")
+        s.decomposition(algorithm="SVD")
         s.blind_source_separation(3)
         sc = self.s.get_bss_model()
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
@@ -197,6 +197,11 @@ class TestEstimateElbowPosition:
         elbow = self.s.estimate_elbow_position(variance)
         assert elbow == 4
 
+    def test_elbow_position_log(self):
+        variance = self.s.learning_results.explained_variance_ratio
+        elbow = self.s.estimate_elbow_position(variance, log=False)
+        assert elbow == 1
+
     def test_elbow_position_none(self):
         _ = self.s.learning_results.explained_variance_ratio
         elbow = self.s.estimate_elbow_position(None)
@@ -216,7 +221,7 @@ class TestEstimateElbowPosition:
         assert s.learning_results.number_significant_components == 2
 
         # Check that number_significant_components is reset properly
-        s.decomposition(algorithm="nmf")
+        s.decomposition(algorithm="NMF")
         assert s.learning_results.number_significant_components is None
 
 
@@ -326,7 +331,7 @@ class TestDecompositionAlgorithm:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA"])
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
@@ -334,7 +339,7 @@ class TestDecompositionAlgorithm:
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
     @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-    @pytest.mark.parametrize("algorithm", ["rpca", "orpca", "ornmf", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["RPCA", "ORPCA", "ORNMF", "MLPCA"])
     def test_decomposition_output_dimension_not_given(self, algorithm):
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm=algorithm, return_info=False)
@@ -348,7 +353,8 @@ class TestDecompositionAlgorithm:
         ):
             self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "ORPCA", "ORNMF"])
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "svd", "mlpca", "nmf",])
     def test_name_deprecation_warning(self, algorithm):
         with pytest.warns(
             VisibleDeprecationWarning,
@@ -357,7 +363,7 @@ class TestDecompositionAlgorithm:
             self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
     def test_algorithm_error(self):
-        with pytest.raises(ValueError, match="'algorithm' not recognised"):
+        with pytest.raises(ValueError, match="not recognised. Expected"):
             self.s.decomposition(algorithm="uniform")
 
 
@@ -365,7 +371,7 @@ class TestPrintInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA"])
     def test_decomposition(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
         captured = capfd.readouterr()
@@ -376,7 +382,7 @@ class TestPrintInfo:
     @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize(
-        "algorithm", ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca"]
+        "algorithm", ["sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca"]
     )
     def test_decomposition_sklearn(self, capfd, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=5)
@@ -384,7 +390,7 @@ class TestPrintInfo:
         assert "Decomposition info:" in captured.out
         assert "scikit-learn estimator:" in captured.out
 
-    @pytest.mark.parametrize("algorithm", ["svd"])
+    @pytest.mark.parametrize("algorithm", ["SVD"])
     def test_no_print(self, algorithm, capfd):
         self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
         captured = capfd.readouterr()
@@ -395,7 +401,7 @@ class TestReturnInfo:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["svd", "mlpca"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA"])
     def test_decomposition_not_supported(self, algorithm):
         assert (
             self.s.decomposition(
@@ -411,11 +417,11 @@ class TestReturnInfo:
     @pytest.mark.parametrize(
         "algorithm",
         [
-            "rpca",
-            "orpca",
-            "ornmf",
+            "RPCA",
+            "ORPCA",
+            "ORNMF",
             "sklearn_pca",
-            "nmf",
+            "NMF",
             "sparse_pca",
             "mini_batch_sparse_pca",
         ],
@@ -435,11 +441,11 @@ class TestReturnInfo:
     @pytest.mark.parametrize(
         "algorithm",
         [
-            "rpca",
-            "orpca",
-            "ornmf",
+            "RPCA",
+            "ORPCA",
+            "ORNMF",
             "sklearn_pca",
-            "nmf",
+            "NMF",
             "sparse_pca",
             "mini_batch_sparse_pca",
         ],
@@ -486,8 +492,8 @@ class TestLoadDecompositionResults:
 class TestComplexSignalDecomposition:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        real = rng.random((8, 8))
-        imag = rng.random((8, 8))
+        real = rng.random_sample(size=(8, 8))
+        imag = rng.random_sample(size=(8, 8))
         s_complex_dtype = signals.ComplexSignal1D(real + 1j * imag - 1j * imag)
         s_real_dtype = signals.ComplexSignal1D(real)
         s_complex_dtype.decomposition()
@@ -512,8 +518,8 @@ class TestComplexSignalDecomposition:
         m, n, r = 32, 32, 3
         rng = np.random.RandomState(123)
 
-        A = rng.random((m, r)) + 1j * rng.random((m, r))
-        B = rng.random((n, r)) + 1j * rng.random((n, r))
+        A = rng.random_sample(size=(m, r)) + 1j * rng.random_sample(size=(m, r))
+        B = rng.random_sample(size=(n, r)) + 1j * rng.random_sample(size=(n, r))
 
         s = signals.ComplexSignal1D(A @ B.T)
         s.decomposition()
@@ -535,7 +541,7 @@ def test_decomposition_reproject_warning(reproject):
     with pytest.warns(
         UserWarning, match="Reprojecting the signal is not yet supported"
     ):
-        s.decomposition(algorithm="nmf", reproject=reproject)
+        s.decomposition(algorithm="NMF", reproject=reproject)
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
@@ -547,11 +553,11 @@ def test_decomposition_pipeline():
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
 
-    est = Pipeline([("scaler", StandardScaler()), ("pca", PCA(n_components=2))])
+    est = Pipeline([("scaler", StandardScaler()), ("PCA", PCA(n_components=2))])
     out = s.decomposition(algorithm=est, output_dimension=2, return_info=True)
 
     assert hasattr(out, "steps")
-    assert hasattr(out.named_steps["pca"], "explained_variance_")
+    assert hasattr(out.named_steps["PCA"], "explained_variance_")
 
 
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
@@ -572,7 +578,7 @@ def test_decomposition_gridsearchcv():
 
 def test_decomposition_mlpca_var_func():
     s = signals.Signal1D(generate_low_rank_matrix())
-    s.decomposition(output_dimension=2, algorithm="mlpca", var_func=lambda x: x)
+    s.decomposition(output_dimension=2, algorithm="MLPCA", var_func=lambda x: x)
 
 
 def test_decomposition_mlpca_warnings_errors():
@@ -581,33 +587,33 @@ def test_decomposition_mlpca_warnings_errors():
     with pytest.warns(
         VisibleDeprecationWarning, match="`polyfit` argument has been deprecated"
     ):
-        s.decomposition(output_dimension=2, algorithm="mlpca", polyfit=[1, 2, 3])
+        s.decomposition(output_dimension=2, algorithm="MLPCA", polyfit=[1, 2, 3])
 
     with pytest.raises(
         ValueError, match="`var_func` and `var_array` cannot both be defined"
     ):
         s.decomposition(
             output_dimension=2,
-            algorithm="mlpca",
+            algorithm="MLPCA",
             var_func=[1, 2, 3],
             var_array=s.data.copy(),
         )
 
     with pytest.raises(ValueError, match="`var_array` must have the same shape"):
         s.decomposition(
-            output_dimension=2, algorithm="mlpca", var_array=s.data.copy()[:-3, :-3],
+            output_dimension=2, algorithm="MLPCA", var_array=s.data.copy()[:-3, :-3],
         )
 
     with pytest.raises(
         ValueError, match="`var_func` must be either a function or an array"
     ):
-        s.decomposition(output_dimension=2, algorithm="mlpca", var_func="func")
+        s.decomposition(output_dimension=2, algorithm="MLPCA", var_func="func")
 
     with pytest.warns(
         UserWarning, match="does not make sense to normalize Poisson noise",
     ):
         s.decomposition(
-            normalize_poissonian_noise=True, algorithm="mlpca", output_dimension=2
+            normalize_poissonian_noise=True, algorithm="MLPCA", output_dimension=2
         )
 
 

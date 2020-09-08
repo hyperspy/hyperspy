@@ -45,9 +45,9 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=0.17',
+install_req = ['scipy>=1.1',
                'matplotlib>=2.2.3',
-               'numpy>=1.11, !=1.13.0',
+               'numpy>=1.15.4',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -57,16 +57,16 @@ install_req = ['scipy>=0.17',
                'h5py>=2.3',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.18, !=2.0',
+               'dask[array]>2.0',
                'scikit-image>=0.15',
-               'pint>=0.8',
-               'statsmodels',
+               'pint>=0.10',
                'numexpr',
                'sparse',
                'imageio',
                'pyyaml',
                'PTable',
-               'tifffile[all]>=2018.10.18',
+               'tifffile>=2018.10.18',
+               'numba',
                ]
 
 extras_require = {
@@ -74,14 +74,14 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["numba", "cython"],
+    "speed": ["cython", "imagecodecs"],
     "usid": ["pyUSID>=0.0.7"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.1"],
+    "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov", "codecov"],
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt"],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be
@@ -138,7 +138,7 @@ def count_c_extensions(extensions):
 def cythonize_extensions(extensions):
     try:
         from Cython.Build import cythonize
-        return cythonize(extensions)
+        return cythonize(extensions, compiler_directives={'language_level' : "3"})
     except ImportError:
         warnings.warn("""WARNING: cython required to generate fast c code is not found on this system.
 Only slow pure python alternative functions will be available.
@@ -311,13 +311,9 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_model1d/*.png',
                 'tests/drawing/plot_model/*.png',
                 'tests/drawing/plot_roi/*.png',
-                'misc/eds/example_signals/*.hdf5',
+                'misc/eds/example_signals/*.hspy',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
-                'tests/drawing/plot_signal/*.png',
-                'tests/drawing/plot_signal1d/*.png',
-                'tests/drawing/plot_signal2d/*.png',
-                'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_widgets/*.png',
                 'tests/drawing/plot_signal_tools/*.png',
                 'tests/io/blockfile_data/*.blo',
@@ -332,7 +328,6 @@ with update_version_when_dev() as version:
                 'tests/io/dm3_locale/*.dm3',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
-                'tests/io/FEI_new/*.npy',
                 'tests/io/FEI_old/*.emi',
                 'tests/io/FEI_old/*.ser',
                 'tests/io/FEI_old/*.npy',
@@ -353,20 +348,23 @@ with update_version_when_dev() as version:
                 'tests/io/emd_files/fei_emd_files.zip',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
+                'tests/io/nexus_files/*.nxs',
+                'tests/io/empad_data/*.xml',
+                'tests/io/phenom_data/*.elid',
+                'tests/io/sur_data/*.pro',
+                'tests/io/sur_data/*.sur',
                 'tests/signal/data/test_find_peaks1D_ohaver.hdf5',
                 'tests/signal/data/*.hspy',
                 'hyperspy_extension.yaml',
             ],
         },
         author=Release.authors['all'][0],
-        author_email=Release.authors['all'][1],
-        maintainer='Francisco de la Peña',
-        maintainer_email='fjd29@cam.ac.uk',
         description=Release.description,
         long_description=open('README.rst').read(),
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,
+        project_urls=Release.PROJECT_URLS,
         keywords=Release.keywords,
         cmdclass={
             'recythonize': Recythonize,

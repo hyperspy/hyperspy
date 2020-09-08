@@ -24,13 +24,16 @@ import numpy as np
 import scipy as sp
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.physical_constants import R, a0
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
 
 _logger = logging.getLogger(__name__)
+
+
+R = sp.constants.value("Rydberg constant times hc in eV")
+a0 = sp.constants.value("Bohr radius")
 
 
 class HartreeSlaterGOS(GOSBase):

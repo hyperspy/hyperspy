@@ -26,16 +26,12 @@ import scipy.interpolate
 import scipy as sp
 from scipy.signal import savgol_filter
 from scipy.ndimage.filters import gaussian_filter1d
-try:
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    statsmodels_installed = True
-except BaseException:
-    statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
+from hyperspy.misc.lowess_smooth import lowess
 
 
 from hyperspy.defaults_parser import preferences
@@ -52,8 +48,10 @@ from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import IntegrateArea, _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC, SPIKES_REMOVAL_TOOL_DOCSTRING
-from hyperspy.docstrings.signal import (
-    SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
+from hyperspy.docstrings.signal import (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+                                        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
 
 
 _logger = logging.getLogger(__name__)
@@ -972,17 +970,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
-        ImportError
-            If statsmodels is not installed.
 
-        Notes
-        -----
-        This method uses the lowess algorithm from the `statsmodels` library,
-        which needs to be installed to use this method.
         """
-        if not statsmodels_installed:
-            raise ImportError("statsmodels is not installed. This package is "
-                              "required for this feature.")
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None or number_of_iterations is None:
             smoother = SmoothingLowess(self)
@@ -993,11 +982,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return smoother.gui(display=display, toolkit=toolkit)
         else:
             self.map(lowess,
-                     exog=self.axes_manager[-1].axis,
-                     frac=smoothing_parameter,
-                     it=number_of_iterations,
-                     is_sorted=True,
-                     return_sorted=False,
+                     x=self.axes_manager[-1].axis,
+                     f=smoothing_parameter,
+                     n_iter=number_of_iterations,
                      show_progressbar=show_progressbar,
                      ragged=False,
                      parallel=parallel,
@@ -1131,7 +1118,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def remove_background(
             self,
             signal_range='interactive',
-            background_type='Power Law',
+            background_type='Power law',
             polynomial_order=2,
             fast=True,
             zero_fill=False,
@@ -1141,11 +1128,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
             display=True,
             toolkit=None):
         """
-        Remove the background, either in place using a gui or returned as a new
+        Remove the background, either in place using a GUI or returned as a new
         spectrum using the command line. The fast option is not accurate for
-        most background type - except Gaussian, Offset and Power law - but it
-        is useful to estimate the initial fitting parameters before performing
-        a full fit.
+        most background types - except Gaussian, Offset and
+        Power law - but it is useful to estimate the initial fitting parameters
+        before performing a full fit.
 
         Parameters
         ----------
@@ -1155,16 +1142,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If tuple is given, the a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
-            Possible components: Doniach, Gaussian, Lorentzian, Offset, Polynomial,
-            PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
+            Possible components: Doniach, Gaussian, Lorentzian, Offset,
+            Polynomial, PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         fast : bool
             If True, perform an approximative estimation of the parameters.
             If False, the signal is fitted using non-linear least squares
-            afterwards.This is slower compared to the estimation but
-            possibly more accurate.
+            afterwards. This is slower compared to the estimation but
+            often more accurate.
         zero_fill : bool
             If True, all spectral channels lower than the lower bound of the
             fitting range will be set to zero (this is the default behavior
@@ -1187,13 +1174,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Returns
         -------
         {None, signal, background_model or (signal, background_model)}
-            If signal_range is not 'interactive', the background substracted
-            signal is returned. If return_model is True, returns the background
-            model.
+            If signal_range is not 'interactive', the signal with background
+            substracted is returned. If return_model is True, returns the
+            background model, otherwise, the GUI widget dictionary is returned
+            if `display=False` - see the display parameter documentation.
 
         Examples
         --------
-        Using gui, replaces spectrum s
+        Using GUI, replaces spectrum s
 
         >>> s = hs.signals.Signal1D(range(1000))
         >>> s.remove_background() #doctest: +SKIP
@@ -1234,9 +1222,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    show_progressbar=show_progressbar,
                                    zero_fill=zero_fill,
                                    model=model)
-            br.gui(display=display, toolkit=toolkit)
+            gui_dict = br.gui(display=display, toolkit=toolkit)
             if return_model:
                 return model
+            else:
+                # for testing purposes
+                return gui_dict
         else:
             background_estimator = _get_background_estimator(
                 background_type, polynomial_order)[0]
@@ -1575,6 +1566,32 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return width
 
     estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+
+    def plot(self,
+             navigator="auto",
+             plot_markers=True,
+             autoscale='v',
+             norm="auto",
+             axes_manager=None,
+             navigator_kwds={},
+             **kwargs):
+        """%s
+        %s
+        %s
+        """
+        for c in autoscale:
+            if c not in ['x', 'v']:
+                raise ValueError("`autoscale` only accepts 'x', 'v' as "
+                                 "valid characters.")
+        super().plot(navigator=navigator,
+                     plot_markers=plot_markers,
+                     autoscale=autoscale,
+                     norm=norm,
+                     axes_manager=axes_manager,
+                     navigator_kwds=navigator_kwds,
+                     **kwargs)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING)
 
 
 class LazySignal1D(LazySignal, Signal1D):

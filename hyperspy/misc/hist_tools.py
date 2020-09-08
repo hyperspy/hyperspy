@@ -74,19 +74,20 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
     if isinstance(a, da.Array):
         return histogram_dask(a, bins=bins, max_num_bins=max_num_bins, **kwargs)
 
-    _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
-    new_bins = _deprecated_bins.get(bins, None)
-    if new_bins:
-        warnings.warn(
-            f"`bins='{bins}'` has been deprecated and will be removed "
-            f"in HyperSpy 2.0. Please use `bins='{new_bins}'` instead.",
-            VisibleDeprecationWarning,
-        )
-        bins = new_bins
+    if isinstance(bins, str):
+        _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
+        new_bins = _deprecated_bins.get(bins, None)
+        if new_bins:
+            warnings.warn(
+                f"`bins='{bins}'` has been deprecated and will be removed "
+                f"in HyperSpy 2.0. Please use `bins='{new_bins}'` instead.",
+                VisibleDeprecationWarning,
+                )
+            bins = new_bins
 
     _old_bins = bins
 
-    if bins in ["knuth", "blocks"]:
+    if isinstance(bins, str) and bins in ["knuth", "blocks"]:
         # if range is specified, we need to truncate
         # the data for these bin-finding routines
         if range is not None:
@@ -168,24 +169,26 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
     if a.ndim != 1:
         a = a.flatten()
 
-    _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
-    new_bins = _deprecated_bins.get(bins, None)
-    if new_bins:
-        warnings.warn(
-            f"`bins='{bins}'` has been deprecated and will be removed "
-            f"in HyperSpy 2.0. Please use `bins='{new_bins}'` instead.",
-            VisibleDeprecationWarning,
-        )
-        bins = new_bins
+    if isinstance(bins, str):
+        _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
+        new_bins = _deprecated_bins.get(bins, None)
+        if new_bins:
+            warnings.warn(
+                f"`bins='{bins}'` has been deprecated and will be removed "
+                f"in HyperSpy 2.0. Please use `bins='{new_bins}'` instead.",
+                VisibleDeprecationWarning,
+                )
+            bins = new_bins
 
     _old_bins = bins
 
-    if bins == "scott":
-        _, bins = _scott_bw_dask(a, True)
-    elif bins == "fd":
-        _, bins = _freedman_bw_dask(a, True)
-    elif isinstance(bins, str):
-        raise ValueError(f"Unrecognized 'bins' argument: got {bins}")
+    if isinstance(bins, str):
+        if bins == "scott":
+            _, bins = _scott_bw_dask(a, True)
+        elif bins == "fd":
+            _, bins = _freedman_bw_dask(a, True)
+        else:
+            raise ValueError(f"Unrecognized 'bins' argument: got {bins}")
     elif not np.iterable(bins):
         kwargs["range"] = da.compute(a.min(), a.max())
 

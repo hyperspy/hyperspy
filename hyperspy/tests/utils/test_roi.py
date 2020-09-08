@@ -385,7 +385,7 @@ class TestROIs():
         s = self.s_i
         r = Line2DROI(0, 0, 4, 4, 1)
         s2 = r(s)
-        assert np.allclose(s2.data, np.array(
+        np.testing.assert_allclose(s2.data, np.array(
             [[[0.5646904, 0.83974605, 0.37688365, 0.499676],
               [0.08130241, 0.3241552, 0.91565131, 0.85345237],
               [0.5941565, 0.90536555, 0.42692772, 0.93761072],
@@ -423,7 +423,7 @@ class TestROIs():
         ))
         r.linewidth = 10
         s3 = r(s)
-        assert np.allclose(s3.data, np.array(
+        np.testing.assert_allclose(s3.data, np.array(
             [[[0., 0., 0., 0.],
               [0., 0., 0., 0.],
               [0., 0., 0., 0.],
@@ -472,9 +472,9 @@ class TestROIs():
                              -150., -135., -45., -30.,
                              150., 135., 45., 30.,
                              135., 120., 60., 45.])
-        assert np.allclose(r_angles, angles_h)
+        np.testing.assert_allclose(r_angles, angles_h)
         r_angles = np.array([rr.angle(axis='vertical') for rr in r])
-        assert np.allclose(r_angles, angles_v)
+        np.testing.assert_allclose(r_angles, angles_v)
 
         # 2. Testing unit conversation
         r = Line2DROI(np.random.rand(), np.random.rand(), np.random.rand(), np.random.rand())

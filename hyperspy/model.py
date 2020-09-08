@@ -43,8 +43,7 @@ from scipy.optimize import (
 from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
-from hyperspy.docstrings.signal import (MAX_WORKERS_ARG, PARALLEL_ARG,
-                                        SHOW_PROGRESSBAR_ARG)
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.events import Event, Events, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
@@ -407,7 +406,7 @@ class BaseModel(list):
                                          valid_variable_name=True), thing)
         if self._plot_active is True:
             self._connect_parameters2update_plot(components=[thing])
-        self.update_plot()
+        self.update_plot(render_figure=True, update_ylimits=True)
 
     def extend(self, iterable):
         for object in iterable:
@@ -454,12 +453,13 @@ class BaseModel(list):
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:
-            self.update_plot()
+            self.update_plot(render_figure=True, update_ylimits=False)
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None, out=None, parallel=None, max_workers=None):
+                  show_progressbar=None, out=None, **kwargs):
         """Returns a recreation of the dataset using the model.
-        The spectral range that is not fitted is filled with nans.
+
+        By default, the signal range outside of the fitted range is filled with nans.
 
         Parameters
         ----------
@@ -468,15 +468,13 @@ class BaseModel(list):
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
-            If True the spectral range that is not fitted is filled with nans.
-            Default True.
+            If True the signal range outside of the fitted range is filled with
+            nans. Default True.
         %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        %s
-        %s
 
         Returns
         -------
@@ -496,17 +494,12 @@ class BaseModel(list):
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
-        if parallel is None:
-            parallel = preferences.General.parallel
 
-        if not isinstance(parallel, bool):
+        for k in [k for k in ["parallel", "max_workers"] if k in kwargs]:
             warnings.warn(
-                "Passing integer arguments to 'parallel' has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use 'parallel=True, max_workers={parallel}' instead.",
+                f"`{k}` argument has been deprecated and will be removed in HyperSpy 2.0",
                 VisibleDeprecationWarning,
             )
-            max_workers = parallel
-            parallel = True
 
         if out is None:
             data = np.empty(self.signal.data.shape, dtype='float')
@@ -521,73 +514,32 @@ class BaseModel(list):
             signal = out
             data = signal.data
 
-        if out_of_range_to_nan is True:
+        if not out_of_range_to_nan:
+            # we want the full signal range, including outside the fitted
+            # range, we need to set all the channel_switches to True
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
 
-        # We set this value to equal cpu_count, with a maximum
-        # of 32 cores, since the earlier default value was inappropriate
-        # for many-core machines.
-        if max_workers is None:
-            max_workers = min(32, os.cpu_count())
+        self._as_signal_iter(
+            component_list=component_list,
+            show_progressbar=show_progressbar,
+            data=data
+        )
 
-        # Avoid any overhead of additional threads
-        if max_workers < 2:
-            parallel = False
-
-        if not parallel:
-            self._as_signal_iter(component_list=component_list,
-                                 show_progressbar=show_progressbar, data=data)
-        else:
-            am = self.axes_manager
-            nav_shape = am.navigation_shape
-            if len(nav_shape):
-                ind = np.argmax(nav_shape)
-                size = nav_shape[ind]
-            if not len(nav_shape) or size < 4:
-                # no or not enough navigation, just run without threads
-                return self.as_signal(component_list=component_list,
-                                      show_progressbar=show_progressbar,
-                                      out=signal, parallel=False)
-            max_workers = min(max_workers, size / 2)
-            splits = [len(sp) for sp in np.array_split(np.arange(size),
-                                                       max_workers)]
-            models = []
-            data_slices = []
-            slices = [slice(None), ] * len(nav_shape)
-            for sp, csm in zip(splits, np.cumsum(splits)):
-                slices[ind] = slice(csm - sp, csm)
-                models.append(self.inav[tuple(slices)])
-                array_slices = self.signal._get_array_slices(tuple(slices),
-                                                             True)
-                data_slices.append(data[array_slices])
-
-            from concurrent.futures import ThreadPoolExecutor
-            with ThreadPoolExecutor(max_workers=max_workers) as exe:
-                _map = exe.map(
-                    lambda thing: thing[0]._as_signal_iter(
-                        data=thing[1],
-                        component_list=component_list,
-                        show_progressbar=thing[2] + 1 if show_progressbar else False),
-                    zip(models, data_slices, range(int(max_workers))))
-
-            _ = next(_map)
-
-        if out_of_range_to_nan is True:
+        if not out_of_range_to_nan:
+            # Restore the channel_switches, previously set
             self.channel_switches[:] = channel_switches_backup
 
         return signal
 
-    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    as_signal.__doc__ %= SHOW_PROGRESSBAR_ARG
 
-    def _as_signal_iter(self, component_list=None, show_progressbar=None,
-                        data=None):
+    def _as_signal_iter(self, data, component_list=None,
+                        show_progressbar=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
-        if data is None:
-            raise ValueError('No data supplied')
-        if show_progressbar is None:
+        if show_progressbar is None:  # pragma: no cover
             show_progressbar = preferences.General.show_progressbar
 
         with stash_active_state(self if component_list else []):
@@ -639,7 +591,7 @@ class BaseModel(list):
                 parameter.events.value_changed.disconnect(
                     self._model_line._auto_update_line)
 
-    def update_plot(self, *args, **kwargs):
+    def update_plot(self, render_figure=False, update_ylimits=False, **kwargs):
         """Update model plot.
 
         The updating can be suspended using `suspend_update`.
@@ -652,7 +604,8 @@ class BaseModel(list):
         if self._plot_active is True and self._suspend_update is False:
             try:
                 if self._model_line is not None:
-                    self._model_line.update()
+                    self._model_line.update(render_figure=render_figure,
+                                            update_ylimits=update_ylimits)
                 for component in [component for component in self if
                                   component.active is True]:
                     self._update_component_line(component)
@@ -690,7 +643,7 @@ class BaseModel(list):
         self._suspend_update = old
 
         if update_on_resume is True:
-            self.update_plot()
+            self.update_plot(render_figure=True, update_ylimits=False)
 
     def _close_plot(self):
         if self._plot_components is True:
@@ -727,7 +680,8 @@ class BaseModel(list):
     @staticmethod
     def _update_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update()
+            component._model_plot_line.update(render_figure=False,
+                                              update_ylimits=False)
 
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
@@ -1147,10 +1101,10 @@ class BaseModel(list):
         if loss_function == "ml":
             warnings.warn(
                 "`loss_function='ml'` has been deprecated and will be removed in "
-                "HyperSpy 2.0. Please use `loss_function='ml-poisson'` instead.",
+                "HyperSpy 2.0. Please use `loss_function='ML-poisson'` instead.",
                 VisibleDeprecationWarning,
             )
-            loss_function = "ml-poisson"
+            loss_function = "ML-poisson"
 
         # Deprecate grad=True/False
         if isinstance(grad, bool):
@@ -1209,7 +1163,7 @@ class BaseModel(list):
             _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
 
         _supported_fd_schemes = ["2-point", "3-point", "cs"]
-        _supported_losses = ["ls", "ml-poisson", "huber"]
+        _supported_losses = ["ls", "ML-poisson", "huber"]
         _supported_bounds = [
             "lm",
             "trf",
@@ -1328,7 +1282,7 @@ class BaseModel(list):
             # has been set, otherwise this returns None
             weights = self._convert_variance_to_weights()
 
-            if weights is not None and loss_function == "ml-poisson":
+            if weights is not None and loss_function == "ML-poisson":
                 # The attribute ``metadata.Signal.Noise_properties.variance`` is set,
                 # but weighted fitting is not supported for `loss_function='ml_poisson'`.
                 # Will proceed with unweighted fitting.
@@ -1360,19 +1314,8 @@ class BaseModel(list):
                         **kwargs,
                     )
 
-                    self.fit_output = OptimizeResult(
-                        x=res.params,
-                        covar=res.covar,
-                        perror=res.perror,
-                        nit=res.niter,
-                        nfev=res.nfev,
-                        success=(res.status > 0) and (res.status != 5),
-                        status=res.status,
-                        message=res.errmsg,
-                        debug=res.debug,
-                        dof=res.dof,
-                        fnorm=res.fnorm,
-                    )
+                    # Return as an OptimizeResult object
+                    self.fit_output = res.optimize_result
 
                     self.p0 = self.fit_output.x
                     ysize = len(self.fit_output.x) + self.fit_output.dof
@@ -1490,7 +1433,7 @@ class BaseModel(list):
                 if loss_function == "ls":
                     f_min = self._errfunc_sq
                     f_der = self._gradient_ls if grad == "analytical" else grad
-                elif loss_function == "ml-poisson":
+                elif loss_function == "ML-poisson":
                     f_min = self._poisson_likelihood_function
                     f_der = self._gradient_ml if grad == "analytical" else grad
                 elif loss_function == "huber":

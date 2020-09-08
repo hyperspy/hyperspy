@@ -683,83 +683,81 @@ class TestAsSignal:
             c.offset.value = 2
         self.m.assign_current_values_to_all()
 
-    @pytest.mark.parallel
-    def test_threaded_identical(self):
-        # all components
-        s = self.m.as_signal(parallel=True)
-        s1 = self.m.as_signal(parallel=False)
-        np.testing.assert_allclose(s1.data, s.data)
-
-        # more complicated
-        self.m[0].active_is_multidimensional = True
-        self.m[0]._active_array[0] = False
-        for component in [0, 1]:
-            s = self.m.as_signal(component_list=[component], parallel=True)
-            s1 = self.m.as_signal(component_list=[component], parallel=False)
-            np.testing.assert_allclose(s1.data, s.data)
-
-    @pytest.mark.parametrize("parallel", [True, False])
-    def test_all_components_simple(self, parallel):
-        s = self.m.as_signal(parallel=parallel)
+    def test_all_components_simple(self):
+        s = self.m.as_signal()
         assert np.all(s.data == 4.0)
 
-    @pytest.mark.parametrize("parallel", [True, False])
-    def test_one_component_simple(self, parallel):
-        s = self.m.as_signal(component_list=[0], parallel=parallel)
+    def test_one_component_simple(self):
+        s = self.m.as_signal(component_list=[0])
         assert np.all(s.data == 2.0)
         assert self.m[1].active
 
-    @pytest.mark.parametrize("parallel", [True, False])
-    def test_all_components_multidim(self, parallel):
+    def test_all_components_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(parallel=parallel)
+        s = self.m.as_signal()
         assert np.all(s.data == 4.0)
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(parallel=parallel)
+        s = self.m.as_signal()
         np.testing.assert_array_equal(
             s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4])
         )
         assert self.m[0].active_is_multidimensional
 
-    @pytest.mark.parametrize("parallel", [True, False])
-    def test_one_component_multidim(self, parallel):
+    def test_one_component_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(component_list=[0], parallel=parallel)
+        s = self.m.as_signal(component_list=[0])
         assert np.all(s.data == 2.0)
         assert self.m[1].active
         assert not self.m[1].active_is_multidimensional
 
-        s = self.m.as_signal(component_list=[1], parallel=parallel)
+        s = self.m.as_signal(component_list=[1])
         np.testing.assert_equal(s.data, 2.0)
         assert self.m[0].active_is_multidimensional
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(component_list=[1], parallel=parallel)
+        s = self.m.as_signal(component_list=[1])
         assert np.all(s.data == 2.0)
 
-        s = self.m.as_signal(component_list=[0], parallel=parallel)
+        s = self.m.as_signal(component_list=[0])
         np.testing.assert_array_equal(
             s.data, np.array([np.zeros((2, 5)), np.ones((2, 5)) * 2])
         )
 
+    @pytest.mark.parametrize("kw", [{"parallel": True}, {"max_workers": 1}])
+    def test_warnings(self, kw):
+        with pytest.warns(
+            VisibleDeprecationWarning, match=r".* has been deprecated",
+        ):
+            _ = self.m.as_signal(**kw)
 
-def test_as_signal_parallel():
-    np.random.seed(1)
-    s = hs.signals.Signal1D(np.random.random((50, 10)))
+    def test_out_of_range_to_nan(self):
+        index = 2
+        self.m.channel_switches[:index] = False
+        s1 = self.m.as_signal(component_list=[0], out_of_range_to_nan=True)
 
-    m = s.create_model()
-    m.append(hs.model.components1D.PowerLaw())
-    m.set_signal_range(2, 5)
-    # HyperSpy 2.0: remove setting iterpath='serpentine'
-    m.multifit(iterpath="serpentine")
+        s2 = self.m.as_signal(component_list=[0], out_of_range_to_nan=False)
 
-    s1 = m.as_signal(out_of_range_to_nan=True, parallel=True)
-    s2 = m.as_signal(out_of_range_to_nan=True, parallel=True)
+        np.testing.assert_allclose(
+            self.m.channel_switches, [False, False, True, True, True]
+        )
 
-    np.testing.assert_allclose(s1, s2)
+        np.testing.assert_allclose(s2.data, np.ones_like(s2) * 2)
+        np.testing.assert_allclose(s1.isig[index:], s2.isig[index:])
+        np.testing.assert_allclose(
+            s1.isig[:index], np.ones_like(s1.isig[:index].data) * np.nan
+        )
+        np.testing.assert_allclose(
+            s1.isig[index:], np.ones_like(s1.isig[index:].data) * 2
+        )
+
+    def test_out_argument(self):
+        out = self.m.as_signal()
+        out.data.fill(0)
+        s = self.m.as_signal(out=out)
+        assert np.all(s.data == 4.0)
 
 
 @lazifyTestClass

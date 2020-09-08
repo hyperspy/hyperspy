@@ -222,6 +222,18 @@ def _test_plot_two_cursors(ndim):
     return s
 
 
+@pytest.mark.parametrize('autoscale', ['', 'x', 'xv', 'v'])
+@pytest.mark.parametrize('norm', ['log', 'auto'])
+def test_plot_two_cursos_parameters(autoscale, norm):
+    kwargs = {'autoscale':autoscale, 'norm':norm}
+    test_plot = _TestPlot(ndim=2, sdim=1)  # sdim=2 not supported
+    s = test_plot.signal
+    s.plot(**kwargs)
+    s._plot.add_right_pointer(**kwargs)
+    for line in s._plot.signal_plot.ax_lines:
+        assert line.autoscale == autoscale
+
+
 def _generate_parameter():
     parameters = []
     for ndim in [1, 2]:
@@ -244,10 +256,14 @@ def test_plot_log_scale():
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_two_cursors(ndim, plot_type):
     s = _test_plot_two_cursors(ndim=ndim)
+
     if plot_type == "sig":
-        return s._plot.signal_plot.figure
+        f = s._plot.signal_plot.figure
     else:
-        return s._plot.navigator_plot.figure
+        f= s._plot.navigator_plot.figure
+    f.canvas.draw()
+    f.canvas.flush_events()
+    return f
 
 
 @update_close_figure
@@ -276,7 +292,7 @@ def test_plot_with_non_finite_value():
 def test_plot_add_line_events():
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()
-    assert len(s.axes_manager.events.indices_changed.connected) == 2
+    assert len(s.axes_manager.events.indices_changed.connected) == 1
     figure = s._plot.signal_plot
 
     def line_function(axes_manager=None):
@@ -285,14 +301,31 @@ def test_plot_add_line_events():
     line = Signal1DLine()
     line.data_function = line_function
     line.set_line_properties(color='blue', type='line', scaley=False)
-    figure.add_line(line)
-    line.plot()    
+    figure.add_line(line, connect_navigation=True)
+    line.plot()
     assert len(line.events.closed.connected) == 1
-    assert len(s.axes_manager.events.indices_changed.connected) == 3
+    assert len(s.axes_manager.events.indices_changed.connected) == 2
 
     line.close()
+    figure.close_right_axis()
+
     assert len(line.events.closed.connected) == 0
-    assert len(s.axes_manager.events.indices_changed.connected) == 2
+    assert len(s.axes_manager.events.indices_changed.connected) == 1
 
     figure.close()
     assert len(s.axes_manager.events.indices_changed.connected) == 0
+
+
+@pytest.mark.parametrize("autoscale", ['', 'x', 'xv', 'v'])
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_autoscale(autoscale):
+    s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal(
+        add_powerlaw=True, add_noise=False)
+    s.plot(autoscale=autoscale)
+    ax = s._plot.signal_plot.ax
+    ax.set_xlim(500.0, 700.0)
+    ax.set_ylim(-10.0, 20.0)
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    return s._plot.signal_plot.figure

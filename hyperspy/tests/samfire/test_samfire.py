@@ -104,7 +104,7 @@ def generate_test_model():
         gs03.A.map['values'][mask] *= 0.
         gs03.A.map['is_set'][:] = True
 
-        s11 = m0.as_signal(parallel=False)
+        s11 = m0.as_signal()
         if total is None:
             total = s11.data.copy()
             lor_map = gs01.centre.map['values'].copy()
@@ -223,7 +223,7 @@ class TestSamfireEmpty:
         from multiprocessing import cpu_count
         samf = m.create_samfire(setup=False)
         assert samf._workers == cpu_count() - 1
-        assert np.allclose(samf.metadata.marker, np.zeros(self.shape))
+        np.testing.assert_allclose(samf.metadata.marker, np.zeros(self.shape))
         samf.stop()
         del samf
 

@@ -42,6 +42,14 @@ def generate_bad_toy_data():
     s1.align_zero_loss_peak(also_align=[s2])
     return s1
 
+@pytest.mark.parametrize("bins",[10,np.linspace(1,20,num=11)])
+def test_types_of_bins(bins):
+    s1 = generate_bad_toy_data()
+    out = s1.get_histogram(bins)
+    assert out.data.shape == (10,)
+    s2 = generate_bad_toy_data().as_lazy()
+    out = s2.get_histogram(bins)
+    assert out.data.shape == (10,)
 
 def test_knuth_bad_data_set(caplog):
     s1 = generate_bad_toy_data()

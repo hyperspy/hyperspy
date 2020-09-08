@@ -166,7 +166,7 @@ class TestModelFitBinnedScipyMinimize:
         "loss_function, expected",
         [
             ("ls", (250.66280759, 49.99999971, 5.00000122)),
-            ("ml-poisson", (250.66282637, 49.99999927, 4.99999881)),
+            ("ML-poisson", (250.66282637, 49.99999927, 4.99999881)),
             ("huber", (250.66280759, 49.99999971, 5.00000122)),
         ],
     )
@@ -182,7 +182,7 @@ class TestModelFitBinnedScipyMinimize:
         [
             ("ls", False, (250.66284342, 50.00000045, 4.99999983)),
             ("ls", True, (257.48175956, 55.0, 7.76887330)),
-            ("ml-poisson", True, (250.66296821, 55.0, 7.07106541)),
+            ("ML-poisson", True, (250.66296821, 55.0, 7.07106541)),
             ("huber", True, (257.48175678, 55.0, 7.76886929)),
         ],
     )
@@ -264,7 +264,7 @@ class TestModelFitBinnedGlobal:
         "loss_function, expected",
         [
             ("ls", (250.66282746, 50.0, 5.0)),
-            ("ml-poisson", (250.66337106, 50.00001755, 4.99997114)),
+            ("ML-poisson", (250.66337106, 50.00001755, 4.99997114)),
             ("huber", (250.66282746, 50.0, 5.0)),
         ],
     )
@@ -351,7 +351,7 @@ class TestModelScalarVariance:
         self.m.fit()
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
-    @pytest.mark.parametrize("std, expected", [(1, 0.86206965), (10, 0.86206965)])
+    @pytest.mark.parametrize("std, expected", [(1, 0.84233497), (10, 0.84233497)])
     def test_std1_red_chisq_in_range(self, std, expected):
         self.m.set_signal_range(10, 50)
         np.random.seed(1)
@@ -442,7 +442,7 @@ class TestFitErrorsAndWarnings:
         with pytest.raises(
             NotImplementedError, match=r".* only supports least-squares fitting"
         ):
-            self.m.fit(loss_function="ml-poisson", optimizer="lm")
+            self.m.fit(loss_function="ML-poisson", optimizer="lm")
 
     def test_not_support_bounds(self):
         with pytest.raises(ValueError, match="Bounded optimization is only supported"):

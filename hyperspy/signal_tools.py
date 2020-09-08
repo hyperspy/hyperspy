@@ -36,9 +36,10 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.misc.label_position import SpectrumLabelPosition
+from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import numba_histogram
-from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -245,6 +246,208 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         self.span_selector_switch(on=True)
         self.last_calibration_stored = True
 
+@add_gui_method(toolkey="hyperspy.EELSSpectrum.print_edges_table")
+class EdgesRange(SpanSelectorInSignal1D):
+    units = t.Unicode()
+    edges_list = t.Tuple()
+    only_major = t.Bool()
+    order = t.Unicode('closest')
+    complementary = t.Bool(True)
+
+    def __init__(self, signal, active=None):
+        if signal.axes_manager.signal_dimension != 1:
+            raise SignalDimensionError(
+                signal.axes_manager.signal_dimension, 1)
+
+        if active is None:
+            super(EdgesRange, self).__init__(signal)
+            self.active_edges = []
+        else:
+            # if active is provided, it is non-interactive mode
+            # so fix the active_edges and don't initialise the span selector
+            self.signal = signal
+            self.axis = self.signal.axes_manager.signal_axes[0]
+            self.active_edges = list(active)
+
+        self.active_complementary_edges = []
+        self.units = self.axis.units
+        self.slp = SpectrumLabelPosition(self.signal)
+        self.btns = []
+
+        self._get_edges_info_within_energy_axis()
+
+        self.signal.axes_manager.events.indices_changed.connect(self._on_figure_changed,
+                                                                [])
+        self.signal._plot.signal_plot.events.closed.connect(
+        lambda: self.signal.axes_manager.events.indices_changed.disconnect(
+        self._on_figure_changed), [])
+
+    def _get_edges_info_within_energy_axis(self):
+        mid_energy = (self.axis.low_value + self.axis.high_value) / 2
+        rng = self.axis.high_value - self.axis.low_value
+        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng,
+                                                         order=self.order))
+        info = get_info_from_edges(self.edge_all)
+
+        energy_all = []
+        relevance_all = []
+        description_all = []
+        for d in info:
+            onset = d['onset_energy (eV)']
+            relevance = d['relevance']
+            threshold = d['threshold']
+            edge_ = d['edge']
+            description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
+
+            energy_all.append(onset)
+            relevance_all.append(relevance)
+            description_all.append(description)
+
+        self.energy_all = np.asarray(energy_all)
+        self.relevance_all = np.asarray(relevance_all)
+        self.description_all = np.asarray(description_all)
+
+    def _on_figure_changed(self):
+        self.slp._set_active_figure_properties()
+        self._plot_labels()
+        self.signal._plot.signal_plot.update()
+
+    def update_table(self):
+        figure_changed = self.slp._check_signal_figure_changed()
+        if figure_changed:
+            self._on_figure_changed()
+
+        if self.span_selector is not None:
+            energy_mask = (self.ss_left_value <= self.energy_all) & \
+                (self.energy_all <= self.ss_right_value)
+            if self.only_major:
+                relevance_mask = self.relevance_all == 'Major'
+            else:
+                relevance_mask = np.ones(len(self.edge_all), bool)
+
+            mask = energy_mask & relevance_mask
+            self.edges_list = tuple(self.edge_all[mask])
+            energy = tuple(self.energy_all[mask])
+            relevance = tuple(self.relevance_all[mask])
+            description = tuple(self.description_all[mask])
+        else:
+            self.edges_list = ()
+            energy, relevance, description = (), (), ()
+
+        self._keep_valid_edges()
+
+        return self.edges_list, energy, relevance, description
+
+    def _keep_valid_edges(self):
+        edge_all = list(self.signal._edge_markers.keys())
+        for edge in edge_all:
+            if (edge not in self.edges_list):
+                if edge in self.active_edges:
+                    self.active_edges.remove(edge)
+                elif edge in self.active_complementary_edges:
+                    self.active_complementary_edges.remove(edge)
+                self.signal.remove_EELS_edges_markers([edge])
+            elif (edge not in self.active_edges):
+                self.active_edges.append(edge)
+
+        self.on_complementary()
+        self._plot_labels()
+
+    def update_active_edge(self, change):
+        state = change['new']
+        edge = change['owner'].description
+
+        if state:
+            self.active_edges.append(edge)
+        else:
+            if edge in self.active_edges:
+                self.active_edges.remove(edge)
+            if edge in self.active_complementary_edges:
+                self.active_complementary_edges.remove(edge)
+            self.signal.remove_EELS_edges_markers([edge])
+
+        figure_changed = self.slp._check_signal_figure_changed()
+        if figure_changed:
+            self._on_figure_changed()
+        self.on_complementary()
+        self._plot_labels()
+
+    def on_complementary(self):
+
+        if self.complementary:
+            self.active_complementary_edges = \
+                self.signal.get_complementary_edges(self.active_edges,
+                                                    self.only_major)
+        else:
+            self.active_complementary_edges = []
+
+    def check_btn_state(self):
+
+        edges = [btn.description for btn in self.btns]
+        for btn in self.btns:
+            edge = btn.description
+            if btn.value is False:
+                if edge in self.active_edges:
+                    self.active_edges.remove(edge)
+                    self.signal.remove_EELS_edges_markers([edge])
+                if edge in self.active_complementary_edges:
+                    btn.value = True
+
+            if btn.value is True and self.complementary:
+                comp = self.signal.get_complementary_edges(self.active_edges,
+                                                           self.only_major)
+                for cedge in comp:
+                    if cedge in edges:
+                        pos = edges.index(cedge)
+                        self.btns[pos].value = True
+
+    def _plot_labels(self, active=None, complementary=None):
+        # plot selected and/or complementary edges
+        if active is None:
+            active = self.active_edges
+        if complementary is None:
+            complementary = self.active_complementary_edges
+
+        edges_on_signal = set(self.signal._edge_markers.keys())
+        edges_to_show = set(set(active).union(complementary))
+        edge_keep = edges_on_signal.intersection(edges_to_show)
+        edge_remove =  edges_on_signal.difference(edge_keep)
+        edge_add = edges_to_show.difference(edge_keep)
+
+        self._clear_markers(edge_remove)
+
+        # all edges to be shown on the signal
+        edge_dict = self.signal._get_edges(edges_to_show, ('Major', 'Minor'))
+        vm_new, tm_new = self.slp.get_markers(edge_dict)
+        for k, edge in enumerate(edge_dict.keys()):
+            v = vm_new[k]
+            t = tm_new[k]
+
+            if edge in edge_keep:
+                # update position of vertical line segment
+                self.signal._edge_markers[edge][0].data = v.data
+                self.signal._edge_markers[edge][0].update()
+
+                # update position of text box
+                self.signal._edge_markers[edge][1].data = t.data
+                self.signal._edge_markers[edge][1].update()
+            elif edge in edge_add:
+                # first argument as dictionary for consistency
+                self.signal.plot_edges_label({edge: edge_dict[edge]},
+                                             vertical_line_marker=[v],
+                                             text_marker=[t])
+
+    def _clear_markers(self, edges=None):
+        if edges is None:
+            edges = list(self.signal._edge_markers.keys())
+
+        self.signal.remove_EELS_edges_markers(list(edges))
+
+        for edge in edges:
+            if edge in self.active_edges:
+                self.active_edges.remove(edge)
+            if edge in self.active_complementary_edges:
+                self.active_complementary_edges.remove(edge)
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
@@ -457,9 +660,9 @@ class SmoothingSavitzkyGolay(Smoothing):
 
 @add_gui_method(toolkey="hyperspy.Signal1D.smooth_lowess")
 class SmoothingLowess(Smoothing):
-    smoothing_parameter = t.Range(low=0.,
-                                  high=1.,
-                                  value=0.5,
+    smoothing_parameter = t.Range(low=0.001,
+                                  high=0.99,
+                                  value=0.1,
                                   )
     number_of_iterations = t.Range(low=1,
                                    value=1)
@@ -553,7 +756,9 @@ class ImageContrastEditor(t.HasTraits):
     ss_right_value = t.Float()
     bins = t.Int(100, desc="Number of bins used for the histogram.")
     gamma = t.Range(0.1, 3.0, 1.0)
-    saturated_pixels = t.Range(0.0, 5.0, preferences.Plot.saturated_pixels)
+    vmin_percentile = t.Range(0.0, 100.0, 0)
+    vmax_percentile = t.Range(0.0, 100.0, 100)
+
     norm = t.Enum(
         'Linear',
         'Power',
@@ -561,11 +766,11 @@ class ImageContrastEditor(t.HasTraits):
         'Symlog',
         default='Linear')
     linthresh = t.Range(0.0, 1.0, 0.01, exclude_low=True, exclude_high=False,
-                        desc=f"Range of value closed to zero, which are "
-                        "linearly extrapolated. {mpl_help}")
+                        desc="Range of value closed to zero, which are "
+                        f"linearly extrapolated. {mpl_help}")
     linscale = t.Range(0.0, 10.0, 0.1, exclude_low=False, exclude_high=False,
-                       desc=f"Number of decades to use for each half of "
-                       "the linear range. {mpl_help}")
+                       desc="Number of decades to use for each half of "
+                       f"the linear range. {mpl_help}")
     auto = t.Bool(True,
                   desc="Adjust automatically the display when changing "
                   "navigator indices. Unselect to keep the same display.")
@@ -578,21 +783,28 @@ class ImageContrastEditor(t.HasTraits):
         self.hspy_fig.create_figure()
         self.create_axis()
 
-        # Copy the original value to be used when resetting the display
-        self.gamma_original = copy.deepcopy(self.image.gamma)
-        self.saturated_pixels_original = copy.deepcopy(
-                self.image.saturated_pixels)
-        self.vmin_original = copy.deepcopy(self.image.vmin)
-        self.vmax_original = copy.deepcopy(self.image.vmax)
-        self.linthresh_original = copy.deepcopy(self.image.linthresh)
-        self.linscale_original = copy.deepcopy(self.image.linscale)
         # self._vmin and self._vmax are used to compute the histogram
         # by default, the image display used these, except when there is a span
         # selector on the histogram
-        self._vmin, self._vmax = self.image.vmin, self.image.vmax
-
+        self._vmin, self._vmax = self.image._vmin, self.image._vmax
         self.gamma = self.image.gamma
-        self.saturated_pixels = self.image.saturated_pixels
+        self.linthresh = self.image.linthresh
+        self.linscale = self.image.linscale
+        if self.image._vmin_percentile is not None:
+            self.vmin_percentile = float(
+                self.image._vmin_percentile.split('th')[0])
+        if self.image._vmax_percentile is not None:
+            self.vmax_percentile = float(
+                self.image._vmax_percentile.split('th')[0])
+
+        # Copy the original value to be used when resetting the display
+        self.vmin_original = self._vmin
+        self.vmax_original = self._vmax
+        self.gamma_original = self.gamma
+        self.linthresh_original = self.linthresh
+        self.linscale_original = self.linscale
+        self.vmin_percentile_original = self.vmin_percentile
+        self.vmax_percentile_original = self.vmax_percentile
 
         if self.image.norm == 'auto':
             self.norm = 'Linear'
@@ -603,7 +815,6 @@ class ImageContrastEditor(t.HasTraits):
         self.span_selector = None
         self.span_selector_switch(on=True)
 
-        self._reset(auto=False, update=False, indices_changed=False)
         self.plot_histogram()
 
         if self.image.axes_manager is not None:
@@ -629,19 +840,34 @@ class ImageContrastEditor(t.HasTraits):
             return
         self.image.gamma = new
         if hasattr(self, "hist"):
-            self.image.update(optimize_contrast=True, data_changed=False)
+            vmin, vmax = self._get_current_range()
+            self.image.update(
+                data_changed=False, auto_contrast=False, vmin=vmin, vmax=vmax)
             self.update_line()
 
-    def _saturated_pixels_changed(self, old, new):
-        self.image.saturated_pixels = new
+    def _vmin_percentile_changed(self, old, new):
+        if isinstance(new, str):
+            new = float(new.split('th')[0])
+        self.image.vmin = f"{new}th"
         # Before the tool is fully initialised
         if hasattr(self, "hist"):
             self._reset(indices_changed=False)
+            self._reset_span_selector()
+
+    def _vmax_percentile_changed(self, old, new):
+        if isinstance(new, str):
+            new = float(new.split('th')[0])
+        self.image.vmax = f"{new}th"
+        # Before the tool is fully initialised
+        if hasattr(self, "hist"):
+            self._reset(indices_changed=False)
+            self._reset_span_selector()
 
     def _auto_changed(self, old, new):
         # Do something only if auto is ticked
-        if new:
+        if new and hasattr(self, "hist"):
             self._reset(indices_changed=False)
+            self._reset_span_selector()
 
     def _norm_changed(self, old, new):
         if hasattr(self, "hist"):
@@ -663,8 +889,8 @@ class ImageContrastEditor(t.HasTraits):
             self.span_selector = \
                 drawing.widgets.ModifiableSpanSelector(
                     self.ax,
-                    onselect=self.update_span_selector_traits,
-                    onmove_callback=self.update_span_selector_traits,
+                    onselect=self.update_span_selector,
+                    onmove_callback=self.update_span_selector,
                     rectprops={"alpha":0.25, "color":'r'})
             self.span_selector.bounds_check = True
 
@@ -677,9 +903,16 @@ class ImageContrastEditor(t.HasTraits):
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
 
-        self.image.vmin, self.image.vmax = self._get_current_range()
-        self.image.update(optimize_contrast=False, data_changed=False)
         self.update_line()
+
+    def update_span_selector(self, *args, **kwargs):
+        self.update_span_selector_traits()
+        # switch off auto when using span selector
+        if self.auto:
+            self.auto = False
+        vmin, vmax = self._get_current_range()
+        self.image.update(data_changed=False, auto_contrast=False,
+                          vmin=vmin, vmax=vmax)
 
     def _get_data(self):
         return self.image._current_data
@@ -710,12 +943,22 @@ class ImageContrastEditor(t.HasTraits):
         if self._vmin == self._vmax:
             return
         data = self._get_data()
+        # masked data outside vmin/vmax
+        data = np.ma.masked_outside(data, self._vmin, self._vmax).compressed()
 
-        # "auto" returns max('sturges', 'fd') which is what we want
-        n_bins = len(np.histogram_bin_edges(data, bins="auto"))
-        # Cap at max_num_bins to avoid memory errors when
-        # the number of bins is very large
-        self.bins = min(n_bins, max_num_bins)
+        # Sturges rule
+        sturges_bin_width = data.ptp() / (np.log2(data.size) + 1.0)
+
+        iqr = np.subtract(*np.percentile(data, [75, 25]))
+        fd_bin_width = 2.0 * iqr * data.size ** (-1.0 / 3.0)
+
+        if fd_bin_width > 0:
+            bin_width = min(fd_bin_width, sturges_bin_width)
+        else:
+            # limited variance: fd_bin_width may be zero
+            bin_width = sturges_bin_width
+
+        self.bins = min(int(np.ceil(data.ptp() / bin_width)), max_num_bins)
 
         self.hist_data = self._get_histogram(data)
         self._set_xaxis()
@@ -736,20 +979,12 @@ class ImageContrastEditor(t.HasTraits):
         if self._vmin == self._vmax:
             return
         color = self.hist.get_facecolor()
-        update_span = self.auto and self.span_selector._get_span_width() != 0
         self.hist.remove()
         self.hist_data = self._get_histogram(self._get_data())
-        if update_span:
-            span_x_coord = self.ax.transData.transform(
-                    (self.span_selector.range[0], 0))
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid", color=color)
+
         self.ax.set_xlim(self._vmin, self._vmax)
-        if update_span:
-            # Restore the span selector at the correct position after updating
-            # the range of the histogram
-            self.span_selector._set_span_x(
-                    self.ax.transData.inverted().transform(span_x_coord)[0])
         if self.hist_data.max() != 0:
             self.ax.set_ylim(0, self.hist_data.max())
         self.update_line()
@@ -798,8 +1033,7 @@ class ImageContrastEditor(t.HasTraits):
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
-            # No span selector, so we use the saturated_pixels value to
-            # calculate the vim and vmax values
+            # No span selector, so we use the default vim and vmax values
             self._reset(auto=True, indices_changed=False)
         else:
             # When we apply the selected range and update the xaxis
@@ -812,20 +1046,26 @@ class ImageContrastEditor(t.HasTraits):
     def reset(self):
         # Reset the display as original
         self._reset_original_settings()
+        self._reset_span_selector()
 
-        # Remove the span selector and set the new one ready to use
-        self.span_selector_switch(False)
-        self.span_selector_switch(True)
-        self._reset(indices_changed=False)
+    def _reset_span_selector(self):
+        if self.span_selector and self.span_selector.rect.get_x() > 0:
+            # Remove the span selector and set the new one ready to use
+            self.span_selector_switch(False)
+            self.span_selector_switch(True)
+            self._reset(indices_changed=False)
 
     def _reset_original_settings(self):
+        if self.vmin_percentile_original is not None:
+            self.vmin_percentile = self.vmin_percentile_original
+        if self.vmax_percentile_original is not None:
+            self.vmax_percentile = self.vmax_percentile_original
+        self._vmin = self.vmin_original
+        self._vmax = self.vmax_original
         self.norm = self.norm_original.capitalize()
         self.gamma = self.gamma_original
         self.linthresh = self.linthresh_original
         self.linscale = self.linscale_original
-        self.saturated_pixels = self.saturated_pixels_original
-        self._vmin = self.vmin_original
-        self._vmax = self.vmax_original
 
     def _get_current_range(self):
         if self.span_selector._get_span_width() != 0:
@@ -838,14 +1078,15 @@ class ImageContrastEditor(t.HasTraits):
         # And reconnect the image if we close the ImageContrastEditor
         if self.image is not None:
             if self.auto:
-                # reset the `_*_user` value so that the contrast of the image
-                # get updated automatically after closing the contrast tool
-                self.image._vmin_user = None
-                self.image._vmax_user = None
+                self.image.vmin = f"{self.vmin_percentile}th"
+                self.image.vmax = f"{self.vmax_percentile}th"
+            else:
+                self.image.vmin = self._vmin
+                self.image.vmax = self._vmax
             self.image.connect()
         self.hspy_fig.close()
 
-    def _reset(self, auto=None, update=True, indices_changed=True):
+    def _reset(self, auto=None, indices_changed=True):
         # indices_changed is used for the connection to the indices_changed
         # event of the axes_manager, which will require to update the displayed
         # image
@@ -853,76 +1094,81 @@ class ImageContrastEditor(t.HasTraits):
         if auto is None:
             auto = self.auto
 
-        if indices_changed:
-            self.image._update_data()
-        # Get the vmin and vmax values
         if auto:
-            self.image.optimize_contrast(self._get_data(),
-                                         ignore_user_values=True)
-            self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
-
-        if update:
-            if self.norm.lower() == 'log' and self._vmin <= 0:
-                # With norm='log', get the smallest positive value
-                data = self._get_data()
-                self._vmin = np.nanmin(np.where(data > 0, data, np.inf))
-                self.image.update(data_changed=False)
-            if not auto:
-                # if we don't use "image.optimize_contrast", the image vmin and
-                # vmax need to be udpated
-                self.image.vmin, self.image.vmax = self._vmin, self._vmax
+            self.image.update(data_changed=indices_changed, auto_contrast=auto)
+            self._vmin, self._vmax = self.image._vmin, self.image._vmax
             self._set_xaxis()
-            self.update_histogram()
-            self.update_span_selector_traits()
+        else:
+            vmin, vmax = self._get_current_range()
+            self.image.update(data_changed=indices_changed, auto_contrast=auto,
+                              vmin=vmin, vmax=vmax)
+
+        self.update_histogram()
+        self.update_span_selector_traits()
 
     def _show_help_fired(self):
         from pyface.message_dialog import information
-        _ = information(None, IMAGE_CONTRAST_EDITOR_HELP,
-                        title="Help"),
+        _help = _IMAGE_CONTRAST_EDITOR_HELP.replace("PERCENTILE",
+                                                    _PERCENTILE_TRAITSUI)
+        _ = information(None, _help, title="Help"),
 
 
-IMAGE_CONTRAST_EDITOR_HELP = \
+_IMAGE_CONTRAST_EDITOR_HELP = \
 """
 <h2>Image contrast editor</h2>
 <p>This tool provides controls to adjust the contrast of the image.</p>
 
 <h3>Basic parameters</h3>
 
+<p><b>Auto</b>: If selected, adjust automatically the contrast when changing
+nagivation axis by taking into account others parameters.</p>
+
+PERCENTILE
+
 <p><b>Bins</b>: Number of bins used in the histogram calculation</p>
 
 <p><b>Norm</b>: Normalisation used to display the image.</p>
 
-<p><b>Saturated pixels</b>: The percentage of pixels that are left out of the bounds.
-For example, the low and high bounds of a value of 1 are the 0.5% and 99.5%
-percentiles. It must be in the [0, 100] range.</p>
+<p><b>Gamma</b>: Paramater of the power law transform, also known as gamma
+correction. <i>Only available with the 'power' norm</i>.</p>
 
-<p><b>Gamma</b>: Paramater of the power law transform (also known as gamma
-correction). <i>(not compatible with the 'log' norm)</i>.</p>
-
-<p><b>Auto</b>: If selected, adjust automatically the contrast when changing
-nagivation axis by taking into account others parameters.</p>
 
 <h3>Advanced parameters</h3>
 
 <p><b>Linear threshold</b>: Since the values close to zero tend toward infinity,
 there is a need to have a range around zero that is linear.
 This allows the user to specify the size of this range around zero.
-<i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
+<i>Only with the 'log' norm and when values <= 0 are displayed</i>.</p>
 
 <p><b>Linear scale</b>: Since the values close to zero tend toward infinity,
 there is a need to have a range around zero that is linear.
 This allows the user to specify the size of this range around zero.
-<i>(only with the 'log' norm and when values <= 0 are displayed)</i>.</p>
+<i>Only with the 'log' norm and when values <= 0 are displayed</i>.</p>
 
 <h3>Buttons</h3>
 
-<p><b>Apply</b>: Use the range selected to re-calculate the histogram.</p>
+<p><b>Apply</b>: Calculate the histogram using the selected range defined by
+the range selector.</p>
 
 <p><b>Reset</b>: Reset the settings to their initial values.</p>
 
 <p><b>OK</b>: Close this tool.</p>
 
 """
+
+_PERCENTILE_TRAITSUI = \
+"""<p><b>vmin percentile</b>: The percentile value defining the number of
+pixels left out of the lower bounds.</p>
+
+<p><b>vmax percentile</b>: The percentile value defining the number of
+pixels left out of the upper bounds.</p>"""
+
+_PERCENTILE_IPYWIDGETS = \
+"""<p><b>vmin/vmax percentile</b>: The percentile values defining the number of
+pixels left out of the lower and upper bounds.</p>"""
+
+IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS = _IMAGE_CONTRAST_EDITOR_HELP.replace(
+    "PERCENTILE", _PERCENTILE_IPYWIDGETS)
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.integrate_in_range")
@@ -965,16 +1211,16 @@ class IntegrateArea(SpanSelectorInSignal1D):
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
         'Doniach',
+        'Exponential',
         'Gaussian',
         'Lorentzian',
         'Offset',
         'Polynomial',
-        'Power Law',
-        'Exponential',
-        'SkewNormal',
-        'SplitVoigt',
+        'Power law',
+        'Skew normal',
+        'Split Voigt',
         'Voigt',
-        default='Power Law')
+        default='Power law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
@@ -994,7 +1240,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     red_chisq = t.Float(np.nan)
 
-    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+    def __init__(self, signal, background_type='Power law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None, model=None):
         super(BackgroundRemoval, self).__init__(signal)
@@ -1010,6 +1256,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             model = Model1D(signal)
         self.model = model
         self.polynomial_order = polynomial_order
+        if background_type in ['Power Law', 'PowerLaw']:
+            background_type = 'Power law'
+        if background_type in ['Skew Normal', 'SkewNormal']:
+            background_type = 'Skew normal'
+        if background_type in ['Split voigt', 'SplitVoigt']:
+            background_type = 'Split Voigt'
         self.background_type = background_type
         self.zero_fill = zero_fill
         self.show_progressbar = show_progressbar
@@ -1026,6 +1278,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.rm_line is not None:
             self.rm_line.close()
             self.rm_line = None
+            self.signal._plot.signal_plot.close_right_axis()
 
     def set_background_estimator(self):
         if self.model is not None:
@@ -1071,7 +1324,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             type='line',
             scaley=False)
         self.signal._plot.signal_plot.add_line(self.bg_line)
-        self.bg_line.autoscale = False
+        self.bg_line.autoscale = ''
         self.bg_line.plot()
 
     def create_remainder_line(self):
@@ -1081,8 +1334,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             color='green',
             type='line',
             scaley=False)
-        self.signal._plot.signal_plot.add_line(self.rm_line)
-        self.rm_line.autoscale = False
+        self.signal._plot.signal_plot.create_right_axis(color='green')
+        self.signal._plot.signal_plot.add_line(self.rm_line, ax='right')
         self.rm_line.plot()
 
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
@@ -1142,12 +1395,13 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.bg_line is None:
             self.create_background_line()
         else:
-            self.bg_line.update()
+            self.bg_line.update(render_figure=False, update_ylimits=False)
         if self.plot_remainder:
             if self.rm_line is None:
                 self.create_remainder_line()
             else:
-                self.rm_line.update()
+                self.rm_line.update(render_figure=True,
+                                    update_ylimits=True)
 
     def apply(self):
         if not self.is_span_selector_valid:
@@ -1308,12 +1562,12 @@ class SpikesRemoval:
                 index = hist.data.shape[0] - 1
             threshold = np.ceil(hist.axes_manager[0].index2value(index))
             _logger.info(f'Threshold value: {threshold}')
-        self.threshold = threshold
-        self.index = 0
         self.argmax = None
         self.derivmax = None
         self.kind = "linear"
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
+        self.index = 0
+        self.threshold = threshold
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
 
@@ -1595,7 +1849,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
         self.interpolated_line.auto_update = False
-        self.interpolated_line.autoscale = False
+        self.interpolated_line.autoscale = ''
         self.interpolated_line.plot()
 
     def span_selector_changed(self):
@@ -1788,9 +2042,9 @@ class PeaksFinder2D(t.HasTraits):
 
     def _find_peaks_current_index(self, method):
         method = self._normalise_method_name(method)
-        self.peaks = self.signal.find_peaks(method, current_index=True,
-                                            interactive=False,
-                                            **self._get_parameters(method))
+        self.peaks.data = self.signal.find_peaks(method, current_index=True,
+                                                 interactive=False,
+                                                 **self._get_parameters(method))
 
     def _plot_markers(self):
         if self.signal._plot is not None and self.signal._plot.is_active:
@@ -1810,14 +2064,14 @@ class PeaksFinder2D(t.HasTraits):
                              y=y_axis.index2value(y),
                              color=color,
                              size=markersize)
-            for x, y in zip(self.peaks[:, 1], self.peaks[:, 0])]
+            for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
 
         return marker_list
 
     def compute_navigation(self):
         method = self._normalise_method_name(self.method)
         with self.signal.axes_manager.events.indices_changed.suppress():
-            self.signal.peaks = self.signal.find_peaks(
+            self.peaks.data = self.signal.find_peaks(
                 method, interactive=False, current_index=False,
                 **self._get_parameters(method))
 

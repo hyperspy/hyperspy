@@ -166,19 +166,25 @@ class EDS_mixin:
     def sum(self, axis=None, out=None):
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        # modify time spend per spectrum
         s = super().sum(axis=axis, out=out)
         s = out or s
-        mp = None
-        if s.metadata.get_item("Acquisition_instrument.SEM"):
-            mp = s.metadata.Acquisition_instrument.SEM
-            mp_old = self.metadata.Acquisition_instrument.SEM
-        elif s.metadata.get_item("Acquisition_instrument.TEM"):
-            mp = s.metadata.Acquisition_instrument.TEM
-            mp_old = self.metadata.Acquisition_instrument.TEM
-        if mp is not None and mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
-                self.data.size / s.data.size
+
+        # Update live time by the change in navigation axes dimensions
+        time_factor = (
+               np.prod([ax.size for ax in self.axes_manager.navigation_axes])
+               / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
+            )
+        aimd = s.metadata.get_item('Acquisition_instrument', None)
+        if aimd is not None:
+            aimd = s.metadata.Acquisition_instrument
+            if "SEM.Detector.EDS.live_time" in aimd:
+                aimd.SEM.Detector.EDS.live_time *= time_factor
+            elif "TEM.Detector.EDS.live_time" in aimd:
+                aimd.TEM.Detector.EDS.live_time *= time_factor
+            else:
+                _logger.info("Live_time could not be found in the metadata and "
+                             "has not been updated.")
+
         if out is None:
             return s
     sum.__doc__ = Signal1D.sum.__doc__
@@ -713,18 +719,17 @@ class EDS_mixin:
         elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
-        tilt_stage = mp.Stage.tilt_alpha
-        azimuth_angle = mp.Detector.EDS.azimuth_angle
-        elevation_angle = mp.Detector.EDS.elevation_angle
-        if 'beta_tilt' not in mp:
-            beta_tilt = 0.0
-        else:
-            beta_tilt = mp.Stage.tilt_beta
+        tilt_stage = mp.get_item('Stage.tilt_alpha', None)
+        azimuth_angle = mp.get_item('Detector.EDS.azimuth_angle', None)
+        elevation_angle = mp.get_item('Detector.EDS.elevation_angle', None)
+        beta_tilt = mp.get_item('Stage.tilt_beta', 0.0)
 
-        TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
-                                       elevation_angle,beta_tilt)
-
-        return TOA
+        return utils.eds.take_off_angle(
+            tilt_stage,
+            azimuth_angle,
+            elevation_angle,
+            beta_tilt
+        )
 
     def estimate_integration_windows(self,
                                      windows_width=2.,
@@ -849,6 +854,12 @@ class EDS_mixin:
              only_one=False,
              background_windows=None,
              integration_windows=None,
+             navigator="auto",
+             plot_markers=True,
+             autoscale='v',
+             norm="auto",
+             axes_manager=None,
+             navigator_kwds={},
              **kwargs):
         """Plot the EDS spectrum. The following markers can be added
 
@@ -917,7 +928,13 @@ class EDS_mixin:
         set_elements, add_elements, estimate_integration_windows,
         get_lines_intensity, estimate_background_windows
         """
-        super().plot(**kwargs)
+        super().plot(navigator=navigator,
+                     plot_markers=plot_markers,
+                     autoscale=autoscale,
+                     norm=norm,
+                     axes_manager=axes_manager,
+                     navigator_kwds=navigator_kwds,
+                     **kwargs)
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
 

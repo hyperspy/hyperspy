@@ -3,9 +3,14 @@ language: python
 
 env:
   global:
+    # The default environment variable are defined here and overwritten
+    # in the matrix when necessary
     - ENV=pip
+    - PIP_ARGS="--upgrade --use-feature=2020-resolver -e"
     - PIP_SELECTOR="all, tests, coverage"
-    - PYTEST_ARGS="--pyargs hyperspy"
+    - PYTEST_ARGS="--pyargs hyperspy --reruns 3 -n 2 --instafail"
+    - OLDEST_SUPPORTED_VERSION=false
+    - MPLBACKEND="agg"
 
 matrix:
   include:
@@ -13,12 +18,18 @@ matrix:
     python: 3.8
   - name: "Linux, 3.7, pip"
     python: 3.7
-    env: PYTEST_ARGS="--pyargs hyperspy --cov=hyperspy"
+    env: PYTEST_ARGS="$PYTEST_ARGS --cov=hyperspy"
   - name: "Linux, 3.6, pip"
     python: 3.6
   - name: "Linux, 3.7, pip, minimum requirement"
     env: PIP_SELECTOR="tests"
     python: 3.7
+  - name: "Linux, 3.6, pip, oldest supported versions"
+    env:
+      - OLDEST_SUPPORTED_VERSION=true
+      - PIP_ARGS="-e"
+      - PIP_SELECTOR="tests"
+    python: 3.6
   - name: "Linux, 3.7, pip, doc"
     env: PIP_SELECTOR="all, build-doc"
     python: 3.7
@@ -29,11 +40,14 @@ before_install:
   - source ci-scripts/travis/setup_travis.sh
 
 install:
-  # Because of https://github.com/pypa/pip/issues/4391, we need to update pytest
-  # manually
-  - pip install -U pytest
-  # Install the package
-  - pip install --upgrade -e .["${PIP_SELECTOR}"]
+  # Because of https://github.com/pypa/pip/issues/4391,
+  # we need to update pytest manually.
+  - pip install --upgrade pytest
+  # Test against the oldest supported version of matplotlib, numpy and scipy
+  - if [ "$OLDEST_SUPPORTED_VERSION" == true ]; then
+      pip install matplotlib==2.2.3 numpy==1.15.4 scipy==1.1;
+    fi
+  - pip install $PIP_ARGS .["${PIP_SELECTOR}"];
 
 script:
   - which python
@@ -41,7 +55,7 @@ script:
   - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
       cd doc && make html;
     else
-      echo "py.test arguments $PYTEST_ARGS";
+      echo "pytest arguments $PYTEST_ARGS";
       pytest $PYTEST_ARGS;
     fi
 

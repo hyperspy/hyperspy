@@ -112,12 +112,13 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
+@pytest.mark.parametrize("percentile", [(None, None), ("1th", "99th")])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_log_scale():
+def test_plot_log_scale(percentile):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal += 1  # need to avoid zeros in log
-    test_plot.signal.plot(norm='log')
+    test_plot.signal.plot(norm='log', vmin=percentile[0], vmax=percentile[1])
     return test_plot.signal._plot.signal_plot.figure
 
 
@@ -341,8 +342,7 @@ def test_plot_images_cmap_multi_signal():
     test_plot2.signal = test_plot2.signal.inav[::-1]
     test_plot2.signal.metadata.General.title = 'Descent'
 
-    hs.plot.plot_images([test_plot1.signal,
-                         test_plot2.signal],
+    hs.plot.plot_images([test_plot1.signal, test_plot2.signal],
                         axes_decor='off',
                         per_row=4,
                         cmap='mpl_colors')
@@ -362,9 +362,7 @@ def test_plot_images_cmap_multi_w_rgb():
     rgb_sig.change_dtype('rgb8')
     rgb_sig.metadata.General.title = 'Racoon!'
 
-    hs.plot.plot_images([test_plot1.signal,
-                         test_plot2.signal,
-                         rgb_sig],
+    hs.plot.plot_images([test_plot1.signal, test_plot2.signal, rgb_sig],
                         axes_decor='off',
                         per_row=4,
                         cmap='mpl_colors')
@@ -377,7 +375,7 @@ def test_plot_images_single_image():
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="99.95th")
     return plt.gcf()
 
 
@@ -387,7 +385,7 @@ def test_plot_images_single_image_stack():
     image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
-    hs.plot.plot_images(image0, saturated_pixels=0.1)
+    hs.plot.plot_images(image0, vmin="0.05th", vmax="99.95th")
     return plt.gcf()
 
 
@@ -415,16 +413,20 @@ def test_plot_images_multi_signal_w_axes_replot():
     return f
 
 
-@pytest.mark.parametrize("saturated_pixels", [5.0, [0.0, 20.0, 40.0],
-                                              [10.0, 20.0], [10.0, None, 20.0]])
+@pytest.mark.parametrize("percentile", [("2.5th", "97.5th"),
+                                        [["0th", "10th", "20th"], ["100th", "90th", "80th"]],
+                                        [["5th", "10th"], ["95th", "90th"]],
+                                        [["5th", None, "10th"], ["95th", None, "90th"]],
+                                        ])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_saturated_pixels(saturated_pixels):
+def test_plot_images_vmin_vmax_percentile(percentile):
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
     ax = hs.plot.plot_images([image0, image0, image0],
-                             saturated_pixels=saturated_pixels,
+                             vmin=percentile[0],
+                             vmax=percentile[1],
                              axes_decor='off')
     return ax[0].figure
 
@@ -516,3 +518,46 @@ def test_plot_navigator_colormap(cmap):
     s = hs.signals.Signal1D(np.arange(10*10*10).reshape(10, 10, 10))
     s.plot(navigator_kwds={'cmap':cmap})
     return s._plot.navigator_plot.figure
+
+
+@pytest.mark.parametrize("autoscale", ['', 'xy', 'xv', 'xyv', 'v'])
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_autoscale(autoscale):
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s.plot(autoscale=autoscale, axes_ticks=True)
+    imf = s._plot.signal_plot
+    ax = imf.ax
+    extend = [5.0, 10.0, 3., 10.0]
+    ax.images[0].set_extent(extend)
+    ax.set_xlim(5.0, 10.0)
+    ax.set_ylim(3., 10.0)
+
+    ax.images[0].norm.vmin = imf._vmin = 10
+    ax.images[0].norm.vmax = imf._vmax = 50
+
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    # Because we are hacking the vmin, vmax with matplotlib, we need to update
+    # colorbar too
+    imf._colorbar.draw_all()
+
+    return s._plot.signal_plot.figure
+
+
+@pytest.mark.parametrize("autoscale", ['', 'v'])
+def test_plot_autoscale_data_changed(autoscale):
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s.plot(autoscale=autoscale, axes_ticks=True)
+    imf = s._plot.signal_plot
+    _vmin = imf._vmin
+    _vmax = imf._vmax
+
+    s.data = s.data / 2
+    s.events.data_changed.trigger(s)
+
+    if 'v' in autoscale:
+        np.testing.assert_allclose(imf._vmin, s.data.min())
+        np.testing.assert_allclose(imf._vmax, s.data.max())
+    else:
+        np.testing.assert_allclose(imf._vmin, _vmin)
+        np.testing.assert_allclose(imf._vmax, _vmax)

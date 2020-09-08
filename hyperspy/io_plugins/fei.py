@@ -226,7 +226,12 @@ def parse_ExperimentalDescription(et, dictree):
         value = data.find("Value").text
         units = data.find("Unit").text
         item = label if not units else label + "_%s" % units
-        value = float(value) if units else value
+        try:
+            # try to coerce value to decimal representation
+            value = float(value) if units else value
+        except ValueError:
+            _logger.warning(f'Expected decimal value for {label}, '
+                            f'but received {value} instead')
         dictree[item] = value
 
 
@@ -261,6 +266,7 @@ def emi_reader(filename, dump_xml=False, **kwds):
     # generated then, it will possible to match to the corresponding ser file
     # and add the detector information in the metadata
     objects = get_xml_info_from_emi(filename)
+    orig_fname = filename
     filename = os.path.splitext(filename)[0]
     if dump_xml is True:
         for i, obj in enumerate(objects):
@@ -278,7 +284,14 @@ def emi_reader(filename, dump_xml=False, **kwds):
 
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
         op = DictionaryTreeBrowser(sers[-1]['original_metadata'])
-        emixml2dtb(ET.fromstring(objects[index]), op)
+
+        # defend against condition where more ser files are present than object
+        # metadata defined in emi
+        if index < len(objects):
+            emixml2dtb(ET.fromstring(objects[index]), op)
+        else:
+            _logger.warning(f'{orig_fname} did not contain any metadata for '
+                            f'{f}, so only .ser header information was read')
         sers[-1]['original_metadata'] = op.as_dictionary()
     return sers
 
@@ -479,7 +492,12 @@ def ser_reader(filename, objects=None, lazy=False, only_valid_data=False):
     date, time = None, None
     if objects is not None:
         objects_dict = convert_xml_to_dict(objects[0])
-        date, time = _get_date_time(objects_dict.ObjectInfo.AcquireDate)
+        try:
+            acq_date = objects_dict.ObjectInfo.AcquireDate
+            date, time = _get_date_time(acq_date)
+        except AttributeError:
+            _logger.warning(f'AcquireDate not found in metadata of {filename};'
+                            ' Not setting metadata date or time')
     if "PositionY" in data.dtype.names and len(data['PositionY']) > 1 and \
             (data['PositionY'][0] == data['PositionY'][1]):
         # The spatial dimensions are stored in F order i.e. X, Y, ...

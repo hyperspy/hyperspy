@@ -20,7 +20,6 @@
 import logging
 import types
 import warnings
-
 import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,11 +34,11 @@ from hyperspy.learn.rpca import orpca, rpca_godec
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.whitening import whiten_data
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import ordinal, stack
+from hyperspy.misc.utils import ordinal, stack,is_hyperspy_signal
+from hyperspy.external.progressbar import progressbar
 
 try:
     import mdp
-
     mdp_installed = True
 except ImportError:
     mdp_installed = False
@@ -51,11 +50,25 @@ _logger = logging.getLogger(__name__)
 if import_sklearn.sklearn_installed:
     decomposition_algorithms = {
         "sklearn_pca": import_sklearn.sklearn.decomposition.PCA,
-        "nmf": import_sklearn.sklearn.decomposition.NMF,
+        "NMF": import_sklearn.sklearn.decomposition.NMF,
         "sparse_pca": import_sklearn.sklearn.decomposition.SparsePCA,
         "mini_batch_sparse_pca": import_sklearn.sklearn.decomposition.MiniBatchSparsePCA,
         "sklearn_fastica": import_sklearn.sklearn.decomposition.FastICA,
     }
+    cluster_algorithms = {
+        None : import_sklearn.sklearn.cluster.KMeans,
+        'kmeans' : import_sklearn.sklearn.cluster.KMeans,
+        'agglomerative' : import_sklearn.sklearn.cluster.AgglomerativeClustering,
+        'minibatchkmeans' : import_sklearn.sklearn.cluster.MiniBatchKMeans,
+        'spectralclustering' : import_sklearn.sklearn.cluster.SpectralClustering
+    }
+    cluster_preprocessing_algorithms = {
+        None: None,
+        "norm": import_sklearn.sklearn.preprocessing.Normalizer,
+        "standard": import_sklearn.sklearn.preprocessing.StandardScaler,
+        "minmax": import_sklearn.sklearn.preprocessing.MinMaxScaler
+    }
+
 
 
 def _get_derivative(signal, diff_axes, diff_order):
@@ -97,7 +110,7 @@ class MVA:
     def decomposition(
         self,
         normalize_poissonian_noise=False,
-        algorithm="svd",
+        algorithm="SVD",
         output_dimension=None,
         centre=None,
         auto_transpose=True,
@@ -123,7 +136,7 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [Keenan2004]_.
-        algorithm : {"svd", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "svd"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -133,28 +146,28 @@ class MVA:
         centre : {None, "navigation", "signal"}, default None
             * If None, the data is not centered prior to decomposition.
             * If "navigation", the data is centered along the navigation axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
             * If "signal", the data is centered along the signal axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only used by the "svd" algorithm.
+            Only used by the "SVD" algorithm.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
-            decompostion.
+            decomposition.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm.
-            Only used by the "mlpca" algorithm.
+            Only used by the "MLPCA" algorithm.
         var_func : None or function or numpy array, default None
             * If None, ignored
             * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "mlpca" algorithm.
+              Only used by the "MLPCA" algorithm.
             * If numpy array, creates ``var_array`` by applying a polynomial function
               defined by the array of coefficients to the data. Only used by
-              the "mlpca" algorithm.
+              the "MLPCA" algorithm.
         reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
@@ -198,7 +211,7 @@ class MVA:
         Returns
         -------
         return_info : tuple(numpy array, numpy array) or sklearn.Estimator or None
-            * If True and 'algorithm' in ['rpca', 'orpca', 'ornmf'], returns
+            * If True and 'algorithm' in ['RPCA', 'ORPCA', 'ORNMF'], returns
               the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
             * If True and 'algorithm' is an sklearn Estimator, returns the
               Estimator object.
@@ -237,11 +250,12 @@ class MVA:
 
         # Check for deprecated algorithm arguments
         algorithms_deprecated = {
-            "fast_svd": "svd",
-            "fast_mlpca": "mlpca",
-            "RPCA_GoDec": "rpca",
-            "ORPCA": "orpca",
-            "ORNMF": "ornmf",
+            "fast_svd": "SVD",
+            "svd": "SVD",
+            "fast_mlpca": "MLPCA",
+            "mlpca": "MLPCA",
+            "nmf": "NMF",
+            "RPCA_GoDec": "RPCA",
         }
         new_algo = algorithms_deprecated.get(algorithm, None)
         if new_algo:
@@ -265,10 +279,10 @@ class MVA:
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
-            "mlpca",
-            "rpca",
-            "orpca",
-            "ornmf",
+            "MLPCA",
+            "RPCA",
+            "ORPCA",
+            "ORNMF",
         ]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(f"`output_dimension` must be specified for '{algorithm}'")
@@ -277,7 +291,7 @@ class MVA:
         is_sklearn_like = False
         algorithms_sklearn = [
             "sklearn_pca",
-            "nmf",
+            "NMF",
             "sparse_pca",
             "mini_batch_sparse_pca",
         ]
@@ -301,9 +315,8 @@ class MVA:
             # Pipeline and GridSearchCV objects.
             is_sklearn_like = True
             estim = algorithm
-
         # MLPCA is designed to handle count data & Poisson noise
-        if algorithm == "mlpca" and normalize_poissonian_noise:
+        if algorithm == "MLPCA" and normalize_poissonian_noise:
             warnings.warn(
                 "It does not make sense to normalize Poisson noise with "
                 "the maximum-likelihood MLPCA algorithm. Therefore, "
@@ -398,7 +411,7 @@ class MVA:
             number_significant_components = None
             mean = None
 
-            if algorithm == "svd":
+            if algorithm == "SVD":
                 factors, loadings, explained_variance, mean = svd_pca(
                     data_,
                     svd_solver=svd_solver,
@@ -408,7 +421,7 @@ class MVA:
                     **kwargs,
                 )
 
-            elif algorithm == "mlpca":
+            elif algorithm == "MLPCA":
                 if var_array is not None and var_func is not None:
                     raise ValueError(
                         "`var_func` and `var_array` cannot both be defined. "
@@ -443,7 +456,7 @@ class MVA:
                 factors = V
                 explained_variance = S ** 2 / len(factors)
 
-            elif algorithm == "rpca":
+            elif algorithm == "RPCA":
                 X, E, U, S, V = rpca_godec(data_, rank=output_dimension, **kwargs)
 
                 loadings = U * S
@@ -453,7 +466,7 @@ class MVA:
                 if return_info:
                     to_return = (X, E)
 
-            elif algorithm == "orpca":
+            elif algorithm == "ORPCA":
                 if return_info:
                     X, E, U, S, V = orpca(
                         data_, rank=output_dimension, store_error=True, **kwargs
@@ -471,7 +484,7 @@ class MVA:
                     loadings = L
                     factors = R.T
 
-            elif algorithm == "ornmf":
+            elif algorithm == "ORNMF":
                 if return_info:
                     X, E, W, H = ornmf(
                         data_, rank=output_dimension, store_error=True, **kwargs,
@@ -523,7 +536,11 @@ class MVA:
                     to_return = estim
 
             else:
-                raise ValueError("'algorithm' not recognised")
+                raise ValueError(
+                    f"algorithm={algorithm}' not recognised. Expected one of: "
+                     '"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", '
+                     '"mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object.'
+                    )
 
             # We must calculate the ratio here because otherwise the sum
             # information can be lost if the user subsequently calls
@@ -642,7 +659,7 @@ class MVA:
         mask=None,
         on_loadings=False,
         reverse_component_criterion="factors",
-        whiten_method="pca",
+        whiten_method="PCA",
         return_info=False,
         print_info=True,
         **kwargs,
@@ -690,7 +707,7 @@ class MVA:
         reverse_component_criterion : {"factors", "loadings"}, default "factors"
             Use either the factors or the loadings to determine if the
             component needs to be reversed.
-        whiten_method : {"pca", "zca", None}, default "pca"
+        whiten_method : {"PCA", "ZCA", None}, default "PCA"
             How to whiten the data prior to blind source separation.
             If None, no whitening is applied. See :py:func:`~.learn.whitening.whiten_data`
             for more details.
@@ -1580,7 +1597,7 @@ class MVA:
             Optional mask applied in the signal axis.
 
         """
-        _logger.info("Scaling the data to normalize Poissonian noise")
+        _logger.info("preprocessing the data to normalize Poissonian noise")
         with self.unfolded():
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that
@@ -1636,7 +1653,860 @@ class MVA:
                 "set `copy=True` when calling s.decomposition()."
             )
 
-    def estimate_elbow_position(self, explained_variance_ratio=None, max_points=20):
+
+    def _mask_for_clustering(self,mask):
+        # Deal with masks
+        if hasattr(mask, 'ravel'):
+            mask = mask.ravel()
+    
+        # Transform the None masks in slices to get the right behaviour
+        if mask is None:
+            mask = slice(None)
+        else:
+            mask = ~mask
+    
+        return mask
+
+    def _scale_data_for_clustering(self,
+                                  cluster_signal,
+                                  preprocessing="norm",
+                                  preprocessing_kwargs={},):
+        """Scale data for cluster analysis
+
+        Results are stored in `learning_results`.
+
+        Parameters
+        ----------
+        cluster_signal : {"bss", "decomposition", "signal", Signal}
+            If "bss" the blind source separation results are used
+            If "decomposition" the decomposition results are used 
+            if "signal" the signal data is used (signal should be unfolded)
+        preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
+            default: 'norm'
+            Preprocessing the data before cluster analysis requires preprocessing
+            the data to be clustered to similar scales. Standard preprocessing
+            adjusts each feature to have uniform variation. Norm preprocessing
+            adjusts treats the set of features like a vector and
+            each measurement is scaled to length 1.
+            You can also pass a cikit-learn preprocessing object
+            See scaling methods in scikit-learn preprocessing for further
+            details.
+        preprocessing_kwargs :
+            Additional parameters passed to the cluster preprocessing algorithm.
+            See sklearn.preprocessing preprocessing methods for further details
+
+
+        See Also
+        --------
+        * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
+        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,        
+        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+
+
+        Returns
+        -------
+        scaled_data : numpy array - unfolded array of shape (number_of_samples,
+        no_of_features) scaled according to the selected algorithm
+
+        """
+
+
+        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(preprocessing,**preprocessing_kwargs)                        
+            
+        
+        
+        if preprocessing_algorithm is None:
+            return cluster_signal
+        else:
+            return preprocessing_algorithm.fit_transform(cluster_signal)
+
+        
+    def _get_number_of_components_for_clustering(self):
+        """
+        Returns the number of components 
+        """        
+        if self.learning_results.number_significant_components is None:
+            raise ValueError("A cluster source has been set to `decomposition` "
+                             "or `bss` but no decomposition results are available. "
+                             "Please run a decomposition method first.")        
+        else:
+            number_of_components = self.learning_results.number_significant_components
+        return number_of_components
+
+    def _cluster_analysis(self,
+                          scaled_data,
+                          algorithm):
+        """Cluster analysis of a scaled data - internal
+
+
+        Parameters
+        ----------
+        n_clusters : int
+            Number of clusters to find.
+        scaled_data : numpy array - (number_of_samples,number_of_features)
+        algorithm: scikit learn clustering object 
+        **kwargs
+            Additional parameters passed to the clustering algorithm.
+            This may include `n_init`, the number of times the algorithm is
+            restarted to optimize results.
+
+            
+        Returns
+        -------
+        alg
+            return the sklearn.cluster object
+ 
+        """
+
+        algorithm.fit(scaled_data)
+        
+        # We need the labels_ to proceed
+        if not hasattr(algorithm, "labels_"):
+            raise AttributeError(
+                f"Fited cluster estimator {str(algorithm)} has no attribute 'labels_'"
+            )
+
+
+        return algorithm
+
+    def plot_cluster_metric(self):
+        """Plot the cluster metrics calculated
+           using evaluate_number_of_clusters method
+           
+        See Also
+        --------
+        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
+        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,        
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+           
+
+        """
+        target = self.learning_results
+
+        if target.cluster_metric_data is not None:
+            ydata = target.cluster_metric_data
+        else:
+            raise ValueError("Cluster metrics not evaluated "
+                             "please run evaluate_number_of_clusters first.")
+        if target.cluster_metric_index is not None:
+            xdata = target.cluster_metric_index
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(xdata, ydata)
+        ax.set_xlabel('number of clusters')
+        label =  str(target.cluster_metric) +"_metric"
+        ax.set_ylabel(label)
+        if target.number_of_clusters is not None:
+            nclusters = target.number_of_clusters
+            if isinstance(nclusters, list):
+                for nc in nclusters:
+                    ax.axvline(nc,
+                        linewidth=2,
+                        color='gray',
+                        linestyle='dashed')
+            else:
+                ax.axvline(nclusters,
+                    linewidth=2,
+                    color='gray',
+                    linestyle='dashed')
+        if target.estimated_number_of_clusters is not None:
+            nclusters = target.estimated_number_of_clusters
+            if isinstance(nclusters, list):
+                for nc in nclusters:
+                    ax.axvline(nc,
+                        linewidth=2,
+                        color='green',
+                        linestyle='dashed')
+            else:
+                ax.axvline(nclusters,
+                    linewidth=2,
+                    color='green',
+                    linestyle='dashed')
+
+        plt.draw()
+        return ax
+
+
+    def _get_cluster_signal(self,cluster_source,number_of_components=None,
+                            navigation_mask=None,
+                            signal_mask=None,):
+        """A cluster source can be an external signal, the signal data
+        or the decomposition or bss results  
+        Return a flatten version of the data, nav and signal mask
+    
+        Parameters
+        ----------
+        cluster_source : str or BaseSignal
+            "decomposition", "bss", "signal" or a Signal 
+        number_of_components : int, optional
+            Number of components to use with decomposition sources.
+            The default is None.
+        navigation_mask : ndarray, optional
+            mask used to select regions of the cluster_source to use. 
+            The default is None.
+        signal_mask : ndarray, optional
+            mask used to select regions of the cluster_source signal. 
+            For decomposition or bss this is not used.
+            The default is None.
+        reproject : bool, optional
+            If False the and the cluster_source is decomposition or bss
+            the loadings are returned. If True the factor @ loadings result
+            is used. The default is False.
+
+ 
+        Returns
+        -------
+        toreturn : ndarray
+            Returns an unfolded dataset from 
+            the selected cluster_source
+
+        """
+                
+        toreturn=None
+        # Is it a signal - i.e. BaseSignal
+        if type(cluster_source) is str and cluster_source=="signal":
+            cluster_source = self
+
+        if is_hyperspy_signal(cluster_source):
+           if cluster_source.axes_manager.navigation_size != self.axes_manager.navigation_size:
+                raise ValueError("cluster_source does not have the same "
+                                 "navigation size as the this signal")
+        else: 
+            if cluster_source not in ("bss", "decomposition", "signal"):
+                if not is_hyperspy_signal(cluster_source):
+                    raise ValueError("cluster source needs to be set "
+                                     "to `decomposition` , `signal` , `bss` "
+                                     "or a suitable Signal")
+        
+            if cluster_source == "decomposition":
+                if self.learning_results.factors is None:
+                    raise ValueError("A cluster source has been set to decomposition "
+                                     "but no decomposition results found. "
+                                     "Please run decomposition method first")
+    
+            if cluster_source == "bss":
+                if self.learning_results.bss_factors is None:
+                    raise ValueError("A cluster source has been set to bss "
+                                     " but no blind source separation results found. "
+                                     " Please run blind source separation method first")
+
+ 
+            if cluster_source in ("decomposition","bss") and number_of_components is None:
+                number_of_components = self._get_number_of_components_for_clustering()
+
+
+        navigation_mask = self._mask_for_clustering(navigation_mask)
+        if not isinstance(navigation_mask,slice) and navigation_mask.size != 1:
+            if navigation_mask.size != self.axes_manager.navigation_size:
+                raise ValueError("Navigation mask size does not match signal navigation size")
+        if is_hyperspy_signal(cluster_source):
+            signal_mask = self._mask_for_clustering(signal_mask)
+            if not isinstance(signal_mask,slice):
+                if signal_mask.size != cluster_source.axes_manager.signal_size:
+                    raise ValueError("signal mask size does not match your "
+                                     "cluster source signal size")
+            # if it's not already unfolded - unfold but remember the unfolding so
+            # can restore later
+            if not cluster_source.metadata._HyperSpy.Folding.unfolded:
+                cluster_source.unfolded4clustering=cluster_source.unfold()
+            data = cluster_source.data \
+                if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
+            toreturn = data[:,signal_mask][navigation_mask,:]
+        elif type(cluster_source) is str:
+            if cluster_source == "bss":
+                loadings = self.learning_results.bss_loadings
+            else:
+                loadings = self.learning_results.loadings
+            toreturn = loadings[navigation_mask,:number_of_components]
+
+        return toreturn
+
+
+    def cluster_analysis(self,
+                         cluster_source,
+                         source_for_centers=None,
+                         preprocessing=None,
+                         preprocessing_kwargs={},
+                         number_of_components=None,
+                         navigation_mask=None,
+                         signal_mask=None,
+                         algorithm=None,
+                         return_info=False,
+                         **kwargs):
+        """Cluster analysis of a signal or decomposition results of a signal
+        Results are stored in `learning_results`.
+
+
+        Parameters
+        ----------
+        cluster_source : {"bss", "decomposition", "signal", BaseSignal}
+            If "bss" the blind source separation results are used
+            If "decomposition" the decomposition results are used 
+            if "signal" the signal data is used 
+            Note that using the signal or BaseSignal can be memory intensive 
+            and is only recommended if the Signal dimension is small
+            BaseSignal must have the same navigation dimensions as the signal.
+        source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
+            default : None
+            If None the cluster_source is used
+            If "bss" the blind source separation results are used
+            If "decomposition" the decomposition results are used 
+            if "signal" the signal data is used 
+            BaseSignal must have the same navigation dimensions as the signal.            
+        preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
+            default: 'norm'
+            Preprocessing the data before cluster analysis requires preprocessing
+            the data to be clustered to similar scales. Standard preprocessing
+            adjusts each feature to have uniform variation. Norm preprocessing
+            adjusts treats the set of features like a vector and
+            each measurement is scaled to length 1.
+            You can also pass one of the scikit-learn preprocessing
+            scale_method = import sklearn.processing.StandadScaler()
+            preprocessing = scale_method
+            See preprocessing methods in scikit-learn preprocessing for further
+            details.
+        preprocessing_kwargs : dict
+            Additional parameters passed to the supported sklearn preprocessing methods.
+            See sklearn.preprocessing scaling methods for further details
+        number_of_components : int, default None
+            If you are getting the cluster centers using the decomposition
+            results (cluster_source_for_centers="decomposition") you can define how
+            many components to use.  If set to None the method uses the
+            estimate of significant components found in the decomposition step
+            using the elbow method and stored in the
+            ``learning_results.number_significant_components`` attribute.
+            This applies to both bss and decomposition results.
+        navigation_mask : boolean numpy array
+            The navigation locations marked as True are not used.
+        signal_mask : boolean numpy array
+            The signal locations marked as True are not used in the
+            clustering for "signal" or Signals supplied as cluster source.
+            This is not applied to decomposition results or source_for_centers
+            (as it may be a different shape to the cluster source)
+        algorithm : { "kmeans" | "agglomerative" | "minibatchkmeans" | "spectralclustering"}
+            See scikit-learn documentation. Default "kmeans"
+        return_info : bool, default False
+            The result of the cluster analysis is stored internally. However,
+            the cluster class used  contain a number of attributes.
+            If True (the default is False)
+            return the cluster object so the attributes can be accessed.
+        **kwargs : dict  optional, default - empty
+            Additional parameters passed to the clustering class for initialization.
+            For example, in case of the "kmeans" algorithm, `n_init` can be
+            used to define the number of times the algorithm is restarted to
+            optimize results.
+
+        Other Parameters
+        ----------------
+        n_clusters : int
+            Number of clusters to find using the one of the pre-defined methods
+            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
+            See sklearn.cluster for details
+
+        See Also
+        --------
+        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,
+        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+
+
+        Returns
+        -------
+            If 'return_info' is True returns the Scikit-learn cluster object
+            used for clustering. Useful if you wish to
+            examine inertia or other outputs.
+
+        """
+        if import_sklearn.sklearn_installed is False:
+            raise ImportError(
+                'sklearn is not installed. Nothing done')
+
+        if source_for_centers is None:
+            source_for_centers = cluster_source
+
+        cluster_algorithm = \
+            self._get_cluster_algorithm(algorithm,**kwargs)
+
+
+        target = LearningResults()
+        try:
+            # scale the data before clustering
+            cluster_signal = \
+                self._get_cluster_signal(
+                    cluster_source,
+                    number_of_components,
+                    navigation_mask,
+                    signal_mask,)
+            scaled_data = \
+                self._scale_data_for_clustering(
+                cluster_signal=cluster_signal,
+                preprocessing=preprocessing,
+                preprocessing_kwargs=preprocessing_kwargs)
+
+            alg = self._cluster_analysis(scaled_data,
+                                         cluster_algorithm)
+            if return_info:
+                to_return = alg
+            else:
+                to_return = None
+
+            n_clusters = int(np.amax(alg.labels_)) + 1
+            # Sort the labels based on clustersize from high to low
+            clustersizes = np.asarray([(alg.labels_ == i).sum() for i in range(n_clusters)])
+            idxs = np.argsort(clustersizes)[::-1]
+            cluster_labels = np.zeros(
+                (n_clusters, self.axes_manager.navigation_size), dtype="bool")
+            nav_mask = self._mask_for_clustering(navigation_mask)
+            for i, j  in enumerate(idxs):
+                cluster_labels[j, nav_mask] = alg.labels_ == i
+            # Calculate cluster centers
+            cluster_sum_signals = []
+            cluster_centroid_signals = []
+            centroids = []
+            distances = np.full(
+                (n_clusters, self.axes_manager.navigation_size,), np.nan, dtype="float")
+            if isinstance(source_for_centers, str) and source_for_centers in ("decomposition", "bss"):
+                loadings = self.learning_results.loadings[:, :number_of_components]
+                factors  = self.learning_results.factors[:, :number_of_components]
+                for i in range(n_clusters):
+                    sloadings = loadings[cluster_labels[i, :], :].sum(0, keepdims=True)
+                    cluster_sum_signals.append((sloadings @ factors.T).squeeze())
+                    cdata = scaled_data[cluster_labels[i, :][nav_mask], :]
+                    centroid = cdata.mean(0)
+                    centroids.append(centroid)
+                    # Calculate the distances to the whole dataset, except for
+                    # the masked areas
+                    cdist = np.linalg.norm(scaled_data - centroid[np.newaxis, :], axis=1)
+                    mloadings = loadings[nav_mask, ...][np.argmin(cdist), ...]
+                    cluster_centroid_signals.append((mloadings @ factors.T).squeeze())
+                    distances[i, nav_mask] = cdist
+            else:
+                cluster_data = \
+                    self._get_cluster_signal(
+                        source_for_centers,
+                        number_of_components,
+                        navigation_mask=None,
+                        signal_mask=None)
+                for i in range(n_clusters):
+                    cluster_sum_signal = np.sum(cluster_data[cluster_labels[i, :], ...], axis=0)
+                    cluster_sum_signals.append(cluster_sum_signal)
+                    # Calculate centroid
+                    cdata = scaled_data[cluster_labels[i, :][nav_mask], :]
+                    centroid = cdata.mean(0)
+                    centroids.append(centroid)
+                    # Calculate the distances to the whole dataset, except for
+                    # the masked areas
+                    cdist = np.linalg.norm(scaled_data - centroid[np.newaxis, :], axis=1)
+                    # Find the signal closest to the centroid
+                    cluster_centroid_signal = cluster_data[nav_mask, ...][np.argmin(cdist), ...]
+                    distances[i, nav_mask] = cdist
+                    cluster_centroid_signals.append(cluster_centroid_signal)
+            target.cluster_labels = cluster_labels
+            target.cluster_algorithm = algorithm
+            target.number_of_clusters = n_clusters
+            target.cluster_sum_signals = np.stack(cluster_sum_signals)
+            target.cluster_centroid_signals = np.stack(cluster_centroid_signals)
+            target.cluster_distances = distances
+            target.cluster_centroids = np.asarray(centroids)
+
+        finally:
+            self.learning_results.__dict__.update(target.__dict__)
+            # if the cluster_source or source_for_centers is a signal
+            # fold it back, if required, when finished
+            if (type(cluster_source) is str and \
+                cluster_source == "signal") or   \
+                (type(source_for_centers) is str and \
+                source_for_centers == "signal"):
+                if hasattr(self,"unfolded4clustering"):
+                    if self.unfolded4clustering:
+                        self.fold()
+
+            if is_hyperspy_signal(cluster_source):
+                if hasattr(cluster_source,"unfolded4clustering"):
+                    if cluster_source.unfolded4clustering:
+                        cluster_source.fold()
+            if is_hyperspy_signal(source_for_centers):
+                if hasattr(source_for_centers,"unfolded4clustering"):
+                    if source_for_centers.unfolded4clustering:
+                        source_for_centers.fold()
+        return to_return
+
+    def _get_cluster_algorithm(self,algorithm,**kwargs):
+
+        """Convenience method to lookup cluster algorithm if algorithm is a string
+        and instantiates it with n_clusters or if it's an object check that 
+        the object has a fit method
+        """
+        algorithms_sklearn = list(cluster_algorithms.keys())
+        if isinstance(algorithm, str):
+            if algorithm in algorithms_sklearn:
+                if not import_sklearn.sklearn_installed:
+                    raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
+                cluster_algorithm = cluster_algorithms[algorithm](**kwargs)
+        elif algorithm is None:
+            cluster_algorithm = cluster_algorithms[None](**kwargs)
+        elif hasattr(algorithm, "fit"):
+            cluster_algorithm = algorithm
+        else:
+            raise ValueError("The clustering method should be either %s "
+                             "or a class which has a fit() method and labels_"
+                             " attribute for results"%algorithms_sklearn)
+        return cluster_algorithm
+
+    def _get_cluster_preprocessing_algorithm(self, algorithm, **kwargs):
+        """Convenience method to lookup method if algorithm is a string
+        or if it's an object check that the object has a fit_transform method
+        """
+        preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
+        if algorithm in preprocessing_methods:
+            if algorithm is not None:
+                if not import_sklearn.sklearn_installed:
+                    raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
+                process_algorithm = cluster_preprocessing_algorithms[algorithm](**kwargs)
+            else:
+                process_algorithm = None
+        elif hasattr(algorithm, "fit_transform"):
+            process_algorithm = algorithm
+        else:
+            raise ValueError("The cluster preprocessing method should be either %s "
+                             "or an object with a fit_transform method"%preprocessing_methods)
+        return process_algorithm
+
+    def _distances_within_cluster(self, cluster_data, memberships,
+                                  squared=True, summed=False):
+        """Return inter cluster distances.
+
+        Parameters
+        ----------
+        cluster_data : ndarray
+            scaled cluster data
+        memberships : ndarray
+            cluster labels
+        squared : bool, optional
+            square distance measurement. The default is True.
+        summed : bool, optional
+            If False returns array showing sum of distance from a given point
+            to all other points in the cluster.
+            If True returns a sum of all distances within a cluster.
+            The results are scaled by 2*number of cluster points.
+            The default is False.
+
+        Returns
+        -------
+        result : list
+            list of distances for within the cluster
+
+        """
+        distances = \
+            [import_sklearn.sklearn.metrics.pairwise.\
+                euclidean_distances(cluster_data[memberships == c, :],
+            squared=squared)
+            for c in range(np.max(memberships) + 1)]
+        result = [np.mean(x,axis=0) / 2.0 for x in distances]
+
+        if summed:
+            result = [np.sum(x) for x in result]
+        return result
+
+    def estimate_number_of_clusters(self,
+                                    cluster_source,
+                                    max_clusters=10,
+                                    preprocessing=None,
+                                    preprocessing_kwargs={},
+                                    number_of_components=None,
+                                    navigation_mask=None,
+                                    signal_mask=None,
+                                    algorithm=None,
+                                    metric="gap",
+                                    n_ref=4,
+                                    **kwargs):
+        """Performs cluster analysis of a signal for cluster sizes ranging from
+        n_clusters =2 to max_clusters ( default 12)
+        Note that this can be a slow process for large datasets so please
+        consider reducing max_clusters in this case.
+        For each cluster it evaluates the silhouette score which is a metric of
+        how well separated the clusters are. Maximima or peaks in the scores
+        indicate good choices for cluster sizes.
+
+
+        Parameters
+        ----------
+        cluster_source : {"bss", "decomposition", "signal" or Signal}
+            If "bss" the blind source separation results are used
+            If "decomposition" the decomposition results are used 
+            if "signal" the signal data is used 
+            Note that using the signal can be memory intensive 
+            and is only recommended if the Signal dimension is small.
+            Input Signal must have the same navigation dimensions as the
+            signal instance.
+        max_clusters : int, default 10
+            Max number of clusters to use. The method will scan from 2 to
+            max_clusters. 
+        preprocessing : {"standard","norm","minmax" or sklearn-like preprocessing object}
+            default: 'norm'
+            Preprocessing the data before cluster analysis requires preprocessing
+            the data to be clustered to similar scales. Standard preprocessing
+            adjusts each feature to have uniform variation. Norm preprocessing
+            adjusts treats the set of features like a vector and
+            each measurement is scaled to length 1.
+            You can also pass an instance of a sklearn preprocessing module.
+            See preprocessing methods in scikit-learn preprocessing for further
+            details.
+        preprocessing_kwargs : dict, default empty
+            Additional parameters passed to the cluster preprocessing algorithm.
+            See sklearn.preprocessing preprocessing methods for further details
+        number_of_components : int, default None
+            If you are getting the cluster centers using the decomposition
+            results (cluster_source_for_centers="decomposition") you can define how
+            many PCA components to use. If set to None the method uses the
+            estimate of significant components found in the decomposition step
+            using the elbow method and stored in the
+            ``learning_results.number_significant_components`` attribute.
+        navigation_mask : boolean numpy array, default : None
+            The navigation locations marked as True are not used in the
+            clustering.
+        signal_mask : boolean numpy array, default : None
+            The signal locations marked as True are not used in the
+            clustering. Applies to "signal" or Signal cluster sources only.
+        metric : {'elbow','silhouette','gap'} default 'gap'
+            Use distance,silhouette analysis or gap statistics to estimate
+            the optimal number of clusters.
+            Gap is believed to be, overall, the best metric but it's also
+            the slowest. Elbow measures the distances between points in
+            each cluster as an estimate of how well grouped they are and
+            is the fastest metric.
+            For elbow the optimal k is the knee or elbow point.
+            For gap the optimal k is the first k gap(k)>= gap(k+1)-std_error
+            For silhouette the optimal k will be one of the "maxima" found with
+            this method
+        n_ref :  int, default 4
+            Number of references to use in gap statistics method
+            Gap statistics compares the results from clustering the data to
+            clustering uniformly distributed data. As clustering has
+            a random variation it is typically averaged n_ref times
+            to get an statistical average
+        **kwargs : dict {}  default empty
+            Parameters passed to the clustering algorithm.
+
+        
+        Other Parameters        
+        ----------------        
+        n_clusters : int
+            Number of clusters to find using the one of the pre-defined methods
+            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
+            See sklearn.cluster for details 
+
+
+        Returns
+        -------
+        best_k : int
+            Estimate of the best cluster size
+        
+        See Also
+        --------
+        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
+        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,        
+        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
+        * :py:meth:`~.signal.MVATools.plot_cluster_results`
+        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
+        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+
+        """
+
+        if max_clusters < 2:
+            raise ValueError("The max number of clusters, max_clusters, "
+                             "must be specified and be >= 2.")
+        if algorithm not in cluster_algorithms:
+            raise ValueError("Estimate number of clusters only works with "
+                             "supported clustering algorithms")
+        if preprocessing not in cluster_preprocessing_algorithms:
+            raise ValueError("Estimate number of clusters only works with "
+                             "supported preprocessing algorithms")
+
+        to_return = None
+        best_k    = None
+        k_range   = list(range(1, max_clusters+1))
+        #
+        # for silhouette k starts at 2
+        # for kmeans or gap k starts at 1
+        # As these methods use random numbers we need to
+        # initiate the random number generator to ensure
+        # consistent/repeatable results
+        #
+        if(algorithm == "agglomerative"):
+            k_range   = list(range(2, max_clusters+1))
+        if(algorithm == "kmeans" or algorithm == "minibatchkmeans"):
+            if metric == "gap":
+                # set number of averages to 1
+                kwargs['n_init']=1
+        if metric =="silhouette":
+            k_range   = list(range(2, max_clusters+1))
+
+        min_k = np.min(k_range)
+
+        target = LearningResults()
+
+        try:
+            # scale the data
+            # scale the data before clustering
+            cluster_signal = \
+                self._get_cluster_signal(cluster_source,
+                                        number_of_components,
+                                        navigation_mask,
+                                        signal_mask,)
+            scaled_data = \
+                self._scale_data_for_clustering(
+                cluster_signal=cluster_signal,
+                preprocessing=preprocessing,
+                preprocessing_kwargs=preprocessing_kwargs)
+
+            # from 2 to max_clusters
+            # cluster and calculate silhouette_score
+            if metric == "elbow":
+                pbar = progressbar(total=len(k_range))
+                inertia = np.zeros(len(k_range))
+
+                for i,k in enumerate(k_range):
+                    cluster_algorithm = self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                    alg = self._cluster_analysis(scaled_data,cluster_algorithm)
+
+                    D = self._distances_within_cluster(scaled_data,alg.labels_,summed=True)
+                    W = np.sum(D)
+                    inertia[i]= np.log(W)
+                    pbar.update(1)
+                    _logger.info(
+                        f"For n_clusters ={k}. "
+                        f"The distance metric is : {inertia[-1]}")
+                to_return = inertia
+                best_k =self.estimate_elbow_position(
+                    to_return, log=False) + min_k
+            elif metric == "silhouette":
+                k_range   = list(range(2, max_clusters+1))
+                pbar = progressbar(total=len(k_range))
+                silhouette_avg = []
+                for k in k_range:
+                    cluster_algorithm = \
+                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                    alg = self._cluster_analysis(scaled_data,cluster_algorithm)
+                    cluster_labels = alg.labels_
+                    silhouette_avg.append(
+                        import_sklearn.sklearn.metrics.silhouette_score(
+                        scaled_data,
+                        cluster_labels))
+                    pbar.update(1)
+                    _logger.info(
+                        f"For n_clusters={k} the average "
+                        f"silhouette_score is : {silhouette_avg[-1]}")
+                to_return = silhouette_avg
+                best_k = []
+                max_value = -1.0
+                # find peaks
+                for u in range(len(silhouette_avg)-1):
+                    if ((silhouette_avg[u] > silhouette_avg[u-1]) &
+                            (silhouette_avg[u] > silhouette_avg[u+1])):
+                        best_k.append(u+min_k)
+                        max_value = max(silhouette_avg[u], max_value)
+                if silhouette_avg[0] > max_value:
+                    best_k.insert(0, min_k)
+            else:
+                # cluster and calculate gap statistic
+                # various empty arrays...
+                reference_inertia = np.zeros(len(k_range))
+                reference_std  = np.zeros(len(k_range))
+                data_inertia=np.zeros(len(k_range))
+                reference=np.zeros(scaled_data.shape)
+                local_inertia = np.zeros(n_ref)
+                pbar = progressbar(total=n_ref*len(k_range))
+                # only perform 1 pass of clustering
+                # otherwise std_dev isn't correct
+                for f_indx in range(scaled_data.shape[1]):
+                    xmin = np.min(scaled_data[:,f_indx])
+                    xmax = np.max(scaled_data[:,f_indx])
+                    reference[:,f_indx]= np.linspace(xmin, xmax, endpoint=True, num=reference[:,0].size)
+
+                for o_indx,k in enumerate(k_range):
+                    # calculate the data metric
+                    if(algorithm=="kmeans"):
+                        kwargs['n_init']=1
+                    cluster_algorithm = \
+                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                    alg = self._cluster_analysis(scaled_data,
+                                                 cluster_algorithm)
+
+                    D = self._distances_within_cluster(scaled_data,alg.labels_,
+                                                 squared=True, summed=True)
+                    W = np.sum(D)
+                    data_inertia[o_indx]=np.log(W)
+                    # now do n_ref clusters for a uniform random distribution
+                    # to determine "gap" between data and random distribution
+
+                    for i_indx in range(n_ref):
+                        # initiate with a known seed to make the overall results
+                        # repeatable but still sampling different configurations
+                        cluster_algorithm = \
+                            self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                        alg = self._cluster_analysis(reference,
+                                                     cluster_algorithm)
+                        D = self._distances_within_cluster(reference,alg.labels_,
+                                                 squared=True,summed=True)
+                        W = np.sum(D)
+                        local_inertia[i_indx]=np.log(W)
+                        pbar.update(1)
+                    reference_inertia[o_indx]=np.mean(local_inertia)
+                    reference_std[o_indx] = np.std(local_inertia)
+                std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std
+                std_error = np.abs(std_error)
+                gap       = reference_inertia-data_inertia
+                to_return = gap
+                # finding the first max..check if first point is max
+                # otherwise use elbow method to find first knee
+                best_k = min_k+1
+                for i in range(1,len(k_range)-1):
+                    if i < len(k_range)-1:
+                        if gap[i] >= (gap[i+1]- std_error[i+1]):
+                            best_k=i+min_k
+                            break
+                    else:
+                        if gap[i] > gap[i-1]+std_error[i-1]:
+                            best_k = len(k_range)
+
+            target.cluster_metric_index=k_range
+            target.cluster_metric_data=to_return
+            target.cluster_metric=metric
+            target.estimated_number_of_clusters=best_k
+            return best_k
+        finally:
+            # fold
+            if (type(cluster_source) is str and \
+                cluster_source == "signal"):
+                if hasattr(self,"unfolded4clustering"):
+                    if self.unfolded4clustering:
+                        self.fold()
+
+            if is_hyperspy_signal(cluster_source):
+                if hasattr(cluster_source,"unfolded4clustering"):
+                    if cluster_source.unfolded4clustering:
+                        cluster_source.fold()
+            self.learning_results.__dict__.update(target.__dict__)
+
+    def estimate_elbow_position(self, explained_variance_ratio=None,log=True,
+                                max_points=20):
         """Estimate the elbow position of a scree plot curve.
 
         Used to estimate the number of significant components in
@@ -1690,7 +2560,6 @@ class MVA:
             curve_values = explained_variance_ratio
 
         max_points = min(max_points, len(curve_values) - 1)
-
         # Clipping the curve_values from below with a v.small
         # number avoids warnings below when taking np.log(0)
         curve_values_adj = np.clip(curve_values, 1e-30, None)
@@ -1698,22 +2567,25 @@ class MVA:
         x1 = 0
         x2 = max_points
 
-        y1 = np.log(curve_values_adj[0])
-        y2 = np.log(curve_values_adj[max_points])
+        if log:
+            y1 = np.log(curve_values_adj[0])
+            y2 = np.log(curve_values_adj[max_points])
+        else:
+            y1 = curve_values_adj[0]
+            y2 = curve_values_adj[max_points]
 
         xs = np.arange(max_points)
-        ys = np.log(curve_values_adj[:max_points])
+        if log:
+            ys = np.log(curve_values_adj[:max_points])
+        else:
+            ys = curve_values_adj[:max_points]
 
         numer = np.abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
         denom = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         distance = np.nan_to_num(numer / denom)
-
-        # Point with the largest distance is the "elbow"
-        # (remember that np.argmax returns the FIRST instance)
         elbow_position = np.argmax(distance)
 
-        return elbow_position
-
+        return elbow_position        
 
 class LearningResults(object):
     """Stores the parameters and results from a decomposition."""
@@ -1729,6 +2601,17 @@ class LearningResults(object):
     output_dimension = None
     mean = None
     centre = None
+    # Clustering values
+    cluster_membership = None
+    cluster_labels = None
+    cluster_centers = None
+    cluster_centers_estimated = None
+    cluster_algorithm = None
+    number_of_clusters = None
+    estimated_number_of_clusters = None
+    cluster_metric_data  = None
+    cluster_metric_index = None
+    cluster_metric = None
     # Unmixing
     bss_algorithm = None
     unmixing_matrix = None
@@ -1896,3 +2779,4 @@ class LearningResults(object):
             self.bss_loadings,
             self.bss_factors,
         )
+        

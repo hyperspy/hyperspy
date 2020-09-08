@@ -673,7 +673,7 @@ class LazySignal(BaseSignal):
     def decomposition(
         self,
         normalize_poissonian_noise=False,
-        algorithm="svd",
+        algorithm="SVD",
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
@@ -694,11 +694,11 @@ class LazySignal(BaseSignal):
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [KeenanKotula2004]_.
-        algorithm : {'svd', 'pca', 'orpca', 'ornmf'}, default 'svd'
+        algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF'}, default 'SVD'
             The decomposition algorithm to use.
         output_dimension : int or None, default None
             Number of components to keep/calculate. If None, keep all
-            (only valid for 'svd' algorithm)
+            (only valid for 'SVD' algorithm)
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
@@ -708,7 +708,7 @@ class LazySignal(BaseSignal):
             increased to contain at least ``output_dimension`` signals.
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not used in the
-            decompostion.
+            decomposition.
         signal_mask : {BaseSignal, numpy array, dask array}
             The signal locations marked as True are not used in the
             decomposition.
@@ -747,26 +747,15 @@ class LazySignal(BaseSignal):
         # Deprecate 'ONMF' for 'ORNMF'
         if algorithm == "ONMF":
             warnings.warn(
-                "The argument `algorithm='ONMF'` has been deprecated and may "
-                "be removed in future. Please use `algorithm='ornmf'` instead.",
+                "The argument `algorithm='ONMF'` has been deprecated and will "
+                "be removed in future. Please use `algorithm='ORNMF'` instead.",
                 VisibleDeprecationWarning,
             )
-            algorithm = "ornmf"
+            algorithm = "ORNMF"
 
-        # Deprecate uppercase to favour lowercase (consistent
-        # with non-lazy decomposition)
-        if algorithm in ["PCA", "ORPCA", "ORNMF"]:
-            warnings.warn(
-                "The argument `algorithm='{}'` has been deprecated and may "
-                "be removed in future. Please use `algorithm='{}'` instead.".format(
-                    algorithm, algorithm.lower()
-                ),
-                VisibleDeprecationWarning,
-            )
-            algorithm = algorithm.lower()
 
         # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["pca", "orpca", "ornmf"]
+        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
@@ -798,30 +787,30 @@ class LazySignal(BaseSignal):
         ]
 
         # LEARN
-        if algorithm == "pca":
+        if algorithm == "PCA":
             if not import_sklearn.sklearn_installed:
-                raise ImportError("algorithm='pca' requires scikit-learn")
+                raise ImportError("algorithm='PCA' requires scikit-learn")
 
             obj = import_sklearn.sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
             reproject = True
             to_print.extend(["scikit-learn estimator:", obj])
 
-        elif algorithm == "orpca":
+        elif algorithm == "ORPCA":
             from hyperspy.learn.rpca import ORPCA
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORPCA(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm == "ornmf":
+        elif algorithm == "ORNMF":
             from hyperspy.learn.ornmf import ORNMF
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm != "svd":
+        elif algorithm != "SVD":
             raise ValueError("'algorithm' not recognised")
 
         original_data = self.data
@@ -863,7 +852,7 @@ class LazySignal(BaseSignal):
                 self.data = data
 
             # LEARN
-            if algorithm == "svd":
+            if algorithm == "SVD":
                 reproject = False
                 from dask.array.linalg import svd
 
@@ -913,38 +902,38 @@ class LazySignal(BaseSignal):
                     if len(this_data):
                         thedata = np.concatenate(this_data, axis=0)
                         method(thedata)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # pragma: no cover
                     pass
 
             # GET ALREADY CALCULATED RESULTS
-            if algorithm == "pca":
+            if algorithm == "PCA":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
 
-            elif algorithm == "orpca":
+            elif algorithm == "ORPCA":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
-            elif algorithm == "ornmf":
+            elif algorithm == "ORNMF":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
 
             # REPROJECT
             if reproject:
-                if algorithm == "pca":
+                if algorithm == "PCA":
                     method = obj.transform
 
                     def post(a):
                         return np.concatenate(a, axis=0)
 
-                elif algorithm == "orpca":
+                elif algorithm == "ORPCA":
                     method = obj.project
 
                     def post(a):
                         return np.concatenate(a, axis=1).T
 
-                elif algorithm == "ornmf":
+                elif algorithm == "ORNMF":
                     method = obj.project
 
                     def post(a):
@@ -963,7 +952,7 @@ class LazySignal(BaseSignal):
                 try:
                     for thing in progressbar(_map, total=nblocks, desc="Project"):
                         H.append(thing)
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:  # pragma: no cover
                     pass
                 loadings = post(H)
 
@@ -972,7 +961,7 @@ class LazySignal(BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "svd":  # Only needed for online algorithms
+            if algorithm != "SVD":  # Only needed for online algorithms
                 try:
                     loadings = _reshuffle_mixed_blocks(
                         loadings, ndim, (output_dimension,), nav_chunks
@@ -987,7 +976,7 @@ class LazySignal(BaseSignal):
         target = self.learning_results
         target.decomposition_algorithm = algorithm
         target.output_dimension = output_dimension
-        if algorithm != "svd":
+        if algorithm != "SVD":
             target._object = obj
         target.factors = factors
         target.loadings = loadings

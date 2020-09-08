@@ -54,14 +54,15 @@ from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
-    HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
+    CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
-                                      KWARGS_DOCSTRING)
+                                      BASE_PLOT_DOCSTRING_PARAMETERS,
+                                      PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
+from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -307,7 +308,7 @@ class MVATools(object):
         vector_scale : integer or None
             Scales the quiver plot arrows. The vector is defined as one data
             unit along the X axis. If shifts are small, set vector_scale so
-            that when they are multiplied by vector_scale, they are on the 
+            that when they are multiplied by vector_scale, they are on the
             scale of the image plot. If None, uses matplotlib's autoscaling.
 
         Returns
@@ -378,7 +379,6 @@ class MVATools(object):
                 plt.title(title)
             else:
                 plt.suptitle(title)
-            animate_legend(f)
         try:
             plt.tight_layout()
         except BaseException:
@@ -761,10 +761,10 @@ class MVATools(object):
                                    comp_ids=None,
                                    calibrate=True,
                                    same_window=True,
-                                   comp_label=None,
                                    title=None,
                                    cmap=plt.cm.gray,
-                                   per_row=3
+                                   per_row=3,
+                                   **kwargs,
                                    ):
         """Plot factors from a decomposition. In case of 1D signal axis, each
         factors line can be toggled on and off by clicking on their
@@ -812,6 +812,8 @@ class MVATools(object):
                                "needs to be performed first.")
         if same_window is None:
             same_window = True
+        if self.learning_results.factors is None:
+            raise RuntimeError("Run a decomposition first.")
         factors = self.learning_results.factors
         if comp_ids is None:
             if self.learning_results.output_dimension:
@@ -820,10 +822,11 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
-                                         same_window)
+                                         same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
@@ -833,15 +836,16 @@ class MVATools(object):
                                             cmap=cmap,
                                             per_row=per_row)
 
-    def plot_bss_factors(self,
-                         comp_ids=None,
-                         calibrate=True,
-                         same_window=True,
-                         comp_label=None,
-                         title=None,
-                         cmap=plt.cm.gray,
-                         per_row=3
-                         ):
+    def plot_bss_factors(
+        self,
+        comp_ids=None,
+        calibrate=True,
+        same_window=True,
+        title=None,
+        cmap=plt.cm.gray,
+        per_row=3,
+        **kwargs,
+        ):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
@@ -861,8 +865,6 @@ class MVATools(object):
         same_window : bool
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-        comp_label : str
-            Will be deprecated in 2.0, please use `title` instead
         title : str
             Title of the plot.
         cmap : :py:class:`~matplotlib.colors.Colormap`
@@ -891,9 +893,11 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('BSS factors of', same_window)
+            title = self._get_plot_title('BSS factors of',
+                                         same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
@@ -907,12 +911,13 @@ class MVATools(object):
                                     calibrate=True,
                                     same_window=True,
                                     title=None,
-                                    comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
                                     per_row=3,
-                                    axes_decor='all'):
+                                    axes_decor='all',
+                                    **kwargs,
+                                    ):
         """Plot loadings from a decomposition. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
@@ -973,6 +978,8 @@ class MVATools(object):
                                "needs to be performed first.")
         if same_window is None:
             same_window = True
+        if self.learning_results.loadings is None:
+            raise RuntimeError("Run a decomposition first.")
         loadings = self.learning_results.loadings.T
         if with_factors:
             factors = self.learning_results.factors
@@ -986,10 +993,11 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('Decomposition loadings of',
-                                         same_window)
+            title = self._get_plot_title(
+                'Decomposition loadings of', same_window=same_window)
 
         return self._plot_loadings(
             loadings,
@@ -1008,12 +1016,12 @@ class MVATools(object):
                           calibrate=True,
                           same_window=True,
                           title=None,
-                          comp_label=None,
                           with_factors=False,
                           cmap=plt.cm.gray,
                           no_nans=False,
                           per_row=3,
-                          axes_decor='all'
+                          axes_decor='all',
+                          **kwargs,
                           ):
         """Plot loadings from blind source separation results. In case of 1D
         navigation axis, each loading line can be toggled on and off by
@@ -1074,10 +1082,11 @@ class MVATools(object):
                                "performed first.")
         if same_window is None:
             same_window = True
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('BSS loadings of',
-                                         same_window)
+            title = self._get_plot_title(
+                'BSS loadings of', same_window=same_window)
         loadings = self.learning_results.bss_loadings.T
         if with_factors:
             factors = self.learning_results.bss_factors
@@ -1195,34 +1204,154 @@ class MVATools(object):
 
         factors = self.learning_results.factors
         loadings = self.learning_results.loadings.T
-        self._export_factors(
-            factors,
-            folder=folder,
-            comp_ids=comp_ids,
-            calibrate=calibrate,
-            multiple_files=multiple_files,
-            factor_prefix=factor_prefix,
-            factor_format=factor_format,
-            comp_label=comp_label,
-            save_figures=save_figures,
-            cmap=cmap,
-            no_nans=no_nans,
-            same_window=same_window,
-            per_row=per_row,
-            save_figures_format=save_figures_format)
-        self._export_loadings(
-            loadings,
-            comp_ids=comp_ids, folder=folder,
-            calibrate=calibrate,
-            multiple_files=multiple_files,
-            loading_prefix=loading_prefix,
-            loading_format=loading_format,
-            comp_label=comp_label,
-            cmap=cmap,
-            save_figures=save_figures,
-            same_window=same_window,
-            no_nans=no_nans,
-            per_row=per_row)
+        self._export_factors(factors,
+                             folder=folder,
+                             comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             multiple_files=multiple_files,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             save_figures=save_figures,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
+        self._export_loadings(loadings,
+                              comp_ids=comp_ids, folder=folder,
+                              calibrate=calibrate,
+                              multiple_files=multiple_files,
+                              loading_prefix=loading_prefix,
+                              loading_format=loading_format,
+                              comp_label=comp_label,
+                              cmap=cmap,
+                              save_figures=save_figures,
+                              same_window=same_window,
+                              no_nans=no_nans,
+                              per_row=per_row)
+
+    def export_cluster_results(self,
+                               cluster_ids=None,
+                               folder=None,
+                               calibrate=True,
+                               center_prefix='cluster_center',
+                               center_format="hspy",
+                               membership_prefix='cluster_label',
+                               membership_format="hspy",
+                               comp_label=None,
+                               cmap=plt.cm.gray,
+                               same_window=False,
+                               multiple_files=True,
+                               no_nans=True,
+                               per_row=3,
+                               save_figures=False,
+                               save_figures_format='png'):
+        """Export results from a cluster analysis to any of the supported
+        formats.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None, returns all clusters/centers.
+            if int, returns clusters/centers with ids from 0 to
+            given int.
+            if list of ints, returnsclusters/centers with ids in
+            given list.
+        folder : str or None
+            The path to the folder where the file will be saved.
+            If `None` the
+            current folder is used by default.
+        center_prefix : string
+            The prefix that any exported filenames for
+            cluster centers
+            begin with
+        center_format : string
+            The extension of the format that you wish to save to. Default is
+            "hspy". See `loading format` for more details.
+        label_prefix : string
+            The prefix that any exported filenames for
+            cluster labels
+            begin with
+        label_format : string
+            The extension of the format that you wish to save to. default
+            is "hspy". The format determines the kind of output.
+
+                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                  plots are created using the plotting flags as below, and saved
+                  at 600 dpi. One plot is saved per loading.
+                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                  are saved in single files.  All loadings are contained in the
+                  one file.
+                * For spectral formats (``'msa'``), each loading is saved to a
+                  separate file.
+
+        multiple_files : bool
+            If True, on exporting a file per center will
+            be created. Otherwise only two files will be created, one for
+            the centers and another for the membership. The default value can
+            be chosen in the preferences.
+        save_figures : bool
+            If True the same figures that are obtained when using the plot
+            methods will be saved with 600 dpi resolution
+
+        Plotting options (for save_figures = True ONLY)
+        ----------------------------------------------
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from
+            the axes_manager.  If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.
+        comp_label : string, the label that is either the plot title
+            (if plotting in separate windows) or the label in the legend
+            (if plotting in the same window)
+        cmap : The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        per_row : int, the number of plots in each row, when the
+        same_window
+            parameter is True.
+        save_figures_format : str
+            The image format extension.
+
+        See Also
+        --------
+        get_cluster_signals,
+        get_cluster_labels.
+
+        """
+
+        factors = self.learning_results.cluster_centers.T
+        loadings = self.learning_results.cluster_labels
+        self._export_factors(factors,
+                             folder=folder,
+                             comp_ids=cluster_ids,
+                             calibrate=calibrate,
+                             multiple_files=multiple_files,
+                             factor_prefix=center_prefix,
+                             factor_format=center_format,
+                             comp_label=comp_label,
+                             save_figures=save_figures,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
+        self._export_loadings(loadings,
+                              comp_ids=cluster_ids,
+                              folder=folder,
+                              calibrate=calibrate,
+                              multiple_files=multiple_files,
+                              loading_prefix=membership_prefix,
+                              loading_format=membership_format,
+                              comp_label=comp_label,
+                              cmap=cmap,
+                              save_figures=save_figures,
+                              same_window=same_window,
+                              no_nans=no_nans,
+                              per_row=per_row)
 
     def export_bss_results(self,
                            comp_ids=None,
@@ -1264,7 +1393,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
-            
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1350,13 +1479,16 @@ class MVATools(object):
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
-        signal = signals.BaseSignal(
-            data,
-            axes=(
-                [{"size": data.shape[0], "navigate": True}] +
-                self.axes_manager._get_navigation_axes_dicts()))
-        for axis in signal.axes_manager._axes[1:]:
-            axis.navigate = False
+        if data.shape[0] > 1:
+            signal = signals.BaseSignal(
+                data,
+                axes=(
+                    [{"size": data.shape[0], "navigate": True}] +
+                    self.axes_manager._get_navigation_axes_dicts()))
+            for axis in signal.axes_manager._axes[1:]:
+                axis.navigate = False
+        else:
+            signal = self._get_navigation_signal(data.squeeze())
         return signal
 
     def _get_factors(self, factors):
@@ -1383,6 +1515,8 @@ class MVATools(object):
         get_decomposition_factors, export_decomposition_results
 
         """
+        if self.learning_results.loadings is None:
+            raise RuntimeError("Run a decomposition first.")
         signal = self._get_loadings(self.learning_results.loadings)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = "Decomposition loadings of " + \
@@ -1401,6 +1535,8 @@ class MVATools(object):
         get_decomposition_loadings, export_decomposition_results
 
         """
+        if self.learning_results.factors is None:
+            raise RuntimeError("Run a decomposition first.")
         signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = ("Decomposition factors of " +
@@ -1542,6 +1678,387 @@ class MVATools(object):
                         loadings_navigator=loadings_navigator,
                         factors_dim=factors_dim,
                         loadings_dim=loadings_dim)
+
+    def get_cluster_labels(self, merged=False):
+        """Return cluster labels as a Signal.
+
+        Parameters:
+        --------
+        merged : bool
+            If False the cluster label signal has a navigation axes of length
+            number_of_clusters and the signal along the the navigation
+            direction is binary - 0 the point is not in the cluster, 1 it is
+            included. If True, the cluster labels are merged (no navigation
+            axes). The value of the signal at any point will be between -1 and
+            the number of clusters. -1 represents the points that
+            were masked for cluster analysis if any.
+
+        See Also
+        --------
+        get_cluster_signals
+
+        Returns
+        --------
+        signal Hyperspy signal of cluster labels
+        """
+        if self.learning_results.cluster_labels is None:
+            raise RuntimeError(
+                "Cluster analysis needs to be performed first.")
+        if merged:
+            data = (np.arange(1, self.learning_results.number_of_clusters + 1)
+                    [:, np.newaxis] *
+                    self.learning_results.cluster_labels ).sum(0) - 1
+            label_signal = self._get_loadings(data)
+        else:
+            label_signal = self._get_loadings(
+                self.learning_results.cluster_labels.T)
+            label_signal.axes_manager._axes[0].name = "Cluster index"
+        label_signal.metadata.General.title = (
+            "Cluster labels of " + self.metadata.General.title)
+        return label_signal
+
+    def _get_cluster_signals_factors(self, signal):
+        if self.learning_results.cluster_centroid_signals is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        if signal == "mean":
+            members = self.learning_results.cluster_labels.sum(1, keepdims=True)
+            cs = self.learning_results.cluster_sum_signals / members
+        elif signal == "sum":
+            cs=self.learning_results.cluster_sum_signals
+        elif signal == "centroid":
+            cs=self.learning_results.cluster_centroid_signals
+        return cs
+
+    def get_cluster_signals(self, signal="mean"):
+        """Return the cluster centers as a Signal.
+
+        Parameter
+        ---------
+        %s
+
+        See Also
+        -------
+        get_cluster_labels
+
+        """
+        cs = self._get_cluster_signals_factors(signal=signal)
+        signal = self._get_factors(cs.T)
+        signal.axes_manager._axes[0].name="Cluster index"
+        signal.metadata.General.title = (
+            f"Cluster {signal} signals of {self.metadata.General.title}")
+        return signal
+    get_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+
+    def get_cluster_distances(self):
+        """Euclidian distances to the centroid of each cluster
+
+        See Also
+        --------
+        get_cluster_signals
+
+        Returns
+        --------
+        signal
+            Hyperspy signal of cluster distances
+
+        """
+        if self.learning_results.cluster_distances is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        distance_signal = self._get_loadings(self.learning_results.cluster_distances.T)
+        distance_signal.axes_manager._axes[0].name = "Cluster index"
+        distance_signal.metadata.General.title = \
+            "Cluster distances of " + self.metadata.General.title
+        return distance_signal
+
+
+    def plot_cluster_signals(
+        self,
+        signal="mean",
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label="Cluster centers",
+        per_row=3):
+        """Plot centers from a cluster analysis.
+
+        Parameters
+        ----------
+        %s
+        cluster_ids : None, int, or list of ints
+            if None, returns maps of all clusters.
+            if int, returns maps of clusters with ids from 0 to given
+            int.
+            if list of ints, returns maps of clusters with ids in
+            given list.
+        calibrate :
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each center to the same window.  They are
+            not scaled.
+        comp_label : string
+            the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting
+            in the same window)
+        per_row : int
+            the number of plots in each row, when the same_window parameter is
+            True.
+
+        See Also
+        --------
+        plot_cluster_labels
+
+        """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2.")
+        cs = self._get_cluster_signals_factors(signal=signal)
+        if same_window is None:
+            same_window = True
+        factors = cs.T
+        if cluster_ids is None:
+            cluster_ids = range(factors.shape[1])
+
+        return self._plot_factors_or_pchars(factors,
+                                            comp_ids=cluster_ids,
+                                            calibrate=calibrate,
+                                            same_window=same_window,
+                                            comp_label=comp_label,
+                                            per_row=per_row)
+    plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+
+    def plot_cluster_labels(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None,
+        **kwargs):
+        """Plot cluster labels from a cluster analysis. In case of 1D navigation axis,
+        each loading line can be toggled on and off by clicking on the legended
+        line.
+
+        Parameters
+        ----------
+
+        cluster_ids : None, int, or list of ints
+            if None (default), returns maps of all components using the
+            number_of_cluster was defined when
+            executing ``cluster``. Otherwise it raises a ValueError.
+            if int, returns maps of cluster labels with ids from 0 to
+            given int.
+            if list of ints, returns maps of cluster labels with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.  They are
+            not scaled. Default is True.
+        title : string
+            Title of the plot.
+        with_centers : bool
+            If True, also returns figure(s) with the cluster centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the loading plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_results.
+
+        """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot labels of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_cluster_results` instead.")
+        if same_window is None:
+            same_window = True
+        labels = self.learning_results.cluster_labels.astype("uint")
+        if with_centers:
+            centers = self.learning_results.cluster_centers.T
+        else:
+            centers = None
+
+        if cluster_ids is None:
+            cluster_ids = range(labels.shape[0])
+
+        comp_label = kwargs.get("comp_label", None)
+        title = _change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title(
+                'Cluster labels of', same_window=same_window)
+
+        return self._plot_loadings(labels,
+                                   comp_ids=cluster_ids,
+                                   with_factors=with_centers,
+                                   factors=centers,
+                                   same_window=same_window,
+                                   comp_label=title,
+                                   cmap=cmap,
+                                   no_nans=no_nans,
+                                   per_row=per_row,
+                                   axes_decor=axes_decor)
+
+
+    def plot_cluster_distances(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None,
+        **kwargs):
+        """Plot the euclidian distances to the centroid of each cluster.
+
+        In case of 1D navigation axis,
+        each line can be toggled on and off by clicking on the legended
+        line.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None (default), returns maps of all components using the
+            number_of_cluster was defined when
+            executing ``cluster``. Otherwise it raises a ValueError.
+            if int, returns maps of cluster labels with ids from 0 to
+            given int.
+            if list of ints, returns maps of cluster labels with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.  They are
+            not scaled. Default is True.
+        title : string
+            Title of the plot.
+        with_centers : bool
+            If True, also returns figure(s) with the cluster centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the loading plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_results, plot_cluster_labels
+
+        """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot labels of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_cluster_results` instead.")
+        if same_window is None:
+            same_window = True
+        distances = self.learning_results.cluster_distances
+        if with_centers:
+            centers = self.learning_results.cluster_centers.T
+        else:
+            centers = None
+
+        if cluster_ids is None:
+            cluster_ids = range(distances.shape[0])
+
+        comp_label = kwargs.get("comp_label", None)
+        title = _change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title(
+                'Cluster distances of', same_window=same_window)
+
+        return self._plot_loadings(distances,
+                                   comp_ids=cluster_ids,
+                                   with_factors=with_centers,
+                                   factors=centers,
+                                   same_window=same_window,
+                                   comp_label=title,
+                                   cmap=cmap,
+                                   no_nans=no_nans,
+                                   per_row=per_row,
+                                   axes_decor=axes_decor)
+
+
+    def plot_cluster_results(self,
+                             centers_navigator="smart_auto",
+                             labels_navigator="smart_auto",
+                             centers_dim=2,
+                             labels_dim=2,
+                             ):
+        """Plot the cluster labels and centers.
+
+        Unlike `plot_cluster_labels` and `plot_cluster_signals`, this
+        method displays one component at a time.
+        Therefore it provides a more compact visualization than then other
+        two methods.  The labels and centers  are displayed in different
+        windows and each has its own navigator/sliders to navigate them if
+        they are multidimensional. The component index axis is synchronized
+        between the two.
+
+        Parameters
+        ----------
+        centers_navigator, labels_navigator : {"smart_auto",
+        "auto", None, "spectrum", Signal}
+            "smart_auto" (default) displays sliders if the navigation
+            dimension is less than 3. For a description of the other options
+            see `plot` documentation for details.
+        labels_dim, centers_dims : int
+            Currently HyperSpy cannot plot signals of dimension higher than
+            two. Therefore, to visualize the clustering results when the
+            centers or the labels have signal dimension greater than 2
+            we can view the data as spectra(images) by setting this parameter
+            to 1(2). (Default 2)
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_labels.
+
+        """
+        centers = self.get_cluster_signals()
+        distances = self.get_cluster_distances()
+        self.get_cluster_labels(merged=True).plot()
+        _plot_x_results(factors=centers,
+                        loadings=distances,
+                        factors_navigator=centers_navigator,
+                        loadings_navigator=labels_navigator,
+                        factors_dim=centers_dim,
+                        loadings_dim=labels_dim)
+
 
 
 def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
@@ -2020,19 +2537,16 @@ class BaseSignal(FancySlicing,
         """%s
         %s
         %s
+        %s
         """
         if self._plot is not None:
-            try:
-                self._plot.close()
-            except BaseException:
-                # If it was already closed it will raise an exception,
-                # but we want to carry on...
-                pass
-        if ('power_spectrum' in kwargs and
-                not self.metadata.Signal.get_item('FFT', False)):
-            _logger.warning('The option `power_spectrum` is considered only '
-                            'for signals in Fourier space.')
-            del kwargs['power_spectrum']
+            self._plot.close()
+        if 'power_spectrum' in kwargs:
+            from hyperspy._signals.complex_signal import ComplexSignal
+            if not isinstance(self, ComplexSignal):
+                raise ValueError('The parameter `power_spectrum` required a '
+                                 'signal with complex data type.')
+                del kwargs['power_spectrum']
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -2148,8 +2662,8 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
-                    "navigator must be one of \"spectrum\",\"auto\","
-                    " \"slider\", None, a Signal instance")
+                    'navigator must be one of "spectrum","auto", '
+                    '"slider", None, a Signal instance')
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
@@ -2162,7 +2676,8 @@ class BaseSignal(FancySlicing,
             if self.metadata.has_item('Markers'):
                 self._plot_permanent_markers()
 
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -2889,7 +3404,8 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.navigation_size < 2:
             while True:
                 yield self()
-            return
+            return  # pragma: no cover
+
         self._make_sure_data_is_contiguous()
         axes = [axis.index_in_array for
                 axis in self.axes_manager.signal_axes]
@@ -2915,8 +3431,7 @@ class BaseSignal(FancySlicing,
             getitem[unfolded_axis] = i
             yield(data[tuple(getitem)])
             i += 1
-            if i == Ni:
-                i = 0
+            i = 0 if i == Ni else i
 
     def _remove_axis(self, axes):
         am = self.axes_manager
@@ -3839,7 +4354,7 @@ class BaseSignal(FancySlicing,
             else:
                 hist_spec.data = hist
 
-        if bins == 'blocks':
+        if isinstance(bins, str) and bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
                 "The option `bins='blocks'` is not fully supported in this "
@@ -3941,7 +4456,7 @@ class BaseSignal(FancySlicing,
         """
         # Sepate ndkwargs
         ndkwargs = ()
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 
@@ -5102,84 +5617,101 @@ class BaseSignal(FancySlicing,
                 marker.plot(render_figure=False)
         self._render_figure()
 
-    def add_poissonian_noise(self, keep_dtype=True):
-        """Add Poissonian noise to the data
+    def add_poissonian_noise(self, keep_dtype=True, random_state=None):
+        """Add Poissonian noise to the data.
 
-        This method works in-place. The resulting data type is ``int64``. If
-        this is different from the original data type a warning is added to the
-        log.
+        This method works in-place. The resulting data type is ``int64``.
+        If this is different from the original data type then a warning
+        is added to the log.
 
         Parameters
         ----------
-        keep_dtype : bool
+        keep_dtype : bool, default True
             If ``True``, keep the original data type of the signal data. For
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
-            ``'float64'``. The default is ``True`` for convenience.
+            ``'float64'``.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.poisson`
-        (or :py:func:`dask.array.random.poisson` for lazy signals) to
-        generate the Poissonian noise. In order to seed it,
-        you must use :py:func:`numpy.random.seed`.
+        (or :py:func:`dask.array.random.poisson` for lazy signals)
+        to generate the Poissonian noise.
 
         """
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import poisson
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import poisson
+
         original_dtype = self.data.dtype
-        self.data = poisson(lam=self.data, **kwargs)
+
+        self.data = random_state.poisson(lam=self.data, **kwargs)
+
         if self.data.dtype != original_dtype:
             if keep_dtype:
                 _logger.warning(
-                    "Changing data type from %s to the original %s." % (
-                        self.data.dtype, original_dtype)
+                    f"Changing data type from {self.data.dtype} "
+                    f"to the original {original_dtype}"
                 )
                 # Don't change the object if possible
                 self.data = self.data.astype(original_dtype, copy=False)
             else:
-                _logger.warning("The data type changed from %s to %s" % (
-                    original_dtype, self.data.dtype
-                ))
+                _logger.warning(
+                    f"The data type changed from {original_dtype} "
+                    f"to {self.data.dtype}"
+                )
+
         self.events.data_changed.trigger(obj=self)
 
-    def add_gaussian_noise(self, std):
+    def add_gaussian_noise(self, std, random_state=None):
         """Add Gaussian noise to the data.
 
         The operation is performed in-place (*i.e.* the data of the signal
-        is modified). This method requires a float data type, otherwise numpy
-        raises a :py:exc:`TypeError`.
+        is modified). This method requires the signal to have a float data type,
+        otherwise it will raise a :py:exc:`TypeError`.
 
         Parameters
         ----------
         std : float
             The standard deviation of the Gaussian noise.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.normal` (or
-        :py:func:`dask.array.random.normal` for lazy signals) to generate the
-        Gaussian noise. In order to seed it, you must use
-        :py:func:`numpy.random.seed`.
+        :py:func:`dask.array.random.normal` for lazy signals)
+        to generate the noise.
+
         """
 
+        if self.data.dtype.char not in np.typecodes["AllFloat"]:
+            raise TypeError(
+                "`s.add_gaussian_noise()` requires the data to have "
+                f"a float datatype, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64'))."
+            )
+
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import normal
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import normal
-        noise = normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
+        noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
         if self._lazy:
             # With lazy data we can't keep the same array object
             self.data = self.data + noise
         else:
             # Don't change the object
             self.data += noise
+
         self.events.data_changed.trigger(obj=self)
 
     def transpose(self, signal_axes=None,

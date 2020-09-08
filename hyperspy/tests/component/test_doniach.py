@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
 from hyperspy.components1d import Doniach
@@ -33,8 +32,8 @@ def test_function():
     g.sigma.value = 2 / sigma2fwhm
     g.A.value = 3 * sqrt2pi * g.sigma.value
     g.alpha.value = 1.0e-7
-    assert_allclose(g.function(2), 3.151281311482424)
-    assert_allclose(g.function(1), 7.519884823893001)
+    np.testing.assert_allclose(g.function(2), 3.151281311482424)
+    np.testing.assert_allclose(g.function(1), 7.519884823893001)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -55,6 +54,6 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g2.sigma.value, 2.331764, 0.01)
-    assert_allclose(g1.A.value, g2.A.value * factor, 0.3)
-    assert_allclose(g2.centre.value, -0.4791825)
+    np.testing.assert_allclose(g2.sigma.value, 2.331764, 0.01)
+    np.testing.assert_allclose(g1.A.value, g2.A.value * factor, 0.3)
+    np.testing.assert_allclose(g2.centre.value, -0.4791825)

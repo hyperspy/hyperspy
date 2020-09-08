@@ -654,7 +654,7 @@ class Test_permanent_markers_io:
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
-    assert s.metadata.Sample.elements.dtype.char == "U"
+    assert isinstance(s.metadata.Sample.elements, list)
 
 
 def test_save_ragged_array(tmpfilepath):

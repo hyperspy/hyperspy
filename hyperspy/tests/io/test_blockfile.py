@@ -24,7 +24,6 @@ import warnings
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.io_plugins.blockfile import get_default_header
@@ -189,11 +188,11 @@ def test_different_x_y_scale_units(save_path):
     signal.axes_manager[0].scale = 50.0
     signal.save(save_path, overwrite=True)
     sig_reload = hs.load(save_path)
-    assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
+    np.testing.assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
                     rtol=1E-5)
-    assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
+    np.testing.assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
                     rtol=1E-5)
-    assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
+    np.testing.assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
                     rtol=1E-5)
 
 

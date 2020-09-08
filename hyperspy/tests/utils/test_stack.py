@@ -17,9 +17,16 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 from hyperspy import utils
 from hyperspy.signal import BaseSignal
+from hyperspy.exceptions import VisibleDeprecationWarning
+
+
+def test_stack_warning():
+    with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
+        _ = utils.stack([BaseSignal([1]), BaseSignal([2])], mmap=True)
 
 
 class TestUtilsStack:

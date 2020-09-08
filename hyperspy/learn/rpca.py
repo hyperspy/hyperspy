@@ -26,6 +26,7 @@ import scipy.linalg
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.learn.svd_pca import svd_solve
+from hyperspy.misc.math_tools import check_random_state
 
 _logger = logging.getLogger(__name__)
 
@@ -38,7 +39,9 @@ def _soft_thresh(X, lambda1):
     return res
 
 
-def rpca_godec(X, rank, lambda1=None, power=0, tol=1e-3, maxiter=1000, **kwargs):
+def rpca_godec(
+    X, rank, lambda1=None, power=0, tol=1e-3, maxiter=1000, random_state=None, **kwargs
+):
     """Perform Robust PCA with missing or corrupted data, using the GoDec algorithm.
 
     Decomposes a matrix Y = X + E, where X is low-rank and E
@@ -57,12 +60,14 @@ def rpca_godec(X, rank, lambda1=None, power=0, tol=1e-3, maxiter=1000, **kwargs)
     lambda1 : None or float
         Regularization parameter.
         If None, set to 1 / sqrt(n_features)
-    power : int
+    power : int, default 0
         The number of power iterations used in the initialization
-    tol : float
+    tol : float, default 1e-3
         Convergence tolerance
-    maxiter : int
+    maxiter : int, default 1000
         Maximum number of iterations
+    random_state : None or int or RandomState instance, default None
+        Used to initialize the subspace on the first iteration.
 
     Returns
     -------
@@ -100,9 +105,11 @@ def rpca_godec(X, rank, lambda1=None, power=0, tol=1e-3, maxiter=1000, **kwargs)
     L = X
     E = np.zeros(L.shape)
 
+    random_state = check_random_state(random_state)
+
     for itr in range(int(maxiter)):
         # Initialization with bilateral random projections
-        Y2 = np.random.randn(n, rank)
+        Y2 = random_state.normal(size=(n, rank))
         for _ in range(power + 1):
             Y2 = L.T @ (L @ Y2)
 
@@ -143,7 +150,7 @@ def rpca_godec(X, rank, lambda1=None, power=0, tol=1e-3, maxiter=1000, **kwargs)
     return Xhat, Ehat, U, S, V
 
 
-def _solveproj(z, X, I, lambda2, r=None, e=None):
+def _solveproj(z, X, Id, lambda2, r=None, e=None):
     m, n = X.shape
     z = z.T
 
@@ -159,7 +166,7 @@ def _solveproj(z, X, I, lambda2, r=None, e=None):
     if e is None or e.shape != eshape:
         e = np.zeros(eshape)
 
-    ddt = np.linalg.solve(X.T @ X + I, X.T)
+    ddt = np.linalg.solve(X.T @ X + Id, X.T)
     maxiter = 1e6
     itr = 0
 
@@ -183,10 +190,10 @@ def _solveproj(z, X, I, lambda2, r=None, e=None):
     return r, e
 
 
-def _updatecol(X, A, B, I):
+def _updatecol(X, A, B, Id):
     tmp, n = X.shape
     L = X
-    A = A + I
+    A = A + Id
 
     for i in range(n):
         b = B[:, i]
@@ -232,6 +239,7 @@ class ORPCA:
         training_samples=10,
         subspace_learning_rate=1.0,
         subspace_momentum=0.5,
+        random_state=None,
     ):
         """Creates Online Robust PCA instance that can learn a representation.
 
@@ -263,6 +271,8 @@ class ORPCA:
         subspace_momentum : float
             Momentum parameter for 'MomentumSGD' method, should be
             a float between 0 and 1.
+        random_state : None or int or RandomState instance, default None
+            Used to initialize the subspace on the first iteration.
 
         """
         self.n_features = None
@@ -282,6 +292,7 @@ class ORPCA:
         self.training_samples = training_samples
         self.subspace_learning_rate = subspace_learning_rate
         self.subspace_momentum = subspace_momentum
+        self.random_state = check_random_state(random_state)
 
         # Check options are valid
         if method not in ("CF", "BCD", "SGD", "MomentumSGD"):
@@ -343,7 +354,7 @@ class ORPCA:
             L, _ = scipy.linalg.qr(Y2, mode="economic")
             return L[:, : self.rank]
         elif self.init == "rand":
-            Y2 = np.random.randn(m, self.rank)
+            Y2 = self.random_state.normal(size=(m, self.rank))
             L, _ = scipy.linalg.qr(Y2, mode="economic")
             return L[:, : self.rank]
 
@@ -479,6 +490,7 @@ def orpca(
     training_samples=10,
     subspace_learning_rate=1.0,
     subspace_momentum=0.5,
+    random_state=None,
     **kwargs,
 ):
     """Perform online, robust PCA on the data X.
@@ -521,6 +533,8 @@ def orpca(
     subspace_momentum : float
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
+    random_state : None or int or RandomState instance, default None
+        Used to initialize the subspace on the first iteration.
 
     Returns
     -------
@@ -558,6 +572,7 @@ def orpca(
         training_samples=training_samples,
         subspace_learning_rate=subspace_learning_rate,
         subspace_momentum=subspace_momentum,
+        random_state=random_state,
     )
     _orpca.fit(X, batch_size=batch_size)
 
