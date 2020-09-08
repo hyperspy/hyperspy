@@ -511,7 +511,7 @@ class TestScalableFixedPattern:
         fp = hs.model.components1D.ScalableFixedPattern(s1, interpolate=False)
         m = s.create_model()
         m.append(fp)
-        m.fit()
+        m.fit(grad='analytical')
         x = s.axes_manager[0].axis
         np.testing.assert_allclose(s.data, fp.function(x))
         np.testing.assert_allclose(fp.function(x), fp.function_nd(x))
@@ -528,6 +528,21 @@ class TestScalableFixedPattern:
         results = fp.function_nd(s.axes_manager[0].axis)
         expected = np.array([s1.data * v for v in [1, 0.5, 0.75]])
         np.testing.assert_allclose(results, expected)
+
+    @pytest.mark.parametrize('interpolate', [True, False])
+    def test_recreate_component(self, interpolate):
+        s = self.s
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1,
+                                                        interpolate=interpolate)
+        m = s.create_model()
+        m.append(fp)
+        model_dict = m.as_dictionary()
+
+        m2 = s.create_model()
+        m2._load_dictionary(model_dict)
+        assert m2[0].interpolate == interpolate
+        np.testing.assert_allclose(m2[0].signal.data, s1.data)
 
 
 class TestHeavisideStep:

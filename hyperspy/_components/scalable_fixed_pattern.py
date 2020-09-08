@@ -74,6 +74,7 @@ class ScalableFixedPattern(Component):
 
         self._position = self.shift
         self._whitelist['signal1D'] = ('init,sig', signal1D)
+        self._whitelist['interpolate'] = None
         self.signal = signal1D
         self.yscale.free = True
         self.yscale.value = yscale
@@ -85,6 +86,16 @@ class ScalableFixedPattern(Component):
         self.isbackground = True
         self.convolved = False
         self.interpolate = interpolate
+
+    @property
+    def interpolate(self):
+        return self._interpolate
+
+    @interpolate.setter
+    def interpolate(self, value):
+        self._interpolate = value
+        self.xscale.free = value
+        self.shift.free = value
 
     def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
         """Prepare interpolation.
