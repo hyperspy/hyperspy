@@ -391,13 +391,13 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
 Defining a new axis
 -------------------
 
-An axis object can be created through the ``axes._create_axis()`` method, which
+An axis object can be created through the ``axes.create_axis()`` method, which
 automatically determines the type of axis by the given attributes:
 
 .. code-block:: python
 
     >>> from hyperspy import axes
-    >>> axis = axes._create_axis(offset=10,scale=0.5,size=20)
+    >>> axis = axes.create_axis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
     
@@ -441,14 +441,8 @@ the right number of axes of the right dimensions. Most functions will however
 fail if you pass a signal object where the axes do not match the data 
 dimensions and shape.
 
-**Add a single axis** to the `AxesManager` of a signal using ``_axes.append()``:
-
-.. code-block:: python
-    
-    >>> s.axes_manager._axes.append(evaxis)
-
-You can also **add a set of axes** to the `AxesManager` by passing either a list of
-axes dictionaries to ``axes_manager.create_axis()``:
+You can **add a set of axes** to the `AxesManager` by passing either a list of
+axes dictionaries to ``axes_manager.create_axes()``:
 
 .. code-block:: python
 
