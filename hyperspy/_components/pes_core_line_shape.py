@@ -56,6 +56,7 @@ class PESCoreLineShape(Component):
 
         # Options
         self.Shirley = False
+        self._whitelist['Shirley'] = None
 
     @property
     def Shirley(self):

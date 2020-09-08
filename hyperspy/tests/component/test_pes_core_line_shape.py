@@ -87,3 +87,20 @@ def test_PESCoreLineShape_function_nd(Shirley):
     assert values.shape == (2, 10)
     for v in values:
         np.testing.assert_allclose(v, core_line.function(x))
+
+
+@pytest.mark.parametrize('Shirley', [False, True])
+def test_recreate_component(Shirley):
+    core_line = PESCoreLineShape(A=10, FWHM=1.5, origin=0.5)
+    core_line.Shirley = Shirley
+
+    s = hs.signals.Signal1D(np.zeros(10))
+    m = s.create_model()
+    m.append(core_line)
+    model_dict = m.as_dictionary()
+
+    m2 = s.create_model()
+    m2._load_dictionary(model_dict)
+    assert m2[0].Shirley == Shirley
+
+

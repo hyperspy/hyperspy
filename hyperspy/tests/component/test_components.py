@@ -63,8 +63,13 @@ def test_creation_components1d(component_name):
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))
 
+    # Do a export/import cycle to check all the components can be re-created.
     m = s.create_model()
     m.append(component)
+    model_dict = m.as_dictionary()
+
+    m2 = s.create_model()
+    m2._load_dictionary(model_dict)
 
 
 class TestPowerLaw:
