@@ -18,6 +18,7 @@
 
 from unittest import mock
 
+import logging
 import numpy as np
 import pytest
 from scipy.signal import savgol_filter
@@ -256,6 +257,22 @@ class TestEstimatePeakWidth:
         assert np.isnan(width.data).all()
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
+
+    @pytest.mark.parametrize("parallel", [None, True])
+    def test_warnings_on_windows(self, parallel, caplog):
+        from hyperspy.misc.config_dir import os_name
+
+        if os_name != "windows":
+            pytest.skip("Ignored on non-Windows OS")
+
+        with caplog.at_level(logging.WARNING):
+            _ = self.s.estimate_peak_width(
+                window=0.5,
+                return_interval=True,
+                parallel=parallel,
+            )
+
+        assert "Parallel operation is not supported on Windows" in caplog.text
 
     def test_two_peaks(self):
         s = self.s.deepcopy()
