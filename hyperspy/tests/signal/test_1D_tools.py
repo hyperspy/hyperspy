@@ -257,6 +257,19 @@ class TestEstimatePeakWidth:
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
 
+    def test_windows_error(self):
+        from hyperspy.misc.config_dir import os_name
+
+        if os_name == "windows":
+            with pytest.raises(ValueError, match="Windows"):
+                _ = self.s.estimate_peak_width(
+                    window=0.5,
+                    return_interval=True,
+                    parallel=True,
+                )
+        else:
+            pytest.skip("Ignored on non-Windows OS")
+
     def test_two_peaks(self):
         s = self.s.deepcopy()
         s.shift1D(np.array([1.0]))

@@ -1490,13 +1490,22 @@ class Signal1D(BaseSignal, CommonSignal1D):
         -------
         width or [width, left, right], depending on the value of
         `return_interval`.
-        """
 
+        """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
+
+        from hyperspy.misc.config_dir import os_name
+
+        if parallel and os_name == "windows":  # pragma: no cover
+            # Due to a scipy bug where scipy.interpolate.UnivariateSpline
+            # appears to not be thread-safe on Windows, we raise a ValueError
+            # here. See https://github.com/hyperspy/hyperspy/issues/2320
+            # Until/if the scipy bug is fixed, we should raise this.
+            raise ValueError("`parallel=True` is not supported on Windows")
 
         axis = self.axes_manager.signal_axes[0]
         # x = axis.axis
