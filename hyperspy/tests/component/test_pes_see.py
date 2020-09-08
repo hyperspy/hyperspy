@@ -30,6 +30,7 @@ def test_see():
         np.array([0.0, 0.0, 0.0, 8.4375, 0.342983001, 0.0675685032,
                   0.0236279967, 0.010861538, 0.005860978, 0.003514161])
         )
+    np.testing.assert_allclose(see.function(x), see.function_nd(x))
 
 
 def test_see_fit():
@@ -47,18 +48,26 @@ def test_see_fit():
     m = s.create_model()
     see = SEE(A=1, Phi=1.5, B=0.5)
     m.append(see)
-    m.fit()
+    m.fit(optimizer="trf")
     np.testing.assert_allclose(see.A.value, A, rtol=0.1)
     np.testing.assert_allclose(see.Phi.value, Phi, rtol=0.1)
     np.testing.assert_allclose(see.B.value, B, rtol=0.1)
 
 
 def test_see_function_nd():
-
-    see = SEE(A=10, Phi=1.5, B=0.5, sigma=0)
+    A, Phi, B = 10, 1.5, 0.5
+    see = SEE(A=A, Phi=Phi, B=B)
     x = np.linspace(-5, 15, 10)
-    np.testing.assert_allclose(see.function_nd(x), see.function(x))
-    values = see.function_nd(np.array([x]*2))
+    s = hs.signals.Signal1D(np.array([x]*2))
+
+    # Manually set to test function_nd
+    see._axes_manager = s.axes_manager
+    see._create_arrays()
+    see.A.map['values'] = [A] * 2
+    see.Phi.map['values'] = [Phi] * 2
+    see.B.map['values'] = [B] * 2
+
+    values = see.function_nd(x)
     assert values.shape == (2, 10)
     for v in values:
         np.testing.assert_allclose(v, see.function(x))

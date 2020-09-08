@@ -512,7 +512,9 @@ class TestScalableFixedPattern:
         m = s.create_model()
         m.append(fp)
         m.fit()
-        np.testing.assert_allclose(s.data, fp.function(s.axes_manager[0].axis))
+        x = s.axes_manager[0].axis
+        np.testing.assert_allclose(s.data, fp.function(x))
+        np.testing.assert_allclose(fp.function(x), fp.function_nd(x))
 
     def test_function_nd(self):
         s = self.s

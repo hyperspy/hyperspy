@@ -77,8 +77,8 @@ class PESCoreLineShape(Component):
         if self.Shirley:
             cf = np.cumsum(f, axis=-1)
             # necessary to work with `function_nd`
-            cf = cf[..., -1][np.newaxis].T - cf
-            return cf * shirley + f
+            shirley_background = cf[..., -1][np.newaxis].T - cf
+            return shirley_background * shirley + f
         else:
             return f
 

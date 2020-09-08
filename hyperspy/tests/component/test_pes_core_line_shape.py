@@ -45,10 +45,11 @@ def test_PESCoreLineShape_shirley():
                   0.290720786, 6.13260758e-04, 6.17204245e-08, 2.96359844e-13,
                   6.78916184e-20, 7.42026292e-28])
         )
+    np.testing.assert_allclose(core_line.function(x), core_line.function_nd(x))
 
 
 @pytest.mark.parametrize('Shirley', [False, True])
-def test_see_fit(Shirley):
+def test_PESCoreLineShape_fit(Shirley):
     # Component parameter values
     A = 10
     FWHM = 0.5
@@ -66,27 +67,37 @@ def test_see_fit(Shirley):
     axis.offset, axis.scale = offset, scale
     s.add_gaussian_noise(0.1, random_state=1)
     m = s.create_model()
-    see = PESCoreLineShape(A=1, FWHM=1.5, origin=0.5)
-    see.Shirley = Shirley
-    m.append(see)
+    core_line = PESCoreLineShape(A=1, FWHM=1.5, origin=0.5)
+    core_line.Shirley = Shirley
+    m.append(core_line)
     m.fit()
-    np.testing.assert_allclose(see.A.value, A, rtol=0.1)
-    np.testing.assert_allclose(abs(see.FWHM.value), FWHM, rtol=0.1)
-    np.testing.assert_allclose(see.origin.value, origin, rtol=0.1)
-    np.testing.assert_allclose(see.shirley.value, shirley, rtol=0.1)
+    np.testing.assert_allclose(core_line.A.value, A, rtol=0.1)
+    np.testing.assert_allclose(abs(core_line.FWHM.value), FWHM, rtol=0.1)
+    np.testing.assert_allclose(core_line.origin.value, origin, rtol=0.1)
+    np.testing.assert_allclose(core_line.shirley.value, shirley, rtol=0.1)
 
 
 @pytest.mark.parametrize('Shirley', [False, True])
 def test_PESCoreLineShape_function_nd(Shirley):
-    core_line = PESCoreLineShape(A=10, FWHM=1.5, origin=0.5)
+    A, FWHM, origin = 10, 1.5, 0.
+    core_line = PESCoreLineShape(A=A, FWHM=FWHM, origin=origin)
     core_line.Shirley = Shirley
     core_line.shirley.value = 0.01 if Shirley else 0.0
-    x = np.linspace(-5, 15, 10)
-    np.testing.assert_allclose(core_line.function_nd(x), core_line.function(x))
-    values = core_line.function_nd(np.array([x]*2))
-    assert values.shape == (2, 10)
+    x = np.linspace(-5, 15, 1000)
+    s = hs.signals.Signal1D(np.array([x]*2))
+
+    # Manually set to test function_nd
+    core_line._axes_manager = s.axes_manager
+    core_line._create_arrays()
+    core_line.A.map['values'] = [A] * 2
+    core_line.FWHM.map['values'] = [FWHM] * 2
+    core_line.origin.map['values'] = [origin] * 2
+    core_line.shirley.map['values'] = [core_line.shirley.value] * 2
+
+    values = core_line.function_nd(x)
+    assert values.shape == (2, len(x))
     for v in values:
-        np.testing.assert_allclose(v, core_line.function(x))
+        np.testing.assert_allclose(v, core_line.function(x), rtol=0.5)
 
 
 @pytest.mark.parametrize('Shirley', [False, True])
