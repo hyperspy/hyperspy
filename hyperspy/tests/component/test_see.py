@@ -39,7 +39,7 @@ def test_see_fit():
     B = 0.5
     sigma = 0
 
-    offset, scale, size = 0, 0.01, 1000
+    offset, scale, size = 0, 0.01, 100
     x = np.linspace(offset, scale*size, size)
     s = hs.signals.Signal1D(SEE(A=A, Phi=Phi, B=B, sigma=sigma).function(x))
     axis = s.axes_manager[0]
@@ -49,3 +49,16 @@ def test_see_fit():
     see = SEE(A=1, Phi=1.5, B=0.5, sigma=1)
     m.append(see)
     m.fit()
+
+
+# def test_see_function_nd():
+
+#     see = SEE(A=10, Phi=1.5, B=0.5, sigma=0)
+#     x = np.linspace(-5, 15, 10)
+#     np.testing.assert_allclose(see.function(x), see.function_nd(x))
+#     # see.function_nd(np.array([x]*2))
+
+#     s = hs.signals.Signal1D(np.zeros(20).reshape(2, 10))
+#     axis = s.axes_manager.signal_axes[0]
+#     m = s.create_model()
+#     m.append(see)
