@@ -1276,7 +1276,7 @@ class MVATools(object):
         label_format : string
             The extension of the format that you wish to save to. default
             is "hspy". The format determines the kind of output.
-            
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1285,7 +1285,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
-                  
+
         multiple_files : bool
             If True, on exporting a file per center will
             be created. Otherwise only two files will be created, one for
@@ -1751,16 +1751,16 @@ class MVATools(object):
 
     def get_cluster_distances(self):
         """Euclidian distances to the centroid of each cluster
-    
+
         See Also
         --------
         get_cluster_signals
-        
+
         Returns
         --------
         signal
-            Hyperspy signal of cluster distances        
-    
+            Hyperspy signal of cluster distances
+
         """
         if self.learning_results.cluster_distances is None:
             raise RuntimeError("Cluster analysis needs to be performed first.")
@@ -1847,7 +1847,7 @@ class MVATools(object):
         ----------
 
         cluster_ids : None, int, or list of ints
-            if None (default), returns maps of all components using the 
+            if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
             if int, returns maps of cluster labels with ids from 0 to
@@ -1941,7 +1941,7 @@ class MVATools(object):
         Parameters
         ----------
         cluster_ids : None, int, or list of ints
-            if None (default), returns maps of all components using the 
+            if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
             if int, returns maps of cluster labels with ids from 0 to
