@@ -580,8 +580,8 @@ library.
 
 .. warning::
 
-    The file will be saved with the same bit depth as the signal. Since 
-    most processing operations in HyperSpy and numpy will result in 64-bit 
+    The file will be saved with the same bit depth as the signal. Since
+    most processing operations in HyperSpy and numpy will result in 64-bit
     floats, this can result in 64-bit ``.tiff`` files, which are not always
     compatible with other imaging software.
 
@@ -1530,12 +1530,21 @@ When executed it will ask for 2 files:
 #. The data itself in raw format.
 
 If a file with the same name and path as the riple file exits
-with raw or bin extension it is opened directly without prompting
-
+with raw or bin extension it is opened directly without prompting.
 ImportRPL was written by Luiz Fernando Zagonel.
 
-
 `Download ImportRPL <https://github.com/downloads/hyperspy/ImportRPL/ImportRPL.s>`_
+
+
+HDF5 reader plugin for Digital Micrograph
+-----------------------------------------
+
+This Digital Micrograph plugin is designed to import HDF5 files and like the
+`ImportRPL` script above, it can used to easily transfer data from HyperSpy to
+Digital Micrograph by using the HDF5 hyperspy format (``hspy`` extension).
+
+Download ``gms_plugin_hdf5`` from its `Github repository <https://github.com/niermann/gms_plugin_hdf5>`_.
+
 
 .. _hyperspy-matlab:
 
@@ -1547,3 +1556,4 @@ Like the Digital Micrograph script above, it is used to easily transfer data
 from HyperSpy to MATLAB, while retaining spatial calibration information.
 
 Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.
+
