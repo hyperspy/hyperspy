@@ -1,6 +1,12 @@
 .. -*- mode: rst -*-
 
-|Azure|_ |Travis|_ |Codecov|_ |rtd|_ |pypi_version|_ |python_version|_ |gitter|_ |DOI|_
+|Azure|_ |Travis|_ |rtd|_ |Codecov|_
+
+|python_version|_ |pypi_version|_ |anaconda_cloud|_
+
+|download_pypi|_ |download_anaconda|_
+
+|gitter|_ |DOI|_
 
 .. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
 .. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build/latest?definitionId=1?branchName=RELEASE_next_minor
@@ -17,11 +23,20 @@
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
 
+.. |anaconda_cloud| image:: https://anaconda.org/conda-forge/hyperspy/badges/version.svg
+.. _anaconda_cloud: https://anaconda.org/conda-forge/hyperspy
+
 .. |python_version| image:: https://img.shields.io/pypi/pyversions/hyperspy.svg?style=flat
 .. _python_version: https://pypi.python.org/pypi/hyperspy
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
+.. |download_pypi| image:: https://pepy.tech/badge/hyperspy/month
+.. _download_pypi: https://pepy.tech/project/hyperspy/month
+
+.. |download_anaconda| image:: https://anaconda.org/conda-forge/hyperspy/badges/downloads.svg
+.. _download_anaconda: https://anaconda.org/conda-forge/hyperspy/files
 
 .. |DOI| image:: https://zenodo.org/badge/2233998.svg
 .. _DOI: https://zenodo.org/badge/latestdoi/2233998
