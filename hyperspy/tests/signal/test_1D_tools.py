@@ -260,9 +260,9 @@ class TestEstimatePeakWidth:
 
     @pytest.mark.parametrize("parallel", [None, True])
     def test_warnings_on_windows(self, parallel, caplog):
-        from hyperspy.misc.config_dir import os_name
+        import os
 
-        if os_name != "windows":
+        if os.name not in ["nt", "dos"]:
             pytest.skip("Ignored on non-Windows OS")
 
         with caplog.at_level(logging.WARNING):

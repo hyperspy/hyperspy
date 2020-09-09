@@ -28,10 +28,10 @@ If the loaded file contains several datasets, the :py:func:`~.io.load`
 functions will return a list of the corresponding signal.
 
 .. NOTE::
-    Note for python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
-    normally need to access it there.)
 
+    Note for Python programmers: the data is stored in a numpy array
+    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
+    normally need to access it there.
 
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
@@ -40,7 +40,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 .. code-block:: python
 
-    >>> s = hs.load("filename", signal = "EELS")
+    >>> s = hs.load("filename", signal_type="EELS")
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
@@ -122,6 +122,22 @@ or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_:
         >>> # /home/data/afile[1x2].hspy
 
         >>> s = hs.load("/home/data/afile[*].hspy", escape_square_brackets=True)
+
+HyperSpy also supports ```pathlib.Path`` <https://docs.python.org/3/library/pathlib.html>`_
+objects, for example:
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> from pathlib import Path
+
+    >>> # Use pathlib.Path
+    >>> p = Path("/path/to/a/file.hspy")
+    >>> s = hs.load(p)
+
+    >>> # Use pathlib.Path.glob
+    >>> p = Path("/path/to/some/files/").glob("*.hspy")
+    >>> s = hs.load(p)
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same

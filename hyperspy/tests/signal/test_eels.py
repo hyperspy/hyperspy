@@ -15,18 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 
 import numpy as np
 import pytest
-
+from pathlib import Path
 
 from hyperspy import signals, datasets
 from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.io import load
 
-MYPATH = os.path.dirname(__file__)
+MYPATH = Path(__file__).resolve().parent
 
 
 @lazifyTestClass
@@ -292,12 +291,12 @@ class Test_Estimate_Thickness:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        self.s = load(os.path.join(
-            MYPATH,
-            "data/EELS_LL_linescan_simulated_thickness_variation.hspy"))
-        self.zlp = load(os.path.join(
-            MYPATH,
-            "data/EELS_ZLP_linescan_simulated_thickness_variation.hspy"))
+        self.s = load(
+            MYPATH.joinpath("data/EELS_LL_linescan_simulated_thickness_variation.hspy")
+        )
+        self.zlp = load(
+            MYPATH.joinpath("data/EELS_ZLP_linescan_simulated_thickness_variation.hspy")
+        )
 
     def test_relative_thickness(self):
         t = self.s.estimate_thickness(zlp=self.zlp)
