@@ -576,8 +576,8 @@ class EDSTEM_mixin:
         opnening: bool
             If true, applied a morphologic opening to the mask
 
-        Return
-        ------
+        Returns
+        -------
         mask: signal
             The mask of the region
 

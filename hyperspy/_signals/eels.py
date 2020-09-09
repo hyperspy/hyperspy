@@ -274,7 +274,7 @@ class EELSSpectrum_mixin:
         ----------
         mask : Signal1D of bool data type or bool array
             It must have signal_dimension = 0 and navigation_shape equal to the
-            navigation shape of the current signal. Where mask is True the 
+            navigation shape of the current signal. Where mask is True the
             shift is not computed and set to nan.
 
         Returns
@@ -344,8 +344,8 @@ class EELSSpectrum_mixin:
             If True, perform the alignment with subpixel accuracy
             using cross-correlation.
         mask : Signal1D of bool data type or bool array.
-            It must have signal_dimension = 0 and navigation_shape equal to 
-            the shape of the current signal. Where mask is True the shift is 
+            It must have signal_dimension = 0 and navigation_shape equal to
+            the shape of the current signal. Where mask is True the shift is
             not computed and set to nan.
         signal_range : tuple of integers, tuple of floats. Optional
             Will only search for the ZLP within the signal_range. If given
@@ -1798,22 +1798,22 @@ collection_angle : float
         Parameters
         ----------
         threshold: float
-            For a given pixel, mean value in the energy axis below which the
-            pixel is considered as vacuum.
+            For a given navigation coordinate, mean value in the energy axis
+            below which the pixel is considered as vacuum.
         start_energy: float, None
-            Energy from which the intensity is averaged up to the end.
+            Minimum energy included in the calculation of the mean intensity.
             If None, set the value to 15.0 eV when the zero-loss peak and the
-            15.0 eV energy channel are in the spectrum, otherwise, take the 
+            15.0 eV energy channel are in the spectrum, otherwise, take the
             last quarter of the spectrum.
         closing: bool
-            If true, applied a morphologic closing to the mask
-        opnening: bool
-            If true, applied a morphologic opening to the mask
+            If True, a morphological closing is applied to the mask.
+        opening: bool
+            If True, a morphological opening is applied to the mask.
 
         Return
         ------
         mask: signal
-            The mask of the region
+            The mask of the region.
         """
         signal_axis = self.axes_manager.signal_axes[0]
         if start_energy is None:
