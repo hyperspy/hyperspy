@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 """This module provides tools to interact with The EELS Database."""
 import requests
 import logging
@@ -12,7 +30,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
            edge=None, min_energy=None, max_energy=None, resolution=None,
            min_energy_compare="gt", max_energy_compare="lt",
            resolution_compare="lt", max_n=-1, monochromated=None, order=None,
-           order_direction="ASC"):
+           order_direction="ASC", verify_certificate=True):
     r"""Download spectra from the EELS Data Base.
 
     Parameters
@@ -93,6 +111,11 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         * "otherURLs"
     order_direction : {"ASC", "DESC"}
         Sorting `order` direction.
+    verify_certificate: bool
+        If True, verify the eelsdb website certificate and raise an error
+        if it is invalid. If False, continue querying the database if the certificate
+        is invalid. (This is a potential security risk.)
+
 
 
     Returns
@@ -195,7 +218,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
     else:
         params["element[]"] = element
 
-    request = requests.get('http://api.eelsdb.eu/spectra', params=params, )
+    request = requests.get('http://api.eelsdb.eu/spectra', params=params, verify=verify_certificate)
     spectra = []
     jsons = request.json()
     if "message" in jsons:
@@ -205,7 +228,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
             "%s" % jsons["message"])
     for json_spectrum in jsons:
         download_link = json_spectrum['download_link']
-        msa_string = requests.get(download_link).text
+        msa_string = requests.get(download_link, verify=verify_certificate).text
         try:
             s = dict2signal(parse_msa_string(msa_string)[0])
             emsa = s.original_metadata

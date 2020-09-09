@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 
 import numpy as np
-from numpy.testing import assert_allclose
 
 from hyperspy.components2d import Gaussian2D
+
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
 
 
@@ -31,8 +32,8 @@ def test_function():
     g.sigma_y.value = 2.
     g.centre_x.value = -5.
     g.centre_y.value = -5.
-    assert_allclose(g.function(-5, -5), 1.1140846)
-    assert_allclose(g.function(-2, -3), 0.007506643)
+    np.testing.assert_allclose(g.function(-5, -5), 1.1140846)
+    np.testing.assert_allclose(g.function(-2, -3), 0.007506643)
     assert g._is2D
     assert g._position_x == g.centre_x
     assert g._position_y == g.centre_y
@@ -43,15 +44,15 @@ def test_util_fwhm_set():
     g1.fwhm_x = 0.33
     g1.fwhm_y = 0.33
     g1.A.value = 1.0
-    assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
-    assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
+    np.testing.assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
+    np.testing.assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
 
 
 def test_util_fwhm_get():
     g1 = Gaussian2D(sigma_x=0.33, sigma_y=0.33)
     g1.A.value = 1.0
-    assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
-    assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
+    np.testing.assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
+    np.testing.assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
 
 
 def test_util_fwhm_getset():
@@ -60,3 +61,38 @@ def test_util_fwhm_getset():
     g1.fwhm_y = 0.33
     assert g1.fwhm_x == 0.33
     assert g1.fwhm_y == 0.33
+
+
+def test_properties():
+    g = Gaussian2D(add_rotation=True)
+    angle = np.radians(20)
+    g.rotation_angle.value = angle
+    np.testing.assert_allclose(g.rotation_angle_wrapped, angle)
+
+    angle = np.radians(380)
+    g.rotation_angle.value = angle
+    np.testing.assert_allclose(g.rotation_angle_wrapped, math.fmod(angle, 2 * np.pi))
+
+    g = Gaussian2D(add_rotation=True)
+    g.sigma_x.value = 0.5
+    g.sigma_y.value = 0.1
+    assert g.ellipticity == 5.0
+    assert g.rotation_angle.value == 0
+    assert g.sigma_major == 0.5
+    assert g.sigma_minor == 0.1
+    angle = np.radians(20)
+    g.rotation_angle.value = angle
+    np.testing.assert_allclose(g.rotation_angle_wrapped, angle)
+    np.testing.assert_allclose(g.rotation_major_axis, angle)
+
+    g = Gaussian2D(add_rotation=True)
+    g.sigma_x.value = 0.1
+    g.sigma_y.value = 0.5
+    assert g.ellipticity == 5.0
+    assert g.rotation_angle.value == 0
+    assert g.sigma_major == 0.5
+    assert g.sigma_minor == 0.1
+    angle = np.radians(20)
+    g.rotation_angle.value = angle
+    np.testing.assert_allclose(g.rotation_angle_wrapped, angle)
+    np.testing.assert_allclose(g.rotation_major_axis, angle - np.pi / 2)

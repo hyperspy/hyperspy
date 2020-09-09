@@ -1,6 +1,5 @@
-
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,40 +18,49 @@
 
 from unittest import mock
 
-from hyperspy.axes import AxesManager
-from hyperspy.signals import BaseSignal, Signal1D, Signal2D
-from hyperspy.defaults_parser import preferences
 from numpy import arange, zeros
+
+from hyperspy.axes import AxesManager
+from hyperspy.defaults_parser import preferences
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
 
 class TestAxesManager:
-
     def setup_method(self, method):
         axes_list = [
-            {'name': 'a',
-             'navigate': True,
-             'offset': 0.0,
-             'scale': 1.3,
-             'size': 2,
-             'units': 'aa'},
-            {'name': 'b',
-             'navigate': False,
-             'offset': 1.0,
-             'scale': 6.0,
-             'size': 3,
-             'units': 'bb'},
-            {'name': 'c',
-             'navigate': False,
-             'offset': 2.0,
-             'scale': 100.0,
-             'size': 4,
-             'units': 'cc'},
-            {'name': 'd',
-             'navigate': True,
-             'offset': 3.0,
-             'scale': 1000000.0,
-             'size': 5,
-             'units': 'dd'}]
+            {
+                "name": "a",
+                "navigate": True,
+                "offset": 0.0,
+                "scale": 1.3,
+                "size": 2,
+                "units": "aa",
+            },
+            {
+                "name": "b",
+                "navigate": False,
+                "offset": 1.0,
+                "scale": 6.0,
+                "size": 3,
+                "units": "bb",
+            },
+            {
+                "name": "c",
+                "navigate": False,
+                "offset": 2.0,
+                "scale": 100.0,
+                "size": 4,
+                "units": "cc",
+            },
+            {
+                "name": "d",
+                "navigate": True,
+                "offset": 3.0,
+                "scale": 1000000.0,
+                "size": 5,
+                "units": "dd",
+            },
+        ]
 
         self.am = AxesManager(axes_list)
 
@@ -71,8 +79,7 @@ class TestAxesManager:
         am2[1].units = "km"
         am2[2].offset = 50
         am2[3].size = 1
-        am.update_axes_attributes_from(am2._axes,
-                                       attributes=["units", "scale"])
+        am.update_axes_attributes_from(am2._axes, attributes=["units", "scale"])
         assert m.changed.called
         assert am2[0].scale == am[0].scale
         assert am2[1].units == am[1].units
@@ -81,7 +88,6 @@ class TestAxesManager:
 
 
 class TestAxesManagerScaleOffset:
-
     def test_low_high_value(self):
         data = arange(11)
         s = BaseSignal(data)
@@ -121,7 +127,6 @@ class TestAxesManagerScaleOffset:
 
 
 class TestAxesManagerExtent:
-
     def test_1d_basesignal(self):
         s = BaseSignal(arange(10))
         assert len(s.axes_manager.signal_extent) == 2
@@ -161,8 +166,10 @@ class TestAxesManagerExtent:
         nav_axis0 = s.axes_manager.navigation_axes[0]
         nav_axis1 = s.axes_manager.navigation_axes[1]
         nav_extent = (
-            nav_axis0.low_value, nav_axis0.high_value,
-            nav_axis1.low_value, nav_axis1.high_value,
+            nav_axis0.low_value,
+            nav_axis0.high_value,
+            nav_axis1.low_value,
+            nav_axis1.high_value,
         )
         assert nav_extent == s.axes_manager.navigation_extent
 
@@ -172,8 +179,10 @@ class TestAxesManagerExtent:
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
         signal_extent = (
-            signal_axis0.low_value, signal_axis0.high_value,
-            signal_axis1.low_value, signal_axis1.high_value,
+            signal_axis0.low_value,
+            signal_axis0.high_value,
+            signal_axis1.low_value,
+            signal_axis1.high_value,
         )
         assert signal_extent == s.axes_manager.signal_extent
         assert len(s.axes_manager.navigation_extent) == 0
@@ -185,8 +194,10 @@ class TestAxesManagerExtent:
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
         signal_extent = (
-            signal_axis0.low_value, signal_axis0.high_value,
-            signal_axis1.low_value, signal_axis1.high_value,
+            signal_axis0.low_value,
+            signal_axis0.high_value,
+            signal_axis1.low_value,
+            signal_axis1.high_value,
         )
         assert signal_extent == s.axes_manager.signal_extent
         assert len(s.axes_manager.navigation_extent) == 2
@@ -199,22 +210,28 @@ class TestAxesManagerExtent:
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
         signal_extent = (
-            signal_axis0.low_value, signal_axis0.high_value,
-            signal_axis1.low_value, signal_axis1.high_value,
+            signal_axis0.low_value,
+            signal_axis0.high_value,
+            signal_axis1.low_value,
+            signal_axis1.high_value,
         )
         assert signal_extent == s.axes_manager.signal_extent
         signal_axis0.scale = 0.2
         signal_axis1.scale = 0.7
         signal_extent = (
-            signal_axis0.low_value, signal_axis0.high_value,
-            signal_axis1.low_value, signal_axis1.high_value,
+            signal_axis0.low_value,
+            signal_axis0.high_value,
+            signal_axis1.low_value,
+            signal_axis1.high_value,
         )
         assert signal_extent == s.axes_manager.signal_extent
         signal_axis0.offset = -11
         signal_axis1.scale = 23
         signal_extent = (
-            signal_axis0.low_value, signal_axis0.high_value,
-            signal_axis1.low_value, signal_axis1.high_value,
+            signal_axis0.low_value,
+            signal_axis0.high_value,
+            signal_axis1.low_value,
+            signal_axis1.high_value,
         )
         assert signal_extent == s.axes_manager.signal_extent
 
@@ -267,38 +284,53 @@ def test_setting_indices_coordinates():
 
 
 class TestAxesHotkeys:
-
     def setup_method(self, method):
         s = Signal1D(zeros(7 * (5,)))
         self.am = s.axes_manager
 
     def test_hotkeys_in_six_dimensions(self):
-        'Step twice increasing and once decreasing all axes'
+        "Step twice increasing and once decreasing all axes"
 
         mod01 = preferences.Plot.modifier_dims_01
         mod23 = preferences.Plot.modifier_dims_23
         mod45 = preferences.Plot.modifier_dims_45
 
-        dim0_decrease = mod01 + '+' + preferences.Plot.dims_024_decrease
-        dim0_increase = mod01 + '+' + preferences.Plot.dims_024_increase
-        dim1_decrease = mod01 + '+' + preferences.Plot.dims_135_decrease
-        dim1_increase = mod01 + '+' + preferences.Plot.dims_135_increase
-        dim2_decrease = mod23 + '+' + preferences.Plot.dims_024_decrease
-        dim2_increase = mod23 + '+' + preferences.Plot.dims_024_increase
-        dim3_decrease = mod23 + '+' + preferences.Plot.dims_135_decrease
-        dim3_increase = mod23 + '+' + preferences.Plot.dims_135_increase
-        dim4_decrease = mod45 + '+' + preferences.Plot.dims_024_decrease
-        dim4_increase = mod45 + '+' + preferences.Plot.dims_024_increase
-        dim5_decrease = mod45 + '+' + preferences.Plot.dims_135_decrease
-        dim5_increase = mod45 + '+' + preferences.Plot.dims_135_increase
+        dim0_decrease = mod01 + "+" + preferences.Plot.dims_024_decrease
+        dim0_increase = mod01 + "+" + preferences.Plot.dims_024_increase
+        dim1_decrease = mod01 + "+" + preferences.Plot.dims_135_decrease
+        dim1_increase = mod01 + "+" + preferences.Plot.dims_135_increase
+        dim2_decrease = mod23 + "+" + preferences.Plot.dims_024_decrease
+        dim2_increase = mod23 + "+" + preferences.Plot.dims_024_increase
+        dim3_decrease = mod23 + "+" + preferences.Plot.dims_135_decrease
+        dim3_increase = mod23 + "+" + preferences.Plot.dims_135_increase
+        dim4_decrease = mod45 + "+" + preferences.Plot.dims_024_decrease
+        dim4_increase = mod45 + "+" + preferences.Plot.dims_024_increase
+        dim5_decrease = mod45 + "+" + preferences.Plot.dims_135_decrease
+        dim5_increase = mod45 + "+" + preferences.Plot.dims_135_increase
 
-        steps = [dim0_increase, dim0_increase, dim0_decrease, dim1_increase,
-                 dim1_increase, dim1_decrease, dim2_increase, dim2_increase, dim2_decrease,
-                 dim3_increase, dim3_increase, dim3_decrease, dim4_increase,
-                 dim4_increase, dim4_decrease, dim5_increase, dim5_increase, dim5_decrease]
+        steps = [
+            dim0_increase,
+            dim0_increase,
+            dim0_decrease,
+            dim1_increase,
+            dim1_increase,
+            dim1_decrease,
+            dim2_increase,
+            dim2_increase,
+            dim2_decrease,
+            dim3_increase,
+            dim3_increase,
+            dim3_decrease,
+            dim4_increase,
+            dim4_increase,
+            dim4_decrease,
+            dim5_increase,
+            dim5_increase,
+            dim5_decrease,
+        ]
 
-        class fake_key_event():
-            'Fake event handler for plot key press'
+        class fake_key_event:
+            "Fake event handler for plot key press"
 
             def __init__(self, key):
                 self.key = key
@@ -307,3 +339,29 @@ class TestAxesHotkeys:
             self.am.key_navigator(fake_key_event(step))
 
         assert self.am.indices == (1, 1, 1, 1, 1, 1)
+
+
+class TestIterPathScanPattern:
+    def setup_method(self, method):
+        s = Signal1D(zeros((3, 3, 3, 2)))
+        self.am = s.axes_manager
+
+    def test_flyback(self):
+        self.am._iterpath = "flyback"
+        for i, index in enumerate(self.am):
+            if i == 3:
+                assert self.am.indices == (0, 1, 0)
+            # Hits a new layer on index 9
+            if i == 9:
+                assert self.am.indices == (0, 0, 1)
+            break
+
+    def test_serpentine(self):
+        self.am._iterpath = "serpentine"
+        for i, index in enumerate(self.am):
+            if i == 3:
+                assert self.am.indices == (2, 1, 0)
+            # Hits a new layer on index 9
+            if i == 9:
+                assert self.am.indices == (2, 2, 1)
+            break

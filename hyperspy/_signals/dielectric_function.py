@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -35,31 +35,24 @@ class DielectricFunction_mixin:
         rule.
 
         The Bethe f-sum rule gives rise to two definitions of the effective
-        number (see [Egerton2011]_), neff1 and neff2:
+        number (see [*]_), neff1 and neff2:
 
-            .. math::
+        .. math::
 
-                n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
+            n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
 
         and:
 
-            .. math::
+        .. math::
 
-                n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
+            n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
 
         This method computes and return both.
 
         Parameters
         ----------
         nat: float
-            Number of atoms (or molecules) per unit volume of the
-            sample.
-        cumulative : bool
-            If False calculate the number of effective electrons up to the
-            higher energy-loss of the spectrum. If True, calculate the
-            number of effective electrons as a function of the energy-loss up
-            to the higher energy-loss of the spectrum. *True is only supported
-            by SciPy newer than 0.13.2*.
+            Number of atoms (or molecules) per unit volume of the sample.
 
         Returns
         -------
@@ -72,8 +65,8 @@ class DielectricFunction_mixin:
 
         Notes
         -----
-        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
-        Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
+        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy 
+           in the Electron Microscope", Springer-Verlag, 2011.
 
         """
 

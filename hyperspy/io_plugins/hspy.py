@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -611,7 +611,7 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
         elif key.startswith('_tuple_empty_'):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
-            dictionary[key[len('_bs_'):]] = value.tostring()
+            dictionary[key[len('_bs_'):]] = value.tobytes()
         # The following two elif stataments enable reading date and time from
         # v < 2 of HyperSpy's metadata specifications
         elif key.startswith('_datetime_date'):

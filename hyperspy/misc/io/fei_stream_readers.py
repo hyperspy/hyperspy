@@ -1,8 +1,26 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import numpy as np
 import dask.array as da
 import sparse
 
-from hyperspy.decorators import jit_ifnumba
+from numba import njit
 
 
 class DenseSliceCOO(sparse.COO):
@@ -17,9 +35,15 @@ class DenseSliceCOO(sparse.COO):
             return obj
 
 
-@jit_ifnumba()
+@njit(cache=True)
 def _stream_to_sparse_COO_array_sum_frames(
-        stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
+        stream_data,
+        last_frame,
+        shape,
+        channels,
+        rebin_energy=1,
+        first_frame=0
+    ):  # pragma: no cover
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -98,9 +122,15 @@ def _stream_to_sparse_COO_array_sum_frames(
     return coords, data, final_shape
 
 
-@jit_ifnumba()
+@njit(cache=True)
 def _stream_to_sparse_COO_array(
-        stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
+        stream_data,
+        last_frame,
+        shape,
+        channels,
+        rebin_energy=1,
+        first_frame=0
+    ):  # pragma: no cover
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -224,9 +254,14 @@ def stream_to_sparse_COO_array(
     return dask_sparse
 
 
-@jit_ifnumba()
-def _fill_array_with_stream_sum_frames(spectrum_image, stream,
-                                       first_frame, last_frame, rebin_energy=1):
+@njit(cache=True)
+def _fill_array_with_stream_sum_frames(
+        spectrum_image,
+        stream,
+        first_frame,
+        last_frame,
+        rebin_energy=1
+    ):  # pragma: no cover
     # jit speeds up this function by a factor of ~ 30
     navigation_index = 0
     frame_number = 0
@@ -249,9 +284,14 @@ def _fill_array_with_stream_sum_frames(spectrum_image, stream,
             navigation_index += 1
 
 
-@jit_ifnumba()
-def _fill_array_with_stream(spectrum_image, stream, first_frame,
-                            last_frame, rebin_energy=1):
+@njit(cache=True)
+def _fill_array_with_stream(
+        spectrum_image,
+        stream,
+        first_frame,
+        last_frame,
+        rebin_energy=1
+    ):  # pragma: no cover
     navigation_index = 0
     frame_number = 0
     shape = spectrum_image.shape
@@ -328,8 +368,8 @@ def stream_to_array(
     return spectrum_image
 
 
-@jit_ifnumba()
-def array_to_stream(array):
+@njit(cache=True)
+def array_to_stream(array):  # pragma: no cover
     """Convert an array to a FEI stream
 
     Parameters

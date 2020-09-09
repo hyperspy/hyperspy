@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy.testing import assert_allclose
 
 from hyperspy.components1d import Logistic
 
@@ -28,6 +27,6 @@ def test_function():
     g.b.value = 2
     g.c.value = 3
     g.origin.value = 4
-    assert_allclose(g.function(10), 1)
-    assert_allclose(g.function(4), 1/3)
-    assert_allclose(g.function(0), 3.07209674e-06)
+    np.testing.assert_allclose(g.function(10), 1)
+    np.testing.assert_allclose(g.function(4), 1/3)
+    np.testing.assert_allclose(g.function(0), 3.07209674e-06)

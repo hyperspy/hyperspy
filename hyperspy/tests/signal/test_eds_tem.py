@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,13 +17,14 @@
 
 
 import numpy as np
+import pytest
 
-from hyperspy.signals import EDSTEMSpectrum
-from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
-from hyperspy.decorators import lazifyTestClass
+from hyperspy.signals import EDSTEMSpectrum
 
 
 @lazifyTestClass
@@ -46,7 +47,7 @@ class Test_metadata:
         sSum = s.sum(0)
         assert (
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            3.1 * 2)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -58,7 +59,8 @@ class Test_metadata:
         sSum = s.sum((0, 1))
         assert (
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            3.1 * 2 * 4)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time
+            * 2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -73,7 +75,7 @@ class Test_metadata:
         assert r is None
         assert (
             s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time * 2)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
@@ -212,20 +214,77 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
 
+    def test_quant_lorimer_warning(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        with pytest.raises(ValueError, match="Thickness is required for absorption"):
+            _ = s.quantification(intensities, method, kfactors,
+                                 composition_units,
+                                 absorption_correction=True,
+                                 thickness=None)
+
+    def test_quant_lorimer_ac(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units)
+        np.testing.assert_allclose(res[0].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
+        res2 = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=1.)
+        res3 = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=300.)
+        res4 = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=0.0001)
+        np.testing.assert_allclose(res2[0][0].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
+        np.testing.assert_allclose(res3[0][0].data, np.array([
+            [22.6957, 22.6957],
+            [22.6957, 22.6957]]), atol=1e-3)
+        np.testing.assert_allclose(res[0].data,
+                                   res4[0][0].data, atol=1e-5)
+
+
     def test_quant_zeta(self):
         s = self.signal
         method = 'zeta'
-        compositions_units = 'weight'
+        composition_units = 'weight'
         factors = [20, 50]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
-                               compositions_units)
+                               composition_units)
         np.testing.assert_allclose(res[1].data, np.array(
             [[2.7125736e-03, 2.7125736e-03],
              [2.7125736e-03, 2.7125736e-03]]), atol=1e-3)
         np.testing.assert_allclose(res[0][1].data, np.array(
             [[80.962287987, 80.962287987],
              [80.962287987, 80.962287987]]), atol=1e-3)
+        res2 = s.quantification(intensities, method, factors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=1.)
+        res3 = s.quantification(intensities, method, factors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=100.)
+        assert res2 == res3
+        np.testing.assert_allclose(res2[0][1].data, np.array([
+            [61.6284, 61.6284],
+            [61.6284, 61.6284]]), atol=1e-3)
 
     def test_quant_cross_section_units(self):
         s = self.signal.deepcopy()
@@ -245,6 +304,68 @@ class Test_quantification:
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
 
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0, 1], ['x', 'y']))
+    def test_get_probe_area(self, axes):
+        s = self.signal
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 0.5/1000
+        if axes == "nav_axes":
+            axes = s.axes_manager.navigation_axes
+        np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0], ['x']))
+    def test_get_probe_area_line_scan(self, axes):
+        s = self.signal.inav[0]
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        if axes == "nav_axes":
+            axes = s.axes_manager.navigation_axes
+        np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    @pytest.mark.parametrize("axes", (None, "nav_axes", [0], ['x']))
+    def test_get_probe_area_line_scan_other_nav_axes(self, axes):
+        s = self.signal
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[1].name = 'time'
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 's'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 10
+        if axes == "nav_axes" or axes is None:
+            axes = s.axes_manager.navigation_axes
+            with pytest.raises(ValueError):
+                s.get_probe_area(axes)
+        else:
+            np.testing.assert_allclose(s.get_probe_area(axes), 0.25, atol=1e-3)
+
+    def test_zeta_vs_cross_section(self):
+        s = self.signal
+        factors = [3, 5]
+        method = 'zeta'
+        intensities = s.get_lines_intensity()
+        zfactors = utils_eds.edx_cross_section_to_zeta([3, 5], ['Al', 'Zn'])
+        factors2 = utils_eds.zeta_to_edx_cross_section(zfactors, ['Al', 'Zn'])
+        np.testing.assert_allclose(factors, factors2, atol=1e-3)
+
+        res = s.quantification(
+            intensities,
+            method,
+            factors = utils_eds.edx_cross_section_to_zeta([22.402, 21.7132],
+                                                          ['Al','Zn']))
+        res2 = s.quantification(intensities,
+                                method='cross_section',
+                                factors=[22.402, 21.7132])
+        np.testing.assert_allclose(res[0][0].data, res2[0][0].data, atol=1e-3)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[36.2969, 36.2969],
+             [36.2969, 36.2969]]), atol=1e-3)
+
+
     def test_quant_cross_section(self):
         s = self.signal
         method = 'cross_section'
@@ -258,8 +379,35 @@ class Test_quantification:
             [[21961.616621, 21961.616621],
              [21961.616621, 21961.616621]]), atol=1e-3)
         np.testing.assert_allclose(res[0][0].data, np.array(
-            [[49.4888856823, 49.4888856823],
-                [49.4888856823, 49.4888856823]]), atol=1e-3)
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
+
+
+    def test_method_error(self):
+        s = self.signal
+        method = 'random_method'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        with pytest.raises(ValueError, match="Please specify method for quantification"):
+            _ = s.quantification(intensities, method, factors)
+
+    def test_quant_cross_section_ac(self):
+        s = self.signal
+        method = 'cross_section'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, factors,
+                                absorption_correction=True)
+        zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
+        res2 = s.quantification(intensities, method='zeta', factors=[22.402, 21.7132],
+                                absorption_correction=True)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
+        np.testing.assert_allclose(res[0][0].data, np.array(
+            [[49.4889, 49.4889],
+             [49.4889, 49.4889]]), atol=1e-3)
+
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],

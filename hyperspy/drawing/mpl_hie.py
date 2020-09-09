@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,62 +18,37 @@
 
 from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.docstrings.plot import PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+from hyperspy.defaults_parser import preferences
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
-    def plot_signal(self,
-                    colorbar=True,
-                    scalebar=True,
-                    scalebar_color="white",
-                    axes_ticks=None,
-                    axes_off=False,
-                    saturated_pixels=None,
-                    vmin=None,
-                    vmax=None,
-                    no_nans=False,
-                    centre_colormap="auto",
-                    norm="auto",
-                    min_aspect=0.1,
-                    gamma=1.0,
-                    linthresh=0.01,
-                    linscale=0.1,
-                    **kwargs
-                    ):
-        """Plot image.
-
+    def plot_signal(self, **kwargs):
+        """
         Parameters
         ----------
-        %s
-        %s
+        **kwargs : dict
+            The kwargs are passed to plot method of the image figure.
 
         """
-        if self.signal_plot is not None:
-            self.signal_plot.plot(**kwargs)
-            return
         super().plot_signal()
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
-        imf.colorbar = colorbar
+
+        # Set all kwargs value to the image figure before passing the rest
+        # of the kwargs to plot method of the image figure
+        for key, value in list(kwargs.items()):
+            if hasattr(imf, key):
+                setattr(imf, key, kwargs.pop(key))
+
         imf.quantity_label = self.quantity_label
-        imf.scalebar = scalebar
-        imf.axes_ticks = axes_ticks
-        imf.axes_off = axes_off
-        imf.vmin, imf.vmax = vmin, vmax
-        imf.saturated_pixels = saturated_pixels
-        imf.no_nans = no_nans
-        imf.scalebar_color = scalebar_color
-        imf.centre_colormap = centre_colormap
-        imf.min_aspect = min_aspect
-        imf.norm = norm
-        imf.gamma = gamma
-        imf.linthresh = linthresh
-        imf.linscale = linscale
+
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
+        if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
+            kwargs["cmap"] = preferences.Plot.cmap_signal
         imf.plot(**kwargs)
         self.signal_plot = imf
 
@@ -84,8 +59,5 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             if self.navigator_plot is not None:
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
-                self.navigator_plot.events.closed.connect(
-                    self._on_navigator_plot_closing, [])
                 imf.events.closed.connect(self.close_navigator_plot, [])
-
-    plot_signal.__doc__ %= (PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+            imf.events.closed.connect(self._on_signal_plot_closing, [])

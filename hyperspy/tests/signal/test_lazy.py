@@ -1,12 +1,29 @@
-import pytest
-import numpy as np
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import dask.array as da
+import numpy as np
+import pytest
 from dask.threaded import get
 
 import hyperspy.api as hs
-from hyperspy._signals.lazy import (_reshuffle_mixed_blocks,
-                                    to_array)
 from hyperspy import _lazy_signals
+from hyperspy._signals.lazy import _reshuffle_mixed_blocks, to_array
 
 
 def _signal():
@@ -77,7 +94,7 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
         real_first = real_first.reshape((2 * 4, -1))[slices1]
         real_second = real_second.reshape((2 * 5, -1))[:, sigslice]
     else:
-        value = np.nan if dtype is 'float' else 0
+        value = np.nan if dtype == 'float' else 0
         if nm is not None:
             real_first[nm, ...] = value
         if sm is not None:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,7 +18,6 @@
 
 
 import numpy as np
-from numpy.testing import assert_allclose
 
 from hyperspy.components1d import RC
 
@@ -29,5 +28,5 @@ def test_function():
     g.Vmax.value = 2
     g.tau.value = 3
     assert g.function(0) == 1
-    assert_allclose(g.function(50), 3)
-    assert_allclose(g.function(-3), 3-2*np.e)
+    np.testing.assert_allclose(g.function(50), 3)
+    np.testing.assert_allclose(g.function(-3), 3-2*np.e)

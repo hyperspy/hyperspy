@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,6 +22,7 @@ import configparser
 import logging
 
 import traits.api as t
+import matplotlib.pyplot as plt
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
@@ -138,11 +139,18 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.05,
-                                label='Saturated pixels',
-                                desc='Set the default saturated_pixels for '
-                                'plotting images.'
+    saturated_pixels = t.CFloat(0.,
+                                label='Saturated pixels (deprecated)',
+                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
                                 )
+    cmap_navigator = t.Enum(plt.colormaps(),
+                            label='Color map navigator',
+                            desc='Set the default color map for the navigator.',
+                            )
+    cmap_signal = t.Enum(plt.colormaps(),
+                         label='Color map signal',
+                         desc='Set the default color map for the signal plot.',
+                         )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )
@@ -192,8 +200,12 @@ template = {
     'Plot': PlotConfig(),
 }
 
+
 # Set the enums defaults
 template['General'].logging_level = 'WARNING'
+template['Plot'].cmap_navigator = 'gray'
+template['Plot'].cmap_signal = 'gray'
+
 
 # Defaults template definition ends ######################################
 

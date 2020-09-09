@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2018 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,14 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 import numpy as np
 import pytest
-import numpy.testing as nt
 
 import hyperspy.api as hs
-from hyperspy.signals import Signal1D, EELSSpectrum
 from hyperspy.components1d import Gaussian
-
+from hyperspy.signals import EELSSpectrum, Signal1D
 
 my_path = os.path.dirname(__file__)
 baseline_dir = 'plot_model'
@@ -124,13 +123,13 @@ def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
             return component.A.value
 
     if convolved:
-        nt.assert_almost_equal(A_value(s, m[0], binned), 0.014034, decimal=5)
-        nt.assert_almost_equal(A_value(s, m[1], binned), 0.008420, decimal=5)
-        nt.assert_almost_equal(A_value(s, m[2], binned), 0.028068, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[0], binned), 0.014034, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[1], binned), 0.008420, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[2], binned), 0.028068, decimal=5)
     else:
-        nt.assert_almost_equal(A_value(s, m[0], binned), 100.0)
-        nt.assert_almost_equal(A_value(s, m[1], binned), 60.0)
-        nt.assert_almost_equal(A_value(s, m[2], binned), 200.0)
+        np.testing.assert_almost_equal(A_value(s, m[0], binned), 100.0, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[1], binned), 60.0, decimal=5)
+        np.testing.assert_almost_equal(A_value(s, m[2], binned), 200.0, decimal=5)
 
     return m._plot.signal_plot.figure
 

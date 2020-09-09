@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -102,14 +102,13 @@ class EDSModel(Model1D):
 
     Parameters
     ----------
-    spectrum : an EDSSpectrum (or any EDSSpectrum subclass) instance.
+    spectrum : EDSSpectrum (or any EDSSpectrum subclass) instance.
 
-    auto_add_lines : boolean
+    auto_add_lines : bool
         If True, automatically add Gaussians for all X-rays generated
         in the energy range by an element, using the edsmodel.add_family_lines
         method.
-
-    auto_background : boolean
+    auto_background : bool
         If True, adds automatically a polynomial order 6 to the model,
         using the edsmodel.add_polynomial_background method.
 
@@ -356,7 +355,7 @@ class EDSModel(Model1D):
             If 'single' fit only the current location. If 'multi'
             use multifit.
         **kwargs : extra key word arguments
-            All extra key word arguments are passed to fit or
+            All extra key word arguments are passed to fit or multifit
 
         See also
         --------
@@ -615,6 +614,7 @@ class EDSModel(Model1D):
             Bound the height of the peak to a fraction of
             its height
         """
+
         def free_twin(component):
             component.A.twin = None
             component.A.free = True
@@ -642,6 +642,7 @@ class EDSModel(Model1D):
 
         Establish the twin on the height of sub-Xray lines (non alpha)
         """
+
         def fix_twin(component):
             component.A.bmin = 0.0
             component.A.bmax = None
@@ -793,10 +794,10 @@ class EDSModel(Model1D):
             fix = self.fix_xray_lines_width
 
         free(xray_lines=xray_lines, bound=bound)
-        if kind == 'single':
-            self.fit(bounded=True, fitter='mpfit', **kwargs)
-        elif kind == 'multi':
-            self.multifit(bounded=True, fitter='mpfit', **kwargs)
+        if kind == "single":
+            self.fit(bounded=True, **kwargs)
+        elif kind == "multi":
+            self.multifit(bounded=True, **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
@@ -846,6 +847,7 @@ class EDSModel(Model1D):
         >>> m.get_lines_intensity(["C_Ka", "Ta_Ma"])
         """
         from hyperspy import utils
+
         intensities = []
 
         if xray_lines is None:

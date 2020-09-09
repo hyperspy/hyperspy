@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+from collections.abc import Iterable
 import numpy as np
 import numbers
 import copy
@@ -285,7 +304,7 @@ def mass_absorption_coefficient(element, energies):
 
     See also
     --------
-    hs.material.mass_absorption_mixture
+    :py:func:`~hs.material.mass_absorption_mixture`
 
     Note
     ----
@@ -299,7 +318,7 @@ def mass_absorption_coefficient(element, energies):
     energies = copy.copy(energies)
     if isinstance(energies, str):
         energies = utils_eds._get_energy_xray_line(energies)
-    elif hasattr(energies, '__iter__'):
+    elif isinstance(energies, Iterable):
         for i, energy in enumerate(energies):
             if isinstance(energy, str):
                 energies[i] = utils_eds._get_energy_xray_line(energy)
@@ -344,7 +363,7 @@ def _mass_absorption_mixture(weight_percent,
 
     See also
     --------
-    hs.material.mass_absorption
+    :py:func:`~hs.material.mass_absorption`
 
     Note
     ----
@@ -356,7 +375,7 @@ def _mass_absorption_mixture(weight_percent,
     if len(elements) != len(weight_percent):
         raise ValueError(
             "Elements and weight_fraction should have the same length")
-    if hasattr(weight_percent[0], '__iter__'):
+    if isinstance(weight_percent[0], Iterable):
         weight_fraction = np.array(weight_percent)
         weight_fraction /= np.sum(weight_fraction, 0)
         mac_res = np.zeros([len(energies)] + list(weight_fraction.shape[1:]))
@@ -407,7 +426,7 @@ def mass_absorption_mixture(weight_percent,
 
     See also
     --------
-    hs.material.mass_absorption_coefficient
+    :py:func:`~hs.material.mass_absorption_coefficient`
 
     Note
     ----
