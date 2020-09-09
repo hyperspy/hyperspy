@@ -75,7 +75,7 @@ extras_require = {
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["cython", "imagecodecs"],
-    "usid": ["pyUSID>=0.0.7"],
+    "usid": ["pyUSID>=0.0.7", "sidpy"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
