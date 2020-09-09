@@ -8,6 +8,7 @@ import pytest
 from hyperspy import api as hs
 
 usid = pytest.importorskip("pyUSID", reason="pyUSID not installed")
+sidpy = pytest.importorskip("sidpy", reason="sidpy not installed")
 
 
 # ##################### HELPER FUNCTIONS ######################################
@@ -94,10 +95,10 @@ def _validate_metadata_from_h5dset(sig, h5_dset, compound_comp_name=None):
     h5_chan_grp = h5_dset.parent
     usid_grp_parms = dict()
     if 'Channel' in h5_chan_grp.name.split('/')[-1]:
-        usid_grp_parms = usid.hdf_utils.get_attributes(h5_chan_grp)
+        usid_grp_parms = sidpy.hdf.hdf_utils.get_attributes(h5_chan_grp)
         h5_meas_grp = h5_chan_grp.parent
         if 'Measurement' in h5_meas_grp.name.split('/')[-1]:
-            temp = usid.hdf_utils.get_attributes(h5_meas_grp)
+            temp = sidpy.hdf.hdf_utils.get_attributes(h5_meas_grp)
             usid_grp_parms.update(temp)
     # Remove timestamp key since there is 1s difference occasionally
     usid_grp_parms.pop('timestamp', None)

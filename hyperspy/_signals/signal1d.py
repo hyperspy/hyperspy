@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
 import math
 
@@ -1506,9 +1507,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
 
-        from hyperspy.misc.config_dir import os_name
-
-        if parallel != False and os_name == "windows":  # pragma: no cover
+        if parallel != False and os.name in ["nt", "dos"]:  # pragma: no cover
             # Due to a scipy bug where scipy.interpolate.UnivariateSpline
             # appears to not be thread-safe on Windows, we raise a warning
             # here. See https://github.com/hyperspy/hyperspy/issues/2320

@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from os.path import join
 from tempfile import TemporaryDirectory
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -481,10 +481,10 @@ class TestLoadDecompositionResults:
         """
         with TemporaryDirectory() as tmpdir:
             self.s.decomposition()
-            fname1 = join(tmpdir, "results.npz")
+            fname1 = Path(tmpdir, "results.npz")
             self.s.learning_results.save(fname1)
             self.s.learning_results.load(fname1)
-            fname2 = join(tmpdir, "output.hspy")
+            fname2 = Path(tmpdir, "output.hspy")
             self.s.save(fname2)
             assert isinstance(self.s.learning_results.decomposition_algorithm, str)
 
