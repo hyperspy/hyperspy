@@ -33,6 +33,15 @@ functions will return a list of the corresponding signal.
     in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
+HyperSpy will attempt to infer the appropriate file reader to use based on
+the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
+override this using the ``reader`` keyword:
+
+.. code-block:: python
+
+    # Load a .hspy file with an unknown extension
+    >>> s = hs.load("filename.some_extension", reader="hspy")
+
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
 providing the ``signal`` keyword, which has to be one of: ``spectrum``,
