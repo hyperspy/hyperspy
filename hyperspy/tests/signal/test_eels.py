@@ -576,23 +576,26 @@ class TestVacuumMask:
 
     def setup_method(self, method):
         s = hs.signals.EELSSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
-        np.random.seed(0)  # Same random every time
-        s.add_poissonian_noise()
+        s.add_poissonian_noise(random_state=1)
+        s.axes_manager[-1].scale = 0.25
+        s.axes_manager[-1].units = 'eV'
         s.inav[:10] += 20
         self.signal = s
 
-    def test_vacuum_mask(self):
+    def test_vacuum_mask_opening(self):
         s = self.signal
-        assert not s.vacuum_mask().data[0]
-        assert not s.vacuum_mask().data[9]
-        assert s.vacuum_mask().data[10]
-        assert s.vacuum_mask().data[-1]
+        mask = s.vacuum_mask(opening=True)
+        assert not mask.data[0]
+        assert not mask.data[9]
+        assert mask.data[10]
+        assert mask.data[-1]
 
     def test_vacuum_mask_threshold(self):
         s = self.signal
-        assert s.vacuum_mask(threshold=20).data[0]
-        assert not s.vacuum_mask(threshold=20).data[1]
-        assert not s.vacuum_mask(threshold=20).data[9]
-        assert s.vacuum_mask(threshold=20).data[10]
-        assert s.vacuum_mask(threshold=20).data[-1]
-
+        mask = s.vacuum_mask(threshold=20)
+        assert mask.data[0]
+        assert mask.data[1]
+        assert not mask.data[2]
+        assert not mask.data[9]
+        assert mask.data[10]
+        assert mask.data[-1]

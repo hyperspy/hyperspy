@@ -24,6 +24,7 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 from prettytable import PrettyTable
+import pint
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
@@ -48,6 +49,7 @@ from hyperspy.docstrings.signal import (
 
 
 _logger = logging.getLogger(__name__)
+_ureg = pint.UnitRegistry()
 
 
 @add_gui_method(toolkey="hyperspy.microscope_parameters_EELS")
@@ -1611,7 +1613,7 @@ collection_angle : float
             vertical_line_marker, text_marker = slp.get_markers(edges)
             # the object is needed to connect replot method when axes_manager
             # indices changed
-            er = EdgesRange(self, active=list(edges.keys()))
+            _ = EdgesRange(self, active=list(edges.keys()))
         if len(vertical_line_marker) != len(text_marker) or \
             len(edges) != len(vertical_line_marker):
             raise ValueError('The size of edges, vertical_line_marker and '
@@ -1802,28 +1804,21 @@ collection_angle : float
             below which the pixel is considered as vacuum.
         start_energy: float, None
             Minimum energy included in the calculation of the mean intensity.
-            If None, set the value to 15.0 eV when the zero-loss peak and the
-            15.0 eV energy channel are in the spectrum, otherwise, take the
-            last quarter of the spectrum.
+            If None, consider only the last quarter of the spectrum to
+            calculate the mask.
         closing: bool
             If True, a morphological closing is applied to the mask.
         opening: bool
             If True, a morphological opening is applied to the mask.
 
-        Return
-        ------
+        Returns
+        -------
         mask: signal
             The mask of the region.
         """
         signal_axis = self.axes_manager.signal_axes[0]
         if start_energy is None:
-            # zero-loss peak present
-            if signal_axis.low_value < 0.0:
-                start_energy = 15.0
-                if signal_axis.high_value < start_energy:
-                    start_energy = 0.25 * signal_axis.high_value
-            else:
-                start_energy = 0.25 * signal_axis.high_value
+            start_energy = 0.75 * signal_axis.high_value
 
         mask = (self.isig[start_energy:].mean(-1) <= threshold)
 
