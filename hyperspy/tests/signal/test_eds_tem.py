@@ -214,6 +214,20 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
 
+    def test_quant_lorimer_mask(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        mask = np.array([[1, 1], [0, 0]])
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               navigation_mask=mask)
+        np.testing.assert_allclose(res[0].data, np.array([
+            [0, 0],
+            [22.70779, 22.70779]]), atol=1e-3)
+
     def test_quant_lorimer_warning(self):
         s = self.signal
         method = 'CL'
@@ -398,9 +412,10 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
                                 absorption_correction=True)
-        zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
-        res2 = s.quantification(intensities, method='zeta', factors=[22.402, 21.7132],
-                                absorption_correction=True)
+        _ = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
+        _ = s.quantification(intensities, method='zeta',
+                             factors=[22.402, 21.7132],
+                             absorption_correction=True)
         np.testing.assert_allclose(res[0][0].data, np.array(
             [[49.4889, 49.4889],
              [49.4889, 49.4889]]), atol=1e-3)

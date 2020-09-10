@@ -342,7 +342,8 @@ class EDSTEM_mixin:
             The navigation locations marked as True are not used in the
             quantification. If float is given the vacuum_mask method is used to
             generate a mask with the float value as threhsold.
-            Else provides a signal with the navigation shape.
+            Else provides a signal with the navigation shape. Only for the
+            'Cliff-Lorimer' method.
         closing: bool
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
@@ -389,9 +390,7 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
-        elif navigation_mask is not None:
-            navigation_mask = navigation_mask.data
+            navigation_mask = self.vacuum_mask(navigation_mask, closing)
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
@@ -421,32 +420,30 @@ class EDSTEM_mixin:
 
         abs_corr_factor = None # initial
 
+        quant_kwargs = {"intensities" : int_stack.data,
+                        "absorption_correction" : abs_corr_factor}
+
         if method == 'CL':
             quantification_method = utils_eds.quantification_cliff_lorimer
-            kwargs = {"intensities" : int_stack.data,
-                    "kfactors" : factors,
-                    "absorption_correction" : abs_corr_factor}
+            quant_kwargs.update({"kfactors" : factors,
+                                 "mask": navigation_mask})
 
         elif method == 'zeta':
             quantification_method = utils_eds.quantification_zeta_factor
-            kwargs = {"intensities" : int_stack.data,
-                    "zfactors" : factors,
-                    "dose" : self._get_dose(method),
-                    "absorption_correction" : abs_corr_factor}
+            quant_kwargs.update({"zfactors" : factors,
+                                 "dose" : self._get_dose(method)})
 
         elif method =='cross_section':
             quantification_method = utils_eds.quantification_cross_section
-            kwargs = {"intensities" : int_stack.data,
-                    "cross_sections" : factors,
-                    "dose" : self._get_dose(method, **kwargs),
-                    "absorption_correction" : abs_corr_factor}
+            quant_kwargs.update({"cross_sections" : factors,
+                                 "dose" : self._get_dose(method)})
 
         else:
             raise ValueError('Please specify method for quantification, '
-                             'as \'CL\', \'zeta\' or \'cross_section\'.')
+                             'as "CL", "zeta" or "cross_section".')
 
         while True:
-            results = quantification_method(**kwargs)
+            results = quantification_method(**quant_kwargs)
 
             if method == 'CL':
                 composition.data = results * 100.
@@ -477,13 +474,13 @@ class EDSTEM_mixin:
                                                        number_of_atoms.split(),
                                                        toa,
                                                        probe_area)
-                kwargs["absorption_correction"] = abs_corr_factor
+                quant_kwargs["absorption_correction"] = abs_corr_factor
             else:
                 if absorption_correction:
                     abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
                                                        mass_thickness,
                                                        toa)
-                    kwargs["absorption_correction"] = abs_corr_factor
+                    quant_kwargs["absorption_correction"] = abs_corr_factor
 
             res_max = np.max((composition - comp_old).data)
             comp_old.data = composition.data
@@ -557,9 +554,6 @@ class EDSTEM_mixin:
                 return composition, mass_thickness
             else:
                 return composition
-        else:
-            raise ValueError('Please specify method for quantification, as \
-            ''CL\', \'zeta\' or \'cross_section\'')
 
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):

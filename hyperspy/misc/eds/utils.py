@@ -36,7 +36,7 @@ def _get_element_and_line(xray_line):
     """
     lim = xray_line.find('_')
     if lim == -1:
-        raise ValueError("Invalid xray-line: %" % xray_line)
+        raise ValueError(f"Invalid xray-line: {xray_line}")
     return xray_line[:lim], xray_line[lim + 1:]
 
 
@@ -434,11 +434,11 @@ def quantification_cliff_lorimer(intensities,
                     intens[index[0], i] = 1.
         intens = intens.reshape(dim)
         if mask is not None:
-            from hyperspy.signals import BaseSignal 
+            from hyperspy.signals import BaseSignal
             if isinstance(mask, BaseSignal):
                 mask = mask.data
             for i in range(dim[0]):
-                intens[i][mask] = 0
+                intens[i][(mask==True)] = 0
         return intens
     else:
         index = np.where(intensities > min_intensity)[0]
