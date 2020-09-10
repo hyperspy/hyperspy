@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+from pathlib import Path
+
+
+def _resolve_dir():
+    """Returns the absolute path to this file's directory."""
+    return Path(__file__).resolve().parent
 
 
 def load_1D_EDS_SEM_spectrum():
@@ -32,9 +37,12 @@ def load_1D_EDS_SEM_spectrum():
       install location
     """
     from hyperspy.io import load
-    file_path = os.sep.join([os.path.dirname(__file__), 'eds',
-                             'example_signals', '1D_EDS_SEM_Spectrum.hspy'])
-    return load(file_path, mode='r')
+
+    file_path = _resolve_dir().joinpath(
+        "eds", "example_signals", "1D_EDS_SEM_Spectrum.hspy"
+    )
+
+    return load(file_path, mode="r")
 
 
 def load_1D_EDS_TEM_spectrum():
@@ -50,9 +58,12 @@ def load_1D_EDS_TEM_spectrum():
       install location
     """
     from hyperspy.io import load
-    file_path = os.sep.join([os.path.dirname(__file__), 'eds',
-                             'example_signals', '1D_EDS_TEM_Spectrum.hspy'])
-    return load(file_path, mode='r')
+
+    file_path = _resolve_dir().joinpath(
+        "eds", "example_signals", "1D_EDS_TEM_Spectrum.hspy"
+    )
+
+    return load(file_path, mode="r")
 
 
 def load_object_hologram():
@@ -79,10 +90,12 @@ def load_object_hologram():
     install location
     """
     from hyperspy.io import load
-    file_path = os.sep.join([os.path.dirname(__file__), 'holography',
-                             'example_signals', 
-                             '01_holo_Vbp_130V_0V_bin2_crop.hdf5'])
-    return load(file_path, signal_type='hologram', mode='r')
+
+    file_path = _resolve_dir().joinpath(
+        "holography", "example_signals", "01_holo_Vbp_130V_0V_bin2_crop.hdf5"
+    )
+
+    return load(file_path, signal_type="hologram", mode="r")
 
 
 def load_reference_hologram():
@@ -109,7 +122,10 @@ def load_reference_hologram():
     install location
     """
     from hyperspy.io import load
-    file_path = os.sep.join([os.path.dirname(__file__), 'holography',
-                             'example_signals', 
-                             '00_ref_Vbp_130V_0V_bin2_crop.hdf5'])
-    return load(file_path, signal_type='hologram', mode='r')
+
+    file_path = _resolve_dir().joinpath(
+        "holography", "example_signals", "00_ref_Vbp_130V_0V_bin2_crop.hdf5"
+    )
+
+    return load(file_path, signal_type="hologram", mode="r")
+

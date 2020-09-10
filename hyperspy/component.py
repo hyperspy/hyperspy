@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
 import numpy as np
 from dask.array import Array as dArray
 import traits.api as t
@@ -25,6 +23,7 @@ from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
 from distutils.version import LooseVersion
+from pathlib import Path
 
 import hyperspy
 from hyperspy.misc.utils import slugify
@@ -671,7 +670,7 @@ class Parameter(t.HasTraits):
             name = self.component.name + '_' + self.name
         filename = incremental_filename(slugify(name) + '.' + format)
         if folder is not None:
-            filename = os.path.join(folder, filename)
+            filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
             self.as_signal(field='std').save(append2pathname(

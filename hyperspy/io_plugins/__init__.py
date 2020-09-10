@@ -46,7 +46,7 @@ try:
     io_plugins.append(usid_hdf5)
 except ImportError:
     _logger.info('The USID IO plugin is not available because '
-                 'the pyUSID Python package is not installed.')
+                 'the pyUSID or sidpy Python package are not installed.')
 
 try:
     from hyperspy.io_plugins import mrcz

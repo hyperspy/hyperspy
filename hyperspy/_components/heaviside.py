@@ -17,16 +17,14 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
-
 from hyperspy._components.expression import Expression
 
 
 class HeavisideStep(Expression):
 
     r"""The Heaviside step function.
-    
-    Based on the corresponding `numpy function 
+
+    Based on the corresponding `numpy function
     <https://numpy.org/doc/stable/reference/generated/numpy.heaviside.html>`_
     using the half maximum definition for the central point:
 

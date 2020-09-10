@@ -17,13 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import os.path
 import warnings
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
 from pint import UnitRegistry, UndefinedUnitError
+from pathlib import Path
 
 import numpy as np
 import scipy as sp
@@ -527,7 +527,7 @@ class MVATools(object):
                 filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
-                    filename = os.path.join(folder, filename)
+                    filename = Path(folder, filename)
                 ensure_directory(filename)
                 _args = {'dpi': 600,
                          'format': save_figures_format}
@@ -574,7 +574,7 @@ class MVATools(object):
                             (factor_prefix, self.metadata.General.title), }})
             filename = '%ss.%s' % (factor_prefix, factor_format)
             if folder is not None:
-                filename = os.path.join(folder, filename)
+                filename = Path(folder, filename)
             s.save(filename)
         else:  # Separate files
             if self.axes_manager.signal_dimension == 1:
@@ -594,7 +594,7 @@ class MVATools(object):
                                              dim,
                                              factor_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     s.save(filename)
 
             if self.axes_manager.signal_dimension == 2:
@@ -619,7 +619,7 @@ class MVATools(object):
                                              dim,
                                              factor_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     im.save(filename)
 
     def _export_loadings(self,
@@ -668,7 +668,7 @@ class MVATools(object):
                 filename = '%s_%02i.%s' % (loading_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
-                    filename = os.path.join(folder, filename)
+                    filename = Path(folder, filename)
                 ensure_directory(filename)
                 _args = {'dpi': 600,
                          'format': save_figures_format}
@@ -717,7 +717,7 @@ class MVATools(object):
                                  }})
             filename = '%ss.%s' % (loading_prefix, loading_format)
             if folder is not None:
-                filename = os.path.join(folder, filename)
+                filename = Path(folder, filename)
             s.save(filename)
         else:  # Separate files
             if self.axes_manager.navigation_dimension == 1:
@@ -731,7 +731,7 @@ class MVATools(object):
                                              dim,
                                              loading_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     s.save(filename)
             elif self.axes_manager.navigation_dimension == 2:
                 axes_dicts = []
@@ -754,7 +754,7 @@ class MVATools(object):
                                              dim,
                                              loading_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     s.save(filename)
 
     def plot_decomposition_factors(self,
@@ -1276,7 +1276,7 @@ class MVATools(object):
         label_format : string
             The extension of the format that you wish to save to. default
             is "hspy". The format determines the kind of output.
-            
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1285,7 +1285,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
-                  
+
         multiple_files : bool
             If True, on exporting a file per center will
             be created. Otherwise only two files will be created, one for
@@ -1751,16 +1751,16 @@ class MVATools(object):
 
     def get_cluster_distances(self):
         """Euclidian distances to the centroid of each cluster
-    
+
         See Also
         --------
         get_cluster_signals
-        
+
         Returns
         --------
         signal
-            Hyperspy signal of cluster distances        
-    
+            Hyperspy signal of cluster distances
+
         """
         if self.learning_results.cluster_distances is None:
             raise RuntimeError("Cluster analysis needs to be performed first.")
@@ -1847,7 +1847,7 @@ class MVATools(object):
         ----------
 
         cluster_ids : None, int, or list of ints
-            if None (default), returns maps of all components using the 
+            if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
             if int, returns maps of cluster labels with ids from 0 to
@@ -1941,7 +1941,7 @@ class MVATools(object):
         Parameters
         ----------
         cluster_ids : None, int, or list of ints
-            if None (default), returns maps of all components using the 
+            if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
             if int, returns maps of cluster labels with ids from 0 to
@@ -2739,7 +2739,7 @@ class BaseSignal(FancySlicing,
         if filename is None:
             if (self.tmp_parameters.has_item('filename') and
                     self.tmp_parameters.has_item('folder')):
-                filename = os.path.join(
+                filename = Path(
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
                 extension = (self.tmp_parameters.extension
@@ -2749,9 +2749,10 @@ class BaseSignal(FancySlicing,
                 filename = self.metadata.General.original_filename
             else:
                 raise ValueError('File name not defined')
+
+        filename = Path(filename)
         if extension is not None:
-            basename, ext = os.path.splitext(filename)
-            filename = basename + '.' + extension
+            filename = filename.with_suffix(f".{extension}")
         io.save(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):
