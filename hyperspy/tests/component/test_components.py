@@ -63,8 +63,13 @@ def test_creation_components1d(component_name):
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))
 
+    # Do a export/import cycle to check all the components can be re-created.
     m = s.create_model()
     m.append(component)
+    model_dict = m.as_dictionary()
+
+    m2 = s.create_model()
+    m2._load_dictionary(model_dict)
 
 
 class TestPowerLaw:
@@ -499,6 +504,45 @@ class TestScalableFixedPattern:
                             category=RuntimeWarning):
             m.fit()
         assert abs(fp.yscale.value - 10) <= .1
+
+    def test_function(self):
+        s = self.s
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1, interpolate=False)
+        m = s.create_model()
+        m.append(fp)
+        m.fit(grad='analytical')
+        x = s.axes_manager[0].axis
+        np.testing.assert_allclose(s.data, fp.function(x))
+        np.testing.assert_allclose(fp.function(x), fp.function_nd(x))
+
+    def test_function_nd(self):
+        s = self.s
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
+        s_multi = hs.stack([s] * 3)
+        m = s_multi.create_model()
+        m.append(fp)
+        fp.yscale.map['values'] = [1.0, 0.5, 1.0]
+        fp.xscale.map['values'] = [1.0, 1.0, 0.75]
+        results = fp.function_nd(s.axes_manager[0].axis)
+        expected = np.array([s1.data * v for v in [1, 0.5, 0.75]])
+        np.testing.assert_allclose(results, expected)
+
+    @pytest.mark.parametrize('interpolate', [True, False])
+    def test_recreate_component(self, interpolate):
+        s = self.s
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1,
+                                                        interpolate=interpolate)
+        m = s.create_model()
+        m.append(fp)
+        model_dict = m.as_dictionary()
+
+        m2 = s.create_model()
+        m2._load_dictionary(model_dict)
+        assert m2[0].interpolate == interpolate
+        np.testing.assert_allclose(m2[0].signal.data, s1.data)
 
 
 class TestHeavisideStep:

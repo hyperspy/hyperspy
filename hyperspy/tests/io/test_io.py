@@ -20,6 +20,7 @@ import hashlib
 import os
 import tempfile
 from unittest.mock import patch
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -126,6 +127,18 @@ def test_glob_wildcards():
         ):
             _ = hs.load(os.path.join(dirpath, "temp[*].hspy"))
 
+        # Test pathlib.Path
+        t = hs.load(Path(dirpath, "temp[1x0].hspy"))
+        assert len(t) == 1
+
+        t = hs.load([Path(dirpath, "temp[1x0].hspy"), Path(dirpath, "temp[1x1].hspy")])
+        assert len(t) == 2
+
+        t = hs.load(list(Path(dirpath).glob('temp*.hspy')))
+        assert len(t) == 2
+
+        t = hs.load(Path(dirpath).glob('temp*.hspy'))
+        assert len(t) == 2
 
 def test_file_not_found_error():
     with tempfile.TemporaryDirectory() as dirpath:
