@@ -4,8 +4,6 @@
 
 |python_version|_ |pypi_version|_ |anaconda_cloud|_
 
-|download_pypi|_ |download_anaconda|_
-
 |gitter|_ |DOI|_
 
 .. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
@@ -31,12 +29,6 @@
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
-.. |download_pypi| image:: https://pepy.tech/badge/hyperspy/month
-.. _download_pypi: https://pepy.tech/project/hyperspy/month
-
-.. |download_anaconda| image:: https://anaconda.org/conda-forge/hyperspy/badges/downloads.svg
-.. _download_anaconda: https://anaconda.org/conda-forge/hyperspy/files
 
 .. |DOI| image:: https://zenodo.org/badge/2233998.svg
 .. _DOI: https://zenodo.org/badge/latestdoi/2233998
