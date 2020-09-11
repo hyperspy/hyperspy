@@ -1,9 +1,13 @@
 .. -*- mode: rst -*-
 
-|Azure|_ |Travis|_ |Codecov|_ |rtd|_ |pypi_version|_ |python_version|_ |gitter|_ |DOI|_
+|Azure|_ |Travis|_ |rtd|_ |Codecov|_
+
+|python_version|_ |pypi_version|_ |anaconda_cloud|_
+
+|gitter|_ |DOI|_
 
 .. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
-.. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build/latest?definitionId=1?branchName=RELEASE_next_minor
+.. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build?definitionId=1&_a=summary&view=branches
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_minor
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
@@ -16,6 +20,9 @@
 
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
+
+.. |anaconda_cloud| image:: https://anaconda.org/conda-forge/hyperspy/badges/version.svg
+.. _anaconda_cloud: https://anaconda.org/conda-forge/hyperspy
 
 .. |python_version| image:: https://img.shields.io/pypi/pyversions/hyperspy.svg?style=flat
 .. _python_version: https://pypi.python.org/pypi/hyperspy
