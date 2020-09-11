@@ -232,6 +232,8 @@ class MVA:
         * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
 
         """
+        from hyperspy.signal import BaseSignal
+
         # Check data is suitable for decomposition
         if self.data.dtype.char not in np.typecodes["AllFloat"]:
             raise TypeError(
@@ -358,7 +360,9 @@ class MVA:
         self._unfolded4decomposition = self.unfold()
         try:
             _logger.info("Performing decomposition analysis")
-
+            if isinstance(navigation_mask, BaseSignal):
+                self._check_navigation_mask(mask=navigation_mask)
+                navigation_mask = navigation_mask.data
             if hasattr(navigation_mask, "ravel"):
                 navigation_mask = navigation_mask.ravel()
 

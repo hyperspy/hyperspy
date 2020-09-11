@@ -204,6 +204,9 @@ class TestlineFit:
 
     def test_quantification(self):
         s = self.s
+        # to have enough intensities, so that the default values for
+        # `navigation_mask` of 1.0 in `quantification` doesn't mask the data
+        s = s * 1000
         m = s.create_model()
         m.fit()
         intensities = m.get_lines_intensity()
@@ -305,4 +308,4 @@ class TestMaps:
         for fitted, expected in zip(
                 m.inav[0, 0].get_lines_intensity(xray_lines),
                 m_single_fit.inav[0, 0].get_lines_intensity(xray_lines)):
-            np.testing.assert_allclose(fitted, expected, atol=1e-7)  
+            np.testing.assert_allclose(fitted, expected, atol=1e-7)
