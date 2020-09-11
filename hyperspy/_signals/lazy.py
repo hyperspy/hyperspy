@@ -29,6 +29,8 @@ from itertools import product
 
 
 from hyperspy.signal import BaseSignal
+from hyperspy.defaults_parser import preferences
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import _requires_linear_rebin
@@ -85,27 +87,46 @@ class LazySignal(BaseSignal):
     """
     _lazy = True
 
-    def compute(self, progressbar=True, close_file=False):
+    def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
 
-        close_file: bool
+        Parameters
+        ----------
+        close_file : bool, default False
             If True, attemp to close the file associated with the dask
             array data if any. Note that closing the file will make all other
             associated lazy signals inoperative.
+        %s
+
+        Returns
+        -------
+        None
 
         """
-        if progressbar:
-            cm = ProgressBar
-        else:
-            cm = dummy_context_manager
+        if "progressbar" in kwargs:
+            warnings.warn(
+                "The `progressbar` keyword is deprecated and will be removed "
+                "in HyperSpy 2.0. Use `show_progressbar` instead.",
+                VisibleDeprecationWarning,
+            )
+            show_progressbar = kwargs["progressbar"]
+
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
+
+        cm = ProgressBar if show_progressbar else dummy_context_manager
+
         with cm():
             da = self.data
             data = da.compute()
             if close_file:
                 self.close_file()
             self.data = data
+
         self._lazy = False
         self._assign_subclass()
+
+    compute.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def close_file(self):
         """Closes the associated data file if any.
