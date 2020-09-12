@@ -570,10 +570,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             elif mask.axes_manager.signal_dimension not in (0, 1):
                 raise ValueError("mask must be a BaseSignal "
                                  "with signal_dimension equal to 1")
-            elif (mask.axes_manager.navigation_dimension !=
-                  self.axes_manager.navigation_dimension):
-                raise ValueError("mask must be a BaseSignal with the same "
-                                 "navigation_dimension as the current signal.")
+            super()._check_navigation_mask(mask)
 
     def estimate_shift1D(
         self,
