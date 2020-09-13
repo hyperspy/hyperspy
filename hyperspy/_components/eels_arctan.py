@@ -16,23 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import math
-
-import numpy as np
-
 from hyperspy._components.expression import Expression
+
 
 class Arctan(Expression):
     # Legacy class to be removed in v2.0
     r"""This is the legacy Arctan component dedicated to EELS measurements
-    that will renamed to `EELSArctan` in v2.0. 
+    that will renamed to `EELSArctan` in v2.0.
 
-    To use the new Arctan component 
-    set `minimum_at_zero=False`. See the documentation of 
-    :meth:`hyperspy._components.arctan.Arctan` for details on 
+    To use the new Arctan component
+    set `minimum_at_zero=False`. See the documentation of
+    :meth:`hyperspy._components.arctan.Arctan` for details on
     the usage.
 
-    The EELS version :meth:`hyperspy._components.eels_arctan.EELSArctan` 
+    The EELS version :meth:`hyperspy._components.eels_arctan.EELSArctan`
     (`minimum_at_zero=True`) shifts the function by A in the y direction
 
     """
@@ -59,27 +56,27 @@ class EELSArctan(Expression):
     r"""Arctan function component for EELS (with minimum at zero).
 
     .. math::
-    
+
         f(x) = A \cdot \left( \frac{\pi}{2} +
                \arctan \left[ k \left( x-x_0 \right) \right] \right)
 
 
     ============ =============
-    Variable      Parameter 
+    Variable      Parameter
     ============ =============
-    :math:`A`     A 
-    :math:`k`     k 
-    :math:`x_0`   x0 
+    :math:`A`     A
+    :math:`k`     k
+    :math:`x_0`   x0
     ============ =============
 
 
     Parameters
     -----------
     A : float
-        Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=0` and 
+        Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=0` and
         :math:`\lim_{x\to\infty}f(x)=2A`
     k : float
-        Slope (steepness of the step). The larger :math:`k`, the sharper the 
+        Slope (steepness of the step). The larger :math:`k`, the sharper the
         step.
     x0 : float
         Center parameter (:math:`f(x_0)=A`).

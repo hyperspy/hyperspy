@@ -1534,55 +1534,45 @@ class SimpleMessage(t.HasTraits):
         self.text = text
 
 
-@add_gui_method(toolkey="hyperspy.Signal1D.spikes_removal_tool")
-class SpikesRemoval(SpanSelectorInSignal1D):
-    interpolator_kind = t.Enum(
-        'Linear',
-        'Spline',
-        default='Linear',
-        desc="the type of interpolation to use when\n"
-             "replacing the signal where a spike has been replaced")
-    threshold = t.Float(400, desc="the derivative magnitude threshold above\n"
-                        "which to find spikes")
-    click_to_show_instructions = t.Button()
-    show_derivative_histogram = t.Button()
-    spline_order = t.Range(1, 10, 3,
-                           desc="the order of the spline used to\n"
-                           "connect the reconstructed data")
-    interpolator = None
-    default_spike_width = t.Int(5,
-                                desc="the width over which to do the interpolation\n"
-                                "when removing a spike (this can be "
-                                "adjusted for each\nspike by clicking "
-                                     "and dragging on the display during\n"
-                                     "spike replacement)")
-    index = t.Int(0)
-    add_noise = t.Bool(True,
-                       desc="whether to add noise to the interpolated\nportion"
-                       "of the spectrum. The noise properties defined\n"
-                       "in the Signal metadata are used if present,"
-                            "otherwise\nshot noise is used as a default")
+class SpikesRemoval:
 
-    def __init__(self, signal, navigation_mask=None, signal_mask=None):
-        super(SpikesRemoval, self).__init__(signal)
+    def __init__(self, signal, navigation_mask=None, signal_mask=None,
+                 threshold='auto', default_spike_width=5, add_noise=True,
+                 max_num_bins=1000):
+        self.ss_left_value = np.nan
+        self.ss_right_value = np.nan
+        self.default_spike_width = default_spike_width
+        self.add_noise = add_noise
+        self.signal_mask = signal_mask
+        self.navigation_mask = navigation_mask
         self.interpolated_line = None
         self.coordinates = [coordinate for coordinate in
                             signal.axes_manager._am_indices_generator()
                             if (navigation_mask is None or not
                                 navigation_mask[coordinate[::-1]])]
         self.signal = signal
-        self.line = signal._plot.signal_plot.ax_lines[0]
-        self.ax = signal._plot.signal_plot.ax
-        signal._plot.auto_update_plot = False
+        self.axis = self.signal.axes_manager.signal_axes[0]
         if len(self.coordinates) > 1:
             signal.axes_manager.indices = self.coordinates[0]
-        self.index = 0
+        if threshold == 'auto':
+            # Find the first zero of the spikes diagnosis plot
+            hist = signal._get_spikes_diagnosis_histogram_data(
+                    signal_mask=signal_mask,
+                    navigation_mask=navigation_mask,
+                    max_num_bins=max_num_bins)
+            zero_index = np.where(hist.data == 0)[0]
+            if zero_index.shape[0] > 0:
+                index = zero_index[0]
+            else:
+                index = hist.data.shape[0] - 1
+            threshold = np.ceil(hist.axes_manager[0].index2value(index))
+            _logger.info(f'Threshold value: {threshold}')
         self.argmax = None
         self.derivmax = None
         self.kind = "linear"
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
-        self.signal_mask = signal_mask
-        self.navigation_mask = navigation_mask
+        self.index = 0
+        self.threshold = threshold
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
 
@@ -1597,19 +1587,6 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 self.noise_type = "shot noise"
         else:
             self.noise_type = "shot noise"
-
-    def _threshold_changed(self, old, new):
-        self.index = 0
-        self.update_plot()
-
-    def _click_to_show_instructions_fired(self):
-        from pyface.message_dialog import information
-        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
-                        title="Instructions"),
-
-    def _show_derivative_histogram_fired(self):
-        self.signal._spikes_diagnosis(signal_mask=self.signal_mask,
-                                      navigation_mask=self.navigation_mask)
 
     def detect_spike(self):
         axis = self.signal.axes_manager.signal_axes[-1].axis
@@ -1629,14 +1606,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         else:
             return False
 
-    def _reset_line(self):
-        if self.interpolated_line is not None:
-            self.interpolated_line.close()
-            self.interpolated_line = None
-            self.reset_span_selector()
-
     def find(self, back=False):
-        self._reset_line()
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
         with self.signal.axes_manager.events.indices_changed.suppress():
@@ -1647,96 +1617,15 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                     self.index += 1
                 else:
                     self.index -= 1
+                self._index_changed(self.index, self.index)
                 spike = self.detect_spike()
 
-        if spike is False:
-            m = SimpleMessage()
-            m.text = 'End of dataset reached'
-            try:
-                m.gui()
-            except (NotImplementedError, ImportError):
-                # This is only available for traitsui, ipywidgets has a
-                # progress bar instead.
-                pass
-            except ValueError as error:
-                _logger.warning(error)
-            self.index = 0
-            self._reset_line()
-            return
-        else:
-            minimum = max(0, self.argmax - 50)
-            maximum = min(len(self.signal()) - 1, self.argmax + 50)
-            thresh_label = DerivativeTextParameters(
-                text=r"$\mathsf{\delta}_\mathsf{max}=$",
-                color="black")
-            self.ax.legend([thresh_label], [repr(int(self.derivmax))],
-                           handler_map={DerivativeTextParameters:
-                                        DerivativeTextHandler()},
-                           loc='best')
-            self.ax.set_xlim(
-                self.signal.axes_manager.signal_axes[0].index2value(
-                    minimum),
-                self.signal.axes_manager.signal_axes[0].index2value(
-                    maximum))
-            self.update_plot()
-            self.create_interpolation_line()
-
-    def update_plot(self):
-        if self.interpolated_line is not None:
-            self.interpolated_line.close()
-            self.interpolated_line = None
-        self.reset_span_selector()
-        self.update_spectrum_line()
-        if len(self.coordinates) > 1:
-            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
-
-    def update_spectrum_line(self):
-        self.line.auto_update = True
-        self.line.update()
-        self.line.auto_update = False
+        return spike
 
     def _index_changed(self, old, new):
         self.signal.axes_manager.indices = self.coordinates[new]
         self.argmax = None
         self._temp_mask[:] = False
-
-    def on_disabling_span_selector(self):
-        if self.interpolated_line is not None:
-            self.interpolated_line.close()
-            self.interpolated_line = None
-
-    def _spline_order_changed(self, old, new):
-        self.kind = self.spline_order
-        self.span_selector_changed()
-
-    def _add_noise_changed(self, old, new):
-        self.span_selector_changed()
-
-    def _interpolator_kind_changed(self, old, new):
-        if new == 'linear':
-            self.kind = new
-        else:
-            self.kind = self.spline_order
-        self.span_selector_changed()
-
-    def _ss_left_value_changed(self, old, new):
-        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
-            self.span_selector_changed()
-
-    def _ss_right_value_changed(self, old, new):
-        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
-            self.span_selector_changed()
-
-    def create_interpolation_line(self):
-        self.interpolated_line = drawing.signal1d.Signal1DLine()
-        self.interpolated_line.data_function = self.get_interpolated_spectrum
-        self.interpolated_line.set_line_properties(
-            color='blue',
-            type='line')
-        self.signal._plot.signal_plot.add_line(self.interpolated_line)
-        self.interpolated_line.auto_update = False
-        self.interpolated_line.autoscale = ''
-        self.interpolated_line.plot()
 
     def get_interpolation_range(self):
         axis = self.signal.axes_manager.signal_axes[0]
@@ -1804,6 +1693,172 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                     np.clip(data[left:right], 0, np.inf))
 
         return data
+
+    def remove_all_spikes(self):
+        spike = self.find()
+        while spike:
+            self.signal()[:] = self.get_interpolated_spectrum()
+            spike = self.find()
+
+
+@add_gui_method(toolkey="hyperspy.Signal1D.spikes_removal_tool")
+class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
+    interpolator_kind = t.Enum(
+        'Linear',
+        'Spline',
+        default='Linear',
+        desc="the type of interpolation to use when\n"
+             "replacing the signal where a spike has been replaced")
+    threshold = t.Float(400, desc="the derivative magnitude threshold above\n"
+                        "which to find spikes")
+    click_to_show_instructions = t.Button()
+    show_derivative_histogram = t.Button()
+    spline_order = t.Range(1, 10, 3,
+                           desc="the order of the spline used to\n"
+                           "connect the reconstructed data")
+    interpolator = None
+    default_spike_width = t.Int(5,
+                                desc="the width over which to do the interpolation\n"
+                                "when removing a spike (this can be "
+                                "adjusted for each\nspike by clicking "
+                                     "and dragging on the display during\n"
+                                     "spike replacement)")
+    index = t.Int(0)
+    add_noise = t.Bool(True,
+                       desc="whether to add noise to the interpolated\nportion"
+                       "of the spectrum. The noise properties defined\n"
+                       "in the Signal metadata are used if present,"
+                            "otherwise\nshot noise is used as a default")
+
+    def __init__(self, signal, max_num_bins=1000, **kwargs):
+        SpanSelectorInSignal1D.__init__(self, signal=signal)
+        signal._plot.auto_update_plot = False
+        self.line = signal._plot.signal_plot.ax_lines[0]
+        self.ax = signal._plot.signal_plot.ax
+        SpikesRemoval.__init__(self, signal=signal, **kwargs)
+        self.update_signal_mask()
+        self.max_num_bins = max_num_bins
+
+    def _threshold_changed(self, old, new):
+        self.index = 0
+        self.update_plot()
+
+    def _click_to_show_instructions_fired(self):
+        from pyface.message_dialog import information
+        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
+                        title="Instructions"),
+
+    def _show_derivative_histogram_fired(self):
+        self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
+                                     navigation_mask=self.navigation_mask,
+                                     max_num_bins=self.max_num_bins)
+
+    def _reset_line(self):
+        if self.interpolated_line is not None:
+            self.interpolated_line.close()
+            self.interpolated_line = None
+            self.reset_span_selector()
+
+    def find(self, back=False):
+        self._reset_line()
+        spike = super().find(back=back)
+
+        if spike is False:
+            m = SimpleMessage()
+            m.text = 'End of dataset reached'
+            try:
+                m.gui()
+            except (NotImplementedError, ImportError):
+                # This is only available for traitsui, ipywidgets has a
+                # progress bar instead.
+                pass
+            except ValueError as error:
+                _logger.warning(error)
+            self.index = 0
+            self._reset_line()
+            return
+        else:
+            minimum = max(0, self.argmax - 50)
+            maximum = min(len(self.signal()) - 1, self.argmax + 50)
+            thresh_label = DerivativeTextParameters(
+                text=r"$\mathsf{\delta}_\mathsf{max}=$",
+                color="black")
+            self.ax.legend([thresh_label], [repr(int(self.derivmax))],
+                           handler_map={DerivativeTextParameters:
+                                        DerivativeTextHandler()},
+                           loc='best')
+            self.ax.set_xlim(
+                self.signal.axes_manager.signal_axes[0].index2value(
+                    minimum),
+                self.signal.axes_manager.signal_axes[0].index2value(
+                    maximum))
+            self.signal._plot.pointer._set_indices(
+                self.coordinates[self.index])
+            self.update_plot()
+            self.create_interpolation_line()
+
+    def update_plot(self):
+        if self.interpolated_line is not None:
+            self.interpolated_line.close()
+            self.interpolated_line = None
+        self.reset_span_selector()
+        self.update_spectrum_line()
+        self.update_signal_mask()
+        if len(self.coordinates) > 1:
+            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
+
+    def update_signal_mask(self):
+        if hasattr(self, 'mask_filling'):
+            self.mask_filling.remove()
+        if self.signal_mask is not None:
+            self.mask_filling = self.ax.fill_between(self.axis.axis,
+                                                     self.signal(), 0,
+                                                     where=self.signal_mask,
+                                                     facecolor='blue',
+                                                     alpha=0.5)
+
+    def update_spectrum_line(self):
+        self.line.auto_update = True
+        self.line.update()
+        self.line.auto_update = False
+
+    def on_disabling_span_selector(self):
+        if self.interpolated_line is not None:
+            self.interpolated_line.close()
+            self.interpolated_line = None
+
+    def _spline_order_changed(self, old, new):
+        self.kind = self.spline_order
+        self.span_selector_changed()
+
+    def _add_noise_changed(self, old, new):
+        self.span_selector_changed()
+
+    def _interpolator_kind_changed(self, old, new):
+        if new == 'linear':
+            self.kind = new
+        else:
+            self.kind = self.spline_order
+        self.span_selector_changed()
+
+    def _ss_left_value_changed(self, old, new):
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
+
+    def _ss_right_value_changed(self, old, new):
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
+
+    def create_interpolation_line(self):
+        self.interpolated_line = drawing.signal1d.Signal1DLine()
+        self.interpolated_line.data_function = self.get_interpolated_spectrum
+        self.interpolated_line.set_line_properties(
+            color='blue',
+            type='line')
+        self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.interpolated_line.auto_update = False
+        self.interpolated_line.autoscale = ''
+        self.interpolated_line.plot()
 
     def span_selector_changed(self):
         if self.interpolated_line is None:

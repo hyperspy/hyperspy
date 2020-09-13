@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.signal_tools import SpikesRemovalInteractive
 from hyperspy.signals import Signal1D
 
 
@@ -31,7 +31,7 @@ def test_spikes_removal_tool():
     s.data[0, 2, 29] += 1
     s.data[1, 2, 14] += 1
 
-    sr = SpikesRemoval(s)
+    sr = SpikesRemovalInteractive(s)
     sr.threshold = 1.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
@@ -16,21 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil
-import logging
-from pathlib import Path
+import numpy as np
+import pytest
+from hyperspy.drawing import widget
+from hyperspy.signals import Signal1D
 
-_logger = logging.getLogger(__name__)
-
-config_files = list()
-config_path = Path("~/.hyperspy").expanduser()
-config_path.mkdir(parents=True, exist_ok=True)
-
-data_path = Path(__file__).resolve().parents[1].joinpath("data")
-
-for file in config_files:
-    templates_file = data_path.joinpath(file)
-    config_file = config_path.joinpath(file)
-    if not config_file.is_file():
-        _logger.info(f"Setting configuration file: {file}")
-        shutil.copy(templates_file, config_file)
+def test_get_step():
+    s = Signal1D(np.zeros((4, 4)))
+    axis = s.axes_manager.navigation_axes[0]
+    step = widget.ResizableDraggableWidgetBase._get_step(s,s.axes_manager.navigation_axes[0])
+    assert(step == 1)
+    axis.index = 3
+    step = widget.ResizableDraggableWidgetBase._get_step(s,s.axes_manager.navigation_axes[0])
+    assert(step == 1)
+    
+    

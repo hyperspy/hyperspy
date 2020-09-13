@@ -20,6 +20,7 @@ import hashlib
 import os
 import tempfile
 from unittest.mock import patch
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -100,7 +101,7 @@ class TestNonUniformAxisCheck:
     def test_io_nonuniform(self):
         assert(self.s.axes_manager[0].is_uniform == False)
         self.s.save('tmp.hspy', overwrite = True)
-        with pytest.raises(OSError):
+        with pytest.raises(AttributeError):
             self.s.save('tmp.msa', overwrite = True)
 
     def test_nonuniform_writer_characteristic(self):
@@ -155,6 +156,18 @@ def test_glob_wildcards():
         ):
             _ = hs.load(os.path.join(dirpath, "temp[*].hspy"))
 
+        # Test pathlib.Path
+        t = hs.load(Path(dirpath, "temp[1x0].hspy"))
+        assert len(t) == 1
+
+        t = hs.load([Path(dirpath, "temp[1x0].hspy"), Path(dirpath, "temp[1x1].hspy")])
+        assert len(t) == 2
+
+        t = hs.load(list(Path(dirpath).glob('temp*.hspy')))
+        assert len(t) == 2
+
+        t = hs.load(Path(dirpath).glob('temp*.hspy'))
+        assert len(t) == 2
 
 def test_file_not_found_error():
     with tempfile.TemporaryDirectory() as dirpath:

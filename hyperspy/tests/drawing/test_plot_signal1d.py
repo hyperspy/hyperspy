@@ -17,6 +17,7 @@
 
 import os
 from shutil import copyfile
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,14 +44,19 @@ def mpl_generate_path_cmdopt(request):
 
 
 def _generate_filename_list(style):
-    path = os.path.dirname(__file__)
-    filename_list = ['test_plot_spectra_%s' % s for s in style] + \
-                    ['test_plot_spectra_rev_%s' % s for s in style]
+    path = Path(__file__).resolve().parent
+    baseline_path = path.joinpath(baseline_dir)
+
+    filename_list = [f'test_plot_spectra_{s}' for s in style] + \
+                    [f'test_plot_spectra_rev_{s}' for s in style]
     filename_list2 = []
+
     for filename in filename_list:
         for i in range(0, 4):
-            filename_list2.append(os.path.join(path, baseline_dir,
-                                               '%s%i.png' % (filename, i)))
+            filename_list2.append(
+                baseline_path.joinpath(f'{filename}{i}.png')
+            )
+
     return filename_list2
 
 
@@ -63,14 +69,14 @@ def setup_teardown(request, scope="class"):
     # expected images are the same.
     if mpl_generate_path_cmdopt is None:
         for filename in _generate_filename_list(style):
-            copyfile("%s.png" % filename[:-5], filename)
+            copyfile(f"{str(filename)[:-5]}.png", filename)
     yield
     # TEARDOWN
     # Create the baseline images: copy one baseline image for each test
     # and remove the other ones.
     if mpl_generate_path_cmdopt:
         for filename in _generate_filename_list(style):
-            copyfile(filename, "%s.png" % filename[:-5])
+            copyfile(filename, f"{str(filename)[:-5]}.png")
     # Delete the images that have been created in 'setup_class'
     for filename in _generate_filename_list(style):
         os.remove(filename)

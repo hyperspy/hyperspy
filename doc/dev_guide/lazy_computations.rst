@@ -39,3 +39,6 @@ the underlying dask blocks as numpy arrays. It is important to note that
 stacking all (flat) blocks and reshaping the result into the initial data shape
 will not result in identical arrays. For illustration it is best to see the
 `dask documentation <https://dask.readthedocs.io/en/latest/array.html>`_.
+
+For a summary of the implementation, see the 
+`first post of the github issue #1219 <https://github.com/hyperspy/hyperspy/pull/1219>`_.

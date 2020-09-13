@@ -114,7 +114,7 @@ class TestParameterDictionary:
         p = Parameter()
         p._id_name = 'newone'
         with pytest.raises(ValueError):
-            _id = p._load_dictionary(d)
+            _ = p._load_dictionary(d)
 
 
 class TestComponentDictionary:
@@ -183,7 +183,7 @@ class TestComponentDictionary:
         d = c.as_dictionary()
         n = Component(self.parameter_names)
         with pytest.raises(ValueError):
-            id_dict = n._load_dictionary(d)
+            _ = n._load_dictionary(d)
 
     def test_invalid_parameter_name(self):
         c = self.comp
@@ -191,7 +191,7 @@ class TestComponentDictionary:
         n = Component([a + 's' for a in self.parameter_names])
         n._id_name = 'dummy names yay!'
         with pytest.raises(ValueError):
-            id_dict = n._load_dictionary(d)
+            _ = n._load_dictionary(d)
 
 
 class TestModelDictionary:

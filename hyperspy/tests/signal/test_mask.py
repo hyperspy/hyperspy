@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
@@ -16,21 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil
-import logging
-from pathlib import Path
+import numpy as np
+import pytest
 
-_logger = logging.getLogger(__name__)
+import hyperspy.api as hs
 
-config_files = list()
-config_path = Path("~/.hyperspy").expanduser()
-config_path.mkdir(parents=True, exist_ok=True)
 
-data_path = Path(__file__).resolve().parents[1].joinpath("data")
+def test_check_navigation_mask():
+    s = hs.signals.Signal1D(np.arange(2*3*4).reshape(3, 2, 4))
+    navigation_mask = s.sum(-1)
+    s._check_navigation_mask(navigation_mask)
+    with pytest.raises(ValueError):
+        s._check_navigation_mask(navigation_mask.T)
 
-for file in config_files:
-    templates_file = data_path.joinpath(file)
-    config_file = config_path.joinpath(file)
-    if not config_file.is_file():
-        _logger.info(f"Setting configuration file: {file}")
-        shutil.copy(templates_file, config_file)
+
+def test_check_signal_mask():
+    s = hs.signals.Signal1D(np.arange(2*3*4).reshape(3, 2, 4))
+    signal_mask = s.sum([0, 1])
+    s._check_signal_mask(signal_mask)
+    with pytest.raises(ValueError):
+        s._check_signal_mask(signal_mask.T)

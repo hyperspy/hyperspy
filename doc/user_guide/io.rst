@@ -28,10 +28,10 @@ If the loaded file contains several datasets, the :py:func:`~.io.load`
 functions will return a list of the corresponding signal.
 
 .. NOTE::
-    Note for python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
-    normally need to access it there.)
 
+    Note for Python programmers: the data is stored in a numpy array
+    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
+    normally need to access it there.
 
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
@@ -40,7 +40,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 .. code-block:: python
 
-    >>> s = hs.load("filename", signal = "EELS")
+    >>> s = hs.load("filename", signal_type="EELS")
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
@@ -122,6 +122,22 @@ or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_:
         >>> # /home/data/afile[1x2].hspy
 
         >>> s = hs.load("/home/data/afile[*].hspy", escape_square_brackets=True)
+
+HyperSpy also supports ```pathlib.Path`` <https://docs.python.org/3/library/pathlib.html>`_
+objects, for example:
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> from pathlib import Path
+
+    >>> # Use pathlib.Path
+    >>> p = Path("/path/to/a/file.hspy")
+    >>> s = hs.load(p)
+
+    >>> # Use pathlib.Path.glob
+    >>> p = Path("/path/to/some/files/").glob("*.hspy")
+    >>> s = hs.load(p)
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same
@@ -524,9 +540,9 @@ TIFF
 ----
 
 HyperSpy can read and write 2D and 3D TIFF files using using
-Christoph Gohlke's tifffile library. In particular it supports reading and
+Christoph Gohlke's ``tifffile`` library. In particular, it supports reading and
 writing of TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH, and FluoView files. Most of
-these are uncompressed or losslessly compressed 2**(0 to 6) bit integer,16, 32
+these are uncompressed or losslessly compressed 2**(0 to 6) bit integer, 16, 32
 and 64-bit float, grayscale and RGB(A) images, which are commonly used in
 bio-scientific imaging. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
@@ -536,21 +552,20 @@ bio-scientific imaging. See `the library webpage
    ImageJ or DigitalMicrograph
 
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
-However, the way that HyperSpy reads and saves the scale and the units of tiff
+However, the way that HyperSpy reads and saves the scale and the units of TIFF
 files is compatible with ImageJ/Fiji and Gatan Digital Micrograph software.
-HyperSpy can also import the scale and the units from tiff files saved using
+HyperSpy can also import the scale and the units from TIFF files saved using
 FEI, Zeiss SEM and Olympus SIS software.
 
 .. code-block:: python
 
     >>> # Force read image resolution using the x_resolution, y_resolution and
-    >>> # the resolution_unit of the tiff tags. Be aware, that most of the
-    >>> # software doesn't (properly) use these tags when saving tiff files.
+    >>> # the resolution_unit of the TIFF tags. Be aware, that most of the
+    >>> # software doesn't (properly) use these tags when saving TIFF files.
     >>> s = hs.load('file.tif', force_read_resolution=True)
 
-HyperSpy can also read and save custom tags through Christoph Gohlke's tifffile
-library. See `the library webpage
-<http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
+HyperSpy can also read and save custom tags through the ``tifffile``
+library.
 
 .. code-block:: python
 
@@ -562,6 +577,24 @@ library. See `the library webpage
     >>> s2 = hs.load('file.tif')
     >>> s2.original_metadata['Number_65000']
     b'Random metadata'
+
+.. warning::
+
+    The file will be saved with the same bit depth as the signal. Since
+    most processing operations in HyperSpy and numpy will result in 64-bit
+    floats, this can result in 64-bit ``.tiff`` files, which are not always
+    compatible with other imaging software.
+
+    You can first change the dtype of the signal before saving:
+
+    .. code-block:: python
+
+        >>> s.data.dtype
+        dtype('float64')
+        >>> s.change_dtype('float32')
+        >>> s.data.dtype
+        dtype('float32')
+        >>> s.save('file.tif')
 
 .. _dm3-format:
 
@@ -1497,12 +1530,21 @@ When executed it will ask for 2 files:
 #. The data itself in raw format.
 
 If a file with the same name and path as the riple file exits
-with raw or bin extension it is opened directly without prompting
-
+with raw or bin extension it is opened directly without prompting.
 ImportRPL was written by Luiz Fernando Zagonel.
 
-
 `Download ImportRPL <https://github.com/downloads/hyperspy/ImportRPL/ImportRPL.s>`_
+
+
+HDF5 reader plugin for Digital Micrograph
+-----------------------------------------
+
+This Digital Micrograph plugin is designed to import HDF5 files and like the
+`ImportRPL` script above, it can used to easily transfer data from HyperSpy to
+Digital Micrograph by using the HDF5 hyperspy format (``hspy`` extension).
+
+Download ``gms_plugin_hdf5`` from its `Github repository <https://github.com/niermann/gms_plugin_hdf5>`_.
+
 
 .. _hyperspy-matlab:
 
@@ -1514,3 +1556,4 @@ Like the Digital Micrograph script above, it is used to easily transfer data
 from HyperSpy to MATLAB, while retaining spatial calibration information.
 
 Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.
+
