@@ -94,7 +94,7 @@ class TestIOOverwriting:
 class TestNonUniformAxisCheck:
 
     def setup_method(self, method):
-        axis = DataAxis(axis = 1/np.arange(10), navigate = False)
+        axis = DataAxis(axis = 1/(np.arange(10)+1), navigate = False)
         self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(), ))
         # make sure we start from a clean state
     
