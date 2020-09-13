@@ -2198,7 +2198,7 @@ class BaseSignal(FancySlicing,
         folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
-        mp.Signal.binned = False
+#        mp.Signal.binned = False
         self.original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 
@@ -4201,7 +4201,7 @@ class BaseSignal(FancySlicing,
 
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
-        `metadata.Signal.binned` is ``False`` and simple summation over the
+        `axis.is_binned` is ``False`` and simple summation over the
         given axis if ``True``.
 
         Parameters
@@ -4229,7 +4229,7 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if self.metadata.Signal.binned is False:
+        if axis.is_binned is False:
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)
@@ -4453,7 +4453,7 @@ class BaseSignal(FancySlicing,
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
-        hist_spec.metadata.Signal.binned = True
+        hist_spec.axes_manager[0].is_binned = True
         if out is None:
             return hist_spec
         else:

@@ -315,7 +315,6 @@ class TestSavingMetadataContainers:
                           'title': 'test_diffraction_pattern'},
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
                                                                         'gain_offset': 0.0}},
-                         'binned': False,
                          'quantity': 'Intensity',
                          'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
