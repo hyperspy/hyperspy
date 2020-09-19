@@ -662,3 +662,21 @@ def test_centering_error():
             match="centre='{}' has been deprecated".format(centre),
         ):
             s.decomposition(centre=centre)
+
+
+@pytest.mark.parametrize('mask_as_array', [True, False])
+def test_decomposition_navigation_mask(mask_as_array):
+    s = signals.Signal1D(generate_low_rank_matrix())
+    navigation_mask = (s.sum(-1) < 1.5)
+    if mask_as_array:
+        navigation_mask = navigation_mask
+    s.decomposition(navigation_mask=navigation_mask)
+
+
+@pytest.mark.parametrize('mask_as_array', [True, False])
+def test_decomposition_signal_mask(mask_as_array):
+    s = signals.Signal1D(generate_low_rank_matrix())
+    signal_mask = (s.sum(0) < 0.25)
+    if mask_as_array:
+        signal_mask = signal_mask.data
+    s.decomposition(signal_mask=signal_mask)
