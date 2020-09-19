@@ -412,6 +412,8 @@ class MVA:
             # input masks
 
             data_ = dc[:, signal_mask][navigation_mask, :]
+            if data_.size == 0:
+                raise ValueError("All the data are masked, change the mask.")
 
             # Reset the explained_variance which is not set by all the
             # algorithms
@@ -1624,6 +1626,9 @@ class MVA:
                 signal_mask = slice(None)
             else:
                 signal_mask = ~signal_mask
+
+            if dc[:, signal_mask][navigation_mask, :].size == 0:
+                raise ValueError("All the data are masked, change the mask.")
 
             # Check non-negative
             if dc[:, signal_mask][navigation_mask, :].min() < 0.0:
