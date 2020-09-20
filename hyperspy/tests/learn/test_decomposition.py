@@ -682,13 +682,15 @@ def test_decomposition_signal_mask(mask_as_array):
     s.decomposition(signal_mask=signal_mask)
 
 
-def test_decomposition_mask_all_data():
+@pytest.mark.parametrize('normalise_poissonian_noise', [True, False])
+def test_decomposition_mask_all_data(normalise_poissonian_noise):
     with pytest.raises(ValueError, match='All the data are masked'):
         s = signals.Signal1D(generate_low_rank_matrix())
         signal_mask = (s.sum(0) >= s.sum(0).min())
-        s.decomposition(signal_mask=signal_mask)
+        s.decomposition(normalise_poissonian_noise, signal_mask=signal_mask)
 
     with pytest.raises(ValueError, match='All the data are masked'):
         s = signals.Signal1D(generate_low_rank_matrix())
         navigation_mask = (s.sum(-1) >= 0)
-        s.decomposition(navigation_mask=navigation_mask)
+        s.decomposition(normalise_poissonian_noise,
+                        navigation_mask=navigation_mask)
