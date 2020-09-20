@@ -19,7 +19,6 @@
 import os
 
 import numpy as np
-import pytest
 
 from hyperspy.io import load
 
@@ -47,7 +46,7 @@ def test_load_project():
   assert s[0].axes_manager[1].units == 'µm'
   assert s[0].axes_manager[1].name == 'height'
   # 1 to 16 files are a 16bit image of work area and elemental maps
-  for map in s[0:-1]:
+  for map in s[:-1]:
     assert map.data.dtype == np.uint8
     assert map.data.shape == (512,512)
     assert map.axes_manager.signal_dimension == 2
@@ -68,7 +67,7 @@ def test_load_project():
   np.testing.assert_allclose(s[-1].axes_manager[2].offset, -0.000789965-0.00999866*96)
   np.testing.assert_allclose(s[-1].axes_manager[2].scale, 0.00999866)
   assert s[-1].axes_manager[2].name == 'Energy'
-  
+
 def test_load_image():
   # test load work area haadf image
   filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[1])

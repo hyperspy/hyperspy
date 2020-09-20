@@ -237,7 +237,12 @@ def read_pts(filename, scale=None):
         height = int(height)
         energy = 4096
         fd.seek(data_pos)
-        data = readcube(fd, width, height, energy)
+
+        # read spectrum image
+        rawdata = np.fromfile(fd, dtype="u2")
+        hypermap = np.zeros([height, width, energy], dtype=np.uint8)
+        data = readcube(rawdata, hypermap)
+
         if scale is not None:
             xscale = -scale[2] / width
             yscale = scale[3] / height
@@ -406,10 +411,8 @@ def parsejeol(fd):
     return final_dict
 
 
-@numba.jit
-def readcube(fd, w, h, e):
-    rawdata = np.fromfile(fd, dtype="u2")
-    hypermap = np.zeros([h, w, e], dtype=np.uint8)
+@numba.njit(cache=True)
+def readcube(rawdata, hypermap):  # pragma: no cover
     for value in rawdata:
         if (value >= 32768) and (value < 36864):
             y = int((value - 32768) / 8 - 1)
