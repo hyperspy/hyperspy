@@ -1136,10 +1136,17 @@ Nexus uses a variety of classes to record data, values,
 units and other experimental metadata associated with an experiment.
 For specific types of experiments an Application Definition may exist which
 defines an agreed common layout that facilities can adhere to.
+
 Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this io plugin.
-Using the ``.nxs`` extension will default to the Nexus loader
+Using the ``.nxs`` extension will default to the Nexus loader. If your file has
+a HDF5 extension, you can also explicitly set the Nexus file reader:
+
+.. code-block:: python
+
+    # Load a NeXus file with a .h5 extension
+    >>> s = hs.load("filename.h5", reader="nxs")
 
 The loader will follow version 3 of the
 `Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.

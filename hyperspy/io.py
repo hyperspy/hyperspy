@@ -192,8 +192,16 @@ def load(filenames=None,
         then square brackets are escaped before wildcard matching with
         ``glob.glob()``. If False, square brackets are used to represent
         character classes (e.g. ``[a-z]`` matches lowercase letters.
-    print_info: bool
-        For SEMPER unf- and EMD (Berkeley)-files, if True (default is False)
+    reader : None or str or custom file reader object, default None
+        Specify the file reader to use when loading the file(s). If None,
+        will use the file extension to infer the file type and appropriate
+        reader. If str, will select the appropriate file reader from the
+        list of available readers in HyperSpy. If a custom reader object,
+        it should implement the ``file_reader`` function, which returns
+        a dictionary containing the data and metadata for conversion to
+        a HyperSpy signal.
+    print_info: bool, default False
+        For SEMPER unf- and EMD (Berkeley)-files, if True
         additional information read during loading is printed for a quick
         overview.
     downsample : int (1–4095)
@@ -280,6 +288,10 @@ def load(filenames=None,
     stacking:
 
     >>> s = hs.load('file*.blo', lazy=True, stack=True)
+
+    Specify the file reader to use
+
+    >>> s = hs.load('a_nexus_file.h5', reader='nxs')
 
     """
     deprecated = ['mmap_dir', 'load_to_memory']
