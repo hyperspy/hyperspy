@@ -47,6 +47,42 @@ f_error_fmt = (
     "\t\tPath: %s")
 
 
+def _infer_file_reader(extension):
+    """Return a file reader from the plugins list based on the file extension.
+
+    If the extension is not found or understood, returns
+    the Python imaging library as the file reader.
+
+    Parameters
+    ----------
+    extension : str
+        File extension, without initial "." separator
+
+    Returns
+    -------
+    reader : func
+        The inferred file reader.
+
+    """
+    rdrs = [rdr for rdr in io_plugins if extension.lower() in rdr.file_extensions]
+
+    if not rdrs:
+        # Try to load it with the python imaging library
+        _logger.warning(
+            f"Unable to infer file type from extension '{extension}'. "
+            "Will attempt to load the file with the Python imaging library."
+        )
+
+        from hyperspy.io_plugins import image
+
+        reader = image
+    else:
+        # Just take the first match for now
+        reader = rdrs[0]
+
+    return reader
+
+
 def _escape_square_brackets(text):
     """Escapes pairs of square brackets in strings for glob.glob().
 
@@ -156,8 +192,16 @@ def load(filenames=None,
         then square brackets are escaped before wildcard matching with
         ``glob.glob()``. If False, square brackets are used to represent
         character classes (e.g. ``[a-z]`` matches lowercase letters.
-    print_info: bool
-        For SEMPER unf- and EMD (Berkeley)-files, if True (default is False)
+    reader : None or str or custom file reader object, default None
+        Specify the file reader to use when loading the file(s). If None,
+        will use the file extension to infer the file type and appropriate
+        reader. If str, will select the appropriate file reader from the
+        list of available readers in HyperSpy. If a custom reader object,
+        it should implement the ``file_reader`` function, which returns
+        a dictionary containing the data and metadata for conversion to
+        a HyperSpy signal.
+    print_info: bool, default False
+        For SEMPER unf- and EMD (Berkeley)-files, if True
         additional information read during loading is printed for a quick
         overview.
     downsample : int (1–4095)
@@ -244,6 +288,10 @@ def load(filenames=None,
     stacking:
 
     >>> s = hs.load('file*.blo', lazy=True, stack=True)
+
+    Specify the file reader to use
+
+    >>> s = hs.load('a_nexus_file.h5', reader='nxs')
 
     """
     deprecated = ['mmap_dir', 'load_to_memory']
@@ -363,48 +411,68 @@ def load(filenames=None,
 
 
 def load_single_file(filename, **kwds):
-    """
-    Load any supported file into an HyperSpy structure
+    """Load any supported file into an HyperSpy structure.
+
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
     Bruker bcf, FEI ser and emi, EDAX spc and spd, hspy (HDF5), and SEMPER unf.
 
     Parameters
     ----------
     filename : string
-        File name (including the extension)
+        File name including the extension.
+    **kwds
+        Keyword arguments passed to specific file reader.
+
+    Returns
+    -------
+    object
+        Data loaded from the file.
 
     """
     if not os.path.isfile(filename):
         raise FileNotFoundError(f"File: {filename} not found!")
 
-    extension = os.path.splitext(filename)[1][1:]
-    i = 0
+    # File extension without "." separator
+    file_ext = os.path.splitext(filename)[1][1:]
+    reader = kwds.pop("reader", None)
 
-    while extension.lower() not in io_plugins[i].file_extensions and \
-            i < len(io_plugins) - 1:
-        i += 1
-
-    if i == len(io_plugins):
-        # Try to load it with the python imaging library
-        try:
-            from hyperspy.io_plugins import image
-            reader = image
-            return load_with_reader(filename, reader, **kwds)
-        except BaseException as e:
-            raise IOError(
-                "If the file format is supported, "
-                f"please report this error:\n{e}"
-            )
+    if reader is None:
+        # Infer file reader based on extension
+        reader = _infer_file_reader(file_ext)
+    elif isinstance(reader, str):
+        # Infer file reader based on provided kwarg string
+        reader = _infer_file_reader(reader)
+    elif hasattr(reader, "file_reader"):
+        # Implies the user has passed their own file reader
+        pass
     else:
-        reader = io_plugins[i]
+        raise ValueError(
+            "`reader` should be one of None, str, "
+            "or a custom file reader object"
+        )
+
+    try:
+        # Try and load the file
         return load_with_reader(filename=filename, reader=reader, **kwds)
 
+    except BaseException as e:
+        _logger.error(
+            "If this file format is supported, please "
+            "report this error to the HyperSpy developers."
+        )
+        raise
 
-def load_with_reader(filename, reader, signal_type=None, convert_units=False,
-                     **kwds):
+
+def load_with_reader(
+        filename,
+        reader,
+        signal_type=None,
+        convert_units=False,
+        **kwds
+    ):
+    """Load a supported file with a given reader."""
     lazy = kwds.get('lazy', False)
-    file_data_list = reader.file_reader(filename,
-                                        **kwds)
+    file_data_list = reader.file_reader(filename, **kwds)
     objects = []
 
     for signal_dict in file_data_list:
@@ -427,6 +495,7 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
 
     if len(objects) == 1:
         objects = objects[0]
+
     return objects
 
 
@@ -663,7 +732,7 @@ def save(filename, signal, overwrite=None, **kwds):
 
         raise IOError(
             "This file format does not support this data. "
-            "Please try one of {strlist2enumeration(yes_we_can)}"
+            f"Please try one of {strlist2enumeration(yes_we_can)}"
         )
 
     # Create the directory if it does not exist
