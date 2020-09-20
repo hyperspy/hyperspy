@@ -36,7 +36,7 @@ def _get_element_and_line(xray_line):
     """
     lim = xray_line.find('_')
     if lim == -1:
-        raise ValueError("Invalid xray-line: %" % xray_line)
+        raise ValueError(f"Invalid xray-line: {xray_line}")
     return xray_line[:lim], xray_line[lim + 1:]
 
 
