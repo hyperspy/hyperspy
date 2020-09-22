@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,9 +18,10 @@
 
 import os
 
-from scipy.misc import imread, imsave
+from imageio import imread, imwrite
 
-from hyperspy.misc.rgb_tools import regular_array2rgbx
+
+from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
 # ----------------------
@@ -30,8 +31,6 @@ full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
                    'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
 default_extension = 0  # png
-
-
 # Writing features
 writes = [(2, 0), ]
 # ----------------------
@@ -49,7 +48,10 @@ def file_writer(filename, signal, file_format='png', **kwds):
             The fileformat defined by its extension that is any one supported by
             PIL.
     """
-    imsave(filename, signal.data)
+    data = signal.data
+    if rgb_tools.is_rgbx(data):
+        data = rgb_tools.rgbx2regular_array(data)
+    imwrite(filename, data)
 
 
 def file_reader(filename, **kwds):
@@ -88,5 +90,5 @@ def _read_data(filename):
                 (dc[:, :, 1] == dc[:, :, 2]).all():
             dc = dc[:, :, 0]
         else:
-            dc = regular_array2rgbx(dc)
+            dc = rgb_tools.regular_array2rgbx(dc)
     return dc

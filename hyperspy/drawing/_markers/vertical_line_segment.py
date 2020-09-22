@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -50,6 +50,7 @@ class VerticalLineSegment(MarkerBase):
     >>> im.add_marker(m)
 
     Add a marker permanently to a marker
+
     >>> im = hs.signals.Signal2D(np.zeros((60, 60)))
     >>> m = hs.plot.markers.vertical_line_segment(x=10, y1=20, y2=50)
     >>> im.add_marker(m, permanent=True)

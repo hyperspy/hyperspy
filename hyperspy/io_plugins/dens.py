@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -32,7 +32,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ['dens', 'DENS']
 default_extension = 0
-
 # Writing capabilities
 writes = False
 
