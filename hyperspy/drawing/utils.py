@@ -29,6 +29,7 @@ import warnings
 import numpy as np
 import logging
 from functools import partial
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
@@ -1516,3 +1517,87 @@ def picker_kwargs(value, kwargs={}):
 
     return kwargs
 
+
+def plot_overlay_images(images, colors, alphas, legend_list=None,
+                        scalebar=None, scalebar_color='white',
+                        axes_decor='all', **kwargs):
+    """Plot multiple images overlapped on one figure.
+
+    Parameters
+    ----------
+    images : list of Signal2D
+        `images` should be a list of Signals to plot.
+        If any of the signal shapes is not suitable, a ValueError will be
+        raised.
+    colors : list of char or hex string
+	    `colors` should be a list compromising either characters or hex
+		strings, corresponding to colors acceptable to matplotlib. Details
+		can be found at https://matplotlib.org/2.0.2/api/colors_api.html.
+    alphas : list of floats
+        `alphas` should be a list of floats corresponding to the alpha
+		value of each color.
+    legend_list : list of strings
+        List of strings to act as labels for each image for legend.
+    scalebar : {None, True}, optional
+        If None (or False), no scalebars will be added to the images.
+        If True, a scalebar will be added.
+    scalebar_color : str, optional
+        A valid MPL color string; will be used as the scalebar color.
+    axes_decor : {'all', 'ticks', 'off', None}, optional
+        Controls how the axes are displayed on each image; default is 'all'.
+        If 'all', both ticks and axis labels will be shown.
+        If 'ticks', no axis labels will be shown, but ticks/labels will.
+        If 'off', all decorations and frame will be disabled.
+        If None, no axis decorations will be shown, but ticks/frame will.
+    **kwargs, optional
+        Additional keyword arguments passed to matplotlib.imshow()
+
+    See Also
+    --------
+    plot_images : Plotting of multiple images
+	plot_spectra : Plotting of multiple spectra
+    plot_signals : Plotting of multiple signals
+    plot_histograms : Compare signal histograms
+
+    """
+
+    from hyperspy.drawing.widgets import ScaleBar
+    import matplotlib.patches as mpatches
+    from hyperspy.signal import BaseSignal
+    
+    # Check that we have a hyperspy signal
+    im = [images] if not isinstance(images, (list, tuple)) else images
+    for image in im:
+        if not isinstance(image, BaseSignal):
+            raise ValueError("`images` must be a list of image signals or a "
+                             "multi-dimensional signal."
+                             " " + repr(type(images)) + " was given.")
+
+    f = plt.figure()
+    ax = f.add_subplot(1, 1, 1)
+    patches = []
+
+    ax.imshow(np.zeros_like(images[0].data))
+    for i, im in enumerate(images):
+        cols = ['k', colors[i]]
+        cmap=LinearSegmentedColormap.from_list('cmap'+str(i), cols)
+        my_cmap = cmap(np.arange(cmap.N))
+        my_cmap[:,-1] = np.linspace(0.3, 1, cmap.N)
+        my_cmap = ListedColormap(my_cmap)
+        ax.imshow(im.data, vmin=im.data.min(), vmax=im.data.max(),
+                  cmap=my_cmap, alpha=alphas[i], **kwargs)
+
+        if legend_list != None:
+            patches.append(mpatches.Patch(color=colors[i],
+                                          label=legend_list[i]))
+
+    set_axes_decor(ax, axes_decor)
+
+    if scalebar != None:
+        f.scalebar = ScaleBar(
+                        ax=ax,
+                        units=images[0].axes_manager[0].units,
+                        color=scalebar_color)
+
+    if legend_list != None:
+        plt.legend(handles=patches)
