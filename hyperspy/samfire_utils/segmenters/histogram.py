@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,7 +19,7 @@
 import numpy as np
 from scipy.signal import argrelextrema
 
-from hyperspy.misc.hist_tools import histogram
+from hyperspy.external.astroML.histtools import histogram
 
 
 class HistogramSegmenter(object):
@@ -28,7 +28,7 @@ class HistogramSegmenter(object):
     the starting parameter estimates.
     """
 
-    def __init__(self, bins='fd'):
+    def __init__(self, bins='freedman'):
         self.database = None
         self.bins = bins
         self._min_points = 4

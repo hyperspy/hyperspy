@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,10 +20,8 @@ import numpy as np
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
-from hyperspy.decorators import lazifyTestClass
 
 
-@lazifyTestClass
 class TestChiSquared:
 
     def setup_method(self, method):
@@ -39,7 +37,7 @@ class TestChiSquared:
         g = Gaussian()
         m.append(g)
         m.fit()
-        np.testing.assert_allclose(m.chisq(), 7.78966223)
+        assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_fit(self):
         m = self.model
@@ -55,7 +53,7 @@ class TestChiSquared:
         g = Gaussian()
         m.append(g)
         m.fit()
-        np.testing.assert_allclose(m.red_chisq(), 1.55793245)
+        assert np.allclose(m.red_chisq(), 1.55793245)
 
     def test_chisq(self):
         m = self.model
@@ -65,7 +63,7 @@ class TestChiSquared:
         g.centre.value = self.centre
         m.append(g)
         m._calculate_chisq()
-        np.testing.assert_allclose(m.chisq(), 7.78966223)
+        assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_p0(self):
         m = self.model
@@ -87,7 +85,7 @@ class TestChiSquared:
         m._set_p0()
         m._set_current_degrees_of_freedom()
         m._calculate_chisq()
-        np.testing.assert_allclose(m.red_chisq(), 1.55793245)
+        assert np.allclose(m.red_chisq(), 1.55793245)
 
     def test_chisq_in_range(self):
         m = self.model
@@ -95,7 +93,7 @@ class TestChiSquared:
         m.append(g)
         m.set_signal_range(1, 7)
         m.fit()
-        np.testing.assert_allclose(m.red_chisq(), 2.20961562)
+        assert np.allclose(m.red_chisq(), 2.87544335)
 
     def test_chisq_with_inactive_components(self):
         m = self.model
@@ -105,7 +103,7 @@ class TestChiSquared:
         m.append(gin)
         gin.active = False
         m.fit()
-        np.testing.assert_allclose(m.chisq(), 7.78966223)
+        assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_inactive_components(self):
         m = self.model

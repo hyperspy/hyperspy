@@ -2,8 +2,9 @@ import os
 import tempfile
 
 import numpy as np
-import pytest
+
 import traits.api as t
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -13,17 +14,26 @@ MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
 
 
 def test_rgba16():
-    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"))
+    """ Use skimage tifffile.py library """
+    _test_rgba16(import_local_tifffile=False)
+
+
+def test_rgba16_local_tifffile():
+    """ Use local tifffile.py library """
+    _test_rgba16(import_local_tifffile=True)
+
+
+def _test_rgba16(import_local_tifffile=False):
+    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"),
+                import_local_tifffile=import_local_tifffile)
     data = np.load(os.path.join(MY_PATH, "npy_files", "test_rgba16.npy"))
     assert (s.data == data).all()
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
     assert s.axes_manager[2].units == t.Undefined
-    np.testing.assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
-    assert s.metadata.General.date == '2014-03-31'
-    assert s.metadata.General.time == '16:35:46'
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
 
 
 def _compare_signal_shape_data(s0, s1):
@@ -36,21 +46,17 @@ def test_read_unit_um():
     s = hs.load(os.path.join(MY_PATH2, 'test_dm_image_um_unit.dm3'))
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
-    assert s.metadata.General.date == '2015-07-20'
-    assert s.metadata.General.time == '18:48:25'
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit.tif')
         s.save(fname, overwrite=True, export_scale=True)
         # load tif file
-        s2 = hs.load(fname)
+        s2 = hs.load(fname, import_local_tifffile=True)
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
-        np.testing.assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
-        np.testing.assert_allclose(s2.axes_manager[1].scale, 0.16867, atol=1E-5)
-        assert s2.metadata.General.date == s.metadata.General.date
-        assert s2.metadata.General.time == s.metadata.General.time
+        assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
+        assert_allclose(s2.axes_manager[1].scale, 0.16867, atol=1E-5)
 
 
 def test_write_read_intensity_axes_DM():
@@ -62,46 +68,55 @@ def test_write_read_intensity_axes_DM():
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit2.tif')
         s.save(fname, overwrite=True, export_scale=True)
-        s2 = hs.load(fname)
+        s2 = hs.load(fname, import_local_tifffile=True)
         assert_deep_almost_equal(s.metadata.Signal.as_dictionary(),
                                  s2.metadata.Signal.as_dictionary())
 
 
 def test_read_unit_from_imagej():
+    """ Use skimage tifffile.py library """
+    _test_read_unit_from_imagej(import_local_tifffile=False)
+
+
+def test_read_unit_from_imagej_local_tifffile():
+    """ Use local tifffile.py library """
+    _test_read_unit_from_imagej(import_local_tifffile=True)
+
+
+def _test_read_unit_from_imagej(import_local_tifffile=False):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    assert s.axes_manager[0].units == 'micron'
+    assert s.axes_manager[1].units == 'micron'
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
 
 
-def test_read_unit_from_imagej_stack():
+def test_read_unit_from_imagej_stack(import_local_tifffile=False):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_stack.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == t.Undefined
-    assert s.axes_manager[1].units == 'µm'
-    assert s.axes_manager[2].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
+    assert s.axes_manager[1].units == 'micron'
+    assert s.axes_manager[2].units == 'micron'
+    assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
 
 
-@pytest.mark.parametrize("lazy", [True, False])
-def test_read_unit_from_DM_stack(lazy):
+def test_read_unit_from_DM_stack(import_local_tifffile=False):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_DM_stack.tif')
-    s = hs.load(fname, lazy=lazy)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == 's'
     assert s.axes_manager[1].units == 'µm'
     assert s.axes_manager[2].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[2].scale, 1.68674, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 1.68674, atol=1E-5)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(
             tmpdir, 'test_loading_image_saved_with_DM_stack2.tif')
@@ -109,85 +124,85 @@ def test_read_unit_from_DM_stack(lazy):
         s2 = hs.load(fname2)
         _compare_signal_shape_data(s, s2)
         assert s2.axes_manager[0].units == s.axes_manager[0].units
-        assert s2.axes_manager[1].units == 'µm'
-        assert s2.axes_manager[2].units == 'µm'
-        np.testing.assert_allclose(
+        assert s2.axes_manager[1].units == 'micron'
+        assert s2.axes_manager[2].units == 'micron'
+        assert_allclose(
             s2.axes_manager[0].scale, s.axes_manager[0].scale, atol=1E-5)
-        np.testing.assert_allclose(
+        assert_allclose(
             s2.axes_manager[1].scale, s.axes_manager[1].scale, atol=1E-5)
-        np.testing.assert_allclose(
+        assert_allclose(
             s2.axes_manager[2].scale, s.axes_manager[2].scale, atol=1E-5)
-        np.testing.assert_allclose(
+        assert_allclose(
             s2.axes_manager[0].offset, s.axes_manager[0].offset, atol=1E-5)
-        np.testing.assert_allclose(
+        assert_allclose(
             s2.axes_manager[1].offset, s.axes_manager[1].offset, atol=1E-5)
-        np.testing.assert_allclose(
+        assert_allclose(
             s2.axes_manager[2].offset, s.axes_manager[2].offset, atol=1E-5)
 
 
-def test_read_unit_from_imagej_stack_no_scale():
+def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_stack_no_scale.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
     assert s.axes_manager[2].units == t.Undefined
-    np.testing.assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
 
 
-def test_read_unit_from_imagej_no_scale():
+def test_read_unit_from_imagej_no_scale(import_local_tifffile=False):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_no_scale.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
-    np.testing.assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
 
 
-def test_write_read_unit_imagej():
+def test_write_read_unit_imagej(import_local_tifffile=True):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname, convert_units=True)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(
             tmpdir, 'test_loading_image_saved_with_imageJ2.tif')
         s.save(fname2, export_scale=True, overwrite=True)
-        s2 = hs.load(fname2)
-        assert s2.axes_manager[0].units == 'µm'
-        assert s2.axes_manager[1].units == 'µm'
+        s2 = hs.load(fname2, import_local_tifffile=import_local_tifffile)
+        assert s2.axes_manager[0].units == 'micron'
+        assert s2.axes_manager[1].units == 'micron'
         assert s.data.shape == s.data.shape
 
 
-def test_write_read_unit_imagej_with_description():
+def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(tmpdir, 'description.tif')
         s.save(fname2, export_scale=False, overwrite=True, description='test')
-        s2 = hs.load(fname2)
+        s2 = hs.load(fname2, import_local_tifffile=import_local_tifffile)
         assert s2.axes_manager[0].units == t.Undefined
         assert s2.axes_manager[1].units == t.Undefined
-        np.testing.assert_allclose(s2.axes_manager[0].scale, 1.0, atol=1E-5)
-        np.testing.assert_allclose(s2.axes_manager[1].scale, 1.0, atol=1E-5)
+        assert_allclose(s2.axes_manager[0].scale, 1.0, atol=1E-5)
+        assert_allclose(s2.axes_manager[1].scale, 1.0, atol=1E-5)
 
         fname3 = os.path.join(tmpdir, 'description2.tif')
         s.save(fname3, export_scale=True, overwrite=True, description='test')
-        s3 = hs.load(fname3, convert_units=True)
-        assert s3.axes_manager[0].units == 'µm'
-        assert s3.axes_manager[1].units == 'µm'
-        np.testing.assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
-        np.testing.assert_allclose(s3.axes_manager[1].scale, 0.16867, atol=1E-5)
+        s3 = hs.load(fname3, import_local_tifffile=import_local_tifffile)
+        assert s3.axes_manager[0].units == 'micron'
+        assert s3.axes_manager[1].units == 'micron'
+        assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
+        assert_allclose(s3.axes_manager[1].scale, 0.16867, atol=1E-5)
 
 
 def test_saving_with_custom_tag():
@@ -203,18 +218,28 @@ def test_saving_with_custom_tag():
         s.save(fname, extratags=extratag, overwrite=True)
         s2 = hs.load(fname)
         assert (s2.original_metadata['Number_65000'] ==
-                "Random metadata")
+                b"Random metadata")
 
 
-def _test_read_unit_from_dm():
+def test_read_unit_from_dm():
+    """ Use skimage tifffile.py library """
+    _test_read_unit_from_dm(import_local_tifffile=False)
+
+
+def test_read_unit_from_dm_local_tifffile():
+    """ Use local tifffile.py library """
+    _test_read_unit_from_dm(import_local_tifffile=True)
+
+
+def _test_read_unit_from_dm(import_local_tifffile=False):
     fname = os.path.join(MY_PATH2, 'test_loading_image_saved_with_DM.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[0].offset, 139.66264, atol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].offset, 128.19276, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[0].offset, 139.66264, atol=1E-5)
+    assert_allclose(s.axes_manager[1].offset, 128.19276, atol=1E-5)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(tmpdir, "DM2.tif")
         s.save(fname2, overwrite=True)
@@ -222,13 +247,13 @@ def _test_read_unit_from_dm():
         _compare_signal_shape_data(s, s2)
         assert s2.axes_manager[0].units == 'micron'
         assert s2.axes_manager[1].units == 'micron'
-        np.testing.assert_allclose(s2.axes_manager[0].scale, s.axes_manager[0].scale,
+        assert_allclose(s2.axes_manager[0].scale, s.axes_manager[0].scale,
                         atol=1E-5)
-        np.testing.assert_allclose(s2.axes_manager[1].scale, s.axes_manager[1].scale,
+        assert_allclose(s2.axes_manager[1].scale, s.axes_manager[1].scale,
                         atol=1E-5)
-        np.testing.assert_allclose(s2.axes_manager[0].offset, s.axes_manager[0].offset,
+        assert_allclose(s2.axes_manager[0].offset, s.axes_manager[0].offset,
                         atol=1E-5)
-        np.testing.assert_allclose(s2.axes_manager[1].offset, s.axes_manager[1].offset,
+        assert_allclose(s2.axes_manager[1].offset, s.axes_manager[1].offset,
                         atol=1E-5)
 
 
@@ -345,20 +370,23 @@ def test_write_scale_unit_image_stack():
     s.axes_manager[1].scale = 0.5
     s.axes_manager[2].scale = 1.5
     s.axes_manager[0].units = 'nm'
-    s.axes_manager[1].units = 'µm'
-    s.axes_manager[2].units = 'µm'
+    s.axes_manager[1].units = 'um'
+    s.axes_manager[2].units = 'mm'
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'test_export_scale_unit_stack2.tif')
         s.save(fname, overwrite=True, export_scale=True)
-        s1 = hs.load(fname, convert_units=True)
+        s1 = hs.load(fname)
         _compare_signal_shape_data(s, s1)
-        assert s1.axes_manager[0].units == 'pm'
+        assert s1.axes_manager[0].units == 'nm'
         # only one unit can be read
-        assert s1.axes_manager[1].units == 'µm'
-        assert s1.axes_manager[2].units == 'µm'
-        np.testing.assert_allclose(s1.axes_manager[0].scale, 250.0)
-        np.testing.assert_allclose(s1.axes_manager[1].scale, s.axes_manager[1].scale)
-        np.testing.assert_allclose(s1.axes_manager[2].scale, s.axes_manager[2].scale)
+        assert s1.axes_manager[1].units == 'mm'
+        assert s1.axes_manager[2].units == 'mm'
+        assert_allclose(
+            s1.axes_manager[0].scale, s.axes_manager[0].scale)
+        assert_allclose(
+            s1.axes_manager[1].scale, s.axes_manager[1].scale)
+        assert_allclose(
+            s1.axes_manager[2].scale, s.axes_manager[2].scale)
 
 
 def test_saving_loading_stack_no_scale():
@@ -370,254 +398,86 @@ def test_saving_loading_stack_no_scale():
         _compare_signal_shape_data(s0, s1)
 
 
-FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': -2.3611,
-                                                                    'tilt': 6.54498e-06,
-                                                                    'x': 2.576e-05,
-                                                                    'y': -0.000194177,
-                                                                    'z': 0.007965},
-                                                          'beam_current': 0.00625,
-                                                          'beam_energy': 5.0,
-                                                          'dwell_time': 1e-05,
-                                                          'microscope': 'Helios NanoLab" 660',
-                                                          'working_distance': 4.03466}},
-                       'General': {'original_filename': 'FEI-Helios-Ebeam-8bits.tif',
-                                   'title': '',
-                                   'authors': 'supervisor',
-                                   'date': '2016-06-13',
-                                   'time': '17:06:40'},
-                       'Signal': {'binned': False,
-                                  'signal_type': ''},
-                       '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                                 'original_shape': None,
-                                                 'signal_unfolded': False,
-                                                 'unfolded': False}}}
-
-
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+    s = hs.load(fname)
+    assert s.axes_manager[0].units == 'm'
+    assert s.axes_manager[1].units == 'm'
+    assert_allclose(s.axes_manager[0].scale, 3.3724e-06, atol=1E-12)
+    assert_allclose(s.axes_manager[1].scale, 3.3724e-06, atol=1E-12)
     assert s.data.dtype == 'uint8'
-    FEI_Helios_metadata['General'][
-        'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
 def test_read_FEI_SEM_scale_metadata_16bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-16bits.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+    s = hs.load(fname)
+    assert s.axes_manager[0].units == 'm'
+    assert s.axes_manager[1].units == 'm'
+    assert_allclose(s.axes_manager[0].scale, 3.3724e-06, atol=1E-12)
+    assert_allclose(s.axes_manager[1].scale, 3.3724e-06, atol=1E-12)
     assert s.data.dtype == 'uint16'
-    FEI_Helios_metadata['General'][
-        'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
 def test_read_Zeiss_SEM_scale_metadata_1k_image():
-    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
-                                                       'tilt': -0.0,
-                                                       'x': 75.6442,
-                                                       'y': 60.4901,
-                                                       'z': 25.193},
-                                             'Detector':{'detector_type':
-                                                 'HE-SE2'},
-                                             'beam_current': 1.0,
-                                             'beam_energy': 25.0,
-                                             'dwell_time': 5e-08,
-                                             'magnification': 105.0,
-                                             'microscope': 'Merlin-61-08',
-                                             'working_distance': 14.808}},
-          'General': {'authors': 'LIM',
-                      'date': '2015-12-23',
-                      'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
-                      'time': '09:40:32',
-                      'title': ''},
-          'Signal': {'binned': False, 'signal_type': ''},
-          '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                    'original_shape': None,
-                                    'signal_unfolded': False,
-                                    'unfolded': False}}}
-
     fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_1k.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
-    assert s.data.dtype == 'uint8'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+    s = hs.load(fname)
+    assert s.axes_manager[0].units == 'm'
+    assert s.axes_manager[1].units == 'm'
+    assert_allclose(s.axes_manager[0].scale, 2.614514e-06, atol=1E-12)
+    assert_allclose(s.axes_manager[1].scale, 2.614514e-06, atol=1E-12)
+    assert s.data.dtype == 'uint16'
 
 
 def test_read_Zeiss_SEM_scale_metadata_512_image():
-    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 245.8,
-                                                       'tilt': 0.0,
-                                                       'x': 62.9961,
-                                                       'y': 65.3168,
-                                                       'z': 44.678},
-                                             'beam_energy': 5.0,
-                                             'magnification': '50.00 K X',
-                                             'microscope': 'ULTRA 55-36-06',
-                                             'working_distance': 3.9}},
-          'General': {'authors': 'LIBERATO',
-                      'date': '2018-09-25',
-                      'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
-                      'time': '08:20:42',
-                      'title': ''},
-          'Signal': {'binned': False, 'signal_type': ''},
-          '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                    'original_shape': None,
-                                    'signal_unfolded': False,
-                                    'unfolded': False}}}
-
-    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_512pix.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
-    assert s.data.dtype == 'uint8'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_512.tif')
+    s = hs.load(fname)
+    assert s.axes_manager[0].units == 'm'
+    assert s.axes_manager[1].units == 'm'
+    assert_allclose(s.axes_manager[0].scale, 7.4240e-08, atol=1E-12)
+    assert_allclose(s.axes_manager[1].scale, 7.4240e-08, atol=1E-12)
+    assert s.data.dtype == 'uint16'
 
 
 def test_read_RGB_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_RGB.tif')
-    s = hs.load(fname, )
+    s = hs.load(fname, import_local_tifffile=True)
     dtype = np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
     assert s.data.dtype == dtype
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
-    np.testing.assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
-    assert s.metadata.General.date == '2016-06-13'
-    assert s.metadata.General.time == '15:59:52'
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-3)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-3)
 
 
 def test_read_BW_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
-    s = hs.load(fname, force_read_resolution=True, convert_units=True)
-    assert s.data.dtype == np.uint8
+    s = hs.load(fname, force_read_resolution=True, import_local_tifffile=True)
+    assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
-    assert s.metadata.General.date == '2016-06-13'
-    assert s.metadata.General.time == '16:08:49'
-
-
-def test_read_BW_Zeiss_optical_scale_metadata_convert_units_false():
-    fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
-    s = hs.load(fname, force_read_resolution=True, convert_units=False)
-    assert s.data.dtype == np.uint8
-    assert s.data.shape == (10, 13)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 169.3333, atol=1E-3)
+    assert_allclose(s.axes_manager[1].scale, 169.3333, atol=1E-3)
 
 
 def test_read_BW_Zeiss_optical_scale_metadata2():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
-    s = hs.load(fname, force_read_resolution=True, convert_units=True)
-    assert s.data.dtype == np.uint8
+    s = hs.load(fname, force_read_resolution=True)
+    assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
-    assert s.metadata.General.date == '2016-06-13'
-    assert s.metadata.General.time == '16:08:49'
+    assert_allclose(s.axes_manager[0].scale, 169.3333, atol=1E-3)
+    assert_allclose(s.axes_manager[1].scale, 169.3333, atol=1E-3)
 
 
 def test_read_BW_Zeiss_optical_scale_metadata3():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=False)
-    assert s.data.dtype == np.uint8
+    assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
-    np.testing.assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
-    assert s.metadata.General.date == '2016-06-13'
-    assert s.metadata.General.time == '16:08:49'
-
-
-def test_read_TVIPS_metadata():
-    md = {'Acquisition_instrument': {'TEM': {'Detector': {'Camera': {'exposure': 0.4,
-                                                                     'name': 'F416'}},
-                                             'Stage': {'tilt_alpha': -0.0070000002,
-                                                       'tilt_beta': -0.055,
-                                                       'x': 0.0,
-                                                       'y': -9.2000000506686774e-05,
-                                                       'z': 7.0000001350933871e-06},
-                                             'beam_energy': 99.0,
-                                             'magnification': 32000.0}},
-          'General': {'original_filename': 'TVIPS_bin4.tif',
-                      'time': '9:01:17',
-                      'title': ''},
-          'Signal': {'binned': False, 'signal_type': ''},
-          '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                    'original_shape': None,
-                                    'signal_unfolded': False,
-                                    'unfolded': False}}}
-    fname = os.path.join(MY_PATH2, 'TVIPS_bin4.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.data.dtype == np.uint8
-    assert s.data.shape == (1024, 1024)
-    assert s.axes_manager[0].units == 'nm'
-    assert s.axes_manager[1].units == 'nm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 1.42080, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 1.42080, rtol=1E-5)
-    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
-
-
-def test_axes_metadata():
-    data = np.arange(2*5*10).reshape((2, 5, 10))
-    s = hs.signals.Signal2D(data)
-    nav_unit = 's'
-    s.axes_manager.navigation_axes[0].units = nav_unit
-    with tempfile.TemporaryDirectory() as tmpdir:
-        fname = os.path.join(tmpdir, 'axes_metadata_default.tif')
-        s.save(fname)
-        s2 = hs.load(fname)
-        assert s2.axes_manager.navigation_axes[0].name == 'image series'
-        assert s2.axes_manager.navigation_axes[0].units == nav_unit
-
-        fname2 = os.path.join(tmpdir, 'axes_metadata_IYX.tif')
-        s.save(fname2, metadata={'axes':'IYX'})
-        s3 = hs.load(fname2)
-        assert s3.axes_manager.navigation_axes[0].name == 'image series'
-        assert s3.axes_manager.navigation_axes[0].units == nav_unit
-
-        fname2 = os.path.join(tmpdir, 'axes_metadata_ZYX.tif')
-        s.save(fname2, metadata={'axes':'ZYX'})
-        s3 = hs.load(fname2)
-        assert s3.axes_manager.navigation_axes[0].units == nav_unit
-
-
-def test_olympus_SIS():
-    pytest.importorskip("imagecodecs", reason="imagecodecs is required")
-    fname = os.path.join(MY_PATH2, 'olympus_SIS.tif')
-    s = hs.load(fname)
-    # This olympus SIS contains two images:
-    # - the first one is a RGB 8-bits (used for preview purposes)
-    # - the second one is the raw data
-    # only the second one is calibrated.
-    assert len(s) == 2
-    am = s[1].axes_manager
-    for axis in am._axes:
-        assert axis.units == 'm'
-        np.testing.assert_allclose(axis.scale, 2.3928e-11)
-        np.testing.assert_allclose(axis.offset, 0.0)
-
-    for ima in s:
-        assert ima.data.shape == (101, 112)
-
-    assert s[1].data.dtype is np.dtype('uint16')
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-3)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-3)

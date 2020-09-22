@@ -1,31 +1,29 @@
-# -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from unittest import mock
 
-import logging
 import numpy as np
-import pytest
 from scipy.signal import savgol_filter
+import pytest
 
-import hyperspy.api as hs
-from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.decorators import lazifyTestClass
+import hyperspy.api as hs
 
 
 @lazifyTestClass
@@ -48,7 +46,7 @@ class TestAlignTools:
 
     def test_estimate_shift(self):
         s = self.signal
-        eshifts = -1 * s.estimate_shift1D()
+        eshifts = -1 * s.estimate_shift1D(show_progressbar=None)
         np.testing.assert_allclose(
             eshifts, self.ishifts * self.scale, atol=1e-3)
 
@@ -59,10 +57,10 @@ class TestAlignTools:
         s.shift1D(-
                   1 *
                   self.ishifts[:, np.newaxis] *
-                  self.scale)
+                  self.scale, show_progressbar=None)
         assert m.data_changed.called
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        np.testing.assert_allclose(s.data[:, i_zlp], 12)
+        assert np.allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
@@ -74,9 +72,9 @@ class TestAlignTools:
 
     def test_align(self):
         s = self.signal
-        s.align1D()
+        s.align1D(show_progressbar=None)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        np.testing.assert_allclose(s.data[:, i_zlp], 12)
+        assert np.allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
@@ -100,7 +98,7 @@ class TestAlignTools:
 
         # Check actual alignment of zlp
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        np.testing.assert_allclose(s.data[:, i_zlp], 12)
+        assert np.allclose(s.data[:, i_zlp], 12)
 
 
 @lazifyTestClass
@@ -112,7 +110,7 @@ class TestShift1D:
 
     def test_crop_left(self):
         s = self.s
-        s.shift1D(np.array((0.01)), crop=True)
+        s.shift1D(np.array((0.01)), crop=True, show_progressbar=None)
         assert (
             tuple(
                 s.axes_manager[0].axis) == tuple(
@@ -121,7 +119,7 @@ class TestShift1D:
 
     def test_crop_right(self):
         s = self.s
-        s.shift1D(np.array((-0.01)), crop=True)
+        s.shift1D(np.array((-0.01)), crop=True, show_progressbar=None)
         assert (
             tuple(
                 s.axes_manager[0].axis) == tuple(
@@ -142,30 +140,42 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.signal.inav[0].find_peaks1D_ohaver()[0]
-        np.testing.assert_allclose(
+        if self.signal._lazy:
+            peaks = peaks.compute()
+        assert np.allclose(
             peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4)
 
     def test_two_spectra(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        np.testing.assert_allclose(
+        if self.signal._lazy:
+            peaks = peaks.compute()
+        assert np.allclose(
             peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4)
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        np.testing.assert_allclose(
+        if self.signal._lazy:
+            peaks = peaks.compute()
+        assert np.allclose(
             peaks['height'], 1.0, rtol=1e-5, atol=1e-4)
 
     def test_width(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        np.testing.assert_allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
+        if self.signal._lazy:
+            peaks = peaks.compute()
+        assert np.allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
 
     def test_n_peaks(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
+        if self.signal._lazy:
+            peaks = peaks.compute()
         assert len(peaks) == 8
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
             peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)[1]
+            if self.signal._lazy:
+                peaks = peaks.compute()
             assert len(peaks) == min((8, n))
 
 
@@ -182,24 +192,24 @@ class TestInterpolateInBetween:
         s = self.s.inav[0]
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.interpolate_in_between(8, 12)
+        s.interpolate_in_between(8, 12, show_progressbar=None)
         np.testing.assert_array_equal(s.data, np.arange(20))
         assert m.data_changed.called
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
-        s.interpolate_in_between(0.8, 1.2)
+        s.interpolate_in_between(0.8, 1.2, show_progressbar=None)
         np.testing.assert_array_equal(s.data, np.arange(20))
 
     def test_two_spectra(self):
         s = self.s
-        s.interpolate_in_between(8, 12)
+        s.interpolate_in_between(8, 12, show_progressbar=None)
         np.testing.assert_array_equal(s.data, np.arange(40).reshape(2, 20))
 
     def test_delta_int(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        tmp = np.zeros(s.data.shape)
+        tmp = np.zeros_like(s.data)
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
@@ -210,16 +220,14 @@ class TestInterpolateInBetween:
     def test_delta_float(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        tmp = np.zeros(s.data.shape)
+        tmp = np.zeros_like(s.data)
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
         print(s.data[8:12])
         np.testing.assert_allclose(
             s.data[8:12], np.array([45.09388598, 104.16170809,
-                                    155.48258721, 170.33564422]),
-            atol=1,
-        )
+                                    155.48258721, 170.33564422]))
 
 
 @lazifyTestClass
@@ -239,7 +247,8 @@ class TestEstimatePeakWidth:
     def test_full_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=None,
-            return_interval=True)
+            return_interval=True,
+            show_progressbar=None)
         np.testing.assert_allclose(width.data, 0.7065102,
                                    rtol=self.rtol, atol=self.atol)
         np.testing.assert_allclose(left.data, 1.6467449,
@@ -253,34 +262,20 @@ class TestEstimatePeakWidth:
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=0.5,
-            return_interval=True)
+            return_interval=True,
+            show_progressbar=None)
         assert np.isnan(width.data).all()
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
 
-    @pytest.mark.parametrize("parallel", [None, True])
-    def test_warnings_on_windows(self, parallel, caplog):
-        import os
-
-        if os.name not in ["nt", "dos"]:
-            pytest.skip("Ignored on non-Windows OS")
-
-        with caplog.at_level(logging.WARNING):
-            _ = self.s.estimate_peak_width(
-                window=0.5,
-                return_interval=True,
-                parallel=parallel,
-            )
-
-        assert "Parallel operation is not supported on Windows" in caplog.text
-
     def test_two_peaks(self):
         s = self.s.deepcopy()
-        s.shift1D(np.array([1.0]))
+        s.shift1D(np.array([1.0]), show_progressbar=None)
         self.s = self.s.isig[10:] + s
         width, left, right = self.s.estimate_peak_width(
             window=None,
-            return_interval=True)
+            return_interval=True,
+            show_progressbar=None)
         assert np.isnan(width.data).all()
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
@@ -302,26 +297,29 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
-    @pytest.mark.parametrize('parallel', [True, False])
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_lowess(self, parallel):
-        from hyperspy.misc.lowess_smooth import lowess
-        f = 0.5
-        n_iter = 1
+        pytest.importorskip("statsmodels")
+        from statsmodels.nonparametric.smoothers_lowess import lowess
+        frac = 0.5
+        it = 1
         data = np.asanyarray(self.s.data, dtype='float')
         for i in range(data.shape[0]):
             data[i, :] = lowess(
-                x=self.s.axes_manager[-1].axis,
-                y=data[i, :],
-                f=f,
-                n_iter=n_iter,
-                )
-        self.s.smooth_lowess(smoothing_parameter=f,
-                             number_of_iterations=n_iter,
+                endog=data[i, :],
+                exog=self.s.axes_manager[-1].axis,
+                frac=frac,
+                it=it,
+                is_sorted=True,
+                return_sorted=False,)
+        self.s.smooth_lowess(smoothing_parameter=frac,
+                             number_of_iterations=it,
+                             show_progressbar=None,
                              parallel=parallel)
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
 
-    @pytest.mark.parametrize('parallel', [True, False])
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_tv(self, parallel):
         weight = 1
         data = np.asanyarray(self.s.data, dtype='float')
@@ -330,6 +328,7 @@ class TestSmoothing:
                 im=data[i, :],
                 weight=weight,)
         self.s.smooth_tv(smoothing_parameter=weight,
+                         show_progressbar=None,
                          parallel=parallel)
         np.testing.assert_allclose(data, self.s.data,
                                    rtol=self.rtol, atol=self.atol)
@@ -350,37 +349,3 @@ class TestSmoothing:
             polynomial_order=polyorder,
             differential_order=deriv,)
         np.testing.assert_allclose(data, self.s.data)
-
-
-@pytest.mark.parametrize('lazy', [True, False])
-@pytest.mark.parametrize('offset', [3, 0])
-def test_hanning(lazy, offset):
-    sig = hs.signals.Signal1D(np.random.rand(5, 20))
-    if lazy:
-        sig = sig.as_lazy()
-    data = np.array(sig.data)
-    channels = 5
-    hanning = np.hanning(channels * 2)
-    data[..., :offset] = 0
-    data[..., offset:offset + channels] *= hanning[:channels]
-    rl = None if offset == 0 else -offset
-    data[..., -offset - channels:rl] *= hanning[-channels:]
-    if offset != 0:
-        data[..., -offset:] = 0
-
-    assert channels == sig.hanning_taper(side='both', channels=channels,
-                                         offset=offset)
-    np.testing.assert_allclose(data, sig.data)
-
-
-@pytest.mark.parametrize('float_data', [True, False])
-def test_hanning_wrong_type(float_data):
-    sig = hs.signals.Signal1D(np.arange(100).reshape(5, 20))
-    if float_data:
-        sig.change_dtype('float')
-
-    if float_data:
-        sig.hanning_taper()
-    else:
-        with pytest.raises(TypeError):
-            sig.hanning_taper()

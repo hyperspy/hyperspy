@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,15 +17,11 @@
 
 
 import numpy as np
-import pytest
-from pathlib import Path
+import numpy.testing
+
 
 import hyperspy.api as hs
-from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.io import load
-
-MYPATH = Path(__file__).resolve().parent
 
 
 @lazifyTestClass
@@ -38,11 +34,11 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = Gaussian()
+        gauss = hs.model.components1D.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -150,30 +146,18 @@ class TestAlignZLP:
         s = self.signal
         s.align_zero_loss_peak(
             calibrate=True,
-            print_stats=False)
+            print_stats=False,
+            show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
         np.testing.assert_allclose(zlpc.data.mean(), 0)
         np.testing.assert_allclose(zlpc.data.std(), 0)
-
-    def test_align_zero_loss_peak_calibrate_true_with_mask(self):
-        s = self.signal
-        mask = s._get_navigation_signal(dtype="bool").T
-        mask.data[[3, 5]] = (True, True)
-        s.align_zero_loss_peak(
-            calibrate=True,
-            print_stats=False,
-            mask=mask)
-        zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
-        np.testing.assert_allclose(np.nanmean(zlpc.data), 0,
-                                   atol=np.finfo(float).eps)
-        np.testing.assert_allclose(np.nanstd(zlpc.data), 0,
-                                   atol=np.finfo(float).eps)
 
     def test_align_zero_loss_peak_calibrate_false(self):
         s = self.signal
         s.align_zero_loss_peak(
             calibrate=False,
-            print_stats=False)
+            print_stats=False,
+            show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
         np.testing.assert_allclose(zlpc.data.std(), 0, atol=10e-3)
 
@@ -182,7 +166,8 @@ class TestAlignZLP:
         s2 = s.deepcopy()
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,
-                               also_align=[s2])
+                               also_align=[s2],
+                               show_progressbar=None)
         zlpc = s2.estimate_zero_loss_peak_centre()
         assert zlpc.data.mean() == 0
         assert zlpc.data.std() == 0
@@ -199,89 +184,7 @@ class TestAlignZLP:
         # Max value in the original spectrum is 12, but due to the aligning
         # the peak is split between two different channels. So 8 is the
         # maximum value for the aligned spectrum
-        np.testing.assert_allclose(zlp_max, 8)
-
-    def test_align_zero_loss_peak_crop_false(self):
-        s = self.signal
-        original_size = s.axes_manager.signal_axes[0].size
-        s.align_zero_loss_peak(
-            crop=False,
-            print_stats=False)
-        assert original_size == s.axes_manager.signal_axes[0].size
-
-
-@lazifyTestClass
-class TestSpikesRemovalToolZLP:
-
-    def setup_method(self, method):
-        # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.zeros((2, 3, 64)))
-        energy_axis = s.axes_manager.signal_axes[0]
-        energy_axis.scale = 0.2
-        energy_axis.offset = -5
-
-        gauss = Gaussian()
-        gauss.centre.value = 0
-        gauss.A.value = 5000
-        gauss.sigma.value = 0.5
-        s.data = s.data + gauss.function(energy_axis.axis)
-        np.random.seed(1)
-        s.add_gaussian_noise(1)
-        self.signal = s
-
-    def _add_spikes(self):
-        self.signal.data[1, 0, 1] += 200
-        self.signal.data[0, 2, 29] += 500
-        self.signal.data[1, 2, 14] += 1000
-
-    def test_get_zero_loss_peak_mask(self):
-        mask = self.signal.get_zero_loss_peak_mask()
-        expected_mask = np.zeros(self.signal.axes_manager.signal_size,
-                                 dtype=bool)
-        expected_mask[13:38] = True
-        np.testing.assert_allclose(mask, expected_mask)
-
-    def test_get_zero_loss_peak_mask_signal_mask(self):
-        signal_mask = np.zeros(self.signal.axes_manager.signal_size,
-                               dtype=bool)
-        signal_mask[40:50] = True
-        mask = self.signal.get_zero_loss_peak_mask(signal_mask=signal_mask)
-        expected_mask = np.zeros(self.signal.axes_manager.signal_size,
-                                 dtype=bool)
-        expected_mask[13:38] = True
-        np.testing.assert_allclose(mask, np.logical_or(expected_mask,
-                                                       signal_mask))
-
-    def test_spikes_diagnosis(self):
-        if self.signal._lazy:
-            pytest.skip("Spikes diagnosis is not supported for lazy signal")
-        self._add_spikes()
-        self.signal.spikes_diagnosis(zero_loss_peak_mask_width=5.0)
-
-        zlp_mask = self.signal.get_zero_loss_peak_mask()
-        hist_data = self.signal._get_spikes_diagnosis_histogram_data(
-            signal_mask=zlp_mask, max_num_bins=1000)
-        expected_data = np.zeros(544)
-        expected_data[:13] = [41, 46, 31, 31, 30, 15, 14,  4,  5,  5,  2,  1,  1,]
-        expected_data[-4:] = [1, 0, 0, 1]
-        np.testing.assert_allclose(hist_data.data, expected_data)
-
-        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data(
-            max_num_bins=1000)
-        expected_data2 = np.array([266, 12, 0, 12, 0, 0, 0, 0, 0, 12, 0, 0, 0,
-                                   2, 0, 0, 0, 0, 0, 0, 12, 12, 1, 0, 0, 0,
-                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,
-                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   10, 2, 0, 2, 9, 0, 0, 0, 0, 0, 0, 0, 12,
-                                   0, 0, 2, 0, 0, 0, 1])
-        np.testing.assert_allclose(hist_data2.data, expected_data2)
-
-
-def test_spikes_removal_tool_no_zlp():
-    s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal()
-    with pytest.raises(ValueError):
-        # Zero not in energy range
-        s.spikes_removal_tool(zero_loss_peak_mask_width=5.0)
+        assert np.allclose(zlp_max, 8)
 
 
 @lazifyTestClass
@@ -306,296 +209,12 @@ class TestPowerLawExtrapolation:
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
 
-
 @lazifyTestClass
 class TestFourierRatioDeconvolution:
 
-    @pytest.mark.parametrize(('extrapolate_lowloss'), [True, False])
-    def test_running(self, extrapolate_lowloss):
+    def test_running(self):
         s = hs.signals.EELSSpectrum(np.arange(200))
-        gaussian = Gaussian()
-        gaussian.A.value = 50
-        gaussian.sigma.value = 10
-        gaussian.centre.value = 20
-        s_ll = hs.signals.EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
-        s_ll.axes_manager[0].offset = -50
-        s.fourier_ratio_deconvolution(s_ll,
-                                      extrapolate_lowloss=extrapolate_lowloss)
-
-
-@lazifyTestClass
-class TestRebin:
-    def setup_method(self, method):
-        # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
-        self.signal = s
-
-    def test_rebin_without_dwell_time(self):
-        s = self.signal
-        s.rebin(scale=(2, 2, 1))
-
-    def test_rebin_dwell_time(self):
-        s = self.signal
-        s.metadata.add_node("Acquisition_instrument.TEM.Detector.EELS")
-        s_mdEELS = s.metadata.Acquisition_instrument.TEM.Detector.EELS
-        s_mdEELS.dwell_time = 0.1
-        s_mdEELS.exposure = 0.5
-        s2 = s.rebin(scale=(2, 2, 8))
-        s2_mdEELS = s2.metadata.Acquisition_instrument.TEM.Detector.EELS
-        assert s2_mdEELS.dwell_time == (0.1 * 2 * 2)
-        assert s2_mdEELS.exposure == (0.5 * 2 * 2)
-
-        def test_rebin_exposure(self):
-            s = self.signal
-            s.metadata.exposure = 10.2
-            s2 = s.rebin(scale=(2, 2, 8))
-            assert s2.metadata.exposure == (10.2 * 2 * 2)
-
-    def test_offset_after_rebin(self):
-        s = self.signal
-        s.axes_manager[0].offset = 1
-        s.axes_manager[1].offset = 2
-        s.axes_manager[2].offset = 3
-        s2 = s.rebin(scale=(2, 2, 1))
-        assert s2.axes_manager[0].offset == 1.5
-        assert s2.axes_manager[1].offset == 2.5
-        assert s2.axes_manager[2].offset == s.axes_manager[2].offset
-
-
-@lazifyTestClass
-class Test_Estimate_Thickness:
-
-    def setup_method(self, method):
-        # Create an empty spectrum
-        self.s = load(
-            MYPATH.joinpath("data/EELS_LL_linescan_simulated_thickness_variation.hspy")
-        )
-        self.zlp = load(
-            MYPATH.joinpath("data/EELS_ZLP_linescan_simulated_thickness_variation.hspy")
-        )
-
-    def test_relative_thickness(self):
-        t = self.s.estimate_thickness(zlp=self.zlp)
-        np.testing.assert_allclose(t.data, np.arange(0.3,2,0.1), atol=4e-3)
-        assert t.metadata.Signal.quantity == "$\\frac{t}{\\lambda}$"
-
-    def test_thickness_mfp(self):
-        t = self.s.estimate_thickness(zlp=self.zlp, mean_free_path=120)
-        np.testing.assert_allclose(t.data, 120 * np.arange(0.3,2,0.1), rtol=3e-3)
-        assert t.metadata.Signal.quantity == "thickness (nm)"
-
-    def test_thickness_density(self):
-        t = self.s.estimate_thickness(zlp=self.zlp, density=3.6)
-        np.testing.assert_allclose(t.data, 142 * np.arange(0.3,2,0.1), rtol=3e-3)
-        assert t.metadata.Signal.quantity == "thickness (nm)"
-
-    def test_thickness_density_and_mfp(self):
-        t = self.s.estimate_thickness(zlp=self.zlp, density=3.6, mean_free_path=120)
-        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
-        assert t.metadata.Signal.quantity == "thickness (nm)"
-
-    def test_threshold(self):
-        t = self.s.estimate_thickness(threshold=4.5, density=3.6, mean_free_path=120)
-        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
-        assert t.metadata.Signal.quantity == "thickness (nm)"
-
-    def test_threshold_nd(self):
-        threshold = self.s._get_navigation_signal()
-        threshold.data[:] = 4.5
-        t = self.s.estimate_thickness(threshold=threshold, density=3.6, mean_free_path=120)
-        np.testing.assert_allclose(t.data, 127.5 * np.arange(0.3,2,0.1), rtol=3e-3)
-        assert t.metadata.Signal.quantity == "thickness (nm)"
-
-    def test_no_zlp_or_threshold(self):
-        with pytest.raises(ValueError):
-            self.s.estimate_thickness()
-
-    def test_no_metadata(self):
-        del self.s.metadata.Acquisition_instrument
-        with pytest.raises(RuntimeError):
-            self.s.estimate_thickness(zlp=self.zlp, density=3.6)
-
-
-class Test_Print_Edges_Near_Energy:
-    def setup_method(self, method):
-        # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
-        self.signal = s
-
-    def test_at_532eV(self):
-        s = self.signal
-        table_ascii = s.print_edges_near_energy(532)
-
-        assert table_ascii.__repr__() == ('+-------+-------------------+------'
-        '-----+-----------------+\n|  edge | onset energy (eV) | relevance '
-        '|   description   |\n+-------+-------------------+-----------+'
-        '-----------------+\n|  O_K  |       532.0       |   Major   '
-        '|   Abrupt onset  |\n| Pd_M3 |       531.0       |   Minor   '
-        '|                 |\n| Sb_M5 |       528.0       |   Major   '
-        '| Delayed maximum |\n| Sb_M4 |       537.0       |   Major   '
-        '| Delayed maximum |\n+-------+-------------------+-----------+'
-        '-----------------+')
-
-    def test_sequence_edges(self):
-        s = self.signal
-        table_ascii = s.print_edges_near_energy(123,
-                                                edges=['Mn_L2', 'O_K', 'Fe_L2'])
-
-        assert table_ascii.__repr__() == ('+-------+-------------------+------'
-        '-----+-----------------------------+\n|  edge | onset energy (eV) '
-        '| relevance |         description         |\n+-------+------------'
-        '-------+-----------+-----------------------------+\n| Mn_L2 |     '
-        '  651.0       |   Major   | Sharp peak. Delayed maximum |\n|  O_K  |'
-        '       532.0       |   Major   |         Abrupt onset        '
-        '|\n| Fe_L2 |       721.0       |   Major   | Sharp peak. '
-        'Delayed maximum |\n+-------+-------------------+-----------+---------'
-        '--------------------+')
-
-    def test_no_energy_and_edges(self):
-        s = self.signal
-        with pytest.raises(ValueError):
-            s.print_edges_near_energy()
-
-
-class Test_Edges_At_Energy:
-    def setup_method(self, method):
-        # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
-        self.signal = s
-
-    def test_at_532eV(self):
-        s = self.signal
-        table_ascii = s.edges_at_energy(532, width=20, only_major=True,
-                                        order='ascending')
-
-        assert table_ascii.__repr__() == ('+-------+-------------------+------'
-        '-----+-----------------+\n|  edge | onset energy (eV) | relevance |  '
-        ' description   |\n+-------+-------------------+-----------+----------'
-        '-------+\n| Sb_M5 |       528.0       |   Major   | Delayed maximum '
-        '|\n|  O_K  |       532.0       |   Major   |   Abrupt onset  |\n| '
-        'Sb_M4 |       537.0       |   Major   | Delayed maximum |\n+-------+'
-        '-------------------+-----------+-----------------+')
-
-
-class Test_Get_Complementary_Edges:
-    def setup_method(self, method):
-        # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
-        self.signal = s
-
-    def test_Fe_O(self):
-        s = self.signal
-        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'])
-
-        assert complementary == ['Fe_L1', 'Fe_L3', 'Fe_M3', 'Fe_M2']
-
-    def test_Fe_O_only_major(self):
-        s = self.signal
-        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'],
-                                                  only_major=True)
-
-        assert complementary == ['Fe_L3', 'Fe_M3', 'Fe_M2']
-
-
-class Test_Plot_EELS:
-    def setup_method(self, method):
-        s = hs.datasets.artificial_data.get_core_loss_eels_signal()
-        self.signal = s
-
-    def test_plot_no_markers(self):
-        s = self.signal
-        s.add_elements(('Mn','Cr'))
-        s.plot()
-
-        assert len(s._edge_markers) == 0
-
-    def test_plot_edges_True(self):
-        s = self.signal
-        s.add_elements(('Mn','Cr'))
-        s.plot(plot_edges=True)
-
-        assert len(s._edge_markers) == 6
-        assert set(s._edge_markers.keys()) == set(['Mn_L2', 'Mn_L3', 'Mn_L1',
-                                                   'Cr_L2', 'Cr_L3', 'Cr_L1'])
-
-    def test_plot_edges_True_without_elements(self):
-        s = self.signal
-        with pytest.raises(ValueError):
-            s.plot(plot_edges=True)
-
-    def test_plot_edges_from_element_family_specific(self):
-        s = self.signal
-        s.plot(plot_edges=['Mn', 'Ti_L', 'Cr_L3'], only_edges=('Major'))
-
-        assert len(s._edge_markers) == 5
-        assert set(s._edge_markers.keys()) == set(['Cr_L3', 'Mn_L2', 'Mn_L3',
-                                                   'Ti_L2', 'Ti_L3'])
-
-    def test_unsupported_edge_family(self):
-        s = self.signal
-        with pytest.raises(AttributeError):
-            s.plot(plot_edges=['Cr_P'])
-
-    def test_unsupported_edge(self):
-        s = self.signal
-        with pytest.raises(AttributeError):
-            s.plot(plot_edges=['Xe_P4'])
-
-    def test_unsupported_element(self):
-        s = self.signal
-        with pytest.raises(ValueError):
-            s.plot(plot_edges=['ABC_L1'])
-
-    def test_remove_edge_labels(self):
-        s = self.signal
-        s.plot(plot_edges=['Cr_L', 'Fe_L2'])
-        s.remove_EELS_edges_markers(['Cr_L1', 'Fe_L2'])
-
-        assert len(s._edge_markers) == 2
-        assert set(s._edge_markers.keys()) == set(['Cr_L2', 'Cr_L3'])
-
-    def test_unequal_edges_and_markers(self):
-        s = self.signal
-        s.plot()
-        with pytest.raises(ValueError):
-            s.plot_edges_label(['Cr_L3', 'Fe_L2'],
-                               vertical_line_marker=['vl1', 'vl2'],
-                               text_marker=['tx1'])
-
-    def test_plot_edges_without_markers_provided(self):
-        s = self.signal
-        s.plot()
-        s.plot_edges_label({'Fe_L2': 721.0, 'O_K': 532.0})
-
-        assert len(s._edge_markers) == 2
-        assert set(s._edge_markers.keys()) == set(['Fe_L2', 'O_K'])
-
-
-@lazifyTestClass
-class TestVacuumMask:
-
-    def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
-        s.add_poissonian_noise(random_state=1)
-        s.axes_manager[-1].scale = 0.25
-        s.axes_manager[-1].units = 'eV'
-        s.inav[:10] += 20
-        self.signal = s
-
-    def test_vacuum_mask_opening(self):
-        s = self.signal
-        mask = s.vacuum_mask(opening=True)
-        assert not mask.data[0]
-        assert not mask.data[9]
-        assert mask.data[10]
-        assert mask.data[-1]
-
-    def test_vacuum_mask_threshold(self):
-        s = self.signal
-        mask = s.vacuum_mask(threshold=20)
-        assert mask.data[0]
-        assert mask.data[1]
-        assert not mask.data[2]
-        assert not mask.data[9]
-        assert mask.data[10]
-        assert mask.data[-1]
+        s_ll = hs.signals.EELSSpectrum(np.zeros(100))
+        s_ll.data[18:23] = [3, 10, 20, 10, 3]
+        s_ll.axes_manager[0].offset = -20
+        s.fourier_ratio_deconvolution(s_ll)

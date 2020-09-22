@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,22 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from hyperspy.signal import BaseSignal
 from hyperspy.exceptions import DataDimensionError
-from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
 class CommonSignal1D(object):
 
     """Common functions for 1-dimensional signals."""
 
-    def to_signal2D(self, optimize=True):
+    def to_signal2D(self):
         """Returns the one dimensional signal as a two dimensional signal.
 
-        By default ensures the data is stored optimally, hence often making a
-        copy of the data. See `transpose` for a more general method with more
+        Always ensures the data is stored optimally, hence often making a copy
+        of the data. See `transpose` for a more general method with more
         options.
-
-        %s
 
         See Also
         --------
@@ -40,8 +38,7 @@ class CommonSignal1D(object):
 
         Raises
         ------
-        DataDimensionError
-            When data.ndim < 2
+        DataDimensionError: when data.ndim < 2
 
 
         """
@@ -50,6 +47,5 @@ class CommonSignal1D(object):
                 "A Signal dimension must be >= 2 to be converted to Signal2D")
         nat = self.axes_manager._get_axes_in_natural_order()
         im = self.transpose(signal_axes=nat[:2], navigation_axes=nat[2:],
-                            optimize=optimize)
+                            optimize=True)
         return im
-    to_signal2D.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

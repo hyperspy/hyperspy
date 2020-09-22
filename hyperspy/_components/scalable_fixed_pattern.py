@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,30 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+
 from scipy.interpolate import interp1d
-
 from hyperspy.component import Component
-from hyperspy.ui_registry import add_gui_method
-from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
-@add_gui_method(toolkey="hyperspy.ScalableFixedPattern_Component")
 class ScalableFixedPattern(Component):
 
-    r"""Fixed pattern component with interpolation support.
+    """Fixed pattern component with interpolation support.
 
-    .. math::
+        f(x) = a*s(b*x-x0) + c
 
-        f(x) = a \cdot s \left(b \cdot x - x_0\right) + c
-
-    ============ =============
-     Variable     Parameter
-    ============ =============
-     :math:`a`    yscale
-     :math:`b`    xscale
-     :math:`x_0`  shift
-    ============ =============
+    +------------+-----------+
+    | Parameter  | Attribute |
+    +------------+-----------+
+    +------------+-----------+
+    |     a      |  yscale   |
+    +------------+-----------+
+    |     b      |  xscale   |
+    +------------+-----------+
+    |    x0      |  shift    |
+    +------------+-----------+
 
 
     The fixed pattern is defined by a single spectrum which must be provided to
@@ -47,15 +44,13 @@ class ScalableFixedPattern(Component):
 
     .. code-block:: ipython
 
-        In [1]: s = load('my_spectrum.hspy')
+        In [1]: s = load('my_spectrum.hdf5')
         In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
 
-    Parameters
+    Attributes
     ----------
 
-    yscale : Float
-    xscale : Float
-    shift : Float
+    yscale, xscale, shift : Float
     interpolate : Bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
@@ -67,35 +62,23 @@ class ScalableFixedPattern(Component):
 
     """
 
-    def __init__(self, signal1D, yscale=1.0, xscale=1.0,
-                 shift=0.0, interpolate=True):
+    def __init__(self, signal1D):
 
         Component.__init__(self, ['yscale', 'xscale', 'shift'])
 
         self._position = self.shift
         self._whitelist['signal1D'] = ('init,sig', signal1D)
-        self._whitelist['interpolate'] = None
         self.signal = signal1D
         self.yscale.free = True
-        self.yscale.value = yscale
-        self.xscale.value = xscale
-        self.shift.value = shift
+        self.yscale.value = 1.
+        self.xscale.value = 1.
+        self.shift.value = 0.
 
         self.prepare_interpolator()
         # Options
         self.isbackground = True
         self.convolved = False
-        self.interpolate = interpolate
-
-    @property
-    def interpolate(self):
-        return self._interpolate
-
-    @interpolate.setter
-    def interpolate(self, value):
-        self._interpolate = value
-        self.xscale.free = value
-        self.shift.free = value
+        self.interpolate = True
 
     def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
         """Prepare interpolation.
@@ -129,34 +112,46 @@ class ScalableFixedPattern(Component):
             fill_value=fill_value,
             **kwargs)
 
-    def _function(self, x, xscale, yscale, shift):
+    def function(self, x):
         if self.interpolate is True:
-            result = yscale * self.f(x * xscale - shift)
+            result = self.yscale.value * self.f(
+                x * self.xscale.value - self.shift.value)
         else:
-            result = yscale * self.signal.data
+            result = self.yscale.value * self.signal.data
         if self.signal.metadata.Signal.binned is True:
             return result / self.signal.axes_manager.signal_axes[0].scale
         else:
             return result
 
-    def function(self, x):
-        return self._function(x, self.xscale.value, self.yscale.value,
-                              self.shift.value)
-
-    def function_nd(self, axis):
-        """%s
-
-        """
-        if self._is_navigation_multidimensional:
-            x = axis[np.newaxis, :]
-            xscale = self.xscale.map['values'][..., np.newaxis]
-            yscale = self.yscale.map['values'][..., np.newaxis]
-            shift = self.shift.map['values'][..., np.newaxis]
-            return self._function(x, xscale, yscale, shift)
-        else:
-            return self.function(axis)
-
-    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
-
     def grad_yscale(self, x):
         return self.function(x) / self.yscale.value
+
+    def notebook_interaction(self, display=True):
+        from ipywidgets import Checkbox
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
+        try:
+            container = super(ScalableFixedPattern,
+                              self).notebook_interaction(display=False)
+            interpolate = Checkbox(description='interpolate',
+                                   value=self.interpolate)
+
+            def on_interpolate_change(change):
+                self.interpolate = change['new']
+
+            interpolate.observe(on_interpolate_change, names='value')
+
+            container.children = (container.children[0], interpolate) + \
+                container.children[1:]
+
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                print('This function is only avialable when running in a'
+                      ' notebook')
+            else:
+                raise
+    notebook_interaction.__doc__ = Component.notebook_interaction.__doc__

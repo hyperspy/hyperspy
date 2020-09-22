@@ -1,11 +1,9 @@
 
 import numpy as np
 
-from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal import BaseSignal
 
 
-@lazifyTestClass
 class TestSignalFolding:
 
     def setup_method(self, method):
@@ -128,7 +126,6 @@ class TestSignalFolding:
                 self.s.axes_manager.signal_shape)
 
 
-@lazifyTestClass
 class TestSignalVarianceFolding:
 
     def setup_method(self, method):

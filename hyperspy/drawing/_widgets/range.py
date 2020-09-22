@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,17 +18,10 @@
 
 
 import numpy as np
-from matplotlib.widgets import SpanSelector
-import inspect
-import logging
+import matplotlib
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.events import Events, Event
-
-
-_logger = logging.getLogger(__name__)
-# Track if we have already warned when the widget is out of range
-already_warn_out_of_range = False
 
 
 def in_interval(number, interval):
@@ -45,20 +38,12 @@ class RangeWidget(ResizableDraggableWidgetBase):
     ModifiablepanSelector so that it conforms to the common widget interface.
 
     For optimized changes of geometry, the class implements two methods
-    'set_bounds' and 'set_ibounds', to set the geometry of the rectangle by
+    'set_bounds' and 'set_ibounds', to set the geomtry of the rectangle by
     value and index space coordinates, respectivly.
-
-    Implements the internal method _validate_geometry to make sure the patch
-    will always stay within bounds.
     """
 
-    def __init__(self, axes_manager, ax=None, alpha=0.5, **kwargs):
-        # Parse all kwargs for the matplotlib SpanSelector
-        self._SpanSelector_kwargs = {}
-        for key in inspect.signature(SpanSelector).parameters.keys():
-            if key in kwargs:
-                self._SpanSelector_kwargs[key] = kwargs.pop(key)
-        super(RangeWidget, self).__init__(axes_manager, alpha=alpha, **kwargs)
+    def __init__(self, axes_manager):
+        super(RangeWidget, self).__init__(axes_manager)
         self.span = None
 
     def set_on(self, value):
@@ -69,15 +54,15 @@ class RangeWidget(ResizableDraggableWidgetBase):
             elif value is False:
                 self.disconnect()
             try:
-                self.ax.figure.canvas.draw_idle()
-            except BaseException:  # figure does not exist
+                self.ax.figure.canvas.draw()
+            except:  # figure does not exist
                 pass
             if value is False:
                 self.ax = None
-        self.__is_on = value
+        self._WidgetBase__is_on = value
 
     def _add_patch_to(self, ax):
-        self.span = ModifiableSpanSelector(ax, **self._SpanSelector_kwargs)
+        self.span = ModifiableSpanSelector(ax)
         self.span.set_initial(self._get_range())
         self.span.bounds_check = True
         self.span.snap_position = self.snap_position
@@ -87,8 +72,6 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.step_ax = self.axes[0]
         self.span.tolerance = 5
         self.patch = [self.span.rect]
-        self.patch[0].set_color(self.color)
-        self.patch[0].set_alpha(self.alpha)
 
     def _span_changed(self, widget):
         r = self._get_range()
@@ -100,9 +83,6 @@ class RangeWidget(ResizableDraggableWidgetBase):
             old_position, old_size = self.position, self.size
             self._pos = np.array([x])
             self._size = np.array([w])
-            self._validate_geometry()
-            if self._pos != np.array([x]) or self._size != np.array([w]):
-                self._update_patch_size()
             self._apply_changes(old_size=old_size, old_position=old_position)
 
     def _get_range(self):
@@ -120,25 +100,22 @@ class RangeWidget(ResizableDraggableWidgetBase):
         elif len(kwargs) == 1 and 'bounds' in kwargs:
             return kwargs.values()[0]
         else:
-            x = kwargs.pop('x', kwargs.pop('left', self._pos[0]))
+            x = kwargs.pop('x', kwargs.pop('left', self.indices[0]))
             if 'right' in kwargs:
                 w = kwargs.pop('right') - x
             else:
-                w = kwargs.pop('w', kwargs.pop('width', self._size[0]))
+                w = kwargs.pop('w', kwargs.pop('width',
+                                               self.get_size_in_indices()[0]))
             return x, w
 
     def set_ibounds(self, *args, **kwargs):
         """
         Set bounds by indices. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-
-        * 'bounds': tuple (left, width)
-
-        OR
-
-        * 'x'/'left'
-        * 'w'/'width', alternatively 'right'
-
+         * 'bounds': tuple (left, width)
+         OR
+         * 'x'/'left'
+         * 'w'/'width', alternatively 'right'
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width will be kept, not right).
         """
@@ -156,56 +133,21 @@ class RangeWidget(ResizableDraggableWidgetBase):
         """
         Set bounds by values. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-
-        * 'bounds': tuple (left, width)
-
-        OR
-
-        * 'x'/'left'
-        * 'w'/'width', alternatively 'right' (x+w)
-
+         * 'bounds': tuple (left, width)
+         OR
+         * 'x'/'left'
+         * 'w'/'width', alternatively 'right' (x+w)
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width will be kept, not right).
         """
-        global already_warn_out_of_range
-
-        def warn(obj, parameter, value):
-            global already_warn_out_of_range
-            if not already_warn_out_of_range:
-                _logger.info('{}: {} is out of range. It is therefore set '
-                             'to the value of {}'.format(obj, parameter, value))
-                already_warn_out_of_range = True
 
         x, w = self._parse_bounds_args(args, kwargs)
-        l0, h0 = self.axes[0].low_value, self.axes[0].high_value
-        scale = self.axes[0].scale
 
-        in_range = 0
-        if x < l0:
-            x = l0
-            warn(self, '`x` or `left`', x)
-        elif h0 <= x:
-            x = h0 - scale
-            warn(self, '`x` or `left`', x)
-        else:
-            in_range += 1
-        if w < scale:
-            w = scale
-            warn(self, '`width` or `right`', w)
-        elif not (l0 + scale <= x + w <= h0 + scale):
-            if self.size != np.array([w]):  # resize
-                w = h0 + scale - self.position[0]
-                warn(self, '`width` or `right`', w)
-            if self.position != np.array([x]):  # moved
-                x = h0 + scale - self.size[0]
-                warn(self, '`x` or `left`', x)
-        else:
-            in_range += 1
-
-        # if we are in range again, reset `already_warn_out_of_range` to False
-        if in_range == 2 and already_warn_out_of_range:
-            _logger.info('{} back in range.'.format(self.__class__.__name__))
-            already_warn_out_of_range = False
+        if not (self.axes[0].low_value <= x <= self.axes[0].high_value):
+            raise ValueError()
+        if not (self.axes[0].low_value <= x + w <= self.axes[0].high_value +
+                self.axes[0].scale):
+            raise ValueError()
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x])
@@ -238,59 +180,20 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.snap_size = value
         self._update_patch_size()
 
-    def _validate_geometry(self, x1=None):
-        """Make sure the entire patch always stays within bounds. First the
-        position (either from position property or from x1 argument), is
-        limited within the bounds. Then, if the right edge are out of
-        bounds, the position is changed so that they will be at the limit.
 
-        The modified geometry is stored, but no change checks are performed.
-        Call _apply_changes after this in order to process any changes (the
-        size might change if it is set larger than the bounds size).
-        """
-        xaxis = self.axes[0]
-
-        # Make sure widget size is not larger than axes
-        self._size[0] = min(self._size[0], xaxis.size * xaxis.scale)
-
-        # Make sure x1 is within bounds
-        if x1 is None:
-            x1 = self._pos[0]  # Get it if not supplied
-        if x1 < xaxis.low_value:
-            x1 = xaxis.low_value
-        elif x1 > xaxis.high_value:
-            x1 = xaxis.high_value
-
-        # Make sure x2 is with upper bound.
-        # If not, keep dims, and change x1!
-        x2 = x1 + self._size[0]
-        if x2 > xaxis.high_value + xaxis.scale:
-            x2 = xaxis.high_value + xaxis.scale
-            x1 = x2 - self._size[0]
-
-        self._pos = np.array([x1])
-        # Apply snaps if appropriate
-        if self.snap_position:
-            self._do_snap_position()
-        if self.snap_size:
-            self._do_snap_size()
-
-
-class ModifiableSpanSelector(SpanSelector):
+class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def __init__(self, ax, **kwargs):
-        onselect = kwargs.pop('onselect', self.dummy)
-        direction = kwargs.pop('direction', 'horizontal')
-        useblit = kwargs.pop('useblit', ax.figure.canvas.supports_blit)
-        SpanSelector.__init__(self, ax, onselect, direction=direction,
-                              useblit=useblit, span_stays=False, **kwargs)
+        onsel = kwargs.pop('onselect', self.dummy)
+        matplotlib.widgets.SpanSelector.__init__(
+            self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
-        self.tolerance = 2
+        self.tolerance = 1
         self.on_move_cid = None
         self._range = None
         self.step_ax = None
         self.bounds_check = False
-        self._button_down = False
+        self.buttonDown = False
         self.snap_size = False
         self.snap_position = False
         self.events = Events()
@@ -338,46 +241,16 @@ class ModifiableSpanSelector(SpanSelector):
             moved = self._range[0] != value[0]
             self._range = value
             if moved:
-                self._set_span_x(value[0])
+                self.rect.set_x(value[0])
                 self.events.moved.trigger(self)
             if resized:
-                self._set_span_width(value[1] - value[0])
+                self.rect.set_width(value[1] - value[0])
                 self.events.resized.trigger(self)
             if moved or resized:
-                self.draw_patch()
+                self.update()
                 self.events.changed.trigger(self)
 
     range = property(_get_range, _set_range)
-
-    def _set_span_x(self, value):
-        if self.direction == 'horizontal':
-            self.rect.set_x(value)
-        else:
-            self.rect.set_y(value)
-
-    def _set_span_width(self, value):
-        if self.direction == 'horizontal':
-            self.rect.set_width(value)
-        else:
-            self.rect.set_height(value)
-
-    def _get_span_x(self):
-        if self.direction == 'horizontal':
-            return self.rect.get_x()
-        else:
-            return self.rect.get_y()
-
-    def _get_span_width(self):
-        if self.direction == 'horizontal':
-            return self.rect.get_width()
-        else:
-            return self.rect.get_height()
-
-    def _get_mouse_position(self, event):
-        if self.direction == 'horizontal':
-            return event.xdata
-        else:
-            return event.ydata
 
     def set_initial(self, initial_range=None):
         """
@@ -386,68 +259,53 @@ class ModifiableSpanSelector(SpanSelector):
         if initial_range is not None:
             self.range = initial_range
 
-        self.disconnect_events()
+        for cid in self.cids:
+            self.canvas.mpl_disconnect(cid)
         # And connect to the new ones
-        self.connect_event('button_press_event', self.mm_on_press)
-        self.connect_event('button_release_event', self.mm_on_release)
-        self.connect_event('draw_event', self.update_background)
-
+        self.cids.append(
+            self.canvas.mpl_connect('button_press_event', self.mm_on_press))
+        self.cids.append(
+            self.canvas.mpl_connect('button_release_event',
+                                    self.mm_on_release))
+        self.cids.append(
+            self.canvas.mpl_connect('draw_event', self.update_background))
         self.rect.set_visible(True)
         self.rect.contains = self.contains
-
-    def update(self, *args):
-        # Override the SpanSelector `update` method to blit properly all
-        # artirts before we go to "modify mode" in `set_initial`.
-        self.draw_patch()
-
-    def draw_patch(self, *args):
-        """Update the patch drawing.
-        """
-        try:
-            if self.useblit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._update_animated()
-            elif self.ax.figure is not None:
-                self.ax.figure.canvas.draw_idle()
-        except AttributeError:
-            pass  # When figure is None, typically when closing
+        self.update()
 
     def contains(self, mouseevent):
         x, y = self.rect.get_transform().inverted().transform_point(
             (mouseevent.x, mouseevent.y))
-        v = x if self.direction == 'vertical' else y
         # Assert y is correct first
-        if not (0.0 <= v <= 1.0):
+        if not (0.0 <= y <= 1.0):
             return False, {}
-        x_pt = self._get_point_size_in_data_units()
+        invtrans = self.ax.transData.inverted()
+        x_pt = self.tolerance * abs((invtrans.transform((1, 0)) -
+                                     invtrans.transform((0, 0)))[0])
         hit = self._range[0] - x_pt, self._range[1] + x_pt
-        if hit[0] < self._get_mouse_position < hit[1]:
+        if hit[0] < mouseevent.xdata < hit[1]:
             return True, {}
         return False, {}
 
     def release(self, event):
-        """When the button is released, the span stays in the screen and the
+        """When the button is realeased, the span stays in the screen and the
         iteractivity machinery passes to modify mode"""
-        if self.pressv is None or (self.ignore(
-                event) and not self._button_down):
+        if self.pressv is None or (self.ignore(event) and not self.buttonDown):
             return
-        self._button_down = False
+        self.buttonDown = False
         self.update_range()
+        self.onselect()
         self.set_initial()
 
-    def _get_point_size_in_data_units(self):
+    def mm_on_press(self, event):
+        if self.ignore(event) and not self.buttonDown:
+            return
+        self.buttonDown = True
+
         # Calculate the point size in data units
         invtrans = self.ax.transData.inverted()
-        (x, y) = (1, 0) if self.direction == 'horizontal' else (0, 1)
-        x_pt = self.tolerance * abs((invtrans.transform((x, y)) -
-                                     invtrans.transform((0, 0)))[y])
-        return x_pt
-
-    def mm_on_press(self, event):
-        if self.ignore(event) and not self._button_down:
-            return
-        self._button_down = True
-
-        x_pt = self._get_point_size_in_data_units()
+        x_pt = self.tolerance * abs((invtrans.transform((1, 0)) -
+                                     invtrans.transform((0, 0)))[0])
 
         # Determine the size of the regions for moving and stretching
         self.update_range()
@@ -455,16 +313,16 @@ class ModifiableSpanSelector(SpanSelector):
         right_region = self._range[1] - x_pt, self._range[1] + x_pt
         middle_region = self._range[0] + x_pt, self._range[1] - x_pt
 
-        if in_interval(self._get_mouse_position(event), left_region) is True:
+        if in_interval(event.xdata, left_region) is True:
             self.on_move_cid = \
                 self.canvas.mpl_connect('motion_notify_event',
                                         self.move_left)
-        elif in_interval(self._get_mouse_position(event), right_region):
+        elif in_interval(event.xdata, right_region):
             self.on_move_cid = \
                 self.canvas.mpl_connect('motion_notify_event',
                                         self.move_right)
-        elif in_interval(self._get_mouse_position(event), middle_region):
-            self.pressv = self._get_mouse_position(event)
+        elif in_interval(event.xdata, middle_region):
+            self.pressv = event.xdata
             self.on_move_cid = \
                 self.canvas.mpl_connect('motion_notify_event',
                                         self.move_rect)
@@ -472,8 +330,8 @@ class ModifiableSpanSelector(SpanSelector):
             return
 
     def update_range(self):
-        self._range = (self._get_span_x(),
-                       self._get_span_x() + self._get_span_width())
+        self._range = (self.rect.get_x(),
+                       self.rect.get_x() + self.rect.get_width())
 
     def switch_left_right(self, x, left_to_right):
         if left_to_right:
@@ -482,7 +340,7 @@ class ModifiableSpanSelector(SpanSelector):
                     return
             w = self._range[1] - self._range[0]
             r0 = self._range[1]
-            self._set_span_x(r0)
+            self.rect.set_x(r0)
             r1 = r0 + w
             self.canvas.mpl_disconnect(self.on_move_cid)
             self.on_move_cid = \
@@ -502,9 +360,9 @@ class ModifiableSpanSelector(SpanSelector):
         self._range = (r0, r1)
 
     def move_left(self, event):
-        if self._button_down is False or self.ignore(event):
+        if self.buttonDown is False or self.ignore(event):
             return
-        x = self._get_mouse_position(event)
+        x = event.xdata
         if self.step_ax is not None:
             if (self.bounds_check and
                     x < self.step_ax.low_value - self.step_ax.scale):
@@ -527,22 +385,22 @@ class ModifiableSpanSelector(SpanSelector):
                 self.move_right(event)
             return
         width_increment = self._range[0] - x
-        if self._get_span_width() + width_increment <= 0:
+        if self.rect.get_width() + width_increment <= 0:
             return
-        self._set_span_x(x)
-        self._set_span_width(self._get_span_width() + width_increment)
+        self.rect.set_x(x)
+        self.rect.set_width(self.rect.get_width() + width_increment)
         self.update_range()
         self.events.moved.trigger(self)
         self.events.resized.trigger(self)
         self.events.changed.trigger(self)
         if self.onmove_callback is not None:
             self.onmove_callback(*self._range)
-        self.draw_patch()
+        self.update()
 
     def move_right(self, event):
-        if self._button_down is False or self.ignore(event):
+        if self.buttonDown is False or self.ignore(event):
             return
-        x = self._get_mouse_position(event)
+        x = event.xdata
         if self.step_ax is not None:
             if (self.bounds_check and
                     x > self.step_ax.high_value + self.step_ax.scale):
@@ -562,29 +420,21 @@ class ModifiableSpanSelector(SpanSelector):
                 self.move_left(event)
             return
         width_increment = x - self._range[1]
-        if self._get_span_width() + width_increment <= 0:
+        if self.rect.get_width() + width_increment <= 0:
             return
-        self._set_span_width(self._get_span_width() + width_increment)
+        self.rect.set_width(self.rect.get_width() + width_increment)
         self.update_range()
         self.events.resized.trigger(self)
         self.events.changed.trigger(self)
         if self.onmove_callback is not None:
             self.onmove_callback(*self._range)
-        self.draw_patch()
+        self.update()
 
     def move_rect(self, event):
-        if self._button_down is False or self.ignore(event):
+        if self.buttonDown is False or self.ignore(event):
             return
-        x_increment = self._get_mouse_position(event) - self.pressv
+        x_increment = event.xdata - self.pressv
         if self.step_ax is not None:
-            if (self.bounds_check  
-                and self._range[0] <= self.step_ax.low_value
-                and self._get_mouse_position(event) <= self.pressv):
-                return
-            if (self.bounds_check
-                and self._range[1] >= self.step_ax.high_value
-                and self._get_mouse_position(event) >= self.pressv):
-                return
             if self.snap_position:
                 rem = x_increment % self.step_ax.scale
                 if rem / self.step_ax.scale < 0.5:
@@ -592,25 +442,26 @@ class ModifiableSpanSelector(SpanSelector):
                 else:
                     rem = self.step_ax.scale - rem
                 x_increment += rem
-        self._set_span_x(self._get_span_x() + x_increment)
+        self.rect.set_x(self.rect.get_x() + x_increment)
         self.update_range()
         self.pressv += x_increment
         self.events.moved.trigger(self)
         self.events.changed.trigger(self)
         if self.onmove_callback is not None:
             self.onmove_callback(*self._range)
-        self.draw_patch()
+        self.update()
 
     def mm_on_release(self, event):
-        if self._button_down is False or self.ignore(event):
+        if self.buttonDown is False or self.ignore(event):
             return
-        self._button_down = False
+        self.buttonDown = False
         self.canvas.mpl_disconnect(self.on_move_cid)
         self.on_move_cid = None
 
     def turn_off(self):
-        self.disconnect_events()
+        for cid in self.cids:
+            self.canvas.mpl_disconnect(cid)
         if self.on_move_cid is not None:
-            self.canvas.mpl_disconnect(self.on_move_cid)
+            self.canvas.mpl_disconnect(cid)
         self.ax.patches.remove(self.rect)
-        self.ax.figure.canvas.draw_idle()
+        self.ax.figure.canvas.draw()

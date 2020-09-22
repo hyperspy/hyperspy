@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,113 +19,17 @@
 import copy
 
 import numpy as np
-from scipy.special import huber
+from contextlib import contextmanager
 
-import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_axis
-from hyperspy.decorators import interactive_range_selector
-from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
-from hyperspy.events import EventSuppressor
-from hyperspy.exceptions import SignalDimensionError, WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
-from hyperspy.signal_tools import SpanSelectorInSignal1D
-from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
-
-
-@add_gui_method(toolkey="hyperspy.Model1D.fit_component")
-class ComponentFit(SpanSelectorInSignal1D):
-
-    def __init__(self, model, component, signal_range=None,
-                 estimate_parameters=True, fit_independent=False,
-                 only_current=True, **kwargs):
-        if model.signal.axes_manager.signal_dimension != 1:
-            raise SignalDimensionError(
-                model.signal.axes_manager.signal_dimension, 1)
-
-        self.signal = model.signal
-        self.axis = self.signal.axes_manager.signal_axes[0]
-        self.span_selector = None
-        self.model = model
-        self.component = component
-        self.signal_range = signal_range
-        self.estimate_parameters = estimate_parameters
-        self.fit_independent = fit_independent
-        self.fit_kwargs = kwargs
-        self.only_current = only_current
-        if signal_range == "interactive":
-            if (not hasattr(self.model, '_plot') or self.model._plot is None or
-                    not self.model._plot.is_active):
-                self.model.plot()
-            self.span_selector_switch(on=True)
-
-    def _fit_fired(self):
-        if (self.signal_range != "interactive" and
-                self.signal_range is not None):
-            self.model.set_signal_range(*self.signal_range)
-        elif self.signal_range == "interactive":
-            self.model.set_signal_range(self.ss_left_value,
-                                        self.ss_right_value)
-
-        # Backup "free state" of the parameters and fix all but those
-        # of the chosen component
-        if self.fit_independent:
-            active_state = []
-            for component_ in self.model:
-                active_state.append(component_.active)
-                if component_ is not self.component:
-                    component_.active = False
-                else:
-                    component_.active = True
-        else:
-            free_state = []
-            for component_ in self.model:
-                for parameter in component_.parameters:
-                    free_state.append(parameter.free)
-                    if component_ is not self.component:
-                        parameter.free = False
-
-        # Setting reasonable initial value for parameters through
-        # the components estimate_parameters function (if it has one)
-        only_current = self.only_current
-        if self.estimate_parameters:
-            if hasattr(self.component, 'estimate_parameters'):
-                if (self.signal_range != "interactive" and
-                        self.signal_range is not None):
-                    self.component.estimate_parameters(
-                        self.signal,
-                        self.signal_range[0],
-                        self.signal_range[1],
-                        only_current=only_current)
-                elif self.signal_range == "interactive":
-                    self.component.estimate_parameters(
-                        self.signal,
-                        self.ss_left_value,
-                        self.ss_right_value,
-                        only_current=only_current)
-
-        if only_current:
-            self.model.fit(**self.fit_kwargs)
-        else:
-            self.model.multifit(**self.fit_kwargs)
-
-        # Restore the signal range
-        if self.signal_range is not None:
-            self.model.channel_switches = (
-                self.model.backup_channel_switches.copy())
-
-        self.model.update_plot()
-
-        if self.fit_independent:
-            for component_ in self.model:
-                component_.active = active_state.pop(0)
-        else:
-            # Restore the "free state" of the components
-            for component_ in self.model:
-                for parameter in component_.parameters:
-                    parameter.free = free_state.pop(0)
-
-    def apply(self):
-        self._fit_fired()
+import hyperspy.drawing.signal1d
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy.axes import generate_axis
+from hyperspy.exceptions import WrongObjectError
+from hyperspy.decorators import interactive_range_selector
+from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
+from hyperspy.gui.tools import ComponentFit
+from hyperspy.events import EventSuppressor
 
 
 class Model1D(BaseModel):
@@ -305,7 +209,6 @@ class Model1D(BaseModel):
 
     @signal.setter
     def signal(self, value):
-        from hyperspy._signals.signal1d import Signal1D
         if isinstance(value, Signal1D):
             self._signal = value
         else:
@@ -371,8 +274,7 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def __call__(self, non_convolved=False, onlyactive=False,
-                 component_list=None):
+    def __call__(self, non_convolved=False, onlyactive=False):
         """Returns the corresponding model for the current coordinates
 
         Parameters
@@ -382,9 +284,6 @@ class Model1D(BaseModel):
         only_active : bool
             If True, only the active components will be used to build the
             model.
-        component_list : list or None
-            If None, the sum of all the components is returned. If list, only
-            the provided components are returned
 
         cursor: 1 or 2
 
@@ -393,31 +292,35 @@ class Model1D(BaseModel):
         numpy array
         """
 
-        if component_list is None:
-            component_list = self
-        if not isinstance(component_list, (list, tuple)):
-            raise ValueError(
-                "'Component_list' parameter need to be a list or None")
-
-        if onlyactive:
-            component_list = [
-                component for component in component_list if component.active]
-
         if self.convolved is False or non_convolved is True:
             axis = self.axis.axis[self.channel_switches]
             sum_ = np.zeros(len(axis))
-            for component in component_list:
-                sum_ += component.function(axis)
+            if onlyactive is True:
+                for component in self:
+                    if component.active:
+                        sum_ += component.function(axis)
+            else:
+                for component in self:
+                    sum_ += component.function(axis)
             to_return = sum_
 
         else:  # convolved
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
-            for component in component_list:
-                if component.convolved:
-                    sum_convolved += component.function(self.convolution_axis)
+            for component in self:  # Cut the parameters list
+                if onlyactive:
+                    if component.active:
+                        if component.convolved:
+                            sum_convolved += component.function(
+                                self.convolution_axis)
+                        else:
+                            sum_ += component.function(self.axis.axis)
                 else:
-                    sum_ += component.function(self.axis.axis)
+                    if component.convolved:
+                        sum_convolved += component.function(
+                            self.convolution_axis)
+                    else:
+                        sum_ += component.function(self.axis.axis)
 
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager),
@@ -448,8 +351,6 @@ class Model1D(BaseModel):
 
         self.backup_channel_switches = copy.copy(self.channel_switches)
         self.channel_switches[:] = False
-        if i2 is not None:
-            i2 += 1
         self.channel_switches[i1:i2] = True
         self.update_plot()
 
@@ -463,12 +364,10 @@ class Model1D(BaseModel):
         E1 : None or float
         E2 : None or float
 
+        Notes
+        -----
+        To use the full energy range call the function without arguments.
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._set_signal_range_in_pixels(i1, i2)
 
@@ -481,8 +380,6 @@ class Model1D(BaseModel):
         x1 : None or float
         x2 : None or float
         """
-        if i2 is not None:
-            i2 += 1
         self.channel_switches[i1:i2] = False
         self.update_plot()
 
@@ -497,11 +394,6 @@ class Model1D(BaseModel):
         x2 : None or float
 
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._remove_signal_range_in_pixels(i1, i2)
 
@@ -518,8 +410,6 @@ class Model1D(BaseModel):
         x1 : None or float
         x2 : None or float
         """
-        if i2 is not None:
-            i2 += 1
         self.channel_switches[i1:i2] = True
         self.update_plot()
 
@@ -534,11 +424,6 @@ class Model1D(BaseModel):
         x2 : None or float
 
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._add_signal_range_in_pixels(i1, i2)
 
@@ -546,34 +431,9 @@ class Model1D(BaseModel):
         self.channel_switches[:] = True
         self.update_plot()
 
-    def _check_analytical_jacobian(self):
-        """Check all components have analytical gradients.
-
-        If they do, return True and an empty string.
-        If they do not, return False and an error message.
-        """
-        missing_gradients = []
-        for component in self:
-            if component.active:
-                for parameter in component.free_parameters:
-                    if not callable(parameter.grad):
-                        missing_gradients.append(parameter)
-
-                    if parameter._twins:
-                        for par in parameter._twins:
-                            if not callable(par.grad):
-                                missing_gradients.append(par)
-
-        if len(missing_gradients) > 0:
-            pars = ", ".join(str(x) for x in missing_gradients)
-            return False, f"Analytical gradient not available for {pars}"
-        else:
-            return True, ""
-
     def _jacobian(self, param, y, weights=None):
         if weights is None:
             weights = 1.
-
         if self.convolved is True:
             counter = 0
             grad = np.zeros(len(self.axis.axis))
@@ -584,14 +444,12 @@ class Model1D(BaseModel):
                             counter:counter +
                             component._nfree_param],
                         onlyfree=True)
-
                     if component.convolved:
                         for parameter in component.free_parameters:
                             par_grad = np.convolve(
                                 parameter.grad(self.convolution_axis),
                                 self.low_loss(self.axes_manager),
                                 mode="valid")
-
                             if parameter._twins:
                                 for par in parameter._twins:
                                     np.add(par_grad, np.convolve(
@@ -599,23 +457,17 @@ class Model1D(BaseModel):
                                             self.convolution_axis),
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
-
                             grad = np.vstack((grad, par_grad))
-
                     else:
                         for parameter in component.free_parameters:
                             par_grad = parameter.grad(self.axis.axis)
-
                             if parameter._twins:
                                 for par in parameter._twins:
-                                    np.add(par_grad, par.grad(self.axis.axis), par_grad)
-
+                                    np.add(par_grad, par.grad(
+                                        self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
-
                     counter += component._nfree_param
-
             to_return = grad[1:, self.channel_switches] * weights
-
         else:
             axis = self.axis.axis[self.channel_switches]
             counter = 0
@@ -627,22 +479,17 @@ class Model1D(BaseModel):
                             counter:counter +
                             component._nfree_param],
                         onlyfree=True)
-
                     for parameter in component.free_parameters:
                         par_grad = parameter.grad(axis)
                         if parameter._twins:
                             for par in parameter._twins:
-                                np.add(par_grad, par.grad(axis), par_grad)
-
+                                np.add(par_grad, par.grad(
+                                    axis), par_grad)
                         grad = np.vstack((grad, par_grad))
-
                     counter += component._nfree_param
-
             to_return = grad[1:, :] * weights
-
         if self.signal.metadata.Signal.binned is True:
             to_return *= self.signal.axes_manager[-1].scale
-
         return to_return
 
     def _function4odr(self, param, x):
@@ -668,21 +515,6 @@ class Model1D(BaseModel):
                self._jacobian(param, y)).sum(1)
         return gls
 
-    def _huber_loss_function(self, param, y, weights=None, huber_delta=None):
-        if weights is None:
-            weights = 1.0
-        if huber_delta is None:
-            huber_delta = 1.0
-        return huber(huber_delta, weights * self._errfunc(param, y)).sum()
-
-    def _gradient_huber(self, param, y, weights=None, huber_delta=None):
-        if huber_delta is None:
-            huber_delta = 1.0
-        return (
-            self._jacobian(param, y)
-            * np.clip(self._errfunc(param, y, weights), -huber_delta, huber_delta)
-        ).sum(axis=1)
-
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
@@ -700,7 +532,7 @@ class Model1D(BaseModel):
             s = ns
         return s
 
-    def plot(self, plot_components=False, **kwargs):
+    def plot(self, plot_components=False):
         """Plots the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -708,14 +540,11 @@ class Model1D(BaseModel):
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
-        kwargs:
-            All extra keyword arguements are passed to ``Signal1D.plot``
-
 
         """
 
         # If new coordinates are assigned
-        self.signal.plot(**kwargs)
+        self.signal.plot()
         _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
@@ -743,7 +572,7 @@ class Model1D(BaseModel):
     @staticmethod
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+            f = component._model_plot_line.update
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
@@ -751,7 +580,7 @@ class Model1D(BaseModel):
     @staticmethod
     def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+            f = component._model_plot_line.update
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
@@ -837,7 +666,8 @@ class Model1D(BaseModel):
         disable_adjust_position
 
         """
-        if self._plot is None or not self._plot.is_active:
+        if (self._plot is None or
+                self._plot.is_active() is False):
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
@@ -928,20 +758,8 @@ class Model1D(BaseModel):
             estimate_parameters=True,
             fit_independent=False,
             only_current=True,
-            display=True,
-            toolkit=None,
             **kwargs):
-        component = self._get_component(component)
-        cf = ComponentFit(self, component, signal_range,
-                          estimate_parameters, fit_independent,
-                          only_current, **kwargs)
-        if signal_range == "interactive":
-            return cf.gui(display=display, toolkit=toolkit)
-        else:
-            cf.apply()
-    fit_component.__doc__ = \
-        """
-        Fit just the given component in the given signal range.
+        """Fit just the given component in the given signal range.
 
         This method is useful to obtain starting parameters for the
         components. Any keyword arguments are passed to the fit method.
@@ -955,8 +773,7 @@ class Model1D(BaseModel):
             If 'interactive' the signal range is selected using the span
              selector on the spectrum plot. The signal range can also
              be manually specified by passing a tuple of floats. If None
-             the current signal range is used. Note that ROIs can be used
-             in place of a tuple.
+             the current signal range is used.
         estimate_parameters : bool, default True
             If True will check if the component has an
             estimate_parameters function, and use it to estimate the
@@ -964,13 +781,6 @@ class Model1D(BaseModel):
         fit_independent : bool, default False
             If True, all other components are disabled. If False, all other
             component paramemeters are fixed.
-        %s
-        %s
-        **kwargs : dict
-            All extra keyword arguments are passed to the
-            py:meth:`~hyperspy.model.BaseModel.fit` or
-            py:meth:`~hyperspy.model.BaseModel.multifit`
-            method, depending if ``only_current`` is True or False.
 
         Examples
         --------
@@ -986,4 +796,12 @@ class Model1D(BaseModel):
 
         >>> m.fit_component(g1, signal_range=(1,7))
 
-        """ % (DISPLAY_DT, TOOLKIT_DT)
+        """
+        component = self._get_component(component)
+        cf = ComponentFit(self, component, signal_range,
+                          estimate_parameters, fit_independent,
+                          only_current, **kwargs)
+        if signal_range == "interactive":
+            cf.edit_traits()
+        else:
+            cf.apply()

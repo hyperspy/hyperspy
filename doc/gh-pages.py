@@ -75,11 +75,11 @@ def init_repo(path):
     sh('git checkout gh-pages')
     cd(here)
 
-
 #-----------------------------------------------------------------------------
 # Script starts
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':
+    sh('./generate_api_doc.sh')
     # The tag can be given as a positional argument
     try:
         tag = sys.argv[1]
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     try:
         cd(pages_dir)
-        branch = sh2('git rev-parse --abbrev-ref HEAD').strip().decode()
+        branch = sh2('git rev-parse --abbrev-ref HEAD').strip()
         if branch != 'gh-pages':
             e = 'On %r, git branch is %r, MUST be "gh-pages"' % (pages_dir,
                                                                  branch)

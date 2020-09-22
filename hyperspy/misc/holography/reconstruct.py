@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
 
 
 def estimate_sideband_position(
-        holo_data, holo_sampling, central_band_mask_radius=None, sb='lower', high_cf=True):
+        holo_data, holo_sampling, central_band_mask_radius=None, sb='lower'):
     """
     Finds the position of the sideband and returns its position.
 
@@ -38,57 +38,44 @@ def estimate_sideband_position(
     central_band_mask_radius: float, optional
         The aperture radius used to mask out the centerband.
     sb : str, optional
-        Chooses which sideband is taken. 'lower', 'upper', 'left', or 'right'.
-    high_cf : bool, optional
-        If False, the highest carrier frequency allowed for the sideband location is equal to
-        half of the Nyquist frequency (Default: True).
+        Chooses which sideband is taken. 'lower' or 'upper'
 
     Returns
     -------
     Tuple of the sideband position (y, x), referred to the unshifted FFT.
     """
+
     sb_position = (0, 0)
+
     f_freq = freq_array(holo_data.shape, holo_sampling)
-    # If aperture radius of centerband is not given, it will be set to 5 % of
-    # the Nyquist frequ.:
+
+    # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist
+    # frequency.
     if central_band_mask_radius is None:
-        central_band_mask_radius = 0.05 * np.max(f_freq)
+        central_band_mask_radius = 1 / 20. * np.max(f_freq)
+
     # A small aperture masking out the centerband.
-    ap_cb = 1.0 - aperture_function(f_freq, central_band_mask_radius, 1e-6)
-    if not high_cf:  # Cut out higher frequencies, if necessary:
-        ap_cb *= aperture_function(f_freq,
-                                   np.max(f_freq) / (2 * np.sqrt(2)),
-                                   1e-6)
-    # Imitates 0:
+    aperture_central_band = np.subtract(
+        1.0, aperture_function(
+            f_freq, central_band_mask_radius, 1e-6))  # 1e-6
+    # imitates 0
+
     fft_holo = fft2(holo_data) / np.prod(holo_data.shape)
-    fft_filtered = fft_holo * ap_cb
+    fft_filtered = fft_holo * aperture_central_band
+
     # Sideband position in pixels referred to unshifted FFT
-    cb_position = (
-        fft_filtered.shape[0] //
-        2,
-        fft_filtered.shape[1] //
-        2)  # cb: center band
     if sb == 'lower':
-        fft_sb = np.abs(fft_filtered[:cb_position[0], :])
+        fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
         sb_position = np.asarray(
             np.unravel_index(
                 fft_sb.argmax(),
                 fft_sb.shape))
     elif sb == 'upper':
-        fft_sb = np.abs(fft_filtered[cb_position[0]:, :])
+        fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-        sb_position = np.asarray(np.add(sb_position, (cb_position[0], 0)))
-    elif sb == 'left':
-        fft_sb = np.abs(fft_filtered[:, :cb_position[1]])
         sb_position = np.asarray(
-            np.unravel_index(
-                fft_sb.argmax(),
-                fft_sb.shape))
-    elif sb == 'right':
-        fft_sb = np.abs(fft_filtered[:, cb_position[1]:])
-        sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-        sb_position = np.asarray(np.add(sb_position, (0, cb_position[1])))
-    # Return sideband position:
+            np.add(sb_position, (int(fft_filtered.shape[0] / 2), 0)))
+
     return sb_position
 
 
@@ -119,8 +106,8 @@ def estimate_sideband_size(sb_position, holo_shape, sb_size_ratio=0.5):
     return np.min(np.linalg.norm(h, axis=1))
 
 
-def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
-                output_shape=None, plotting=False):
+def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, output_shape=None,
+                plotting=False):
     """Core function for holographic reconstruction.
 
     Parameters
@@ -137,7 +124,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
         Smoothness of the aperture in pixel.
     output_shape: tuple, optional
         New output shape.
-    plotting : bool
+    plotting : boolean
         Plots the masked sideband used for reconstruction.
 
     Returns

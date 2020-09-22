@@ -20,7 +20,7 @@ ctypedef fused channel_t:
 
 # instructivelly packed array structs:
 
-cdef packed struct Bunch_head:  # size 2bytes
+cdef packed struct Bunch_head: #size 2bytes
     uint8_t size
     uint8_t channels
 
@@ -29,27 +29,27 @@ cdef packed struct Bunch_head:  # size 2bytes
 @cython.boundscheck(False)
 cdef uint16_t read_16(unsigned char *pointer):
 
-    return ((<uint16_t>pointer[1]<<8) & 0xff00) | <uint16_t>pointer[0]
+    return ((<uint16_t>pointer[1]<<8) & 65280) | <uint16_t>pointer[0]
 
 @cython.boundscheck(False)
 cdef uint32_t read_32(unsigned char *pointer):
 
-    return ((<uint32_t>pointer[3]<<24) & <uint32_t>0xff000000) |\
-           ((<uint32_t>pointer[2]<<16) & <uint32_t>0xff0000) |\
-           ((<uint32_t>pointer[1]<<8) & <uint32_t>0xff00) |\
+    return ((<uint32_t>pointer[3]<<24) & <uint32_t>4278190080) |\
+           ((<uint32_t>pointer[2]<<16) & <uint32_t>16711680) |\
+           ((<uint32_t>pointer[1]<<8) & <uint32_t>65280) |\
              <uint32_t>pointer[0]
 
 @cython.boundscheck(False)
 cdef uint64_t read_64(unsigned char *pointer):
     # skiping the most high bits, as such a huge values is impossible
     # for present bruker technology. If it would change - uncomment bellow and recompile.
-    #return ((<uint64_t>pointer[7]<<56) & <uint64_t>0xff00000000000000) |\
-    #       ((<uint64_t>pointer[6]<<48) & <uint64_t>0xff000000000000) |\
-    #       ((<uint64_t>pointer[5]<<40) & <uint64_t>0xff0000000000) |\
+    #return ((<uint64_t>pointer[self.offset-1]<<24) & <uint64_t>0xff00000000000000) |\
+    #   ((<uint64_t>self.buffer2[self.offset-2]<<8) & <uint64_t>0xff000000000000) |\
+    #((<uint64_t>self.buffer2[self.offset-3]<<40) & <uint64_t>0xff0000000000) |\
     return ((<uint64_t>pointer[4]<<32) & <uint64_t>0xff00000000) |\
-           ((<uint64_t>pointer[3]<<24) & <uint64_t>0xff000000) |\
-           ((<uint64_t>pointer[2]<<16) & <uint64_t>0xff0000) |\
-           ((<uint64_t>pointer[1]<<8) & <uint64_t>0xff00) |\
+           ((<uint64_t>pointer[3]<<24) & <uint64_t>4278190080) |\
+           ((<uint64_t>pointer[2]<<16) & <uint64_t>16711680) |\
+           ((<uint64_t>pointer[1]<<8) & <uint64_t>65280) |\
              <uint64_t>pointer[0]
 
 
@@ -144,8 +144,8 @@ cdef bin_to_numpy(DataStream data_stream,
                   int downsample):
 
     cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
-    cdef uint32_t dummy1, line_cnt, data_size2
-    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses
+    cdef uint32_t dummy1, line_cnt
+    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
     cdef uint16_t add_val, j
 
     height = data_stream.read_32()
@@ -161,15 +161,9 @@ cdef bin_to_numpy(DataStream data_stream,
             flag = data_stream.read_16()
             data_size1 = data_stream.read_16()
             n_of_pulses = data_stream.read_16()
-            data_size2 = data_stream.read_32()
-            if flag == 0:
-                unpack16bit(hypermap,
-                            pixel_x // downsample,
-                            line_cnt // downsample,
-                            data_stream.ptr_to(data_size2),
-                            n_of_pulses,
-                            max_chan)
-            elif flag == 1:
+            data_size2 = data_stream.read_16()
+            data_stream.skip(2)  # skip to data
+            if flag == 1:
                 unpack12bit(hypermap,
                             pixel_x // downsample,
                             line_cnt // downsample,
@@ -273,37 +267,29 @@ cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,
         if i % 4 == 0:
             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
         elif i % 4 == 1:
-            channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 0xFFF)
+            channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
         elif i % 4 == 2:
             channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))
         else:
-            channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 0xFFF)
+            channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
         if channel < cutoff:
             dest[y, x, channel] += 1
-
-
-@cython.cdivision(True)
-@cython.boundscheck(False)
-cdef void unpack16bit(channel_t[:, :, :] dest, int x, int y,
-                      unsigned char * src,
-                      uint16_t no_of_pulses,
-                      int cutoff):
-    """unpack 16bit packed array into selection of memoryview"""
-    cdef int i, channel
-    for i in range(no_of_pulses):
-        channel = <int>(src[2*i] + ((src[2*i+1] << 8) & 0xff00))
-        if channel < cutoff:
-            dest[y, x, channel] += 1
-
 
 #the main function:
 
-def parse_to_numpy(virtual_file, shape, dtype, downsample=1):
-    """parse the hyperspectral cube from brukers bcf binary file
-    and return it as numpy array"""
-    blocks, block_size = virtual_file.get_iter_and_properties()[:2]
-    map_depth = shape[2]
-    hypermap = np.zeros(shape, dtype=dtype)
+def parse_to_numpy(bcf, downsample=1, cutoff=None, description=False):
+    blocks, block_size, total_blocks = bcf.get_iter_and_properties()
+    map_depth = bcf.sfs.header.estimate_map_channels()
+    if type(cutoff) == int:
+        map_depth = cutoff
+    dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
+    shape = (-(-bcf.sfs.header.image.height // downsample),
+             -(-bcf.sfs.header.image.width // downsample),
+             map_depth)
+    if description:
+        return shape, dtype
+    hypermap = np.zeros(shape,
+                        dtype=dtype)
     cdef DataStream data_stream = DataStream(blocks, block_size)
     if dtype == np.uint8:
         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)

@@ -1,27 +1,29 @@
 Dielectric function tools
 -------------------------
 
-The :py:class:`~._signals.dielectric_function.DielectricFunction` class
-inherits from :py:class:`~._signals.complex_signal.ComplexSignal` and can
-thus access complex properties. To convert a
-:py:class:`~._signals.complex_signal.ComplexSignal` to a
-:py:class:`~._signals.dielectric_function.DielectricFunction`,
-make sure that the signal dimension and signal type are properly set:
+.. versionadded:: 0.7
+
+The :py:class:`~.signals.dielectric_function.DielectricFunction` class inherits from
+:py:class:`~.signals.complex_signal.ComplexSignal` and can thus access complex properties.
+To convert a :py:class:`~.signals.complex_signal.ComplexSignal` to a
+:py:class:`~.signals.dielectric_function.DielectricFunction`, make sure that the signal dimension
+and signal type are properly set:
 
     .. code-block:: python
 
         >>> s.set_signal_type('DielectricFunction')
 
-Note that :py:class:`~._signals.dielectric_function.DielectricFunction` is
-complex and therefore is a subclass of
-:py:class:`~._signals.complex_signal1d.ComplexSignal1D`.
+Note that :py:class:`~._signals.dielectric_function.DielectricFunction` is complex and therefore
+is a subclass of :py:class:`~._signals.complex_signal1d.ComplexSignal1D`.
 
 
 Number of effective electrons
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 0.7
+
 The Bethe f-sum rule gives rise to two definitions of the effective number (see
-:ref:`[Egerton2011] <Egerton2011>`):
+[Egerton2011]_):
 
 .. math::
 
@@ -31,7 +33,7 @@ The Bethe f-sum rule gives rise to two definitions of the effective number (see
 
 where :math:`n_a` is the number of atoms (or molecules) per unit volume of the
 sample, :math:`\epsilon_0` is the vacuum permittivity, :math:`m_0` is the
-electron mass and :math:`e` is the electron charge.
+elecron mass and :math:`e` is the electron charge.
 
 The
 :py:meth:`~._signals.dielectric_function.DielectricFunction.get_number_of_effective_electrons`
@@ -39,6 +41,8 @@ method computes both.
 
 Compute the electron energy-loss signal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
 
 The
 :py:meth:`~._signals.dielectric_function.DielectricFunction.get_electron_energy_loss_spectrum`

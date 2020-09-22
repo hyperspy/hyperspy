@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -34,7 +34,7 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
         self.metadata.Signal.binned = False
 
 
-class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
+class LazyComplexSignal1D(LazyComplexSignal, CommonSignal1D):
 
     """BaseSignal subclass for lazy complex 1-dimensional data."""
 

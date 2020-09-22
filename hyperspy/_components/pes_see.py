@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,91 +18,142 @@
 
 
 import numpy as np
-import logging
 
-from hyperspy._components.expression import Expression
+from hyperspy.component import Component
+from .gaussian import Gaussian
 
-_logger = logging.getLogger(__name__)
+sqrt2pi = np.sqrt(2 * np.pi)
 
 
-class SEE(Expression):
+class SEE(Component):
 
-    r"""Secondary electron emission component for Photoemission Spectroscopy.
+    """Secondary electron emission component for Photoemission Spectroscopy
 
-    .. math::
-        :nowrap:
-
-        \[
-        f(x) =
-        \begin{cases}
-            0, & x \leq \Phi\\
-            A\cdot{ (x-\Phi) / (x-\Phi+B)^{4}}, & x >  \Phi
-        \end{cases}
-        \]
-
-    ============= =============
-     Variable      Parameter
-    ============= =============
-     :math:`A`     A
-     :math:`\Phi`  Phi
-     :math:`B`     B
-    ============= =============
-
-    Parameters
+    Attributes
     ----------
     A : float
-        Height parameter
     Phi : float
-        Position parameter
     B : float
-        Tail or asymmetry parameter
-    **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+    sigma : float
+        Resolution parameter.
 
     """
 
-    def __init__(self, A=1., Phi=1., B=0., module="numexpr",
-                 compute_gradients=False, **kwargs):
-        if kwargs.pop('sigma', False):
-            _logger.warning('The `sigma` parameter was broken and it has been '
-                            'removed.')
+    def __init__(self, A=1., Phi=1., B=0., sigma=0):
+        Component.__init__(self, ('A', 'Phi', 'B', 'sigma'))
+        self.A.value, self.Phi.value, self.B.value, self.sigma.value = \
+            A, Phi, B, sigma
 
-        super().__init__(
-            expression="where(x > Phi, A * (x - Phi) / (x - Phi + B) ** 4, 0)",
-            name="SEE",
-            A=A,
-            Phi=Phi,
-            B=B,
-            position="Phi",
-            module=module,
-            autodoc=False,
-            compute_gradients=compute_gradients,
-            **kwargs,
-        )
-
+        self._position = self.Phi
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
 
         self.convolved = True
 
+        # Gradients
+        self.A.grad = self.grad_A
+        self.Phi.grad = self.grad_Phi
+        self.B.grad = self.grad_B
+        self.sigma.grad = self.grad_sigma
+
+        # Resolution functions
+        self.gaussian = Gaussian()
+        self.gaussian.origin.free, self.gaussian.A.free = False, False
+        self.gaussian.sigma.free = True
+        self.gaussian.A.value = 1.
+
+    def __repr__(self):
+        return 'SEE'
+
+    def function(self, x):
+        """
+        """
+        if self.sigma.value:
+            self.gaussian.sigma.value = self.sigma.value
+            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    self.A.value * (
+                        x - self.Phi.value) / (
+                        x - self.Phi.value + self.B.value) ** 4,
+                    0),
+                'same')
+        else:
+            return np.where(x > self.Phi.value, self.A.value *
+                            (x -
+                             self.Phi.value) /
+                            (x -
+                             self.Phi.value +
+                             self.B.value) ** 4, 0)
+
     def grad_A(self, x):
         """
         """
-        return np.where(x > self.Phi.value, (x - self.Phi.value) /
+        if self.sigma.value:
+            self.gaussian.sigma.value = self.sigma.value
+            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    (x - self.Phi.value) /
+                    (x - self.Phi.value + self.B.value) ** 4, 0),
+                'same')
+        else:
+            return np.where(x > self.Phi.value, (x - self.Phi.value) /
                             (x - self.Phi.value + self.B.value) ** 4, 0)
+
+    def grad_sigma(self, x):
+        """
+        """
+        self.gaussian.sigma.value = self.sigma.value
+        self.gaussian.origin.value = (x[-1] + x[0]) / 2
+        return np.convolve(
+            self.gaussian.grad_sigma(x),
+            np.where(
+                x > self.Phi.value,
+                self.A.value * (x - self.Phi.value) /
+                (x - self.Phi.value + self.B.value) ** 4, 0),
+            'same')
 
     def grad_Phi(self, x):
         """
         """
-        return np.where(
+        if self.sigma.value:
+            self.gaussian.sigma.value = self.sigma.value
+            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    (4 * (x - self.Phi.value) * self.A.value) /
+                    (self.B.value + x - self.Phi.value) ** 5 -
+                    self.A.value / (self.B.value + x - self.Phi.value) ** 4,
+                    0),
+                'same')
+        else:
+            return np.where(
                 x > self.Phi.value,
                 (4 * (x - self.Phi.value) * self.A.value) /
                 (self.B.value + x - self.Phi.value) ** 5 -
                 self.A.value / (self.B.value + x - self.Phi.value) ** 4, 0)
 
     def grad_B(self, x):
-        return np.where(
+        if self.sigma.value:
+            self.gaussian.sigma.value = self.sigma.value
+            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    -(4 * (x - self.Phi.value) * self.A.value) /
+                    (self.B.value + x - self.Phi.value) ** 5, 0),
+                'same')
+        else:
+            return np.where(
                 x > self.Phi.value,
                 -(4 * (x - self.Phi.value) * self.A.value) /
                 (self.B.value + x - self.Phi.value) ** 5, 0)

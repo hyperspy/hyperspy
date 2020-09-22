@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,10 +17,9 @@
 
 
 import numpy as np
-
 from hyperspy.components1d import Gaussian
-from hyperspy.misc.utils import stash_active_state
 from hyperspy.signals import Signal1D
+from hyperspy.misc.utils import stash_active_state
 
 
 class TestParametersAsSignals:

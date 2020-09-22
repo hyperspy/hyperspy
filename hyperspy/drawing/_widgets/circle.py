@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -112,7 +112,6 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
-            alpha=self.alpha,
             picker=True,)]
         if ri > 0:
             self.patch.append(
@@ -122,7 +121,6 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,
-                    alpha=self.alpha,
                     picker=True,))
 
     def _validate_pos(self, value):
@@ -154,13 +152,6 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             ro, ri = self.size
             self.patch[0].radius = ro
             if ri > 0:
-                # Add the inner circle
-                if len(self.patch) == 1:
-                    # Need to remove the previous patch before using
-                    # `_add_patch_to`
-                    self.ax.artists.remove(self.patch[0])
-                    self.patch = []
-                    self._add_patch_to(self.ax)
                 self.patch[1].radius = ri
             self._update_resizers()
             self.draw_patch()

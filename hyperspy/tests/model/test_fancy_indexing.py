@@ -1,30 +1,29 @@
-# -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2011 The Hyperspy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of  Hyperspy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+#  Hyperspy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+#  Hyperspy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 
-from hyperspy._signals.eels import EELSSpectrum
+import time
+
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.components1d import Gaussian
-from hyperspy.decorators import lazifyTestClass
 
 
-@lazifyTestClass
 class TestModelIndexing:
 
     def setup_method(self, method):
@@ -101,7 +100,6 @@ class TestModelIndexing:
         assert m[0]._active_array[0, 0]
 
 
-@lazifyTestClass
 class TestModelIndexingClass:
 
     def setup_method(self, method):
@@ -121,7 +119,6 @@ class TestModelIndexingClass:
         assert isinstance(m_eels, type(m_eels.inav[1:]))
 
 
-@lazifyTestClass
 class TestEELSModelSlicing:
 
     def setup_method(self, method):

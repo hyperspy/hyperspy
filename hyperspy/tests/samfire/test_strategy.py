@@ -1,28 +1,29 @@
-# -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
 
-from hyperspy.components1d import Gaussian
+from numpy.testing import assert_allclose
+from hyperspy.samfire_utils.strategy import (LocalStrategy,
+                                             GlobalStrategy)
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.samfire_utils.strategy import GlobalStrategy, LocalStrategy
 from hyperspy.signals import Signal1D
+from hyperspy.components1d import Gaussian
 
 
 class someweight(object):
@@ -61,7 +62,7 @@ def compare_two_value_dicts(ans_r, ans):
             for p, pv in v.items():
                 test = test and p in ans[k]
                 if test:
-                    np.testing.assert_allclose(
+                    assert np.allclose(
                         np.array(pv),
                         np.array(
                             ans[k][p]))
@@ -143,12 +144,12 @@ class TestLocalSimple:
                          [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
 
         s.refresh(True, given_pixels=None)
-        np.testing.assert_allclose(ans1, s.samf.metadata.marker[:4, :4])
+        assert np.allclose(ans1, s.samf.metadata.marker[:4, :4])
 
         given = np.ones(self.shape, dtype=bool)
         given[0, 1] = False
         s.refresh(True, given_pixels=given)
-        np.testing.assert_allclose(
+        assert_allclose(
             s.samf.metadata.marker[
                 ~given][0],
             0.011624353837970535)
@@ -175,14 +176,14 @@ class TestLocalSimple:
                          [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
 
         s.refresh(False, given_pixels=None)
-        np.testing.assert_allclose(ans1, s.samf.metadata.marker[:4, :4])
+        assert np.allclose(ans1, s.samf.metadata.marker[:4, :4])
 
         s.samf.metadata.marker[0, 0] = -1
         given = np.ones(self.shape, dtype=bool)
         given[0, 0] = False
         # should stay the same, as the new point [0,0] is not in "given"
         s.refresh(False, given_pixels=given)
-        np.testing.assert_allclose(ans1, s.samf.metadata.marker[:4, :4])
+        assert np.allclose(ans1, s.samf.metadata.marker[:4, :4])
 
     def test_get_distance_array(self):
         s = self.s
@@ -203,7 +204,7 @@ class TestLocalSimple:
                           [True, False, False],
                           [False, False, False]], dtype=bool)
         assert np.all(tmp_m == mask)
-        np.testing.assert_allclose(tmp[mask], distances[mask])
+        assert np.allclose(tmp[mask], distances[mask])
         assert not s._radii_changed
         tmp_ma = np.array([[3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957],
                            [2.01506272,
@@ -232,7 +233,7 @@ class TestLocalSimple:
                             1.18403779,
                             2.01506272],
                            [3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957]])
-        np.testing.assert_allclose(s._mask_all, tmp_ma)
+        assert np.allclose(s._mask_all, tmp_ma)
         tmp_un = np.array([[3.60555128, 3.16227766, 3., 3.16227766, 3.60555128],
                            [2.82842712,
                             2.23606798,
@@ -256,7 +257,7 @@ class TestLocalSimple:
                             2.23606798,
                             2.82842712],
                            [3.60555128, 3.16227766, 3., 3.16227766, 3.60555128]])
-        np.testing.assert_allclose(s._untruncated, tmp_un)
+        assert np.allclose(s._untruncated, tmp_un)
 
         # now check that the stored values are used
         # mask:
@@ -275,7 +276,7 @@ class TestLocalSimple:
                         [np.nan, 1.41421356, 1.],
                         [np.nan, 1., 0.]])
         assert np.all(tmp_m == mask)
-        np.testing.assert_allclose(tmp[mask], distances[mask])
+        assert np.allclose(tmp[mask], distances[mask])
         assert not s._radii_changed
 
         # now mask radii changed and check that the correct result is
@@ -295,7 +296,7 @@ class TestLocalSimple:
                         [np.nan, 1.41421356, 1.],
                         [np.nan, 1., 0.]])
         assert np.all(tmp_m == mask)
-        np.testing.assert_allclose(tmp[mask], distances[mask])
+        assert np.allclose(tmp[mask], distances[mask])
         assert not s._radii_changed
 
     def test_update_marker(self):
@@ -321,7 +322,7 @@ class TestLocalSimple:
                             0.00000000e+00,
                             0.00000000e+00],
                            [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
-        np.testing.assert_allclose(tmp_m1, s.samf.metadata.marker[:4, :4])
+        assert np.allclose(tmp_m1, s.samf.metadata.marker[:4, :4])
 
         ind = (1, 1)
         s.samf.running_pixels.append((1, 2))
@@ -335,7 +336,7 @@ class TestLocalSimple:
                             1.63810767e-03,
                             0.00000000e+00],
                            [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
-        np.testing.assert_allclose(tmp_m2, s.samf.metadata.marker[:4, :4])
+        assert np.allclose(tmp_m2, s.samf.metadata.marker[:4, :4])
 
 
 class TestLocalWithModel:

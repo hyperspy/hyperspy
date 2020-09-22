@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,8 +22,6 @@ import os
 from datetime import datetime as dt
 import warnings
 import logging
-from distutils.version import LooseVersion
-
 
 # Plugin characteristics
 # ----------------------
@@ -60,25 +58,24 @@ def _protochips_log_reader(csv_file):
     for key in csv_file.logged_quantity_name_list:
         try:
             csvs.append(csv_file.get_dictionary(key))
-        except BaseException:
+        except:
             raise IOError(invalid_file_error)
     return csvs
 
 
 class ProtochipsCSV(object):
 
-    def __init__(self, filename, ):
+    def __init__(self, filename, header_line_number=10):
         self.filename = filename
-        self._parse_header()
-        self._read_data()
+        self._parse_header(header_line_number)
+        self._read_data(header_line_number)
 
-    def _parse_header(self):
-        with open(self.filename, 'r') as f:
-            s = f.readline()
-            self.column_name = s.replace(', ', ',').replace('\n', '').split(',')
-            if not self._is_protochips_csv_file():
-                raise IOError(invalid_file_error)
-            self._read_all_metadata_header(f)
+    def _parse_header(self, header_line_number):
+        self.raw_header = self._read_header(header_line_number)
+        self.column_name = self._read_column_name()
+        if not self._is_protochips_csv_file():
+            raise IOError(invalid_file_error)
+        self._read_all_metadata_header()
         self.logged_quantity_name_list = self.column_name[2:]
 
     def _is_protochips_csv_file(self):
@@ -136,15 +133,12 @@ class ProtochipsCSV(object):
         return {'value': self.time_axis,
                 'units': self.time_units}
 
-    def _read_data(self):
+    def _read_data(self, header_line_number):
         names = [name.replace(' ', '_') for name in self.column_name]
-        # Necessary for numpy >= 1.14
-        kwargs = {'encoding': 'latin1'} if np.__version__ >= LooseVersion("1.14") else {
-        }
         data = np.genfromtxt(self.filename, delimiter=',', dtype=None,
                              names=names,
-                             skip_header=self.header_last_line_number,
-                             unpack=True, **kwargs)
+                             skip_header=header_line_number,
+                             unpack=True)
 
         self._data_dictionary = dict()
         for i, name, name_dtype in zip(range(len(names)), self.column_name,
@@ -174,8 +168,8 @@ class ProtochipsCSV(object):
         return "Calibration file name: %s" % basename.split('\\')[-1]
 
     def _get_axes(self):
-        scale = np.diff(self.time_axis[1:-1]).mean()
-        max_diff = np.diff(self.time_axis[1:-1]).max()
+        scale = np.diff(self.time_axis[1:-2]).mean()
+        max_diff = np.diff(self.time_axis[1:-2]).max()
         units = 's'
         offset = 0
         if self.time_units == 'Milliseconds':
@@ -207,9 +201,14 @@ class ProtochipsCSV(object):
         quantity = quantity.split(' ')[-1].lower()
         return self.__dict__['%s_units' % quantity]
 
-    def _read_all_metadata_header(self, f):
-        param, value = self._parse_metadata_header(f.readline())
-        i = 2
+    def _read_header(self, header_line_number):
+        with open(self.filename, 'r') as f:
+            raw_header = [f.readline() for i in range(header_line_number)]
+        return raw_header
+
+    def _read_all_metadata_header(self):
+        i = 1
+        param, value = self._parse_metadata_header(self.raw_header[i])
         while 'User' not in param:  # user should be the last of the header
             if 'Calibration file' in param:
                 self.calibration_file = value
@@ -222,10 +221,8 @@ class ProtochipsCSV(object):
                 self.__dict__[attr_name] = value
             i += 1
             try:
-                param, value = self._parse_metadata_header(f.readline())
-            except ValueError:
-                # when the last line of header does not contain 'User',
-                # possibly some old file.
+                param, value = self._parse_metadata_header(self.raw_header[i])
+            except ValueError:  # when the last line of header does not contain 'User'
                 self.user = None
                 break
             except IndexError:
@@ -233,9 +230,12 @@ class ProtochipsCSV(object):
                 break
         else:
             self.user = value
-        self.header_last_line_number = i
         self.start_datetime = np.datetime64(dt.strptime(date + time,
                                                         "%Y.%m.%d%H:%M:%S.%f"))
 
     def _parse_metadata_header(self, line):
         return line.replace(', ', ',').split(',')[1].split(' = ')
+
+    def _read_column_name(self):
+        string = self.raw_header[0]
+        return string.replace(', ', ',').replace('\n', '').split(',')

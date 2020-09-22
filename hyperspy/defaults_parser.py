@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,46 +17,45 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
+import os.path
+from os import cpu_count
 import configparser
 import logging
 
 import traits.api as t
-import matplotlib.pyplot as plt
 
-from pathlib import Path
-
-from hyperspy.misc.config_dir import config_path, data_path
+from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
-from hyperspy.ui_registry import add_gui_method
+from hyperspy.io_plugins import default_write_ext
 
-defaults_file = Path(config_path, 'hyperspyrc')
-eels_gos_files = Path(data_path, 'EELS_GOS.tar.gz')
+defaults_file = os.path.join(config_path, 'hyperspyrc')
+eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
 
 _logger = logging.getLogger(__name__)
 
 
 def guess_gos_path():
-    if os.name in ["nt", "dos"]:
+    if os_name == 'windows':
         # If DM is installed, use the GOS tables from the default
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
-        gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
-        gos_path = Path(program_files, gos)
+        gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
+        gos_path = os.path.join(program_files, gos)
 
         # Else, use the default location in the .hyperspy forlder
-        if not gos_path.is_dir() and 'PROGRAMFILES(X86)' in os.environ:
+        if os.path.isdir(gos_path) is False and \
+                'PROGRAMFILES(X86)' in os.environ:
             program_files = os.environ['PROGRAMFILES(X86)']
-            gos_path = Path(program_files, gos)
-            if not gos_path.is_dir():
-                gos_path = Path(config_path, 'EELS_GOS')
+            gos_path = os.path.join(program_files, gos)
+            if os.path.isdir(gos_path) is False:
+                gos_path = os.path.join(config_path, 'EELS_GOS')
     else:
-        gos_path = Path(config_path, 'EELS_GOS')
+        gos_path = os.path.join(config_path, 'EELS_GOS')
     return gos_path
 
 
-if defaults_file.is_file():
+if os.path.isfile(defaults_file):
     # Remove config file if obsolated
     with open(defaults_file) as f:
         if 'Not really' in f.readline():
@@ -81,9 +80,32 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
+    default_file_format = t.Enum(
+        'hdf5',
+        'rpl',
+        desc='Using the hdf5 format is highly reccomended because is the '
+        'only one fully supported. The Ripple (rpl) format it is useful '
+        'tk is provided for when none of the other toolkits are'
+        ' available. However, when using this toolkit the '
+        'user interface elements are not available. '
+        'to export data to other software that do not support hdf5')
+    default_export_format = t.Enum(
+        *default_write_ext,
+        desc='Using the hdf5 format is highly reccomended because is the '
+        'only one fully supported. The Ripple (rpl) format it is useful '
+        'to export data to other software that do not support hdf5')
+    hspy_extension = t.CBool(
+        False,
+        desc='If enabled, HyperSpy will use the "hspy" extension when saving '
+        'to HDF5 instead of the "hdf5" extension. "hspy" will be the default'
+        'extension from HyperSpy v1.3')
+    interactive = t.CBool(
+        True,
+        desc='If enabled, HyperSpy will prompt the user when options are '
+        'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(
         False,
-        label='Automatic logging (requires IPython)',
+        label='Automatic logging',
         desc='If enabled, HyperSpy will store a log in the current directory '
         'of all the commands typed')
 
@@ -106,9 +128,9 @@ class GeneralConfig(t.HasTraits):
         desc='Use parallel threads for computations by default.'
     )
 
-    nb_progressbar = t.CBool(
-        True,
-        desc='Attempt to use ipywidgets progressbar'
+    lazy = t.CBool(
+        False,
+        desc='Load data lazily by default.'
     )
 
     def _logger_on_changed(self, old, new):
@@ -118,58 +140,67 @@ class GeneralConfig(t.HasTraits):
             turn_logging_off()
 
 
+class ModelConfig(t.HasTraits):
+    default_fitter = t.Enum('leastsq', 'mpfit',
+                            desc='Choose leastsq if no bounding is required. '
+                            'Otherwise choose mpfit')
+
+
+class MachineLearningConfig(t.HasTraits):
+    export_factors_default_file_format = t.Enum(*default_write_ext)
+    export_loadings_default_file_format = t.Enum(*default_write_ext)
+    multiple_files = t.Bool(
+        True,
+        label='Export to multiple files',
+        desc='If enabled, on exporting the PCA or ICA results one file'
+        'per factor and loading will be created. Otherwise only two files'
+        'will contain the factors and loadings')
+    same_window = t.Bool(
+        True,
+        label='Plot components in the same window',
+        desc='If enabled the principal and independent components will all'
+        ' be plotted in the same window')
+
+
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(
         guess_gos_path(),
         label='GOS directory',
         desc='The GOS files are required to create the EELS edge components')
-
-
-class GUIs(t.HasTraits):
-    enable_ipywidgets_gui = t.CBool(
-        True,
-        desc="Display ipywidgets in the Jupyter Notebook. "
-        "Requires installing hyperspy_gui_ipywidgets.")
-    enable_traitsui_gui = t.CBool(
-        True,
-        desc="Display traitsui user interface elements. "
-        "Requires installing hyperspy_gui_traitsui.")
-    warn_if_guis_are_missing = t.CBool(
-        True,
-        desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
-
-
-class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.,
-                                label='Saturated pixels (deprecated)',
-                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
-                                )
-    cmap_navigator = t.Enum(plt.colormaps(),
-                            label='Color map navigator',
-                            desc='Set the default color map for the navigator.',
-                            )
-    cmap_signal = t.Enum(plt.colormaps(),
-                         label='Color map signal',
-                         desc='Set the default color map for the signal plot.',
-                         )
-    dims_024_increase = t.Str('right',
-                              label='Navigate right'
-                              )
-    dims_024_decrease = t.Str('left',
-                              label='Navigate left',
-                              )
-    dims_135_increase = t.Str('down',
-                              label='Navigate down',
-                              )
-    dims_135_decrease = t.Str('up',
-                              label='Navigate up',
-                              )
-    modifier_dims_01 = t.Enum(['ctrl', 'alt', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
-                               'ctrl+alt+shift'], label='Modifier key for 1st and 2nd dimensions')  # 0 elem is default
-    modifier_dims_23 = t.Enum(['shift', 'alt', 'ctrl', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
-                               'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
-    modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
-                               'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
+    fine_structure_width = t.CFloat(
+        30,
+        label='Fine structure length',
+        desc='The default length of the fine structure from the edge onset')
+    fine_structure_active = t.CBool(
+        False,
+        label='Enable fine structure',
+        desc="If enabled, the regions of the EELS spectrum defined as fine "
+        "structure will be fitted with a spline. Please note that it "
+        "enabling this feature only makes sense when the model is "
+        "convolved to account for multiple scattering")
+    fine_structure_smoothing = t.Range(
+        0.,
+        1.,
+        value=0.3,
+        label='Fine structure smoothing factor',
+        desc='The lower the value the smoother the fine structure spline fit')
+    synchronize_cl_with_ll = t.CBool(False)
+    preedge_safe_window_width = t.CFloat(
+        2,
+        label='Pre-onset region (in eV)',
+        desc='Some functions needs to define the regions between two '
+        'ionisation edges. Due to limited energy resolution or chemical '
+        'shift, the region is limited on its higher energy side by '
+        'the next ionisation edge onset minus an offset defined by this '
+        'parameters')
+    min_distance_between_edges_for_fine_structure = t.CFloat(
+        0,
+        label='Minimum distance between edges',
+        desc='When automatically setting the fine structure energy regions, '
+        'the fine structure of an EELS edge component is automatically '
+        'disable if the next ionisation edge onset distance to the '
+        'higher energy side of the fine structure region is lower that '
+        'the value of this parameter')
 
 
 class EDSConfig(t.HasTraits):
@@ -193,20 +224,35 @@ class EDSConfig(t.HasTraits):
         desc='default value for the elevation angle in degree.')
 
 
+class PlotConfig(t.HasTraits):
+    default_style_to_compare_spectra = t.Enum(
+        'overlap',
+        'cascade',
+        'mosaic',
+        'heatmap',
+        desc=' the default style use to compare spectra with the'
+        ' function utils.plot.plot_spectra')
+    plot_on_load = t.CBool(
+        False,
+        desc='If enabled, the object will be plot automatically on loading')
+    pylab_inline = t.CBool(
+        False,
+        desc="If True the figure are displayed inline."
+        "HyperSpy must be restarted for changes to take effect")
+
 template = {
     'General': GeneralConfig(),
-    'GUIs': GUIs(),
+    'Model': ModelConfig(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
-    'Plot': PlotConfig(),
-}
-
+    'MachineLearning': MachineLearningConfig(),
+    'Plot': PlotConfig(), }
 
 # Set the enums defaults
+template['MachineLearning'].export_factors_default_file_format = 'rpl'
+template['MachineLearning'].export_loadings_default_file_format = 'rpl'
+template['General'].default_export_format = 'rpl'
 template['General'].logging_level = 'WARNING'
-template['Plot'].cmap_navigator = 'gray'
-template['Plot'].cmap_signal = 'gray'
-
 
 # Defaults template definition ends ######################################
 
@@ -238,7 +284,6 @@ def dictionary_from_template(template):
         dictionary[section] = traited_class.get()
     return dictionary
 
-
 config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
@@ -268,27 +313,32 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
-@add_gui_method(toolkey="hyperspy.Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
+    Model = t.Instance(ModelConfig)
     General = t.Instance(GeneralConfig)
-    GUIs = t.Instance(GUIs)
+    MachineLearning = t.Instance(MachineLearningConfig)
     Plot = t.Instance(PlotConfig)
+
+    def gui(self):
+        import hyperspy.gui.preferences
+        self.EELS.trait_view("traits_view",
+                             hyperspy.gui.preferences.eels_view)
+        self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 
-
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
     General=template['General'],
-    GUIs=template['GUIs'],
-    Plot=template['Plot'],
-)
+    Model=template['Model'],
+    MachineLearning=template['MachineLearning'],
+    Plot=template['Plot'])
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)

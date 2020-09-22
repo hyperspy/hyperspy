@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,14 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import logging
 import warnings
+import logging
 
+from hyperspy.models.model1d import Model1D
+from hyperspy.components1d import EELSCLEdge
+from hyperspy.components1d import PowerLaw
+from hyperspy.defaults_parser import preferences
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
-from hyperspy.components1d import EELSCLEdge, PowerLaw
-from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
-from hyperspy.models.model1d import Model1D
 
 _logger = logging.getLogger(__name__)
 
@@ -36,11 +37,11 @@ class EELSModel(Model1D):
     Parameters
     ----------
     spectrum : a Signal1D (or any Signal1D subclass) instance
-    auto_background : bool
+    auto_background : boolean
         If True, and if spectrum is an EELS instance adds automatically
         a powerlaw to the model and estimate the parameters by the
         two-area method.
-    auto_add_edges : bool
+    auto_add_edges : boolean
         If True, and if spectrum is an EELS instance, it will
         automatically add the ionization edges as defined in the
         Signal1D instance. Adding a new element to the spectrum using
@@ -65,14 +66,6 @@ class EELSModel(Model1D):
                  auto_add_edges=True, ll=None,
                  GOS=None, dictionary=None):
         Model1D.__init__(self, signal1D)
-
-        # When automatically setting the fine structure energy regions,
-        # the fine structure of an EELS edge component is automatically
-        # disable if the next ionisation edge onset distance to the
-        # higher energy side of the fine structure region is lower that
-        # the value of this parameter
-        self._min_distance_between_edges_for_fine_structure = 0
-        self._preedge_safe_window_width = 2
         self.signal1D = signal1D
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
@@ -100,6 +93,12 @@ class EELSModel(Model1D):
     def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
             self._signal = value
+            if self.signal._are_microscope_parameters_missing():
+                raise ValueError(
+                    "The required microscope parameters are not defined in "
+                    "the EELS spectrum signal metadata. Use "
+                    "``set_microscope_parameters`` to set them."
+                )
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
@@ -124,7 +123,6 @@ class EELSModel(Model1D):
     def remove(self, component):
         super(EELSModel, self).remove(component)
         self._classify_components()
-
     remove.__doc__ = Model1D.remove.__doc__
 
     def _classify_components(self):
@@ -182,12 +180,6 @@ class EELSModel(Model1D):
         ----------
         e_shells : list of strings
         """
-        if self.signal._are_microscope_parameters_missing():
-            raise ValueError(
-                "The required microscope parameters are not defined in "
-                "the EELS spectrum signal metadata. Use "
-                "``set_microscope_parameters`` to set them."
-            )
         if e_shells is None:
             e_shells = list(self.signal.subshells)
         e_shells.sort()
@@ -221,7 +213,8 @@ class EELSModel(Model1D):
 
     def resolve_fine_structure(
             self,
-            preedge_safe_window_width=2,
+            preedge_safe_window_width=preferences.EELS.
+            preedge_safe_window_width,
             i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
@@ -232,8 +225,7 @@ class EELSModel(Model1D):
         ----------
         preedge_safe_window_width : float
             minimum distance between the fine structure of an ionization edge
-            and that of the following one. Default 2 (eV).
-
+            and that of the following one.
         """
 
         if self._suspend_auto_fine_structure_width is True:
@@ -255,11 +247,11 @@ class EELSModel(Model1D):
                     self._active_edges[i2].onset_energy.value -
                     self._active_edges[i1].onset_energy.value)
                 if (self._active_edges[i1].fine_structure_width >
-                        distance_between_edges -
-                        self._preedge_safe_window_width):
-                    min_d = self._min_distance_between_edges_for_fine_structure
+                        distance_between_edges - preedge_safe_window_width):
+                    min_d = preferences.EELS.\
+                        min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
-                            self._preedge_safe_window_width) <= min_d:
+                            preedge_safe_window_width) <= min_d:
                         _logger.info((
                             "Automatically deactivating the fine structure "
                             "of edge number %d to avoid conflicts with edge "
@@ -270,8 +262,7 @@ class EELSModel(Model1D):
                         self.resolve_fine_structure(i1=i2)
                     else:
                         new_fine_structure_width = (
-                            distance_between_edges -
-                            self._preedge_safe_window_width)
+                            distance_between_edges - preedge_safe_window_width)
                         _logger.info((
                             "Automatically changing the fine structure "
                             "width of edge %d from %s eV to %s eV to avoid "
@@ -288,76 +279,98 @@ class EELSModel(Model1D):
         else:
             return
 
-    def fit(self, kind="std", **kwargs):
-        """Fits the model to the experimental data.
-
-        Read more in the :ref:`User Guide <model.fitting>`.
+    def fit(self, fitter=None, method='ls', grad=False,
+            bounded=False, ext_bounding=False, update_plot=False,
+            kind='std', **kwargs):
+        """Fits the model to the experimental data
 
         Parameters
         ----------
-        kind : {"std", "smart"}, default "std"
-            If "std", performs standard fit. If "smart",
-            performs a smart_fit - for more details see
-            the :ref:`User Guide <eels.fitting>`.
-        %s
+        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
+            The optimizer to perform the fitting. If None the fitter
+            defined in the Preferences is used. leastsq is the most
+            stable but it does not support bounding. mpfit supports
+            bounding. fmin is the only one that supports
+            maximum likelihood estimation, but it is less robust than
+            the Levenberg–Marquardt based leastsq and mpfit, and it is
+            better to use it after one of them to refine the estimation.
+        method : {'ls', 'ml'}
+            Choose 'ls' (default) for least squares and 'ml' for
+            maximum-likelihood estimation. The latter only works with
+            fitter = 'fmin'.
+        grad : bool
+            If True, the analytical gradient is used if defined to
+            speed up the estimation.
+        ext_bounding : bool
+            If True, enforce bounding by keeping the value of the
+            parameters constant out of the defined bounding area.
+        bounded : bool
+            If True performs bounded optimization if the fitter
+            supports it. Currently only mpfit support bounding.
+        update_plot : bool
+            If True, the plot is updated during the optimization
+            process. It slows down the optimization but it permits
+            to visualize the optimization evolution.
+        kind : {'std', 'smart'}
+            If 'std' (default) performs standard fit. If 'smart'
+            performs smart_fit
 
-        Returns
-        -------
-        None
+        **kwargs : key word arguments
+            Any extra key word argument will be passed to the chosen
+            fitter
 
         See Also
         --------
-        * :py:meth:`~hyperspy.model.BaseModel.fit`
-        * :py:meth:`~hyperspy.model.BaseModel.multifit`
-        * :py:meth:`~hyperspy.model.EELSModel.smart_fit`
+        multifit, smart_fit
 
         """
-        if kind not in ["smart", "std"]:
-            raise ValueError(
-                f"kind must be either 'std' or 'smart', not '{kind}'"
-            )
-        elif kind == "smart":
-            return self.smart_fit(**kwargs)
-        elif kind == "std":
-            return Model1D.fit(self, **kwargs)
-
-    fit.__doc__ %= FIT_PARAMETERS_ARG
+        if kind == 'smart':
+            self.smart_fit(fitter=fitter,
+                           method=method,
+                           grad=grad,
+                           bounded=bounded,
+                           ext_bounding=ext_bounding,
+                           update_plot=update_plot,
+                           **kwargs)
+        elif kind == 'std':
+            Model1D.fit(self,
+                        fitter=fitter,
+                        method=method,
+                        grad=grad,
+                        bounded=bounded,
+                        ext_bounding=ext_bounding,
+                        update_plot=update_plot,
+                        **kwargs)
+        else:
+            raise ValueError('kind must be either \'std\' or \'smart\'.'
+                             '\'%s\' provided.' % kind)
 
     def smart_fit(self, start_energy=None, **kwargs):
-        """Fits EELS edges in a cascade style.
-
-        The fitting procedure acts in iterative manner along
-        the energy-loss-axis. First it fits only the background
-        up to the first edge. It continues by deactivating all
-        edges except the first one, then performs the fit. Then
-        it only activates the the first two, fits, and repeats
-        this until all edges are fitted simultanously.
-
-        Other, non-EELSCLEdge components, are never deactivated,
-        and fitted on every iteration.
+        """ Fits everything in a cascade style.
 
         Parameters
         ----------
+
         start_energy : {float, None}
             If float, limit the range of energies from the left to the
             given value.
-        %s
+        **kwargs : key word arguments
+            Any extra key word argument will be passed to
+            the fit method. See the fit method documentation for
+            a list of valid arguments.
 
         See Also
         --------
-        * :py:meth:`~hyperspy.model.BaseModel.fit`
-        * :py:meth:`~hyperspy.model.BaseModel.multifit`
-        * :py:meth:`~hyperspy.model.EELSModel.fit`
+        fit, multifit
 
         """
+
         # Fit background
         self.fit_background(start_energy, **kwargs)
 
         # Fit the edges
         for i in range(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
-
-    smart_fit.__doc__ %= FIT_PARAMETERS_ARG
 
     def _get_first_ionization_edge_energy(self, start_energy=None):
         """Calculate the first ionization edge energy.
@@ -408,7 +421,7 @@ class EELSModel(Model1D):
         if iee is not None:
             to_disable = [edge for edge in self._active_edges
                           if edge.onset_energy.value >= iee]
-            E2 = iee - self._preedge_safe_window_width
+            E2 = iee - preferences.EELS.preedge_safe_window_width
             self.disable_edges(to_disable)
         else:
             E2 = None
@@ -457,7 +470,7 @@ class EELSModel(Model1D):
                 E2 = ea[-1]
             else:
                 E2 = E2 - \
-                    self._preedge_safe_window_width
+                    preferences.EELS.preedge_safe_window_width
 
         if not powerlaw.estimate_parameters(
                 self.signal, E1, E2, only_current=False):
@@ -472,6 +485,7 @@ class EELSModel(Model1D):
         ea = self.axis.axis[self.channel_switches]
         if start_energy is None:
             start_energy = ea[0]
+        preedge_safe_window_width = preferences.EELS.preedge_safe_window_width
         # Declare variables
         active_edges = self._active_edges
         edge = active_edges[edgenumber]
@@ -484,7 +498,6 @@ class EELSModel(Model1D):
         last_index = len(self._active_edges) - 1    # Last edge index
         i = 1
         twins = []
-        # find twins
         while edgenumber + i <= last_index and (
                 active_edges[edgenumber + i].intensity.twin is not None or
                 active_edges[edgenumber + i].active is False):
@@ -496,7 +509,7 @@ class EELSModel(Model1D):
         else:
             nextedgeenergy = (
                 active_edges[edgenumber + i].onset_energy.value -
-                self._preedge_safe_window_width)
+                preedge_safe_window_width)
 
         # Backup the fsstate
         to_activate_fs = []

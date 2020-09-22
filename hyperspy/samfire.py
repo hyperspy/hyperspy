@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -24,7 +24,6 @@ import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
-from hyperspy.misc.math_tools import check_random_state
 from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
@@ -116,8 +115,6 @@ class Samfire:
     save_every : int
         When running, samfire saves results every time save_every good fits are
         found.
-    random_state : None or int or RandomState instance, default None
-        Random seed used to select the next pixels.
 
     Methods
     -------
@@ -161,7 +158,7 @@ class Samfire:
     _args = None
     count = 0
 
-    def __init__(self, model, workers=None, setup=True, random_state=None, **kwargs):
+    def __init__(self, model, workers=None, setup=True, **kwargs):
         # constants:
         if workers is None:
             workers = max(1, cpu_count() - 1)
@@ -195,7 +192,6 @@ class Samfire:
         if len(kwargs) or setup:
             self._setup(**kwargs)
         self.refresh_database()
-        self.random_state = check_random_state(random_state)
 
     @property
     def active_strategy(self):
@@ -238,11 +234,6 @@ class Samfire:
         self._setup()
         if self._workers and self.pool is not None:
             self.pool.update_parameters()
-        if 'min_function' in kwargs:
-            kwargs['min_function'] = dill.dumps(kwargs['min_function'])
-        if 'min_function_grad' in kwargs:
-            kwargs['min_function_grad'] = dill.dumps(
-                kwargs['min_function_grad'])
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
@@ -258,7 +249,7 @@ class Samfire:
                     # last one just finished running
                     break
                 self.change_strategy(self._active_strategy_ind + 1)
-        except KeyboardInterrupt:  # pragma: no cover
+        except KeyboardInterrupt:
             if self.pool is not None:
                 _logger.warning(
                     'Collecting already started pixels, please wait')
@@ -345,8 +336,8 @@ class Samfire:
         Parameters
         ----------
         filename: {str, None}
-            the filename. If None, a default value of "backup_"+signal_title
-            is used.
+            the filename. If None, a default value of "backup_"+signal_title is
+            used
         on_count: bool
             if True (default), only saves on the required count of steps
         """
@@ -408,7 +399,7 @@ class Samfire:
         """Changes current strategy to a new one. Certain rules apply:
         diffusion -> diffusion : resets all "ignored" pixels
         diffusion -> segmenter : saves already calculated pixels to be ignored
-        when(if) subsequently diffusion strategy is run
+            when(if) subsequently diffusion strategy is run
 
         Parameters
         ----------
@@ -499,7 +490,7 @@ class Samfire:
         if best > 0.0:
             ind_list = np.where(self.metadata.marker == best)
             while number and ind_list[0].size > 0:
-                i = self.random_state.randint(len(ind_list[0]))
+                i = np.random.randint(len(ind_list[0]))
                 ind = tuple([lst[i] for lst in ind_list])
                 if ind not in self.running_pixels:
                     inds.append(ind)
@@ -618,7 +609,7 @@ class Samfire:
             if self.strategies:
                 try:
                     self._figure = self.active_strategy.plot(self._figure)
-                except BaseException:
+                except:
                     self._figure = None
                     self._figure = self.active_strategy.plot(self._figure)
 
@@ -633,7 +624,3 @@ class Samfire:
         ans += self.model.signal.metadata.General.title
         ans += u"'>"
         return ans
-
-    def stop(self):
-        if hasattr(self, "pool") and self.pool is not None:
-            self.pool.stop()

@@ -1,4 +1,3 @@
-import copy
 import os.path
 import tempfile
 
@@ -94,8 +93,8 @@ example2_TEM = {'Detector': {'EDS': {'EDS_det': "SIWLS",
                 'beam_current_units': "nA",
                 'beam_energy': 120.0,
                 'beam_energy_units': "kV",
-                'Stage': {'tilt_alpha': 45.0,
-                          'tilt_alpha_units': "dg"}}
+                'tilt_stage': 45.0,
+                'tilt_stage_units': "dg"}
 
 example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
                      'General': {'original_filename': "example2.msa",
@@ -208,24 +207,6 @@ class TestExample1:
             s2.metadata.General.original_filename = "example1.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
-
-class TestExample1WrongDate:
-
-    def setup_method(self, method):
-        self.s = load(os.path.join(
-            my_path,
-            "msa_files",
-            "example1_wrong_date.msa"))
-
-    def test_metadata(self):
-        md = copy.copy(example1_metadata)
-        del md["General"]["date"]
-        del md["General"]["time"]
-        md["General"]["original_filename"] = "example1_wrong_date.msa"
-        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
-                                 md)
-
-
 
 
 class TestExample2:

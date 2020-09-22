@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -340,10 +340,10 @@ class SemperFormat(object):
             iform = 0  # byte
         elif np.issubdtype(data.dtype, np.int16):
             iform = 1  # int16
-        elif np.issubdtype(data.dtype, np.floating) and data.dtype.itemsize <= 4:
+        elif np.issubdtype(data.dtype, float) and data.dtype.itemsize <= 4:
             data = data.astype(np.float32)
             iform = 2  # float (4 byte or less)
-        elif np.issubdtype(data.dtype, np.complexfloating) and data.dtype.itemsize <= 8:
+        elif np.issubdtype(data.dtype, complex) and data.dtype.itemsize <= 8:
             data = data.astype(np.complex64)
             iform = 3  # complex (8 byte or less)
         elif np.issubdtype(data.dtype, np.int32):
@@ -359,7 +359,7 @@ class SemperFormat(object):
 
     @classmethod
     def load_from_unf(cls, filename, lazy=False):
-        r"""Load a `.unf`-file into a :class:`~.SemperFormat` object.
+        """Load a `.unf`-file into a :class:`~.SemperFormat` object.
 
         Parameters
         ----------
@@ -442,7 +442,7 @@ class SemperFormat(object):
         ----------
         filename : string, optional
             The name of the unf-file to which the data should be written.
-        skip_header : bool, optional
+        skip_header : boolean, optional
             Determines if the header, title and label should be skipped (useful
             for some other programs). Default is False.
 

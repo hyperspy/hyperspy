@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,10 +17,10 @@
 
 
 import numpy as np
+import numpy.testing
 import pytest
-from numpy.testing import assert_array_equal
 
-from hyperspy import roi, signals
+from hyperspy import signals
 
 
 class Test1D:
@@ -120,21 +120,6 @@ class Test1D:
     def test_minus_one_index(self):
         s = self.signal.isig[-1]
         assert s.data == self.data[-1]
-
-    def test_units(self):
-        self.signal.axes_manager[0].scale = 0.5
-        self.signal.axes_manager[0].units = 'µm'
-        s = self.signal.isig[:'4000.0 nm']
-        assert_array_equal(s.data, self.data[:8])
-        s = self.signal.isig[:'4 µm']
-        assert_array_equal(s.data, self.data[:8])
-
-    def test_units_error(self):
-        self.signal.axes_manager[0].scale = 0.5
-        self.signal.axes_manager[0].units = 'µm'
-        with pytest.raises(ValueError):
-            self.signal.isig[:'4000.0']
-            pytest.fail("should contains an units")
 
 
 class Test2D:
@@ -351,32 +336,3 @@ class TestEllipsis:
         self.signal.axes_manager._axes[-3].navigate = False
         s = self.signal.isig[..., 0]
         np.testing.assert_array_equal(s.data, self.data[:, :, 0, ...])
-
-
-class TestROISlicing:
-
-    def setup_method(self, method):
-        s = signals.Signal1D(np.random.random((10, 20, 1)))
-        s.axes_manager[0].scale = 0.5
-        s.axes_manager[1].scale = 2
-        self.s = s
-
-    def test_span_roi(self):
-        s = self.s
-        srx = roi.SpanROI(left=1.5, right=10)
-        sry = roi.SpanROI(left=-1000, right=2)
-        assert_array_equal(s.inav[srx, :].data, s.inav[1.5:10., ].data)
-        assert_array_equal(
-            s.inav[
-                srx, sry].data, s.inav[
-                1.5:10., -1000.:2.].data)
-
-    def test_rectangular_roi(self):
-        s = self.s
-        sr = roi.RectangularROI(left=1.5, right=10, top=-1000, bottom=2)
-        assert_array_equal(s.inav[sr].data, s.inav[1.5:10., -1000.:2.].data)
-
-    def test_point2D_roi(self):
-        s = self.s
-        sr = roi.Point2DROI(x=1.5, y=10)
-        assert_array_equal(s.inav[sr].data, s.inav[1.5, 10.].data)

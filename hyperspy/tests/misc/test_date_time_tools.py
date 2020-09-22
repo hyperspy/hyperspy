@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,11 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from dateutil import parser, tz
+from dateutil import tz, parser
+
+from numpy.testing import assert_allclose
 
 import hyperspy.misc.date_time_tools as dtt
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 def _get_example(date, time, time_zone=None):
@@ -36,7 +38,6 @@ def _get_example(date, time, time_zone=None):
         iso = '%sT%s' % (date, time)
         dt = parser.parse(iso)
     return md, dt, iso
-
 
 md1, dt1, iso1 = _get_example('2014-12-27', '00:00:00', 'UTC')
 serial1 = 42000.00
@@ -101,9 +102,7 @@ def test_update_date_time_in_metadata():
     md12 = dtt.update_date_time_in_metadata(dt1, md.deepcopy())
     assert_deep_almost_equal(md12.General.date, md1.General.date)
     assert_deep_almost_equal(md12.General.time, md1.General.time)
-    import locale
-    if locale.getlocale()[0] in ['en_GB', 'en_US']:
-        assert md12.General.time_zone in ('UTC', 'Coordinated Universal Time')
+    assert md12.General.time_zone in ('UTC', 'Coordinated Universal Time')
 
     md13 = dtt.update_date_time_in_metadata(iso2, md.deepcopy())
     assert_deep_almost_equal(md13.General.date, md2.General.date)
@@ -144,17 +143,17 @@ def test_serial_date_to_ISO_format():
 def test_ISO_format_to_serial_date():
     res1 = dtt.ISO_format_to_serial_date(
         dt1.date().isoformat(), dt1.time().isoformat(), timezone=dt1.tzname())
-    np.testing.assert_allclose(res1, serial1, atol=1E-5)
+    assert_allclose(res1, serial1, atol=1E-5)
     dt = dt2.astimezone(tz.tzlocal())
     res2 = dtt.ISO_format_to_serial_date(
         dt.date().isoformat(), dt.time().isoformat(), timezone=dt.tzname())
-    np.testing.assert_allclose(res2, serial2, atol=1E-5)
+    assert_allclose(res2, serial2, atol=1E-5)
     res3 = dtt.ISO_format_to_serial_date(
         dt3.date().isoformat(), dt3.time().isoformat(), timezone=dt3.tzname())
-    np.testing.assert_allclose(res3, serial3, atol=1E-5)
+    assert_allclose(res3, serial3, atol=1E-5)
 
 
 def test_datetime_to_serial_date():
-    np.testing.assert_allclose(dtt.datetime_to_serial_date(dt1), serial1, atol=1E-5)
-    np.testing.assert_allclose(dtt.datetime_to_serial_date(dt2), serial2, atol=1E-5)
-    np.testing.assert_allclose(dtt.datetime_to_serial_date(dt3), serial3, atol=1E-5)
+    assert_allclose(dtt.datetime_to_serial_date(dt1), serial1, atol=1E-5)
+    assert_allclose(dtt.datetime_to_serial_date(dt2), serial2, atol=1E-5)
+    assert_allclose(dtt.datetime_to_serial_date(dt3), serial3, atol=1E-5)

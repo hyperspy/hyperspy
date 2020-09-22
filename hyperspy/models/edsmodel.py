@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,8 +31,6 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
-from hyperspy.misc.test_utils import ignore_warning
-
 
 _logger = logging.getLogger(__name__)
 
@@ -102,13 +100,14 @@ class EDSModel(Model1D):
 
     Parameters
     ----------
-    spectrum : EDSSpectrum (or any EDSSpectrum subclass) instance.
+    spectrum : an EDSSpectrum (or any EDSSpectrum subclass) instance.
 
-    auto_add_lines : bool
+    auto_add_lines : boolean
         If True, automatically add Gaussians for all X-rays generated
         in the energy range by an element, using the edsmodel.add_family_lines
         method.
-    auto_background : bool
+
+    auto_background : boolean
         If True, adds automatically a polynomial order 6 to the model,
         using the edsmodel.add_polynomial_background method.
 
@@ -136,15 +135,15 @@ class EDSModel(Model1D):
         self.start_energy = self.axes_manager.signal_axes[0].low_value
         self.background_components = list()
         if 'dictionary' in kwargs or len(args) > 1:
-            auto_add_lines = False
-            auto_background = False
             d = args[1] if len(args) > 1 else kwargs['dictionary']
             if len(d['xray_lines']) > 0:
                 self.xray_lines.extend(
                     [self[name] for name in d['xray_lines']])
+                auto_add_lines = False
             if len(d['background_components']) > 0:
                 self.background_components.extend(
                     [self[name] for name in d['background_components']])
+                auto_background = False
         if auto_background is True:
             self.add_polynomial_background()
         if auto_add_lines is True:
@@ -272,7 +271,7 @@ class EDSModel(Model1D):
     @property
     def _active_background_components(self):
         return [bc for bc in self.background_components
-                if bc.free_parameters]
+                if bc.coefficients.free]
 
     def add_polynomial_background(self, order=6):
         """
@@ -285,8 +284,7 @@ class EDSModel(Model1D):
         order: int
             The order of the polynomial
         """
-        with ignore_warning(message="The API of the `Polynomial` component"):
-            background = create_component.Polynomial(order=order, legacy=False)
+        background = create_component.Polynomial(order=order)
         background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)
@@ -297,14 +295,14 @@ class EDSModel(Model1D):
         Free the yscale of the background components.
         """
         for component in self.background_components:
-            component.set_parameters_free()
+            component.coefficients.free = True
 
     def fix_background(self):
         """
         Fix the background components.
         """
         for component in self._active_background_components:
-            component.set_parameters_not_free()
+            component.coefficients.free = False
 
     def enable_xray_lines(self):
         """Enable the X-ray lines components.
@@ -355,7 +353,7 @@ class EDSModel(Model1D):
             If 'single' fit only the current location. If 'multi'
             use multifit.
         **kwargs : extra key word arguments
-            All extra key word arguments are passed to fit or multifit
+            All extra key word arguments are passed to fit or
 
         See also
         --------
@@ -614,7 +612,6 @@ class EDSModel(Model1D):
             Bound the height of the peak to a fraction of
             its height
         """
-
         def free_twin(component):
             component.A.twin = None
             component.A.free = True
@@ -642,7 +639,6 @@ class EDSModel(Model1D):
 
         Establish the twin on the height of sub-Xray lines (non alpha)
         """
-
         def fix_twin(component):
             component.A.bmin = 0.0
             component.A.bmax = None
@@ -794,17 +790,15 @@ class EDSModel(Model1D):
             fix = self.fix_xray_lines_width
 
         free(xray_lines=xray_lines, bound=bound)
-        if kind == "single":
-            self.fit(bounded=True, **kwargs)
-        elif kind == "multi":
-            self.multifit(bounded=True, **kwargs)
+        if kind == 'single':
+            self.fit(bounded=True, fitter='mpfit', **kwargs)
+        elif kind == 'multi':
+            self.multifit(bounded=True, fitter='mpfit', **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
                             xray_lines=None,
                             plot_result=False,
-                            only_one=True,
-                            only_lines=("a",),
                             **kwargs):
         """
         Return the fitted intensity of the X-ray lines.
@@ -813,25 +807,14 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: {None, list of string}
-            If None,
-            if `metadata.Sample.elements.xray_lines` contains a
-            list of lines use those.
-            If `metadata.Sample.elements.xray_lines` is undefined
-            or empty but `metadata.Sample.elements` is defined,
-            use the same syntax as `add_line` to select a subset of lines
-            for the operation.
-            Alternatively, provide an iterable containing
+        xray_lines: list of str or None or 'from_metadata'
+            If None, all main X-ray lines (alpha)
+            If 'from_metadata', take the Xray_lines stored in the `metadata`
+            of the spectrum. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
-        only_one : bool
-            If False, use all the lines of each element in the data spectral
-            range. If True use only the line at the highest energy
-            above an overvoltage of 2 (< beam energy / 2).
-        only_lines : {None, list of strings}
-            If not None, use only the given lines.
         kwargs
             The extra keyword arguments for plotting. See
             `utils.plot.plot_signals`
@@ -847,19 +830,16 @@ class EDSModel(Model1D):
         >>> m.get_lines_intensity(["C_Ka", "Ta_Ma"])
         """
         from hyperspy import utils
-
         intensities = []
-
         if xray_lines is None:
             xray_lines = [component.name for component in self.xray_lines]
         else:
-            xray_lines = self.signal._parse_xray_lines(
-                xray_lines, only_one, only_lines)
-            xray_lines = list(filter(lambda x: x in [a.name for a in
-                                                     self], xray_lines))
-        if len(xray_lines) == 0:
+            if xray_lines == 'from_metadata':
+                xray_lines = self.signal.metadata.Sample.xray_lines
+            xray_lines = filter(lambda x: x in [a.name for a in
+                                                self], xray_lines)
+        if not xray_lines:
             raise ValueError("These X-ray lines are not part of the model.")
-
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             line_energy = self.signal._get_line_energy(xray_line)
@@ -874,7 +854,6 @@ class EDSModel(Model1D):
                  line_energy,
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
-            img.axes_manager.set_signal_dimension(0)
             if plot_result and img.axes_manager.signal_dimension == 0:
                 print("%s at %s %s : Intensity = %.2f"
                       % (xray_line,
@@ -887,16 +866,3 @@ class EDSModel(Model1D):
         if plot_result and img.axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
-
-    def remove(self, thing):
-        thing = self._get_component(thing)
-        if not np.iterable(thing):
-            thing = [thing, ]
-        for comp in thing:
-            if comp in self.xray_lines:
-                self.xray_lines.remove(comp)
-            elif comp in self.family_lines:
-                self.family_lines.remove(comp)
-            elif comp in self.background_components:
-                self.background_components.remove(comp)
-        super().remove(thing)

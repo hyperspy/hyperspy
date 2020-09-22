@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,33 +15,30 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import warnings
+import sys
 from unittest.mock import Mock
 
-import numpy as np
 import matplotlib
+from matplotlib.testing.decorators import cleanup
 import pytest
 
-from hyperspy.drawing.utils import create_figure, contrast_stretching
+import hyperspy.drawing.utils as utils
+from hyperspy.misc.test_utils import assert_warns
 
 
+@pytest.mark.skipif(sys.platform == 'darwin',
+                    reason="Plot testing not supported on osx by travis-ci")
+@cleanup
 def test_create_figure():
-    if matplotlib.get_backend() == "agg":
+    dummy_warning = 'dummy_function have been called after closing windows'
+    if matplotlib.get_backend() not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
         pytest.xfail("{} backend does not support on_close event.".format(
             matplotlib.get_backend()))
 
     dummy_function = Mock()
-    fig = create_figure(window_title="test title",
-                        _on_figure_window_close=dummy_function)
+    fig = utils.create_figure(window_title="test title",
+                              _on_figure_window_close=dummy_function)
     assert isinstance(fig, matplotlib.figure.Figure) == True
     matplotlib.pyplot.close(fig)
     dummy_function.assert_called_once_with()
-
-
-def test_contrast_stretching():
-    data = np.arange(100)
-    assert contrast_stretching(data, 1, 99) == (1, 99)
-    assert contrast_stretching(data, 1.0, 99.0) == (1, 99)
-    assert contrast_stretching(data, '1th', '99th') == (0.99, 98.01)
-    assert contrast_stretching(data, '0.05th', '99.95th') == (0.0495, 98.9505)
-    # vmin, vmax are to set in conftest.py
-    assert contrast_stretching(data, None, None) == (0.0, 99.0)

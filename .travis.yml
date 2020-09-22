@@ -1,65 +1,70 @@
-# For details: https://github.com/ericpre/ci-scripts
 language: python
-
-env:
-  global:
-    # The default environment variable are defined here and overwritten
-    # in the matrix when necessary
-    - ENV=pip
-    - PIP_ARGS="--upgrade --use-feature=2020-resolver -e"
-    - PIP_SELECTOR="all, tests, coverage"
-    - PYTEST_ARGS="--pyargs hyperspy --reruns 3 -n 2 --instafail"
-    - OLDEST_SUPPORTED_VERSION=false
-    - MPLBACKEND="agg"
 
 matrix:
   include:
-  - name: "Linux, 3.8, pip"
-    python: 3.8
-  - name: "Linux, 3.7, pip"
-    python: 3.7
-    env: PYTEST_ARGS="$PYTEST_ARGS --cov=hyperspy"
-  - name: "Linux, 3.6, pip"
-    python: 3.6
-  - name: "Linux, 3.7, pip, minimum requirement"
-    env: PIP_SELECTOR="tests"
-    python: 3.7
-  - name: "Linux, 3.6, pip, oldest supported versions"
-    env:
-      - OLDEST_SUPPORTED_VERSION=true
-      - PIP_ARGS="-e"
-      - PIP_SELECTOR="tests"
-    python: 3.6
-  - name: "Linux, 3.7, pip, doc"
-    env: PIP_SELECTOR="all, build-doc"
-    python: 3.7
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+    os: osx
+    language: generic
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+    os: osx
+    language: generic
+  allow_failures:
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 
 before_install:
-  # Clone the ci-scripts repo to get the ci setup scripts
-  - git clone --depth 1 git://github.com/hyperspy/ci-scripts.git
-  - source ci-scripts/travis/setup_travis.sh
-
-install:
-  # Because of https://github.com/pypa/pip/issues/4391,
-  # we need to update pytest manually.
-  - pip install --upgrade pytest
-  # Test against the oldest supported version of matplotlib, numpy and scipy
-  - if [ "$OLDEST_SUPPORTED_VERSION" == true ]; then
-      pip install matplotlib==2.2.3 numpy==1.15.4 scipy==1.1;
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then
+      curl "https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh" -o miniconda.sh;
+    else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     fi
-  - pip install $PIP_ARGS .["${PIP_SELECTOR}"];
+  - chmod +x miniconda.sh;
+    ./miniconda.sh -b -p $HOME/miniconda;
+    export "PATH=$HOME/miniconda/bin:$PATH";
+    hash -r;
+install:
+
+  - if [[ $MINIMAL_ENV == 'False' ]] ; then
+      DEPS="pip numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
+    else DEPS="pip ipython numpy scipy matplotlib h5py sympy scikit-image";
+    fi
+  - conda create -n testenv --yes python=$PYTHON;
+    source activate testenv;
+    conda install -y -c conda-forge $DEPS;
+  - if [[ $MINIMAL_ENV == 'False' ]] ; then
+      pip install .[all];
+    else pip install .;
+    fi
+  - python setup.py build_ext --inplace;
+
+before_script: # configure a headless display to test plot generation
+  - "export DISPLAY=:99.0"
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then sh -e /etc/init.d/xvfb start; fi
+  - sleep 3 # give xvfb some time to start
 
 script:
-  - which python
-  - python -c 'import matplotlib.pyplot as plt; print("Matplotlib backend:", plt.get_backend())';
-  - if [[ $PIP_SELECTOR == *"build-doc"* ]]; then
-      cd doc && make html;
-    else
-      echo "pytest arguments $PYTEST_ARGS";
-      pytest $PYTEST_ARGS;
-    fi
+  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
+    py.test --mpl --cov=hyperspy --pyargs hyperspy;
 
 after_success:
-  - if [[ $PYTEST_ARGS == *"--cov=hyperspy"* ]]; then
-      codecov;
-    fi
+- coveralls
+- if [[ $MINIMAL_ENV == 'False' ]]; then
+    python setup.py bdist_wheel;
+  else python setup.py sdist;
+  fi
+
+before_deploy:
+- export DISTRIB=$(ls ./dist/*.whl);
+
+deploy:
+  provider: releases
+  api_key:
+    #francisco-dlp:
+    secure: dTt5L3HsIrfTOvnU8QFqwMu+Ghpuzp+vr0y7skRbqdFBCmPfjbAe2l24haMidVC1x0ZikHGgv9krEd/aKEBLi6QM+E2KsxiXUJWlhTFMH5o8qsMTBSAS2ChfQ32Jlktg8oK0FMs+UO6EFbMz1cr7m1Fgc0Ikds1ZCzev6Uke2Zk=
+  file: "${DISTRIB}"
+  skip_cleanup: true
+  on:
+    tags: true
+    condition: $MINIMAL_ENV = 'False'

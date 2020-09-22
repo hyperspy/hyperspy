@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -31,28 +31,27 @@ class DielectricFunction_mixin:
     _alias_signal_types = ["dielectric function"]
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
-        r"""Compute the number of effective electrons using the Bethe f-sum
+        """Compute the number of effective electrons using the Bethe f-sum
         rule.
 
         The Bethe f-sum rule gives rise to two definitions of the effective
-        number (see [*]_), neff1 and neff2:
-
-        .. math::
-
-            n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
-
-        and:
-
-        .. math::
-
-            n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
-
-        This method computes and return both.
+        number (see [Egerton2011]_):
+        $n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)$ that
+        we'll call neff1 and
+        $n_{\mathrm{eff}}\left(\epsilon_{2}\right)$ that we'll call neff2. This
+        method computes both.
 
         Parameters
         ----------
         nat: float
-            Number of atoms (or molecules) per unit volume of the sample.
+            Number of atoms (or molecules) per unit volume of the
+            sample.
+        cumulative : bool
+            If False calculate the number of effective electrons up to the
+            higher energy-loss of the spectrum. If True, calculate the
+            number of effective electrons as a function of the energy-loss up
+            to the higher energy-loss of the spectrum. *True is only supported
+            by SciPy newer than 0.13.2*.
 
         Returns
         -------
@@ -65,8 +64,8 @@ class DielectricFunction_mixin:
 
         Notes
         -----
-        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy 
-           in the Electron Microscope", Springer-Verlag, 2011.
+        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
+        Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
 
         """
 
@@ -115,7 +114,6 @@ class DielectricFunction_mixin:
         data = ((-1 / self.data).imag * eels_constant(self, zlp, t).data *
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)
-        s.data = s.data.real
         s.set_signal_type("EELS")
         s.metadata.General.title = ("EELS calculated from " +
                                     self.metadata.General.title)
@@ -126,5 +124,5 @@ class DielectricFunction(DielectricFunction_mixin, ComplexSignal1D):
     pass
 
 
-class LazyDielectricFunction(DielectricFunction, LazyComplexSignal1D):
+class LazyDielectricFunction(DielectricFunction_mixin, LazyComplexSignal1D):
     pass

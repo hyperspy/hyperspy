@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,15 +20,12 @@ from functools import wraps
 
 import numpy as np
 import dask.array as da
+import h5py
 
 from hyperspy.signal import BaseSignal
-from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, COMPLEX_DOCSTRING,
-    PLOT2D_KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
-from hyperspy.misc.utils import parse_quantity
+    BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
 def format_title(thing):
@@ -98,12 +95,8 @@ class ComplexSignal_mixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # _plot_kwargs store the plot kwargs argument for convenience when
-        # plotting ROI in order to use the same plotting options than the
-        # original plot
-        self._plot_kwargs = {}
-        if not np.issubdtype(self.data.dtype, np.complexfloating):
-            self.data = self.data.astype(np.complex128)
+        if not np.issubdtype(self.data.dtype, complex):
+            self.data = self.data.astype(complex)
 
     def change_dtype(self, dtype):
         """Change the data type.
@@ -115,7 +108,7 @@ class ComplexSignal_mixin:
             complex dtypes are allowed. If real valued properties are required use `real`,
             `imag`, `amplitude` and `phase` instead.
         """
-        if np.issubdtype(dtype, np.complexfloating):
+        if np.issubdtype(dtype, complex):
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError(
@@ -123,8 +116,8 @@ class ComplexSignal_mixin:
 
     @format_title('angle')
     def angle(self, angle, deg=False):
-        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
-        for positive values and :math:`2\pi` for negative values.
+        """Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        for positive values and 2$\pi$ for negative values.
 
         Parameters
         ----------
@@ -142,7 +135,7 @@ class ComplexSignal_mixin:
         return angle
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
-                        show_progressbar=None, parallel=None, max_workers=None):
+                        show_progressbar=None, parallel=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
@@ -156,9 +149,11 @@ class ComplexSignal_mixin:
         seed : int, optional
             Unwrapping 2D or 3D images uses random initialization. This sets the
             seed of the PRNG to achieve deterministic behavior.
-        %s
-        %s
-        %s
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallely
 
         Returns
         -------
@@ -178,51 +173,30 @@ class ComplexSignal_mixin:
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar, ragged=False,
-                  parallel=parallel, max_workers=max_workers)
+                  parallel=parallel)
         phase.metadata.General.title = 'unwrapped {}'.format(
             phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
-
-    def __call__(self, axes_manager=None, power_spectrum=False,
-                 fft_shift=False):
-        value = super().__call__(axes_manager=axes_manager,
-                                 fft_shift=fft_shift)
-        if power_spectrum:
-            value = np.abs(value)**2
-        return value
-
-    def plot(self,
-             power_spectrum=False,
-             representation='cartesian',
-             same_axes=True,
-             fft_shift=False,
-             navigator="auto",
-             axes_manager=None,
-             norm="auto",
-             **kwargs):
+    def plot(self, navigator="auto", axes_manager=None,
+             representation='cartesian', same_axes=True, **kwargs):
         """%s
-        %s
         %s
         %s
 
         """
-        if norm == "auto":
-            norm = 'log' if power_spectrum else 'linear'
-
-        kwargs.update({'norm': norm,
-                       'fft_shift': fft_shift,
-                       'navigator': navigator,
-                       'axes_manager': self.axes_manager})
         if representation == 'cartesian':
-            if ((same_axes and self.axes_manager.signal_dimension == 1) or
-                    power_spectrum):
-                kwargs['power_spectrum'] = power_spectrum
+            if same_axes and self.axes_manager.signal_dimension == 1:
                 super().plot(**kwargs)
             else:
-                self.real.plot(**kwargs)
-                self.imag.plot(**kwargs)
+                self.real.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
+                self.imag.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
         elif representation == 'polar':
             if same_axes and self.axes_manager.signal_dimension == 1:
                 amp = self.amplitude
@@ -230,19 +204,18 @@ class ComplexSignal_mixin:
                 amp.imag = self.phase
                 amp.plot(**kwargs)
             else:
-                self.amplitude.plot(**kwargs)
-                self.phase.plot(**kwargs)
+                self.amplitude.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
+                self.phase.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
         else:
             raise ValueError('{}'.format(representation) +
                              'is not a valid input for representation (use "cartesian" or "polar")!')
-
-        self._plot_kwargs = {'power_spectrum': power_spectrum,
-                             'representation': representation,
-                             'norm': norm,
-                             'fft_shift': fft_shift,
-                             'same_axes': same_axes}
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
-                     BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_KWARGS_DOCSTRING)
+    plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
 
 
 class ComplexSignal(ComplexSignal_mixin, BaseSignal):
@@ -288,85 +261,17 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         return super().angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
-    def argand_diagram(self, size=[256, 256], range=None):
-        """
-        Calculate and plot Argand diagram of complex signal
 
-        Parameters
-        ----------
-        size : [int, int], optional
-            Size of the Argand plot in pixels
-            (Default: [256, 256])
-        range : array_like, shape(2,2) or shape(2,) optional
-            The position of the edges of the diagram
-            (if not specified explicitly in the bins parameters): [[xmin, xmax], [ymin, ymax]].
-            All values outside of this range will be considered outliers and not tallied in the histogram.
-            (Default: None)
-
-        Returns
-        -------
-        argand_diagram:
-            Argand diagram as Signal2D
-
-        Examples
-        --------
-        >>> import hyperspy.api as hs
-        >>> holo = hs.datasets.example_signals.object_hologram()
-        >>> ref = hs.datasets.example_signals.reference_hologram()
-        >>> w = holo.reconstruct_phase(ref)
-        >>> w.argand_diagram(range=[-3, 3]).plot()
-
-        """
-        im = self.imag.data.ravel()
-        re = self.real.data.ravel()
-
-        if range:
-            if np.asarray(range).shape == (2,):
-                range = [[range[0], range[1]],
-                         [range[0], range[1]]]
-            elif np.asarray(range).shape != (2, 2):
-                raise ValueError('display_range should be array_like, shape(2,2) or shape(2,).')
-
-        argand_diagram, real_edges, imag_edges = np.histogram2d(re, im, bins=size, range=range)
-        argand_diagram = Signal2D(argand_diagram.T)
-        argand_diagram.metadata = self.metadata.deepcopy()
-        argand_diagram.metadata.General.title = 'Argand diagram of {}'.format(self.metadata.General.title)
-
-        if self.real.metadata.Signal.has_item('quantity'):
-            quantity_real, units_real = parse_quantity(self.real.metadata.Signal.quantity)
-            argand_diagram.axes_manager.signal_axes[0].name = quantity_real
-        else:
-            argand_diagram.axes_manager.signal_axes[0].name = 'Real'
-            units_real = None
-        argand_diagram.axes_manager.signal_axes[0].offset = real_edges[0]
-        argand_diagram.axes_manager.signal_axes[0].scale = np.abs(real_edges[0] - real_edges[1])
-
-        if self.imag.metadata.Signal.has_item('quantity'):
-            quantity_imag, units_imag = parse_quantity(self.imag.metadata.Signal.quantity)
-            argand_diagram.axes_manager.signal_axes[1].name = quantity_imag
-        else:
-            argand_diagram.axes_manager.signal_axes[1].name = 'Imaginary'
-            units_imag = None
-        argand_diagram.axes_manager.signal_axes[1].offset = imag_edges[0]
-        argand_diagram.axes_manager.signal_axes[1].scale = np.abs(imag_edges[0] - imag_edges[1])
-        if units_real:
-            argand_diagram.axes_manager.signal_axes[0].units = units_real
-        if units_imag:
-            argand_diagram.axes_manager.signal_axes[1].units = units_imag
-
-        return argand_diagram
-
-
-class LazyComplexSignal(ComplexSignal, LazySignal):
+class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
 
     @format_title('absolute')
     def _get_amplitude(self):
-        amplitude = abs(self)
-        return super(ComplexSignal, self)._get_amplitude(amplitude)
+        amplitude = da.numpy_compat.builtins.abs(self)
+        return super()._get_amplitude(amplitude)
 
     def _get_phase(self):
         phase = self._deepcopy_with_new_data(da.angle(self.data))
-        return super(ComplexSignal, self)._get_phase(phase)
+        return super()._get_phase(phase)
 
     def _set_real(self, real):
         if isinstance(real, BaseSignal):
@@ -389,16 +294,11 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
     def _set_phase(self, phase):
         if isinstance(phase, BaseSignal):
             phase = phase.data.real
-        self.data = abs(self.data) * \
+        self.data = da.numpy_compat.builtins.abs(self.data) * \
             da.exp(1j * phase)
         self.events.data_changed.trigger(self)
 
     def angle(self, deg=False):
         angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
-        return super(ComplexSignal, self).angle(angle, deg=deg)
+        return super().angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
-
-    def argand_diagram(self, *args, **kwargs):
-        raise NotImplementedError("Argand diagram is not implemented for lazy "
-                                  "signals. Use `compute()` to convert the "
-                                  "signal to a regular one.")

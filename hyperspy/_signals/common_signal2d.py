@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,17 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy.docstrings.signal import OPTIMIZE_ARG
+from hyperspy.signal import BaseSignal
 
 
 class CommonSignal2D(object):
 
     """Common functions for 2-dimensional signals."""
 
-    def to_signal1D(self, optimize=True):
+    def to_signal1D(self):
         """Returns the image as a spectrum.
-
-        %s
 
         See Also
         --------
@@ -38,5 +36,4 @@ class CommonSignal2D(object):
         as_signal2D, transpose, hs.transpose
 
         """
-        return self.as_signal1D(0 + 3j, optimize=optimize)
-    to_signal1D.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))
+        return self.as_signal1D(0 + 3j)

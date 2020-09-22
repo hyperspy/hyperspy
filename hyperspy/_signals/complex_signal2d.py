@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,8 +20,7 @@
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy._signals.complex_signal import (ComplexSignal, LazyComplexSignal)
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
-    COMPLEX_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
 class Complex2Dmixin:
@@ -48,9 +47,9 @@ class Complex2Dmixin:
             Offset of the ramp at the fulcrum.
         Notes
         -----
-            The fulcrum of the linear ramp is at the origin and the slopes are
-            given in units of the axis with the according scale taken into
-            account. Both are available via the `axes_manager` of the signal.
+            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
+            the axis with the according scale taken into account. Both are available via the
+            `axes_manager` of the signal.
 
         """
         phase = self.phase
@@ -58,63 +57,37 @@ class Complex2Dmixin:
         self.phase = phase
 
     def plot(self,
-             power_spectrum=False,
-             fft_shift=False,
-             navigator="auto",
-             plot_markers=True,
-             autoscale='v',
-             saturated_pixels=None,
-             norm="auto",
-             vmin=None,
-             vmax=None,
-             gamma=1.0,
-             linthresh=0.01,
-             linscale=0.1,
+             colorbar=True,
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             axes_off=False,
-             axes_manager=None,
+             saturated_pixels=0,
+             vmin=None,
+             vmax=None,
              no_nans=False,
-             colorbar=True,
              centre_colormap="auto",
-             min_aspect=0.1,
              **kwargs
              ):
         """%s
         %s
         %s
         %s
-        %s
 
         """
         super().plot(
-            power_spectrum=power_spectrum,
-            fft_shift=fft_shift,
-            navigator=navigator,
-            plot_markers=plot_markers,
-            autoscale=autoscale,
-            saturated_pixels=saturated_pixels,
-            norm=norm,
-            vmin=vmin,
-            vmax=vmax,
-            gamma=gamma,
-            linthresh=linthresh,
-            linscale=linscale,
+            colorbar=colorbar,
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
-            axes_off=axes_off,
-            axes_manager=axes_manager,
+            saturated_pixels=saturated_pixels,
+            vmin=vmin,
+            vmax=vmax,
             no_nans=no_nans,
-            colorbar=colorbar,
             centre_colormap=centre_colormap,
-            min_aspect=min_aspect,
             **kwargs
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
-                     BASE_PLOT_DOCSTRING_PARAMETERS,
-                     PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
+                     COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
 class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
@@ -123,7 +96,7 @@ class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
     pass
 
 
-class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
+class LazyComplexSignal2D(Complex2Dmixin, LazyComplexSignal, CommonSignal2D):
 
     """BaseSignal subclass for lazy complex 2-dimensional data."""
     pass

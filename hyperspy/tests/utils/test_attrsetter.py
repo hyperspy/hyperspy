@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,8 @@
 
 import pytest
 
-from hyperspy.misc.utils import DictionaryTreeBrowser, attrsetter
+from hyperspy.misc.utils import attrsetter
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
 class DummyThing(object):

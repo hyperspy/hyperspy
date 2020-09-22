@@ -1,0 +1,12 @@
+[run]
+branch = True
+source = hyperspy
+include = */hyperspy/*
+omit =
+    */hyperspy/external/*
+    */hyperspy/ipython_profile/*
+    */hyperspy/gui/*
+    */setup.py
+    */examples/*
+    */bin/*
+    */continuous_integration/*

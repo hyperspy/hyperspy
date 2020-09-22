@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,31 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
-from tqdm import __version__ as tqdm_version
-
-if LooseVersion(tqdm_version) >= LooseVersion("4.36.0"):
-    # API change for 5.0 https://github.com/tqdm/tqdm/pull/800
-    from tqdm import tqdm
-    from tqdm.notebook import tqdm as tqdm_notebook
-else:
-    from tqdm import tqdm, tqdm_notebook
-
-from hyperspy.defaults_parser import preferences
+from tqdm import tqdm, tqdm_notebook
 
 
 def progressbar(*args, **kwargs):
     """Uses tqdm progressbar. This function exists for wrapping purposes only.
-
     Original docstring follows:
-    ---------------------------
+    ----------------------------------------
     %s
     %s
     """
-    if preferences.General.nb_progressbar:
-        try:
-            return tqdm_notebook(*args, **kwargs)
-        except:
-            pass
-    return tqdm(*args, **kwargs)
+    try:
+        return tqdm_notebook(*args, **kwargs)
+    except:
+        return tqdm(*args, **kwargs)
 progressbar.__doc__ %= (tqdm.__doc__, tqdm.__init__.__doc__)
+

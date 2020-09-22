@@ -1,37 +1,11 @@
-# -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
-#
-# This file is part of  HyperSpy.
-#
-#  HyperSpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-#  HyperSpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-
 import numpy as np
+
 import pytest
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
-from hyperspy.decorators import lazifyTestClass
 
 
-# Dask does not always work nicely with np.errstate,
-# see: https://github.com/dask/dask/issues/3245, so
-# filter out divide-by-zero warnings that only appear
-# when the test is lazy. When the test is not lazy,
-# internal use of np.errstate means the warnings never
-# appear in the first place.
-@pytest.mark.filterwarnings("ignore:invalid value encountered in subtract:RuntimeWarning")
-@pytest.mark.filterwarnings("ignore:divide by zero encountered in log:RuntimeWarning")
-@lazifyTestClass
 class TestCreateEELSModel:
 
     def setup_method(self, method):
@@ -48,6 +22,7 @@ class TestCreateEELSModel:
     def test_create_eelsmodel_no_md(self):
         s = self.s
         del s.metadata.Acquisition_instrument
+        hs.preferences.General.interactive = False
         with pytest.raises(ValueError):
             s.create_model()
 
@@ -89,10 +64,9 @@ class TestCreateEELSModel:
         ll.axes_manager[-1].offset = -20
         ll.axes_manager.navigation_shape = (123,)
         with pytest.raises(ValueError):
-            _ = self.s.create_model(ll=ll)
+            m = self.s.create_model(ll=ll)
 
 
-@lazifyTestClass
 class TestEELSModel:
 
     def setup_method(self, method):
@@ -116,7 +90,8 @@ class TestEELSModel:
         m.suspend_auto_fine_structure_width()
         m.resume_auto_fine_structure_width()
         window = (m["C_K"].onset_energy.value -
-                  m["B_K"].onset_energy.value - m._preedge_safe_window_width)
+                  m["B_K"].onset_energy.value -
+                  hs.preferences.EELS.preedge_safe_window_width)
         m.enable_fine_structure()
         m.resolve_fine_structure()
         assert window == m["B_K"].fine_structure_width
@@ -139,10 +114,10 @@ class TestEELSModel:
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        np.testing.assert_allclose(
+        assert_allclose(
             self.m._background_components[0].A.value,
             2.1451237089380295)
-        np.testing.assert_allclose(
+        assert_allclose(
             self.m._background_components[0].r.value,
             3.0118980767392736)
 
@@ -151,10 +126,10 @@ class TestEELSModel:
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        np.testing.assert_allclose(
+        assert_allclose(
             self.m._background_components[0].A.value,
             2.3978438900878087)
-        np.testing.assert_allclose(
+        assert_allclose(
             self.m._background_components[0].r.value,
             3.031884021065014)
 
@@ -164,10 +139,10 @@ class TestEELSModel:
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        np.testing.assert_allclose(
+        assert_allclose(
             self.m._background_components[0].A.value,
             2.6598803469440986)
-        np.testing.assert_allclose(
+        assert_allclose(
             self.m._background_components[0].r.value,
             3.0494030409062058)
 
@@ -184,7 +159,6 @@ class TestEELSModel:
                 150)
 
 
-@lazifyTestClass
 class TestFitBackground:
 
     def setup_method(self, method):
@@ -201,7 +175,7 @@ class TestFitBackground:
 
     def test_fit_background_B_C(self):
         self.m.fit_background()
-        np.testing.assert_allclose(self.m["Offset"].offset.value,
+        assert_allclose(self.m["Offset"].offset.value,
                         1)
         assert self.m["B_K"].active
         assert self.m["C_K"].active
@@ -209,8 +183,8 @@ class TestFitBackground:
     def test_fit_background_C(self):
         self.m["B_K"].active = False
         self.m.fit_background()
-        np.testing.assert_allclose(self.m["Offset"].offset.value,
-                        1.7142857)
+        assert_allclose(self.m["Offset"].offset.value,
+                        1.71212121212)
         assert not self.m["B_K"].active
         assert self.m["C_K"].active
 
@@ -218,7 +192,7 @@ class TestFitBackground:
         self.m["B_K"].active = False
         self.m["C_K"].active = False
         self.m.fit_background()
-        np.testing.assert_allclose(self.m["Offset"].offset.value,
-                        2.14)
+        assert_allclose(self.m["Offset"].offset.value,
+                        2.13567839196)
         assert not self.m["B_K"].active
         assert not self.m["C_K"].active

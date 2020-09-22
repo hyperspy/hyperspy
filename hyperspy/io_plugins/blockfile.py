@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -38,6 +38,7 @@ full_support = False
 # Recognised file extension
 file_extensions = ['blo', 'BLO']
 default_extension = 0
+
 # Writing capabilities:
 writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]
@@ -49,7 +50,7 @@ mapping = {
     'blockfile_header.Camera_length':
     ("Acquisition_instrument.TEM.camera_length", lambda x: x * 1e-4),
     'blockfile_header.Scan_rotation':
-    ("Acquisition_instrument.TEM.rotation", lambda x: x * 1e-2),
+    ("Acquisition_instrument.TEM.scan_rotation", lambda x: x * 1e-2),
 }
 
 
@@ -106,29 +107,23 @@ def get_header_from_signal(signal, endianess='<'):
         note = signal.original_metadata['blockfile_header']['Note']
     else:
         note = ''
-    # The navigation and signal units are 'nm' and 'cm', respectively, so we
-    # convert the units accordingly before saving the signal
-    axes_manager = signal.axes_manager.deepcopy()
-    axes_manager.convert_units('navigation', 'nm')
-    axes_manager.convert_units('signal', 'cm')
-
-    if axes_manager.navigation_dimension == 2:
-        NX, NY = axes_manager.navigation_shape
-        SX = axes_manager.navigation_axes[0].scale
-        SY = axes_manager.navigation_axes[1].scale
-    elif axes_manager.navigation_dimension == 1:
-        NX = axes_manager.navigation_shape[0]
+    if signal.axes_manager.navigation_dimension == 2:
+        NX, NY = signal.axes_manager.navigation_shape
+        SX = signal.axes_manager.navigation_axes[0].scale
+        SY = signal.axes_manager.navigation_axes[1].scale
+    elif signal.axes_manager.navigation_dimension == 1:
+        NX = signal.axes_manager.navigation_shape[0]
         NY = 1
-        SX = axes_manager.navigation_axes[0].scale
+        SX = signal.axes_manager.navigation_axes[0].scale
         SY = SX
-    elif axes_manager.navigation_dimension == 0:
+    elif signal.axes_manager.navigation_dimension == 0:
         NX = NY = SX = SY = 1
 
-    DP_SZ = axes_manager.signal_shape
+    DP_SZ = signal.axes_manager.signal_shape
     if DP_SZ[0] != DP_SZ[1]:
         raise ValueError('Blockfiles require signal shape to be square!')
     DP_SZ = DP_SZ[0]
-    SDP = 100. / axes_manager.signal_axes[0].scale
+    SDP = 100. / signal.axes_manager.signal_axes[0].scale
 
     offset2 = NX * NY + header['Data_offset_1']
     # Based on inspected files, the DPs are stored at 16-bit boundary...
@@ -168,16 +163,8 @@ def file_reader(filename, endianess='<', mmap_mode=None,
                       "Will attempt to read, but correcteness not guaranteed!")
     header = sarray2dict(header)
     note = f.read(header['Data_offset_1'] - f.tell())
-    # It seems it uses "\x00" for padding, so we remove it
-    try:
-        header['Note'] = note.decode("latin1").strip("\x00")
-    except BaseException:
-        # Not sure about the encoding so, if it fails, we carry on
-        _logger.warning(
-            "Reading the Note metadata of this file failed. "
-            "You can help improving "
-            "HyperSpy by reporting the issue in "
-            "https://github.com/hyperspy/hyperspy")
+    note = note.strip(b'\x00')
+    header['Note'] = note.decode()
     _logger.debug("File header: " + str(header))
     NX, NY = int(header['NX']), int(header['NY'])
     DP_SZ = int(header['DP_SZ'])

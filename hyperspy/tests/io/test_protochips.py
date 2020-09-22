@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,6 +21,8 @@ import os
 import numpy as np
 import pytest
 
+from numpy.testing import assert_allclose
+
 import hyperspy.api as hs
 from hyperspy.io_plugins.protochips import ProtochipsCSV, invalid_file_error
 
@@ -33,7 +35,7 @@ generate_numpy_file = False
 
 def create_numpy_file(filename, obj):
     gen = (obj._data_dictionary[key] for key in obj.logged_quantity_name_list)
-    data = np.vstack(list(gen))
+    data = np.vstack(gen)
     np.save(filename, data.T)
 
 #######################
@@ -100,7 +102,7 @@ class TestProtochipsGasCellCSV():
             assert s.metadata.General.date == date
             assert s.metadata.General.time == time
             assert s.axes_manager[0].units == 's'
-            np.testing.assert_allclose(s.axes_manager[0].scale, 0.25995, atol=1E-5)
+            assert_allclose(s.axes_manager[0].scale, 0.25995, atol=1E-5)
             assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):
@@ -131,7 +133,7 @@ class TestProtochipsGasCellCSVNoUser():
             assert s.metadata.General.date == date
             assert s.metadata.General.time == time
             assert s.axes_manager[0].units == 's'
-            np.testing.assert_allclose(s.axes_manager[0].scale, 0.26029, atol=1E-5)
+            assert_allclose(s.axes_manager[0].scale, 0.26029, atol=1E-5)
             assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):
@@ -171,7 +173,7 @@ class TestProtochipsGasCellCSVReader():
     def test_read_data(self):
         gen = (self.pgc._data_dictionary[key]
                for key in self.pgc.logged_quantity_name_list)
-        data = np.vstack(list(gen))
+        data = np.vstack(gen)
         expected_data = np.load(os.path.join(
             dirpath, 'protochips_gas_cell.npy'))
         np.testing.assert_allclose(data.T, expected_data)
@@ -239,7 +241,7 @@ class TestProtochipsElectricalCSVReader():
     def test_read_data(self):
         gen = (self.pa._data_dictionary[key]
                for key in self.pa.logged_quantity_name_list)
-        data = np.vstack(list(gen))
+        data = np.vstack(gen)
         expected_data = np.load(os.path.join(
             dirpath, 'protochips_electrical.npy'))
         np.testing.assert_allclose(data.T, expected_data)
@@ -279,7 +281,7 @@ class TestProtochipsThermallCSVReader():
     def test_read_data(self):
         gen = (self.pt._data_dictionary[key]
                for key in self.pt.logged_quantity_name_list)
-        data = np.vstack(list(gen))
+        data = np.vstack(gen)
         expected_data = np.load(os.path.join(
             dirpath, 'protochips_thermal.npy'))
         np.testing.assert_allclose(data.T, expected_data)
@@ -332,7 +334,7 @@ class TestProtochipsElectrothermalCSVReader():
     def test_read_data(self):
         gen = (self.pet._data_dictionary[key]
                for key in self.pet.logged_quantity_name_list)
-        data = np.vstack(list(gen))
+        data = np.vstack(gen)
         expected_data = np.load(os.path.join(dirpath,
                                              self.filename.replace('.csv', '.npy')))
         np.testing.assert_allclose(data.T, expected_data)
