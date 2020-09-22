@@ -35,5 +35,5 @@ The :mod:`~hyperspy.api.plot` module contains the following submodules:
 """
 
 from hyperspy.drawing.utils import (plot_histograms, plot_images, plot_signals,
-                                    plot_spectra)
+                                    plot_spectra, plot_overlay_images)
 from hyperspy.utils import markers
