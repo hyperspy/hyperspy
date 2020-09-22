@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,16 +21,24 @@ __doc__ = """
 
 Components that can be used to define a 2D model for e.g. 2D model fitting.
 
-Writing a new template is really easy, just edit _template.py and maybe take a
-look to the other components.
+Writing a new template is easy: see the user guide documentation on creating
+components.
 
 For more details see each component docstring.
 ====================================================================
 """
 
-from hyperspy._components.gaussian2d import Gaussian2D
-from hyperspy._components.expression import Expression
 
+from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
+import importlib
+
+_g = globals()
+for _component, _specs in _EXTENSIONS["components2D"].items():
+    _g[_component] = getattr(
+        importlib.import_module(
+            _specs["module"]), _component)
+
+del importlib
 # Generating the documentation
 
 # Grab all the currently defined globals and make a copy of the keys

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,17 +20,19 @@ import logging
 
 import numpy as np
 import warnings
-import matplotlib
+from collections.abc import Iterable
 from matplotlib import pyplot as plt
-from distutils.version import LooseVersion
 
 from hyperspy import utils
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy.signals import LazySignal1D
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.plot import markers
+from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING_PARAMETERS,
+                                      PLOT1D_DOCSTRING)
+
 
 _logger = logging.getLogger(__name__)
 
@@ -120,10 +122,8 @@ class EDS_mixin:
             beam_energy = self.metadata.Acquisition_instrument.TEM.beam_energy
         else:
             raise AttributeError(
-                "To use this method the beam energy "
-                "`Acquisition_instrument.TEM.beam_energy` or "
-                "`Acquisition_instrument.SEM.beam_energy` must be defined in "
-                "`metadata`.")
+                "The beam energy is not defined in `metadata`. "
+                "Use `set_microscope_parameters` to set it.")
 
         units_name = self.axes_manager.signal_axes[0].units
 
@@ -147,8 +147,12 @@ class EDS_mixin:
         ax = self.axes_manager.signal_axes[0]
         low_value = ax.low_value
         high_value = ax.high_value
-        if self._get_beam_energy() < high_value:
-            high_value = self._get_beam_energy()
+        try:
+            if self._get_beam_energy() < high_value:
+                high_value = self._get_beam_energy()
+        except AttributeError:
+            # in case the beam energy is not defined in the metadata
+            pass
         xray_lines_in_range = []
         xray_lines_not_in_range = []
         for xray_line in xray_lines:
@@ -162,41 +166,60 @@ class EDS_mixin:
     def sum(self, axis=None, out=None):
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        # modify time spend per spectrum
         s = super().sum(axis=axis, out=out)
         s = out or s
-        if "Acquisition_instrument.SEM" in s.metadata:
-            mp = s.metadata.Acquisition_instrument.SEM
-            mp_old = self.metadata.Acquisition_instrument.SEM
-        else:
-            mp = s.metadata.Acquisition_instrument.TEM
-            mp_old = self.metadata.Acquisition_instrument.TEM
-        if mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
-                self.data.size / s.data.size
+
+        # Update live time by the change in navigation axes dimensions
+        time_factor = (
+               np.prod([ax.size for ax in self.axes_manager.navigation_axes])
+               / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
+            )
+        aimd = s.metadata.get_item('Acquisition_instrument', None)
+        if aimd is not None:
+            aimd = s.metadata.Acquisition_instrument
+            if "SEM.Detector.EDS.live_time" in aimd:
+                aimd.SEM.Detector.EDS.live_time *= time_factor
+            elif "TEM.Detector.EDS.live_time" in aimd:
+                aimd.TEM.Detector.EDS.live_time *= time_factor
+            else:
+                _logger.info("Live_time could not be found in the metadata and "
+                             "has not been updated.")
+
         if out is None:
             return s
     sum.__doc__ = Signal1D.sum.__doc__
 
-    def rebin(self, new_shape, out=None):
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) /
-                   np.array(new_shape_in_array))
-        s = super().rebin(new_shape, out=out)
-        s = out or s
-        # modify time per spectrum
-        this_md = self.metadata
-        that_md = s.metadata
-        keys = ("Acquisition_instrument.SEM.Detector.EDS.live_time",
-                "Acquisition_instrument.TEM.Detector.EDS.live_time")
-        for key in keys:
-            if key in this_md:
-                that_md.set_item(key, this_md.get_item(key) * np.prod(factors))
-        return s
-    sum.__doc__ = Signal1D.sum.__doc__
+    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+        factors = self._validate_rebin_args_and_get_factors(
+            new_shape=new_shape,
+            scale=scale,)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+        m = out or m
+        time_factor = np.prod([factors[axis.index_in_array]
+                               for axis in m.axes_manager.navigation_axes])
+        aimd = m.metadata.Acquisition_instrument
+        if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
+            aimd.SEM.Detector.EDS.real_time *= time_factor
+        elif "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
+            aimd.TEM.Detector.EDS.real_time *= time_factor
+        else:
+            _logger.info(
+                "real_time could not be found in the metadata and has not been updated.")
+        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
+            aimd.SEM.Detector.EDS.live_time *= time_factor
+        elif "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
+            aimd.TEM.Detector.EDS.live_time *= time_factor
+        else:
+            _logger.info(
+                "Live_time could not be found in the metadata and has not been updated.")
+
+        if out is None:
+            return m
+        else:
+            out.events.data_changed.trigger(obj=out)
+        return m
+
+    rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def set_elements(self, elements):
         """Erase all elements and set them.
@@ -279,7 +302,7 @@ class EDS_mixin:
                     only_lines=only_lines)
             else:
                 raise ValueError(
-                    "Not X-ray line, set them with `add_elements`")
+                    "Not X-ray line, set them with `add_elements`.")
         return xray_lines
 
     def set_lines(self,
@@ -464,7 +487,11 @@ class EDS_mixin:
         """
 
         only_lines = utils_eds._parse_only_lines(only_lines)
-        beam_energy = self._get_beam_energy()
+        try:
+            beam_energy = self._get_beam_energy()
+        except BaseException:
+            # Fall back to the high_value of the energy axis
+            beam_energy = self.axes_manager.signal_axes[0].high_value
         lines = []
         elements = [el if isinstance(el, str) else el.decode()
                     for el in elements]
@@ -497,6 +524,19 @@ class EDS_mixin:
         lines.sort()
         return lines
 
+    def _parse_xray_lines(self, xray_lines, only_one, only_lines):
+        only_lines = utils_eds._parse_only_lines(only_lines)
+        xray_lines = self._get_xray_lines(xray_lines, only_one=only_one,
+                                          only_lines=only_lines)
+        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
+            xray_lines)
+        for xray in xray_not_here:
+            warnings.warn("%s is not in the data energy range." % xray +
+                          "You can remove it with" +
+                          "s.metadata.Sample.xray_lines.remove('%s')"
+                          % xray)
+        return xray_lines
+
     def get_lines_intensity(self,
                             xray_lines=None,
                             integration_windows=2.,
@@ -517,7 +557,7 @@ class EDS_mixin:
 
         Parameters
         ----------
-        xray_lines: {None, "best", list of string}
+        xray_lines: {None, Iterable* of strings}
             If None,
             if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
@@ -527,6 +567,8 @@ class EDS_mixin:
             for the operation.
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
+            * Note that while dictionaries and strings are iterable,
+            their use is ambiguous and specifically not allowed.
         integration_windows: Float or array
             If float, the width of the integration windows is the
             'integration_windows_width' times the calculated FWHM of the line.
@@ -583,17 +625,15 @@ class EDS_mixin:
         plot
 
         """
+        if xray_lines is not None and \
+            (not isinstance(xray_lines, Iterable) or \
+            isinstance(xray_lines, (str, dict))):
 
-        only_lines = utils_eds._parse_only_lines(only_lines)
-        xray_lines = self._get_xray_lines(xray_lines, only_one=only_one,
-                                          only_lines=only_lines)
-        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
-            xray_lines)
-        for xray in xray_not_here:
-            warnings.warn("%s is not in the data energy range." % xray +
-                          "You can remove it with" +
-                          "s.metadata.Sample.xray_lines.remove('%s')"
-                          % xray)
+            raise TypeError(
+                "xray_lines must be a compatible iterable, but was "
+                "mistakenly provided as a %s." % type(xray_lines))
+
+        xray_lines = self._parse_xray_lines(xray_lines, only_one, only_lines)
         if hasattr(integration_windows, '__iter__') is False:
             integration_windows = self.estimate_integration_windows(
                 windows_width=integration_windows, xray_lines=xray_lines)
@@ -603,9 +643,8 @@ class EDS_mixin:
         # signal_to_index = self.axes_manager.navigation_dimension - 2
         for i, (Xray_line, window) in enumerate(
                 zip(xray_lines, integration_windows)):
-            line_energy, line_FWHM = self._get_line_energy(Xray_line,
-                                                           FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
+            line_energy = self._get_line_energy(Xray_line)
             img = self.isig[window[0]:window[1]].integrate1D(-1)
             if np.issubdtype(img.data.dtype, np.integer):
                 # The operations below require a float dtype with the default
@@ -652,9 +691,10 @@ class EDS_mixin:
         """Calculate the take-off-angle (TOA).
 
         TOA is the angle with which the X-rays leave the surface towards
-        the detector. Parameters are read in 'SEM.tilt_stage',
+        the detector. Parameters are read in 'SEM.Stage.tilt_alpha',
         'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle' and
-        'SEM.Detector.EDS.elevation_angle' in 'metadata'.
+        'SEM.Detector.EDS.elevation_angle' and 'SEM.Stage.tilt_beta in
+        'metadata'.
 
         Returns
         -------
@@ -673,25 +713,23 @@ class EDS_mixin:
         See also
         --------
         hs.eds.take_off_angle
-
-        Notes
-        -----
-        Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597
-        (2007)
         """
         if self.metadata.Signal.signal_type == "EDS_SEM":
             mp = self.metadata.Acquisition_instrument.SEM
         elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
-        tilt_stage = mp.tilt_stage
-        azimuth_angle = mp.Detector.EDS.azimuth_angle
-        elevation_angle = mp.Detector.EDS.elevation_angle
+        tilt_stage = mp.get_item('Stage.tilt_alpha', None)
+        azimuth_angle = mp.get_item('Detector.EDS.azimuth_angle', None)
+        elevation_angle = mp.get_item('Detector.EDS.elevation_angle', None)
+        beta_tilt = mp.get_item('Stage.tilt_beta', 0.0)
 
-        TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
-                                       elevation_angle)
-
-        return TOA
+        return utils.eds.take_off_angle(
+            tilt_stage,
+            azimuth_angle,
+            elevation_angle,
+            beta_tilt
+        )
 
     def estimate_integration_windows(self,
                                      windows_width=2.,
@@ -816,13 +854,18 @@ class EDS_mixin:
              only_one=False,
              background_windows=None,
              integration_windows=None,
+             navigator="auto",
+             plot_markers=True,
+             autoscale='v',
+             norm="auto",
+             axes_manager=None,
+             navigator_kwds={},
              **kwargs):
-        """
-        Plot the EDS spectrum. The following markers can be added
+        """Plot the EDS spectrum. The following markers can be added
 
         - The position of the X-ray lines and their names.
         - The background windows associated with each X-ray lines. A black line
-        links the left and right window with the average value in each window.
+          links the left and right window with the average value in each window.
 
         Parameters
         ----------
@@ -856,8 +899,8 @@ class EDS_mixin:
             'estimate_integration_windows'.
             Else provide an array for which each row corresponds to a X-ray
             line. Each row contains the left and right value of the window.
-        kwargs
-            The extra keyword arguments for plot()
+        %s
+        %s
 
         Examples
         --------
@@ -885,9 +928,18 @@ class EDS_mixin:
         set_elements, add_elements, estimate_integration_windows,
         get_lines_intensity, estimate_background_windows
         """
-        super().plot(**kwargs)
+        super().plot(navigator=navigator,
+                     plot_markers=plot_markers,
+                     autoscale=autoscale,
+                     norm=norm,
+                     axes_manager=axes_manager,
+                     navigator_kwds=navigator_kwds,
+                     **kwargs)
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
+
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING)
 
     def _plot_xray_lines(self, xray_lines=False, only_lines=("a", "b"),
                          only_one=False, background_windows=None,
@@ -908,12 +960,14 @@ class EDS_mixin:
                         only_one=only_one,
                         only_lines=only_lines)
                 else:
-                    raise ValueError(
+                    _logger.warning(
                         "No elements defined, set them with `add_elements`")
+                    # No X-rays lines, nothing to do then
+                    return
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
-                _logger.warn("%s is not in the data energy range." % xray)
+                _logger.warning("%s is not in the data energy range." % xray)
             xray_lines = np.unique(xray_lines)
             self.add_xray_lines_markers(xray_lines)
             if background_windows is not None:
@@ -941,15 +995,13 @@ class EDS_mixin:
             keywords argument for markers.vertical_line
         """
         per_xray = len(position[0])
-        if LooseVersion(matplotlib.__version__) >= "1.5.3":
-            colors = itertools.cycle(np.sort(
+        colors = itertools.cycle(np.sort(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
-        else:
-            colors = itertools.cycle(np.sort(
-                plt.rcParams['axes.color_cycle'] * per_xray))
+
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
     def add_xray_lines_markers(self, xray_lines):
         """
@@ -974,16 +1026,17 @@ class EDS_mixin:
         for i in range(len(line_energy)):
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
             string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
                       utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
                 x=line_energy[i], y=intensity[i] * 1.1, text=string,
                 rotation=90)
-            self.add_marker(text)
+            self.add_marker(text, render_figure=False)
             self._xray_markers[xray_lines[i]] = [line, text]
             line.events.closed.connect(self._xray_marker_closed)
             text.events.closed.connect(self._xray_marker_closed)
+        self._render_figure(plot=['signal_plot'])
 
     def _xray_marker_closed(self, obj):
         marker = obj
@@ -1009,7 +1062,8 @@ class EDS_mixin:
                 line_markers = self._xray_markers[xray_line]
                 while line_markers:
                     m = line_markers.pop()
-                    m.close()
+                    m.close(render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
     def _add_background_windows_markers(self,
                                         windows_position):
@@ -1046,12 +1100,13 @@ class EDS_mixin:
             line = markers.line_segment(
                 x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
 
 class EDSSpectrum(EDS_mixin, Signal1D):
     pass
 
 
-class LazyEDSSpectrum(EDS_mixin, LazySignal1D):
+class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):
     pass

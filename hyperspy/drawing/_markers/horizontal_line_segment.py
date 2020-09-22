@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -50,6 +50,7 @@ class HorizontalLineSegment(MarkerBase):
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
+
     >>> im = hs.signals.Signal2D(np.zeros((100, 100)))
     >>> m = hs.plot.markers.horizontal_line_segment(
     >>>     x1=10, x2=30, y=42, linewidth=4, color='red', linestyle='dotted')

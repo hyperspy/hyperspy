@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,16 +17,14 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from os import remove
 import tempfile
-
+from os import remove
 
 import numpy as np
 import pytest
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D, ComplexSignal
-
+from hyperspy.signals import BaseSignal, ComplexSignal, Signal1D, Signal2D
 
 my_path = os.path.dirname(__file__)
 
@@ -182,9 +180,3 @@ class TestCaseSaveAndReadByte():
 
     def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
-
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,24 +18,71 @@
 
 import numpy as np
 
-from hyperspy.component import Component
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy._components.expression import Expression
 
 
-class DoublePowerLaw(Component):
+class DoublePowerLaw(Expression):
 
+    r"""Double power law component for EELS spectra.
+
+    .. math::
+
+        f(x) = A \cdot [s_r \cdot (x - x_0 - x_s)^{-r} + (x - x_0)^{-r}]
+
+    ============= =============
+     Variable      Parameter
+    ============= =============
+     :math:`A`     A
+     :math:`r`     r
+     :math:`x_0`   origin
+     :math:`x_s`   shift
+     :math:`s_r`   ratio
+    ============= =============
+
+    Parameters
+    ----------
+    A : float
+        Height parameter.
+    r : float
+        Power law coefficient.
+    origin : float
+        Location parameter.
+    shift : float
+        Offset of second power law.
+    ratio : float
+        Height ratio of the two power law components.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
+    The `left_cutoff` parameter can be used to set a lower threshold from which
+    the component will return 0.
     """
-    """
 
-    def __init__(self, A=1e-5, r=3., origin=0.,):
-        Component.__init__(self, ('A', 'r', 'origin', 'shift', 'ratio'))
-        self.A.value = A
-        self.r.value = r
-        self.origin.value = origin
+    def __init__(self, A=1e-5, r=3., origin=0., shift=20., ratio=1., 
+                 left_cutoff=0.0, module="numexpr", compute_gradients=False, 
+                 **kwargs):
+        super(DoublePowerLaw, self).__init__(
+            expression="where(x > left_cutoff, \
+                        A * (ratio * (x - origin - shift) ** -r \
+                        + (x - origin) ** -r), 0)",
+            name="DoublePowerLaw",
+            A=A,
+            r=r,
+            origin=origin,
+            shift=shift,
+            ratio=ratio,
+            left_cutoff=left_cutoff,
+            position="origin",
+            autodoc=False,
+            module=module,
+            compute_gradients=compute_gradients,
+            **kwargs,
+        )
+
         self.origin.free = False
         self.shift.value = 20.
         self.shift.free = False
-        self.ratio.value = 1.E-2
-        self.left_cutoff = 20.  # in x-units
 
         # Boundaries
         self.A.bmin = 0.
@@ -46,63 +93,38 @@ class DoublePowerLaw(Component):
         self.isbackground = True
         self.convolved = False
 
-    def function(self, x):
-        """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the background model, returns the background
-        model for the current parameters.
-        """
-        a = self.A.value
-        b = self.ratio.value
-        s = self.shift.value
-        r = self.r.value
-        x0 = self.origin.value
-        return np.where(x > self.left_cutoff,
-                        a * (b / (-x0 + x - s) ** r + 1 / (x - x0) ** r),
-                        0)
+    def function_nd(self, axis):
+        """%s
 
+        """
+        return super().function_nd(axis)
+
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
+
+    # Define gradients
     def grad_A(self, x):
         return self.function(x) / self.A.value
 
-    def grad_ratio(self, x):
-        a = self.A.value
-        s = self.shift.value
-        r = self.r.value
-        x0 = self.origin.value
-        return np.where(x > self.left_cutoff, a / (-x0 + x - s) ** r, 0)
+    def grad_r(self, x):
+        return np.where(x > self.left_cutoff.value, -self.A.value * 
+                        self.ratio.value * (x - self.origin.value -
+                        self.shift.value) ** (-self.r.value) *
+                        np.log(x - self.origin.value - self.shift.value) -
+                        self.A.value * (x - self.origin.value) ** 
+                        (-self.r.value) * np.log(x - self.origin.value), 0)
 
     def grad_origin(self, x):
-        a = self.A.value
-        b = self.ratio.value
-        s = self.shift.value
-        r = self.r.value
-        x0 = self.origin.value
-        return np.where(
-            x > self.left_cutoff,
-            a * (
-                b * r * (-x0 + x - s) ** (-r - 1) +
-                r * (x - x0) ** (-r - 1)),
-            0)
+        return np.where(x > self.left_cutoff.value, self.A.value * self.r.value
+                        * self.ratio.value * (x - self.origin.value - self.shift.value) 
+                        ** (-self.r.value - 1) + self.A.value * self.r.value
+                        * (x - self.origin.value) ** (-self.r.value - 1), 0)
 
     def grad_shift(self, x):
-        a = self.A.value
-        b = self.ratio.value
-        s = self.shift.value
-        r = self.r.value
-        x0 = self.origin.value
-        return np.where(
-            x > self.left_cutoff, a * b * r * (-x0 + x - s) ** (-r - 1), 0)
+        return np.where(x > self.left_cutoff.value, self.A.value * self.r.value
+                        * self.ratio.value * (x - self.origin.value - 
+                        self.shift.value) ** (-self.r.value - 1), 0)
 
-    def grad_r(self, x):
-        a = self.A.value
-        b = self.ratio.value
-        s = self.shift.value
-        r = self.r.value
-        x0 = self.origin.value
-        return np.where(
-            x > self.left_cutoff,
-            a * (
-                -(b * np.log(-x0 + x - s)) /
-                (-x0 + x - s) ** r - np.log(x - x0) /
-                (x - x0) ** r),
-            0)
+    def grad_ratio(self, x):
+        return np.where(x > self.left_cutoff.value, self.A.value *
+                        (x - self.origin.value - self.shift.value) ** 
+                        (-self.r.value), 0)

@@ -1,7 +1,25 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.misc.utils import (DictionaryTreeBrowser, check_long_string,
+                                 replace_html_symbols)
 from hyperspy.signal import BaseSignal
 
 
@@ -166,3 +184,40 @@ class TestDictionaryBrowser:
         assert self.tree.get_item('Node1.Node31.leaf311', 44) == 44
         assert self.tree.get_item('Node1.Node21.leaf311', 44) == 44
         assert self.tree.get_item('.Node1.Node21.leaf311', 44) == 44
+
+    def test_html(self):
+        "Test that the method actually runs"
+        # We do not have a way to validate html
+        # without relying on more dependencies
+        tree = self.tree
+        tree['<myhtmltag>'] = "5 < 6"
+        tree['<mybrokenhtmltag'] = "<hello>"
+        tree['mybrokenhtmltag2>'] = ""
+        tree._get_html_print_items()
+
+def test_check_long_string():
+    max_len = 20
+    value = "Hello everyone this is a long string"
+    truth, shortened = check_long_string(value, max_len)
+    assert truth == False
+    assert shortened == 'Hello everyone this is a long string'
+
+    value = "No! It was not a long string! This is a long string!"
+    truth, shortened = check_long_string(value, max_len)
+    assert truth == True
+    assert shortened == 'No! It was not a lon ... is is a long string!'
+
+def test_replace_html_symbols():
+    assert '&lt;&gt;&amp' == replace_html_symbols('<>&')
+    assert 'no html symbols' == replace_html_symbols('no html symbols')
+    assert '&lt;mix&gt;' == replace_html_symbols('<mix>')
+
+def test_add_key_value():
+    key = "<foo>"
+    value = ">bar<"
+
+    string = """<ul style="margin: 0px; list-style-position: outside;">
+        <li style='margin-left:1em; padding-left: 0.5em'>{} = {}</li></ul>
+        """.format(replace_html_symbols(key), replace_html_symbols(value))
+
+    assert string == '<ul style="margin: 0px; list-style-position: outside;">\n        <li style=\'margin-left:1em; padding-left: 0.5em\'>&lt;foo&gt; = &gt;bar&lt;</li></ul>\n        '

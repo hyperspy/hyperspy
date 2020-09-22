@@ -6,7 +6,7 @@
 # Analytica Chimica Acta 350, no. 3 (September 19, 1997): 341-352.
 #
 # Copyright 1997 Darren T. Andrews and Peter D. Wentzell
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,94 +26,130 @@
 import logging
 
 import numpy as np
-import scipy.linalg
 
-from hyperspy.misc.machine_learning.import_sklearn import (
-    fast_svd, sklearn_installed)
+from hyperspy.learn.svd_pca import svd_solve
 
 _logger = logging.getLogger(__name__)
 
 
-def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
-    """
-    This function performs MLPCA with missing
-    data.
+def mlpca(
+    X, varX, output_dimension, svd_solver="auto", tol=1e-10, max_iter=50000, **kwargs
+):
+    """Performs maximum likelihood PCA with missing data and/or heteroskedastic noise.
+
+    Standard PCA based on a singular value decomposition (SVD) approach assumes
+    that the data is corrupted with Gaussian, or homoskedastic noise. For many
+    applications, this assumption does not hold. For example, count data from
+    EDS-TEM experiments is corrupted by Poisson noise, where the noise variance
+    depends on the underlying pixel value. Rather than scaling or transforming
+    the data to approximately "normalize" the noise, MLPCA instead uses estimates
+    of the data variance to perform the decomposition.
+
+    This function is a transcription of a MATLAB code obtained from [Andrews1997]_.
+
+    Read more in the :ref:`User Guide <mva.mlpca>`.
 
     Parameters
     ----------
-    X: numpy array
-        is the mxn matrix of observations.
-    stdX: numpy array
-        is the mxn matrix of standard deviations
-        associated with X (zeros for missing
-        measurements).
-    p: int
+    X : numpy array, shape (m, n)
+        Matrix of observations.
+    varX : numpy array
+        Matrix of variances associated with X
+        (zeros for missing measurements).
+    output_dimension : int
         The model dimensionality.
+    svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
+        If auto:
+            The solver is selected by a default policy based on `data.shape` and
+            `output_dimension`: if the input data is larger than 500x500 and the
+            number of components to extract is lower than 80% of the smallest
+            dimension of the data, then the more efficient "randomized"
+            method is enabled. Otherwise the exact full SVD is computed and
+            optionally truncated afterwards.
+        If full:
+            run exact SVD, calling the standard LAPACK solver via
+            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+        If arpack:
+            use truncated SVD, calling ARPACK solver via
+            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+            `0 < output_dimension < min(data.shape)`
+        If randomized:
+            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            to estimate a limited number of components
+    tol : float
+        Tolerance of the stopping condition.
+    max_iter : int
+        Maximum number of iterations before exiting without convergence.
 
     Returns
     -------
-    U,S,V: numpy array
-        are the pseudo-svd parameters.
-    Sobj: numpy array
-        is the value of the objective function.
-    ErrFlag: {0, 1}
-        indicates exit conditions:
-        0 = nkmal termination
-        1 = max iterations exceeded.
+    U, S, V: numpy array
+        The pseudo-SVD parameters.
+    s_obj : float
+        Value of the objective function.
+
+    References
+    ----------
+    .. [Andrews1997] Darren T. Andrews and Peter D. Wentzell, "Applications
+        of maximum likelihood principal component analysis: incomplete
+        data sets and calibration transfer", Analytica Chimica Acta 350,
+        no. 3 (September 19, 1997): 341-352.
 
     """
-    if fast is True and sklearn_installed is True:
-        def svd(X):
-            return fast_svd(X, p)
-    else:
-        def svd(X):
-            return scipy.linalg.svd(X, full_matrices=False)
-    XX = X
-#    varX = stdX**2
-    n = XX.shape[1]
+    m, n = X.shape
+
+    with np.errstate(divide="ignore"):
+        # Shouldn't really have zero variance anywhere,
+        # except for missing data but handle it here.
+        inv_v = 1.0 / varX
+        inv_v[~np.isfinite(inv_v)] = 1.0
+
     _logger.info("Performing maximum likelihood principal components analysis")
+
     # Generate initial estimates
     _logger.info("Generating initial estimates")
-    CV = np.cov(X)
-    U, S, Vh = svd(CV)
-    U0 = U
+    U, _, _ = svd_solve(np.cov(X), svd_solver=svd_solver, **kwargs)
+    U = U[:, :output_dimension]
+    s_old = 0.0
+
+    # Placeholders
+    F = np.empty((m, n))
+    M = np.zeros((m, n))
+    Uq = np.zeros((output_dimension, m))
 
     # Loop for alternating least squares
     _logger.info("Optimization iteration loop")
-    count = 0
-    Sold = 0
-    ErrFlag = -1
-    while ErrFlag < 0:
-        count += 1
-        Sobj = 0
-        MLX = np.zeros(XX.shape)
+    for itr in range(max_iter):  # pragma: no branch
+        s_obj = 0.0
+
         for i in range(n):
-            Q = np.diag((1 / (varX[:, i])).squeeze())
-            U0m = np.matrix(U0)
-            F = np.linalg.inv((U0m.T * Q * U0m))
-            MLX[:, i] = np.array(U0m * F * U0m.T * Q *
-                                 (np.matrix(XX[:, i])).T).squeeze()
-            dx = np.matrix((XX[:, i] - MLX[:, i]).squeeze())
-            Sobj += float(dx * Q * dx.T)
-        if (count % 2) == 1:
-            _logger.info("Iteration : %s" % (count / 2))
-            if (abs(Sold - Sobj) / Sobj) < convlim:
-                ErrFlag = 1
-            _logger.info("(abs(Sold - Sobj) / Sobj) = %s" %
-                         (abs(Sold - Sobj) / Sobj))
-            if count > maxiter:
-                ErrFlag = 1
+            Uq = U.T * inv_v[:, i]
+            F = np.linalg.inv(Uq @ U)
+            M[:, i] = np.linalg.multi_dot([U, F, Uq, X[:, i].T])
+            dx = X[:, i] - M[:, i]
+            s_obj += (dx * inv_v[:, i]) @ dx.T
 
-        if ErrFlag < 0:
-            Sold = Sobj
-            U, S, Vh = svd(MLX)
-            V = Vh.T
-            XX = XX.T
-            varX = varX.T
-            n = XX.shape[1]
-            U0 = V[:]
-    # Finished
+        # Every second iteration, check the stop criterion
+        if itr > 0 and itr % 2 == 0:
+            stop_criterion = np.abs(s_old - s_obj) / s_obj
+            _logger.info(f"Iteration: {itr // 2}, convergence: {stop_criterion}")
 
-    U, S, Vh = svd(MLX)
-    V = Vh.T
-    return U, S, V, Sobj, ErrFlag
+            if stop_criterion < tol:
+                break
+
+        # Transpose for next iteration
+        s_old = s_obj
+        _, _, V = svd_solve(M, svd_solver=svd_solver, **kwargs)
+
+        X = X.T
+        inv_v = inv_v.T
+        F = F.T
+        M = M.T
+
+        m, n = X.shape
+        U = V[:output_dimension].T
+
+    U, S, V = svd_solve(M, svd_solver=svd_solver, **kwargs)
+    V = V.T
+
+    return U, S, V, s_obj

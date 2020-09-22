@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,11 +23,7 @@ import os
 from dateutil import parser
 import logging
 import xml.etree.ElementTree as ET
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:
-    ordict = False
+from collections import OrderedDict
 
 import numpy as np
 import traits.api as t
@@ -35,7 +31,9 @@ import traits.api as t
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import DictionaryTreeBrowser, multiply
 
+
 _logger = logging.getLogger(__name__)
+
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -47,7 +45,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ser_extensions + emi_extensions
 default_extension = 0
-
 # Writing capabilities
 writes = False
 # ----------------------
@@ -162,6 +159,7 @@ def get_data_dtype_list(file, offset, record_by):
             ("ArrayLength", "<u4"),
             ("Array", (data_types[str(data_type)], array_size)),
         ]
+        shape = (array_size)
     elif record_by == 'image':  # Untested
         file.seek(offset + 40)
         data_type = readLEShort(file)
@@ -181,7 +179,8 @@ def get_data_dtype_list(file, offset, record_by):
             ("Array",
              (data_types[str(data_type)], (array_size_x, array_size_y))),
         ]
-    return header
+        shape = (array_size_x, array_size_y)
+    return header, shape
 
 
 def get_data_tag_dtype_list(data_type_id):
@@ -227,7 +226,12 @@ def parse_ExperimentalDescription(et, dictree):
         value = data.find("Value").text
         units = data.find("Unit").text
         item = label if not units else label + "_%s" % units
-        value = float(value) if units else value
+        try:
+            # try to coerce value to decimal representation
+            value = float(value) if units else value
+        except ValueError:
+            _logger.warning(f'Expected decimal value for {label}, '
+                            f'but received {value} instead')
         dictree[item] = value
 
 
@@ -262,6 +266,7 @@ def emi_reader(filename, dump_xml=False, **kwds):
     # generated then, it will possible to match to the corresponding ser file
     # and add the detector information in the metadata
     objects = get_xml_info_from_emi(filename)
+    orig_fname = filename
     filename = os.path.splitext(filename)[0]
     if dump_xml is True:
         for i, obj in enumerate(objects):
@@ -279,7 +284,14 @@ def emi_reader(filename, dump_xml=False, **kwds):
 
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
         op = DictionaryTreeBrowser(sers[-1]['original_metadata'])
-        emixml2dtb(ET.fromstring(objects[index]), op)
+
+        # defend against condition where more ser files are present than object
+        # metadata defined in emi
+        if index < len(objects):
+            emixml2dtb(ET.fromstring(objects[index]), op)
+        else:
+            _logger.warning(f'{orig_fname} did not contain any metadata for '
+                            f'{f}, so only .ser header information was read')
         sers[-1]['original_metadata'] = op.as_dictionary()
     return sers
 
@@ -313,18 +325,29 @@ def load_ser_file(filename):
         # OffsetArrayOffset can contain 4 or 8 bytes integer depending if the
         # data have been acquired using a 32 or 64 bits platform.
         if header['SeriesVersion'] <= 528:
-            data_offsets = readLELong(f)
+            data_offset = readLELong(f)
+            data_offset_array = np.fromfile(f,
+                                            dtype="<u4",
+                                            count=header["ValidNumberElements"][0])
         else:
-            data_offsets = readLELongLong(f)
-        data_dtype_list = get_data_dtype_list(
+            data_offset = readLELongLong(f)
+            data_offset_array = np.fromfile(f,
+                                            dtype="<u8",
+                                            count=header["ValidNumberElements"][0])
+        data_dtype_list, shape = get_data_dtype_list(
             f,
-            data_offsets,
+            data_offset,
             guess_record_by(header['DataTypeID']))
         tag_dtype_list = get_data_tag_dtype_list(header['TagTypeID'])
-        f.seek(data_offsets)
-        data = np.fromfile(f,
-                           dtype=np.dtype(data_dtype_list + tag_dtype_list),
-                           count=header["TotalNumberElements"][0])
+        f.seek(data_offset)
+        data = np.empty(header["ValidNumberElements"][0],
+                        dtype=np.dtype(data_dtype_list + tag_dtype_list))
+        for i, offset in enumerate(data_offset_array):
+            data[i] = np.fromfile(f,
+                                  dtype=np.dtype(
+                                      data_dtype_list + tag_dtype_list),
+                                  count=1)
+            f.seek(offset)
         _logger.info("Data info:")
         log_struct_array_values(data[0])
     return header, data
@@ -458,7 +481,7 @@ def convert_xml_to_dict(xml_object):
     return op
 
 
-def ser_reader(filename, objects=None, *args, **kwds):
+def ser_reader(filename, objects=None, lazy=False, only_valid_data=False):
     """Reads the information from the file and returns it in the HyperSpy
     required format.
 
@@ -469,7 +492,12 @@ def ser_reader(filename, objects=None, *args, **kwds):
     date, time = None, None
     if objects is not None:
         objects_dict = convert_xml_to_dict(objects[0])
-        date, time = _get_date_time(objects_dict.ObjectInfo.AcquireDate)
+        try:
+            acq_date = objects_dict.ObjectInfo.AcquireDate
+            date, time = _get_date_time(acq_date)
+        except AttributeError:
+            _logger.warning(f'AcquireDate not found in metadata of {filename};'
+                            ' Not setting metadata date or time')
     if "PositionY" in data.dtype.names and len(data['PositionY']) > 1 and \
             (data['PositionY'][0] == data['PositionY'][1]):
         # The spatial dimensions are stored in F order i.e. X, Y, ...
@@ -505,8 +533,20 @@ def ser_reader(filename, objects=None, *args, **kwds):
                     'size': header['Dim-%i_DimensionSize' % idim][0],
                     'name': name,
                 })
-                array_shape[i] = \
-                    header['Dim-%i_DimensionSize' % idim][0]
+                array_shape[i] = header['Dim-%i_DimensionSize' % idim][0]
+
+        # Deal with issue when TotalNumberElements does not equal
+        # ValidNumberElements for ndim==1.
+        if ndim == 1 and (header['TotalNumberElements']
+                          != header['ValidNumberElements'][0]) and only_valid_data:
+            if header['ValidNumberElements'][0] == 1:
+                # no need for navigation dimension
+                array_shape = []
+                axes = []
+            else:
+                array_shape[0] = header['ValidNumberElements'][0]
+                axes[0]['size'] = header['ValidNumberElements'][0]
+
     # Spectral dimension
     if record_by == "spectrum":
         axes.append({
@@ -538,7 +578,6 @@ def ser_reader(filename, objects=None, *args, **kwds):
             'size': data['ArraySizeY'][0],
         })
         array_shape.append(data['ArraySizeY'][0])
-
         # X axis
         axes.append({
             'name': 'x',
@@ -549,6 +588,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
             'units': units,
         })
         array_shape.append(data['ArraySizeX'][0])
+
     # FEI seems to use the international system of units (SI) for the
     # spatial scale. However, we prefer to work in nm
     for axis in axes:
@@ -556,26 +596,25 @@ def ser_reader(filename, objects=None, *args, **kwds):
             axis['units'] = 'nm'
             axis['scale'] *= 10 ** 9
         elif axis['units'] == '1/meters':
-            axis['units'] = '1/nm'
+            axis['units'] = '1 / nm'
             axis['scale'] /= 10 ** 9
+
     # Remove Nones from array_shape caused by squeezing size 1 dimensions
     array_shape = [dim for dim in array_shape if dim is not None]
-    lazy = kwds.pop('lazy', False)
     if lazy:
         from dask import delayed
         from dask.array import from_delayed
         val = delayed(load_only_data, pure=True)(filename, array_shape,
-                                                 record_by, len(axes))
+                                                 record_by, len(axes),
+                                                 only_valid_data=only_valid_data)
         dc = from_delayed(val, shape=array_shape,
                           dtype=data['Array'].dtype)
     else:
         dc = load_only_data(filename, array_shape, record_by, len(axes),
-                            data=data)
+                            data=data, header=header,
+                            only_valid_data=only_valid_data)
 
-    if ordict:
-        original_metadata = OrderedDict()
-    else:
-        original_metadata = {}
+    original_metadata = OrderedDict()
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
     # We remove the Array key to save memory avoiding duplication
@@ -601,20 +640,29 @@ def ser_reader(filename, objects=None, *args, **kwds):
     return dictionary
 
 
-def load_only_data(filename, array_shape, record_by, num_axes, data=None):
+def load_only_data(filename, array_shape, record_by, num_axes, data=None,
+                   header=None, only_valid_data=False):
     if data is None:
-        _, data = load_ser_file(filename)
+        header, data = load_ser_file(filename)
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore
     # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
     if multiply(array_shape) != multiply(data['Array'].shape):
-        dc = np.zeros(multiply(array_shape),
-                      dtype=data['Array'].dtype)
-        if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
-            dc[:] = np.nan
-        dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
+        if int(header['NumberDimensions']) == 1 and only_valid_data:
+            # No need to fill with zeros if `TotalNumberElements !=
+            # ValidNumberElements` for series data.
+            # The valid data is always `0:ValidNumberElements`
+            dc = data['Array'][0:header['ValidNumberElements'][0], ...]
+            array_shape[0] = header['ValidNumberElements'][0]
+        else:
+            # Maps will need to be filled with zeros or nans
+            dc = np.zeros(multiply(array_shape),
+                          dtype=data['Array'].dtype)
+            if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
+                dc[:] = np.nan
+            dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
     else:
         dc = data['Array']
 
@@ -678,10 +726,6 @@ def _get_simplified_mode(mode):
         return "TEM"
 
 
-def _get_degree(value):
-    return np.degrees(float(value))
-
-
 def _get_date_time(value):
     dt = parser.parse(value)
     return dt.date().isoformat(), dt.time().isoformat()
@@ -689,6 +733,7 @@ def _get_date_time(value):
 
 def _get_microscope_name(value):
     return value.replace('Microscope ', '')
+
 
 mapping = {
     "ObjectInfo.ExperimentalDescription.High_tension_kV": (
@@ -706,9 +751,27 @@ mapping = {
     "ObjectInfo.ExperimentalDescription.Magnification_x": (
         "Acquisition_instrument.TEM.magnification",
         None),
-    "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
-        "Acquisition_instrument.TEM.tilt_stage",
-        _get_degree),
+    "ObjectInfo.AcquireInfo.CameraNamePath": (
+        "Acquisition_instrument.TEM.Detector.Camera.Name",
+        None),
+    "ObjectInfo.AcquireInfo.DwellTimePath": (
+        "Acquisition_instrument.TEM.Detector.Camera.exposure",
+        None),
+    "ObjectInfo.ExperimentalDescription.Stage_A_deg": (
+        "Acquisition_instrument.TEM.Stage.tilt_alpha",
+        None),
+    "ObjectInfo.ExperimentalDescription.Stage_B_deg": (
+        "Acquisition_instrument.TEM.Stage.tilt_beta",
+        None),
+    "ObjectInfo.ExperimentalDescription.Stage_X_um": (
+        "Acquisition_instrument.TEM.Stage.x",
+        lambda x: x * 1e-3),
+    "ObjectInfo.ExperimentalDescription.Stage_Y_um": (
+        "Acquisition_instrument.TEM.Stage.y",
+        lambda x: x * 1e-3),
+    "ObjectInfo.ExperimentalDescription.Stage_Z_um": (
+        "Acquisition_instrument.TEM.Stage.z",
+        lambda x: x * 1e-3),
     "ObjectInfo.ExperimentalDescription.User": (
         "General.authors",
         None),

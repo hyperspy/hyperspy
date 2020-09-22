@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -50,6 +50,7 @@ class Text(MarkerBase):
     >>> s.add_marker(m)
 
     Add a marker permanently to a signal
+
     >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
     >>> m = hs.plot.markers.text(5, 5, "a_text")
     >>> s.add_marker(m, permanent=True)

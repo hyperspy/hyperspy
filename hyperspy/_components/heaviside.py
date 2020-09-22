@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,54 +17,58 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 
-class HeavisideStep(Component):
+class HeavisideStep(Expression):
 
-    """The Heaviside step function
+    r"""The Heaviside step function.
+
+    Based on the corresponding `numpy function
+    <https://numpy.org/doc/stable/reference/generated/numpy.heaviside.html>`_
+    using the half maximum definition for the central point:
 
     .. math::
 
         f(x) =
-        \\begin{cases}
-          0     $ \\quad \\text{if } x < n \\\\
-          A/2     $ \\quad \\text{if } x = n \\\\
-          A     $ \\quad \\text{if } x > n \\\\
-        \\end{cases}
+        \begin{cases}
+        0 & x<n\\
+        A/2 & x=n\\
+        A & x>n
+        \end{cases}
 
+
+    ============== =============
+    Variable        Parameter
+    ============== =============
+    :math:`n`       centre
+    :math:`A`       height
+    ============== =============
+
+
+    Parameters
+    -----------
+    n : float
+        Location parameter defining the x position of the step.
+    A : float
+        Height parameter for x>n.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
     """
 
-    def __init__(self, A=1, n=0):
-        Component.__init__(self, ('n', 'A'))
-        self.A.value = A
-        self.n.value = n
+    def __init__(self, A=1., n=0., module="numpy", compute_gradients=True,
+                 **kwargs):
+        super(HeavisideStep, self).__init__(
+            expression="A*heaviside(x-n,0.5)",
+            name="HeavisideStep",
+            A=A,
+            n=n,
+            position="n",
+            module=module,
+            autodoc=False,
+            compute_gradients=compute_gradients,
+            **kwargs)
+
         self.isbackground = True
         self.convolved = False
 
-        # Gradients
-        self.A.grad = self.grad_A
-        self.n.grad = self.grad_n
-
-    def function(self, x):
-        x = np.asanyarray(x)
-        return np.where(x < self.n.value,
-                        0,
-                        np.where(x == self.n.value,
-                                 self.A.value * 0.5,
-                                 self.A.value)
-                        )
-
-    def grad_A(self, x):
-        x = np.asanyarray(x)
-        return np.ones(x.shape)
-
-    def grad_n(self, x):
-        x = np.asanyarray(x)
-        return np.where(x < self.n.value,
-                        0,
-                        np.where(x == self.n.value,
-                                 0.5,
-                                 1)
-                        )
