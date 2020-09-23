@@ -33,6 +33,15 @@ functions will return a list of the corresponding signal.
     in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
+HyperSpy will attempt to infer the appropriate file reader to use based on
+the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
+override this using the ``reader`` keyword:
+
+.. code-block:: python
+
+    # Load a .hspy file with an unknown extension
+    >>> s = hs.load("filename.some_extension", reader="hspy")
+
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
 providing the ``signal`` keyword, which has to be one of: ``spectrum``,
@@ -1127,10 +1136,17 @@ Nexus uses a variety of classes to record data, values,
 units and other experimental metadata associated with an experiment.
 For specific types of experiments an Application Definition may exist which
 defines an agreed common layout that facilities can adhere to.
+
 Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this io plugin.
-Using the ``.nxs`` extension will default to the Nexus loader
+Using the ``.nxs`` extension will default to the Nexus loader. If your file has
+a HDF5 extension, you can also explicitly set the Nexus file reader:
+
+.. code-block:: python
+
+    # Load a NeXus file with a .h5 extension
+    >>> s = hs.load("filename.h5", reader="nxs")
 
 The loader will follow version 3 of the
 `Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
