@@ -449,7 +449,7 @@ def file_reader(filename, lazy=False, dataset_keys=None,
     mapping = kwds.get('mapping', {})
     original_metadata = {}
     learning = {}
-    fin = h5py.File(filename, "r+")
+    fin = h5py.File(filename, "r+" if lazy else "r")
     signal_dict_list = []
 
     dataset_keys = _check_search_keys(dataset_keys)
