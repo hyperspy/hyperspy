@@ -484,6 +484,18 @@ class Test_vacum_mask:
         assert not s.vacuum_mask().data[-1]
 
 
+@pytest.mark.parametrize('normalise_poissonian_noise', [True, False])
+def test_decomposition(normalise_poissonian_noise):
+    s = EDSTEMSpectrum(np.ones(shape=(32, 32, 1024)))
+    s.add_poissonian_noise()
+    # default uses `vacuum_mask`
+    s.decomposition(normalise_poissonian_noise)
+
+    # test with numpy array mask
+    mask = s.vacuum_mask().data
+    s.decomposition(normalise_poissonian_noise, navigation_mask=mask)
+
+
 @lazifyTestClass
 class Test_simple_model:
 
