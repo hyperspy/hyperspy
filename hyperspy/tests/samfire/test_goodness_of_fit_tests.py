@@ -17,9 +17,9 @@
 
 import numpy as np
 
+from hyperspy.components1d import Lorentzian
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Signal1D
-from hyperspy.components1d import Lorentzian
 
 
 class TestRedChisq:
@@ -71,7 +71,7 @@ class TestInformationCriteria:
         m = Signal1D(np.arange(30).reshape((3, 10))).create_model()
         m.append(Lorentzian())
         # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.multifit(show_progressbar=False, iterpath='serpentine')
+        m.multifit(iterpath='serpentine')
         self.m = m
         # have to be imported here, as otherwise crashes nosetools
         from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory \

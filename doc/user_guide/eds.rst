@@ -779,6 +779,8 @@ number of atoms per pixel for each element.
   rather than spectrum images, the pixel area should be added to the
   metadata as above.
 
+.. _eds_absorption-label:
+
 Absorption Correction
 ^^^^^^^^^^^^^^^^^^^^^
 

@@ -16,21 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import math
 import logging
 
 import numpy as np
 import scipy as sp
 
+from pathlib import Path
+
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.physical_constants import R, a0
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
 
 _logger = logging.getLogger(__name__)
+
+
+R = sp.constants.value("Rydberg constant times hc in eV")
+a0 = sp.constants.value("Bohr radius")
 
 
 class HartreeSlaterGOS(GOSBase):
@@ -96,14 +100,6 @@ class HartreeSlaterGOS(GOSBase):
             self.read_elements()
             self._load_dictionary(element_subshell)
         else:
-            # Check if the Peter Rez's Hartree Slater GOS distributed by
-            # Gatan are available. Otherwise exit
-            if not os.path.isdir(preferences.EELS.eels_gos_files_path):
-                raise IOError(
-                    "The parametrized Hartree-Slater GOS files could not "
-                    "found in %s ." % preferences.EELS.eels_gos_files_path +
-                    "Please define a valid location for the files "
-                    "in the preferences.")
             self.element, self.subshell = element_subshell.split('_')
             self.read_elements()
             self.readgosfile()
@@ -120,20 +116,35 @@ class HartreeSlaterGOS(GOSBase):
         return dic
 
     def readgosfile(self):
-        info_str = (
-            "Hartree-Slater GOS\n" +
-            ("\tElement: %s " % self.element) +
-            ("\tSubshell: %s " % self.subshell) +
-            ("\tOnset Energy = %s " % self.onset_energy))
-        _logger.info(info_str)
+        _logger.info(
+            "Hartree-Slater GOS\n"
+            f"\tElement: {self.element} "
+            f"\tSubshell: {self.subshell}"
+            f"\tOnset Energy = {self.onset_energy}"
+        )
         element = self.element
         subshell = self.subshell
-        filename = os.path.join(
-            preferences.EELS.eels_gos_files_path,
-            (elements[element]['Atomic_properties']['Binding_energies']
-             [subshell]['filename']))
 
-        with open(filename) as f:
+        # Check if the Peter Rez's Hartree Slater GOS distributed by
+        # Gatan are available. Otherwise exit
+        gos_root = Path(preferences.EELS.eels_gos_files_path)
+        gos_file = gos_root.joinpath(
+            (
+                elements[element]["Atomic_properties"]["Binding_energies"][subshell][
+                    "filename"
+                ]
+            )
+        )
+
+        if not gos_root.is_dir():
+            raise FileNotFoundError(
+                "Parametrized Hartree-Slater GOS files not "
+                f"found in {gos_root}. Please define a valid "
+                "location for the files in the preferences as "
+                "`preferences.EELS.eels_gos_files_path`."
+            )
+
+        with open(gos_file) as f:
             GOS_list = f.read().replace('\r', '').split()
 
         # Map the parameters

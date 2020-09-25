@@ -107,7 +107,7 @@ class ElidReader:
         (id, version) = struct.unpack('<4si', self._read(8))
         if id != b'EID2':
             raise Exception('not an ELID file')
-        if version > 1:
+        if version > 2:
             raise Exception('unsupported ELID format')
         self._version = version
         self.dictionaries = self._read_Project()
@@ -252,6 +252,15 @@ class ElidReader:
         n = self._read_uint32()
         return [self._read_element_family() for _ in range(n)]
 
+    def _read_drift_correction(self):
+        dc = self._read_uint8()
+        if dc == 1:
+            return 'on'
+        elif dc == 2:
+            return 'off'
+        else:
+            return 'unknown'
+
     def _read_eds_metadata(self, om):
         metadata = {}
         metadata['high_tension'] = self._read_float64()
@@ -293,6 +302,10 @@ class ElidReader:
         eds_metadata['auto_id'] = self._read_bool()
         eds_metadata['order_nr'] = self._read_int32()
         eds_metadata['family_overrides'] = self._read_element_families()
+        if self._version >= 2:
+            eds_metadata['drift_correction'] = self._read_drift_correction()
+        else:
+            eds_metadata['drift_correction'] = 'unknown'
         if metadata:
             metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
         else:
@@ -301,23 +314,24 @@ class ElidReader:
             metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
         return (metadata, data)
 
-    def _make_metadata_dict(self, signal_type, title, datetime):
-        dict = {
+    def _make_metadata_dict(self, signal_type=None, title="", datetime=None):
+        metadata_dict = {
             'General': {
                 'original_filename': os.path.split(self._pathname)[1],
                 'title': title
-            },
-            'Signal': {
-                'signal_type': signal_type
             }
         }
+        if signal_type:
+            metadata_dict['Signal'] = {
+                'signal_type': signal_type
+                }
         if datetime:
-            dict['General'].update({
+            metadata_dict['General'].update({
                 'date': datetime[0],
                 'time': datetime[1],
                 'time_zone': self._get_local_time_zone()
             })
-        return dict
+        return metadata_dict
 
     def _get_local_time_zone(self):
         return tz.tzlocal().tzname(datetime.today())
@@ -474,7 +488,7 @@ class ElidReader:
         dict = {
             'data': data,
             'axes': axes,
-            'metadata': self._make_metadata_dict('image', title, self._get_datetime(om)),
+            'metadata': self._make_metadata_dict('', title, self._get_datetime(om)),
             'original_metadata': om,
             'mapping': self._make_mapping()
         }

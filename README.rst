@@ -1,9 +1,13 @@
 .. -*- mode: rst -*-
 
-|Azure|_ |Travis|_ |Codecov|_ |rtd|_ |pypi_version|_ |python_version|_ |gitter|_
+|Azure|_ |Travis|_ |rtd|_ |Codecov|_
+
+|python_version|_ |pypi_version|_ |anaconda_cloud|_
+
+|gitter|_ |DOI|_
 
 .. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
-.. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build/latest?definitionId=1?branchName=RELEASE_next_minor
+.. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build?definitionId=1&_a=summary&view=branches
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_minor
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
@@ -17,11 +21,17 @@
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
 
+.. |anaconda_cloud| image:: https://anaconda.org/conda-forge/hyperspy/badges/version.svg
+.. _anaconda_cloud: https://anaconda.org/conda-forge/hyperspy
+
 .. |python_version| image:: https://img.shields.io/pypi/pyversions/hyperspy.svg?style=flat
 .. _python_version: https://pypi.python.org/pypi/hyperspy
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
+.. |DOI| image:: https://zenodo.org/badge/2233998.svg
+.. _DOI: https://zenodo.org/badge/latestdoi/2233998
 
 
 HyperSpy is an open source Python library for the interactive analysis of
@@ -48,12 +58,4 @@ Contributing
 Everyone is welcome to contribute. Please read our
 `contributing guidelines <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md>`_ and get started!
 
-Cite
-----
 
-If you use HyperSpy in a scientific publication, please cite the following DOI:
-
-|DOI|_
-
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.3396791.svg
-.. _DOI: https://doi.org/10.5281/zenodo.3396791

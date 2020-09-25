@@ -291,16 +291,16 @@ class EDSTEM_mixin:
                        intensities,
                        method,
                        factors,
-                       composition_units = 'atomic',
-                       absorption_correction = False,
-                       take_off_angle = 'auto',
-                       thickness = 'auto',
-                       convergence_criterion = 0.5,
-                       navigation_mask = 1.0,
-                       closing = True,
-                       plot_result = False,
-                       probe_area = 'auto',
-                       max_iterations = 30,
+                       composition_units='atomic',
+                       absorption_correction=False,
+                       take_off_angle='auto',
+                       thickness='auto',
+                       convergence_criterion=0.5,
+                       navigation_mask=1.0,
+                       closing=True,
+                       plot_result=False,
+                       probe_area='auto',
+                       max_iterations=30,
                        **kwargs):
         """
         Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
@@ -342,7 +342,8 @@ class EDSTEM_mixin:
             The navigation locations marked as True are not used in the
             quantification. If float is given the vacuum_mask method is used to
             generate a mask with the float value as threhsold.
-            Else provides a signal with the navigation shape.
+            Else provides a signal with the navigation shape. Only for the
+            'Cliff-Lorimer' method.
         closing: bool
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
@@ -389,9 +390,7 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
-        elif navigation_mask is not None:
-            navigation_mask = navigation_mask.data
+            navigation_mask = self.vacuum_mask(navigation_mask, closing)
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
@@ -421,32 +420,30 @@ class EDSTEM_mixin:
 
         abs_corr_factor = None # initial
 
+        quant_kwargs = {"intensities" : int_stack.data,
+                        "absorption_correction" : abs_corr_factor}
+
         if method == 'CL':
             quantification_method = utils_eds.quantification_cliff_lorimer
-            kwargs = {"intensities" : int_stack.data,
-                    "kfactors" : factors,
-                    "absorption_correction" : abs_corr_factor}
+            quant_kwargs.update({"kfactors" : factors,
+                                 "mask": navigation_mask})
 
         elif method == 'zeta':
             quantification_method = utils_eds.quantification_zeta_factor
-            kwargs = {"intensities" : int_stack.data,
-                    "zfactors" : factors,
-                    "dose" : self._get_dose(method),
-                    "absorption_correction" : abs_corr_factor}
+            quant_kwargs.update({"zfactors" : factors,
+                                 "dose" : self._get_dose(method)})
 
         elif method =='cross_section':
             quantification_method = utils_eds.quantification_cross_section
-            kwargs = {"intensities" : int_stack.data,
-                    "cross_sections" : factors,
-                    "dose" : self._get_dose(method, **kwargs),
-                    "absorption_correction" : abs_corr_factor}
+            quant_kwargs.update({"cross_sections" : factors,
+                                 "dose" : self._get_dose(method)})
 
         else:
             raise ValueError('Please specify method for quantification, '
-                             'as \'CL\', \'zeta\' or \'cross_section\'.')
+                             'as "CL", "zeta" or "cross_section".')
 
         while True:
-            results = quantification_method(**kwargs)
+            results = quantification_method(**quant_kwargs)
 
             if method == 'CL':
                 composition.data = results * 100.
@@ -457,9 +454,11 @@ class EDSTEM_mixin:
                                                                 thickness)
                         mass_thickness.metadata.General.title = 'Mass thickness'
                     else:
-                        warnings.warn('Thickness is required for absorption '
-                        'correction with k-factor method. Results will contain '
-                        'no correction for absorption.')
+                        raise ValueError(
+                            'Thickness is required for absorption '
+                            'correction with k-factor method. Results will contain '
+                            'no correction for absorption.'
+                        )
 
             elif method == 'zeta':
                 composition.data = results[0] * 100
@@ -475,13 +474,13 @@ class EDSTEM_mixin:
                                                        number_of_atoms.split(),
                                                        toa,
                                                        probe_area)
-                kwargs["absorption_correction"] = abs_corr_factor
+                quant_kwargs["absorption_correction"] = abs_corr_factor
             else:
                 if absorption_correction:
                     abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
                                                        mass_thickness,
                                                        toa)
-                    kwargs["absorption_correction"] = abs_corr_factor
+                    quant_kwargs["absorption_correction"] = abs_corr_factor
 
             res_max = np.max((composition - comp_old).data)
             comp_old.data = composition.data
@@ -555,9 +554,6 @@ class EDSTEM_mixin:
                 return composition, mass_thickness
             else:
                 return composition
-        else:
-            raise ValueError('Please specify method for quantification, as \
-            ''CL\', \'zeta\' or \'cross_section\'')
 
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
@@ -574,6 +570,11 @@ class EDSTEM_mixin:
         opnening: bool
             If true, applied a morphologic opening to the mask
 
+        Returns
+        -------
+        mask: signal
+            The mask of the region
+
         Examples
         --------
         >>> # Simulate a spectrum image with vacuum region
@@ -584,11 +585,6 @@ class EDSTEM_mixin:
         >>> si = hs.stack([s]*3 + [s_vac])
         >>> si.vacuum_mask().data
         array([False, False, False,  True], dtype=bool)
-
-        Return
-        ------
-        mask: signal
-            The mask of the region
         """
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
@@ -624,7 +620,7 @@ class EDSTEM_mixin:
         closing: bool, default True
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
-        algorithm : {"svd", "mlpca", "sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", "rpca", "orpca", "ornmf", custom object}, default "svd"
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -634,25 +630,25 @@ class EDSTEM_mixin:
         centre : {None, "navigation", "signal"}, default None
             * If None, the data is not centered prior to decomposition.
             * If "navigation", the data is centered along the navigation axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
             * If "signal", the data is centered along the signal axis.
-              Only used by the "svd" algorithm.
+              Only used by the "SVD" algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only used by the "svd" algorithm.
+            Only used by the "SVD" algorithm.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm.
-            Only used by the "mlpca" algorithm.
+            Only used by the "MLPCA" algorithm.
         var_func : None or function or numpy array, default None
             * If None, ignored
             * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "mlpca" algorithm.
+              Only used by the "MLPCA" algorithm.
             * If numpy array, creates ``var_array`` by applying a polynomial function
               defined by the array of coefficients to the data. Only used by
-              the "mlpca" algorithm.
+              the "MLPCA" algorithm.
         reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
@@ -706,7 +702,7 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
+            navigation_mask = self.vacuum_mask(navigation_mask, closing)
         super().decomposition(
             normalize_poissonian_noise=normalize_poissonian_noise,
             navigation_mask=navigation_mask, *args, **kwargs)

@@ -31,31 +31,31 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     r"""Voigt lineshape.
 
     The voigt peak is the convolution of a Lorentz peak with a Gaussian peak:
-    
-    .. math:: 
-        f(x) = G(x) \cdot L(x) 
 
-    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
-    Lorentzian function. In this case using an approximate formula by David 
+    .. math::
+        f(x) = G(x) \cdot L(x)
+
+    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the
+    Lorentzian function. In this case using an approximate formula by David
     (see Notes). This approximation improves on the pseudo-Voigt function
     (linear combination instead of convolution of the distributions) and is,
     to a very good approximation, equivalent to a Voigt function:
 
-    .. math:: 
+    .. math::
         z(x) &= \frac{x + i \gamma}{\sqrt{2} \sigma} \\
         w(z) &= \frac{e^{-z^2} \text{erfc}(-i z)}{\sqrt{2 \pi} \sigma} \\
         f(x) &= A \cdot \Re\left\{ w \left[ z(x - x_0) \right] \right\}
 
 
     ============== =============
-    Variable        Parameter 
+    Variable        Parameter
     ============== =============
-    :math:`x_0`     center 
+    :math:`x_0`     center
     :math:`A`       scale
     :math:`\gamma`  gamma
     :math:`\sigma`  sigma
     ============== =============
-    
+
 
     Parameters
     ----------
@@ -84,18 +84,18 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
 class Voigt(Component):
     # Legacy class to be removed in v2.0
 
-    """This is the legacy Voigt profile component dedicated to photoemission 
+    """This is the legacy Voigt profile component dedicated to photoemission
     spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
     the new Voigt lineshape component set `legacy=False`. See the
-    documentation of :meth:`hyperspy._components.voigt.Voigt` for details on 
-    the usage of the new Voigt component and 
-    :meth:`hyperspy._components.pes_voigt.PESVoigt` for the legacy component. 
+    documentation of :meth:`hyperspy._components.voigt.Voigt` for details on
+    the usage of the new Voigt component and
+    :meth:`hyperspy._components.pes_voigt.PESVoigt` for the legacy component.
 
-    .. math:: 
-        f(x) = G(x) \cdot L(x) 
+    .. math::
+        f(x) = G(x) \cdot L(x)
 
-    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
-    Lorentzian function. This component uses an approximate formula by David 
+    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the
+    Lorentzian function. This component uses an approximate formula by David
     (see Notes).
 
 
@@ -107,11 +107,12 @@ class Voigt(Component):
     """
 
     def __init__(self, legacy=True, **kwargs):
+        self.legacy = legacy
         if legacy:
             from hyperspy.misc.utils import deprecation_warning
             msg = (
                 "The API of the `Voigt` component will change in v2.0. "
-                "This component will become `PESVoigt`."
+                "This component will become `PESVoigt`. "
                 "To use the new API set `legacy=False`.")
             deprecation_warning(msg)
 
@@ -124,34 +125,34 @@ class Voigt(Component):
 
     @property
     def gwidth(self):
-        if legacy is False:
+        if not self.legacy:
             return super().sigma.value * sigma2fwhm
 
     @gwidth.setter
     def gwidth(self, value):
-        if legacy is False:
+        if not self.legacy:
             super(Voigt, self.__class__).sigma.value.fset(self, value
                                                                 / sigma2fwhm)
 
     @property
     def FWHM(self):
-        if legacy is False:
+        if not self.legacy:
             return super().sigma.value * sigma2fwhm
 
     @FWHM.setter
     def FWHM(self, value):
-        if legacy is False:
+        if not self.legacy:
             super(Voigt, self.__class__).sigma.value.fset(self, value
                                                                 / sigma2fwhm)
 
     @property
     def lwidth(self):
-        if legacy is False:
+        if not self.legacy:
             return super().gamma.value * 2
 
     @lwidth.setter
     def lwidth(self, value):
-        if legacy is False:
+        if not self.legacy:
             super(Voigt, self.__class__).gamma.value.fset(self, value / 2)
 
 
@@ -163,11 +164,11 @@ class PESVoigt(Component):
     non_isochromaticity, transmission_function corrections and spin orbit
     splitting specially suited for photoemission spectroscopy data analysis.
 
-    .. math:: 
-        f(x) = G(x) \cdot L(x) 
+    .. math::
+        f(x) = G(x) \cdot L(x)
 
-    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the 
-    Lorentzian function. This component uses an approximate formula by David 
+    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the
+    Lorentzian function. This component uses an approximate formula by David
     (see Notes).
 
 
@@ -253,7 +254,7 @@ class PESVoigt(Component):
             return f
 
     def estimate_parameters(self, signal, E1, E2, only_current=False):
-        """Estimate the Voigt function by calculating the momenta of the 
+        """Estimate the Voigt function by calculating the momenta of the
         Gaussian.
 
         Parameters

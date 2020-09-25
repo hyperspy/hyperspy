@@ -23,6 +23,7 @@ import numpy as np
 from scipy.stats import halfnorm
 
 from hyperspy.external.progressbar import progressbar
+from hyperspy.misc.math_tools import check_random_state
 
 _logger = logging.getLogger(__name__)
 
@@ -133,6 +134,7 @@ class ORNMF:
         method="PGD",
         subspace_learning_rate=1.0,
         subspace_momentum=0.5,
+        random_state=None,
     ):
         """Creates Online Robust NMF instance that can learn a representation.
 
@@ -156,6 +158,8 @@ class ORNMF:
         subspace_momentum : float
             Momentum parameter for 'MomentumSGD' method, should be
             a float between 0 and 1.
+        random_state : None or int or RandomState instance, default None
+            Used to initialize the subspace on the first iteration.
 
         """
         self.n_features = None
@@ -174,6 +178,7 @@ class ORNMF:
         self.kappa = kappa
         self.subspace_learning_rate = subspace_learning_rate
         self.subspace_momentum = subspace_momentum
+        self.random_state = check_random_state(random_state)
 
         # Check options are valid
         if method not in ("PGD", "RobustPGD", "MomentumSGD"):
@@ -203,9 +208,10 @@ class ORNMF:
         self.n_features = m
         self.iterating = iterating
 
-        self.W = np.abs(
-            avg * halfnorm.rvs(size=(self.n_features, self.rank)) / np.sqrt(self.rank)
+        self.W = halfnorm.rvs(
+            size=(self.n_features, self.rank), random_state=self.random_state
         )
+        self.W = np.abs(avg * self.W / np.sqrt(self.rank))
         self.H = []
 
         if self.subspace_tracking:
@@ -357,6 +363,7 @@ def ornmf(
     method="PGD",
     subspace_learning_rate=1.0,
     subspace_momentum=0.5,
+    random_state=None,
 ):
     """Perform online, robust NMF on the data X.
 
@@ -389,6 +396,8 @@ def ornmf(
     subspace_momentum : float
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
+    random_state : None or int or RandomState instance, default None
+        Used to initialize the subspace on the first iteration.
 
     Returns
     -------
@@ -414,6 +423,7 @@ def ornmf(
         method=method,
         subspace_learning_rate=subspace_learning_rate,
         subspace_momentum=subspace_momentum,
+        random_state=random_state,
     )
     _ornmf.fit(X, batch_size=batch_size)
 

@@ -17,11 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-
 import pytest
 
-from hyperspy.misc import rgb_tools
 import hyperspy.api as hs
+from hyperspy.misc import rgb_tools
 
 
 class TestRGBA8:

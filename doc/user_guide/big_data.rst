@@ -139,13 +139,13 @@ offers the following online algorithms:
    +--------------------------+----------------------------------------------------------------+
    | Algorithm                | Method                                                         |
    +==========================+================================================================+
-   | "svd" (default)          | :py:func:`dask.array.linalg.svd`                               |
+   | "SVD" (default)          | :py:func:`dask.array.linalg.svd`                               |
    +--------------------------+----------------------------------------------------------------+
-   | "pca"                    | :py:class:`sklearn.decomposition.IncrementalPCA`               |
+   | "PCA"                    | :py:class:`sklearn.decomposition.IncrementalPCA`               |
    +--------------------------+----------------------------------------------------------------+
-   | "orpca"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
+   | "ORPCA"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
    +--------------------------+----------------------------------------------------------------+
-   | "ornmf"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
+   | "ORNMF"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
    +--------------------------+----------------------------------------------------------------+
 
 .. seealso::

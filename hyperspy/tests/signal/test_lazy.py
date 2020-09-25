@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-import numpy as np
 import dask.array as da
+import numpy as np
+import pytest
 from dask.threaded import get
 
 import hyperspy.api as hs
-from hyperspy._signals.lazy import (_reshuffle_mixed_blocks,
-                                    to_array)
 from hyperspy import _lazy_signals
+from hyperspy._signals.lazy import _reshuffle_mixed_blocks, to_array
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 def _signal():
@@ -138,3 +138,14 @@ def test_ma_lazify():
     assert np.isnan(l.data[1].compute())
     ss = hs.stack([s, s])
     assert np.isnan(ss.data[:, 1]).all()
+
+
+def test_warning():
+    sig = _signal()
+
+    with pytest.warns(VisibleDeprecationWarning, match="progressbar"):
+        sig.compute(progressbar=False)
+
+    assert sig._lazy == False
+    thing = to_array(sig, chunks=None)
+    assert isinstance(thing, np.ndarray)

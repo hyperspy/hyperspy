@@ -17,11 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 from distutils.version import LooseVersion
+
+import pytest
 import sympy
+import numpy as np
 
 from hyperspy.components1d import Erf
 
@@ -35,6 +35,5 @@ def test_function():
     g.sigma.value = 2
     g.origin.value = 3
     assert g.function(3) == 0.
-    assert_allclose(g.function(15),0.5)
-    assert_allclose(g.function(1.951198),-0.2,rtol=1e-6)
-
+    np.testing.assert_allclose(g.function(15),0.5)
+    np.testing.assert_allclose(g.function(1.951198),-0.2,rtol=1e-6)
