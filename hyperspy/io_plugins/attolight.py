@@ -41,40 +41,22 @@ default_extension = 0
 writes = False
 # ----------------------
 
-# Attolight system specific parameters
-# ------------------------------------
-# Store the system specific parameters in a dictionary for
-# different Attolight SEMs around the world, with their identifier.
-
-attolight_systems = {
-    'cambridge_uk_attolight': {
-        'channels': 1024,
-        'cal_factor_x_axis': 131072,
-        'metadata_file_name': 'MicroscopeStatus.txt',
-        'grating_corrfactors': {
-            150: 2.73E-04,
-            600: 6.693659836087227e-05,
-        }
-    }
-}
-
-
-def _get_original_metadata(filename, md_file_name, attolight_acquisition_system):
-    """Import the metadata from the MicroscopeStatus.txt file.
-    Returns binning, nx, ny, FOV, grating and central_wavelength.
-    Parameters
-    ----------
-    filename : str
-        The absolute folder path where the md_file_name exists.
+def _get_original_metadata(folder, md_file_name, channels):
     """
-    path = os.path.join(filename, md_file_name)
+    :param folder: expermient folder path
+    :param md_file_name: name of the metadata txt file
+    :param channels: number of channels
+    :return: dictionary
+
+    """
+    path = os.path.join(folder, md_file_name)
 
     original_metadata = {}
     with open(path, encoding='windows-1252') as f:
         for line in f:
             try:
                 key, value = line.split(":")
-                original_metadata[key] = value[:-1]
+                original_metadata[key] = value
             except ValueError:
                 # not enough values to unpack
                 pass
@@ -86,15 +68,16 @@ def _get_original_metadata(filename, md_file_name, attolight_acquisition_system)
     try:
         original_metadata['Total channels']
     except KeyError:
-        original_metadata['Total channels'] = attolight_systems[attolight_acquisition_system]['channels']
+        original_metadata['Total channels'] = channels
 
     original_metadata['Channels'] = original_metadata['Total channels'] // int(original_metadata['Horizontal Binning'])
 
     return original_metadata
 
 
-def _parse_relevant_metadata_values(filename, md_file_name, attolight_acquisition_system, md_subcategory):
-    original_metadata = _get_original_metadata(filename, md_file_name, attolight_acquisition_system)
+def _parse_relevant_metadata_values(filename, md_file_name, md_subcategory, channels):
+
+    original_metadata = _get_original_metadata(filename, md_file_name, channels)
 
     from pint import UnitRegistry, UndefinedUnitError
 
@@ -129,7 +112,7 @@ def _parse_relevant_metadata_values(filename, md_file_name, attolight_acquisitio
     for key, value in original_metadata.items():
         if key in keys_of_interest[md_subcategory]:
             try:
-                value = Q_(value)
+                value = Q_(value).magnitude
             except UndefinedUnitError:
                 value = value
 
@@ -140,7 +123,7 @@ def _parse_relevant_metadata_values(filename, md_file_name, attolight_acquisitio
 
 
 def _store_metadata(dict_tree, hypcard_folder, md_file_name,
-                    attolight_acquisition_system):
+                    attolight_acquisition_system, channels):
     """
     Store metadata in the DictionaryTreeBrowser metadata. Stores
     binning, nx, ny, FOV, grating and central_wavelength and others.
@@ -149,11 +132,11 @@ def _store_metadata(dict_tree, hypcard_folder, md_file_name,
     # Get metadata
     metadata = {}
     metadata['Spectrometer'] = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
-                                                           attolight_acquisition_system, 'Spectrometer')
+                                                                'Spectrometer', channels)
     metadata['CCD']  = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
-                                                           attolight_acquisition_system, 'CCD')
+                                                                'CCD', channels)
     metadata['SEM']  = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
-                                                           attolight_acquisition_system, 'SEM')
+                                                                'SEM', channels)
 
     # Store metadata
     for group in metadata:
@@ -167,16 +150,9 @@ def _store_metadata(dict_tree, hypcard_folder, md_file_name,
     return
 
 
-def _create_signal_axis_in_wavelength(data, metadata):
+def _create_signal_axis(data):
     """
-    Based on the Attolight software export function. Need to be automatised.
-    Two calibrated sets show the trend:
-    #Centre at 650 nm:
-        spec_start= 377.436, spec_end = 925.122
-    #Centre at 750:
-        spec_start= 478.2, spec_end = 1024.2472
-
-    TO DO: ALLOW FOR NON-LINEAR-AXIS
+    Create the signal axis in pixel units
 
     Returns
     ----------
@@ -184,21 +160,12 @@ def _create_signal_axis_in_wavelength(data, metadata):
         Dictionary with the parameters of a linear axis.
     """
     # Get relevant parameters from metadata
-    central_wavelength = metadata.Acquisition_instrument.Spectrometer.Central_wavelength
-    central_wavelength.ito('nanometer')
 
-    central_wavelength = central_wavelength.magnitude
-
-    # Estimate start and end wavelengths
-    spectra_offset_array = [central_wavelength - 273, central_wavelength + 273]
-
-    # Apply calibration
     size = data.shape[0]
-    name = 'Wavelength'
-    scale = (spectra_offset_array[1] - spectra_offset_array[0]) \
-            / size
-    offset = spectra_offset_array[0]
-    units = 'nm'
+    name = 'Signal axis'
+    scale = 1
+    offset = 0
+    units = 'px'
 
     axis_dict = {'name': name,
                  'units': units,
@@ -210,27 +177,25 @@ def _create_signal_axis_in_wavelength(data, metadata):
     return axis_dict
 
 
-def _create_navigation_axis(data, metadata):
+def _create_navigation_axis(data, metadata, cal_factor_x_axis):
     # Edit the navigation axes
+    if cal_factor_x_axis is not None:
+        # Get relevant parameters from metadata and acquisition_systems
+        # parameters
+        FOV = metadata.Acquisition_instrument.SEM.Real_Magnification.magnitude
+        nx = metadata.Acquisition_instrument.SEM.Resolution_X.magnitude
 
-    # Get relevant parameters from metadata and acquisition_systems
-    # parameters
-    acquisition_system = metadata.Acquisition_instrument.acquisition_system
-    cal_factor_x_axis \
-        = attolight_systems[acquisition_system]['cal_factor_x_axis']
-    FOV = metadata.Acquisition_instrument.SEM.Real_Magnification.magnitude
-    nx = metadata.Acquisition_instrument.SEM.Resolution_X.magnitude
-
-    # Get the calibrated scanning axis scale from the acquisition_systems
-    # dictionary
-    calax = cal_factor_x_axis / (FOV * nx)
+        # Get the calibrated scanning axis scale from the acquisition_systems
+        # dictionary
+        calax = cal_factor_x_axis / (FOV * nx)
+        scale = calax * 1000
+        # changes micrometer to nm, value for the size of 1 pixel
+        units = 'nm'
+    else:
+        scale = 1
+        units = ''
 
     size = data.shape[1]
-    name = ''
-    scale = calax * 1000
-    # changes micrometer to nm, value for the size of 1 pixel
-    units = 'nm'
-
     axis_dict = {'units': units,
                  'navigate': True,
                  'size': size,
@@ -239,12 +204,13 @@ def _create_navigation_axis(data, metadata):
     return axis_dict
 
 
-def _save_background_metadata(metadata, hypcard_folder, background_file_name='Background*.txt'):
+def _save_background_metadata(metadata, hypcard_folder, background_file_name):
     """
     Based on the Attolight background savefunction.
     If background is found in the folder, it saves background as in the metadata.
     """
     # Get the absolute path
+    background_file_name = os.path.basename(background_file_name)
     path = os.path.join(hypcard_folder, background_file_name)
 
     # Try to load the file, if it exists.
@@ -256,11 +222,33 @@ def _save_background_metadata(metadata, hypcard_folder, background_file_name='Ba
         # The bkg file contains [wavelength, background]
         metadata.set_item("Signal.background", bkg)
         return
-    except:
+    except FileNotFoundError:
         return
 
 
-def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
+def _get_calibration_dictionary(calibration_path):
+    from pint import UnitRegistry
+    ureg = UnitRegistry()
+    Q_ = ureg.Quantity
+
+    calibration_dict = {}
+    with open(calibration_path) as f:
+        for line in f:
+            try:
+                key, value = line.split(":")
+                try:
+                    value = Q_(value).magnitude
+                except:
+                    pass
+                calibration_dict[key] = value
+            except ValueError:
+                # not enough values to unpack
+                pass
+
+    return calibration_dict
+
+
+def file_reader(filename, attolight_calibration_dictionary=None, background_file=None,
                 *args, **kwds):
     """Loads data into CLSEMSpectrum lumispy object.
     Reads the HYPCard.bin file, containing the hyperspectral CL data.
@@ -274,10 +262,8 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     filename : str, None
         The HYPCard.bin filepath for the file to be loaded, created by
         the AttoLight software.
-    attolight_acquisition_system : str
-        Specify which acquisition system the HYPCard was taken with, from the
-        attolight_systems dictionary file. By default, it assumes it is
-        the Cambridge Attolight SEM system.
+    attolight_calibration_dictionary : str
+        The calibration.txt filepath for the file to be calibrated. If not given, assume 1024 channels and no grating correction.
 
     Returns
     -------
@@ -291,9 +277,19 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     # Get folder name (which is the experiment name)
     name = os.path.basename(hypcard_folder)
 
-    if attolight_acquisition_system == 'cambridge_attolight' and len(name) > 37:
+    # Load calibration dictionary if possible
+    if attolight_calibration_dictionary is not None:
+        calibration_dict = _get_calibration_dictionary(attolight_calibration_dictionary)
+    else:
+        calibration_dict = {
+            'system_name' : None,
+            'channels': 1024,
+            'metadata_file_name': 'MicroscopeStatus.txt',
+            'cal_factor_x_axis': None,}
+
+    if len(name) > 37:
         # CAUTION: Specifically delimeted by Attolight default naming system
-            name = name[:-37]
+        name = name[:-37]
 
     # Create metadata dictionary
     meta = DictionaryTreeBrowser({
@@ -302,12 +298,11 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
                    'background': None},
     })
 
-    # Import metadata
-    metadata_file_name \
-        = attolight_systems[attolight_acquisition_system]['metadata_file_name']
-
     # Add all parameters as metadata
-    _store_metadata(meta, hypcard_folder, metadata_file_name, attolight_acquisition_system)
+    _store_metadata(meta, hypcard_folder,
+                    attolight_calibration_dictionary['metadata_file_name'],
+                    attolight_calibration_dictionary['system_name'],
+                    attolight_calibration_dictionary['channels'])
 
     # Load data
     channels = meta.Acquisition_instrument.CCD.Channels.magnitude
@@ -321,12 +316,14 @@ def file_reader(filename, attolight_acquisition_system='cambridge_uk_attolight',
     # Swap x-y axes to get the right xy orientation
     data = np.swapaxes(array, 1, 2)
 
-    # Save background in metadata
-    _save_background_metadata(meta, hypcard_folder,)
+    # Save background in metadata if it exists or if it is provided
+    if background_file is None:
+        background_file = 'Background*.txt'
+    _save_background_metadata(meta, hypcard_folder, background_file)
 
     # Create axes
-    signal_axis = _create_signal_axis_in_wavelength(data, meta)
-    navigation_axis = _create_navigation_axis(data, meta)
+    signal_axis = _create_signal_axis(data)
+    navigation_axis = _create_navigation_axis(data, meta, calibration_dict['cal_factor_x_axis'])
 
     axes = [navigation_axis, navigation_axis, signal_axis]
 
