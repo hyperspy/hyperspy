@@ -191,6 +191,7 @@ def _create_navigation_axis(data, metadata, cal_factor_x_axis):
         scale = calax * 1000
         # changes micrometer to nm, value for the size of 1 pixel
         units = 'nm'
+
     else:
         scale = 1
         units = ''
@@ -226,7 +227,7 @@ def _save_background_metadata(metadata, hypcard_folder, background_file_name):
         return
 
 
-def _get_calibration_dictionary(calibration_path):
+def _get_calibration_dictionary(calibration_path, metadata):
     from pint import UnitRegistry
     ureg = UnitRegistry()
     Q_ = ureg.Quantity
@@ -244,7 +245,8 @@ def _get_calibration_dictionary(calibration_path):
             except ValueError:
                 # not enough values to unpack
                 pass
-
+    # Add in metadata calibration tag
+    metadata.Signal.calibration_file = os.path.basename(calibration_path)
     return calibration_dict
 
 
@@ -277,20 +279,6 @@ def file_reader(filename, attolight_calibration_dictionary=None, background_file
     # Get folder name (which is the experiment name)
     name = os.path.basename(hypcard_folder)
 
-    # Load calibration dictionary if possible
-    if attolight_calibration_dictionary is not None:
-        calibration_dict = _get_calibration_dictionary(attolight_calibration_dictionary)
-    else:
-        calibration_dict = {
-            'system_name' : None,
-            'channels': 1024,
-            'metadata_file_name': 'MicroscopeStatus.txt',
-            'cal_factor_x_axis': None,}
-
-    if len(name) > 37:
-        # CAUTION: Specifically delimeted by Attolight default naming system
-        name = name[:-37]
-
     # Create metadata dictionary
     meta = DictionaryTreeBrowser({
         'General': {'title': name},
@@ -303,6 +291,21 @@ def file_reader(filename, attolight_calibration_dictionary=None, background_file
                     attolight_calibration_dictionary['metadata_file_name'],
                     attolight_calibration_dictionary['system_name'],
                     attolight_calibration_dictionary['channels'])
+
+    # Load calibration dictionary if possible
+    meta.set_item("Signal.calibration_file", None)
+    if attolight_calibration_dictionary is not None:
+        calibration_dict = _get_calibration_dictionary(attolight_calibration_dictionary, meta)
+    else:
+        calibration_dict = {
+            'system_name' : None,
+            'channels': 1024,
+            'metadata_file_name': 'MicroscopeStatus.txt',
+            'cal_factor_x_axis': None,}
+
+    if len(name) > 37:
+        # CAUTION: Specifically delimeted by Attolight default naming system
+        name = name[:-37]
 
     # Load data
     channels = meta.Acquisition_instrument.CCD.Channels.magnitude
