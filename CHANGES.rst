@@ -1,10 +1,190 @@
 What's new
 **********
 
+We only cover here the main highlights, for a detailed list of all the changes
+see `the commits in the GITHUB milestones
+<https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
+
 Current Version
 ===============
 
+.. _changes_1.6:
+
+v1.6
+++++
+
+NEW
+---
+
+* Support for the following file formats:
+
+  * :ref:`sur-format`
+  * :ref:`elid_format-label`
+  * :ref:`nexus-format`
+  * :ref:`usid-format`
+  * :ref:`empad-format`
+  * Prismatic EMD format, see :ref:`emd-format`
+* :meth:`~._signals.eels.EELSSpectrum_mixin.print_edges_near_energy` method
+  that, if the `hyperspy-gui-ipywidgets package
+  <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
+  is installed, includes an
+  awesome interactive mode. See :ref:`eels_elemental_composition-label`.
+* Model asymmetric line shape components:
+
+  * :py:class:`~._components.doniach.Doniach`
+  * :py:class:`~._components.split_pvoigt.SplitVoigt`
+* :ref:`EDS absorption correction <eds_absorption-label>`.
+* :ref:`Argand diagram for complex signals <complex.argand>`.
+* :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
+* :ref:`cluster_analysis-label`.
+
+Enhancements
+------------
+
+* The :py:meth:`~.signal.BaseSignal.get_histogram` now uses numpy's
+  `np.histogram_bin_edges()
+  <https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html>`_
+  and supports all of its ``bins`` keyword values.
+* Further improvements to the contrast adjustment tool.
+  Test it by pressing the ``h`` key on any image.
+* The following components have been rewritten using
+  :py:class:`hyperspy._components.expression.Expression`, boosting their
+  speeds among other benefits.
+
+  * :py:class:`hyperspy._components.arctan.Arctan`
+  * :py:class:`hyperspy._components.voigt.Voigt`
+  * :py:class:`hyperspy._components.heaviside.HeavisideStep`
+* The model fitting :py:meth:`~.model.BaseModel.fit` and
+  :py:meth:`~.model.BaseModel.multifit` methods have been vastly improved. See
+  :ref:`model.fitting` and the API changes section below.
+* New serpentine iteration path for multi-dimensional fitting.
+  See :ref:`model.multidimensional-label`.
+* The :py:func:`~.drawing.utils.plot_spectra`  function now listens to
+  events to update the figure automatically.
+  See :ref:`this example <plot_profiles_interactive-label>`.
+* Improve thread-based parallelism. Add ``max_workers`` argument to the
+  :py:meth:`~.signal.BaseSignal.map` method, such that the user can directly
+  control how many threads they launch.
+* Many improvements to the :py:meth:`~.mva.MVA.decomposition` and
+  :py:meth:`~.mva.MVA.blind_source_separation` methods, including support for
+  scikit-learn like algorithms, better API and much improved documentation.
+  See :ref:`ml-label` and the API changes section below.
+* Add option to calculate the absolute thickness to the EELS
+  :meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` method.
+  See :ref:`eels_thickness-label`.
+* Vastly improved performance and memory footprint of the
+  :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` method.
+* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
+  now remove Doniach, exponential, Lorentzian, skew normal,
+  split Voigt and Voigt functions. Furthermore, it can return the background
+  model that includes an estimation of the reduced chi-squared.
+* The performance of the maximum-likelihood PCA method was greatly improved.
+* All ROIs now have a ``__getitem__`` method, enabling e.g. using them with the
+  unpack ``*`` operator. See :ref:`roi-slice-label` for an example.
+* New syntax to set the contrast when plotting images. In particular, the
+  ``vmin`` and ``vmax`` keywords now take values like ``vmin="30th"`` to
+  clip the minimum value to the 30th percentile. See :ref:`signal.fft`
+  for an example.
+* The :py:meth:`~._signals.signal1d.Signal1D.plot` and
+  :py:meth:`~._signals.signal2d.Signal2D.plot` methods take a new keyword
+  argument ``autoscale``. See :ref:`plot.customize_images` for details.
+* The contrast editor and the decomposition methods can now operate on
+  complex signals.
+* The default colormap can now be set in
+  :ref:`preferences <configuring-hyperspy-label>`.
+
+
+API changes
+-----------
+
+* The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
+  ``saturated_pixels`` is deprecated. Please use
+  ``vmin`` and/or ``vmax`` instead.
+* The :py:func:`~.io.load` keyword argument ``dataset_name`` has been
+  renamed to ``dataset_path``.
+* The :py:meth:`~.signal.BaseSignal.set_signal_type` method no longer takes
+  ``None``. Use the empty string ``""`` instead.
+* The :py:meth:`~.signal.BaseSignal.get_histogram` ``bins`` keyword values
+  have been renamed as follows for consistency with numpy:
+
+    * ``"scotts"`` -> ``"scott"``,
+    * ``"freedman"`` -> ``"fd"``
+*  Multiple changes to the syntax of the :py:meth:`~.model.BaseModel.fit`
+   and :py:meth:`~.model.BaseModel.multifit` methods:
+
+  * The ``fitter`` keyword has been renamed to ``optimizer``.
+  * The values that the ``optimizer`` keyword take have been renamed
+    for consistency with scipy:
+
+    * ``"fmin"`` -> ``"Nelder-Mead"``,
+    * ``"fmin_cg"`` -> ``"CG"``,
+    * ``"fmin_ncg"`` -> ``"Newton-CG"``,
+    * ``"fmin_bfgs"`` -> ``"BFGS"``,
+    * ``"fmin_l_bfgs_b"`` -> ``"L-BFGS-B"``,
+    * ``"fmin_tnc"`` -> ``"TNC"``,
+    * ``"fmin_powell"`` -> ``"Powell"``,
+    * ``"mpfit"`` -> ``"lm"`` (in combination with ``"bounded=True"``),
+    * ``"leastsq"`` -> ``"lm"``,
+
+  * Passing integer arguments to ``parallel`` to select the number of
+    workers is now deprecated. Use ``parallel=True, max_workers={value}``
+    instead.
+  * The ``method`` keyword has been renamed to ``loss_function``.
+  * The ``loss_function`` value ``"ml"`` has been renamed to ``"ML-poisson"``.
+  * The ``grad`` keyword no longer takes boolean values. It takes the
+    following values instead: ``"fd"``, ``"analytical"``, callable or ``None``.
+  * The ``ext_bounding`` keyword has been deprecated and will be removed. Use
+    ``bounded=True`` instead.
+  * The ``min_function`` keyword argument has been deprecated and will
+    be removed. Use ``loss_function`` instead.,
+  * The ``min_function_grad`` keyword arguments has been deprecated and will be
+    removed. Use ``grad`` instead.
+  * The ``iterpath`` default will change from ``'flyback'`` to
+    ``'serpentine'`` in HyperSpy version 2.0.
+
+* The following :py:class:`~.model.BaseModel` methods are now private:
+
+  * :py:meth:`~.model.BaseModel.set_boundaries`
+  * :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
+  * :py:meth:`~.model.BaseModel.set_boundaries`
+
+* The ``comp_label`` keyword of the machine learning plotting functions
+  has been renamed to ``title``.
+* The :py:class:`~.learn.rpca.orpca` constructor's ``learning_rate``
+  keyword has been renamed to ``subspace_learning_rate``
+* The :py:class:`~.learn.rpca.orpca` constructor's ``momentum``
+  keyword has been renamed to ``subspace_momentum``
+* The :py:class:`~.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
+  values have been renamed as follows:
+
+    * ``"trials"`` -> ``"navigation"``
+    * ``"variables"`` -> ``"signal"``
+* The ``bounds`` keyword argument of the
+  :py:meth:`~._signals.lazy.decomposition` is deprecated and will be removed.
+* Several syntax changes in the :py:meth:`~.learn.mva.decomposition` method:
+
+  * Several ``algorithm`` keyword values have been renamed as follows:
+
+    * ``"svd"``: ``"SVD"``,
+    * ``"fast_svd"``: ``"SVD"``,
+    * ``"nmf"``: ``"NMF"``,
+    * ``"fast_mlpca"``: ``"MLPCA"``,
+    * ``"mlpca"``: ``"MLPCA"``,
+    * ``"RPCA_GoDec"``: ``"RPCA"``,
+  * The ``polyfit`` argument has been deprecated and will be removed.
+    Use ``var_func`` instead.
+
+
+
+
+Changelog
+*********
+
+Previous Versions
+=================
+
 .. _changes_1.5.2:
+
 
 v1.5.2
 ++++++
@@ -39,7 +219,7 @@ NEW
   ``apodization`` keyword for :py:meth:`hyperspy.signal.BaseSignal.fft`. See
   :ref:`signal.fft` for details.
 * Estimation of number of significant components by the elbow method.
-  See :ref:`scree-plot`.
+  See :ref:`mva.scree_plot`.
 
 Enhancements
 ------------
@@ -80,17 +260,6 @@ For developers
 * Drop support for python 3.5
 * New extension mechanism that enables external packages to register HyperSpy
   objects. See :ref:`writing_extensions-label` for details.
-
-Changelog
-*********
-
-Previous Versions
-=================
-
-
-We only cover here the main highlights, for a detailed list of all the changes
-see `the commits in the GITHUB milestones
-<https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
 
 
 .. _changes_1.4.2:
@@ -343,7 +512,7 @@ Enhancements
   :ref:`User Guide for details <expression_component-label>`.
 * Better support for EMD files.
 * The scree plot got a beauty treatment and some extra features. See
-  :ref:`scree-plot`.
+  :ref:`mva.scree_plot`.
 * :py:meth:`~.signal.BaseSignal.map` can now take functions that return
   differently-shaped arrays or arbitrary objects, see :ref:`map-label`.
 * Add support for stacking multi-signal files. See :ref:`load-multiple-label`.
@@ -440,7 +609,7 @@ NEW
 ---
 
 * :ref:`roi-label`.
-* :ref:`Robust PCA <rpca-label>` (RPCA) and online RPCA algorithms.
+* :ref:`Robust PCA <mva.rpca>` (RPCA) and online RPCA algorithms.
 * Numpy ufuncs can now :ref:`operate on HyperSpy's signals <ufunc-label>`.
 * ComplexSignal and specialised subclasses to :ref:`operate on complex data <complex_data-label>`.
 * Events :ref:`logging <logger-label>`.
@@ -805,7 +974,7 @@ Machine learning
 ^^^^^^^^^^^^^^^^
 
 * The PCA scree plot can now be easily obtained as a Signal. See
-  :ref:`scree-plot`.
+  :ref:`mva.scree_plot`.
 * The decomposition and blind source separation components can now be obtained
   as :py:class:`~.signal.Signal` instances. See :ref:`mva.get_results`.
 * New methods to plot the decomposition and blind source separation results

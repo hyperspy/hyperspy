@@ -36,7 +36,7 @@ def bragg_scattering_angle(d, E0=100):
 
     """
 
-    gamma = 1 + E0 / 511.
+    gamma = 1 + E0 / 511.0
     v_rel = np.sqrt(1 - 1 / gamma ** 2)
     e_lambda = 2 * np.pi / (2590e9 * (gamma * v_rel))  # m
 
@@ -59,6 +59,13 @@ def effective_Z(Z_list, exponent=2.94):
     float
 
     """
+    if not np.iterable(Z_list) or not np.iterable(Z_list[0]):
+        raise ValueError(
+            "Z_list should be a list of tuples (f,Z) "
+            "where f is the number of atoms of the element"
+            "in the molecule and Z its atomic number"
+        )
+
     exponent = float(exponent)
     temp = 0
     total_e = 0

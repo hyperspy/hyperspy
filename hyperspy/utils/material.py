@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.material import weight_to_atomic
-from hyperspy.misc.material import atomic_to_weight
-from hyperspy.misc.material import density_of_mixture
-from hyperspy.misc.material import mass_absorption_coefficient
-from hyperspy.misc.material import mass_absorption_mixture
 from hyperspy.misc.elements import elements_db as elements
+from hyperspy.misc.material import (atomic_to_weight, density_of_mixture,
+                                    mass_absorption_coefficient,
+                                    mass_absorption_mixture, weight_to_atomic)

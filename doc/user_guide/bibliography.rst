@@ -196,7 +196,35 @@ Bibliography
    pp. 166-171, Minneapolis, Minnesota, USA, June 2011
    [`<https://doi.org/10.1109/ICDCSW.2011.20>`_].
 
+.. _Lerotic2004:
 
+:ref:`[Lerotic2004] <Lerotic2004>`
+   M Lerotic, C Jacobsen, T Schafer, S Vogt 
+   "Cluster analysis of soft X-ray spectromicroscopy data".
+   Ultramicroscopy 100 (2004) 35–57 
+   [`<https://doi.org/10.1016/j.ultramic.2004.01.008>`_]
+
+.. _Iakoubovskii2008:
+
+:ref:`[Iakoubovskii2008] <Iakoubovskii2008>`
+    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+      [`<https://doi.org/10.1002/jemt.20597>`_].
+
+.. _White2009:
+
+:ref:`[White2009] <White2009>`
+    - T.A. White, “Structure solution using precession electron diffraction and
+      diffraction tomography” PhD Thesis, University of Cambridge, 2009.
+
+.. _Zaefferer2000:
+
+:ref:`[Zaefferer2000] <Zaefferer2000>`
+    - S. Zaefferer, “New developments of computer-aided crystallographic
+      analysis in transmission electron microscopy” J. Appl. Crystallogr.,
+      vol. 33, no. v, pp. 10–25, 2000.
+      [`<https://doi.org/10.1107/S0021889899010894>`_].
 
 
 Peer-review articles with results obtained using HyperSpy

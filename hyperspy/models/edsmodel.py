@@ -355,7 +355,7 @@ class EDSModel(Model1D):
             If 'single' fit only the current location. If 'multi'
             use multifit.
         **kwargs : extra key word arguments
-            All extra key word arguments are passed to fit or
+            All extra key word arguments are passed to fit or multifit
 
         See also
         --------
@@ -614,6 +614,7 @@ class EDSModel(Model1D):
             Bound the height of the peak to a fraction of
             its height
         """
+
         def free_twin(component):
             component.A.twin = None
             component.A.free = True
@@ -641,6 +642,7 @@ class EDSModel(Model1D):
 
         Establish the twin on the height of sub-Xray lines (non alpha)
         """
+
         def fix_twin(component):
             component.A.bmin = 0.0
             component.A.bmax = None
@@ -792,10 +794,10 @@ class EDSModel(Model1D):
             fix = self.fix_xray_lines_width
 
         free(xray_lines=xray_lines, bound=bound)
-        if kind == 'single':
-            self.fit(bounded=True, fitter='mpfit', **kwargs)
-        elif kind == 'multi':
-            self.multifit(bounded=True, fitter='mpfit', **kwargs)
+        if kind == "single":
+            self.fit(bounded=True, **kwargs)
+        elif kind == "multi":
+            self.multifit(bounded=True, **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
@@ -845,6 +847,7 @@ class EDSModel(Model1D):
         >>> m.get_lines_intensity(["C_Ka", "Ta_Ma"])
         """
         from hyperspy import utils
+
         intensities = []
 
         if xray_lines is None:

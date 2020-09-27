@@ -6,6 +6,7 @@ from collections.abc import MutableMapping
 import h5py
 import numpy as np
 import pyUSID as usid
+import sidpy
 
 _logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
             continue
         else:
             try:
-                step_size = usid.write_utils.get_slope(dim_vals)
+                step_size = sidpy.base.num_utils.get_slope(dim_vals)
             except ValueError:
                 # Non-linear dimension! - see notes above
                 if ignore_non_linear_dims:
@@ -270,16 +271,16 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
     h5_chan_grp = h5_main.parent
     if isinstance(h5_chan_grp, h5py.Group):
         if 'Channel' in h5_chan_grp.name.split('/')[-1]:
-            group_attrs = usid.hdf_utils.get_attributes(h5_chan_grp)
+            group_attrs = sidpy.hdf_utils.get_attributes(h5_chan_grp)
             h5_meas_grp = h5_main.parent
             if isinstance(h5_meas_grp, h5py.Group):
                 if 'Measurement' in h5_meas_grp.name.split('/')[-1]:
-                    temp = usid.hdf_utils.get_attributes(h5_meas_grp)
+                    temp = sidpy.hdf_utils.get_attributes(h5_meas_grp)
                     group_attrs.update(temp)
 
     """
-    Normally, we might have been done but the order of the dimensions may be 
-    different in N-dim form and 
+    Normally, we might have been done but the order of the dimensions may be
+    different in N-dim form and
     attributes in ancillary dataset
     """
     num_pos_dims = len(h5_main.pos_dim_labels)
@@ -287,7 +288,7 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
     spec_dim_list = _assemble_dim_list(spec_dict, dim_labs[num_pos_dims:])
     dim_list = pos_dim_list + spec_dim_list
 
-    _, is_complex, is_compound, _, _ = usid.dtype_utils.check_dtype(h5_main)
+    _, is_complex, is_compound, _, _ = sidpy.hdf.dtype_utils.check_dtype(h5_main)
 
     trunc_func = partial(_convert_to_signal_dict,
                          dim_dict_list=dim_list,
@@ -382,7 +383,8 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
 # ####### REQUIRED FUNCTIONS FOR AN IO PLUGIN #################################
 
 
-def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
+def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
+                **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
 
@@ -390,7 +392,7 @@ def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
     ----------
     filename : str
         path to HDF5 file
-    dset_path : str, Optional
+    dataset_path : str, Optional
         Absolute path of USID Main HDF5 dataset.
         Default - None - all Main Datasets will be read. Given that HDF5 files
         can accommodate very large datasets, lazy reading is strongly
@@ -410,13 +412,13 @@ def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
     if not isinstance(filename, str):
         raise TypeError('filename should be a string')
     if not os.path.isfile(filename):
-        raise FileNotFoundError('No file found at: {}'.format(filename))
+        raise FileNotFoundError(f'No file found at: {filename}')
 
     # Need to keep h5 file handle open indefinitely if lazy
     # Using "with" will cause the file to be closed
     # with h5py.File(filename, mode='r') as h5_f:
     h5_f = h5py.File(filename, mode='r')
-    if dset_path is None:
+    if dataset_path is None:
         """
         if not kwds.get('lazy', True):
             warn('In order to safely load multiple large datasets to memory, '
@@ -432,9 +434,9 @@ def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
                                              ignore_non_linear_dims, **kwds)
         return signals
     else:
-        if not isinstance(dset_path, str):
-            raise TypeError('dset_path should be a string')
-        h5_dset = h5_f[dset_path]
+        if not isinstance(dataset_path, str):
+            raise TypeError("'dataset_path' should be a string")
+        h5_dset = h5_f[dataset_path]
         return _usidataset_to_signal(h5_dset,
                                      ignore_non_linear_dims=
                                      ignore_non_linear_dims, **kwds)
@@ -471,7 +473,7 @@ def file_writer(filename, object2save, **kwds):
     parm_dict = _flatten_dict(object2save.metadata.as_dictionary())
     temp = object2save.original_metadata.as_dictionary()
     parm_dict.update(_flatten_dict(temp, parent_key='Original'))
-    
+
     num_pos_dims = object2save.axes_manager.navigation_dimension
     nav_axes = object2save.axes_manager.navigation_axes
     sig_axes = object2save.axes_manager.signal_axes

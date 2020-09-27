@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
+    'sphinx_toggleprompt',
 ]
 
 try:
@@ -245,6 +246,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'dask': ('https://docs.dask.org/en/latest', None),
                        'astroML': ('https://www.astroml.org/', None),
                        'sklearn': ('https://scikit-learn.org/stable', None),
+                       'skimage': ('https://scikit-image.org/docs/stable', None),
                        }
 
 graphviz_output_format = "svg"
@@ -268,4 +270,3 @@ def run_apidoc(_):
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
-    app.add_javascript('copybutton.js')

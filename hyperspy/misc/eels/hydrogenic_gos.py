@@ -24,7 +24,6 @@ import scipy as sp
 import scipy.interpolate
 
 from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.physical_constants import R
 
 _logger = logging.getLogger(__name__)
 
@@ -36,6 +35,8 @@ XU = [
 
 # IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
 # 926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
+
+R = sp.constants.value("Rydberg constant times hc in eV")
 
 
 class HydrogenicGOS(GOSBase):

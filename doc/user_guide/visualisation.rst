@@ -68,13 +68,13 @@ in ``s.axes_manager.indices`` or as calibrated coordinates in
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
 
-In matplotlib, left and right arrow keys are by default set to navigate the 
-"zoom" history. To avoid the problem of changing zoom while navigating, 
+In matplotlib, left and right arrow keys are by default set to navigate the
+"zoom" history. To avoid the problem of changing zoom while navigating,
 Ctrl + arrows can be used instead. Navigating without using the modifier keys
 will be deprecated in version 2.0.
 
 To navigate navigation dimensions larger than 2, modifier keys can be used.
-The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down) 
+The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down)
 for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
 
 Hotkeys and modifier keys for navigating the plot can be set in the ``hs.preferences.gui()``.
@@ -128,8 +128,8 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    Plotting ``float16`` images is currently not supported by matplotlib; however, it is 
-    possible to convert the type of the data by using the 
+    Plotting ``float16`` images is currently not supported by matplotlib; however, it is
+    possible to convert the type of the data by using the
     :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
@@ -194,7 +194,7 @@ arguments are supported as well:
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.misc.ascent())
     >>> img.plot(colorbar=True, scalebar=False,
-    ... 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
+    ... 	 axes_ticks=True, cmap='RdYlBu_r')
 
 
 .. figure::  images/custom_cmap.png
@@ -207,41 +207,34 @@ arguments are supported as well:
 .. versionadded:: 1.4
    ``norm`` keyword argument
 
-The ``norm`` keyword argument can be used to select between linear, logarithmic or
-custom (using a matplotlib norm) intensity scale. The default, "auto", automatically
-selects a logarithmic scale when plotting a power spectrum.
+The ``norm`` keyword argument can be used to select between linear, logarithmic
+or custom (using a matplotlib norm) intensity scale. The default, "auto",
+automatically selects a logarithmic scale when plotting a power spectrum.
 
-.. versionadded:: 1.1.2
-   Passing keyword arguments to the navigator plot.
+.. versionadded:: 1.6
+   ``autoscale`` keyword argument
 
-The same options can be passed to the navigator, albeit separately, by specifying
-them as a dictionary in ``navigator_kwds`` argument when plotting:
+The ``autoscale`` keyword argument can be used to specify which axis limits are
+reset when the data or navigation indices change. It can take any combinations
+of the following characters:
+
+* ``'x'``: to reset the horizontal axes
+* ``'y'``: to reset the vertical axes
+* ``'v'``: to reset the contrast of the image  according to ``vmin`` and ``vmax``
+
+By default (``autoscale='v'``), only the contrast of the image will be reset
+automatically. For example, to reset the extent of the image (x and y) to their
+maxima but not the contrast, use ``autoscale='xy'``; To reset all limits,
+including the contrast of the image, use ``autoscale='xyv'``:
 
 .. code-block:: python
 
     >>> import numpy as np
-    >>> import scipy
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
-    >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
-    >>> ims.metadata.General.title = 'My Images'
-    >>> ims.plot(colorbar=False,
-    ...          scalebar=False,
-    ...          axes_ticks=False,
-    ...          cmap='viridis',
-    ...          navigator_kwds=dict(colorbar=True,
-    ...                              scalebar_color='red',
-    ...                              cmap='Blues',
-    ...                              axes_ticks=False)
-    ...          )
+    >>> img = hs.signals.Signal2D(np.arange(10*10*10).reshape(10, 10, 10))
+    >>> img.plot(autoscale='xyv')
 
-.. figure::  images/custom_nav_opts.png
-   :align:   center
-   :height:   250
-
-   Custom different options for both signal and navigator image plots
 
 .. _plot.divergent_colormaps-label:
-
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
@@ -293,6 +286,37 @@ The same example with the feature disabled:
 
 Customizing the "navigator"
 ===========================
+
+.. versionadded:: 1.1.2
+   Passing keyword arguments to the navigator plot.
+
+The navigator can be customised by using the ``navigator_kwds`` argument. For
+example, in case of a image navigator, all image plot arguments mentioned in
+the section :ref:`plot.customize_images` can be passed as a dictionary to the
+``navigator_kwds`` argument:
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import scipy
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
+    >>> ims.metadata.General.title = 'My Images'
+    >>> ims.plot(colorbar=False,
+    ...          scalebar=False,
+    ...          axes_ticks=False,
+    ...          cmap='viridis',
+    ...          navigator_kwds=dict(colorbar=True,
+    ...                              scalebar_color='red',
+    ...                              cmap='Blues',
+    ...                              axes_ticks=False)
+    ...          )
+
+.. figure::  images/custom_nav_opts.png
+   :align:   center
+   :height:   250
+
+   Custom different options for both signal and navigator image plots
 
 Data files used in the following examples can be downloaded using
 
@@ -479,7 +503,7 @@ font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
    dimension 2 and signal dimension 0.
 
 A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
@@ -601,7 +625,7 @@ which is used to call subplots_adjust method of matplotlib
     >>> im = si_EDS.get_lines_intensity()
     >>> hs.plot.plot_images(im,
     ...     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
-    ...     colorbar='single', saturated_pixels=2, scalebar='all',
+    ...     colorbar='single', vmin='1th', vmax='99th', scalebar='all',
     ...     scalebar_color='black', suptitle_fontsize=16,
     ...     padding={'top':0.8, 'bottom':0.10, 'left':0.05,
     ...              'right':0.85, 'wspace':0.20, 'hspace':0.10})
@@ -632,7 +656,7 @@ generator:
     >>> im = si_EDS.get_lines_intensity()
     >>> hs.plot.plot_images(im,
     >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
-    >>>    colorbar='multi', saturated_pixels=2, scalebar=[0],
+    >>>    colorbar='multi', vmin='1th', vmax='99th', scalebar=[0],
     >>>    scalebar_color='white', suptitle_fontsize=16)
 
 .. figure::  images/plot_images_eds_cmap_list.png
@@ -657,7 +681,7 @@ __ plot.spectra_
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> si_EDS.change_dtype('float')
-    >>> si_EDS.decomposition(True, algorithm='nmf', output_dimension=3)
+    >>> si_EDS.decomposition(True, algorithm='NMF', output_dimension=3)
     >>> factors = si_EDS.get_decomposition_factors()
     >>>
     >>> # the first factor is a very strong carbon background component, so we
@@ -722,7 +746,7 @@ same figure. It supports different styles, the default
 being "overlap".
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
    dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian
@@ -950,6 +974,38 @@ and "overlap" styles:
   :width:   350
 
   Plotting on existing matplotlib axes.
+
+
+.. _plot_profiles_interactive-label:
+
+Plotting profiles interactively
+-------------------------------
+
+Spectra or line profile can be plotted interactively on the same figure using
+the :py:func:`~.drawing.utils.plot_spectra` function. For example, profiles
+obtained from different Signal2D using the :py:class:`~.roi.Line2DROI` ROI can
+be plotted interactively:
+
+.. code-block:: python
+
+    >>> im0 = hs.datasets.example_signals.reference_hologram()
+    >>> im1 = hs.datasets.example_signals.object_hologram()
+    >>> im0.plot()
+    >>> im1.plot()
+    >>> # Create the ROI
+    >>> line_profile = hs.roi.Line2DROI(400, 250, 220, 600)
+    >>> # Obtain the signals to plot by "slicing" the signals with the ROI
+    >>> line0 = line_profile.interactive(im0)
+    >>> line1 = line_profile.interactive(im1)
+    >>> # Plotting the profile on the same figure
+    >>> hs.plot.plot_spectra([line0, line1])
+
+.. figure::  images/interactive_profiles.gif
+  :align:   center
+  :width:   1024
+
+  Plotting profiles from different images interactively.
+
 
 .. _plot.signals:
 

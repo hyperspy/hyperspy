@@ -16,10 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 import numpy as np
+
 from hyperspy._components.expression import Expression
+from hyperspy._components.gaussian import _estimate_gaussian_parameters
+
+sqrt2pi = math.sqrt(2 * math.pi)
+
 
 tiny = np.finfo(np.float64).eps
+
 
 class Doniach(Expression):
 
@@ -27,7 +34,7 @@ class Doniach(Expression):
 
     .. math::
         :nowrap:
-            
+
         \[
         f(x) = \frac{A \cos[ \frac{{\pi\alpha}}{2}+
         (1-\alpha)\tan^{-1}(\frac{x-centre+dx}{\sigma})]}
@@ -64,16 +71,16 @@ class Doniach(Expression):
 
     Note
     -----
-    This is an asymmetric lineshape, originially design for xps but generally 
+    This is an asymmetric lineshape, originially design for xps but generally
     useful for fitting peaks with low side tails
-    See Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970) 
+    See Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970)
     or http://www.casaxps.com/help_manual/line_shapes.htm for a more detailed
     description
-        
+
     """
 
-    def __init__(self, centre=0., A=1., sigma=1., alpha=0.,
-                 module=["numpy","scipy"], **kwargs):
+    def __init__(self, centre=0., A=1., sigma=1., alpha=0.5,
+                 module=["numpy", "scipy"], **kwargs):
         super(Doniach, self).__init__(
             expression="A*cos(0.5*pi*alpha+\
             ((1.0 - alpha) * arctan( (x-centre+offset)/sigma) ) )\
@@ -94,3 +101,67 @@ class Doniach(Expression):
         self.isbackground = False
         self.convolved = True
 
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
+        """Estimate the Donach by calculating the median (centre) and the
+        variance parameter (sigma).
+
+        Note that an insufficient range will affect the accuracy of this
+        method and that this method doesn't estimate the asymmetry parameter
+        (alpha).
+
+        Parameters
+        ----------
+        signal : Signal1D instance
+        x1 : float
+            Defines the left limit of the spectral range to use for the
+            estimation.
+        x2 : float
+            Defines the right limit of the spectral range to use for the
+            estimation.
+
+        only_current : bool
+            If False estimates the parameters for the full dataset.
+
+        Returns
+        -------
+        bool
+            Returns True when the parameters estimation is successful
+
+        Examples
+        --------
+
+        >>> g = hs.model.components1D.Lorentzian()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
+        """
+
+        super()._estimate_parameters(signal)
+        axis = signal.axes_manager.signal_axes[0]
+        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
+                                                              only_current)
+
+        if only_current is True:
+            self.centre.value = centre
+            self.sigma.value = sigma
+            self.A.value = height * 1.3
+            if self.binned:
+                self.A.value /= axis.scale
+            return True
+        else:
+            if self.A.map is None:
+                self._create_arrays()
+            self.A.map['values'][:] = height * 1.3
+            if self.binned:
+                self.A.map['values'][:] /= axis.scale
+            self.A.map['is_set'][:] = True
+            self.sigma.map['values'][:] = sigma
+            self.sigma.map['is_set'][:] = True
+            self.centre.map['values'][:] = centre
+            self.centre.map['is_set'][:] = True
+            self.fetch_stored_values()
+            return True

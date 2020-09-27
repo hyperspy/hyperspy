@@ -17,9 +17,16 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
-from hyperspy.signal import BaseSignal
 from hyperspy import utils
+from hyperspy.signal import BaseSignal
+from hyperspy.exceptions import VisibleDeprecationWarning
+
+
+def test_stack_warning():
+    with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
+        _ = utils.stack([BaseSignal([1]), BaseSignal([2])], mmap=True)
 
 
 class TestUtilsStack:
@@ -41,6 +48,18 @@ class TestUtilsStack:
         test_axis = s.axes_manager[0].index_in_array
         result_signal = utils.stack([s, s1, s2])
         result_list = result_signal.split()
+        assert test_axis == s.axes_manager[0].index_in_array
+        assert len(result_list) == 3
+        np.testing.assert_array_almost_equal(
+            result_list[0].data, result_signal.inav[:, :, 0].data)
+
+    def test_stack_number_of_parts(self):
+        s = self.signal
+        s1 = s.deepcopy() + 1
+        s2 = s.deepcopy() * 4
+        test_axis = s.axes_manager[0].index_in_array
+        result_signal = utils.stack([s, s1, s2])
+        result_list = result_signal.split(number_of_parts=3)
         assert test_axis == s.axes_manager[0].index_in_array
         assert len(result_list) == 3
         np.testing.assert_array_almost_equal(

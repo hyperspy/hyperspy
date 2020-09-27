@@ -19,12 +19,12 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import EDSTEMSpectrum
-from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
-from hyperspy.decorators import lazifyTestClass
+from hyperspy.signals import EDSTEMSpectrum
 
 
 @lazifyTestClass
@@ -47,7 +47,7 @@ class Test_metadata:
         sSum = s.sum(0)
         assert (
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            3.1 * 2)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -59,7 +59,8 @@ class Test_metadata:
         sSum = s.sum((0, 1))
         assert (
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            3.1 * 2 * 4)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time
+            * 2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
@@ -74,7 +75,7 @@ class Test_metadata:
         assert r is None
         assert (
             s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
-            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time * 2)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
@@ -213,6 +214,31 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
 
+    def test_quant_lorimer_mask(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        mask = np.array([[1, 1], [0, 0]])
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               navigation_mask=mask)
+        np.testing.assert_allclose(res[0].data, np.array([
+            [0, 0],
+            [22.70779, 22.70779]]), atol=1e-3)
+
+    def test_quant_lorimer_warning(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        with pytest.raises(ValueError, match="Thickness is required for absorption"):
+            _ = s.quantification(intensities, method, kfactors,
+                                 composition_units,
+                                 absorption_correction=True,
+                                 thickness=None)
 
     def test_quant_lorimer_ac(self):
         s = self.signal
@@ -371,6 +397,14 @@ class Test_quantification:
              [49.4889, 49.4889]]), atol=1e-3)
 
 
+    def test_method_error(self):
+        s = self.signal
+        method = 'random_method'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        with pytest.raises(ValueError, match="Please specify method for quantification"):
+            _ = s.quantification(intensities, method, factors)
+
     def test_quant_cross_section_ac(self):
         s = self.signal
         method = 'cross_section'
@@ -378,9 +412,10 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
                                 absorption_correction=True)
-        zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
-        res2 = s.quantification(intensities, method='zeta', factors=[22.402, 21.7132],
-                                absorption_correction=True)
+        _ = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
+        _ = s.quantification(intensities, method='zeta',
+                             factors=[22.402, 21.7132],
+                             absorption_correction=True)
         np.testing.assert_allclose(res[0][0].data, np.array(
             [[49.4889, 49.4889],
              [49.4889, 49.4889]]), atol=1e-3)
@@ -447,6 +482,18 @@ class Test_vacum_mask:
         s = self.signal
         assert s.vacuum_mask().data[0]
         assert not s.vacuum_mask().data[-1]
+
+
+@pytest.mark.parametrize('normalise_poissonian_noise', [True, False])
+def test_decomposition(normalise_poissonian_noise):
+    s = EDSTEMSpectrum(np.ones(shape=(32, 32, 1024)))
+    s.add_poissonian_noise()
+    # default uses `vacuum_mask`
+    s.decomposition(normalise_poissonian_noise)
+
+    # test with numpy array mask
+    mask = s.vacuum_mask().data
+    s.decomposition(normalise_poissonian_noise, navigation_mask=mask)
 
 
 @lazifyTestClass
