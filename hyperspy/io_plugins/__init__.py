@@ -20,6 +20,7 @@
 import logging
 
 from hyperspy.io_plugins import (
+    attolight,
     blockfile,
     bruker,
     dens,
@@ -39,10 +40,10 @@ from hyperspy.io_plugins import (
     semper_unf,
     sur,
     tiff,
-    attolight,
 )
 
 io_plugins = [
+    attolight,
     blockfile,
     bruker,
     dens,
@@ -62,7 +63,6 @@ io_plugins = [
     semper_unf,
     sur,
     tiff,
-    attolight,
 ]
 
 

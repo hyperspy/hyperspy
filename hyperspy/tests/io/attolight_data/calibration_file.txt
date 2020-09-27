@@ -2,7 +2,7 @@
 # ------------------------------------
 # List the system specific parameters in a dictionary for different Attolight SEMs around the world, with their identifier.
 
-system_name = cambridge_uk
+system_name: attolight_cambridge_uk
 channels: 1024
 cal_factor_x_axis: 131072
 metadata_file_name: MicroscopeStatus.txt

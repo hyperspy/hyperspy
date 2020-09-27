@@ -77,6 +77,7 @@ def _get_original_metadata(folder, md_file_name, channels):
 
 
 def _parse_relevant_metadata_values(filename, md_file_name, md_subcategory, channels):
+
     original_metadata = _get_original_metadata(filename, md_file_name, channels)
 
     from pint import UnitRegistry, UndefinedUnitError
@@ -140,11 +141,10 @@ def _store_metadata(meta_dict, hypcard_folder, md_file_name,
 
     # Store metadata
     for group in metadata:
-        g = {}
+        meta_dict["Acquisition_instrument"][group] = {}
         for key, value in metadata[group].items():
-            d = {key: value}
-            g.update(d)
-        meta_dict["Acquisition_instrument"].update(g)
+            #d = {key: value}
+            meta_dict["Acquisition_instrument"][group][key] = value
 
     meta_dict["General"]["folder_path"] = hypcard_folder
     meta_dict["Acquisition_instrument"]["acquisition_system"] = attolight_acquisition_system
@@ -246,7 +246,7 @@ def _get_calibration_dictionary(calibration_path):
                 try:
                     value = q_reg(value).magnitude
                 except UndefinedUnitError:
-                    pass
+                    value = value[:-1].strip()
                 calibration_dict[key] = value
             except ValueError:
                 # not enough values to unpack
