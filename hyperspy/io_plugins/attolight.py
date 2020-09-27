@@ -196,6 +196,7 @@ def _create_navigation_axis(data, metadata, cal_factor_x_axis, system_name):
 
         # Add in metadata calibration tag
         metadata["Signal"]["calibration_file"] = system_name
+        metadata["Acquisition_instrument"]["SEM"]["calibration_factor_x_axis"] = cal_factor_x_axis
 
     else:
         scale = 1
@@ -285,10 +286,6 @@ def file_reader(filename, attolight_calibration_file=None, background_file=None,
 
     # Get folder name (which is the experiment name)
     name = os.path.basename(hypcard_folder)
-
-    if len(name) > 37:
-        # CAUTION: Specifically delimited by Attolight default naming system
-        name = name[:-37]
 
     # Load calibration dictionary if possible
     if attolight_calibration_file is not None:
