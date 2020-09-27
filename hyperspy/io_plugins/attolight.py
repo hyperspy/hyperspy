@@ -25,7 +25,6 @@ import glob
 import os
 import logging
 import numpy as np
-from hyperspy.misc.utils import DictionaryTreeBrowser
 
 _logger = logging.getLogger(__name__)
 
@@ -39,11 +38,13 @@ file_extensions = ['bin', 'BIN']
 default_extension = 0
 # Writing capabilities
 writes = False
+
+
 # ----------------------
 
 def _get_original_metadata(folder, md_file_name, channels):
     """
-    :param folder: expermient folder path
+    :param folder: experiment folder path
     :param md_file_name: name of the metadata txt file
     :param channels: number of channels
     :return: dictionary
@@ -76,27 +77,26 @@ def _get_original_metadata(folder, md_file_name, channels):
 
 
 def _parse_relevant_metadata_values(filename, md_file_name, md_subcategory, channels):
-
     original_metadata = _get_original_metadata(filename, md_file_name, channels)
 
     from pint import UnitRegistry, UndefinedUnitError
 
     ureg = UnitRegistry()
-    Q_ = ureg.Quantity
+    q_reg = ureg.Quantity
 
     keys_of_interest = {
-        'Spectrometer' : [
+        'Spectrometer': [
             'Grating - Groove Density',
             'Central wavelength',
         ],
-        'CCD' : [
+        'CCD': [
             'Horizontal Binning',
             'Channels',
             'Signal Amplification',
             'Readout Rate (horizontal pixel shift)',
             'Exposure Time',
         ],
-        'SEM' : [
+        'SEM': [
             'Resolution_X',
             'Resolution_Y',
             'Real Magnification',
@@ -112,7 +112,7 @@ def _parse_relevant_metadata_values(filename, md_file_name, md_subcategory, chan
     for key, value in original_metadata.items():
         if key in keys_of_interest[md_subcategory]:
             try:
-                value = Q_(value).magnitude
+                value = q_reg(value).magnitude
             except UndefinedUnitError:
                 value = value
 
@@ -122,7 +122,7 @@ def _parse_relevant_metadata_values(filename, md_file_name, md_subcategory, chan
     return metadata
 
 
-def _store_metadata(dict_tree, hypcard_folder, md_file_name,
+def _store_metadata(meta_dict, hypcard_folder, md_file_name,
                     attolight_acquisition_system, channels):
     """
     Store metadata in the DictionaryTreeBrowser metadata. Stores
@@ -132,20 +132,22 @@ def _store_metadata(dict_tree, hypcard_folder, md_file_name,
     # Get metadata
     metadata = {}
     metadata['Spectrometer'] = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
-                                                                'Spectrometer', channels)
-    metadata['CCD']  = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
-                                                                'CCD', channels)
-    metadata['SEM']  = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
-                                                                'SEM', channels)
+                                                               'Spectrometer', channels)
+    metadata['CCD'] = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
+                                                      'CCD', channels)
+    metadata['SEM'] = _parse_relevant_metadata_values(hypcard_folder, md_file_name,
+                                                      'SEM', channels)
 
     # Store metadata
     for group in metadata:
+        g = {}
         for key, value in metadata[group].items():
-            s = "Acquisition_instrument." + group + "." + key
-            dict_tree.set_item(s, value)
+            d = {key: value}
+            g.update(d)
+        meta_dict["Acquisition_instrument"].update(g)
 
-    dict_tree.set_item("General.folder_path", hypcard_folder)
-    dict_tree.set_item("Acquisition_instrument.acquisition_system", attolight_acquisition_system)
+    meta_dict["General"]["folder_path"] = hypcard_folder
+    meta_dict["Acquisition_instrument"]["acquisition_system"] = attolight_acquisition_system
 
     return
 
@@ -177,20 +179,23 @@ def _create_signal_axis(data):
     return axis_dict
 
 
-def _create_navigation_axis(data, metadata, cal_factor_x_axis):
+def _create_navigation_axis(data, metadata, cal_factor_x_axis, system_name):
     # Edit the navigation axes
     if cal_factor_x_axis is not None:
         # Get relevant parameters from metadata and acquisition_systems
         # parameters
-        FOV = metadata.Acquisition_instrument.SEM.Real_Magnification.magnitude
-        nx = metadata.Acquisition_instrument.SEM.Resolution_X.magnitude
+        fov = metadata["Acquisition_instrument"]["SEM"]["Real_Magnification"]
+        nx = metadata["Acquisition_instrument"]["SEM"]["Resolution_X"]
 
         # Get the calibrated scanning axis scale from the acquisition_systems
         # dictionary
-        calax = cal_factor_x_axis / (FOV * nx)
+        calax = cal_factor_x_axis / (fov * nx)
         scale = calax * 1000
         # changes micrometer to nm, value for the size of 1 pixel
         units = 'nm'
+
+        # Add in metadata calibration tag
+        metadata["Signal"]["calibration_file"] = system_name
 
     else:
         scale = 1
@@ -221,16 +226,16 @@ def _save_background_metadata(metadata, hypcard_folder, background_file_name):
         # Load the file as a numpy array
         bkg = np.loadtxt(path)
         # The bkg file contains [wavelength, background]
-        metadata.set_item("Signal.background", bkg)
+        metadata["Signal"]["background"] = bkg
         return
     except FileNotFoundError:
         return
 
 
-def _get_calibration_dictionary(calibration_path, metadata):
-    from pint import UnitRegistry
+def _get_calibration_dictionary(calibration_path):
+    from pint import UnitRegistry, UndefinedUnitError
     ureg = UnitRegistry()
-    Q_ = ureg.Quantity
+    q_reg = ureg.Quantity
 
     calibration_dict = {}
     with open(calibration_path) as f:
@@ -238,35 +243,37 @@ def _get_calibration_dictionary(calibration_path, metadata):
             try:
                 key, value = line.split(":")
                 try:
-                    value = Q_(value).magnitude
-                except:
+                    value = q_reg(value).magnitude
+                except UndefinedUnitError:
                     pass
                 calibration_dict[key] = value
             except ValueError:
                 # not enough values to unpack
                 pass
-    # Add in metadata calibration tag
-    metadata.Signal.calibration_file = os.path.basename(calibration_path)
     return calibration_dict
 
 
-def file_reader(filename, attolight_calibration_file=None, background_file=None,
-                *args, **kwds):
-    """Loads data into CLSEMSpectrum lumispy object.
+def file_reader(filename, attolight_calibration_file=None, background_file=None,):
+    """
+    Loads data into CLSEMSpectrum lumispy object.
     Reads the HYPCard.bin file, containing the hyperspectral CL data.
     Reads the metadata files contained in the same folder as HYPCard.bin.
         - MicroscopeStatus.txt to load all the metadata values
-        - Background file contained in the same folder
+        - Background file contained in the same folder (or imported with `background_file` param)
         - SEM image (taken simultaneously) with the hyperspectral map.
+    You can also import a microscope-specific calibration .txt file as input to calibrate the
+    navigation axis.
 
     Parameters
     ----------
-    filename : str, None
-        The HYPCard.bin filepath for the file to be loaded, created by
-        the AttoLight software.
-    attolight_calibration_file : str
-        The calibration.txt filepath for the file to be calibrated. If not given, assume 1024 channels and no grating correction.
-
+    :param filename: str
+        The HYPCard.bin filepath for the file to be loaded, created by the AttoLight software.
+    :param attolight_calibration_file: str
+        The calibration.txt filepath for the file to be calibrated.
+        If not given, assume 1024 channels and no navigation axis calibration.
+    :param background_file: str
+        An external background .txt file,
+        in case none is found in the same folder as the HYPCard.bin file.
     Returns
     -------
     s: dictionary
@@ -279,38 +286,37 @@ def file_reader(filename, attolight_calibration_file=None, background_file=None,
     # Get folder name (which is the experiment name)
     name = os.path.basename(hypcard_folder)
 
+    if len(name) > 37:
+        # CAUTION: Specifically delimited by Attolight default naming system
+        name = name[:-37]
+
+    # Load calibration dictionary if possible
+    if attolight_calibration_file is not None:
+        calibration_dict = _get_calibration_dictionary(attolight_calibration_file)
+    else:
+        calibration_dict = {
+            'system_name': None,
+            'channels': 1024,
+            'metadata_file_name': 'MicroscopeStatus.txt',
+            'cal_factor_x_axis': None, }
+
     # Create metadata dictionary
-    meta = DictionaryTreeBrowser({
-        'General': {'title': name},
-        "Signal": {'signal_type': 'CL_SEM',
-                   'background': None},
-    })
+    meta = {
+        "General": {"title": name},
+        "Signal": {"signal_type": "CL_SEM", "background": None, "calibration_file": None},
+        "Acquisition_instrument": {},
+    }
 
     # Add all parameters as metadata
     _store_metadata(meta, hypcard_folder,
-                    attolight_calibration_file['metadata_file_name'],
-                    attolight_calibration_file['system_name'],
-                    attolight_calibration_file['channels'])
-
-    # Load calibration dictionary if possible
-    meta.set_item("Signal.calibration_file", None)
-    if attolight_calibration_file is not None:
-        calibration_dict = _get_calibration_dictionary(attolight_calibration_file, meta)
-    else:
-        calibration_dict = {
-            'system_name' : None,
-            'channels': 1024,
-            'metadata_file_name': 'MicroscopeStatus.txt',
-            'cal_factor_x_axis': None,}
-
-    if len(name) > 37:
-        # CAUTION: Specifically delimeted by Attolight default naming system
-        name = name[:-37]
+                    calibration_dict['metadata_file_name'],
+                    calibration_dict['system_name'],
+                    calibration_dict['channels'])
 
     # Load data
-    channels = meta.Acquisition_instrument.CCD.Channels.magnitude
-    nx = meta.Acquisition_instrument.SEM.Resolution_X.magnitude
-    ny = meta.Acquisition_instrument.SEM.Resolution_Y.magnitude
+    channels = meta["Acquisition_instrument"]["CCD"]["Channels"]
+    nx = meta["Acquisition_instrument"]["SEM"]["Resolution_X"]
+    ny = meta["Acquisition_instrument"]["SEM"]["Resolution_Y"]
 
     with open(filename, 'rb') as f:
         data = np.fromfile(f, dtype=[('bar', '<i4')], count=channels * nx * ny)
@@ -326,7 +332,9 @@ def file_reader(filename, attolight_calibration_file=None, background_file=None,
 
     # Create axes
     signal_axis = _create_signal_axis(data)
-    navigation_axis = _create_navigation_axis(data, meta, calibration_dict['cal_factor_x_axis'])
+    navigation_axis = _create_navigation_axis(data, meta,
+                                              calibration_dict['cal_factor_x_axis'],
+                                              calibration_dict['system_name'])
 
     axes = [navigation_axis, navigation_axis, signal_axis]
 
@@ -334,7 +342,7 @@ def file_reader(filename, attolight_calibration_file=None, background_file=None,
     dictionary = {
         'data': data.squeeze(),
         'axes': axes,
-        'metadata': meta.as_dictionary(),
+        'metadata': meta,
         "package": 'lumispy',
     }
     return [dictionary, ]
