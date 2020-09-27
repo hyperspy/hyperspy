@@ -250,7 +250,7 @@ def _get_calibration_dictionary(calibration_path, metadata):
     return calibration_dict
 
 
-def file_reader(filename, attolight_calibration_dictionary=None, background_file=None,
+def file_reader(filename, attolight_calibration_file=None, background_file=None,
                 *args, **kwds):
     """Loads data into CLSEMSpectrum lumispy object.
     Reads the HYPCard.bin file, containing the hyperspectral CL data.
@@ -264,7 +264,7 @@ def file_reader(filename, attolight_calibration_dictionary=None, background_file
     filename : str, None
         The HYPCard.bin filepath for the file to be loaded, created by
         the AttoLight software.
-    attolight_calibration_dictionary : str
+    attolight_calibration_file : str
         The calibration.txt filepath for the file to be calibrated. If not given, assume 1024 channels and no grating correction.
 
     Returns
@@ -288,14 +288,14 @@ def file_reader(filename, attolight_calibration_dictionary=None, background_file
 
     # Add all parameters as metadata
     _store_metadata(meta, hypcard_folder,
-                    attolight_calibration_dictionary['metadata_file_name'],
-                    attolight_calibration_dictionary['system_name'],
-                    attolight_calibration_dictionary['channels'])
+                    attolight_calibration_file['metadata_file_name'],
+                    attolight_calibration_file['system_name'],
+                    attolight_calibration_file['channels'])
 
     # Load calibration dictionary if possible
     meta.set_item("Signal.calibration_file", None)
-    if attolight_calibration_dictionary is not None:
-        calibration_dict = _get_calibration_dictionary(attolight_calibration_dictionary, meta)
+    if attolight_calibration_file is not None:
+        calibration_dict = _get_calibration_dictionary(attolight_calibration_file, meta)
     else:
         calibration_dict = {
             'system_name' : None,
