@@ -97,8 +97,8 @@ def test_get_calibration_dictionary():
     # Test if it loads the calibrations
     cl_sem = hs.load(test_file, attolight_calibration_file=calibration_file)
     assert cl_sem.metadata.Acquisition_instrument.acquisition_system is not None
-    assert cl_sem.metadata.Acquisition_instrument.acquisition_system == 'cambridge_uk'
-    assert cl_sem.metadata.Signal.calibration_file == 'cambridge_uk'
+    assert cl_sem.metadata.Acquisition_instrument.acquisition_system == 'attolight_cambridge_uk'
+    assert cl_sem.metadata.Signal.calibration_file == 'attolight_cambridge_uk'
     assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.calibration_factor_x_axis, 131072, 1)
 
     # Test that no calibrations (default values) are stored if no param is given
@@ -114,23 +114,21 @@ def test__store_metadata():
 def test_metadata():
     cl_sem = hs.load(test_file)
 
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.Spectrometer.Grating__Groove_Density.magnitude, 150.0, 1)
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.Spectrometer.Central_wavelength.magnitude, 700, 1)
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.Spectrometer.Grating__Groove_Density, 150.0, 1)
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.Spectrometer.Central_wavelength, 700, 1)
 
-    assert cl_sem.metadata.Acquisition_instrument.SEM.Resolution_X.magnitude == 2
-    assert cl_sem.metadata.Acquisition_instrument.SEM.Resolution_Y.magnitude == 2
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Real_Magnification.magnitude, 26391, 1)
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Objective_Lens.magnitude, 0.325, 0.01)
-    assert cl_sem.metadata.Acquisition_instrument.SEM.Aperture.magnitude == 100
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Resolution_X == 2
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Resolution_Y == 2
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Real_Magnification, 26391, 1)
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Objective_Lens, 0.325, 0.01)
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Aperture == 100
     assert cl_sem.metadata.Acquisition_instrument.SEM.Aperture_Chamber_Pressure == '1.0426e-07 Torr'
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.HYP_Dwelltime.magnitude, 0.29, atol=0.1)
-    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Beam_Energy.magnitude, 6000, 100)
-    assert cl_sem.metadata.Acquisition_instrument.SEM.Gun_Lens.magnitude == 1.2
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.HYP_Dwelltime, 0.29, atol=0.1)
+    assert_allclose(cl_sem.metadata.Acquisition_instrument.SEM.Beam_Energy, 6000, 100)
+    assert cl_sem.metadata.Acquisition_instrument.SEM.Gun_Lens == 1.2
 
-    assert cl_sem.metadata.Acquisition_instrument.CCD.Horizontal_Binning.magnitude == 1
-    assert cl_sem.metadata.Acquisition_instrument.CCD.Channels.magnitude == 1024
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Horizontal_Binning == 1
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Channels == 1024
     assert cl_sem.metadata.Acquisition_instrument.CCD.Signal_Amplification == 'x1'
     assert cl_sem.metadata.Acquisition_instrument.CCD.Readout_Rate_horizontal_pixel_shift == '1Mhz'
-    assert cl_sem.metadata.Acquisition_instrument.CCD.Exposure_Time.magnitude == 0.3
-
-    assert cl_sem.metadata.Acquisition_instrument.acquisition_system == 'cambridge_uk_attolight'
+    assert cl_sem.metadata.Acquisition_instrument.CCD.Exposure_Time == 0.3

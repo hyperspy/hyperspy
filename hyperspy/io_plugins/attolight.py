@@ -115,7 +115,7 @@ def _parse_relevant_metadata_values(filename, md_file_name, md_subcategory, chan
             try:
                 value = q_reg(value).magnitude
             except UndefinedUnitError:
-                value = value
+                value = value[:-1].strip()
 
             key = key.replace(" ", "_")
             metadata[key] = value
@@ -254,7 +254,8 @@ def _get_calibration_dictionary(calibration_path):
     return calibration_dict
 
 
-def file_reader(filename, attolight_calibration_file=None, background_file=None,):
+def file_reader(filename, attolight_calibration_file=None, background_file=None,
+                *args, **kwds):
     """
     Loads data into CLSEMSpectrum lumispy object.
     Reads the HYPCard.bin file, containing the hyperspectral CL data.
