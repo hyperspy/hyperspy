@@ -535,7 +535,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 if reference in ['current', 'cascade']:
                     if ref is None:
                         ref = im.copy()
-                        shift = np.array([0, 0])
+                        shift = np.array([0., 0.])
                     nshift, max_val = estimate_image_shift(
                         ref, im, roi=roi, sobel=sobel, medfilter=medfilter,
                         hanning=hanning, plot=plot,
