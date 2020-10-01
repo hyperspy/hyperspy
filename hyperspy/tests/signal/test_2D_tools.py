@@ -65,6 +65,7 @@ class TestSubPixelAlign:
         s.align2D(shifts=shifts)
         # Compare by broadcasting
         np.testing.assert_allclose(s.data[4], s.data[0], rtol=0.5)
+        s.estimate_shift2D(reference='cascade', sub_pixel_factor=10)
 
     @pytest.mark.parametrize(("normalize_corr", "reference"),
                              _generate_parameters())

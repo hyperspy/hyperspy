@@ -159,3 +159,34 @@ def test_Model2D_NotImplementedError_plot():
     for member_f in ["_plot_component", "_connect_component_line"]:
         with pytest.raises(NotImplementedError):
             _ = getattr(m, member_f)(None)
+
+def test_channelswitches_mask():
+    g = hs.model.components2D.Gaussian2D(
+        A=1, centre_x=-5.0, centre_y=-5.0, sigma_x=1.0, sigma_y=2.0
+    )
+
+    scale = 0.1
+    x = np.arange(-10, 10, scale)
+    y = np.arange(-10, 10, scale)
+    X, Y = np.meshgrid(x, y)
+
+    im = hs.signals.Signal2D(g.function(X, Y))
+    im.axes_manager[0].scale = scale
+    im.axes_manager[0].offset = -10
+    im.axes_manager[1].scale = scale
+    im.axes_manager[1].offset = -10
+
+    mask = (im<0.01).data
+
+    m = im.create_model()
+    gt = hs.model.components2D.Gaussian2D(centre_x=-4.5,
+                                          centre_y=-4.5,
+                                          sigma_x=0.5,
+                                          sigma_y=1.5)
+    m.append(gt)
+    m.fit()
+
+    np.testing.assert_allclose(gt.centre_x.value, -5.)
+    np.testing.assert_allclose(gt.centre_y.value, -5.)
+    np.testing.assert_allclose(gt.sigma_x.value, 1.)
+    np.testing.assert_allclose(gt.sigma_y.value, 2.)
