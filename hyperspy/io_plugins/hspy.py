@@ -707,9 +707,7 @@ def write_signal(signal, group, **kwds):
 
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
-    elif kwds['compression'] == 'blosc':
-        kwds['compression'] = 32001
-    if kwds['compression'] == 32001:
+    elif kwds['compression'] in ['blosc', 32001]:
         import_pytables_for_blosc(kwds['compression'])
 
     for axis in signal.axes_manager._axes:
@@ -746,6 +744,9 @@ def write_signal(signal, group, **kwds):
             model.attrs['_signal'] = group.name
 
 def import_pytables_for_blosc(compression_algorithm=None):
+    """The 'blosc' and 32001 compression algorithms are the same. It requires  
+    pytables to have been imported.
+    """
     try:
         import tables
     except ImportError:
@@ -775,12 +776,12 @@ def file_writer(filename, signal, *args, **kwds):
         if "/" in group_name:
             group_name = group_name.replace("/", "-")
         expg = exps.create_group(group_name)
+
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
-        elif kwds['compression'] == 'blosc':
-            kwds['compression'] = 32001
-        if kwds['compression'] == 32001:
+        elif kwds['compression'] in ['blosc', 32001]:
             import_pytables_for_blosc(kwds['compression'])
+
         # Add record_by metadata for backward compatibility
         smd = signal.metadata.Signal
         if signal.axes_manager.signal_dimension == 1:

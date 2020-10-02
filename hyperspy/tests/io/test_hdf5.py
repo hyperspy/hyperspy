@@ -662,7 +662,7 @@ class TestSaveReadWithCompression():
         self.s.save('test_compression.hspy', overwrite=True, compression=compression)
 
         s = load('test_compression.hspy')
-
+        os.remove('test_compression.hspy')
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert isinstance(s.metadata.Sample.elements, list)
