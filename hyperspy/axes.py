@@ -1145,6 +1145,10 @@ class AxesManager(t.HasTraits):
         AttributeError when attempting to set its value.
     signal_axes, navigation_axes : list
         Contain the corresponding DataAxis objects
+    iterpath : string or iterable
+        Sets the order of iterating through the indices in the navigation dimension.
+        indices. Can be either "flyback" or "serpentine", or an iterable
+        of hyperspy indices.
 
     Examples
     --------
