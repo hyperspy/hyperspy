@@ -46,7 +46,6 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
 def test_signal_iterator():
     sig = signals.Signal1D(np.arange(3).reshape((3, 1)))
     for s in (sig, sig.as_lazy()):
-        assert next(s).data[0] == 0
         # If the following fails it can be because the iteration index was not
         # restarted
         for i, signal in enumerate(s):

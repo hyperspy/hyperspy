@@ -1115,12 +1115,6 @@ def flyback_iter(shape):
 
     return ndindex_reversed(shape)
 
-iterpath_error = '''The iterpath scan pattern is set to "{}". \
-It must be either "serpentine" or "flyback", or an iterable of \
-hyperspy indices, and is set either \
-as multifit `iterpath` argument or \
-`axes_manager.iterpath`'''
-
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
 
@@ -1460,7 +1454,12 @@ class AxesManager(t.HasTraits):
                 self._iterpath = 'flyback'
                 self._iterpath_generator = flyback_iter(self.navigation_shape)
             else:
-                raise ValueError(iterpath_error.format(path))
+                iterpath_error = (
+                    f'The iterpath scan pattern is set to "{path}". '
+                    'It must be either "serpentine" or "flyback", or an iterable '
+                    'of hyperspy indices, and is set either as multifit '
+                    '`iterpath` argument or `axes_manager.iterpath`')
+                raise ValueError(iterpath_error)
         else:
             # Pass a custom indices iterator
             self._iterpath = path
