@@ -494,12 +494,16 @@ def test_iterate_markers():
     index = np.array([peak_local_max(im.data, min_distance=100,
                                      num_peaks=4) for im in ims])
     # Add multiple markers
+    # Numbers "1" and "2" are not visible in the 1st and 2nd image, respectively
+    visible = [[True] * 3, [False, True, True], [True, None, True], [True] * 3]
     for i in range(4):
         xs = index[:, i, 1]
         ys = index[:, i, 0]
         m = markers.point(x=xs, y=ys, color='red')
         ims.add_marker(m, plot_marker=True, permanent=True)
-        m = markers.text(x=10 + xs, y=10 + ys, text=str(i), color='k')
+        m = markers.text(
+            x=10 + xs, y=10 + ys, text=str(i), color='k', visible=visible[i]
+        )
         ims.add_marker(m, plot_marker=True, permanent=True)
     xs = index[:, :, 1]
     ys = index[:, :, 0]
@@ -523,6 +527,13 @@ def test_iterate_markers():
             assert mo.get_data_position('text') == mi.get_data_position('text')
             assert mo.marker_properties['color'] == \
                 mi.marker_properties['color']
+            assert mo.get_data_position('visible') == mi.get_data_position('visible')
+
+    # Ensure text markers' visibility are as set above
+    for i, im in enumerate(ims):
+        mi = im.metadata.Markers
+        for j, tm in enumerate([mi.text, mi.text1, mi.text2, mi.text3]):
+            assert tm.get_data_position("visible") == visible[j][i]
 
 
 @update_close_figure

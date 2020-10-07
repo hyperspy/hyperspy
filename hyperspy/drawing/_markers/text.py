@@ -56,11 +56,11 @@ class Text(MarkerBase):
     >>> s.add_marker(m, permanent=True)
     """
 
-    def __init__(self, x, y, text, **kwargs):
+    def __init__(self, x, y, text, visible=None, **kwargs):
         MarkerBase.__init__(self)
         lp = {'color': 'black'}
         self.marker_properties = lp
-        self.set_data(x1=x, y1=y, text=text)
+        self.set_data(x1=x, y1=y, text=text, visible=visible)
         self.set_marker_properties(**kwargs)
         self.name = 'text'
 
@@ -81,8 +81,13 @@ class Text(MarkerBase):
         self.marker.set_position([self.get_data_position('x1'),
                                   self.get_data_position('y1')])
         self.marker.set_text(self.get_data_position('text'))
+        self.marker.set_visible(self.get_data_position('visible'))
 
     def _plot_marker(self):
         self.marker = self.ax.text(
-            self.get_data_position('x1'), self.get_data_position('y1'),
-            self.get_data_position('text'), **self.marker_properties)
+            x=self.get_data_position('x1'),
+            y=self.get_data_position('y1'),
+            s=self.get_data_position('text'),
+            visible=self.get_data_position('visible'),
+            **self.marker_properties,
+        )

@@ -93,7 +93,7 @@ class MarkerBase(object):
             'marker_type': self.__class__.__name__,
             'plot_on_signal': self._plot_on_signal,
             'data': {k: self.data[k][()].tolist() for k in (
-                'x1', 'x2', 'y1', 'y2', 'text', 'size')}
+                'x1', 'x2', 'y1', 'y2', 'text', 'size', 'visible')}
         }
         return marker_dict
 
@@ -116,19 +116,40 @@ class MarkerBase(object):
         """
         self.marker_properties = kwargs
 
-    def set_data(self, x1=None, y1=None,
-                 x2=None, y2=None, text=None, size=None):
+    def set_data(
+        self,
+        x1=None,
+        y1=None,
+        x2=None,
+        y2=None,
+        text=None,
+        size=None,
+        visible=None,
+    ):
+        """Set data to the structured array. Each field of data should
+        have the same dimensions than the navigation axes. The other
+        fields are overwritten.
         """
-        Set data to the structured array. Each field of data should have
-        the same dimensions than the navigation axes. The other fields are
-        overwritten.
-        """
-        self.data = np.array((np.array(x1), np.array(y1),
-                              np.array(x2), np.array(y2),
-                              np.array(text), np.array(size)),
-                             dtype=[('x1', object), ('y1', object),
-                                    ('x2', object), ('y2', object),
-                                    ('text', object), ('size', object)])
+        self.data = np.array(
+            (
+                np.array(x1),
+                np.array(y1),
+                np.array(x2),
+                np.array(y2),
+                np.array(text),
+                np.array(size),
+                np.array(visible),
+            ),
+            dtype=[
+                ('x1', object),
+                ('y1', object),
+                ('x2', object),
+                ('y2', object),
+                ('text', object),
+                ('size', object),
+                ('visible', object)
+            ]
+        )
         self._is_marker_static()
 
     def add_data(self, **kwargs):
