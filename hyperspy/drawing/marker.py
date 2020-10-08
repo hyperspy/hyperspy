@@ -124,7 +124,7 @@ class MarkerBase(object):
         y2=None,
         text=None,
         size=None,
-        visible=None,
+        visible=None,  # Or True?
     ):
         """Set data to the structured array. Each field of data should
         have the same dimensions than the navigation axes. The other

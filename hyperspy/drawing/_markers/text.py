@@ -33,6 +33,10 @@ class Text(MarkerBase):
         The position of the text in y. see x arguments
     text : array or str
         The text. see x arguments
+    visible : bool, optional
+        Whether to plot the marker, default is True. This is useful when
+        adding a marker that changes with signal navigation index, but is
+        not visibile in all indices.
     kwargs :
         Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
@@ -56,7 +60,7 @@ class Text(MarkerBase):
     >>> s.add_marker(m, permanent=True)
     """
 
-    def __init__(self, x, y, text, visible=None, **kwargs):
+    def __init__(self, x, y, text, visible=True, **kwargs):
         MarkerBase.__init__(self)
         lp = {'color': 'black'}
         self.marker_properties = lp
@@ -73,7 +77,7 @@ class Text(MarkerBase):
             self.get_data_position('text'),
             self.marker_properties['color'],
         )
-        return(string)
+        return string
 
     def update(self):
         if self.auto_update is False:
