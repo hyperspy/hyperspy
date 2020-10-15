@@ -1478,13 +1478,13 @@ SUR and PRO format
 This is a format developed by the digitalsurf company to handle various types of
 scientific measurements data such as profilometer,SEM,AFM,RGB(A) images, multilayer
 surfaces and profiles. Even though it is essentially a surfaces format, 1D signals
-are supported for spectra and spectral maps. Metadata parsing is supported, including
-user-customised metadata, as well as the loading of files containing multiple objects
-packed together.
+are supported for spectra and spectral maps. Specifically, this file format is used
+by Attolight SA for the its Scanning Electron Microscope Cathodoluminescence
+(SEM-CL) hyperspectral maps. Metadata parsing is supported, including user-specific
+metadata, as well as the loading of files containing multiple objects packed together.
 
 The plugin was developed based on the MountainsMap software documentation which
 contains a description of the binary format.
-
 
 .. _empad-format:
 
@@ -1572,4 +1572,3 @@ Like the Digital Micrograph script above, it is used to easily transfer data
 from HyperSpy to MATLAB, while retaining spatial calibration information.
 
 Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.
-
