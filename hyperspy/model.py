@@ -627,8 +627,11 @@ class BaseModel(list):
             f = self._model_line._auto_update_line
             for c in self:
                 es.add(c.events, f)
+                if c._position:
+                    es.add(c._position.events)
                 for p in c.parameters:
                     es.add(p.events, f)
+
         for c in self:
             if hasattr(c, '_model_plot_line'):
                 f = c._model_plot_line._auto_update_line
@@ -643,6 +646,11 @@ class BaseModel(list):
         self._suspend_update = old
 
         if update_on_resume is True:
+            for c in self:
+                position = c._position
+                if position:
+                    position.events.value_changed.trigger(
+                        obj=position, value=position.value)
             self.update_plot(render_figure=True, update_ylimits=False)
 
     def _close_plot(self):
