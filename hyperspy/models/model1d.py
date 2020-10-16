@@ -780,7 +780,6 @@ class Model1D(BaseModel):
         component._component_line = line
         self._connect_component_line(component)
 
-
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
         if hasattr(component, "_component_line"):

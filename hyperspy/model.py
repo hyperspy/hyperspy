@@ -606,9 +606,10 @@ class BaseModel(list):
                 if self._model_line is not None:
                     self._model_line.update(render_figure=render_figure,
                                             update_ylimits=update_ylimits)
-                for component in [component for component in self if
-                                  component.active is True]:
-                    self._update_component_line(component)
+                if self._plot_components:
+                    for component in [component for component in self if
+                                      component.active is True]:
+                        self._update_component_line(component)
             except BaseException:
                 self._disconnect_parameters2update_plot(components=self)
 
