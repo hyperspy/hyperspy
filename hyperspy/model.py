@@ -853,7 +853,7 @@ class BaseModel(list):
             if component.active:
                 component.store_current_parameters_in_map()
 
-    def fetch_stored_values(self, only_fixed=False):
+    def fetch_stored_values(self, only_fixed=False, update_on_resume=True):
         """Fetch the value of the parameters that has been previously stored.
 
         Parameters
@@ -861,15 +861,24 @@ class BaseModel(list):
         only_fixed : bool, optional
             If True, only the fixed parameters are fetched.
 
+        update_on_resume : bool, optional
+            If True, update the model plot after values are updated.
+
         See Also
         --------
         store_current_values
 
         """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
-        with cm(update_on_resume=True):
+        with cm(update_on_resume=update_on_resume):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
+
+    def _on_navigating(self):
+        """Same as fetch_stored_values but without update_on_resume since
+        the model plot is updated in the figure update callback.
+        """
+        self.fetch_stored_values(only_fixed=False, update_on_resume=False)
 
     def fetch_values_from_array(self, array, array_std=None):
         """Fetch the parameter values from the given array, optionally also
