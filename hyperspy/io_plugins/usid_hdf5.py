@@ -384,7 +384,7 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
 
 
 def file_reader(filename, dataset_path=None, ignore_non_uniform_dims=True,
-                **kwds):
+                lazy=False, **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
 
@@ -416,14 +416,8 @@ def file_reader(filename, dataset_path=None, ignore_non_uniform_dims=True,
 
     # Need to keep h5 file handle open indefinitely if lazy
     # Using "with" will cause the file to be closed
-    # with h5py.File(filename, mode='r') as h5_f:
-    h5_f = h5py.File(filename, mode='r')
+    h5_f = h5py.File(filename, mode='r+' if lazy else 'r')
     if dataset_path is None:
-        """
-        if not kwds.get('lazy', True):
-            warn('In order to safely load multiple large datasets to memory, '
-                 'please consider setting the kwarg lazy=True')
-        """
         all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
         signals = []
         for h5_dset in all_main_dsets:
@@ -431,7 +425,8 @@ def file_reader(filename, dataset_path=None, ignore_non_uniform_dims=True,
             # Should not append
             signals += _usidataset_to_signal(h5_dset,
                                              ignore_non_uniform_dims=
-                                             ignore_non_uniform_dims, **kwds)
+                                             ignore_non_uniform_dims,
+                                             lazy=lazy, **kwds)
         return signals
     else:
         if not isinstance(dataset_path, str):
@@ -439,10 +434,11 @@ def file_reader(filename, dataset_path=None, ignore_non_uniform_dims=True,
         h5_dset = h5_f[dataset_path]
         return _usidataset_to_signal(h5_dset,
                                      ignore_non_uniform_dims=
-                                     ignore_non_uniform_dims, **kwds)
+                                     ignore_non_uniform_dims,
+                                     lazy=lazy, **kwds)
 
     # At least close the file handle if not lazy load
-    if not kwds.get('lazy', True):
+    if not lazy:
         h5_f.close()
 
 
