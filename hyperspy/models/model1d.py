@@ -362,8 +362,8 @@ class Model1D(BaseModel):
             if parameter in self._position_widgets:
                 for pw in reversed(self._position_widgets[parameter]):
                     pw.close()
-            if hasattr(thing, '_model_plot_line'):
-                line = thing._model_plot_line
+            if hasattr(thing, '_component_line'):
+                line = thing._component_line
                 line.close()
         super(Model1D, self).remove(things)
         self._disconnect_parameters2update_plot(things)
@@ -741,16 +741,16 @@ class Model1D(BaseModel):
 
     @staticmethod
     def _connect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+        if hasattr(component, "_component_line"):
+            f = component._component_line._auto_update_line
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
 
     @staticmethod
     def _disconnect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+        if hasattr(component, "_component_line"):
+            f = component._component_line._auto_update_line
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
@@ -765,25 +765,27 @@ class Model1D(BaseModel):
             if component.active:
                 self._disconnect_component_line(component)
 
+    @staticmethod
+    def _update_component_line(component):
+        if hasattr(component, "_component_line"):
+            component._component_line.update(render_figure=False,
+                                             update_ylimits=False)
+
     def _plot_component(self, component):
         line = hyperspy.drawing.signal1d.Signal1DLine()
         line.data_function = component._component2plot
         # Add the line to the figure
         self._plot.signal_plot.add_line(line)
         line.plot()
-        component._model_plot_line = line
+        component._component_line = line
         self._connect_component_line(component)
 
-    @staticmethod
-    def _update_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update()
 
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.close()
-            del component._model_plot_line
+        if hasattr(component, "_component_line"):
+            component._component_line.close()
+            del component._component_line
         self._plot_components = False
 
     def _close_plot(self):

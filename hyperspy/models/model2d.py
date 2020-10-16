@@ -254,6 +254,10 @@ class Model2D(BaseModel):
     def _connect_component_line(component):
         raise NotImplementedError
 
+    @staticmethod
+    def _disconnect_component_line(component):
+        raise NotImplementedError
+
     def _plot_component(self, component):
         raise NotImplementedError
 

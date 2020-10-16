@@ -633,8 +633,8 @@ class BaseModel(list):
                     es.add(p.events, f)
 
         for c in self:
-            if hasattr(c, '_model_plot_line'):
-                f = c._model_plot_line._auto_update_line
+            if hasattr(c, '_component_line'):
+                f = c._component_line._auto_update_line
                 es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
@@ -659,43 +659,11 @@ class BaseModel(list):
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    @staticmethod
-    def _connect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
-            component.events.active_changed.connect(f, [])
-            for parameter in component.parameters:
-                parameter.events.value_changed.connect(f, [])
-
-    @staticmethod
-    def _disconnect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
-            component.events.active_changed.disconnect(f)
-            for parameter in component.parameters:
-                parameter.events.value_changed.disconnect(f)
-
-    def _connect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._connect_component_line(component)
-
-    def _disconnect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._disconnect_component_line(component)
-
-    @staticmethod
-    def _update_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update(render_figure=False,
-                                              update_ylimits=False)
-
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.close()
-            del component._model_plot_line
+        if hasattr(component, "_component_line"):
+            component._component_line.close()
+            del component._component_line
         self._plot_components = False
 
     def enable_plot_components(self):
