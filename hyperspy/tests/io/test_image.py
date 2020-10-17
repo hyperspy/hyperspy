@@ -52,3 +52,16 @@ def test_save_load_cycle_color(color, ext):
         filename = os.path.join(tmpdir, 'test_image.'+ext)
         s.save(filename)
         hs.load(filename)
+
+
+@pytest.mark.parametrize(("ext"), ['png', 'bmp', 'gif', 'jpg'])
+def test_export_scalebar(ext):
+    data = np.arange(1E6).reshape((1000, 1000))
+    s = hs.signals.Signal2D(data)
+    s.axes_manager[0].units = 'nm'
+    filename = 'test.png'
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = os.path.join(tmpdir, f'test_scalebar_export.{ext}')
+        s.save(filename)
+        s_reload = hs.load(filename, scalebar=True)
+        assert s.data.shape == s_reload.data.shape
