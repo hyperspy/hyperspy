@@ -534,8 +534,19 @@ Images
 ------
 
 HyperSpy is able to read and write data too all the image formats supported by
-`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
-This includes png, pdf, gif etc.
+the `pillow <https://pillow.readthedocs.io/>`_ library and this includes png,
+pdf, gif etc.
+
+When saving an image, a scalebar can be added to the image and the formatting,
+location, etc. of the scalebar can be set using the ``scalebar_kwds`` arguments
+- see the `matplotlib-scalebar <https://pypi.org/project/matplotlib-scalebar/>`_
+documentation for more information.
+
+.. code-block:: python
+
+    >>> s.save('file.jpg', scalebar=True)
+    >>> s.save('file.jpg', scalebar=True, scalebar_kwds={'location':'lower right'})
+
 
 It is important to note that these image formats only support 8-bit files, and
 therefore have an insufficient dynamic range for most scientific applications.
