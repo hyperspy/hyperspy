@@ -9,6 +9,7 @@ dependencies:
 - imageio
 - ipyparallel
 - matplotlib-base
+- matplotlib-scalebar
 - mrcz
 - natsort
 - numba
@@ -29,4 +30,5 @@ dependencies:
 - tifffile >=2019.07.26
 - traits
 - tqdm
+
 
