@@ -62,6 +62,6 @@ def test_export_scalebar(ext):
     filename = 'test.png'
     with tempfile.TemporaryDirectory() as tmpdir:
         filename = os.path.join(tmpdir, f'test_scalebar_export.{ext}')
-        s.save(filename)
-        s_reload = hs.load(filename, scalebar=True)
+        s.save(filename, scalebar=True)
+        s_reload = hs.load(filename)
         assert s.data.shape == s_reload.data.shape
