@@ -22,6 +22,7 @@ import logging
 from imageio import imread, imwrite
 from matplotlib.figure import Figure
 import traits.api as t
+import pint
 
 from hyperspy.misc import rgb_tools
 
@@ -37,6 +38,7 @@ default_extension = 0  # png
 writes = [(2, 0), ]
 # ----------------------
 
+_ureg = pint.UnitRegistry()
 _logger = logging.getLogger(__name__)
 
 
@@ -95,8 +97,8 @@ def file_writer(filename, signal, scalebar=False,
         if axis.units == t.Undefined:
             axis.units = "px"
             scalebar_kwds['dimension'] = "pixel-length"
-        if not isinstance(axis.units, str):
-            raise ValueError("Units of the signal axis needs to be of string type.")
+        if _ureg.Quantity(axis.units).check('1/[length]'):
+            scalebar_kwds['dimension'] = "si-length-reciprocal"
         scalebar = ScaleBar(axis.scale, axis.units, **scalebar_kwds)
         ax.add_artist(scalebar)
         fig.savefig(filename, dpi=dpi, pil_kwargs=kwds)
