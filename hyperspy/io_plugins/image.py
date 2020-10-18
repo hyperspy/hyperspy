@@ -99,9 +99,9 @@ def file_writer(filename, signal, scalebar=False,
             raise ValueError("Units of the signal axis needs to be of string type.")
         scalebar = ScaleBar(axis.scale, axis.units, **scalebar_kwds)
         ax.add_artist(scalebar)
-        fig.savefig(filename, dpi=dpi)
+        fig.savefig(filename, dpi=dpi, pil_kwargs=kwds)
     else:
-        imwrite(filename, data)
+        imwrite(filename, data, **kwds)
 
 
 def file_reader(filename, **kwds):

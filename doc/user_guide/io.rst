@@ -481,7 +481,7 @@ Digital Micrograph.
     the calibration read from the first spectrum and applied to all other spectra.
 
 Extra saving arguments
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 For the MSA format the ``format`` argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
@@ -547,6 +547,8 @@ documentation for more information.
     >>> s.save('file.jpg', scalebar=True)
     >>> s.save('file.jpg', scalebar=True, scalebar_kwds={'location':'lower right'})
 
+When saving an image, keywords arguments can be passed to the corresponding
+pillow file writer.
 
 It is important to note that these image formats only support 8-bit files, and
 therefore have an insufficient dynamic range for most scientific applications.
