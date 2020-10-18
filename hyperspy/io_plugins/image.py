@@ -77,15 +77,14 @@ def file_writer(filename, signal, scalebar=False,
         try:
             # List of format supported by matplotlib
             supported_format = sorted(fig.canvas.get_supported_filetypes())
+            if os.path.splitext(filename)[1].replace('.', '') not in supported_format:
+                export_scalebar = False
+                _logger.warning("Exporting image with scalebar is supported "
+                                f"only with {', '.join(supported_format)}.")
         except AttributeError:
             export_scalebar = False
             _logger.warning("Exporting image with scalebar requires the "
                             "matplotlib 3.1 or newer.")
-
-        if os.path.splitext(filename)[1].replace('.', '') not in supported_format:
-            export_scalebar = False
-            _logger.warning("Exporting image with scalebar is supported only "
-                            f"with {', '.join(supported_format)}.")
 
     if scalebar and export_scalebar:
         ax = fig.add_axes([0, 0, 1, 1])
