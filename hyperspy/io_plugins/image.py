@@ -72,8 +72,14 @@ def file_writer(filename, signal, scalebar=False,
         fig = Figure(figsize=[v/dpi for v in signal.axes_manager.signal_shape],
                      dpi=dpi)
 
-        # List of format supported by matplotlib
-        supported_format = sorted(fig.canvas.get_supported_filetypes())
+        try:
+            # List of format supported by matplotlib
+            supported_format = sorted(fig.canvas.get_supported_filetypes())
+        except AttributeError:
+            export_scalebar = False
+            _logger.warning("Exporting image with scalebar requires the "
+                            "matplotlib 3.1 or newer.")
+
         if os.path.splitext(filename)[1].replace('.', '') not in supported_format:
             export_scalebar = False
             _logger.warning("Exporting image with scalebar is supported only "
