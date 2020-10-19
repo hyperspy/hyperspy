@@ -20,7 +20,7 @@ from unittest import mock
 
 from numpy import array, arange, zeros
 
-from hyperspy.axes import AxesManager, serpentine_iter, flyback_iter
+from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
@@ -374,11 +374,13 @@ class TestIterPathScanPattern:
         with pytest.raises(TypeError):
             self.am.iterpath = A()
 
-    def test_wrong_custom_iterpath(self):
-        self.am.iterpath = [(0,)] # not enough dimensions
-        with pytest.raises(AttributeError):
-            for i in self.am:
-                pass
+    def test_wrong_custom_iterpath2(self):
+        with pytest.raises(TypeError):
+            self.am.iterpath = [0,1,2,3,4,] # indices are not iterable
+
+    def test_wrong_custom_iterpath3(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = [(0,)] # not enough dimensions
 
     def test_flyback(self):
         self.am.iterpath = "flyback"
@@ -405,12 +407,34 @@ class TestIterPathScanPattern:
         self.am.iterpath = iterpath
         assert self.am._iterpath == iterpath
         assert self.am.iterpath == iterpath
+        assert self.am._iterpath_generator != iterpath
+
         for i, _ in enumerate(self.am):
             if i == 0:
                 assert self.am.indices == iterpath[0]
             if i == 1:
                 assert self.am.indices == iterpath[1]
             break
+
+
+    def test_custom_iterpath_generator(self):
+        def generator():
+            for i in range(3):
+                yield((0,0,i))
+        iterpath = generator()
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
+        assert self.am._iterpath_generator == iterpath
+
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == (0,0,0)
+            if i == 1:
+                assert self.am.indices == (0,0,1)
+            break
+        
+
 
 class TestIterPathScanPatternSignal2D:
     def setup_method(self, method):
@@ -442,11 +466,11 @@ class TestIterPathScanPatternSignal2D:
             break
 
 def test_iterpath_function_flyback():
-    for i, indices in enumerate(flyback_iter((3,3,3))):
+    for i, indices in enumerate(_flyback_iter((3,3,3))):
         if i == 3:
             assert indices == (0, 1, 0)
 
 def test_iterpath_function_flyback():
-    for i, indices in enumerate(serpentine_iter((3,3,3))):
+    for i, indices in enumerate(_serpentine_iter((3,3,3))):
         if i == 3:
             assert indices == (2, 1, 0)

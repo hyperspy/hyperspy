@@ -36,6 +36,8 @@ from hyperspy._components.expression import _parse_substitutions
 
 
 import warnings
+import inspect
+import collections
 
 _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
@@ -1080,7 +1082,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         d["_type"] = 'DataAxis'
         self.__init__(**d, axis=self.axis)
 
-def serpentine_iter(shape):
+def _serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices
     in serpentine pattern, like snake game.
     Takes shape in hyperspy order, not numpy order.
@@ -1105,7 +1107,7 @@ def serpentine_iter(shape):
         else:  # pragma: no cover
             break
 
-def flyback_iter(shape):
+def _flyback_iter(shape):
     "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape in hyperspy order, not numpy order."
     shape = shape[::-1]
     class ndindex_reversed(np.ndindex):
@@ -1453,27 +1455,47 @@ class AxesManager(t.HasTraits):
         if isinstance(path, str):
             if path == 'serpentine':
                 self._iterpath = 'serpentine'
-                self._iterpath_generator = serpentine_iter(self.navigation_shape)
+                self._iterpath_generator = _serpentine_iter(self.navigation_shape)
             elif path == 'flyback':
                 self._iterpath = 'flyback'
-                self._iterpath_generator = flyback_iter(self.navigation_shape)
+                self._iterpath_generator = _flyback_iter(self.navigation_shape)
             else:
-                iterpath_error = (
-                    f'The iterpath scan pattern is set to "{path}". '
+                raise ValueError(
+                    f'The iterpath scan pattern is set to `"{path}"`. '
                     'It must be either "serpentine" or "flyback", or an iterable '
-                    'of hyperspy indices, and is set either as multifit '
-                    '`iterpath` argument or `axes_manager.iterpath`')
-                raise ValueError(iterpath_error)
+                    'of navigation indices, and is set either as multifit '
+                    '`iterpath` argument or `axes_manager.iterpath`'
+                    )
         else:
-            # Pass a custom indices iterator
-            self._iterpath = path
+            # Passing a custom indices iterator
             try:
-                self._iterpath_generator = iter(self._iterpath)
-            except TypeError:
+                iter(path) # If this fails, its not an iterable and we raise TypeError
+            except TypeError as e:
                 raise TypeError(
-                f"The iterpath '{self._iterpath}' is not a correct iterpath. "
-                "Ensure it is an iterable delivering incides with length equal "
-                f"to the navigation dimension, which is {self.navigation_dimension}.")
+                    f'The iterpath `{path}` is not an iterable. '
+                    'Ensure it is an iterable like a list, array or generator.'
+                    ) from e
+            try:
+                if not inspect.isgenerator(path):
+                # If iterpath is a generator, then we can't check its first value, have to trust it
+                    first_indices = path[0]
+                    if not isinstance(first_indices, collections.Iterable):
+                        raise TypeError
+                    assert len(first_indices) == self.navigation_dimension
+            except TypeError as e:
+                raise TypeError(
+                    f"Each set of indices in the iterpath should be an iterable, e.g. `(0,)` or `(0,0,0)`. " 
+                    f"The first entry currently looks like: `{first_indices}`, and does not satisfy this requirement."
+                    ) from e
+            except AssertionError as e:
+                raise ValueError(
+                    f"The current iterpath yields indices of length "
+                    f"{len(path)}. It should deliver incides with length "
+                    f"equal to the navigation dimension, which is {self.navigation_dimension}."
+                    ) from e
+            else:
+                self._iterpath = path
+                self._iterpath_generator = iter(self._iterpath)
 
     def __next__(self):
         """
