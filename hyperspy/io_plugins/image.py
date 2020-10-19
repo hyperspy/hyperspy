@@ -66,7 +66,7 @@ def file_writer(filename, signal, scalebar=False,
         try:
             from matplotlib_scalebar.scalebar import ScaleBar
             export_scalebar = True
-        except ImportError:
+        except ImportError:  # pragma: no cover
             export_scalebar = False
             _logger.warning("Exporting image with scalebar requires the "
                             "matplotlib-scalebar library.")
@@ -81,7 +81,7 @@ def file_writer(filename, signal, scalebar=False,
                 export_scalebar = False
                 _logger.warning("Exporting image with scalebar is supported "
                                 f"only with {', '.join(supported_format)}.")
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             export_scalebar = False
             _logger.warning("Exporting image with scalebar requires the "
                             "matplotlib 3.1 or newer.")
