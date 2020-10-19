@@ -1245,9 +1245,9 @@ class AxesManager(t.HasTraits):
             # Default to Signal1D view if the view is not fully defined
             self.set_signal_dimension(len(axes_list))
 
-        self._iterpath = 'flyback'
         self._update_attributes()
         self._update_trait_handlers()
+        self.iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
