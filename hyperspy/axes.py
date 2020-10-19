@@ -1149,8 +1149,8 @@ class AxesManager(t.HasTraits):
         Contain the corresponding DataAxis objects
     iterpath : string or iterable
         Sets the order of iterating through the indices in the navigation dimension.
-        indices. Can be either "flyback" or "serpentine", or an iterable
-        of hyperspy indices.
+        Can be either "flyback" or "serpentine", or an iterable
+        of hyperspy navigation indices.
 
     Examples
     --------
