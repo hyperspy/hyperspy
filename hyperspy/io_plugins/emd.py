@@ -1100,8 +1100,13 @@ class FeiEMDReader(object):
             # Change back to standard API once issue #977 is fixed.
             # Preallocate the numpy array and use read_direct method, which is
             # much faster in case of chunked data.
-            data = np.empty(h5data.shape)
+            data = np.empty(h5data.shape, h5data.dtype)
             h5data.read_direct(data)
+            # dealing with an FFT, convert to complex
+            if data.dtype == [('realFloatHalfEven', '<f4'),
+                              ('imagFloatHalfEven', '<f4')]:
+                _logger.debug("Found an FFT, loading as Complex2DSignal")
+                data = data['realFloatHalfEven'] + 1j * data['imagFloatHalfEven']
             data = np.rollaxis(data, axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
@@ -1698,7 +1703,7 @@ def file_reader(filename, lazy=False, **kwds):
             emd_reader = FeiEMDReader(lazy=lazy, **kwds)
             emd_reader.read_file(file)
         elif is_EMD_NCEM(file):
-            _logger.debug('EMD file is a Bekerley variant.')
+            _logger.debug('EMD file is a Berkeley variant.')
             dataset_name = kwds.pop('dataset_name', None)
             if dataset_name is not None:
                 msg = (

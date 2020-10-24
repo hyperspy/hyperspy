@@ -35,7 +35,8 @@ from dateutil import tz
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-from hyperspy.signals import BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D
+from hyperspy.signals import (BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D,
+                              ComplexSignal2D)
 
 my_path = os.path.dirname(__file__)
 
@@ -73,6 +74,11 @@ def test_spectrum_1d_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'example_spectrum.emd'))
     np.testing.assert_equal(signal.data, data_spectrum)
     assert isinstance(signal, Signal1D)
+
+
+def test_complex_loading():
+    signal = load(os.path.join(my_path, 'emd_files', 'example_complex.emd'))
+    assert isinstance(signal, ComplexSignal2D)
 
 
 def test_metadata():
