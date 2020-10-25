@@ -61,4 +61,44 @@ request!
 Diagrammatically, you should be aiming for something like this:
 
 .. figure:: images/branching_schematic.png
-    
+
+
+Semantic versioning and HyperSpy main branches
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+HyperSpy versioning follows `semantic versioning <https://semver.org/spec/v2.0.0.html>`_ 
+and the version number is therefore a three-part number: MAJOR.MINOR.PATCH.
+Each number will change depending on the type of changes according to the following:
+
+- MAJOR increases when making incompatible API changes,
+- MINOR increases when adding functionality in a backwards compatible manner, and
+- PATCH increases when making backwards compatible bug fixes.
+
+The git repository of HyperSpy has 3 main branches matching the above pattern
+and depending on the type of pull request, you will need to base your pull request
+one one of the following branch:
+
+- ``RELEASE_next_major`` to change the API in a not backward-compatible fashion,
+- ``RELEASE_next_minor`` to add new features and improvement,
+- ``RELEASE_next_patch`` for bug fixes.
+
+The ``RELEASE_next_patch`` is merged daily in the ``RELEASE_next_minor`` by the github action
+`Nightly Merge <https://github.com/hyperspy/hyperspy/actions>`_.
+
+
+Changing base branch
+^^^^^^^^^^^^^^^^^^^^
+
+If you started your work in the wrong branch (typically on ``RELEASE_next_minor``
+instead of ``RELEASE_next_patch`` and you are doing a bug fix), you can change the
+base branch using ``git rebase --onto``, like this:
+
+.. code:: bash
+
+   $ git rebase --onto <NEW-BASE-BRANCH> <OLD-BASE-BRANCH> <YOUR-BRANCH>
+
+For example, to rebase the ``bug_fix_branch`` branch from ``RELEASE_next_minor`` onto ``RELEASE_next_patch``:
+
+.. code:: bash
+
+   $ git rebase --onto RELEASE_next_patch RELEASE_next_minor bug_fix_branch
+
