@@ -1088,26 +1088,37 @@ class FeiEMDReader(object):
         h5data = image_sub_group['Data']
         # Get the scanning area shape of the SI from the images
         self.spatial_shape = h5data.shape[:-1]
-        # Set the axes in frame, y, x order
-        if self.lazy:
-            data = da.transpose(
-                da.from_array(
-                    h5data,
-                    chunks=h5data.chunks),
-                axes=[2, 0, 1])
-        else:
-            # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
-            # Change back to standard API once issue #977 is fixed.
-            # Preallocate the numpy array and use read_direct method, which is
-            # much faster in case of chunked data.
+        # For Velox FFT data, dtype must be specified and lazy is not
+        # supported due to special dtype. The data is loaded as-is; to get
+        # a traditional view the negative half must be created and the data
+        # must be re-centered
+        if h5data.dtype == [('realFloatHalfEven', '<f4'),
+                            ('imagFloatHalfEven', '<f4')]:
+            _logger.debug("Found an FFT, loading as Complex2DSignal")
+            if self.lazy:
+                _logger.warning("Lazy not supported for FFT")
             data = np.empty(h5data.shape, h5data.dtype)
             h5data.read_direct(data)
-            # dealing with an FFT, convert to complex
-            if data.dtype == [('realFloatHalfEven', '<f4'),
-                              ('imagFloatHalfEven', '<f4')]:
-                _logger.debug("Found an FFT, loading as Complex2DSignal")
-                data = data['realFloatHalfEven'] + 1j * data['imagFloatHalfEven']
+            data = data['realFloatHalfEven'] + 1j * data['imagFloatHalfEven']
+            # Set the axes in frame, y, x order
             data = np.rollaxis(data, axis=2)
+        else:
+            if self.lazy:
+                data = da.transpose(
+                    da.from_array(
+                        h5data,
+                        chunks=h5data.chunks),
+                    axes=[2, 0, 1])
+            else:
+                # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
+                # Change back to standard API once issue #977 is fixed.
+                # Preallocate the numpy array and use read_direct method, which is
+                # much faster in case of chunked data.
+                # Do not specify dtype in np.empty, slows down substantially!
+                data = np.empty(h5data.shape)
+                h5data.read_direct(data)
+                # Set the axes in frame, y, x order
+                data = np.rollaxis(data, axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -1126,7 +1137,12 @@ class FeiEMDReader(object):
             data = data[0, ...]
             i = 0
         else:
-            frame_time = original_metadata['Scan']['FrameTime']
+            if "Frametime" in original_metadata["Scan"]:
+                frame_time = original_metadata['Scan']['FrameTime']
+            else:
+                _logger.debug("No Frametime found, likely TEM image stack")
+                det_ind = original_metadata["BinaryResult"]["DetectorIndex"]
+                frame_time = original_metadata["Detectors"][f"Detector-{det_ind}"]["ExposureTime"]
             frame_time, time_unit = self._convert_scale_units(
                 frame_time, 's', 2 * data.shape[0])
             axes.append({'index_in_array': 0,

@@ -76,11 +76,6 @@ def test_spectrum_1d_loading():
     assert isinstance(signal, Signal1D)
 
 
-def test_complex_loading():
-    signal = load(os.path.join(my_path, 'emd_files', 'example_complex.emd'))
-    assert isinstance(signal, ComplexSignal2D)
-
-
 def test_metadata():
     signal = load(os.path.join(my_path, 'emd_files', 'example_metadata.emd'))
     om = signal.original_metadata
@@ -626,3 +621,15 @@ class TestFeiEMD():
         plt.plot(frame_offsets, time_data)
         plt.xlabel('Frame offset')
         plt.xlabel('Loading time (s)')
+
+
+def test_fei_complex_loading():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'))
+    assert isinstance(signal, ComplexSignal2D)
+
+
+def test_fei_no_frametime():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_tem_stack.emd'))
+    assert isinstance(signal, Signal2D)
+    assert signal.data.shape == (3, 2, 2)
+    assert signal.axes_manager["Time"].scale == 0.8
