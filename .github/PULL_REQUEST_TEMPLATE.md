@@ -1,5 +1,6 @@
 ### Requirements
 * Read the [developer guide](http://hyperspy.org/hyperspy-doc/current/dev_guide.html).
+* Base your pull request on the [correct branch](http://hyperspy.org/hyperspy-doc/current/dev_guide.html#semantic-versioning-and-hyperspy-main-branches).
 * Filling out the template; it helps the review process and it is useful to summarise the PR.
 * This template can be updated during the progression of the PR to summarise its status. 
 
