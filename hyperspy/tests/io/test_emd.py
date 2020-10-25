@@ -631,5 +631,5 @@ def test_fei_complex_loading():
 def test_fei_no_frametime():
     signal = load(os.path.join(my_path, 'emd_files', 'fei_example_tem_stack.emd'))
     assert isinstance(signal, Signal2D)
-    assert signal.data.shape == (3, 2, 2)
+    assert signal.data.shape == (2, 3, 3)
     assert signal.axes_manager["Time"].scale == 0.8
