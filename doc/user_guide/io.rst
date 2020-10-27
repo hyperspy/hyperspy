@@ -910,11 +910,17 @@ the data size in memory.
     [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
 
+.. note::
+    
+    FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
+    The FFT is not centered and only positive frequencies are stored in the file.
+    Lazy reading of these datasets is not supported. Making FFTs with HyperSpy
+    from the respective image datasets is recommended.
 
 .. note::
 
     Currently only lazy uncompression rather than lazy loading is implemented.
-    This means that it is not currently possible to read EDS SI Veloz EMD files
+    This means that it is not currently possible to read EDS SI Velox EMD files
     with size bigger than the available memory.
 
 

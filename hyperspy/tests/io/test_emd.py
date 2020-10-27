@@ -35,7 +35,8 @@ from dateutil import tz
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-from hyperspy.signals import BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D
+from hyperspy.signals import (BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D,
+                              ComplexSignal2D)
 
 my_path = os.path.dirname(__file__)
 
@@ -620,3 +621,15 @@ class TestFeiEMD():
         plt.plot(frame_offsets, time_data)
         plt.xlabel('Frame offset')
         plt.xlabel('Loading time (s)')
+
+
+def test_fei_complex_loading():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'))
+    assert isinstance(signal, ComplexSignal2D)
+
+
+def test_fei_no_frametime():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_tem_stack.emd'))
+    assert isinstance(signal, Signal2D)
+    assert signal.data.shape == (2, 3, 3)
+    assert signal.axes_manager["Time"].scale == 0.8
