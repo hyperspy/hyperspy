@@ -1102,6 +1102,17 @@ class FeiEMDReader(object):
             data = data['realFloatHalfEven'] + 1j * data['imagFloatHalfEven']
             # Set the axes in frame, y, x order
             data = np.rollaxis(data, axis=2)
+        # similare story for DPC signal
+        elif h5data.dtype == [('realFloat', '<f4'),
+                              ('imagFloat', '<f4')]:
+            _logger.debug("Found a DPC signal, loading as Complex2DSignal")
+            if self.lazy:
+                _logger.warning("Lazy not supported for DPC")
+            data = np.empty(h5data.shape, h5data.dtype)
+            h5data.read_direct(data)
+            data = data['realFloat'] + 1j * data['imagFloat']
+            # Set the axes in frame, y, x order
+            data = np.rollaxis(data, axis=2)
         else:
             if self.lazy:
                 data = da.transpose(
