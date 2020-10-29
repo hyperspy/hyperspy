@@ -81,6 +81,21 @@ def to_array(thing, chunks=None):
             raise ValueError
 
 
+def get_navigation_dimension_host_chunk_slice(position_tuple, chunks):
+    chunk_slice_list = da.core.slices_from_chunks(chunks)
+    for chunk_slice in chunk_slice_list:
+        is_slice = True
+        for ipos in range(len(position_tuple)):
+            temp_slice = chunk_slice[ipos]
+            pos = position_tuple[ipos]
+            if not (temp_slice.start <= pos < temp_slice.stop):
+                is_slice = False
+                break
+        if is_slice:
+            return chunk_slice
+    return False
+
+
 class LazySignal(BaseSignal):
     """A Lazy Signal instance that delays computation until explicitly saved
     (assuming storing the full result of computation in memory is not feasible)
@@ -309,6 +324,28 @@ class LazySignal(BaseSignal):
             s = self._deepcopy_with_new_data(new_data)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
+
+    def _get_temporary_plotting_dask_chunk(self, position):
+        sig_dim = self.axes_manager.signal_dimension
+        chunks = self.data.chunks[:-sig_dim]
+        position_tuple = position[:-sig_dim]
+        chunk_slice = get_navigation_dimension_host_chunk_slice(
+            position_tuple, chunks)
+        if not hasattr(self, "_temp_plot_data"):
+            self._temp_plot_data = None
+            self._temp_plot_data_slice = None
+        if not chunk_slice == self._temp_plot_data_slice:
+            del self._temp_plot_data
+            temp_dask_array = np.atleast_1d(self.data.__getitem__(chunk_slice))
+            self._temp_plot_data = np.asarray(temp_dask_array)
+            self._temp_plot_data_slice = chunk_slice
+
+        position = list(position)
+        for i, temp_slice in enumerate(chunk_slice):
+            position[i] -= temp_slice.start
+        position = tuple(position)
+        value = self._temp_plot_data[position]
+        return value
 
     def rebin(self, new_shape=None, scale=None,
               crop=False, out=None, rechunk=True):

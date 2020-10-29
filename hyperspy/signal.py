@@ -2524,10 +2524,11 @@ class BaseSignal(FancySlicing,
     def __call__(self, axes_manager=None, fft_shift=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        value = np.atleast_1d(self.data.__getitem__(
-            axes_manager._getitem_tuple))
-        if isinstance(value, da.Array):
-            value = np.asarray(value)
+        position = axes_manager._getitem_tuple
+        if self._lazy:
+            value = self._get_temporary_plotting_dask_chunk(position)
+        else:
+            value = np.atleast_1d(self.data.__getitem__(position))
         if fft_shift:
             value = np.fft.fftshift(value)
         return value
