@@ -329,8 +329,7 @@ class LazySignal(BaseSignal):
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.data.chunks[:-sig_dim]
         position_tuple = position[:-sig_dim]
-        chunk_slice = get_navigation_dimension_host_chunk_slice(
-            position_tuple, chunks)
+        chunk_slice = get_navigation_dimension_host_chunk_slice(position_tuple, chunks)
         if not hasattr(self, "_temp_plot_data"):
             self._temp_plot_data = None
             self._temp_plot_data_slice = None
