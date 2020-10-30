@@ -553,8 +553,21 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
+            
+            if isinstance(self.axes_manager.iterpath, str):
+                maxval = self.axes_manager.navigation_size
+            else:
+                try:
+                    maxval = len(self.axes_manager.iterpath)
+                except TypeError:
+                    maxval = -1 # progressbar is shown, so user can monitor "iterations per second"
+                    warnings.warn(
+                        "The `iterpath` is missing the `__len__` method, so does not have a known length. "
+                        "The progressbar will only show run time and iterations per second, but no actual progress indicator."
+                        )
+
             maxval = self.axes_manager.navigation_size
-            enabled = show_progressbar and (maxval > 0)
+            enabled = show_progressbar and (maxval != 0)
             pbar = progressbar(total=maxval, disable=not enabled,
                                position=show_progressbar, leave=True)
             for index in self.axes_manager:
