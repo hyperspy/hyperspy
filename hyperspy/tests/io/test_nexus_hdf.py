@@ -273,35 +273,33 @@ class TestSavingMetadataContainers:
             lin.original_metadata.testarray1
 
 
-class TestSavingMultiSignals:
+def test_saving_multi_signals(tmp_path):
 
-    def setup_method(self, method):
-        data = np.zeros((15, 1, 40, 40))
-        self.sig = hs.signals.Signal2D(data)
-        self.sig.axes_manager[0].name = "stage_y_axis"
-        self.sig.original_metadata.set_item("stage_y.value", 4.0)
-        self.sig.original_metadata.set_item("stage_y.attrs.units", "mm")
-        data = np.zeros((30, 30, 10))
-        self.sig2 = hs.signals.Signal1D(data)
-        self.sig2.axes_manager[0].name = "axis1"
-        self.sig2.axes_manager[1].name = "axis2"
-        self.sig2.original_metadata.set_item("stage_x.value", 8.0)
-        self.sig2.original_metadata.set_item("stage_x.attrs.units", "mm")
+    sig = hs.signals.Signal2D(np.zeros((15, 1, 40, 40)))
+    sig.axes_manager[0].name = "stage_y_axis"
+    sig.original_metadata.set_item("stage_y.value", 4.0)
+    sig.original_metadata.set_item("stage_y.attrs.units", "mm")
 
-    def test_save_signal_list(self, tmp_path):
-        fname = tmp_path / 'test.nxs'
-        file_writer(fname, [self.sig, self.sig2])
-        lin = load(fname, nxdata_only=True)
-        assert len(lin) == 2
-        assert lin[0].original_metadata.stage_y.value == 4.0
-        assert lin[0].axes_manager[0].name == "stage_y_axis"
-        assert lin[1].original_metadata.stage_x.value == 8.0
-        assert lin[1].original_metadata.stage_x.attrs.units == "mm"
-        assert isinstance(lin[0], Signal2D) is True
-        assert isinstance(lin[1], Signal1D) is True
-        # test the metadata haven't merged
-        with pytest.raises(AttributeError):
-            lin[1].original_metadata.stage_y.value
+    sig2 = hs.signals.Signal1D(np.zeros((30, 30, 10)))
+    sig2.axes_manager[0].name = "axis1"
+    sig2.axes_manager[1].name = "axis2"
+    sig2.original_metadata.set_item("stage_x.value", 8.0)
+    sig2.original_metadata.set_item("stage_x.attrs.units", "mm")
+
+    fname = tmp_path / 'test.nxs'
+    sig.save(fname)
+    file_writer(fname, [sig, sig2])
+    lin = load(fname, nxdata_only=True)
+    assert len(lin) == 2
+    assert lin[0].original_metadata.stage_y.value == 4.0
+    assert lin[0].axes_manager[0].name == "stage_y_axis"
+    assert lin[1].original_metadata.stage_x.value == 8.0
+    assert lin[1].original_metadata.stage_x.attrs.units == "mm"
+    assert isinstance(lin[0], Signal2D)
+    assert isinstance(lin[1], Signal1D)
+    # test the metadata haven't merged
+    with pytest.raises(AttributeError):
+        lin[1].original_metadata.stage_y.value
 
 
 def test_read_file2_dataset_key_test():
