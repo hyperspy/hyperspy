@@ -226,10 +226,7 @@ class TestSavingMetadataContainers:
         fname = tmp_path / 'test.hspy'
         s.save(fname)
         l = load(fname)
-        assert isinstance(l.metadata.test[0][0], float)
-        assert isinstance(l.metadata.test[0][1], float)
-        assert isinstance(l.metadata.test[1][0], str)
-        assert isinstance(l.metadata.test[1][1], str)
+        np.testing.assert_array_equal(l.metadata.test, s.metadata.test)
 
     @pytest.mark.xfail(sys.platform == 'win32',
                        reason="randomly fails in win32")
