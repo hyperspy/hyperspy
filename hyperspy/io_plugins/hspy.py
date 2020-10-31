@@ -640,7 +640,7 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                 if key.startswith("_list_"):
                     if (h5py.check_string_dtype(dat.dtype) and
                         hasattr(dat, 'asstr')):
-                        # h5py 3.0 and later
+                        # h5py 3.0 and newer
                         # https://docs.h5py.org/en/3.0.0/strings.html
                         dat = dat.asstr()[:]
                     ans = np.array(dat)

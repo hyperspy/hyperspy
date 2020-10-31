@@ -622,6 +622,18 @@ class EMD_NCEM:
         """
         return group.attrs.get('emd_group_type', False)
 
+    @staticmethod
+    def _read_dataset(dataset):
+        """Read dataset and use the h5py AsStrWrapper when the dataset is of
+        string type (h5py 3.0 and newer)
+        """
+        if (h5py.check_string_dtype(dataset.dtype) and
+            hasattr(dataset, 'asstr')):
+            # h5py 3.0 and newer
+            # https://docs.h5py.org/en/3.0.0/strings.html
+            dataset = dataset.asstr()[:]
+        return dataset
+
     def _read_emd_version(self, group):
         """ Return the group version if the group is an EMD group, otherwise
         return None.
@@ -650,21 +662,24 @@ class EMD_NCEM:
         if len(array_list) > 1:
             # Squeeze the data only when
             if self.lazy:
-                data_list = [da.from_array(d, chunks=chunks) for d in array_list]
+                data_list = [da.from_array(self._read_dataset(d),
+                                           chunks=chunks) for d in array_list]
                 if transpose_required:
                     data_list = [da.transpose(d) for d in data_list]
                 data = da.stack(data_list)
                 data = da.squeeze(data)
             else:
-                data_list = [np.asanyarray(d) for d in array_list]
+                data_list = [np.asanyarray(self._read_dataset(d))
+                             for d in array_list]
                 if transpose_required:
                     data_list = [np.transpose(d) for d in data_list]
                 data = np.stack(data_list).squeeze()
         else:
             if self.lazy:
-                data = da.from_array(array_list[0], chunks=chunks)
+                data = da.from_array(self._read_dataset(array_list[0]),
+                                     chunks=chunks)
             else:
-                data = np.asanyarray(array_list[0])
+                data = np.asanyarray(self._read_dataset(array_list[0]))
             if transpose_required:
                 data = data.transpose()
 
@@ -850,6 +865,9 @@ class EMD_NCEM:
         dataset = signal_group.require_group(title)
         data = signal.data.T
         maxshape = tuple(None for _ in data.shape)
+        if np.issubdtype(data.dtype, np.dtype('U')):
+            # Saving numpy unicode type is not supported in h5py
+            data = data.astype(np.dtype('S'))
         dataset.create_dataset('data', data=data, chunks=True,
                                maxshape=maxshape)
 
