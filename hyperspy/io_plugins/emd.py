@@ -744,7 +744,7 @@ class EMD_NCEM:
                 value = value.decode()
             if key == 'units':
                 # Get all the units
-                units_list = re.findall("(\[.+?\])", value)
+                units_list = re.findall(r"(\[.+?\])", value)
                 units_list = [u[1:-1].replace("_", "") for u in units_list]
                 value = ' * '.join(units_list)
                 try:
