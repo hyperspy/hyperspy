@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import gc
 import os.path
-import tempfile
 
 import numpy as np
 import pytest
@@ -43,20 +41,6 @@ file4 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example_no_axes.nxs')
 
 
 my_path = os.path.dirname(__file__)
-
-
-@pytest.fixture()
-def tmpfilepath():
-    with tempfile.TemporaryDirectory() as tmp:
-        yield os.path.join(tmp, "test.nxs")
-        gc.collect()        # Make sure any memmaps are closed first!
-
-
-@pytest.fixture()
-def tmphspyfilepath():
-    with tempfile.TemporaryDirectory() as tmp:
-        yield os.path.join(tmp, "test.hdf5")
-        gc.collect()        # Make sure any memmaps are closed first!
 
 
 class TestDLSNexus():
@@ -108,9 +92,9 @@ class TestDLSNexus():
         assert self.s.original_metadata.instrument.\
             beamline.M1.m1_y.attrs.units == "mm"
 
-    def test_save_hspy(self, tmphspyfilepath):
+    def test_save_hspy(self, tmp_path):
         try:
-            self.s.save(tmphspyfilepath)
+            self.s.save(tmp_path / 'test.hspy')
         except:
             pytest.fail("unexpected error saving hdf5")
 
@@ -153,9 +137,9 @@ class TestDLSNexusNoAxes():
         assert self.s.original_metadata.instrument.\
                  beamline.M1.m1_y.attrs.units == "mm"
 
-    def test_save_hspy(self, tmphspyfilepath):
+    def test_save_hspy(self, tmp_path):
         try:
-            self.s.save(tmphspyfilepath)
+            self.s.save(tmp_path / 'test.hspy')
         except:
             pytest.fail("unexpected error saving hdf5")
 
@@ -249,25 +233,27 @@ class TestSavingMetadataContainers:
     def setup_method(self, method):
         self.s = BaseSignal([0.1, 0.2, 0.3])
 
-    def test_save_scalers(self, tmpfilepath):
+    def test_save_scalers(self, tmp_path):
         s = self.s
         s.original_metadata.set_item('test1', 44.0)
         s.original_metadata.set_item('test2', 54.0)
         s.original_metadata.set_item('test3', 64.0)
-        s.save(tmpfilepath)
-        lin = load(tmpfilepath, nxdata_only=True)
+        fname = tmp_path / 'test.nxs'
+        s.save(fname)
+        lin = load(fname, nxdata_only=True)
         assert isinstance(lin.original_metadata.test1, float)
         assert isinstance(lin.original_metadata.test2, float)
         assert isinstance(lin.original_metadata.test3, float)
         assert lin.original_metadata.test2 == 54.0
 
-    def test_save_arrays(self, tmpfilepath):
+    def test_save_arrays(self, tmp_path):
         s = self.s
         s.original_metadata.set_item("testarray1", ["a", 2, "b", 4, 5])
         s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
         s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
-        s.save(tmpfilepath)
-        lin = load(tmpfilepath, nxdata_only=True)
+        fname = tmp_path / 'test.nxs'
+        s.save(fname)
+        lin = load(fname, nxdata_only=True)
         np.testing.assert_array_equal(lin.original_metadata.testarray1,
                                       np.array([b"a", b'2', b'b', b'4', b'5']))
         np.testing.assert_array_equal(lin.original_metadata.testarray2,
@@ -275,13 +261,14 @@ class TestSavingMetadataContainers:
         np.testing.assert_array_equal(lin.original_metadata.testarray3,
                                       np.array([1, 2, 3, 4, 5]))
 
-    def test_save_original_metadata(self, tmpfilepath):
+    def test_save_original_metadata(self, tmp_path):
         s = self.s
         s.original_metadata.set_item("testarray1", ["a", 2, "b", 4, 5])
         s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
         s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
-        s.save(tmpfilepath, save_original_metadata=False)
-        lin = load(tmpfilepath, nxdata_only=True)
+        fname = tmp_path / 'test.nxs'
+        s.save(fname, save_original_metadata=False)
+        lin = load(fname, nxdata_only=True)
         with pytest.raises(AttributeError):
             lin.original_metadata.testarray1
 
@@ -301,9 +288,10 @@ class TestSavingMultiSignals:
         self.sig2.original_metadata.set_item("stage_x.value", 8.0)
         self.sig2.original_metadata.set_item("stage_x.attrs.units", "mm")
 
-    def test_save_signal_list(self, tmpfilepath):
-        file_writer(tmpfilepath, [self.sig, self.sig2])
-        lin = load(tmpfilepath, nxdata_only=True)
+    def test_save_signal_list(self, tmp_path):
+        fname = tmp_path / 'test.nxs'
+        file_writer(fname, [self.sig, self.sig2])
+        lin = load(fname, nxdata_only=True)
         assert len(lin) == 2
         assert lin[0].original_metadata.stage_y.value == 4.0
         assert lin[0].axes_manager[0].name == "stage_y_axis"
