@@ -6083,6 +6083,70 @@ class BaseSignal(FancySlicing,
         else:
             return self * window_nd
 
+    def _check_navigation_mask(self, mask):
+        """
+        Check the shape of the navigation mask.
+
+        Parameters
+        ----------
+        mask : numpy array or BaseSignal.
+            Mask to check the shape.
+
+        Raises
+        ------
+        ValueError
+            If shape doesn't match the shape of the navigation dimension.
+
+        Returns
+        -------
+        None.
+
+        """
+        if isinstance(mask, BaseSignal):
+            if mask.axes_manager.signal_dimension != 0:
+                raise ValueError("`mask` must be a signal with "
+                                 "`signal_dimension` equal to 0")
+            elif (mask.axes_manager.navigation_shape !=
+                  self.axes_manager.navigation_shape):
+                raise ValueError("`mask` must be a signal with the same "
+                                 "`navigation_shape` as the current signal.")
+        if isinstance(mask, np.ndarray) and (
+                mask.shape != self.axes_manager.navigation_shape):
+            raise ValueError("The shape of `mask` must match the shape of "
+                             "the `navigation_shape`.")
+
+    def _check_signal_mask(self, mask):
+        """
+        Check the shape of the signal mask.
+
+        Parameters
+        ----------
+        mask : numpy array or BaseSignal.
+            Mask to check the shape.
+
+        Raises
+        ------
+        ValueError
+            If shape doesn't match the shape of the signal dimension.
+
+        Returns
+        -------
+        None.
+
+        """
+        if isinstance(mask, BaseSignal):
+            if mask.axes_manager.navigation_dimension != 0:
+                raise ValueError("`mask` must be a signal with "
+                                 "`navigation_dimension` equal to 0")
+            elif (mask.axes_manager.signal_shape !=
+                  self.axes_manager.signal_shape):
+                raise ValueError("`mask` must be a signal with the same "
+                                 "`signal_shape` as the current signal.")
+        if isinstance(mask, np.ndarray) and (
+                mask.shape != self.axes_manager.signal_shape):
+            raise ValueError("The shape of `mask` must match the shape of "
+                             "the `signal_shape`.")
+
 
 ARITHMETIC_OPERATORS = (
     "__add__",

@@ -164,7 +164,7 @@ class Model2D(BaseModel):
             for component in self:  # Cut the parameters list
                 np.add(sum_, component.function(self.xaxis, self.yaxis),
                        sum_)
-        return sum_
+        return sum_[self.channel_switches]
 
     def _errfunc(self, param, y, weights=None):
         if weights is None:

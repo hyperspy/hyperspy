@@ -33,6 +33,15 @@ functions will return a list of the corresponding signal.
     in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
+HyperSpy will attempt to infer the appropriate file reader to use based on
+the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
+override this using the ``reader`` keyword:
+
+.. code-block:: python
+
+    # Load a .hspy file with an unknown extension
+    >>> s = hs.load("filename.some_extension", reader="hspy")
+
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
 providing the ``signal`` keyword, which has to be one of: ``spectrum``,
@@ -901,11 +910,17 @@ the data size in memory.
     [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
 
+.. note::
+    
+    FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
+    The FFT is not centered and only positive frequencies are stored in the file.
+    Lazy reading of these datasets is not supported. Making FFTs with HyperSpy
+    from the respective image datasets is recommended.
 
 .. note::
 
     Currently only lazy uncompression rather than lazy loading is implemented.
-    This means that it is not currently possible to read EDS SI Veloz EMD files
+    This means that it is not currently possible to read EDS SI Velox EMD files
     with size bigger than the available memory.
 
 
@@ -1050,13 +1065,13 @@ If multiple datasets are present within the h5USID file and you try the same com
     [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
     <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
 
-We can load a specific dataset using the ``dset_path`` keyword argument. setting it to the
+We can load a specific dataset using the ``dataset_path`` keyword argument. setting it to the
 absolute path of the desired dataset will cause the single dataset to be loaded.
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data')
+    >>> hs.load("sample.h5", dataset_path='/Measurement_004/Channel_003/Main_Data')
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 h5USID files support the storage of HDF5 dataset with
@@ -1127,10 +1142,17 @@ Nexus uses a variety of classes to record data, values,
 units and other experimental metadata associated with an experiment.
 For specific types of experiments an Application Definition may exist which
 defines an agreed common layout that facilities can adhere to.
+
 Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this io plugin.
-Using the ``.nxs`` extension will default to the Nexus loader
+Using the ``.nxs`` extension will default to the Nexus loader. If your file has
+a HDF5 extension, you can also explicitly set the Nexus file reader:
+
+.. code-block:: python
+
+    # Load a NeXus file with a .h5 extension
+    >>> s = hs.load("filename.h5", reader="nxs")
 
 The loader will follow version 3 of the
 `Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
@@ -1462,13 +1484,13 @@ SUR and PRO format
 This is a format developed by the digitalsurf company to handle various types of
 scientific measurements data such as profilometer,SEM,AFM,RGB(A) images, multilayer
 surfaces and profiles. Even though it is essentially a surfaces format, 1D signals
-are supported for spectra and spectral maps. Metadata parsing is supported, including
-user-customised metadata, as well as the loading of files containing multiple objects
-packed together.
+are supported for spectra and spectral maps. Specifically, this file format is used
+by Attolight SA for the its Scanning Electron Microscope Cathodoluminescence
+(SEM-CL) hyperspectral maps. Metadata parsing is supported, including user-specific
+metadata, as well as the loading of files containing multiple objects packed together.
 
 The plugin was developed based on the MountainsMap software documentation which
 contains a description of the binary format.
-
 
 .. _empad-format:
 
@@ -1556,4 +1578,3 @@ Like the Digital Micrograph script above, it is used to easily transfer data
 from HyperSpy to MATLAB, while retaining spatial calibration information.
 
 Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.
-

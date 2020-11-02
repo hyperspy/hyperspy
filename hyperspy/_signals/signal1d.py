@@ -563,15 +563,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def _check_navigation_mask(self, mask):
-        if mask is not None:
-            if not isinstance(mask, BaseSignal):
-                raise ValueError("mask must be a BaseSignal instance.")
-            elif mask.axes_manager.signal_dimension not in (0, 1):
-                raise ValueError("mask must be a BaseSignal "
-                                 "with signal_dimension equal to 1")
-            super()._check_navigation_mask(mask)
-
     def estimate_shift1D(
         self,
         start=None,
