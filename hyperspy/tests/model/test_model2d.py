@@ -176,7 +176,7 @@ def test_channelswitches_mask():
     im.axes_manager[1].scale = scale
     im.axes_manager[1].offset = -10
 
-    mask = (im<0.01).data
+    mask = (im<0.01)
 
     m = im.create_model()
     gt = hs.model.components2D.Gaussian2D(centre_x=-4.5,
@@ -184,6 +184,7 @@ def test_channelswitches_mask():
                                           sigma_x=0.5,
                                           sigma_y=1.5)
     m.append(gt)
+    m.channel_switches = ~mask.data
     m.fit()
 
     np.testing.assert_allclose(gt.centre_x.value, -5.)
