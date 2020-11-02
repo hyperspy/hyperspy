@@ -20,7 +20,7 @@ import numpy as np
 
 
 def check_axes_calibration(ax1, ax2):
-    """Check if the calibration of two DataAxis objects matches.
+    """Check if the calibration of two Axis objects matches.
 
     Raises a logger warning if there is a mismatch.
     ``scale`` and ``offset`` are compared as floats
@@ -29,7 +29,7 @@ def check_axes_calibration(ax1, ax2):
 
     Parameters
     ----------
-    ax1, ax2 : DataAxis objects
+    ax1, ax2 : Axis objects
 
     Returns
     -------
@@ -37,13 +37,21 @@ def check_axes_calibration(ax1, ax2):
         If the two axes have identical calibrations.
 
     """
-    if not np.allclose(ax1.scale, ax2.scale, atol=0, rtol=1e-7):
-        return False
-
-    if not np.allclose(ax1.offset, ax2.offset, atol=0, rtol=1e-7):
-        return False
-
-    if ax1.units != ax2.units:
+    if ax1.is_uniform == ax2.is_uniform == True:
+        if not np.allclose(ax1.scale, ax2.scale, atol=0, rtol=1e-7):
+            return False
+        if not np.allclose(ax1.offset, ax2.offset, atol=0, rtol=1e-7):
+            return False
+        if ax1.units != ax2.units:
+            return False
+    elif hasattr(ax1,'axis') and hasattr(ax2,'axis'):
+        if not np.allclose(ax1.axis, ax2.axis, atol=0, rtol=1e-7):
+            return False
+    elif hasattr(ax1,'expression') and hasattr(ax2,'expression'):
+        if not ax1.expression == ax2.expression:
+            return False
+        return check_axes_calibration(ax1.x, ax2.x)
+    else:
         return False
 
     return True
