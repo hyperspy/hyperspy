@@ -1208,7 +1208,9 @@ class FeiEMDReader(object):
         om = self.original_metadata['Operations']
         keys = ['CameraInputOperation',
                 'StemInputOperation',
-                'SurfaceReconstructionOperation']
+                'SurfaceReconstructionOperation',
+                'MathematicsOperation',
+                'DpcOperation']
 
         for k in keys:
             if k in om.keys() and k == keys[0]:
@@ -1233,6 +1235,18 @@ class FeiEMDReader(object):
                         if metadata[1]['enableFilter'] == 'true':
                             detector_name = "Filtered {}".format(detector_name)
                         return detector_name
+            if k in om.keys() and k == keys[3]:
+                for metadata in om[k].items():
+                    if key in metadata[1]["dataPath"]:
+                        if metadata[1]["outputs"][0]["inputIndex"] == "0":
+                            return "A-C"
+                        elif metadata[1]["outputs"][0]["inputIndex"] == "1":
+                            return "B-D"
+            if k in om.keys() and k == keys[4]:
+                for metadata in om[k].items():
+                    if key in metadata[1]['dataPath']:
+                        return "DPC"
+        return "Unrecognized_image_signal"
 
     def _get_detector_information(self, om):
         # if the `BinaryResult/Detector` is not available, there should be only
