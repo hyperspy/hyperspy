@@ -41,8 +41,9 @@ description = ('Import/Export standard image formats Christoph Gohlke\'s '
 full_support = False
 file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif
-# Writing features
+# Writing capabilities
 writes = [(2, 0), (2, 1)]
+non_uniform_axis = False
 # ----------------------
 
 

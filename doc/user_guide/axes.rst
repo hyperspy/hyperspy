@@ -247,12 +247,13 @@ Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
     >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': False,
-    'size': 500,
-    'scale': 1.0,
-    'offset': 300.0}
+    {'_type': 'UniformDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'size': 500,
+     'scale': 1.0,
+     'offset': 300.0}
 
 Corresponding output of :py:class:`~.axes.AxesManager`:
 
@@ -291,14 +292,21 @@ Sample dictionary for a :py:class:`~.axes.FunctionalDataAxis`:
     >>> dict0 = {'expression': 'a / (x + 1) + b', 'a': 100, 'b': 10, 'size': 500}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': False,
-    'expression': 'a / (x + 1) + b',
-    'size': 500,
-    'x': <Unnamed axis, size: 500>,
-    'a': 100,
-    'b': 10}
+    {'_type': 'FunctionalDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'expression': 'a / (x + 1) + b',
+     'size': 500,
+     'x': {'_type': 'UniformDataAxis',
+      'name': <undefined>,
+      'units': <undefined>,
+      'navigate': <undefined>,
+      'size': 500,
+      'scale': 1.0,
+      'offset': 0.0},
+     'a': 100,
+     'b': 10}
 
 Corresponding output of :py:class:`~.axes.AxesManager`:
 
@@ -344,6 +352,8 @@ Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
         14.        ,  12.77777778,  12.04081633,  11.5625    ,
         11.2345679 ])
 
+Initializing ``x`` with ``offset`` and ``scale``:
+
 
 (non-uniform) Data axis
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -360,10 +370,11 @@ Sample dictionary for a :py:class:`~.axes.DataAxis`:
     >>> dict0 = {'axis': np.arange(12)**2}
     >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': False,
-    'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100, 121])}
+    {'_type': 'DataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100, 121])}
 
 Corresponding output of :py:class:`~.axes.AxesManager`:
 
@@ -385,6 +396,7 @@ automatically determines the type of axis by the given attributes:
 
 .. code-block:: python
 
+    >>> from hyperspy import axes
     >>> axis = axes.create_axis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
@@ -394,6 +406,7 @@ directly:
 
 .. code-block:: python
 
+    >>> from hyperspy import axes
     >>> axis = axes.UniformDataAxis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
@@ -404,15 +417,53 @@ method:
 .. code-block:: python
 
     >>> axis.get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': <undefined>,
-    'size': 20,
-    'scale': 0.5,
-    'offset': 10.0}
+    {'_type': 'UniformDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': <undefined>,
+     'size': 20,
+     'scale': 0.5,
+     'offset': 10.0}
 
 This dictionary can be used, for example, in the :ref:`initilization of a new
 signal<signal_initialization>`.
+
+
+Adding/Removing axes to/from a signal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Usually, the axes are directly added to a signal during :ref:`signal 
+initialization<signal_initialization>`. However, you may wish to add/remove
+axes from the `AxesManager` of a signal.
+
+Note that there is currently no consistency check whether a signal object has
+the right number of axes of the right dimensions. Most functions will however
+fail if you pass a signal object where the axes do not match the data 
+dimensions and shape.
+
+You can *add a set of axes* to the `AxesManager` by passing either a list of
+axes dictionaries to ``axes_manager.create_axes()``:
+
+.. code-block:: python
+
+    >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
+    >>> dict1 = {'axis': np.arange(12)**2}
+    >>> s.axes_manager.create_axes([dict0,dict1])
+
+or a list of axes objects:
+
+.. code-block:: python
+
+    >>> from hyperspy.axes import UniformDataAxis, DataAxis
+    >>> axis0 = UniformDataAxis(offset=300,scale=1,size=500)
+    >>> axis1 = DataAxis(axis=np.arange(12)**2)
+    >>> s.axes_manager.create_axes([axis0,axis1])
+
+*Remove an axis* from the `AxesManager` using ``remove()``, e.g. for the last axis:
+
+.. code-block:: python
+
+    >>> s.axes_manager.remove(-1)
 
 
 .. _quantity_and_converting_units:

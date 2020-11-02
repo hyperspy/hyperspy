@@ -57,8 +57,9 @@ default_extension = 0
 reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
-# Writing features
+# Writing capabilities
 writes = True  # Only Berkeley emd
+non_uniform_axis = False
 EMD_VERSION = '0.2'
 # ----------------------
 

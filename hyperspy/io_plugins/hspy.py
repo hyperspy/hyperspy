@@ -43,36 +43,42 @@ file_extensions = ['hspy', 'hdf5']
 default_extension = 0
 # Writing capabilities
 writes = True
-version = "3.0"
+non_uniform_axis = True
+version = "3.1"
+# ----------------------
 
 # -----------------------
 # File format description
 # -----------------------
-# The root must contain a group called Experiments
-# The experiments group can contain any number of subgroups
-# Each subgroup is an experiment or signal
-# Each subgroup must contain at least one dataset called data
-# The data is an array of arbitrary dimension
-# In addition a number equal to the number of dimensions of the data
+# The root must contain a group called Experiments.
+# The experiments group can contain any number of subgroups.
+# Each subgroup is an experiment or signal.
+# Each subgroup must contain at least one dataset called data.
+# The data is an array of arbitrary dimension.
+# In addition, a number equal to the number of dimensions of the data
 # dataset + 1 of empty groups called coordinates followed by a number
-# must exists with the following attributes:
+# must exist with the following attributes:
 #    'name'
 #    'offset'
 #    'scale'
 #    'units'
 #    'size'
 #    'index_in_array'
+# Alternatively to 'offset' and 'scale', the coordinate groups may
+# contain an 'axis' vector attribute defining the axis points.
 # The experiment group contains a number of attributes that will be
 # directly assigned as class attributes of the Signal instance. In
 # addition the experiment groups may contain 'original_metadata' and
-# 'metadata'subgroup that will be
-# assigned to the same name attributes of the Signal instance as a
-# Dictionary Browsers
+# 'metadata'-subgroup that will be assigned to the same name attributes 
+# of the Signal instance as a Dictionary Browser.
 # The Experiments group can contain attributes that may be common to all
 # the experiments and that will be accessible as attributes of the
-# Experiments instance
+# Experiments instance.
 #
 # CHANGES
+#
+# v3.1
+# - add read support for non-linear DataAxis defined by 'axis' vector
 #
 # v3.0
 # - add Camera and Stage node
@@ -83,7 +89,7 @@ version = "3.0"
 # - store quantity for intensity axis
 #
 # v2.1
-# - Store the navigate attribute.
+# - Store the navigate attribute
 # - record_by is stored only for backward compatibility but the axes navigate
 #   attribute takes precendence over record_by for files with version >= 2.1
 # v1.3
@@ -224,7 +230,7 @@ def hdfgroup2signaldict(group, lazy=False):
     axes = []
     for i in range(len(exp['data'].shape)):
         try:
-            axes.append(dict(group['axis-%i' % i].attrs))
+            axes.append(hdfgroup2dict(group['axis-%i' % i]))
             axis = axes[-1]
             for key, item in axis.items():
                 if isinstance(item, np.bool_):
