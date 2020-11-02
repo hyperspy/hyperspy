@@ -383,7 +383,7 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
 # ####### REQUIRED FUNCTIONS FOR AN IO PLUGIN #################################
 
 
-def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
+def file_reader(filename, dataset_path=None, ignore_non_uniform_dims=True,
                 lazy=False, **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
@@ -424,8 +424,8 @@ def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
             # Note that the function returns a list already.
             # Should not append
             signals += _usidataset_to_signal(h5_dset,
-                                             ignore_non_linear_dims=
-                                             ignore_non_linear_dims,
+                                             ignore_non_uniform_dims=
+                                             ignore_non_uniform_dims,
                                              lazy=lazy, **kwds)
         return signals
     else:
@@ -433,8 +433,8 @@ def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
             raise TypeError("'dataset_path' should be a string")
         h5_dset = h5_f[dataset_path]
         return _usidataset_to_signal(h5_dset,
-                                     ignore_non_linear_dims=
-                                     ignore_non_linear_dims,
+                                     ignore_non_uniform_dims=
+                                     ignore_non_uniform_dims,
                                      lazy=lazy, **kwds)
 
     # At least close the file handle if not lazy load
