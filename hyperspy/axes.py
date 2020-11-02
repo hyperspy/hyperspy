@@ -80,7 +80,7 @@ def generate_uniform_axis(offset, scale, size, offset_index=0):
                        size)
 
 
-def _create_axis(**kwargs):
+def create_axis(**kwargs):
     """Creates a uniform, a non-uniform axis or a functional axis depending on 
     the kwargs provided. If `axis` or  `expression` are provided, a non-uniform
     or a functional axis is created, respectively. Otherwise a uniform axis is 
@@ -254,10 +254,15 @@ class BaseDataAxis(t.HasTraits):
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined):
+                 navigate=t.Undefined,
+                 **kwargs):
         super(BaseDataAxis, self).__init__()
 
         self.events = Events()
+        if '_type' in kwargs:
+            if kwargs.get('_type') != self.__class__.__name__:
+                raise ValueError('The passed `_type` of axis is inconsistent '
+                                'with the given attributes')
         _name = self.__class__.__name__
         self.events.index_changed = Event("""
             Event that triggers when the index of the `{}` changes
@@ -481,7 +486,8 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        return {'name': self.name,
+        return {'_type': self.__class__.__name__,
+                'name': self.name,
                 'units': self.units,
                 'navigate': self.navigate
                 }
@@ -590,6 +596,7 @@ class BaseDataAxis(t.HasTraits):
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
+        d["_type"] = 'UniformDataAxis'
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
@@ -601,8 +608,9 @@ class DataAxis(BaseDataAxis):
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
-                 axis=[1]):
-        super().__init__(index_in_array, name, units, navigate)
+                 axis=[1],
+                 **kwargs):
+        super().__init__(index_in_array, name, units, navigate, **kwargs)
         self.axis = axis
         self.update_axis()
 
@@ -703,15 +711,20 @@ class FunctionalDataAxis(BaseDataAxis):
                  navigate=t.Undefined,
                  size=t.Undefined,
                  **parameters):
-        super().__init__(index_in_array, name, units, navigate)
+        super().__init__(index_in_array, name, units, navigate, **parameters)
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
             self.x = UniformDataAxis(scale=1, offset=0, size=size)
         else:
-            self.x = x
-            self.size = self.x.size
+            if isinstance(x, dict):
+                self.x = create_axis(**x)
+            else:
+                self.x = x
+                self.size = self.x.size
         self._expression = expression
+        if '_type' in parameters:
+            del parameters['_type']
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
@@ -721,7 +734,6 @@ class FunctionalDataAxis(BaseDataAxis):
             raise ValueError(
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
-
         self._function = lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False)
         for parameter in parameters.keys():
@@ -763,13 +775,14 @@ class FunctionalDataAxis(BaseDataAxis):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
         d.update({'size': self.size, })
-        d.update({'x': self.x.copy(), })
+        d.update({'x': self.x.get_axis_dictionary(), })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
+        d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
 
@@ -832,12 +845,14 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                  navigate=t.Undefined,
                  size=1.,
                  scale=1.,
-                 offset=0.):
+                 offset=0.,
+                 **kwargs):
         super().__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
+            **kwargs
             )
         self.scale = scale
         self.offset = offset
@@ -1007,12 +1022,14 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
         self.__class__ = FunctionalDataAxis
+        d["_type"] = 'FunctionalDataAxis'
         self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
         self.__class__ = DataAxis
+        d["_type"] = 'DataAxis'
         self.__init__(**d, axis=self.axis)
 
 def serpentine_iter(shape):
@@ -1325,8 +1342,10 @@ class AxesManager(t.HasTraits):
         return tuple(cslice)
 
     def create_axes(self, axes_list):
-        """Given a list of dictionaries defining the axes properties,
-        create the DataAxis instances and add them to the AxesManager.
+        """Given a list of either axes dictionaries or axes objects, these are
+        added to the AxesManager. In case dictionaries defining the axes 
+        properties are passed, the DataAxis/UniformDataAxis/FunctionalDataAxis 
+        instances are first created.
 
         The index of the axis in the array and in the `_axes` lists
         can be defined by the index_in_array keyword if given
@@ -1345,7 +1364,10 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            self._append_axis(**axis_dict)
+            if isinstance(axis_dict,dict):
+                self._append_axis(**axis_dict)
+            else:
+                self._axes.append(axis_dict)
 
     def set_axis(self, axis, index_in_axes_manager):
         self._axes[index_in_axes_manager] = axis
@@ -1411,7 +1433,7 @@ class AxesManager(t.HasTraits):
         return self
 
     def _append_axis(self, **kwargs):
-        axis = _create_axis(**kwargs)
+        axis = create_axis(**kwargs)
         axis.axes_manager = self
         self._axes.append(axis)
 

@@ -84,6 +84,9 @@ This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
 	├── binned = False
 	└── signal_type =
 
+Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal 
+initialization, you can also pass a list of *axes objects*: ``[axis0, axis1]``.
+
 
 The navigation and signal dimensions
 ------------------------------------

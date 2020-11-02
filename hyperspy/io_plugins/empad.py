@@ -42,6 +42,8 @@ default_extension = 0
 
  # Writing capabilities:
 writes = False
+non_uniform_axis = False
+# ----------------------
 
 
 def _read_raw(info, fp, lazy=False):

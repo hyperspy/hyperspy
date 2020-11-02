@@ -2146,9 +2146,10 @@ class BaseSignal(FancySlicing,
         ----------
         data : :py:class:`numpy.ndarray`
            The signal data. It can be an array of any dimensions.
-        axes : dict, optional
-            Dictionary to define the axes (see the documentation of the
-            :py:class:`~hyperspy.axes.AxesManager` class for more details).
+        axes : [dict/axes], optional
+            List of either dictionaries or axes objects to define the axes (see 
+            the documentation of the :py:class:`~hyperspy.axes.AxesManager` 
+            class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
         metadata : dict, optional

@@ -28,6 +28,8 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.signals import Signal1D
+from hyperspy.axes import DataAxis
+from hyperspy.io_plugins import io_plugins
 
 
 FULLFILENAME = Path(__file__).resolve().parent.joinpath("test_io_overwriting.hspy")
@@ -88,6 +90,33 @@ class TestIOOverwriting:
     def teardown_method(self, method):
         self._clean_file()
 
+class TestNonUniformAxisCheck:
+
+    def setup_method(self, method):
+        axis = DataAxis(axis = 1/(np.arange(10)+1), navigate = False)
+        self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(), ))
+        # make sure we start from a clean state
+    
+    def test_io_nonuniform(self):
+        assert(self.s.axes_manager[0].is_uniform == False)
+        self.s.save('tmp.hspy', overwrite = True)
+        with pytest.raises(AttributeError):
+            self.s.save('tmp.msa', overwrite = True)
+
+    def test_nonuniform_writer_characteristic(self):
+        for plugin in io_plugins:
+            try:
+                plugin.non_uniform_axis is True
+            except AttributeError:
+                print(plugin.format_name + ' IO-plugin is missing the '
+                      'characteristic `non_uniform_axis`')
+
+    def teardown_method(self):
+        if os.path.exists('tmp.hspy'):
+            os.remove('tmp.hspy')
+        if os.path.exists('tmp.msa'):
+            os.remove('tmp.msa')
+            
 
 def test_glob_wildcards():
     s = Signal1D(np.arange(10))

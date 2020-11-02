@@ -31,8 +31,9 @@ full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
                    'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
 default_extension = 0  # png
-# Writing features
+# Writing capabilities
 writes = [(2, 0), ]
+non_uniform_axis = False
 # ----------------------
 
 

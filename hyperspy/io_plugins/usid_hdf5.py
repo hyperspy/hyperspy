@@ -31,6 +31,7 @@ writes_spectrum = True
 writes_spectrum_image = True
 # Writing capabilities
 writes = True
+non_uniform_axis = False
 version = usid.__version__
 
 # ######### UTILITIES THAT SIMPLIFY READING FROM H5USID FILES #################

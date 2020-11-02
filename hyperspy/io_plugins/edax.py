@@ -48,6 +48,9 @@ file_extensions = ['spd', 'SPD', 'spc', 'SPC']
 default_extension = 0
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
+
 
 spd_extensions = ('spd', 'SPD', 'Spd')
 spc_extensions = ('spc', 'SPC', 'Spc')
