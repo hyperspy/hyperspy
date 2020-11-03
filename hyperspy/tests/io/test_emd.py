@@ -636,12 +636,7 @@ def test_fei_no_frametime():
 
 
 def test_fei_dpc_loading():
-    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_dpc.emd'))
-    assert isinstance(signal, ComplexSignal2D)
-
-
-def test_fei_image_titles():
-    signals = load(os.path.join(my_path, 'emd_files', 'fei_example_titles.emd'))
+    signals = load(os.path.join(my_path, 'emd_files', 'fei_example_dpc.emd'))
     assert signals[0].metadata.General.title == "B-D"
     assert signals[1].metadata.General.title == "DPC"
     assert signals[2].metadata.General.title == "iDPC"
@@ -651,3 +646,12 @@ def test_fei_image_titles():
     assert signals[6].metadata.General.title == "A-C"
     assert signals[7].metadata.General.title == "DF4-D"
     assert signals[8].metadata.General.title == "Filtered iDPC"
+    assert isinstance(signals[0], Signal2D)
+    assert isinstance(signals[1], ComplexSignal2D)
+    assert isinstance(signals[2], Signal2D)
+    assert isinstance(signals[3], Signal2D)
+    assert isinstance(signals[4], Signal2D)
+    assert isinstance(signals[5], Signal2D)
+    assert isinstance(signals[6], Signal2D)
+    assert isinstance(signals[7], Signal2D)
+    assert isinstance(signals[8], Signal2D)
