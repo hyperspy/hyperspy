@@ -636,7 +636,7 @@ def test_fei_no_frametime():
 
 
 def test_fei_dpc_loading():
-    signals = load(os.path.join(my_path, 'emd_files', 'fei_example_dpc.emd'))
+    signals = load(os.path.join(my_path, 'emd_files', 'fei_example_dpc_titles.emd'))
     assert signals[0].metadata.General.title == "B-D"
     assert signals[1].metadata.General.title == "DPC"
     assert signals[2].metadata.General.title == "iDPC"
