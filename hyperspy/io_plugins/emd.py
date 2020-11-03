@@ -1089,25 +1089,20 @@ class FeiEMDReader(object):
         # supported due to special dtype. The data is loaded as-is; to get
         # a traditional view the negative half must be created and the data
         # must be re-centered
-        if h5data.dtype == [('realFloatHalfEven', '<f4'),
-                            ('imagFloatHalfEven', '<f4')]:
-            _logger.debug("Found an FFT, loading as Complex2DSignal")
+        # Similar story for DPC signal
+        fft_dtype = [('realFloatHalfEven', '<f4'),
+                     ('imagFloatHalfEven', '<f4')]
+        dpc_dtype = [('realFloat', '<f4'),
+                     ('imagFloat', '<f4')]
+        if h5data.dtype == fft_dtype or h5data.dtype == dpc_dtype:
+            _logger.debug("Found an FFT or DPC, loading as Complex2DSignal")
             if self.lazy:
-                _logger.warning("Lazy not supported for FFT")
+                _logger.warning("Lazy not supported for FFT or DPC")
             data = np.empty(h5data.shape, h5data.dtype)
             h5data.read_direct(data)
-            data = data['realFloatHalfEven'] + 1j * data['imagFloatHalfEven']
-            # Set the axes in frame, y, x order
-            data = np.rollaxis(data, axis=2)
-        # similare story for DPC signal
-        elif h5data.dtype == [('realFloat', '<f4'),
-                              ('imagFloat', '<f4')]:
-            _logger.debug("Found a DPC signal, loading as Complex2DSignal")
-            if self.lazy:
-                _logger.warning("Lazy not supported for DPC")
-            data = np.empty(h5data.shape, h5data.dtype)
-            h5data.read_direct(data)
-            data = data['realFloat'] + 1j * data['imagFloat']
+            real = h5data.dtype.descr[0][0]
+            imag = h5data.dtype.descr[1][0]
+            data = data[real] + 1j * data[imag]
             # Set the axes in frame, y, x order
             data = np.rollaxis(data, axis=2)
         else:
@@ -1210,7 +1205,10 @@ class FeiEMDReader(object):
                 'StemInputOperation',
                 'SurfaceReconstructionOperation',
                 'MathematicsOperation',
-                'DpcOperation']
+                'DpcOperation',
+                'IntegrationOperation',
+                'FftOperation',
+                ]
 
         for k in keys:
             if k in om.keys() and k == keys[0]:
@@ -1246,6 +1244,14 @@ class FeiEMDReader(object):
                 for metadata in om[k].items():
                     if key in metadata[1]['dataPath']:
                         return "DPC"
+            if k in om.keys() and k == keys[5]:
+                for metadata in om[k].items():
+                    if key in metadata[1]['dataPath']:
+                        return "DCFI"
+            if k in om.keys() and k == keys[6]:
+                for metadata in om[k].items():
+                    if key in metadata[1]['imageOutputPath']:
+                        return "Half FFT"
         return "Unrecognized_image_signal"
 
     def _get_detector_information(self, om):
