@@ -244,7 +244,7 @@ Define components from a fixed-pattern
 
 The :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 component enables fitting a pattern (in the form of a
-:py:class:`~._signals.signal1d.Signal1D` instance) to data by shifting 
+:py:class:`~._signals.signal1d.Signal1D` instance) to data by shifting
 (:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.shift`)
 and
 scaling it in the x and y directions using the
@@ -1182,6 +1182,41 @@ undesired spectral channels from the fitting process:
 * :py:meth:`~.models.model1d.Model1D.set_signal_range`
 * :py:meth:`~.models.model1d.Model1D.remove_signal_range`
 * :py:meth:`~.models.model1d.Model1D.reset_signal_range`
+
+In 2D models, those methods are not implemented (hyperspy 1.6.0). Instead, the
+`m.channel_switches` attribute of a model can be set using boolean arrays of the
+same shape as the data's signal, where True means that the datapoint
+will be used in the fitting routine.
+
+A signal range can be set using axes units by creating another signal2D object:
+
+.. code-block:: python
+
+    >>> #Creating a sample 2D gaussian dataset
+    >>> g = hs.model.components2D.Gaussian2D(
+    ...   A=1, centre_x=-5.0, centre_y=-5.0, sigma_x=1.0, sigma_y=2.0,)
+
+    >>> scale = 0.1
+    >>> x = np.arange(-10, 10, scale)
+    >>> y = np.arange(-10, 10, scale)
+    >>> X, Y = np.meshgrid(x, y)
+
+    >>> im = hs.signals.Signal2D(g.function(X, Y))
+    >>> im.axes_manager[0].scale = scale
+    >>> im.axes_manager[0].offset = -10
+    >>> im.axes_manager[1].scale = scale
+    >>> im.axes_manager[1].offset = -10
+
+    >>> m = im.create_model() #Model initialisation
+    >>> gt = hs.model.components2D.Gaussian2D()
+    >>> m.append(gt)
+
+    >>> sr = im._deepcopy_with_new_data( #signal range mask object
+    ...   np.zeros(im.axes_manager.signal_shape,dtype='bool'))
+    >>> sr.isig[-7.:-3.,-9.:-1.] = True
+
+    >>> m.channel_switches = sr.data #setting channel switches
+    >>> m.fit()
 
 .. _model.multidimensional-label:
 
