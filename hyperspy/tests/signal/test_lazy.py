@@ -291,7 +291,7 @@ class TestGetTemporaryPlottingDaskChunk:
         s = _lazy_signals.LazySignal1D(data)
         value = s._get_temporary_plotting_dask_chunk(s.axes_manager._getitem_tuple)
         assert len(s._temp_plot_data_slice) == 2
-        assert s._temp_plot_data.shape == s.data.chunksize
+        assert s._temp_plot_data.shape == (2, 2, 20)
         assert s._temp_plot_data_slice == np.s_[0:2, 0:2]
         assert len(value.shape) == 1
         assert len(value) == 20
@@ -359,7 +359,7 @@ class TestLazyPlot:
     def test_signal1d(self):
         s = _lazy_signals.LazySignal1D(da.zeros((10, 10, 20), chunks=(5, 5, 10)))
         s.plot()
-        assert s._temp_plot_data.shape == s.data.chunksize
+        assert s._temp_plot_data.shape == (5, 5, 20)
         assert s._temp_plot_data_slice == np.s_[0:5, 0:5]
         s._plot.close()
         s._plot.close_navigator_plot()
