@@ -918,6 +918,11 @@ the data size in memory.
     from the respective image datasets is recommended.
 
 .. note::
+    
+    DPC data is loaded in as a HyperSpy ComplexSignal2D object. Lazy reading of these
+    datasets is not supported.
+
+.. note::
 
     Currently only lazy uncompression rather than lazy loading is implemented.
     This means that it is not currently possible to read EDS SI Velox EMD files
