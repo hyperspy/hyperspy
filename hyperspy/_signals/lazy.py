@@ -162,9 +162,9 @@ class LazySignal(BaseSignal):
                 _logger.exception("Failed to close lazy Signal file")
 
     def _clear_temp_dask_data(self, obj=None):
-        if hasattr(self, '_temp_dask_chunk'):
+        if hasattr(self, "_temp_dask_chunk"):
             del self._temp_dask_chunk
-        if hasattr(self, '_temp_dask_chunk_slice'):
+        if hasattr(self, "_temp_dask_chunk_slice"):
             del self._temp_dask_chunk_slice
 
     def _get_dask_chunks(self, axis=None, dtype=None):
