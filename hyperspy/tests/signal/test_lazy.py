@@ -303,11 +303,11 @@ class TestGetTemporaryDaskChunk:
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         position = s.axes_manager._getitem_tuple
         s._get_temporary_dask_chunk(position)
-        assert hasattr(s._temp_data_chunk)
-        assert hasattr(s._temp_data_chunk_slice)
+        assert hasattr(s, "_temp_dask_chunk")
+        assert hasattr(s, "_temp_dask_chunk_slice")
         s.events.data_changed.trigger(None)
-        assert not hasattr(s._temp_data_chunk)
-        assert not hasattr(s._temp_data_chunk_slice)
+        assert not hasattr(s, "_temp_dask_chunk")
+        assert not hasattr(s, "_temp_dask_chunk_slice")
 
     def test_map(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
@@ -316,6 +316,14 @@ class TestGetTemporaryDaskChunk:
         s.map(np.sum, axis=1, ragged=False)
         s.__call__()
         assert len(s._temp_dask_chunk.shape) == 3
+
+    def test_clear_temp_dask_data(self):
+        s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
+        s.__call__()
+        s._clear_temp_dask_data(self)
+        assert not hasattr(s, "_temp_dask_data")
+        assert not hasattr(s, "_temp_dask_data_slice")
+        s._clear_temp_dask_data(self)
 
 
 class TestLazyPlot:
