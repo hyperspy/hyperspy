@@ -442,7 +442,7 @@ class TestFeiEMD():
         assert signal0.axes_manager[1].name == 'x'
         assert signal0.axes_manager[1].size == 10
         assert signal0.axes_manager[1].units == 'nm'
-        np.testing.assert_allclose(signal0.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal0.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal0.axes_manager[2].name == 'y'
         assert signal0.axes_manager[2].size == 50
         assert signal0.axes_manager[2].units == 'nm'
