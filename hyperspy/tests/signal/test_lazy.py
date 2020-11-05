@@ -200,7 +200,7 @@ class TestGetNavigationDimensionHostChunkSlice:
         assert chunk_slice_output == chunk_slice_compare
 
 
-class TestGetTemporaryPlottingDaskChunk:
+class TestGetTemporaryDaskChunk:
     def test_correct_values(self):
         chunk_slice_list = [
             np.s_[0:5, 0:5],
@@ -218,7 +218,7 @@ class TestGetTemporaryPlottingDaskChunk:
         data = da.from_array(data, chunks=(5, 5, 25, 25))
         s = _lazy_signals.LazySignal2D(data)
         for value, chunk_slice in zip(value_list, chunk_slice_list):
-            value_output = s._get_temporary_plotting_dask_chunk(
+            value_output = s._get_temporary_dask_chunk(
                 (chunk_slice[0].start, chunk_slice[1].start, slice(None), slice(None))
             )
             assert s._temp_plot_data.shape == (5, 5, 50, 50)
@@ -230,18 +230,18 @@ class TestGetTemporaryPlottingDaskChunk:
         s = _lazy_signals.LazySignal2D(
             da.zeros((10, 10, 20, 20), chunks=(5, 5, 10, 10))
         )
-        s._get_temporary_plotting_dask_chunk((0, 0, slice(None), slice(None)))
+        s._get_temporary_dask_chunk((0, 0, slice(None), slice(None)))
         chunk_slice0 = s._temp_plot_data_slice
 
         s._temp_plot_data[:] = 2
 
-        s._get_temporary_plotting_dask_chunk((4, 4, slice(None), slice(None)))
+        s._get_temporary_dask_chunk((4, 4, slice(None), slice(None)))
         chunk_slice1 = s._temp_plot_data_slice
         assert chunk_slice0 == chunk_slice1
         assert np.all(s._temp_plot_data == 2)
 
-        s._get_temporary_plotting_dask_chunk((6, 4, slice(None), slice(None)))
-        s._get_temporary_plotting_dask_chunk((0, 0, slice(None), slice(None)))
+        s._get_temporary_dask_chunk((6, 4, slice(None), slice(None)))
+        s._get_temporary_dask_chunk((0, 0, slice(None), slice(None)))
         assert np.all(s._temp_plot_data == 0)
 
     @pytest.mark.parametrize(
@@ -258,7 +258,7 @@ class TestGetTemporaryPlottingDaskChunk:
         chunks = (2,) * len(shape)
         s = _lazy_signals.LazySignal2D(da.zeros(shape), chunks=chunks)
         position = s.axes_manager._getitem_tuple
-        s._get_temporary_plotting_dask_chunk(position)
+        s._get_temporary_dask_chunk(position)
         assert len(position) == len(shape)
 
     def test_correct_value_within_chunk(self):
@@ -269,19 +269,19 @@ class TestGetTemporaryPlottingDaskChunk:
         data[1, 1] = 4
         data = da.from_array(data, chunks=(2, 2, 25, 25))
         s = _lazy_signals.LazySignal2D(data)
-        value = s._get_temporary_plotting_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 1)
 
         s.axes_manager.indices = (1, 0)
-        value = s._get_temporary_plotting_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 2)
 
         s.axes_manager.indices = (0, 1)
-        value = s._get_temporary_plotting_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 3)
 
         s.axes_manager.indices = (1, 1)
-        value = s._get_temporary_plotting_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 4)
 
     def test_signal1d(self):
@@ -289,14 +289,14 @@ class TestGetTemporaryPlottingDaskChunk:
         data[5, 5] = 2
         data = da.from_array(data, chunks=(2, 2, 10))
         s = _lazy_signals.LazySignal1D(data)
-        value = s._get_temporary_plotting_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
         assert len(s._temp_plot_data_slice) == 2
         assert s._temp_plot_data.shape == (2, 2, 20)
         assert s._temp_plot_data_slice == np.s_[0:2, 0:2]
         assert len(value.shape) == 1
         assert len(value) == 20
         s.axes_manager.indices = (5, 5)
-        value = s._get_temporary_plotting_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 2)
 
 

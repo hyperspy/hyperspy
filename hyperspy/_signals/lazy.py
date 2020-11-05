@@ -325,7 +325,7 @@ class LazySignal(BaseSignal):
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def _get_temporary_plotting_dask_chunk(self, position):
+    def _get_temporary_dask_chunk(self, position):
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.data.chunks[:-sig_dim]
         position_tuple = position[:-sig_dim]

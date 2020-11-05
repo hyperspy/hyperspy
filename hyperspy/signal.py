@@ -2526,7 +2526,7 @@ class BaseSignal(FancySlicing,
             axes_manager = self.axes_manager
         position = axes_manager._getitem_tuple
         if self._lazy:
-            value = self._get_temporary_plotting_dask_chunk(position)
+            value = self._get_temporary_dask_chunk(position)
         else:
             value = np.atleast_1d(self.data.__getitem__(position))
         if fft_shift:
