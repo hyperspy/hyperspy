@@ -2528,7 +2528,8 @@ class BaseSignal(FancySlicing,
         if self._lazy:
             value = self._get_temporary_dask_chunk(position)
         else:
-            value = np.atleast_1d(self.data.__getitem__(position))
+            value = self.data.__getitem__(position)
+        value = np.atleast_1d(value)
         if fft_shift:
             value = np.fft.fftshift(value)
         return value

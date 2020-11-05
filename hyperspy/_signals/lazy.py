@@ -161,6 +161,10 @@ class LazySignal(BaseSignal):
             except AttributeError:
                 _logger.exception("Failed to close lazy Signal file")
 
+    def _clear_temp_dask_data(self, obj=None):
+        del self._temp_dask_chunk
+        del self._temp_dask_chunk_slice
+
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks.
 
@@ -326,24 +330,26 @@ class LazySignal(BaseSignal):
             return s
 
     def _get_temporary_dask_chunk(self, position):
+        if not self._clear_temp_dask_data in self.events.data_changed._connected_all:
+            self.events.data_changed.connect(self._clear_temp_dask_data)
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.data.chunks[:-sig_dim]
         position_tuple = position[:-sig_dim]
         chunk_slice = get_navigation_dimension_host_chunk_slice(position_tuple, chunks)
-        if not hasattr(self, "_temp_plot_data"):
-            self._temp_plot_data = None
-            self._temp_plot_data_slice = None
-        if not chunk_slice == self._temp_plot_data_slice:
-            del self._temp_plot_data
+        if not hasattr(self, "_temp_dask_chunk"):
+            self._temp_dask_chunk = None
+            self._temp_dask_chunk_slice = None
+        if not chunk_slice == self._temp_dask_chunk_slice:
+            del self._temp_dask_chunk
             temp_dask_array = np.atleast_1d(self.data.__getitem__(chunk_slice))
-            self._temp_plot_data = np.asarray(temp_dask_array)
-            self._temp_plot_data_slice = chunk_slice
+            self._temp_dask_chunk = np.asarray(temp_dask_array)
+            self._temp_dask_chunk_slice = chunk_slice
 
         position = list(position)
         for i, temp_slice in enumerate(chunk_slice):
             position[i] -= temp_slice.start
         position = tuple(position)
-        value = self._temp_plot_data[position]
+        value = self._temp_dask_chunk[position]
         return value
 
     def rebin(self, new_shape=None, scale=None,
