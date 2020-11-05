@@ -1140,7 +1140,7 @@ class FeiEMDReader(object):
             data = data[0, ...]
             i = 0
         else:
-            if "Frametime" in original_metadata["Scan"]:
+            if "FrameTime" in original_metadata["Scan"]:
                 frame_time = original_metadata['Scan']['FrameTime']
             else:
                 _logger.debug("No Frametime found, likely TEM image stack")
