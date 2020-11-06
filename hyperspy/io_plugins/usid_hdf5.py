@@ -370,7 +370,8 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
                 dim_units = temp
                 # use REAL dimension size rather than what is presented in the
                 # axes manager
-        ar = np.arange(dim.size) * dim.scale + dim.offset
+        dim_size = data_shape[len(data_shape) - 1 - dim_ind]
+        ar = np.arange(dim_size) * dim.scale + dim.offset
         dim_list.append(usid.Dimension(dim_name, dim_units, ar))
     if len(dim_list) == 0:
         return usid.Dimension('Arb', 'a. u.', 1)
