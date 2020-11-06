@@ -409,6 +409,44 @@ class TestFeiEMD():
         assert signal0.axes_manager[1].size == 50
         assert signal0.axes_manager[1].units == 'nm'
 
+        s = load(os.path.join(
+            self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
+            lazy=lazy,
+            load_SI_image_stack=True)
+        signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+
+        signal0 = s[0]
+        if lazy:
+            assert signal0._lazy
+            signal0.compute(close_file=True)
+        assert isinstance(signal0, Signal2D)
+        assert signal0.axes_manager[0].name == 'Time'
+        assert signal0.axes_manager[0].size == 10
+        assert signal0.axes_manager[0].units == 's'
+        assert signal0.axes_manager[1].name == 'x'
+        assert signal0.axes_manager[1].size == 10
+        assert signal0.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal0.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal0.axes_manager[2].name == 'y'
+        assert signal0.axes_manager[2].size == 50
+        assert signal0.axes_manager[2].units == 'nm'
+
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
                  sum_frames=False,
