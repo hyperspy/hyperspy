@@ -660,26 +660,20 @@ class BaseModel(list):
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    def _disable_plot_component(self, component):
-        self._disconnect_component_line(component)
-        if hasattr(component, "_component_line"):
-            component._component_line.close()
-            del component._component_line
-        self._plot_components = False
-
     def enable_plot_components(self):
         if self._plot is None or self._plot_components:
             return
-        self._plot_components = True
         for component in [component for component in self if
                           component.active]:
             self._plot_component(component)
+        self._plot_components = True
 
     def disable_plot_components(self):
         if self._plot is None:
             return
-        for component in self:
-            self._disable_plot_component(component)
+        if self._plot_components:
+            for component in self:
+                self._disable_plot_component(component)
         self._plot_components = False
 
     def _set_p0(self):

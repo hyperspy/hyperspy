@@ -75,17 +75,9 @@ def create_sum_of_gaussians(convolved=False):
     return s
 
 
-def _generate_parameters():
-    parameters = []
-    for convolved in [True, False]:
-        for plot_component in [True, False]:
-            for binned in [True, False]:
-                parameters.append([convolved, plot_component, binned])
-    return parameters
-
-
-@pytest.mark.parametrize(("convolved", "plot_component", "binned"),
-                         _generate_parameters())
+@pytest.mark.parametrize("convolved", [True, False])
+@pytest.mark.parametrize("plot_component", [True, False])
+@pytest.mark.parametrize("binned", [True, False])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
@@ -146,3 +138,15 @@ def test_fit_EELS_convolved(convolved):
     m.fit(kind='smart')
     m.plot(plot_components=True)
     return m._plot.signal_plot.figure
+
+
+def test_plot_component():
+    m = hs.signals.Signal1D(np.arange(100).reshape(2, 50)).create_model()
+    components = [hs.model.components1D.Gaussian(A=250, sigma=5, centre=20),
+                  hs.model.components1D.Offset(10)]
+    m.extend(components)
+    m.plot(plot_components=True)
+    m.multifit(iterpath='serpentine')
+    m.update_plot()
+    m.remove(0)
+    m.remove(0)
