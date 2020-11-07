@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import Signal2D
+from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.utils import roi
 
 BASELINE_DIR = 'plot_roi'
@@ -147,3 +147,16 @@ def test_error_message():
     p = roi.Point1DROI(0.5)
     with pytest.raises(Exception, match='does not have an active plot.'):
         p.add_widget(signal=im, axes=[0, ], color="cyan")
+
+
+def test_remove_rois():
+    s = Signal1D(np.arange(10))
+    s2 = s.deepcopy()
+    r = roi.SpanROI(2, 4)
+    s.plot()
+    s2.plot()
+
+    s_roi = r.interactive(s)
+    s2_roi = r.interactive(s2)
+
+    r.remove_widget(s)
