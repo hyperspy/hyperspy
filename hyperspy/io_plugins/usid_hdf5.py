@@ -356,8 +356,7 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
     # for dim_ind, (dim_size, dim) in enumerate(zip(data_shape, axes_list)):
     # we are going by data_shape for order (slowest to fastest)
     # so the order in axes_list does not matter
-    for dim_ind in range(len(data_shape)):
-        dim_size = data_shape[len(data_shape) - 1 - dim_ind]
+    for dim_ind, dim in enumerate(axes_list):
         dim = axes_list[dim_ind]
         dim_name = dim_type + '_Dim_' + str(dim_ind)
         if isinstance(dim.name, str):
@@ -371,11 +370,9 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
                 dim_units = temp
                 # use REAL dimension size rather than what is presented in the
                 # axes manager
-        dim_list.append(usid.Dimension(dim_name, dim_units,
-                                       np.arange(dim.offset,
-                                                 dim.offset + dim_size *
-                                                 dim.scale,
-                                                 dim.scale)))
+        dim_size = data_shape[len(data_shape) - 1 - dim_ind]
+        ar = np.arange(dim_size) * dim.scale + dim.offset
+        dim_list.append(usid.Dimension(dim_name, dim_units, ar))
     if len(dim_list) == 0:
         return usid.Dimension('Arb', 'a. u.', 1)
     return dim_list[::-1]
@@ -501,6 +498,8 @@ def file_writer(filename, object2save, **kwds):
     phy_quant = 'Unknown Quantity'
     phy_units = 'Unknown Units'
     dset_name = 'Raw_Data'
+
+
 
     if not append:
         tran = usid.NumpyTranslator()
