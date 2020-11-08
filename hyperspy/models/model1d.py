@@ -89,18 +89,17 @@ class ComponentFit(SpanSelectorInSignal1D):
         only_current = self.only_current
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
-                if (self.signal_range != "interactive" and
-                        self.signal_range is not None):
-                    self.component.estimate_parameters(
-                        self.signal,
-                        self.signal_range[0],
-                        self.signal_range[1],
-                        only_current=only_current)
-                elif self.signal_range == "interactive":
+                if self.signal_range == "interactive":
                     self.component.estimate_parameters(
                         self.signal,
                         self.ss_left_value,
                         self.ss_right_value,
+                        only_current=only_current)
+                elif self.signal_range is not None:
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.signal_range[0],
+                        self.signal_range[1],
                         only_current=only_current)
 
         if only_current:
@@ -755,16 +754,6 @@ class Model1D(BaseModel):
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
 
-    def _connect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._connect_component_line(component)
-
-    def _disconnect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._disconnect_component_line(component)
-
     @staticmethod
     def _update_component_line(component):
         if hasattr(component, "_component_line"):
@@ -795,7 +784,7 @@ class Model1D(BaseModel):
         self._model_line = None
 
     def enable_plot_components(self):
-        if self._plot is None or self._plot_components:
+        if self._plot is None or self._plot_components:  # pragma: no cover
             return
         self._plot_components = True
         for component in [component for component in self if
@@ -804,7 +793,7 @@ class Model1D(BaseModel):
 
     def disable_plot_components(self):
         self._plot_components = False
-        if self._plot is None:
+        if self._plot is None:  # pragma: no cover
             return
         for component in self:
             self._disable_plot_component(component)
