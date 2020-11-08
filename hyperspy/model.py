@@ -404,9 +404,9 @@ class BaseModel(list):
         thing.model = self
         setattr(self.components, slugify(name_string,
                                          valid_variable_name=True), thing)
-        if self._plot_active is True:
+        if self._plot_active:
             self._connect_parameters2update_plot(components=[thing])
-        self.update_plot(render_figure=True, update_ylimits=True)
+            self.signal._plot.signal_plot.update()
 
     def extend(self, iterable):
         for object in iterable:
@@ -453,7 +453,7 @@ class BaseModel(list):
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:
-            self.update_plot(render_figure=True, update_ylimits=False)
+            self.signal._plot.signal_plot.update()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, **kwargs):

@@ -142,11 +142,14 @@ def test_fit_EELS_convolved(convolved):
 
 def test_plot_component():
     m = hs.signals.Signal1D(np.arange(100).reshape(2, 50)).create_model()
-    components = [hs.model.components1D.Gaussian(A=250, sigma=5, centre=20),
-                  hs.model.components1D.Offset(10)]
-    m.extend(components)
+    m.append(hs.model.components1D.Gaussian(A=250, sigma=5, centre=20))
     m.plot(plot_components=True)
-    m.multifit(iterpath='serpentine')
-    m.update_plot()
+    ax = m.signal._plot.signal_plot.ax
+    p = hs.model.components1D.Polynomial(order=1, legacy=False, a0=-10, a1=0)
+    m.append(p)
+    assert ax.get_ylim() == (-10.1, 49.0)
     m.remove(0)
+    p.estimate_parameters(m.signal, 0, 50)
+    assert ax.get_ylim() == (-10.1, 49.0)
     m.remove(0)
+    assert ax.get_ylim() == (-0.1, 49.0)

@@ -30,6 +30,7 @@ from hyperspy.exceptions import SignalDimensionError, WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
+from hyperspy.misc.utils import dummy_context_manager
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
@@ -345,12 +346,16 @@ class Model1D(BaseModel):
                                               dimension, knot_position)
 
     def append(self, thing):
-        super(Model1D, self).append(thing)
+        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        with cm(update_on_resume=False):
+            super(Model1D, self).append(thing)
         if self._plot_components:
             self._plot_component(thing)
         if self._adjust_position_all:
             self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
+        if self._plot_active:
+            self.signal._plot.signal_plot.update()
 
     def remove(self, things):
         things = self._get_component(things)
