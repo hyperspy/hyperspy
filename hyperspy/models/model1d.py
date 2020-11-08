@@ -782,11 +782,8 @@ class Model1D(BaseModel):
         self._plot_components = False
 
     def _close_plot(self):
-        if self._plot_components is True:
-            self.disable_plot_components()
         self.disable_adjust_position()
-        self._disconnect_parameters2update_plot(components=self)
-        self._model_line = None
+        super()._close_plot()
 
     def enable_plot_components(self):
         if self._plot is None or self._plot_components:  # pragma: no cover

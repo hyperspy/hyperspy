@@ -153,3 +153,5 @@ def test_plot_component():
     assert ax.get_ylim() == (-10.1, 49.0)
     m.remove(0)
     assert ax.get_ylim() == (-0.1, 49.0)
+    m.append(p)
+    m.signal._plot.close()
