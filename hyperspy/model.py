@@ -1241,13 +1241,12 @@ class BaseModel(list):
                 # differentiation, but for consistency across all three
                 # we enforce estimation below, and raise an error here.
                 raise ValueError(
-                    f"`optimizer='{optimizer}'` does not support `grad=None`. "
-                    f"Please use `grad='auto'` instead."
+                    f"`optimizer='{optimizer}'` does not support `grad=None`."
                 )
         else:
             raise ValueError(
-                "`grad` must be one of ['auto', 'analytical', "
-                f"callable, None], not '{grad}'"
+                "`grad` must be one of ['analytical', callable, None], not "
+                f"'{grad}'."
             )
 
         with cm(update_on_resume=True):
