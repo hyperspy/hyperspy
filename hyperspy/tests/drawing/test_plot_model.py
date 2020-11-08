@@ -75,9 +75,9 @@ def create_sum_of_gaussians(convolved=False):
     return s
 
 
-@pytest.mark.parametrize("convolved", [True, False])
-@pytest.mark.parametrize("plot_component", [True, False])
 @pytest.mark.parametrize("binned", [True, False])
+@pytest.mark.parametrize("plot_component", [True, False])
+@pytest.mark.parametrize("convolved", [True, False])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
