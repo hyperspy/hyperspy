@@ -340,6 +340,9 @@ def test_read_file2_metadata_keys():
                 dataset_keys=["rocks"], metadata_keys=["energy"])
     assert s.original_metadata.instrument.energy.value == 12.0
 
+def test_read_lazy_file():
+    s = hs.load(file3, nxdata_only=True, lazy=True)
+    assert s[0]._lazy and s[1]._lazy
 
 @pytest.mark.parametrize("verbose", [True, False])
 @pytest.mark.parametrize("dataset_keys", ["testdata", "nexustest"])
