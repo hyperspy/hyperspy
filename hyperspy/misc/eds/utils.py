@@ -573,7 +573,10 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
     toa_rad = np.radians(take_off_angle)
     csc_toa = 1.0/np.sin(toa_rad)
     # convert from cm^2/g to m^2/kg
-    mac = stack(material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
+    mac = stack(
+        material.mass_absorption_mixture(weight_percent=weight_percent),
+        show_progressbar=False
+        ) * 0.1
     acf = mac.data * mass_thickness.data * csc_toa
     acf = acf/(1.0 - np.exp(-(acf)))
 
@@ -626,7 +629,8 @@ def quantification_cross_section(intensities,
     return composition, number_of_atoms
 
 
-def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, probe_area): # take_off_angle, temporary value for testing
+def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle,
+                               probe_area):
     """
     Calculate absorption correction terms.
 
@@ -646,15 +650,18 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, pro
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
 
-    number_of_atoms = stack(number_of_atoms).data
+    number_of_atoms = stack(number_of_atoms, show_progressbar=False).data
 
     #calculate the total_mass per pixel, or mass thicknessself.
     total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
     for i, (weight) in enumerate(atomic_weights):
         total_mass += (number_of_atoms[i] * weight / Av / probe_area / 1E-15)
 
-     # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
-    mac = stack(material.mass_absorption_mixture(weight_percent=material.atomic_to_weight(composition))) * 0.1
+    # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
+    to_stack = material.mass_absorption_mixture(
+        weight_percent=material.atomic_to_weight(composition)
+        )
+    mac = stack(to_stack, show_progressbar=False) * 0.1
 
     acf = np.zeros_like(number_of_atoms)
     constant = 1/(Av * math.sin(toa_rad) * probe_area * 1E-16)
