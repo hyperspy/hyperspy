@@ -453,8 +453,10 @@ class EDSTEM_mixin:
                 if absorption_correction:
                     if thickness is not None:
                         mass_thickness = intensities[0].deepcopy()
-                        mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
-                                                                thickness)
+                        mass_thickness.data = self.CL_get_mass_thickness(
+                            composition.split(),
+                            thickness
+                            )
                         mass_thickness.metadata.General.title = 'Mass thickness'
                     else:
                         raise ValueError(
@@ -473,16 +475,20 @@ class EDSTEM_mixin:
                 number_of_atoms = composition._deepcopy_with_new_data(results[1])
 
             if method == 'cross_section':
-                abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
-                                                       number_of_atoms.split(),
-                                                       toa,
-                                                       probe_area)
+                abs_corr_factor = utils_eds.get_abs_corr_cross_section(
+                    composition.split(),
+                    number_of_atoms.split(),
+                    toa,
+                    probe_area
+                    )
                 kwargs["absorption_correction"] = abs_corr_factor
             else:
                 if absorption_correction:
-                    abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
-                                                       mass_thickness,
-                                                       toa)
+                    abs_corr_factor = utils_eds.get_abs_corr_zeta(
+                        composition.split(),
+                        mass_thickness,
+                        toa
+                        )
                     kwargs["absorption_correction"] = abs_corr_factor
 
             res_max = np.max((composition - comp_old).data)
@@ -875,7 +881,8 @@ class EDSTEM_mixin:
             raise Exception("Method need to be 'zeta' or 'cross_section'.")
 
 
-    def CL_get_mass_thickness(self, weight_percent, thickness):
+    @staticmethod
+    def CL_get_mass_thickness(weight_percent, thickness):
         """
         Creates a array of mass_thickness based on a known material composition and
         measured thickness. Required for absorption correction calcultions using the
@@ -886,8 +893,7 @@ class EDSTEM_mixin:
 
         Parameters
         ----------
-
-        composition: stack of compositions as determined from an initial k_factor
+        weight_percent: stack of compositions as determined from an initial k_factor
             quantification.
             Probe current in nA
         thickness: float or array
@@ -895,12 +901,12 @@ class EDSTEM_mixin:
             of the EDX map with thickness at each position of the sample.
 
         Returns
-        --------
-        Mass_thickness as an array in kg/m².
+        -------
+            ``mass_thickness`` as an array in kg/m².
 
         """
-        if type(thickness)==float or type(thickness)==int:
-            thickness_map = np.ones_like(weight_percent[0])*thickness
+        if isinstance(thickness, (float, int)):
+            thickness_map = np.ones_like(weight_percent[0]) * thickness
         else:
             thickness_map = thickness
 
@@ -910,7 +916,10 @@ class EDSTEM_mixin:
             [elements_db[element]['Physical_properties']['density (g/cm^3)']
                     for element in elements])
         for density, element_composition in zip(densities, weight_percent):
-            elemental_mt = element_composition * thickness_map * 1E-9 * density
+            # convert composition from % to fraction: factor of 1E-2
+            # convert thickness from nm to m: factor of 1E-9
+            # convert density from g/cm3 to kg/m2: factor of 1E3
+            elemental_mt = element_composition * thickness_map * density * 1E-8
             mass_thickness += elemental_mt
         return mass_thickness
 
