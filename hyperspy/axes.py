@@ -126,7 +126,7 @@ class UnitConversion:
         except pint.errors.UndefinedUnitError:
             warnings.warn('Unit "{}" not supported for conversion. Nothing '
                           'done.'.format(units),
-                          UserWarning)
+                          )
             return True
         return False
 
@@ -1476,7 +1476,7 @@ class AxesManager(t.HasTraits):
                     'Ensure it is an iterable like a list, array or generator.'
                     ) from e
             try:
-                if not inspect.isgenerator(path):
+                if not (inspect.isgenerator(path) or type(path) is GeneratorLen):
                 # If iterpath is a generator, then we can't check its first value, have to trust it
                     first_indices = path[0]
                     if not isinstance(first_indices, collections.Iterable):
@@ -1496,6 +1496,33 @@ class AxesManager(t.HasTraits):
             else:
                 self._iterpath = path
                 self._iterpath_generator = iter(self._iterpath)
+
+    def _get_iterpath_size(self, masked_elements=0):
+        "Attempts to get the iterpath size, returning None if it is unknown"
+        if isinstance(self.iterpath, str):
+            # flyback and serpentine have well-defined lengths <- navigation_size
+            maxval = self.navigation_size - masked_elements
+        else:
+            try:
+                maxval = len(self.iterpath)
+                if masked_elements:
+                    # Checking if mask indices exist in the iterpath could take a long time,
+                    # or may not be possible in the case of a generator.
+                    warnings.warn(
+                    ("The progressbar length cannot be estimated when using both custom iterpath and a mask."
+                    "The progressbar may terminate before it appears complete. This can safely be ignored."),
+                    UserWarning
+                    )
+            except TypeError:
+                # progressbar is shown, so user can monitor "iterations per second"
+                # but the length of the bar is unknown
+                maxval = None
+                warnings.warn(
+                    ("The AxesManager `iterpath` is missing the `__len__` method, so does not have a known length. "
+                    "The progressbar will only show run time and iterations per second, but no actual progress indicator."),
+                    UserWarning
+                    )
+        return maxval
 
     def __next__(self):
         """
@@ -2098,4 +2125,26 @@ class AxesManager(t.HasTraits):
         %s
         """
 
+class GeneratorLen: 
+    """Helper class for creating a generator-like object with a known length.
+    Useful when giving a generator as input to the AxesManager iterpath, so that the 
+    length is known for the progressbar.
 
+    Found at: https://stackoverflow.com/questions/7460836/how-to-lengenerator/7460986
+
+    Parameters
+        ----------
+        gen : generator
+            The Generator containing hyperspy navigation indices.
+        length : int
+            The manually-specified length of the generator.
+    """
+    def __init__(self, gen, length):
+        self.gen = gen
+        self.length = length
+
+    def __len__(self): 
+        return self.length
+
+    def __iter__(self):
+        return self.gen

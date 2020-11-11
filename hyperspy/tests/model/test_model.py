@@ -26,7 +26,7 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.utils import slugify
-
+from hyperspy.axes import GeneratorLen
 
 class TestModelJacobians:
     def setup_method(self, method):
@@ -827,6 +827,10 @@ def test_deprecated_private_functions():
     with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
         m.set_mpfit_parameters_info()
 
+def generate():
+    for i in range(3):
+        yield (i,i)
+
 class Test_multifit_iterpath():
     def setup_method(self, method):
         data = np.ones((3, 3, 10))
@@ -844,3 +848,13 @@ class Test_multifit_iterpath():
         self.m.multifit(iterpath=indices)
         set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
         np.testing.assert_array_equal(set_indices, indices[:,::-1])
+
+    def test_model_generator(self):
+        gen = generate()
+        self.m.axes_manager.iterpath = gen
+        self.m.multifit()
+
+    def test_model_GeneratorLen(self):
+        gen = GeneratorLen(generate(), 3)
+        self.m.axes_manager.iterpath = gen
+        self.m.multifit()

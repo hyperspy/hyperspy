@@ -20,12 +20,16 @@ from unittest import mock
 
 from numpy import array, arange, zeros
 
-from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter
+from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
 import pytest
 
+def generator():
+    for i in range(3):
+        yield((0,0,i))
+        
 class TestAxesManager:
     def setup_method(self, method):
         axes_list = [
@@ -416,11 +420,8 @@ class TestIterPathScanPattern:
                 assert self.am.indices == iterpath[1]
             break
 
-
     def test_custom_iterpath_generator(self):
-        def generator():
-            for i in range(3):
-                yield((0,0,i))
+
         iterpath = generator()
         self.am.iterpath = iterpath
         assert self.am._iterpath == iterpath
@@ -434,7 +435,31 @@ class TestIterPathScanPattern:
                 assert self.am.indices == (0,0,1)
             break
         
+    def test_get_iterpath_size1(self):
+        assert self.am._get_iterpath_size() == self.am.navigation_size
+        assert self.am._get_iterpath_size(masked_elements = 1) == self.am.navigation_size - 1
 
+    def test_get_iterpath_size2(self):
+        self.am.iterpath = generator()
+        assert self.am._get_iterpath_size() == None
+        with pytest.warns(UserWarning):
+            assert self.am._get_iterpath_size(masked_elements = 1) == None
+
+    def test_get_iterpath_size3(self):
+        self.am.iterpath =[(0,0,0), (0,0,1)]
+        assert self.am._get_iterpath_size() == 2
+        with pytest.warns(UserWarning):
+            assert self.am._get_iterpath_size(masked_elements = 1) == 2
+
+    def test_GeneratorLen(self):
+        gen = GeneratorLen(gen=generator(), length=3)
+        assert list(gen) == [(0,0,0),(0,0,1),(0,0,2)]
+
+    def test_GeneratorLen_iterpath(self):
+        gen = GeneratorLen(gen=generator(), length=3)
+        assert len(gen) == 3
+        self.am.iterpath = gen
+        assert self.am._get_iterpath_size() == 3
 
 class TestIterPathScanPatternSignal2D:
     def setup_method(self, method):
@@ -470,7 +495,7 @@ def test_iterpath_function_flyback():
         if i == 3:
             assert indices == (0, 1, 0)
 
-def test_iterpath_function_flyback():
+def test_iterpath_function_serpentine():
     for i, indices in enumerate(_serpentine_iter((3,3,3))):
         if i == 3:
             assert indices == (2, 1, 0)
