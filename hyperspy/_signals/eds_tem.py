@@ -880,26 +880,23 @@ class EDSTEM_mixin:
     @staticmethod
     def CL_get_mass_thickness(weight_percent, thickness):
         """
-        Creates a array of mass_thickness based on a known material composition and
-        measured thickness. Required for absorption correction calcultions using the
-        Cliff Lorimer method.
-
-        Input given by i*t*N, i the current, t the
-        acquisition time, and N the number of electron by unit electric charge.
+        Creates a array of mass_thickness based on a known material composition
+        and measured thickness. Required for absorption correction calcultions
+        using the Cliff Lorimer method.
 
         Parameters
         ----------
-        weight_percent: stack of compositions as determined from an initial k_factor
+        weight_percent : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+            Stack of compositions as determined from an initial k_factor
             quantification.
-            Probe current in nA
-        thickness: float or array
-            Either a float value for thickness in nm or an array equal to the size
-            of the EDX map with thickness at each position of the sample.
+        thickness : float or :py:class:`numpy.ndarray`
+            Either a float value for thickness in nm or an array equal to the
+            size of the EDX map with thickness at each position of the sample.
 
         Returns
         -------
-            ``mass_thickness`` as an array in kg/m².
-
+        mass_thickness : :py:class:`numpy.ndarray`
+            Mass thickness in kg/m².
         """
         if isinstance(thickness, (float, int)):
             thickness_map = np.ones_like(weight_percent[0]) * thickness
