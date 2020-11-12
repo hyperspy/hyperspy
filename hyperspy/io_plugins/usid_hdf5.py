@@ -413,7 +413,7 @@ def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
 
     # Need to keep h5 file handle open indefinitely if lazy
     # Using "with" will cause the file to be closed
-    h5_f = h5py.File(filename, mode='r+' if lazy else 'r')
+    h5_f = h5py.File(filename, 'r')
     if dataset_path is None:
         all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
         signals = []

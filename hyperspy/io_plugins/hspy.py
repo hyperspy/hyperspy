@@ -116,7 +116,7 @@ def get_hspy_format_version(f):
 
 def file_reader(filename, backing_store=False,
                 lazy=False, **kwds):
-    mode = kwds.pop('mode', 'r+' if lazy else 'r')
+    mode = kwds.pop('mode', 'r')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
