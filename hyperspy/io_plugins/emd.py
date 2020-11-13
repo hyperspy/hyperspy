@@ -357,7 +357,7 @@ class EMD(object):
         """
         cls._log.debug('Calling load_from_emd')
         # Read in file:
-        emd_file = h5py.File(filename, 'r+' if lazy else 'r')
+        emd_file = h5py.File(filename, 'r')
         # Creat empty EMD instance:
         emd = cls()
         # Extract user:
@@ -1788,7 +1788,7 @@ def file_reader(filename, lazy=False, **kwds):
         Keyword argument pass to the EMD NCEM or EMD Velox reader. See user
         guide or the docstring of the `load` function for more information.
     """
-    file = h5py.File(filename, 'r+' if lazy else 'r')
+    file = h5py.File(filename, 'r')
     dictionaries = []
     try:
         if is_EMD_Velox(file):
