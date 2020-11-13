@@ -454,7 +454,7 @@ def file_reader(filename, lazy=False, dataset_keys=None,
 
     dataset_keys = _check_search_keys(dataset_keys)
     metadata_keys = _check_search_keys(metadata_keys)
-    original_metadata = _load_metadata(fin)
+    original_metadata = _load_metadata(fin, lazy=lazy)
     # some default values...
     nexus_data_paths = []
     hdf_data_paths = []
