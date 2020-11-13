@@ -400,7 +400,8 @@ class EDSTEM_mixin:
             if show_progressbar is None:  # pragma: no cover
                 show_progressbar = preferences.General.show_progressbar
             if show_progressbar:
-                pbar = progressbar(total=max_iterations+1)
+                pbar = progressbar(total=None,
+                                   desc='Absorption correction calculation')
 
         composition = utils.stack(intensities, lazy=False,
                                   show_progressbar=False)
