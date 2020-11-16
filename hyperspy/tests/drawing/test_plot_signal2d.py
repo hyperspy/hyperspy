@@ -561,3 +561,8 @@ def test_plot_autoscale_data_changed(autoscale):
     else:
         np.testing.assert_allclose(imf._vmin, _vmin)
         np.testing.assert_allclose(imf._vmax, _vmax)
+
+def test_plot_signal_navigator_sidebyside():
+    s = hs.signals.Signal1D(np.arange(10*10*10).reshape(10, 10, 10))
+    s.plot()
+    s._plot.arrange_windows()
