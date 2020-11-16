@@ -28,10 +28,10 @@ import matplotlib.pyplot as plt
 _logger = logging.getLogger(__name__)
 
 
-class MPL_HyperExplorer(object):
-
+class MPL_HyperExplorer:
     """
-
+    Base class for the combined navigator and signal explorer in HyperSpy
+    This class initialises the figures for navigation and plotting
     """
 
     def __init__(self):
@@ -123,7 +123,7 @@ class MPL_HyperExplorer(object):
 
             # Set all kwargs value to the image figure before passing the rest
             # of the kwargs to plot method of the image figure
-            for key, value in list(kwargs.items()):
+            for key, _ in list(kwargs.items()):
                 if hasattr(imf, key):
                     setattr(imf, key, kwargs.pop(key))
 

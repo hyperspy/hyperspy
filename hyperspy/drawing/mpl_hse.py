@@ -28,8 +28,8 @@ from hyperspy.drawing import signal1d
 
 class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
-    """Plots the current spectrum to the screen and a map with a cursor
-    to explore the SI.
+    """
+    Explorer for combined Navigator + Signal where the Signal is a 1D Signal (spectrum)
 
     """
 

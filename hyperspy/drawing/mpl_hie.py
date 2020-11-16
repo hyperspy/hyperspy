@@ -22,6 +22,9 @@ from hyperspy.defaults_parser import preferences
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
+    """
+    Explorer for combined Navigator + Signal where the Signal is a 2D plot (image)
+    """
 
     def plot_signal(self, **kwargs):
         """
