@@ -65,7 +65,7 @@ install_req = ['scipy>=1.1',
                'imageio',
                'pyyaml',
                # prettytable and ptable are API compatible
-               # prettytalbe is maintained and ptable is an unmaintained fork
+               # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
                'tifffile>=2018.10.18',
                'numba',
