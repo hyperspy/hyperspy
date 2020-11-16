@@ -23,7 +23,7 @@ from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.defaults_parser import preferences
-
+import matplotlib.pyplot as plt
 
 _logger = logging.getLogger(__name__)
 
@@ -192,6 +192,7 @@ class MPL_HyperExplorer(object):
                 self.navigator_plot.events.closed.connect(
                     self.pointer.disconnect, [])
         self.plot_signal(**kwargs)
+        self.arrange_windows()
 
     def assign_pointer(self):
         if self.navigator_data_function is None:
@@ -229,3 +230,25 @@ class MPL_HyperExplorer(object):
             if self.signal_plot:
                 self.signal_plot.close()
             self.close_navigator_plot()
+
+    def arrange_windows(self):
+        """Attempt to offset the navigator and signal plots side-by-side
+        Only works for the non-widget/nbagg backends
+        """
+
+        if self.navigator_plot and self.signal_plot:
+            if "nbagg" not in plt.get_backend().lower(): # doesn't work for widget / nbagg backends
+                try: # Try incase some exotic backend raises an error
+                    # Get coordinates of navigator plot
+                    manager = self.navigator_plot.figure.canvas.manager
+                    # Shift left
+                    left, top, width, height = manager.window.geometry().getRect()
+                    manager.window.setGeometry(left-width//2 ,top, width, height) # must take ints
+
+                    # Get coordinates of signal plot
+                    manager = self.signal_plot.figure.canvas.manager
+                    # Shift right
+                    left, top, width, height = manager.window.geometry().getRect()
+                    manager.window.setGeometry(left+width//2 ,top, width, height) # must take ints
+                except:
+                    pass
