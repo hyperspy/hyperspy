@@ -568,8 +568,7 @@ class ImagePlot(BlittedFigure):
             else:
                 self.figure.canvas.draw_idle()
         else:  # no signal have been drawn yet
-            new_args = {'interpolation': 'nearest',
-                        'extent': self._extent,
+            new_args = {'extent': self._extent,
                         'aspect': self._aspect,
                         'animated': self.figure.canvas.supports_blit,
                         }
