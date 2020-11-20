@@ -242,13 +242,15 @@ class MPL_HyperExplorer:
                     # Get coordinates of navigator plot
                     manager = self.navigator_plot.figure.canvas.manager
                     # Shift left
-                    left, top, width, height = manager.window.geometry().getRect()
-                    manager.window.setGeometry(left-width//2 ,top, width, height) # must take ints
+                    left1, top1, width1, height1 = manager.window.geometry().getRect()
+                    # setGeometry takes left, top, width, height
+                    # top = 0 results in hidden windows toolbar
+                    manager.window.setGeometry(0,30, width1, height1) 
 
                     # Get coordinates of signal plot
                     manager = self.signal_plot.figure.canvas.manager
                     # Shift right
-                    left, top, width, height = manager.window.geometry().getRect()
-                    manager.window.setGeometry(left+width//2 ,top, width, height) # must take ints
+                    left2, top2, width2, height2 = manager.window.geometry().getRect()
+                    manager.window.setGeometry(width1+1, 30, width2, height2) # +1 offset to left position for border
                 except:
                     pass
