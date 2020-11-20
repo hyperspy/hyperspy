@@ -743,13 +743,21 @@ def write_signal(signal, group, **kwds):
         for model in model_group.values():
             model.attrs['_signal'] = group.name
 
+
+def pytables_is_installed():
+    try:
+        import tables
+        return True
+    except ImportError:
+        return False
+
 def import_pytables_for_blosc(compression_algorithm=None):
     """The 'blosc' and 32001 compression algorithms are the same. It requires  
     pytables to have been imported.
     """
-    try:
+    if pytables_is_installed():
         import tables
-    except ImportError:
+    else:
         if compression_algorithm:
             raise ValueError(
         f'The compression algorithm {compression_algorithm} requires pytables to be installed.')

@@ -32,6 +32,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.io import load
+from hyperspy.io_plugins.hspy import pytables_is_installed
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
@@ -656,13 +657,15 @@ class TestSaveReadWithCompression():
         self.s = Signal1D(np.ones((3,3)))
     
     @pytest.mark.parametrize("compression", (None, "gzip", "szip", "lzf", "blosc", ))
-    def test_compression(self, compression):
-        if sys.platform == "win32" and compression == "szip":
-            return
-        self.s.save('test_compression.hspy', overwrite=True, compression=compression)
+    def test_compression(self, compression, tmp_path):
+        if compression == "szip" and sys.platform == "win32":
+            pytest.skip('szip not supported on windows')
+        elif compression == 'blosc' and not pytables_is_installed():
+            pytest.skip("pytables is optional and not installed")
 
-        s = load('test_compression.hspy')
-        os.remove('test_compression.hspy')
+        self.s.save(tmp_path / 'test_compression.hspy', overwrite=True, compression=compression)
+        load(tmp_path / 'test_compression.hspy')
+
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert isinstance(s.metadata.Sample.elements, list)

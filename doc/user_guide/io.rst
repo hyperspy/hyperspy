@@ -27,15 +27,9 @@ information.
 If the loaded file contains several datasets, the :py:func:`~.io.load`
 functions will return a list of the corresponding signal.
 
-<<<<<<< HEAD
-.. NOTE::
-
-    Note for Python programmers: the data is stored in a numpy array
-=======
 .. note::
 
     Note for python programmers: the data is stored in a numpy array
->>>>>>> 3f7d647c0... @ericpre comments
     in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
