@@ -77,7 +77,7 @@ example1_original_metadata = {
 
 
 class Example1:
-
+    "Used as a base class for the TestExample classes below"
     def test_data(self):
         assert (
             [4066.0,
