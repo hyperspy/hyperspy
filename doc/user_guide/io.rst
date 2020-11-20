@@ -371,7 +371,7 @@ Extra saving arguments
 `compression`:
   One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'``, ``'blosc'`` (default is ``'gzip'``). 
   The ``'blosc'`` compressor requires ``pytables`` to be installed. It can significantly improve the speed of saving with very
-  good compression.
+  good compression. ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
 .. note::
 
