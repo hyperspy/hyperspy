@@ -32,7 +32,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.io import load
-from hyperspy.io_plugins.hspy import pytables_is_installed
+from hyperspy.io_plugins.hspy import pytables_is_installed, get_h5py_read_write_filters
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
@@ -658,8 +658,9 @@ class TestSaveReadWithCompression():
     
     @pytest.mark.parametrize("compression", (None, "gzip", "szip", "lzf", "blosc", ))
     def test_compression(self, compression, tmp_path):
-        if compression == "szip" and sys.platform == "win32":
-            pytest.skip('szip not supported on windows')
+        if compression == "szip": # Support for szip is dependent on HDF5 install
+            if compression not in get_h5py_read_write_filters().write:
+                pytest.skip('Support for szip is dependent on HDF5 install, currently not available')
         elif compression == 'blosc' and not pytables_is_installed():
             pytest.skip("pytables is optional and not installed")
 
@@ -688,3 +689,7 @@ def test_load_missing_extension(caplog):
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
        _ = s.models.restore("a")
+
+def test_check_available_compression_filters():
+    assert 'gzip' in get_h5py_read_write_filters().read
+    assert 'gzip' in get_h5py_read_write_filters().write

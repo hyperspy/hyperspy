@@ -187,7 +187,7 @@ The following example shows how to chunk one of the two navigation dimensions in
     >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
     >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
     >>> s2.data.chunksize
-    (10, 100, 30)
+    (10, 100, 300)
 
 .. versionadded:: 1.3.2
 

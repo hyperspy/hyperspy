@@ -28,6 +28,7 @@ import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
+from collections import namedtuple
 
 _logger = logging.getLogger(__name__)
 
@@ -743,6 +744,16 @@ def write_signal(signal, group, **kwds):
         for model in model_group.values():
             model.attrs['_signal'] = group.name
 
+def get_h5py_read_write_filters():
+    """Get tuple of lists of available read and write compression formats.
+    Some of these, like szip, are dependent on the HDF5 install due to 
+    licensing issues
+    """
+    from h5py._hl.filters import _gen_filter_tuples
+    decode, encode = _gen_filter_tuples()
+    Filters = namedtuple('Filters', ['read', 'write'])
+
+    return Filters(decode, encode)
 
 def pytables_is_installed():
     try:
