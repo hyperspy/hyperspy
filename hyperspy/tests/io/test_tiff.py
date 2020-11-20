@@ -4,6 +4,9 @@ import tempfile
 import numpy as np
 import pytest
 import traits.api as t
+from distutils.version import LooseVersion
+import tifffile
+
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -634,6 +637,7 @@ def test_save_angstrom_units():
         fname = os.path.join(tmpdir, 'save_angstrom_units.tif')
         s.save(fname)
         s2 = hs.load(fname)
-        assert s2.axes_manager[0].units == s.axes_manager[0].units
+        if LooseVersion(tifffile.__version__) >= LooseVersion("2020.7.17"):
+            assert s2.axes_manager[0].units == s.axes_manager[0].units
         assert s2.axes_manager[0].scale == s.axes_manager[0].scale
         assert s2.axes_manager[0].offset == s.axes_manager[0].offset
