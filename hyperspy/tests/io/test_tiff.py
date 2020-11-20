@@ -621,3 +621,19 @@ def test_olympus_SIS():
         assert ima.data.shape == (101, 112)
 
     assert s[1].data.dtype is np.dtype('uint16')
+
+
+def test_save_angstrom_units():
+    s = hs.signals.Signal2D(np.arange(200*200, dtype='float32').reshape((200, 200)))
+    for axis in s.axes_manager.signal_axes:
+        axis.units = 'Å'
+        axis.scale = 0.1
+        axis.offset = 10
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'save_angstrom_units.tif')
+        s.save(fname)
+        s2 = hs.load(fname)
+        assert s2.axes_manager[0].units == s.axes_manager[0].units
+        assert s2.axes_manager[0].scale == s.axes_manager[0].scale
+        assert s2.axes_manager[0].offset == s.axes_manager[0].offset
