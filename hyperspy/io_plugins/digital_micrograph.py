@@ -788,6 +788,8 @@ class ImageObject(object):
     def _get_mode(self, mode):
         if 'STEM' in mode:
             return 'STEM'
+        elif 'SEM' in mode:
+            return 'SEM'
         else:
             return 'TEM'
 
@@ -977,6 +979,42 @@ class ImageObject(object):
                     None),
                 "{}.EDS.Real_time".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
+                    None),
+            })
+        elif self.signal_type == "CL":
+            mapping.update({
+                "{}.CL.Acquisition.Date".format(tags_path): (
+                    "General.date",
+                    self._get_date),
+                "{}.CL.Acquisition.Start_time".format(tags_path): (
+                    "General.time",
+                    self._get_time),
+                "{}.CL.Acquisition.End_time".format(tags_path): (
+                    "Signal.CL.end_time",
+                    self._get_time),
+                "{}.Meta_Data.Acquisition_Mode".format(tags_path): (
+                    "Signal.aquisition_mode",
+                    None),
+                "{}.Meta_Data.Format".format(tags_path): (
+                    "Signal.format",
+                    None),
+                "{}.CL.Acquisition.Dispersion_grating_(lines/mm)".format(tags_path): (
+                    "Signal.CL.dispersion_grating",
+                    None),
+                "{}.CL.Acquisition.Central_wavelength_(nm)".format(tags_path): (
+                    "Signal.CL.central_wavelength",
+                    None),
+                "{}.CL.Acquisition.Exposure_(s)".format(tags_path): (
+                    "Signal.CL.exposure",
+                    None),
+                "{}.CL.Acquisition.Number_of_frames".format(tags_path): (
+                    "Signal.CL.frame_number",
+                    None),
+                "{}.CL.Acquisition.Integration_time_(s)".format(tags_path): (
+                    "Signal.CL.integration_time",
+                    None),
+                "{}.CL.Acquisition.Saturation_fraction".format(tags_path): (
+                    "Signal.CL.saturation_fraction",
                     None),
             })
         elif "DigiScan" in image_tags_dict.keys():
