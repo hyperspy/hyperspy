@@ -189,3 +189,14 @@ def test_file_reader_options():
         t = hs.load(Path(dirpath, "temp.hspy"), reader=hspy)
         assert len(t) == 1
         np.testing.assert_allclose(t.data, np.arange(10))
+
+
+def test_save_default_format():
+    s = Signal1D(np.arange(10))
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        f = os.path.join(dirpath, "temp")
+        s.save(f)
+
+        t = hs.load(Path(dirpath, "temp.hspy"))
+        assert len(t) == 1

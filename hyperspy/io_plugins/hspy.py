@@ -556,6 +556,9 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # Optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
+    if np.issubdtype(data.dtype, np.dtype('U')):
+        # Saving numpy unicode type is not supported in h5py
+        data = data.astype(np.dtype('S'))
     if data.dtype == np.dtype('O'):
         # For saving ragged array
         # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
@@ -647,6 +650,11 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                 dat = group[key]
                 kn = key
                 if key.startswith("_list_"):
+                    if (h5py.check_string_dtype(dat.dtype) and
+                        hasattr(dat, 'asstr')):
+                        # h5py 3.0 and newer
+                        # https://docs.h5py.org/en/3.0.0/strings.html
+                        dat = dat.asstr()[:]
                     ans = np.array(dat)
                     ans = ans.tolist()
                     kn = key[6:]
