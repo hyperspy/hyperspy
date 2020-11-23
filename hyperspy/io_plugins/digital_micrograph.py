@@ -541,6 +541,9 @@ class ImageObject(object):
         elif self.signal_type in ("EDS", "EDX"):
             if "keV" in self.units:
                 names[indices.pop(self.units.index("keV"))] = "Energy"
+        elif self.signal_type in ("CL"):
+            if "nm" in self.units:
+                names[indices.pop(self.units.index("nm"))] = "Wavelength"
         for index, name in zip(indices[::-1], ("x", "y", "z")):
             names[index] = name
         return names
@@ -984,38 +987,51 @@ class ImageObject(object):
         elif self.signal_type == "CL":
             mapping.update({
                 "{}.CL.Acquisition.Date".format(tags_path): (
-                    "General.date",
-                    self._get_date),
+                    "General.date", self._get_date),
                 "{}.CL.Acquisition.Start_time".format(tags_path): (
-                    "General.time",
-                    self._get_time),
-                "{}.CL.Acquisition.End_time".format(tags_path): (
-                    "Signal.CL.end_time",
-                    self._get_time),
+                    "General.time", self._get_time),
                 "{}.Meta_Data.Acquisition_Mode".format(tags_path): (
-                    "Signal.aquisition_mode",
-                    None),
+                    "Acquisition_instrument.CL.aquisition_mode", None),
                 "{}.Meta_Data.Format".format(tags_path): (
-                    "Signal.format",
-                    None),
+                    "Signal.format", None),
                 "{}.CL.Acquisition.Dispersion_grating_(lines/mm)".format(tags_path): (
-                    "Signal.CL.dispersion_grating",
-                    None),
+                    "Acquisition_instrument.CL.dispersion_grating", None),
+                # Parallel spectrum
                 "{}.CL.Acquisition.Central_wavelength_(nm)".format(tags_path): (
-                    "Signal.CL.central_wavelength",
-                    None),
+                    "Acquisition_instrument.CL.central_wavelength", None),
                 "{}.CL.Acquisition.Exposure_(s)".format(tags_path): (
-                    "Signal.CL.exposure",
-                    None),
+                    "Acquisition_instrument.CL.exposure", None),
                 "{}.CL.Acquisition.Number_of_frames".format(tags_path): (
-                    "Signal.CL.frame_number",
-                    None),
+                    "Acquisition_instrument.CL.frame_number", None),
                 "{}.CL.Acquisition.Integration_time_(s)".format(tags_path): (
-                    "Signal.CL.integration_time",
-                    None),
+                    "Acquisition_instrument.CL.integration_time", None),
                 "{}.CL.Acquisition.Saturation_fraction".format(tags_path): (
-                    "Signal.CL.saturation_fraction",
-                    None),
+                    "Acquisition_instrument.CL.saturation_fraction", None),
+                "{}.Acquisition.Parameters.High_Level.Binning".format(tags_path): (
+                    "Acquisition_instrument.CL.CCD.binning", None),
+                "{}.Acquisition.Parameters.High_Level.CCD_Read_Area".format(tags_path): (
+                    "Acquisition_instrument.CL.CCD.read_area", None),
+                "{}.Acquisition.Parameters.High_Level.Processing".format(tags_path): (
+                    "Acquisition_instrument.CL.CCD.processing", None),
+                # Serial Spectrum
+                "{}.CL.Acquisition.Acquisition_begin".format(tags_path): (
+                    "General.date", self._get_date),
+                "{}.CL.Acquisition.Detector_type".format(tags_path): (
+                    "Acquisition_instrument.CL.detector_type", None),
+                "{}.CL.Acquisition.Dwell_time_(s)".format(tags_path): (
+                    "Acquisition_instrument.CL.dwell_time", None),
+                "{}.CL.Acquisition.Start_wavelength_(nm)".format(tags_path): (
+                    "Acquisition_instrument.CL.start_wavelength", None),
+                "{}.CL.Acquisition.Step-size_(nm)".format(tags_path): (
+                    "Acquisition_instrument.CL.step_size", None),
+                # SI 
+                "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Periodicity".format(tags_path): (
+                    "Acquisition_instrument.CL.SI.drift_correction_periodicity", None),
+                "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Units".format(tags_path): (
+                    "Acquisition_instrument.CL.SI.drift_correction_units", None),
+                "{}.SI.Acquisition.SI_Application_Mode.Name".format(tags_path): (
+                    "Acquisition_instrument.CL.SI.mode", None),
+                
             })
         elif "DigiScan" in image_tags_dict.keys():
             mapping.update({
