@@ -369,17 +369,21 @@ See the `chunking section <big_data.html#Chunking>`__ under `Working with big da
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 `compression`:
-  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'``, ``'blosc'`` (default is ``'gzip'``). 
-  The ``'blosc'`` compressor requires ``pytables`` to be installed. It can significantly improve the speed of saving with very
-  good compression. ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
+  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
+  ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
 .. note::
 
     Compression can significantly increase the saving speed. If file size
-    is not an issue, it can be disabled by setting ``compression = None``.
-    Only ``compression = None/'gzip'`` is guaranteed to be compatible for reading
+    is not an issue, it can be disabled by setting ``compression=None``.
+    Only ``compression=None/'gzip'`` is guaranteed to be compatible for reading
     with hyperspy on all platforms, see the `h5py documentation
     <https://docs.h5py.org/en/stable/faq.html>`_ for more details.
+
+    Other compressor, such as ``blosc`` can significantly improve the speed of saving with very
+    good compression but can be more complicated to install and use - read the
+    `pytables <https://www.pytables.org/usersguide/optimization.html>`_ or the
+    `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_ documentation for more details.
 
 
 .. _netcdf-format:

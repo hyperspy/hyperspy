@@ -32,7 +32,6 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.io import load
-from hyperspy.io_plugins.hspy import pytables_is_installed
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
@@ -664,17 +663,14 @@ class Test_permanent_markers_io:
             "test_marker_point_y2_data_deleted.hdf5"))
         assert len(s.metadata.Markers) == 5
 
-class TestSaveReadWithCompression():
-    def setup_method(self):
-        self.s = Signal1D(np.ones((3,3)))
-    
-    @pytest.mark.parametrize("compression", (None, "gzip", "lzf", "blosc", ))
-    def test_compression(self, compression, tmp_path):
-        if compression == 'blosc' and not pytables_is_installed():
-            pytest.skip("pytables is optional and not installed")
 
-        self.s.save(tmp_path / 'test_compression.hspy', overwrite=True, compression=compression)
-        load(tmp_path / 'test_compression.hspy')
+@pytest.mark.parametrize("compression", (None, "gzip", "lzf"))
+def test_compression(compression, tmp_path):
+    s = Signal1D(np.ones((3,3)))
+    s.save(tmp_path / 'test_compression.hspy', overwrite=True,
+           compression=compression)
+    load(tmp_path / 'test_compression.hspy')
+
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()

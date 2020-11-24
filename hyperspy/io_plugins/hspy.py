@@ -716,8 +716,6 @@ def write_signal(signal, group, **kwds):
 
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
-    elif kwds['compression'] in ['blosc', 32001]:
-        import_pytables_for_blosc(kwds['compression'])
 
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
@@ -752,25 +750,6 @@ def write_signal(signal, group, **kwds):
         for model in model_group.values():
             model.attrs['_signal'] = group.name
 
-def pytables_is_installed():
-    try:
-        import tables
-        return True
-    except ImportError:
-        return False
-
-def import_pytables_for_blosc(compression_algorithm=None):
-    """The 'blosc' and 32001 compression algorithms are the same. It requires  
-    pytables to have been imported.
-    """
-    if pytables_is_installed():
-        import tables
-    else:
-        if compression_algorithm:
-            raise ValueError(
-        f'The compression algorithm {compression_algorithm} requires pytables to be installed.')
-        else:
-            raise ImportError('This functionality requires pytables, but it is not installed.')
 
 def file_writer(filename, signal, *args, **kwds):
     """Writes data to hyperspy's hdf5 format
@@ -792,11 +771,6 @@ def file_writer(filename, signal, *args, **kwds):
         if "/" in group_name:
             group_name = group_name.replace("/", "-")
         expg = exps.create_group(group_name)
-
-        if 'compression' not in kwds:
-            kwds['compression'] = 'gzip'
-        elif kwds['compression'] in ['blosc', 32001]:
-            import_pytables_for_blosc(kwds['compression'])
 
         # Add record_by metadata for backward compatibility
         smd = signal.metadata.Signal
