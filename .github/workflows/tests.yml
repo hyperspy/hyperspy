@@ -11,13 +11,13 @@ jobs:
       MPLBACKEND: agg
       PIP_ARGS: --upgrade --use-feature=2020-resolver -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
+      PYTEST_ARGS_COVERAGE: 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         PYTHON_VERSION: [3.7, 3.8]
         PIP_SELECTOR: ['[all, tests]']
-        OLDEST_SUPPORTED_VERSION: [false]
         include:
           # test oldest supported version of main dependencies on python 3.6 
           - os: ubuntu-latest
@@ -31,10 +31,16 @@ jobs:
             PYTHON_VERSION: 3.7
             PIP_SELECTOR: '[tests]'
             LABEL: /minimum
+          # Run coverage
           - os: ubuntu-latest
             PYTHON_VERSION: 3.7
             PIP_SELECTOR: '[all, tests, coverage]'
             PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
+            LABEL: /coverage
+        exclude:
+          # redundant build (same as coverage) 
+          - os: ubuntu-latest
+            PYTHON_VERSION: 3.7
 
     steps:
       - uses: actions/checkout@v2
@@ -64,7 +70,7 @@ jobs:
           pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
 
       - name: Upload coverage to Codecov
-        if: ${{ matrix.PYTEST_ARGS_COVERAGE }}
+        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }} 
         uses: codecov/codecov-action@v1
         with:
           verbose: true
