@@ -46,7 +46,7 @@ Portable distribution (Windows only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A portable version of the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`_
-based the WinPython distribution is also available on Windows.
+based on the WinPython distribution is also available on Windows.
 
 
 .. _anaconda-install:
@@ -74,21 +74,22 @@ and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use
 
 .. note::
 
-    Depending on how Anaconda have been installed, it is possible that the 
-    ``conda`` is not avaible from the Terminal, read the
+    Depending on how Anaconda has been installed, it is possible that the 
+    ``conda`` command is not avaible from the Terminal, read the
     `Anaconda User Guide <https://docs.continuum.io/anaconda/>`_ for details.
 
 .. note::
 
-    Using ``-c conda-forge`` is only necessary when the conda-forge is not
-    already added to the conda configuration, read the
+    Using ``-c conda-forge`` is only necessary when the ``conda-forge`` channel
+    is not already added to the conda configuration, read the
     `conda-forge documentation <https://conda-forge.org/docs/user/introduction.html>`_
     for more details.
 
 .. note::
 
     Depending on the packages installed in Anaconda, ``conda`` can be slow and
-    in this case ``mamba`` can be used as replacement of ``conda``. Read the
+    in this case ``mamba`` can be used as an alternative of ``conda`` since the
+    former is significantly faster. Read the
     `mamba documentation <https://github.com/mamba-org/mamba>`_ for instructions.
 
 Further information
@@ -99,15 +100,15 @@ packages installed in an environment are met. This can lead to situations where
 a solution for dependencies resolution cannot be resolved or the solution may
 include installing old or undesired versions of libraries. The requirements
 depend on which libraries are already present in the environment as satisfying
-their respective dependencies may be problematic. In such situation, possible
+their respective dependencies may be problematic. In such a situation, possible
 solutions are:
 
 - use Miniconda instead of Anaconda, if you are installing a python
-  distribution from scratch: Miniconda installs very few packages so satisfying
-  all dependencies is relatively simple.
+  distribution from scratch: Miniconda only installs very few packages so satisfying
+  all dependencies is simple.
 - install hyperspy in a `new environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
-  The following example illustrates creating a new environment named ``hspy_environment``,
-  activating it and installing hyperspy in the new environment.
+  The following example illustrates how to create a new environment named ``hspy_environment``,
+  activate it and install hyperspy in the new environment.
 
   .. code-block:: bash
 
