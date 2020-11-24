@@ -72,8 +72,6 @@ jobs:
       - name: Upload coverage to Codecov
         if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }} 
         uses: codecov/codecov-action@v1
-        with:
-          verbose: true
 
   build_doc:
     name: Build doc
