@@ -31,7 +31,10 @@ jobs:
             PYTHON_VERSION: 3.7
             PIP_SELECTOR: '[tests]'
             LABEL: /minimum
-
+          - os: ubuntu-latest
+            PYTHON_VERSION: 3.7
+            PIP_SELECTOR: '[all, tests, coverage]'
+            PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
 
     steps:
       - uses: actions/checkout@v2
@@ -58,7 +61,13 @@ jobs:
 
       - name: Run test suite
         run: |
-          pytest $PYTEST_ARGS
+          pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.PYTEST_ARGS_COVERAGE }}
+        uses: codecov/codecov-action@v1
+        with:
+          verbose: true
 
   build_doc:
     name: Build doc
