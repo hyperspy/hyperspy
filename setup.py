@@ -76,7 +76,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["cython", "imagecodecs", "tables"],
+    "speed": ["cython", "imagecodecs"],
     "usid": ["pyUSID>=0.0.7", "sidpy"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
