@@ -597,13 +597,11 @@ class EELSModel(Model1D):
         print()
         if output == "absolute":
             print("Absolute quantification:")
-        elif output == "normalized":
-            print("Normalized elemental concentrations:")
-        if output == "absolute":
             print("Elem.\tIntensity")
         elif output == "normalized":
+            print("Normalized elemental concentrations:")
             print("Elem.\tConcentration")
-
+        
         for element in elements:
             if len(elements[element]) == 1:
                 for subshell in elements[element]:
