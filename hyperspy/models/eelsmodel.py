@@ -32,7 +32,6 @@ _logger = logging.getLogger(__name__)
 class EELSModel(Model1D):
 
     """Build an EELS model
-
     Parameters
     ----------
     spectrum : a Signal1D (or any Signal1D subclass) instance
@@ -58,18 +57,11 @@ class EELSModel(Model1D):
     dictionary : {dict, None}
         A dictionary to be used to recreate a model. Usually generated using
         :meth:`hyperspy.model.as_dictionary`
-
     """
 
-    def __init__(
-        self,
-        signal1D,
-        auto_background=True,
-        auto_add_edges=True,
-        ll=None,
-        GOS=None,
-        dictionary=None,
-    ):
+    def __init__(self, signal1D, auto_background=True,
+                 auto_add_edges=True, ll=None,
+                 GOS=None, dictionary=None):
         Model1D.__init__(self, signal1D)
 
         # When automatically setting the fine structure energy regions,
@@ -109,8 +101,8 @@ class EELSModel(Model1D):
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
-                "but an object of type %s was provided" % str(type(value))
-            )
+                "but an object of type %s was provided" %
+                str(type(value)))
 
     def append(self, component):
         super(EELSModel, self).append(component)
@@ -120,8 +112,7 @@ class EELSModel(Model1D):
                 E0=tem.beam_energy,
                 alpha=tem.convergence_angle,
                 beta=tem.Detector.EELS.collection_angle,
-                energy_scale=self.axis.scale,
-            )
+                energy_scale=self.axis.scale)
             component.energy_scale = self.axis.scale
             component._set_fine_structure_coeff()
         self._classify_components()
@@ -137,30 +128,27 @@ class EELSModel(Model1D):
     def _classify_components(self):
         """Classify components between background and ionization edge
         components.
-
         This method should be called everytime that components are added and
         removed. An ionization edge becomes background when its onset falls to
         the left of the first non-masked energy channel. The ionization edges
         are stored in a list in the `edges` attribute. They are sorted by
         increasing `onset_energy`. The background components are stored in
         `_background_components`.
-
         """
         self.edges = []
         self._background_components = []
         for component in self:
             if isinstance(component, EELSCLEdge):
-                if (
-                    component.onset_energy.value
-                    < self.axis.axis[self.channel_switches][0]
-                ):
+                if component.onset_energy.value < \
+                        self.axis.axis[self.channel_switches][0]:
                     component.isbackground = True
                 if component.isbackground is not True:
                     self.edges.append(component)
                 else:
                     component.fine_structure_active = False
                     component.fine_structure_coeff.free = False
-            elif isinstance(component, PowerLaw) or component.isbackground is True:
+            elif (isinstance(component, PowerLaw) or
+                  component.isbackground is True):
                 self._background_components.append(component)
 
         if self.edges:
@@ -169,9 +157,11 @@ class EELSModel(Model1D):
         if len(self._background_components) > 1:
             self._backgroundtype = "mix"
         elif len(self._background_components) == 1:
-            self._backgroundtype = self._background_components[0].__repr__()
+            self._backgroundtype = \
+                self._background_components[0].__repr__()
             bg = self._background_components[0]
-            if isinstance(bg, PowerLaw) and self.edges and not bg.A.map["is_set"].any():
+            if isinstance(bg, PowerLaw) and self.edges and not \
+               bg.A.map["is_set"].any():
                 self.two_area_background_estimation()
 
     @property
@@ -204,11 +194,11 @@ class EELSModel(Model1D):
         self.append(master_edge)
         element = master_edge.element
         while len(e_shells) > 0:
-            next_element = e_shells[-1].split("_")[0]
+            next_element = e_shells[-1].split('_')[0]
             if next_element != element:
                 # New master edge
                 self._add_edges_from_subshells_names(e_shells=e_shells)
-            elif self.GOS == "hydrogenic":
+            elif self.GOS == 'hydrogenic':
                 # The hydrogenic GOS includes all the L subshells in one
                 # so we get rid of the others
                 e_shells.pop()
@@ -221,23 +211,22 @@ class EELSModel(Model1D):
                 edge.intensity.twin = master_edge.intensity
                 edge.onset_energy.twin = master_edge.onset_energy
                 edge.onset_energy.twin_function_expr = "x + {}".format(
-                    (edge.GOS.onset_energy - master_edge.GOS.onset_energy)
-                )
+                    (edge.GOS.onset_energy - master_edge.GOS.onset_energy))
                 edge.free_onset_energy = False
                 self.append(edge)
 
-    def resolve_fine_structure(self, preedge_safe_window_width=2, i1=0):
+    def resolve_fine_structure(
+            self,
+            preedge_safe_window_width=2,
+            i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
-
         This function is called automatically everytime the position of an edge
         changes
-
         Parameters
         ----------
         preedge_safe_window_width : float
             minimum distance between the fine structure of an ionization edge
             and that of the following one. Default 2 (eV).
-
         """
 
         if self._suspend_auto_fine_structure_width is True:
@@ -246,62 +235,46 @@ class EELSModel(Model1D):
         if not self._active_edges:
             return
 
-        while (
-            self._active_edges[i1].fine_structure_active is False
-            and i1 < len(self._active_edges) - 1
-        ):
+        while (self._active_edges[i1].fine_structure_active is False and
+               i1 < len(self._active_edges) - 1):
             i1 += 1
         if i1 < len(self._active_edges) - 1:
             i2 = i1 + 1
-            while (
-                self._active_edges[i2].fine_structure_active is False
-                and i2 < len(self._active_edges) - 1
-            ):
+            while (self._active_edges[i2].fine_structure_active is False and
+                    i2 < len(self._active_edges) - 1):
                 i2 += 1
             if self._active_edges[i2].fine_structure_active is True:
                 distance_between_edges = (
-                    self._active_edges[i2].onset_energy.value
-                    - self._active_edges[i1].onset_energy.value
-                )
-                if (
-                    self._active_edges[i1].fine_structure_width
-                    > distance_between_edges - self._preedge_safe_window_width
-                ):
+                    self._active_edges[i2].onset_energy.value -
+                    self._active_edges[i1].onset_energy.value)
+                if (self._active_edges[i1].fine_structure_width >
+                        distance_between_edges -
+                        self._preedge_safe_window_width):
                     min_d = self._min_distance_between_edges_for_fine_structure
-                    if (
-                        distance_between_edges - self._preedge_safe_window_width
-                    ) <= min_d:
-                        _logger.info(
-                            (
-                                "Automatically deactivating the fine structure "
-                                "of edge number %d to avoid conflicts with edge "
-                                "number %d"
-                            )
-                            % (i2 + 1, i1 + 1)
-                        )
+                    if (distance_between_edges -
+                            self._preedge_safe_window_width) <= min_d:
+                        _logger.info((
+                            "Automatically deactivating the fine structure "
+                            "of edge number %d to avoid conflicts with edge "
+                            "number %d") % (i2 + 1, i1 + 1))
                         self._active_edges[i2].fine_structure_active = False
-                        self._active_edges[i2].fine_structure_coeff.free = False
+                        self._active_edges[
+                            i2].fine_structure_coeff.free = False
                         self.resolve_fine_structure(i1=i2)
                     else:
                         new_fine_structure_width = (
-                            distance_between_edges - self._preedge_safe_window_width
-                        )
-                        _logger.info(
-                            (
-                                "Automatically changing the fine structure "
-                                "width of edge %d from %s eV to %s eV to avoid "
-                                "conflicts with edge number %d"
-                            )
-                            % (
-                                i1 + 1,
-                                self._active_edges[i1].fine_structure_width,
-                                new_fine_structure_width,
-                                i2 + 1,
-                            )
-                        )
-                        self._active_edges[
-                            i1
-                        ].fine_structure_width = new_fine_structure_width
+                            distance_between_edges -
+                            self._preedge_safe_window_width)
+                        _logger.info((
+                            "Automatically changing the fine structure "
+                            "width of edge %d from %s eV to %s eV to avoid "
+                            "conflicts with edge number %d") % (
+                            i1 + 1,
+                            self._active_edges[i1].fine_structure_width,
+                            new_fine_structure_width,
+                            i2 + 1))
+                        self._active_edges[i1].fine_structure_width = \
+                            new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
                 else:
                     self.resolve_fine_structure(i1=i2)
@@ -310,9 +283,7 @@ class EELSModel(Model1D):
 
     def fit(self, kind="std", **kwargs):
         """Fits the model to the experimental data.
-
         Read more in the :ref:`User Guide <model.fitting>`.
-
         Parameters
         ----------
         kind : {"std", "smart"}, default "std"
@@ -320,20 +291,19 @@ class EELSModel(Model1D):
             performs a smart_fit - for more details see
             the :ref:`User Guide <eels.fitting>`.
         %s
-
         Returns
         -------
         None
-
         See Also
         --------
         * :py:meth:`~hyperspy.model.BaseModel.fit`
         * :py:meth:`~hyperspy.model.BaseModel.multifit`
         * :py:meth:`~hyperspy.model.EELSModel.smart_fit`
-
         """
         if kind not in ["smart", "std"]:
-            raise ValueError(f"kind must be either 'std' or 'smart', not '{kind}'")
+            raise ValueError(
+                f"kind must be either 'std' or 'smart', not '{kind}'"
+            )
         elif kind == "smart":
             return self.smart_fit(**kwargs)
         elif kind == "std":
@@ -343,30 +313,25 @@ class EELSModel(Model1D):
 
     def smart_fit(self, start_energy=None, **kwargs):
         """Fits EELS edges in a cascade style.
-
         The fitting procedure acts in iterative manner along
         the energy-loss-axis. First it fits only the background
         up to the first edge. It continues by deactivating all
         edges except the first one, then performs the fit. Then
         it only activates the the first two, fits, and repeats
         this until all edges are fitted simultanously.
-
         Other, non-EELSCLEdge components, are never deactivated,
         and fitted on every iteration.
-
         Parameters
         ----------
         start_energy : {float, None}
             If float, limit the range of energies from the left to the
             given value.
         %s
-
         See Also
         --------
         * :py:meth:`~hyperspy.model.BaseModel.fit`
         * :py:meth:`~hyperspy.model.BaseModel.multifit`
         * :py:meth:`~hyperspy.model.EELSModel.fit`
-
         """
         # Fit background
         self.fit_background(start_energy, **kwargs)
@@ -379,22 +344,17 @@ class EELSModel(Model1D):
 
     def _get_first_ionization_edge_energy(self, start_energy=None):
         """Calculate the first ionization edge energy.
-
         Returns
         -------
         iee : float or None
             The first ionization edge energy or None if no edge is defined in
             the model.
-
         """
         if not self._active_edges:
             return None
         start_energy = self._get_start_energy(start_energy)
-        iee_list = [
-            edge.onset_energy.value
-            for edge in self._active_edges
-            if edge.onset_energy.value > start_energy
-        ]
+        iee_list = [edge.onset_energy.value for edge in self._active_edges
+                    if edge.onset_energy.value > start_energy]
         iee = min(iee_list) if iee_list else None
         return iee
 
@@ -407,7 +367,6 @@ class EELSModel(Model1D):
     def fit_background(self, start_energy=None, only_current=True, **kwargs):
         """Fit the background to the first active ionization edge
         in the energy range.
-
         Parameters
         ----------
         start_energy : {float, None}, optional
@@ -419,7 +378,6 @@ class EELSModel(Model1D):
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
             multifit.
-
         """
 
         # If there is no active background compenent do nothing
@@ -427,9 +385,8 @@ class EELSModel(Model1D):
             return
         iee = self._get_first_ionization_edge_energy(start_energy=start_energy)
         if iee is not None:
-            to_disable = [
-                edge for edge in self._active_edges if edge.onset_energy.value >= iee
-            ]
+            to_disable = [edge for edge in self._active_edges
+                          if edge.onset_energy.value >= iee]
             E2 = iee - self._preedge_safe_window_width
             self.disable_edges(to_disable)
         else:
@@ -446,7 +403,6 @@ class EELSModel(Model1D):
     def two_area_background_estimation(self, E1=None, E2=None, powerlaw=None):
         """Estimates the parameters of a power law background with the two
         area method.
-
         Parameters
         ----------
         E1 : float
@@ -454,7 +410,6 @@ class EELSModel(Model1D):
         powerlaw : PowerLaw component or None
             If None, it will try to guess the right component from the
             background components of the model
-
         """
         if powerlaw is None:
             for component in self._active_background_components:
@@ -463,11 +418,10 @@ class EELSModel(Model1D):
                         powerlaw = component
                     else:
                         _logger.warning(
-                            "There are more than two power law "
-                            "background components defined in this model, "
-                            "please use the powerlaw keyword to specify one"
-                            " of them"
-                        )
+                            'There are more than two power law '
+                            'background components defined in this model, '
+                            'please use the powerlaw keyword to specify one'
+                            ' of them')
                         return
                 else:  # No power law component
                     return
@@ -479,14 +433,15 @@ class EELSModel(Model1D):
             if E2 is None:
                 E2 = ea[-1]
             else:
-                E2 = E2 - self._preedge_safe_window_width
+                E2 = E2 - \
+                    self._preedge_safe_window_width
 
-        if not powerlaw.estimate_parameters(self.signal, E1, E2, only_current=False):
+        if not powerlaw.estimate_parameters(
+                self.signal, E1, E2, only_current=False):
             _logger.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"
-                "Try choosing a different energy range for the estimation"
-            )
+                "Try choosing a different energy range for the estimation")
             return
 
     def _fit_edge(self, edgenumber, start_energy=None, **kwargs):
@@ -497,22 +452,19 @@ class EELSModel(Model1D):
         # Declare variables
         active_edges = self._active_edges
         edge = active_edges[edgenumber]
-        if (
-            edge.intensity.twin is not None
-            or edge.active is False
-            or edge.onset_energy.value < start_energy
-            or edge.onset_energy.value > ea[-1]
-        ):
+        if (edge.intensity.twin is not None or
+                edge.active is False or
+                edge.onset_energy.value < start_energy or
+                edge.onset_energy.value > ea[-1]):
             return 1
         # Fitting edge 'edge.name'
-        last_index = len(self._active_edges) - 1  # Last edge index
+        last_index = len(self._active_edges) - 1    # Last edge index
         i = 1
         twins = []
         # find twins
         while edgenumber + i <= last_index and (
-            active_edges[edgenumber + i].intensity.twin is not None
-            or active_edges[edgenumber + i].active is False
-        ):
+                active_edges[edgenumber + i].intensity.twin is not None or
+                active_edges[edgenumber + i].active is False):
             if active_edges[edgenumber + i].intensity.twin is not None:
                 twins.append(self._active_edges[edgenumber + i])
             i += 1
@@ -520,19 +472,14 @@ class EELSModel(Model1D):
             nextedgeenergy = ea[-1]
         else:
             nextedgeenergy = (
-                active_edges[edgenumber + i].onset_energy.value
-                - self._preedge_safe_window_width
-            )
+                active_edges[edgenumber + i].onset_energy.value -
+                self._preedge_safe_window_width)
 
         # Backup the fsstate
         to_activate_fs = []
-        for edge_ in [
-            edge,
-        ] + twins:
-            if (
-                edge_.fine_structure_active is True
-                and edge_.fine_structure_coeff.free is True
-            ):
+        for edge_ in [edge, ] + twins:
+            if (edge_.fine_structure_active is True and
+                    edge_.fine_structure_coeff.free is True):
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
 
@@ -540,8 +487,9 @@ class EELSModel(Model1D):
 
         # Without fine structure to determine onset_energy
         edges_to_activate = []
-        for edge_ in self._active_edges[edgenumber + 1 :]:
-            if edge_.active is True and edge_.onset_energy.value >= nextedgeenergy:
+        for edge_ in self._active_edges[edgenumber + 1:]:
+            if (edge_.active is True and
+                    edge_.onset_energy.value >= nextedgeenergy):
                 edge_.active = False
                 edges_to_activate.append(edge_)
 
@@ -660,13 +608,11 @@ class EELSModel(Model1D):
         """Remove the fine structure data from the fitting routine as
         defined in the fine_structure_width parameter of the
         component.EELSCLEdge
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -675,14 +621,14 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
         else:
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
-            if edge.isbackground is False and edge.fine_structure_active is True:
+            if (edge.isbackground is False and
+                    edge.fine_structure_active is True):
                 start = edge.onset_energy.value
                 stop = start + edge.fine_structure_width
                 self.remove_signal_range(start, stop)
@@ -691,13 +637,11 @@ class EELSModel(Model1D):
         """Enable the edges listed in edges_list. If edges_list is
         None (default) all the edges with onset in the spectrum energy
         region will be enabled.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -706,7 +650,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
 
         if edges_list is None:
@@ -722,13 +665,11 @@ class EELSModel(Model1D):
         """Disable the edges listed in edges_list. If edges_list is None (default)
         all the edges with onset in the spectrum energy region will be
         disabled.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -737,7 +678,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
@@ -749,12 +689,14 @@ class EELSModel(Model1D):
         self.resolve_fine_structure()
 
     def enable_background(self):
-        """Enable the background componets."""
+        """Enable the background componets.
+        """
         for component in self._background_components:
             component.active = True
 
     def disable_background(self):
-        """Disable the background components."""
+        """Disable the background components.
+        """
         for component in self._active_background_components:
             component.active = False
 
@@ -762,13 +704,11 @@ class EELSModel(Model1D):
         """Enable the fine structure of the edges listed in edges_list.
         If edges_list is None (default) the fine structure of all the edges
         with onset in the spectrum energy region will be enabled.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -777,7 +717,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
@@ -793,13 +732,11 @@ class EELSModel(Model1D):
         """Disable the fine structure of the edges listed in edges_list.
         If edges_list is None (default) the fine structure of all the edges
         with onset in the spectrum energy region will be disabled.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -808,7 +745,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
@@ -835,13 +771,11 @@ class EELSModel(Model1D):
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the onset_energy of all the edges
         with onset in the spectrum energy region will be freeed.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -850,7 +784,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
@@ -867,13 +800,11 @@ class EELSModel(Model1D):
         with onset in the spectrum energy region will not be freed.
         Note that if their atribute edge.onset_energy.free is True, the
         parameter will be free during the smart fit.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -882,7 +813,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
 
         if edges_list is None:
@@ -896,13 +826,11 @@ class EELSModel(Model1D):
     def fix_edges(self, edges_list=None):
         """Fixes all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be fixed.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -911,7 +839,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
@@ -926,13 +853,11 @@ class EELSModel(Model1D):
     def free_edges(self, edges_list=None):
         """Frees all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be freeed.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -941,7 +866,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
 
         if edges_list is None:
@@ -955,13 +879,11 @@ class EELSModel(Model1D):
     def fix_fine_structure(self, edges_list=None):
         """Fixes all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be fixed.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -970,7 +892,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
@@ -983,13 +904,11 @@ class EELSModel(Model1D):
     def free_fine_structure(self, edges_list=None):
         """Frees all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be freeed.
-
         Parameters
         ----------
         edges_list : None or  list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
-
         See Also
         --------
         enable_edges, disable_edges, enable_background,
@@ -998,7 +917,6 @@ class EELSModel(Model1D):
         unset_all_edges_intensities_positive, enable_free_onset_energy,
         disable_free_onset_energy, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
-
         """
         if edges_list is None:
             edges_list = self._active_edges
@@ -1011,11 +929,9 @@ class EELSModel(Model1D):
     def suspend_auto_fine_structure_width(self):
         """Disable the automatic adjustament of the core-loss edges fine
         structure width.
-
         See Also
         --------
         resume_auto_fine_structure_width
-
         """
         if self._suspend_auto_fine_structure_width is False:
             self._suspend_auto_fine_structure_width = True
@@ -1025,17 +941,13 @@ class EELSModel(Model1D):
     def resume_auto_fine_structure_width(self, update=True):
         """Enable the automatic adjustament of the core-loss edges fine
         structure width.
-
         Parameters
         ----------
         update : bool, optional
             If True, also execute the automatic adjustment (default).
-
-
         See Also
         --------
         suspend_auto_fine_structure_width
-
         """
         if self._suspend_auto_fine_structure_width is True:
             self._suspend_auto_fine_structure_width = False
