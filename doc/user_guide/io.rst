@@ -368,22 +368,24 @@ See the `chunking section <big_data.html#Chunking>`__ under `Working with big da
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-`compression`:
-  One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
+- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
   ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
 .. note::
 
-    Compression can significantly increase the saving speed. If file size
-    is not an issue, it can be disabled by setting ``compression=None``.
-    Only ``compression=None/'gzip'`` is guaranteed to be compatible for reading
-    with hyperspy on all platforms, see the `h5py documentation
-    <https://docs.h5py.org/en/stable/faq.html>`_ for more details.
+    HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
+    supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
+    The default is ``'gzip'``. It is possible to enable other compression filters
+    such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
+    However, be aware that loading those files will require installing the package
+    providing the compression filter. If not available an error will be raised.
 
-    Other compressor, such as ``blosc`` can significantly improve the speed of saving with very
-    good compression but can be more complicated to install and use - read the
-    `pytables <https://www.pytables.org/usersguide/optimization.html>`_ or the
-    `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_ documentation for more details.
+    Compression can significantly increase the saving speed. If file size is not
+    an issue, it can be disabled by setting ``compression=None``. Notice that only
+    ``compression=None`` and ``compression='gzip'`` are available in all platforms,
+    see the `h5py documentation <https://docs.h5py.org/en/stable/faq.html#what-compression-processing-filters-are-supported>`_
+    for more details. Therefore, if you choose any other compression filter for
+    saving a file, be aware that it may not be possible to load it in some platforms.
 
 
 .. _netcdf-format:
@@ -639,7 +641,7 @@ us aware of the problem.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- `optimize`: bool, default is True. During loading, the data is replaced by its
+- ``optimize``: bool, default is True. During loading, the data is replaced by its
   :ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
   e. g. iteration over navigation axes. The cost of this speed improvement is to
   double the memory requirement during data loading.
@@ -692,7 +694,7 @@ Extra loading arguments for SPD file
 Extra loading arguments for SPD and SPC files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is
+- ``load_all_spc`` : bool, switch to control if all of the ``.spc`` header is
   read, or just the important parts for import into HyperSpy.
 
 
