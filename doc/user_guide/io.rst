@@ -27,9 +27,9 @@ information.
 If the loaded file contains several datasets, the :py:func:`~.io.load`
 functions will return a list of the corresponding signal.
 
-.. NOTE::
+.. note::
 
-    Note for Python programmers: the data is stored in a numpy array
+    Note for python programmers: the data is stored in a numpy array
     in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
@@ -324,8 +324,7 @@ The change of type is done using numpy "safe" rules, so no information is lost,
 as numbers are represented to full machine precision.
 
 This feature is particularly useful when using
-:py:meth:`~._signals.EDSSEMSpectrum.get_lines_intensity` (see :ref:`get lines
-intensity<get_lines_intensity>`):
+:py:meth:`~hyperspy._signals.eds.EDS_mixin.get_lines_intensity`:
 
 .. code-block:: python
 
@@ -344,14 +343,16 @@ intensity<get_lines_intensity>`):
 .. versionadded:: 1.3.1
     ``chunks`` keyword argument
 
-By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
-possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
-``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
+The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
+of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
+full signal shape. It is possible to customise the chunk shape using the ``chunks`` keyword. 
+For example, to save the data with ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks
+for this signal:
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
-    >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
+    >>> s.save("test_chunks", chunks=(20, 20, 256))
 
 Note that currently it is not possible to pass different customised chunk shapes to all signals and
 arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving
@@ -362,9 +363,29 @@ what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`
 constrain of storing at least one signal per chunks. For example, for the signal in the example above
 passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
+Choosing the correct chunk-size can significantly affect the speed of reading, writing and performance of many hyperspy algorithms.
+See the `chunking section <big_data.html#Chunking>`__ under `Working with big data <big_data.html>`__ for more information.
+
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-- ``compression`` : One of None, 'gzip', 'szip', 'lzf' (default is 'gzip').
+- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
+  ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
+
+.. note::
+
+    HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
+    supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
+    The default is ``'gzip'``. It is possible to enable other compression filters
+    such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
+    However, be aware that loading those files will require installing the package
+    providing the compression filter. If not available an error will be raised.
+
+    Compression can significantly increase the saving speed. If file size is not
+    an issue, it can be disabled by setting ``compression=None``. Notice that only
+    ``compression=None`` and ``compression='gzip'`` are available in all platforms,
+    see the `h5py documentation <https://docs.h5py.org/en/stable/faq.html#what-compression-processing-filters-are-supported>`_
+    for more details. Therefore, if you choose any other compression filter for
+    saving a file, be aware that it may not be possible to load it in some platforms.
 
 
 .. _netcdf-format:
@@ -620,7 +641,7 @@ us aware of the problem.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- `optimize`: bool, default is True. During loading, the data is replaced by its
+- ``optimize``: bool, default is True. During loading, the data is replaced by its
   :ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
   e. g. iteration over navigation axes. The cost of this speed improvement is to
   double the memory requirement during data loading.
@@ -673,7 +694,7 @@ Extra loading arguments for SPD file
 Extra loading arguments for SPD and SPC files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is
+- ``load_all_spc`` : bool, switch to control if all of the ``.spc`` header is
   read, or just the important parts for import into HyperSpy.
 
 

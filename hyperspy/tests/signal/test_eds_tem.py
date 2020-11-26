@@ -248,9 +248,8 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, kfactors,
                                composition_units)
-        np.testing.assert_allclose(res[0].data, np.array([
-            [22.70779, 22.70779],
-            [22.70779, 22.70779]]), atol=1e-3)
+        np.testing.assert_allclose(res[0].data, np.ones((2, 2)) * 22.70779,
+                                   atol=1e-3)
         res2 = s.quantification(intensities, method, kfactors,
                                composition_units,
                                absorption_correction=True,
@@ -263,14 +262,11 @@ class Test_quantification:
                                composition_units,
                                absorption_correction=True,
                                thickness=0.0001)
-        np.testing.assert_allclose(res2[0][0].data, np.array([
-            [22.70779, 22.70779],
-            [22.70779, 22.70779]]), atol=1e-3)
-        np.testing.assert_allclose(res3[0][0].data, np.array([
-            [22.6957, 22.6957],
-            [22.6957, 22.6957]]), atol=1e-3)
-        np.testing.assert_allclose(res[0].data,
-                                   res4[0][0].data, atol=1e-5)
+        np.testing.assert_allclose(res2[0][0].data, np.ones((2, 2)) * 22.70779,
+                                   atol=1e-3)
+        np.testing.assert_allclose(res3[0][0].data, np.ones((2, 2)) * 22.587251,
+                                   atol=1e-3)
+        np.testing.assert_allclose(res[0].data, res4[0][0].data, atol=1e-5)
 
 
     def test_quant_zeta(self):
@@ -411,18 +407,15 @@ class Test_quantification:
         factors = [3, 5]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
+                               absorption_correction=True)
+        zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
+        res2 = s.quantification(intensities, method='zeta',
+                                factors=zfactors,
                                 absorption_correction=True)
-        _ = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
-        _ = s.quantification(intensities, method='zeta',
-                             factors=[22.402, 21.7132],
-                             absorption_correction=True)
         np.testing.assert_allclose(res[0][0].data, np.array(
             [[49.4889, 49.4889],
              [49.4889, 49.4889]]), atol=1e-3)
-        np.testing.assert_allclose(res[0][0].data, np.array(
-            [[49.4889, 49.4889],
-             [49.4889, 49.4889]]), atol=1e-3)
-
+        np.testing.assert_allclose(res2[0][0].data, res[0][0].data, atol=1e-3)
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -468,6 +461,24 @@ class Test_quantification:
         np.testing.assert_allclose(res[1].data, np.array([
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
+
+    def test_CL_get_mass_thickness(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units)
+
+        mass_thickness = s.CL_get_mass_thickness(res, 100.)[0, 0]
+        np.testing.assert_allclose(mass_thickness, 6.1317741E-4)
+
+        thickness = np.array([[100., 90.0],
+                              [85, 80.]])
+        mass_thickness2 = s.CL_get_mass_thickness(res, thickness)
+        np.testing.assert_allclose(mass_thickness2,
+                                   mass_thickness * thickness / 100)
 
 
 @lazifyTestClass

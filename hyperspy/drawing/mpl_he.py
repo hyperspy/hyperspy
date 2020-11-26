@@ -49,7 +49,7 @@ class MPL_HyperExplorer(object):
         self.pointer = None
         self._pointer_nav_dim = None
 
-    def plot_signal(self):
+    def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.
         if self.axes_manager.signal_dimension == 0:

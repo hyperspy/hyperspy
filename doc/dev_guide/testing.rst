@@ -165,18 +165,18 @@ Continuous integration (CI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The HyperSpy test suite is run using continuous integration services provided by
-`Travis CI <https://travis-ci.org/github/hyperspy/hyperspy>`_ and
+`Github Actions <https://github.com/hyperspy/hyperspy/actions>`_ and
 `Azure Pipelines <https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build>`_.
-The CI helper scripts are pulled from the
+In case of Azure Pipelines, CI helper scripts are pulled from the
 `ci-scripts <https://github.com/hyperspy/ci-scripts>`_ repository.
 
 The testing matrix is as follows:
 
-- **Travis CI**: test all supported Python versions on Linux only; all dependencies
-  are pulled from `PyPI <https://pypi.org>`_. See ``.travis.yml`` in the HyperSpy
-  repository for further details.
+- **Github Actions**: test a range of Pythons version on Linux, MacOS and Windows;
+  all dependencies are installed from `PyPI <https://pypi.org>`_.
+  See ``.github/workflows/tests.yml`` in the HyperSpy repository for further details.
 - **Azure Pipeline**: test a range of Python versions on Linux, MacOS and Windows;
-  all dependencies are pulled from `Anaconda Cloud <https://anaconda.org/>`_
+  all dependencies are installed from `Anaconda Cloud <https://anaconda.org/>`_
   using the `Anaconda "defaults" <https://anaconda.org/anaconda>`_ and the
   `"conda-forge" <https://anaconda.org/conda-forge>`_ channel (in this order of
   priority). See ``azure-pipelines.yml`` in the HyperSpy repository for further details.
@@ -188,15 +188,15 @@ interface (ABI) incompatibility between dependencies.
 
 The most recent versions of packages are usually available first on PyPI, before
 they are available on Anaconda Cloud. These means that if a recent release of a
-dependency breaks the test suite, it should happen first on Travis CI.
-Similarly, deprecation warnings will usually appear first on Travis CI.
+dependency breaks the test suite, it should happen first on Github Actions.
+Similarly, deprecation warnings will usually appear first on Github Actions.
 
-The documentation build is done on both Travis CI and
+The documentation build is done on both Github Actions and
 `Read the Docs <https://readthedocs.org/>`_, and it is worth checking that no new
 warnings have been introduced when writing documentation in the user guide or
 in the docstrings.
 
-The Travis CI testing matrix also includes the following special cases:
+The Github Actions testing matrix also includes the following special cases:
 
 - The test suite is run against HyperSpy's minimum requirements on Python 3.7
   on Linux. This will skip any tests that require **optional** packages such as
@@ -204,9 +204,6 @@ The Travis CI testing matrix also includes the following special cases:
 - The test suite is run against the oldest supported versions of ``numpy``,
   ``matplotlib`` and ``scipy``. For more details, see this
   `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`_.
-- `codecov.io <https://codecov.io/gh/hyperspy/hyperspy>`_ will only report
-  the coverage of your PR if the test suite passes on Python 3.7 on Linux.
-  This job is labelled as ``"Linux, 3.7, pip"`` on Travis CI.
 
 
 .. _plot-test-label:

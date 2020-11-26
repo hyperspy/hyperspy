@@ -102,7 +102,7 @@ jobs:
           python-version: 3.8
 
       - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@v0.3.1-manylinux2010_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2010_x86_64
         with:
           build-requirements: 'cython'
 

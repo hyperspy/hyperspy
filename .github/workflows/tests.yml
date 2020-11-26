@@ -1,0 +1,98 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  run_test_site:
+    name: ${{ matrix.os }}/py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      MPLBACKEND: agg
+      PIP_ARGS: --upgrade --use-feature=2020-resolver -e
+      PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
+      PYTEST_ARGS_COVERAGE: 
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        PYTHON_VERSION: [3.7, 3.8]
+        PIP_SELECTOR: ['[all, tests]']
+        include:
+          # test oldest supported version of main dependencies on python 3.6 
+          - os: ubuntu-latest
+            PYTHON_VERSION: 3.6
+            OLDEST_SUPPORTED_VERSION: true
+            DEPENDENCIES: matplotlib==2.2.3 numpy==1.15.4 scipy==1.1 imagecodecs==2019.12.3
+            PIP_SELECTOR: '[all, tests]'
+            LABEL: /oldest
+          # test minimum requirement
+          - os: ubuntu-latest
+            PYTHON_VERSION: 3.7
+            PIP_SELECTOR: '[tests]'
+            LABEL: /minimum
+          # Run coverage
+          - os: ubuntu-latest
+            PYTHON_VERSION: 3.7
+            PIP_SELECTOR: '[all, tests, coverage]'
+            PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
+            LABEL: /coverage
+        exclude:
+          # redundant build (same as coverage) 
+          - os: ubuntu-latest
+            PYTHON_VERSION: 3.7
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: ${{ matrix.PYTHON_VERSION }}
+
+      - name: Display version
+        run: |
+          python --version
+          pip --version
+
+      - name: Install
+        shell: bash
+        run: |
+          pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
+
+      - name: Install oldest supported version
+        if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
+        run: |
+          pip install ${{ matrix.DEPENDENCIES }}
+
+      - name: Run test suite
+        run: |
+          pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
+
+      - name: Upload coverage to Codecov
+        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }} 
+        uses: codecov/codecov-action@v1
+
+  build_doc:
+    name: Build doc
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: 3.8
+
+      - name: Install
+        run: |
+          pip install -e .[build-doc]
+
+      - name: Build doc
+        run: |
+          cd doc && make html
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./doc/_build/*
