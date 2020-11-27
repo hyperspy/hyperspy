@@ -218,7 +218,6 @@ class TestReadSeveralDatasets:
     def test_load_file(self):
         s = load(self.hdf5_dataset_path)
         assert len(s) == len(self.group_path_list)
-        title_list = [s_temp.metadata.General.title for s_temp in s]
         for _s, path in zip(s, self.group_path_list):
             assert _s.metadata.General.title in path
 

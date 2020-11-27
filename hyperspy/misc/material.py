@@ -168,7 +168,7 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     from hyperspy.signals import BaseSignal
     elements = _elements_auto(atomic_percent, elements)
     if isinstance(atomic_percent[0], BaseSignal):
-        weight_percent = stack(atomic_percent)
+        weight_percent = stack(atomic_percent, show_progressbar=False)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
         weight_percent = weight_percent.split()
@@ -441,7 +441,8 @@ def mass_absorption_mixture(weight_percent,
     energies = _lines_auto(weight_percent, energies)
     if isinstance(weight_percent[0], BaseSignal):
         weight_per = np.array([wt.data for wt in weight_percent])
-        mac_res = stack([weight_percent[0].deepcopy()] * len(energies))
+        mac_res = stack([weight_percent[0].deepcopy()] * len(energies),
+                        show_progressbar=False)
         mac_res.data = \
             _mass_absorption_mixture(weight_per, elements, energies)
         mac_res = mac_res.split()

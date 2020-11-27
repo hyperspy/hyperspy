@@ -79,7 +79,7 @@ example1_original_metadata = {
 
 
 class Example1:
-
+    "Used as a base class for the TestExample classes below"
     def test_data(self):
         assert (
             [4066.0,
@@ -186,52 +186,59 @@ class TestLoadingNewSavedMetadata:
         assert f(3.5) == 4.5
 
 
-@pytest.fixture()
-def tmpfilepath():
-    with tempfile.TemporaryDirectory() as tmp:
-        yield os.path.join(tmp, "test")
-        gc.collect()        # Make sure any memmaps are closed first!
-
-
 class TestSavingMetadataContainers:
 
     def setup_method(self, method):
         self.s = BaseSignal([0.1])
 
-    def test_save_unicode(self, tmpfilepath):
+    def test_save_unicode(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
         assert isinstance(l.metadata.test[2], str)
         assert l.metadata.test[2] == '\u6f22\u5b57'
 
-    def test_save_long_list(self, tmpfilepath):
+    def test_save_long_list(self, tmp_path):
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))
         start = time.time()
-        s.save(tmpfilepath)
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
         end = time.time()
         assert end - start < 1.0  # It should finish in less that 1 s.
 
-    def test_numpy_only_inner_lists(self, tmpfilepath):
+    def test_numpy_only_inner_lists(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test, list)
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
 
     @pytest.mark.xfail(sys.platform == 'win32',
                        reason="randomly fails in win32")
-    def test_numpy_general_type(self, tmpfilepath):
+    def test_numpy_general_type(self, tmp_path):
+        s = self.s
+        s.metadata.set_item('test', np.array([[1., 2], ['3', 4]]))
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
+        np.testing.assert_array_equal(l.metadata.test, s.metadata.test)
+
+    @pytest.mark.xfail(sys.platform == 'win32',
+                       reason="randomly fails in win32")
+    def test_list_general_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test[0][0], float)
         assert isinstance(l.metadata.test[0][1], float)
         assert isinstance(l.metadata.test[1][0], str)
@@ -239,34 +246,37 @@ class TestSavingMetadataContainers:
 
     @pytest.mark.xfail(sys.platform == 'win32',
                        reason="randomly fails in win32")
-    def test_general_type_not_working(self, tmpfilepath):
+    def test_general_type_not_working(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test, tuple)
         assert isinstance(l.metadata.test[0], Signal1D)
         assert isinstance(l.metadata.test[1], float)
         assert isinstance(l.metadata.test[2], str)
 
-    def test_unsupported_type(self, tmpfilepath):
+    def test_unsupported_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert 'test' not in l.metadata
 
-    def test_date_time(self, tmpfilepath):
+    def test_date_time(self, tmp_path):
         s = self.s
         date, time = "2016-08-05", "15:00:00.450"
         s.metadata.General.date = date
         s.metadata.General.time = time
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert l.metadata.General.date == date
         assert l.metadata.General.time == time
 
-    def test_general_metadata(self, tmpfilepath):
+    def test_general_metadata(self, tmp_path):
         s = self.s
         notes = "Dummy notes"
         authors = "Author 1, Author 2"
@@ -274,18 +284,20 @@ class TestSavingMetadataContainers:
         s.metadata.General.notes = notes
         s.metadata.General.authors = authors
         s.metadata.General.doi = doi
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert l.metadata.General.notes == notes
         assert l.metadata.General.authors == authors
         assert l.metadata.General.doi == doi
 
-    def test_quantity(self, tmpfilepath):
+    def test_quantity(self, tmp_path):
         s = self.s
         quantity = "Intensity (electron)"
         s.metadata.Signal.quantity = quantity
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert l.metadata.Signal.quantity == quantity
 
     def test_metadata_update_to_v3_0(self):
@@ -684,18 +696,26 @@ class Test_permanent_markers_io:
         assert len(s.metadata.Markers) == 5
 
 
+@pytest.mark.parametrize("compression", (None, "gzip", "lzf"))
+def test_compression(compression, tmp_path):
+    s = Signal1D(np.ones((3,3)))
+    s.save(tmp_path / 'test_compression.hspy', overwrite=True,
+           compression=compression)
+    load(tmp_path / 'test_compression.hspy')
+
+
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert isinstance(s.metadata.Sample.elements, list)
 
 
-def test_save_ragged_array(tmpfilepath):
+def test_save_ragged_array(tmp_path):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
     s = BaseSignal(np.array([a, b], dtype=object)).T
-    filename = os.path.join(tmpfilepath, "test_save_ragged_array.hspy")
-    s.save(filename)
-    s1 = load(filename)
+    fname = tmp_path / 'test_save_ragged_array.hspy'
+    s.save(fname)
+    s1 = load(fname)
     for i in range(len(s.data)):
         np.testing.assert_allclose(s.data[i], s1.data[i])
     assert s.__class__ == s1.__class__

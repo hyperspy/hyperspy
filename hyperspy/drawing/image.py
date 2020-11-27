@@ -69,7 +69,7 @@ class ImagePlot(BlittedFigure):
 
         # Attribute matching the arguments of
         # `hyperspy._signal.signal2d.signal2D.plot`
-        self.autoscale = "z"
+        self.autoscale = "v"
         self.saturated_pixels = None
         self.norm = "auto"
         self.vmin = None

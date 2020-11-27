@@ -31,6 +31,7 @@ from hyperspy.exceptions import SignalDimensionError, WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
+from hyperspy.misc.utils import dummy_context_manager
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
@@ -90,18 +91,17 @@ class ComponentFit(SpanSelectorInSignal1D):
         only_current = self.only_current
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
-                if (self.signal_range != "interactive" and
-                        self.signal_range is not None):
-                    self.component.estimate_parameters(
-                        self.signal,
-                        self.signal_range[0],
-                        self.signal_range[1],
-                        only_current=only_current)
-                elif self.signal_range == "interactive":
+                if self.signal_range == "interactive":
                     self.component.estimate_parameters(
                         self.signal,
                         self.ss_left_value,
                         self.ss_right_value,
+                        only_current=only_current)
+                elif self.signal_range is not None:
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.signal_range[0],
+                        self.signal_range[1],
                         only_current=only_current)
 
         if only_current:
@@ -265,10 +265,9 @@ class Model1D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
-        self._adjust_position_all = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, [])
+            self._on_navigating, [])
         self.channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -350,12 +349,16 @@ class Model1D(BaseModel):
                                                      dimension, knot_position)
 
     def append(self, thing):
-        super(Model1D, self).append(thing)
+        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        with cm(update_on_resume=False):
+            super(Model1D, self).append(thing)
         if self._plot_components:
             self._plot_component(thing)
         if self._adjust_position_all:
             self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
+        if self._plot_active:
+            self.signal._plot.signal_plot.update()
 
     def remove(self, things):
         things = self._get_component(things)
@@ -366,8 +369,8 @@ class Model1D(BaseModel):
             if parameter in self._position_widgets:
                 for pw in reversed(self._position_widgets[parameter]):
                     pw.close()
-            if hasattr(thing, '_model_plot_line'):
-                line = thing._model_plot_line
+            if hasattr(thing, '_component_line'):
+                line = thing._component_line
                 line.close()
         super(Model1D, self).remove(things)
         self._disconnect_parameters2update_plot(things)
@@ -745,29 +748,25 @@ class Model1D(BaseModel):
 
     @staticmethod
     def _connect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+        if hasattr(component, "_component_line"):
+            f = component._component_line._auto_update_line
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
 
     @staticmethod
     def _disconnect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+        if hasattr(component, "_component_line"):
+            f = component._component_line._auto_update_line
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
 
-    def _connect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._connect_component_line(component)
-
-    def _disconnect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._disconnect_component_line(component)
+    @staticmethod
+    def _update_component_line(component):
+        if hasattr(component, "_component_line"):
+            component._component_line.update(render_figure=False,
+                                             update_ylimits=False)
 
     def _plot_component(self, component):
         line = hyperspy.drawing.signal1d.Signal1DLine()
@@ -775,30 +774,22 @@ class Model1D(BaseModel):
         # Add the line to the figure
         self._plot.signal_plot.add_line(line)
         line.plot()
-        component._model_plot_line = line
+        component._component_line = line
         self._connect_component_line(component)
-
-    @staticmethod
-    def _update_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update()
 
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.close()
-            del component._model_plot_line
+        if hasattr(component, "_component_line"):
+            component._component_line.close()
+            del component._component_line
         self._plot_components = False
 
     def _close_plot(self):
-        if self._plot_components is True:
-            self.disable_plot_components()
         self.disable_adjust_position()
-        self._disconnect_parameters2update_plot(components=self)
-        self._model_line = None
+        super()._close_plot()
 
     def enable_plot_components(self):
-        if self._plot is None or self._plot_components:
+        if self._plot is None or self._plot_components:  # pragma: no cover
             return
         self._plot_components = True
         for component in [component for component in self if
@@ -807,7 +798,7 @@ class Model1D(BaseModel):
 
     def disable_plot_components(self):
         self._plot_components = False
-        if self._plot is None:
+        if self._plot is None:  # pragma: no cover
             return
         for component in self:
             self._disable_plot_component(component)
