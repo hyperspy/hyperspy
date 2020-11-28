@@ -344,10 +344,10 @@ class Samfire:
 
         Parameters
         ----------
-        filename: {str, None}
-            the filename. If None, a default value of "backup_"+signal_title
+        filename : {str, None}
+            the filename. If None, a default value of ``backup_`` + signal_title
             is used.
-        on_count: bool
+        on_count : bool
             if True (default), only saves on the required count of steps
         """
         if filename is None:
