@@ -117,7 +117,7 @@ PLOT2D_DOCSTRING = \
             position. If 'v' (for values) is in the string, the contrast of the
             image will be set automatically according to `vmin` and `vmax` when
             the data or navigation indices change. Default is 'v'.
-        saturated_pixels: scalar
+        saturated_pixels : scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
