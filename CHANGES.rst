@@ -631,7 +631,8 @@ Model
 * :ref:`SAMFire-label`.
 * Store :ref:`models in hdf5 files <storing_models-label>`.
 * Add :ref:`fancy indexing <model_indexing-label>` to `Model`.
-* :ref:`Two-dimensional model fitting <2D_model-label>`.
+* :ref:Two-dimensional model fitting (:py:class:`~.models.model2d.Model2D`).
+
 
 EDS
 ^^^
@@ -910,7 +911,7 @@ Core
 
 * New syntax to index the :py:class:`~.axes.AxesManager`.
 * New Signal methods to transform between Signal subclasses. More information
-  :ref:`here <transforming.signal>`.
+  :ref:`here <transforming_signal-label>`.
 
   + :py:meth:`~.signal.Signal.set_signal_type`
   + :py:meth:`~.signal.Signal.set_signal_origin`
