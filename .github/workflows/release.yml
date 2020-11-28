@@ -2,36 +2,36 @@ name: Release
 # This workflow builds the wheels "on tag".
 # If run from the hyperspy/hyperspy repository, the wheels will be uploaded to pypi ;
 # otherwise, the wheels will be available as a github artifact.
-
-on:
-  push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+on: [push, pull_request]
+#on:
+#  push:
+#    # Sequence of patterns matched against refs/tags
+#    tags:
+#    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
-  create_release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    outputs: 
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
+#  create_release:
+#    name: Create Release
+#    runs-on: ubuntu-latest
+#    outputs: 
+#      upload_url: ${{ steps.create_release.outputs.upload_url }}
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#      - name: Create Release
+#        id: create_release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
+#        with:
+#          tag_name: ${{ github.ref }}
+#          release_name: Release ${{ github.ref }}
+#          draft: false
+#          prerelease: false
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
-    needs: create_release
+    #needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -94,7 +94,7 @@ jobs:
 
   build_wheels_linux:
     name: Wheels on ubuntu-latest
-    needs: create_release
+    #needs: create_release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
