@@ -33,7 +33,7 @@ all the work that you do.
 * ``@pytest.mark.parametrize()`` is a very convenient decorator to test several
   parameters of the same function without having to write to much repetitive
   code, which is often error-prone. See `pytest documentation
-  <http://doc.pytest.org/en/latest/parametrize.html>`_ for more details.
+  <http://doc.pytest.org/en/latest/parametrize.html>`__ for more details.
 * It is good to check that the tests does not use too much memory after
   creating new tests. If you need to explicitly delete your objects and free
   memory, you can do the following to release the memory associated with the
@@ -129,7 +129,7 @@ This can be achieved using the ```pytest-rerunfailures`` plugin <https://pypi.or
     $ pytest --reruns 3 --reruns-delay 1
 
 You can read more about flaky tests in the `pytest documentation 
-<https://docs.pytest.org/en/stable/flaky.html>`_.
+<https://docs.pytest.org/en/stable/flaky.html>`__.
 
 
 Test coverage
