@@ -25,7 +25,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
     """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
         Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
 
-        If ``'auto'``:
+            If ``'auto'``:
 
                 - If `navigation_dimension` > 0, a navigator is
                   provided to explore the data.

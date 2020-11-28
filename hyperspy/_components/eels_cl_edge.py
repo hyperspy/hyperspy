@@ -80,7 +80,6 @@ class EELSCLEdge(Component):
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-
     fine_structure_active : bool
         Activates/deactivates the fine structure feature.
 
