@@ -34,6 +34,7 @@ jobs:
     needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
         python-version: [3.6, 3.7, 3.8]
@@ -81,13 +82,15 @@ jobs:
         with:
           path: ./dist/*.whl
 
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish wheels to PyPI
         if: github.repository_owner == 'hyperspy'
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-           # Github secret set in the hyperspy/hyperspy repository
-           # not available from fork
-           password: ${{ secrets.pypi_password }}
+        env:
+          # Github secret set in the hyperspy/hyperspy repository
+          # not available from fork
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_password }}
+        run: |
+          twine upload dist/*-manylinux*.whl
 
   build_wheels_linux:
     name: Wheels on ubuntu-latest
@@ -129,11 +132,14 @@ jobs:
             ./dist/*-manylinux*.whl
             ./sdist/*.tar.gz
 
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish wheels to PyPI
         if: github.repository_owner == 'hyperspy'
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-           # Github secret set in the hyperspy/hyperspy repository
-           # not available from fork
-           password: ${{ secrets.pypi_password }}
+        env:
+          # Github secret set in the hyperspy/hyperspy repository
+          # not available from fork
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_password }}
+        run: |
+          twine upload dist/*.whl
+          twine upload sdist/*.tar.gz
 
