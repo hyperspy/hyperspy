@@ -87,10 +87,10 @@ jobs:
         env:
           # Github secret set in the hyperspy/hyperspy repository
           # not available from fork
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: "${{ secrets.PYPI_PASSWORD }}"
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          twine upload dist/*.whl
+          twine upload dist/*.whl --verbose
 
   build_wheels_linux:
     name: Wheels on ubuntu-latest
@@ -144,6 +144,6 @@ jobs:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          twine upload dist/*-manylinux*.whl
-          twine upload sdist/*.tar.gz
+          twine upload dist/*-manylinux*.whl --verbose 
+          twine upload sdist/*.tar.gz --verbose 
 
