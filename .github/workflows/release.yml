@@ -87,8 +87,8 @@ jobs:
         env:
           # Github secret set in the hyperspy/hyperspy repository
           # not available from fork
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_password }}
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: "${{ secrets.PYPI_PASSWORD }}"
         run: |
           twine upload dist/*.whl
 
@@ -141,9 +141,9 @@ jobs:
         env:
           # Github secret set in the hyperspy/hyperspy repository
           # not available from fork
-          TWINE_USERNAME: __token__
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          twine upload dist/*.whl
+          twine upload dist/*-manylinux*.whl
           twine upload sdist/*.tar.gz
 
