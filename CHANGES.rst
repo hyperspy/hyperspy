@@ -5,8 +5,6 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
 
-Current Version
-===============
 
 .. _changes_1.6.1:
 
@@ -24,10 +22,6 @@ for details.
 
 Changelog
 *********
-
-Previous Versions
-=================
-
 
 .. _changes_1.6:
 
