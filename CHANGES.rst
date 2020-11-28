@@ -8,6 +8,27 @@ see `the commits in the GITHUB milestones
 Current Version
 ===============
 
+.. _changes_1.6.1:
+
+
+v1.6.1
+++++++
+
+This is a maintenance release that adds compatibility with h5py 3.0 and includes
+numerous bug fixes and enhancements.
+See `the issue tracker
+<https://github.com/hyperspy/hyperspy/milestone/41?closed=1>`__
+for details.
+
+
+
+Changelog
+*********
+
+Previous Versions
+=================
+
+
 .. _changes_1.6:
 
 v1.6
@@ -175,14 +196,6 @@ API changes
     Use ``var_func`` instead.
 
 
-
-
-Changelog
-*********
-
-Previous Versions
-=================
-
 .. _changes_1.5.2:
 
 
@@ -203,6 +216,7 @@ v1.5.1
 This is a maintenance release that fixes some regressions introduced in v1.5.
 Follow the following links for details on all the `bugs fixed
 <https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.1>`__.
+
 
 .. _changes_1.5:
 
