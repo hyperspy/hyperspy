@@ -564,9 +564,10 @@ You can access the fitted estimator by passing ``return_info=True``.
                                    tol=0.0001, w_init=None, whiten=True))],
             verbose=False)
 
-.. _mva.visualization:
 
 .. include:: cluster.rst
+
+.. _mva.visualization:
 
 
 Visualizing results
