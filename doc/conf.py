@@ -251,12 +251,9 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
 graphviz_output_format = "svg"
 
 
-# -- Options for Sphinx API doc ----------------------------------------------
-# Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py
-# run api doc
-
-
 def run_apidoc(_):
+    # https://www.sphinx-doc.org/en/master/man/sphinx-apidoc.html
+    # https://www.sphinx-doc.org/es/1.2/ext/autodoc.html
     import os
     os.environ['SPHINX_APIDOC_OPTIONS'] = 'members,private-members,no-undoc-members,show-inheritance,ignore-module-all'
 

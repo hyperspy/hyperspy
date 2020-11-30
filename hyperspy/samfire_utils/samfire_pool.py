@@ -65,34 +65,6 @@ class SamfirePool(ParallelPool):
       addressing individual workers in general. This one is checked with
       higher priority in workers.
 
-    Methods
-    -------
-    prepare_workers
-        Given SAMFire object, populates the workers with the required
-        information. In case of multiprocessing, starts worker listening to the
-        queues.
-    update_parameters
-        Updates various worker parameters
-    ping_workers
-        Pings all workers. Stores the one-way trip time and the process_id
-        (pid) of each worker if available
-    add_jobs
-        Adds the requested number of jobs to the queue
-    parse
-        Parses the messages, returned from the workers.
-    colect_results
-        Collects all currently available results and parses them
-    run
-        Runs the full procedure until no more pixels are left to run in the
-        SAMFire
-    stop
-        Stops the pool, (for ipyparallel) clears the memory
-    setup
-        Sets up the ipyparallel or multiprocessing pool (collects to the
-        client or creates the pool)
-    sleep
-        Sleeps for the specified time, by default timestep
-
     Attributes
     ----------
     has_pool : bool
@@ -138,8 +110,9 @@ class SamfirePool(ParallelPool):
                 this_queue.put(('change_timestep', (value,)))
 
     def prepare_workers(self, samfire):
-        """Prepares the workers for work, in case of multiprocessing starts
-        listening
+        """Given SAMFire object, populate the workers with the required
+        information. In case of multiprocessing, start worker listening to the
+        queues.
 
         Parameters
         ----------
@@ -225,8 +198,8 @@ class SamfirePool(ParallelPool):
                               self.rworker, boundaries)
 
     def ping_workers(self, timeout=None):
-        """Pings the workers and records one-way trip time and (if available)
-        pid of the worker.
+        """Ping the workers and record one-way trip time and the process_id
+        pid of each worker if available.
 
         Parameters
         ----------
@@ -279,7 +252,7 @@ class SamfirePool(ParallelPool):
                                                            value_dict), ind))
 
     def parse(self, value):
-        """Parses the value, returned from the workers.
+        """Parse the value returned from the workers.
 
         Parameters
         ----------
@@ -384,9 +357,12 @@ class SamfirePool(ParallelPool):
         return (time.time() - self._last_time) <= self.timeout
 
     def run(self):
-        """Runs the full process of adding jobs to the processing queue,
+        """Run the full process of adding jobs to the processing queue,
         listening to the results and updating SAMFire as needed. Stops when
         timed out or no pixels are left to run.
+
+        Run the full procedure until no more pixels are left to run in the
+        SAMFire.
         """
         while self._not_too_long and (self.samf.pixels_left or
                                       len(self.samf.running_pixels)):
