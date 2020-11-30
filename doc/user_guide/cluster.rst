@@ -1,4 +1,3 @@
-.. _cluster_analysis-label:
 
 Cluster analysis
 ================
