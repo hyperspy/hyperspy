@@ -257,6 +257,9 @@ graphviz_output_format = "svg"
 
 
 def run_apidoc(_):
+    import os
+    os.environ['SPHINX_APIDOC_OPTIONS'] = 'members,private-members,no-undoc-members,show-inheritance,ignore-module-all'
+
     from sphinx.ext.apidoc import main
 
     cur_dir = os.path.normpath(os.path.dirname(__file__))
