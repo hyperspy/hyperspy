@@ -126,7 +126,7 @@ Getting help
 When using IPython, the documentation (docstring in Python jargon) can be
 accessed by adding a question mark to the name of a function. e.g.:
 
-.. code-block:: python
+.. code-block:: none
 
    >>> hs?
    >>> hs.load?
