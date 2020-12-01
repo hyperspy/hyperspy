@@ -7,8 +7,6 @@
 Welcome to HyperSpy's documentation!
 ====================================
 
-.. this_is_wrong::
-
 .. toctree::
    :maxdepth: 1
    :caption: User Guide
