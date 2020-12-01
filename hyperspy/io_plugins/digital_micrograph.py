@@ -991,7 +991,7 @@ class ImageObject(object):
                 "{}.CL.Acquisition.Start_time".format(tags_path): (
                     "General.time", self._get_time),
                 "{}.Meta_Data.Acquisition_Mode".format(tags_path): (
-                    "Acquisition_instrument.CL.aquisition_mode", None),
+                    "Acquisition_instrument.CL.acquisition_mode", None),
                 "{}.Meta_Data.Format".format(tags_path): (
                     "Signal.format", None),
                 "{}.CL.Acquisition.Dispersion_grating_(lines/mm)".format(tags_path): (
@@ -1062,8 +1062,8 @@ class ImageObject(object):
 
 def file_reader(filename, record_by=None, order=None, lazy=False,
                 optimize=True):
-    """Reads a DM3 file and loads the data into the appropriate class.
-    data_id can be specified to load a given image within a DM3 file that
+    """Reads a DM3/4 file and loads the data into the appropriate class.
+    data_id can be specified to load a given image within a DM3/4 file that
     contains more than one dataset.
 
     Parameters

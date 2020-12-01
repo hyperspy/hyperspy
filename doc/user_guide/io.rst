@@ -1593,7 +1593,7 @@ HDF5 reader plugin for Digital Micrograph
 -----------------------------------------
 
 This Digital Micrograph plugin is designed to import HDF5 files and like the
-`ImportRPL` script above, it can used to easily transfer data from HyperSpy to
+`ImportRPL` script above, it can be used to easily transfer data from HyperSpy to
 Digital Micrograph by using the HDF5 hyperspy format (``hspy`` extension).
 
 Download ``gms_plugin_hdf5`` from its `Github repository <https://github.com/niermann/gms_plugin_hdf5>`_.

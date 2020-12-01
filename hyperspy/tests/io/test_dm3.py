@@ -246,6 +246,88 @@ def test_read_EDS_metadata():
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
 
+def test_read_CL_pmt_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-CL_spectrum-pmt.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-10-27"
+    assert md.Acquisition_instrument.CL.acquisition_mode == "Serial dispersive"
+    assert md.Acquisition_instrument.CL.detector_type == "linear"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dispersion_grating, 1200)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dwell_time, 1.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.step_size, 0.5)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.start_wavelength, 166.233642578125)
+
+def test_read_CL_ccd_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-CL_spectrum-ccd.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-09-11"
+    assert md.General.time == "17:04:19"
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.magnification, 10104.515625)
+    assert md.Acquisition_instrument.CL.acquisition_mode == "Parallel dispersive"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dispersion_grating, 300.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.exposure, 30.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.frame_number, 1.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.integration_time, 30.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.central_wavelength, 949.9741821289062)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.saturation_fraction, 0.01861908845603466)
+    assert md.Acquisition_instrument.CL.CCD.binning == (1, 100)
+    assert md.Acquisition_instrument.CL.CCD.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.CL.CCD.read_area == (0, 0, 100, 1336)
+
+def test_read_CL_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-CL_spectrum-SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum image"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-04-11"
+    assert md.General.time == "14:41:01"
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.magnification, 31661.427734375)
+    assert md.Acquisition_instrument.CL.acquisition_mode == "Parallel dispersive"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dispersion_grating, 600.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.exposure, 0.05000000074505806)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.frame_number, 1)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.central_wavelength, 869.9838256835938)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.saturation_fraction[0], 0.09676377475261688)
+    assert md.Acquisition_instrument.CL.CCD.binning == (1, 100)
+    assert md.Acquisition_instrument.CL.CCD.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.CL.CCD.read_area == (0, 0, 100, 1336)
+    assert md.Acquisition_instrument.CL.SI.drift_correction_periodicity == 1
+    assert md.Acquisition_instrument.CL.SI.drift_correction_units == "second(s)"
+    assert md.Acquisition_instrument.CL.SI.mode == "LineScan"
+
 
 def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
