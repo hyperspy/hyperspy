@@ -38,14 +38,21 @@ The HyperSpy bundle is very similar to the Anaconda distribution, and it include
   * HyperSpy
   * HyperSpyUI
   * `HyperSpy extensions <https://github.com/hyperspy/hyperspy-extensions-list>`_
-  * context menu shortcut (right-click) to Jupyter Notebook, Qtconsole or JupyterLab
+  * context `menu shortcut (right-click) <https://github.com/hyperspy/start_jupyter_cm>`_
+    to Jupyter Notebook, Qtconsole or JupyterLab
 
-For instructions and download links go to https://github.com/hyperspy/hyperspy-bundle
+.. image:: images/download_hyperspy_button.png
+   :width: 350
+   :align: center
+   :target: https://github.com/hyperspy/hyperspy-bundle/releases
+
+
+For instructions, see the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`__ repository.
 
 Portable distribution (Windows only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A portable version of the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`_
+A portable version of the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`__
 based on the WinPython distribution is also available on Windows.
 
 
