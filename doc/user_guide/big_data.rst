@@ -162,6 +162,33 @@ performed lazily. Important points are:
 Chunking
 ^^^^^^^^
 
+Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory, 
+allowing lazy loading. Chunk size can dramatically affect the speed of various HyperSpy algorithms, so chunk size is
+worth careful consideration when saving a signal. HyperSpy's default chunking sizes are probably not optimal
+for a given data analysis technique. For more comprehensible documentation on chunking,
+see the dask `array chunks
+<https://docs.dask.org/en/latest/array-chunks.html>`_ and `best practices
+<https://docs.dask.org/en/latest/array-best-practices.html>`_ docs. The chunks saved into HDF5 will
+match the dask array chunks in ``s.data.chunks`` when lazy loading.
+Chunk shape should follow the axes order of the numpy shape (``s.data.shape``), not the hyperspy shape.
+The following example shows how to chunk one of the two navigation dimensions into smaller chunks:
+
+.. code-block:: python
+
+    >>> import dask.array as da
+    >>> data = da.random.random((10,200,300))
+    >>> data.chunksize
+    (10, 200, 300)
+    
+    >>> s = hs.signals.Signal1D(data)
+    >>> s # Note the reversed order of navigation dimensions
+    <Signal1D, title: , dimensions: (200, 10|300)>
+    
+    >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
+    >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
+    >>> s2.data.chunksize
+    (10, 100, 300)
+
 .. versionadded:: 1.3.2
 
 By default, HyperSpy tries to optimize the chunking for most operations. However,

@@ -494,6 +494,7 @@ class EventSuppressor(object):
 
     def _is_tuple_target(self, candidate):
         v = (isinstance(candidate, Iterable) and
+             not isinstance(candidate, Events) and
              len(candidate) == 2 and
              isinstance(candidate[0], (Event, Events)) and
              callable(candidate[1]))
@@ -517,7 +518,8 @@ class EventSuppressor(object):
          - Any iterable collection of the above target types
         """
         # Remove useless layers of iterables:
-        while isinstance(to_suppress, Iterable) and len(to_suppress) == 1:
+        while (isinstance(to_suppress, Iterable) and
+               not isinstance(to_suppress, Events) and len(to_suppress) == 1):
             to_suppress = to_suppress[0]
         # If single target passed, add directly:
         if self._is_target(to_suppress):

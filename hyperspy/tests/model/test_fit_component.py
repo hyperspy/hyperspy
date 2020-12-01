@@ -21,7 +21,10 @@ import numpy as np
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy.components1d import Gaussian
+from hyperspy.models.model1d import ComponentFit
+from hyperspy.exceptions import SignalDimensionError
 
 
 class TestFitOneComponent:
@@ -37,23 +40,34 @@ class TestFitOneComponent:
         self.model = m
         self.g = g
         self.axis = axis
-        self.rtol = 0.00
 
-    def test_fit_component(self):
+    @pytest.mark.parametrize("signal_range", [(4000, 6000), 'interactive'])
+    def test_fit_component(self, signal_range):
         m = self.model
         axis = self.axis
+        g = self.g
 
         g1 = Gaussian()
         m.append(g1)
-        m.fit_component(g1, signal_range=(4000, 6000))
-        np.testing.assert_allclose(self.g.function(axis),
+        cf = ComponentFit(m, g1, signal_range=signal_range)
+        if signal_range == 'interactive':
+            cf.ss_left_value, cf.ss_right_value = (4000, 6000)
+        cf._fit_fired()
+        np.testing.assert_allclose(g.function(axis),
                                    g1.function(axis),
-                                   rtol=self.rtol,
+                                   rtol=0.0,
                                    atol=10e-3)
 
     def test_component_not_in_model(self):
         with pytest.raises(ValueError):
             self.model.fit_component(self.g)
+
+
+def test_Component_fit_wrong_signal():
+    s = Signal2D(np.arange(2*3*4).reshape(2, 3, 4))
+    m = s.create_model()
+    with pytest.raises(SignalDimensionError):
+        ComponentFit(m, Gaussian())
 
 
 class TestFitSeveralComponent:
