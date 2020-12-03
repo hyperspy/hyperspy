@@ -8,7 +8,8 @@ What's new
 RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
-
+- Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
+- Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
 
 Changelog
 *********
