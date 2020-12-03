@@ -254,6 +254,8 @@ def test_read_CL_pmt_metadata():
     assert md.Signal.format == "Spectrum"
     assert md.Signal.quantity == "Intensity (Counts)"
     assert md.General.date == "2020-10-27"
+    assert md.General.original_filename == "test-CL_spectrum-pmt.dm4"
+    assert md.General.title == "test-CL_spectrum-pmt"
     assert md.Acquisition_instrument.CL.acquisition_mode == "Serial dispersive"
     assert md.Acquisition_instrument.CL.detector_type == "linear"
     np.testing.assert_allclose(
@@ -274,6 +276,8 @@ def test_read_CL_ccd_metadata():
     assert md.Signal.quantity == "Intensity (Counts)"
     assert md.General.date == "2020-09-11"
     assert md.General.time == "17:04:19"
+    assert md.General.original_filename == "test-CL_spectrum-ccd.dm4"
+    assert md.General.title == "test-CL_spectrum-ccd"
     assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
     assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
     np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
@@ -305,6 +309,8 @@ def test_read_CL_SI_metadata():
     assert md.Signal.quantity == "Intensity (Counts)"
     assert md.General.date == "2020-04-11"
     assert md.General.time == "14:41:01"
+    assert md.General.original_filename == "test-CL_spectrum-SI.dm4"
+    assert md.General.title == "test-CL_spectrum-SI"
     assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
     assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
     np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
