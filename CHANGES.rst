@@ -1,13 +1,24 @@
 What's new
 **********
 
+..
+  Add a single entry in the corresponding section below.
+  See https://keepachangelog.com for details
+
+RELEASE_next_patch (Unreleased)
++++++++++++++++++++++++++++++++
+
+
+
+Changelog
+*********
+
 We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
 
 
 .. _changes_1.6.1:
-
 
 v1.6.1
 ++++++
@@ -17,11 +28,6 @@ numerous bug fixes and enhancements.
 See `the issue tracker
 <https://github.com/hyperspy/hyperspy/milestone/41?closed=1>`__
 for details.
-
-
-
-Changelog
-*********
 
 .. _changes_1.6:
 
