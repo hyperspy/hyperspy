@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,7 +23,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.drawing import utils
 
 
 class HistogramTilePlot(BlittedFigure):
@@ -32,16 +31,6 @@ class HistogramTilePlot(BlittedFigure):
         self.figure = None
         self.title = ''
         self.ax = None
-
-    def create_figure(self):
-        self.figure = utils.create_figure(
-            window_title=("Figure " + self.title
-                          if self.title
-                          else None))
-        canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.figure.bbox)
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
-        utils.on_figure_window_close(self.figure, self.close)
 
     def create_axis(self, ncols=1, nrows=1, number=1, title=''):
         ax = self.figure.add_subplot(ncols, nrows, number)
@@ -96,6 +85,6 @@ class HistogramTilePlot(BlittedFigure):
     def close(self):
         try:
             plt.close(self.figure)
-        except:
+        except BaseException:
             pass
         self.figure = None

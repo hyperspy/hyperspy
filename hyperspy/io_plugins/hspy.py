@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,8 +26,9 @@ import h5py
 import numpy as np
 import dask.array as da
 from traits.api import Undefined
-from hyperspy.misc.utils import ensure_unicode, multiply
+from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
+from collections import namedtuple
 
 _logger = logging.getLogger(__name__)
 
@@ -37,12 +38,10 @@ _logger = logging.getLogger(__name__)
 format_name = 'HSPY'
 description = \
     'The default file format for HyperSpy based on the HDF5 standard'
-
 full_support = False
 # Recognised file extension
 file_extensions = ['hspy', 'hdf5']
 default_extension = 0
-
 # Writing capabilities
 writes = True
 version = "3.0"
@@ -118,7 +117,16 @@ def get_hspy_format_version(f):
 
 def file_reader(filename, backing_store=False,
                 lazy=False, **kwds):
-    mode = kwds.pop('mode', 'r+')
+    """Read data from hdf5 files saved with the hyperspy hdf5 format specification
+
+    Parameters
+    ----------
+    filename: str
+    lazy: bool
+        Load image lazily using dask
+    **kwds, optional
+    """
+    mode = kwds.pop('mode', 'r')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
@@ -205,6 +213,16 @@ def hdfgroup2signaldict(group, lazy=False):
             group[original_metadata], lazy=lazy),
         'attributes': {}
     }
+    if "package" in group.attrs:
+        # HyperSpy version is >= 1.5
+        exp["package"] = group.attrs["package"]
+        exp["package_version"] = group.attrs["package_version"]
+    else:
+        # Prior to v1.4 we didn't store the package information. Since there
+        # were already external package we cannot assume any package provider so
+        # we leave this empty.
+        exp["package"] = ""
+        exp["package_version"] = ""
 
     data = group['data']
     if lazy:
@@ -395,6 +413,8 @@ def hdfgroup2signaldict(group, lazy=False):
 
 
 def dict2hdfgroup(dictionary, group, **kwds):
+    "Recursive writer of dicts and signals"
+
     from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import BaseSignal
 
@@ -409,7 +429,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
                 tmp = np.array(value)
         except ValueError:
             tmp = np.array([[0]])
-        if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
+        if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
             dict2hdfgroup(dict(zip(
                 [str(i) for i in range(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
@@ -475,7 +495,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
         else:
             try:
                 group.attrs[key] = value
-            except:
+            except BaseException:
                 _logger.exception(
                     "The hdf5 writer could not write the following "
                     "information in the file: %s : %s", key, value)
@@ -527,11 +547,26 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
     return tuple(int(x) for x in chunks)
 
 
-def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
-    if signal_axes is None:
-        chunks = True
-    else:
-        chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
+    if chunks is None:
+        if signal_axes is None:
+            # Use automatic h5py chunking
+            chunks = True
+        else:
+            # Optimise the chunking to contain at least one signal per chunk
+            chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+
+    if np.issubdtype(data.dtype, np.dtype('U')):
+        # Saving numpy unicode type is not supported in h5py
+        data = data.astype(np.dtype('S'))
+    if data.dtype == np.dtype('O'):
+        # For saving ragged array
+        # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
+        group.require_dataset(key,
+                              chunks,
+                              dtype=h5py.special_dtype(vlen=data[0].dtype),
+                              **kwds)
+        group[key][:] = data[:]
 
     maxshape = tuple(None for _ in data.shape)
 
@@ -546,6 +581,8 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
                                    chunks=chunks,
                                    shuffle=True,))
 
+            # If chunks is True, the `chunks` attribute of `dset` below
+            # contains the chunk shape guessed by h5py
             dset = group.require_dataset(key, **these_kwds)
             got_data = True
         except TypeError:
@@ -556,10 +593,13 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
         # just a reference to already created thing
         pass
     else:
+        _logger.info("Chunks used for saving: %s" % str(dset.chunks))
         if isinstance(data, da.Array):
             da.store(data.rechunk(dset.chunks), dset)
+        elif data.flags.c_contiguous:
+            dset.write_direct(data)
         else:
-            da.store(da.from_array(data, chunks=dset.chunks), dset)
+            dset[:] = data
 
 
 def hdfgroup2dict(group, dictionary=None, lazy=False):
@@ -586,7 +626,7 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
         elif key.startswith('_tuple_empty_'):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
-            dictionary[key[len('_bs_'):]] = value.tostring()
+            dictionary[key[len('_bs_'):]] = value.tobytes()
         # The following two elif stataments enable reading date and time from
         # v < 2 of HyperSpy's metadata specifications
         elif key.startswith('_datetime_date'):
@@ -610,6 +650,11 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                 dat = group[key]
                 kn = key
                 if key.startswith("_list_"):
+                    if (h5py.check_string_dtype(dat.dtype) and
+                        hasattr(dat, 'asstr')):
+                        # h5py 3.0 and newer
+                        # https://docs.h5py.org/en/3.0.0/strings.html
+                        dat = dat.asstr()[:]
                     ans = np.array(dat)
                     ans = ans.tolist()
                     kn = key[6:]
@@ -659,12 +704,16 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
 
 
 def write_signal(signal, group, **kwds):
+    "Writes a hyperspy signal to a hdf5 group"
+
+    group.attrs.update(get_object_package_info(signal))
     if default_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
         metadata = "metadata"
         original_metadata = "original_metadata"
+
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
 
@@ -702,9 +751,16 @@ def write_signal(signal, group, **kwds):
             model.attrs['_signal'] = group.name
 
 
-def file_writer(filename,
-                signal,
-                *args, **kwds):
+def file_writer(filename, signal, *args, **kwds):
+    """Writes data to hyperspy's hdf5 format
+
+    Parameters
+    ----------
+    filename: str
+    signal: a BaseSignal instance
+    *args, optional
+    **kwds, optional
+    """
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
@@ -715,8 +771,7 @@ def file_writer(filename,
         if "/" in group_name:
             group_name = group_name.replace("/", "-")
         expg = exps.create_group(group_name)
-        if 'compression' not in kwds:
-            kwds['compression'] = 'gzip'
+
         # Add record_by metadata for backward compatibility
         smd = signal.metadata.Signal
         if signal.axes_manager.signal_dimension == 1:
@@ -727,7 +782,7 @@ def file_writer(filename,
             smd.record_by = ""
         try:
             write_signal(signal, expg, **kwds)
-        except:
+        except BaseException:
             raise
         finally:
             del smd.record_by

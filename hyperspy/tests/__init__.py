@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,7 +20,8 @@ import os
 import warnings
 
 from hyperspy.defaults_parser import preferences
-preferences.General.show_progressbar = False
+
+preferences.General.show_progressbar = True
 
 # Check if we should fail on external deprecation messages
 fail_on_external = os.environ.pop('FAIL_ON_EXTERNAL_DEPRECATION', False)
@@ -34,7 +35,7 @@ if fail_on_external:
     # Travis setup has these warnings, so ignore:
     warnings.filterwarnings(
         'ignore',
-        "BaseException\.message has been deprecated as of Python 2\.6",
+        r"BaseException\.message has been deprecated as of Python 2\.6",
         DeprecationWarning)
     # Don't care about warnings in hyperspy in this mode!
     warnings.filterwarnings('default', module="hyperspy")

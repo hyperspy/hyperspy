@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,136 +16,109 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 import math
+import sympy
 
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
+from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from distutils.version import LooseVersion
 
 sqrt2pi = math.sqrt(2 * math.pi)
+sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
-    """Voigt lineshape.
+class Voigt(Expression):
 
-    The voigt peak is the convolution of a Lorentz peak with a Gaussian peak.
+    r"""Voigt component.
 
-    The formula used to calculate this is::
+    Symmetric peak shape based on the convolution of a Lorentzian and Normal
+    (Gaussian) distribution:
 
-        z(x) = (x + 1j gamma) / (sqrt(2) sigma)
-        w(z) = exp(-z**2) erfc(-1j z) / (sqrt(2 pi) sigma)
+    .. math::
+        f(x) = G(x) \cdot L(x)
 
-        V(x) = scale Re(w(z(x-center)))
+    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the
+    Lorentzian function. In this case using an approximate formula by David
+    (see Notes). This approximation improves on the pseudo-Voigt function
+    (linear combination instead of convolution of the distributions) and is,
+    to a very good approximation, equivalent to a Voigt function:
+
+    .. math::
+        z(x) &= \frac{x + i \gamma}{\sqrt{2} \sigma} \\
+        w(z) &= \frac{e^{-z^2} \text{erfc}(-i z)}{\sqrt{2 \pi} \sigma} \\
+        f(x) &= A \cdot \Re\left\{ w \left[ z(x - x_0) \right] \right\}
+
+
+    ============== =============
+    Variable        Parameter
+    ============== =============
+    :math:`x_0`     centre
+    :math:`A`       area
+    :math:`\gamma`  gamma
+    :math:`\sigma`  sigma
+    ============== =============
+
 
     Parameters
-    ----------
-    gamma : real
-       The half-width half-maximum of the Lorentzian
-    FWHM : real
-       The FWHM of the Gaussian
-    center : real
-       Location of the center of the peak
-    scale : real
-       Value at the highest point of the peak
+    -----------
+    centre : float
+        Location of the maximum of the peak.
+    area : float
+        Intensity below the peak.
+    gamma : float
+        :math:`\gamma` = HWHM of the Lorentzian distribution.
+    sigma: float
+        :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
+
+
+    For convenience the `gwidth` and `lwidth` attributes can also be used to
+    set and get the FWHM of the Gaussian and Lorentzian parts of the
+    distribution, respectively. For backwards compatability, `FWHM` is another
+    alias for the Gaussian width.
 
     Notes
     -----
-    Ref: W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64
-
-    adjusted to use stddev and HWHM rather than FWHM parameters
-
-    """
-    # wofz function = w(z) = Fad[d][e][y]eva function = exp(-z**2)erfc(-iz)
-    from scipy.special import wofz
-    sigma = FWHM / 2.3548200450309493
-    z = (np.asarray(x) - center + 1j * gamma) / (sigma * math.sqrt(2))
-    V = wofz(z) / (math.sqrt(2 * np.pi) * sigma)
-    return scale * V.real
-
-
-class Voigt(Component):
-
-    """Voigt profile component with support for shirley background,
-    non_isochromaticity,transmission_function corrections and spin orbit
-    splitting specially suited for Photoemission spectroscopy data analysis.
-
-    f(x) = G(x)*L(x) where G(x) is the Gaussian function and L(x) is the
-    Lorentzian function
-
-    Attributes
-    ----------
-
-    area : Parameter
-    centre: Parameter
-    FWHM : Parameter
-    gamma : Parameter
-    resolution : Parameter
-    shirley_background : Parameter
-    non_isochromaticity : Parameter
-    transmission_function : Parameter
-    spin_orbit_splitting : Bool
-    spin_orbit_branching_ratio : float
-    spin_orbit_splitting_energy : float
-
+    W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64,
+    doi:10.1107/S0021889886089999
     """
 
-    def __init__(self):
-        Component.__init__(self, (
-            'area',
-            'centre',
-            'FWHM',
-            'gamma',
-            'resolution',
-            'shirley_background',
-            'non_isochromaticity',
-            'transmission_function'))
-        self._position = self.centre
-        self.FWHM.value = 1
-        self.gamma.value = 0
-        self.area.value = 1
-        self.resolution.value = 0
-        self.resolution.free = False
-        self.shirley_background.free = False
-        self.non_isochromaticity.value = 0
-        self.non_isochromaticity.free = False
-        self.transmission_function.value = 1
-        self.transmission_function.free = False
-        # Options
-        self.shirley_background.active = False
-        self.spin_orbit_splitting = False
-        self.spin_orbit_branching_ratio = 0.5
-        self.spin_orbit_splitting_energy = 0.61
+    def __init__(self, centre=10., area=1., gamma=0.2, sigma=0.1,
+                 module=["numpy", "scipy"], **kwargs):
+        # Not to break scripts once we remove the legacy Voigt
+        if "legacy" in kwargs:
+            del kwargs["legacy"]
+        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+            raise ImportError("The `Voigt` component requires "
+                              "SymPy >= 1.3")
+        # We use `_gamma` internally to workaround the use of the `gamma`
+        # function in sympy
+        super(Voigt, self).__init__(
+            expression="area * real(V); \
+                V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
+                z = (x - centre + 1j * _gamma) / (sigma * sqrt(2.0))",
+            name="Voigt",
+            centre=centre,
+            area=area,
+            gamma=gamma,
+            sigma=sigma,
+            position="centre",
+            module=module,
+            autodoc=False,
+            rename_pars={"_gamma": "gamma"},
+            **kwargs,
+        )
+
+        # Boundaries
+        self.area.bmin = 0.
+        self.gamma.bmin = 0.
+        self.sigma.bmin = 0.
 
         self.isbackground = False
         self.convolved = True
 
-    def function(self, x):
-        area = self.area.value * self.transmission_function.value
-        centre = self.centre.value
-        ab = self.non_isochromaticity.value
-        if self.resolution.value == 0:
-            FWHM = self.FWHM.value
-        else:
-            FWHM = math.sqrt(self.FWHM.value ** 2 + self.resolution.value ** 2)
-        gamma = self.gamma.value
-        k = self.shirley_background.value
-        f = voigt(x,
-                  FWHM=FWHM, gamma=gamma, center=centre - ab, scale=area)
-        if self.spin_orbit_splitting is True:
-            ratio = self.spin_orbit_branching_ratio
-            shift = self.spin_orbit_splitting_energy
-            f2 = voigt(x, FWHM=FWHM, gamma=gamma,
-                       center=centre - ab - shift, scale=area * ratio)
-            f += f2
-        if self.shirley_background.active:
-            cf = np.cumsum(f)
-            cf = cf[-1] - cf
-            self.cf = cf
-            return cf * k + f
-        else:
-            return f
-
-    def estimate_parameters(self, signal, E1, E2, only_current=False):
-        """Estimate the voigt function by calculating the momenta the gaussian.
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
+        """Estimate the Voigt function by calculating the momenta of the
+        Gaussian.
 
         Parameters
         ----------
@@ -162,7 +135,8 @@ class Voigt(Component):
 
         Returns
         -------
-        bool
+         : bool
+            Exit status required for the :meth:`remove_background` function.
 
         Notes
         -----
@@ -171,58 +145,62 @@ class Voigt(Component):
         Examples
         --------
 
-        >>> g = hs.model.components1D.Gaussian()
-        >>> x = np.arange(-10,10, 0.01)
-        >>> data = np.zeros((32,32,2000))
-        >>> data[:] = g.function(x).reshape((1,1,2000))
-        >>> s = hs.signals.Signal1D({'data' : data})
-        >>> s.axes_manager.axes[-1].offset = -10
-        >>> s.axes_manager.axes[-1].scale = 0.01
-        >>> g.estimate_parameters(s, -10,10, False)
+        >>> g = hs.model.components1D.Voigt(legacy=False)
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
 
         """
         super(Voigt, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
+                                                              only_current)
 
-        energy2index = axis._get_index
-        i1 = energy2index(E1) if energy2index(E1) else 0
-        i2 = energy2index(E2) if energy2index(E2) else len(axis.axis) - 1
-        X = axis.axis[i1:i2]
         if only_current is True:
-            data = signal()[i1:i2]
-            X_shape = (len(X),)
-            i = 0
-            center_shape = (1,)
-        else:
-            # TODO: write the rest of the code to estimate the parameters of
-            # the full dataset
-            i = axis.index_in_array
-            data_gi = [slice(None), ] * len(signal.data.shape)
-            data_gi[axis.index_in_array] = slice(i1, i2)
-            data = signal.data[data_gi]
-            X_shape = [1, ] * len(signal.data.shape)
-            X_shape[axis.index_in_array] = data.shape[i]
-            center_shape = list(data.shape)
-            center_shape[i] = 1
-
-        center = np.sum(X.reshape(X_shape) * data, i
-                        ) / np.sum(data, i)
-
-        sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - center.reshape(
-            center_shape)) ** 2 * data, i) / np.sum(data, i)))
-        height = data.max(i)
-        if only_current is True:
-            self.centre.value = center
-            self.FWHM.value = sigma * 2.3548200450309493
+            self.centre.value = centre
+            self.sigma.value = sigma
             self.area.value = height * sigma * sqrt2pi
+            if self.binned:
+                self.area.value /= axis.scale
             return True
         else:
             if self.area.map is None:
-                self.create_arrays(signal.axes_manager.navigation_shape)
+                self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
+            if self.binned:
+                self.area.map['values'][:] /= axis.scale
             self.area.map['is_set'][:] = True
-            self.FWHM.map['values'][:] = sigma * 2.3548200450309493
-            self.FWHM.map['is_set'][:] = True
-            self.centre.map['values'][:] = center
+            self.sigma.map['values'][:] = sigma
+            self.sigma.map['is_set'][:] = True
+            self.centre.map['values'][:] = centre
             self.centre.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True
+
+    @property
+    def gwidth(self):
+        return self.sigma.value * sigma2fwhm
+
+    @gwidth.setter
+    def gwidth(self, value):
+        self.sigma.value = value / sigma2fwhm
+
+    @property
+    def FWHM(self):
+        return self.sigma.value * sigma2fwhm
+
+    @FWHM.setter
+    def FWHM(self, value):
+        self.sigma.value = value / sigma2fwhm
+
+    @property
+    def lwidth(self):
+        return self.gamma.value * 2
+
+    @lwidth.setter
+    def lwidth(self, value):
+        self.gamma.value = value / 2

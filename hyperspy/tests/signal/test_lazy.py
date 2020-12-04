@@ -1,20 +1,41 @@
-import pytest
-import numpy as np
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import dask.array as da
+import numpy as np
+import pytest
 from dask.threaded import get
 
 import hyperspy.api as hs
-from hyperspy._signals.lazy import (_reshuffle_mixed_blocks,
-                                    to_array)
 from hyperspy import _lazy_signals
+from hyperspy._signals.lazy import _reshuffle_mixed_blocks, to_array
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
-@pytest.fixture
-def signal():
+def _signal():
     ar = da.from_array(np.arange(6. * 9 * 7 * 11).reshape((6, 9, 7, 11)),
                        chunks=((2, 1, 3), (4, 5), (7,), (11,))
                        )
     return _lazy_signals.LazySignal2D(ar)
+
+@pytest.fixture
+def signal():
+    return _signal()
 
 
 @pytest.mark.parametrize("sl", [(0, 0),
@@ -74,7 +95,7 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
         real_first = real_first.reshape((2 * 4, -1))[slices1]
         real_second = real_second.reshape((2 * 5, -1))[:, sigslice]
     else:
-        value = np.nan if dtype is 'float' else 0
+        value = np.nan if dtype == 'float' else 0
         if nm is not None:
             real_first[nm, ...] = value
         if sm is not None:
@@ -84,17 +105,17 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
     np.testing.assert_allclose(second_block, real_second)
 
 
-@pytest.mark.parametrize('sig', [signal(),
-                                 signal().data,
-                                 signal().data.compute()])
+@pytest.mark.parametrize('sig', [_signal(),
+                                 _signal().data,
+                                 _signal().data.compute()])
 def test_as_array_numpy(sig):
     thing = to_array(sig, chunks=None)
     assert isinstance(thing, np.ndarray)
 
 
-@pytest.mark.parametrize('sig', [signal(),
-                                 signal().data,
-                                 signal().data.compute()])
+@pytest.mark.parametrize('sig', [_signal(),
+                                 _signal().data,
+                                 _signal().data.compute()])
 def test_as_array_dask(sig):
     chunks = ((6,), (9,), (7,), (11,))
     thing = to_array(sig, chunks=chunks)
@@ -117,3 +138,14 @@ def test_ma_lazify():
     assert np.isnan(l.data[1].compute())
     ss = hs.stack([s, s])
     assert np.isnan(ss.data[:, 1]).all()
+
+
+def test_warning():
+    sig = _signal()
+
+    with pytest.warns(VisibleDeprecationWarning, match="progressbar"):
+        sig.compute(progressbar=False)
+
+    assert sig._lazy == False
+    thing = to_array(sig, chunks=None)
+    assert isinstance(thing, np.ndarray)

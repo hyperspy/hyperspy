@@ -1,5 +1,23 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import inspect
-import collections
+from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import wraps   # Used in exec statement
 import re
@@ -24,8 +42,8 @@ class Events(object):
         all callbacks of all events in the container. When the 'with' lock
         completes, the old suppression values will be restored.
 
-        Example usage
-        -------------
+        Example
+        -------
         >>> with obj.events.suppress():
         ...     # Any events triggered by assignments are prevented:
         ...     obj.val_a = a
@@ -130,29 +148,29 @@ class Event(object):
         """
         Create an Event object.
 
-        Arguments:
-        ----------
-            doc : str
-                Optional docstring for the new Event.
-            arguments : iterable
-                Pass to define the arguments of the trigger() function. Each
-                element must either be an argument name, or a tuple containing
-                the argument name and the argument's default value.
+        Arguments
+        ---------
+        doc : str
+            Optional docstring for the new Event.
+        arguments : iterable
+            Pass to define the arguments of the trigger() function. Each
+            element must either be an argument name, or a tuple containing
+            the argument name and the argument's default value.
 
-        Example usage:
-        --------------
-            >>> from hyperspy.events import Event
-            >>> Event()
-            <hyperspy.events.Event: set()>
-            >>> Event(doc="This event has a docstring!").__doc__
-            'This event has a docstring!'
-            >>> e1 = Event()
-            >>> e2 = Event(arguments=('arg1', ('arg2', None)))
-            >>> e1.trigger(arg1=12, arg2=43, arg3='str', arg4=4.3)  # Can trigger with whatever
-            >>> e2.trigger(arg1=11, arg2=22, arg3=3.4)
-            Traceback (most recent call last):
-                ...
-            TypeError: trigger() got an unexpected keyword argument 'arg3'
+        Example
+        -------
+        >>> from hyperspy.events import Event
+        >>> Event()
+        <hyperspy.events.Event: set()>
+        >>> Event(doc="This event has a docstring!").__doc__
+        'This event has a docstring!'
+        >>> e1 = Event()
+        >>> e2 = Event(arguments=('arg1', ('arg2', None)))
+        >>> e1.trigger(arg1=12, arg2=43, arg3='str', arg4=4.3)  # Can trigger with whatever
+        >>> e2.trigger(arg1=11, arg2=22, arg3=3.4)
+        Traceback (most recent call last):
+            ...
+        TypeError: trigger() got an unexpected keyword argument 'arg3'
 
         """
         self.__doc__ = doc
@@ -222,8 +240,8 @@ class Event(object):
         all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
 
-        Example usage
-        -------------
+        Example
+        -------
         >>> with obj.events.myevent.suppress():
         ...     # These would normally both trigger myevent:
         ...     obj.val_a = a
@@ -252,8 +270,8 @@ class Event(object):
         will trigger. When the 'with' lock completes, the old suppression value
         will be restored.
 
-        Example usage
-        -------------
+        Example
+        -------
 
         >>> with obj.events.myevent.suppress_callback(f):
         ...     # Events will trigger as normal, but `f` will not be called
@@ -289,8 +307,9 @@ class Event(object):
     def connect(self, function, kwargs='all'):
         """
         Connects a function to the event.
-        Arguments:
-        ----------
+
+        Arguments
+        ---------
         function : callable
             The function to call when the event triggers.
         kwargs : {tuple or list, dictionary, 'all', 'auto'}, default "all"
@@ -350,10 +369,11 @@ class Event(object):
         If you only need to temporarily prevent a function from being called,
         single callback suppression is supported by the `suppress_callback`
         context manager.
+
         Parameters
         ----------
         function: function
-        return_connection_kwargs: Bool, default False
+        return_connection_kwargs: bool, default False
             If True, returns the kwargs that would reconnect the function as
             it was.
 
@@ -431,15 +451,16 @@ class EventSuppressor(object):
 
     Targets to be suppressed can be added by the function `add()`, or given
     in the constructor. Valid targets are:
-     - `Event`: The entire Event will be suppressed
-     - `Events`: All events in th container will be suppressed
-     - (Event, callback): The callback will be suppressed in Event
-     - (Events, callback): The callback will be suppressed in each event in
-         Events where it is connected.
-     - Any iterable collection of the above target types
 
-    Example usage
-    -------------
+    * `Event`: The entire Event will be suppressed
+    * `Events`: All events in th container will be suppressed
+    * (Event, callback): The callback will be suppressed in Event
+    * (Events, callback): The callback will be suppressed in each event in
+      Events where it is connected.
+    * Any iterable collection of the above target types
+
+    Example
+    -------
     >>> es = EventSuppressor((event1, callback1), (event1, callback2))
     >>> es.add(event2, callback2)
     >>> es.add(event3)
@@ -472,7 +493,8 @@ class EventSuppressor(object):
             self._cms.append(cm)
 
     def _is_tuple_target(self, candidate):
-        v = (isinstance(candidate, collections.Iterable) and
+        v = (isinstance(candidate, Iterable) and
+             not isinstance(candidate, Events) and
              len(candidate) == 2 and
              isinstance(candidate[0], (Event, Events)) and
              callable(candidate[1]))
@@ -496,13 +518,13 @@ class EventSuppressor(object):
          - Any iterable collection of the above target types
         """
         # Remove useless layers of iterables:
-        while (isinstance(to_suppress, collections.Iterable) and
-                len(to_suppress) == 1):
+        while (isinstance(to_suppress, Iterable) and
+               not isinstance(to_suppress, Events) and len(to_suppress) == 1):
             to_suppress = to_suppress[0]
         # If single target passed, add directly:
         if self._is_target(to_suppress):
             self._add_single(to_suppress)
-        elif isinstance(to_suppress, collections.Iterable):
+        elif isinstance(to_suppress, Iterable):
             if len(to_suppress) == 0:
                 raise ValueError("No viable suppression targets added!")
             for t in to_suppress:

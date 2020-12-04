@@ -1,31 +1,33 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of HyperSpy.
+# This file is part of  HyperSpy.
 #
-# HyperSpy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HyperSpy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+import gc
 
+import dill
 import numpy as np
 import pytest
 
-import dill
-import copy
-
 import hyperspy.api as hs
-from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.samfire_utils.samfire_worker import create_worker
+
+N_WORKERS = 1
 
 
 class Mock_queue(object):
@@ -39,25 +41,25 @@ class Mock_queue(object):
 
 def generate_test_model():
 
-    # import hyperspy.api as hs
     from hyperspy.signals import Signal1D
-    from hyperspy.components1d import (Gaussian, Lorentzian)
-    import numpy as np
+    from hyperspy.components1d import Gaussian, Lorentzian
     from scipy.ndimage import gaussian_filter
+
     total = None
-# blurs = [0., 0.5, 1., 2.,5.]
     blurs = [1.5]
     rnd = np.random.RandomState(17)
+    n_im = 400
     radius = 5
     domain = 15
-# do circle/domain
+
+    # do circle/domain
     cent = (domain // 2, domain // 2)
     y, x = np.ogrid[-cent[0]:domain - cent[0], -cent[1]:domain - cent[1]]
     mask = x * x + y * y <= radius * radius
     lor_map = None
     for blur in blurs:
 
-        s = Signal1D(np.ones((domain, domain, 1024)))
+        s = Signal1D(np.ones((domain, domain, n_im)))
         cent = tuple([int(0.5 * i) for i in s.data.shape[:-1]])
         m0 = s.create_model()
 
@@ -102,7 +104,7 @@ def generate_test_model():
         gs03.A.map['values'][mask] *= 0.
         gs03.A.map['is_set'][:] = True
 
-        s11 = m0.as_signal(show_progressbar=False, parallel=False)
+        s11 = m0.as_signal()
         if total is None:
             total = s11.data.copy()
             lor_map = gs01.centre.map['values'].copy()
@@ -113,6 +115,7 @@ def generate_test_model():
 
     s = Signal1D(total)
     s.data = rnd.poisson(lam=s.data) + 0.1
+    s.change_dtype(np.float16)
     s.estimate_poissonian_noise_variance()
 
     m = s.inav[:, :7].create_model()
@@ -137,6 +140,7 @@ def generate_test_model():
     m.extend([g, l1, l2])
     m.assign_current_values_to_all()
     l2.active_is_multidimensional = True
+
     return m, gs01, gs02, gs03
 
 
@@ -144,7 +148,9 @@ class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        s = hs.signals.Signal1D(np.ones(self.shape + (1024,)) + 3.)
+        n_im = 50
+        s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
+        s.change_dtype(np.float16)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -152,64 +158,80 @@ class TestSamfireEmpty:
         m.append(hs.model.components1D.Lorentzian())
         self.model = m
 
-    @pytest.mark.parallel
+    def teardown_method(self, method):
+        gc.collect()
+
     def test_setup(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert samf.metadata._gt_dump is None
         assert samf.pool is None
         samf._setup(ipyparallel=False)
         assert samf.metadata._gt_dump is not None
         assert samf.pool is not None
+        samf.stop()
+        del samf
 
     def test_samfire_init_marker(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         np.testing.assert_array_almost_equal(samf.metadata.marker,
                                              np.zeros(self.shape))
+        samf.stop()
+        del samf
 
     def test_samfire_init_model(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert samf.model is m
+        samf.stop()
+        del samf
 
     def test_samfire_init_metadata(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
+        samf.stop()
+        del samf
 
     def test_samfire_init_strategy_list(self):
         from hyperspy.samfire import StrategyList
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert isinstance(samf.strategies, StrategyList)
 
     def test_samfire_init_strategies(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
         assert isinstance(samf.strategies[0],
                           ReducedChiSquaredStrategy)
         assert isinstance(samf.strategies[1], HistogramStrategy)
+        samf.stop()
+        del samf
 
     def test_samfire_init_fig(self):
         m = self.model
-        samf = m.create_samfire(workers=1, setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert samf._figure is None
+        samf.stop()
+        del samf
 
     def test_samfire_init_default(self):
         m = self.model
         from multiprocessing import cpu_count
         samf = m.create_samfire(setup=False)
         assert samf._workers == cpu_count() - 1
-        assert np.allclose(samf.metadata.marker, np.zeros(self.shape))
+        np.testing.assert_allclose(samf.metadata.marker, np.zeros(self.shape))
+        samf.stop()
+        del samf
 
     def test_optional_components(self):
         m = self.model
         m[-1].active_is_multidimensional = False
 
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         samf.optional_components = [m[0], 1]
         samf._enable_optional_components()
         assert m[0].active_is_multidimensional
@@ -217,6 +239,8 @@ class TestSamfireEmpty:
         assert np.all([isinstance(a, int)
                        for a in samf.optional_components])
         np.testing.assert_equal(samf.optional_components, [0, 1])
+        samf.stop()
+        del samf
 
     def test_swap_dict_and_model(self):
         m = self.model
@@ -240,7 +264,7 @@ class TestSamfireEmpty:
              }
 
         d = copy.deepcopy(d)
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         samf._swap_dict_and_model((1, 0), d)
         assert m.chisq.data[1, 0] == 1200.
         assert m.dof.data[1, 0] == 1.
@@ -262,9 +286,12 @@ class TestSamfireEmpty:
                             0, 0] == p.map['is_set'][
                             1, 0])
 
+        samf.stop()
+        del samf
+
     def test_next_pixels(self):
         m = self.model
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         ans = samf._next_pixels(3)
         assert len(ans) == 0
         ind_list = [(1, 2), (0, 1), (3, 3), (4, 6)]
@@ -278,10 +305,12 @@ class TestSamfireEmpty:
             samf.metadata.marker[ind] += n
         ans = samf._next_pixels(10)
         assert ans == [(4, 6), ]
+        samf.stop()
+        del samf
 
     def test_change_strategy(self):
         m = self.model
-        samf = m.create_samfire(setup=False)
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 
@@ -302,45 +331,45 @@ class TestSamfireEmpty:
         assert samf._active_strategy_ind == 3
         assert samf.active_strategy is new_strat
         assert samf.metadata.marker[ind] == -2
+        samf.stop()
+        del samf
 
+@pytest.mark.xfail(reason="Sometimes the number of failed pixels > 3 when using multiprocessing. Unknown reason")
+def test_multiprocessed():
+    """This test uses multiprocessing.pool rather than ipyparallel"""
+    model, lor1, g, lor2 = generate_test_model()
 
-class TestSamfireMain:
+    shape = (7, 15)
 
-    def setup_method(self, method):
-        self.model, self.lor1, self.g, self.lor2 = generate_test_model()
-        self.shape = (7, 15)
+    model.fit()
+    samf = model.create_samfire(workers=N_WORKERS, ipyparallel=False)
+    samf.plot_every = np.nan
+    samf.strategies[0].radii = 1.
+    samf.strategies.remove(1)
+    samf.optional_components = [model[2]]
+    samf.start(bounded=True)
 
-    @pytest.mark.xfail(
-        reason="Sometimes it fails in CirCleCI for no know reason.")
-    def test_multiprocessed(self, mpl_cleanup):
-        self.model.fit()
-        samf = self.model.create_samfire(ipyparallel=False)
-        samf.plot_every = np.nan
-        samf.strategies[0].radii = 1.
-        samf.strategies.remove(1)
-        samf.optional_components = [self.model[2]]
-        samf.start(bounded=True)
-        # let at most 3 pixels to fail randomly.
-        fitmask = samf.metadata.marker == -np.ones(self.shape)
-        print('number of pixels failed: {}'.format(
-              np.prod(self.shape) - np.sum(fitmask)))
-        assert np.sum(fitmask) >= np.prod(self.shape) - 5
-        for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
-            for p, p1 in zip(o_c.parameters, n_c.parameters):
-                if n_c._active_array is not None:
-                    mask = np.logical_and(n_c._active_array, fitmask)
-                else:
-                    mask = fitmask
-                print(o_c._id_name, n_c._id_name, p1._id_name, p._id_name)
-                print(p.map['values'][:4, :4])
-                print('----------------------------')
-                print(p1.map['values'][:4, :4])
-                print('ooooooooooooooooooooooooooooooooooooooooooo')
-                np.testing.assert_allclose(
-                    p1.map['values'][mask],
-                    p.map['values'][:7, :15][mask],
-                    rtol=0.3)
+    # let at most 3 pixels to fail randomly.
+    fitmask = samf.metadata.marker == -np.ones(shape)
+    print('number of pixels failed: {}'.format(
+          np.prod(shape) - np.sum(fitmask)))
+    assert np.sum(fitmask) >= np.prod(shape) - 5
 
+    for o_c, n_c in zip([g, lor1, lor2], model):
+        for p, p1 in zip(o_c.parameters, n_c.parameters):
+            if n_c._active_array is not None:
+                mask = np.logical_and(n_c._active_array, fitmask)
+            else:
+                mask = fitmask
+
+            np.testing.assert_allclose(
+                p1.map['values'][mask],
+                p.map['values'][:7, :15][mask],
+                rtol=0.3)
+
+    samf.stop()
+    del samf
+    gc.collect()
 
 def test_create_worker_defaults():
     worker = create_worker('worker')
@@ -381,6 +410,7 @@ class TestSamfireWorker:
             l1.function(ax - self.centres[2])
         s = hs.signals.Signal1D(np.array([d, d]))
         s.add_poissonian_noise()
+        s.change_dtype(np.float16)
         s.metadata.Signal.set_item("Noise_properties.variance",
                                    s.deepcopy() + 1.)
         m = s.create_model()
@@ -447,6 +477,9 @@ class TestSamfireWorker:
         self.model_dictionary = m_dict
         self.optional_comps = [1, 2, 3, 4, 5]
 
+    def teardown_method(self, method):
+        gc.collect()
+
     def test_add_model(self):
         worker = create_worker('worker')
         worker.create_model(self.model_dictionary, self.model_letter)
@@ -455,6 +488,8 @@ class TestSamfireWorker:
         for component in worker.model:
             assert not component.active_is_multidimensional
             assert component.active
+
+        del worker
 
     def test_main_result(self):
         worker = create_worker('worker')
@@ -509,3 +544,5 @@ class TestSamfireWorker:
         assert (np.allclose(lor2_values, possible_values1, rtol=0.05)
                 or
                 np.allclose(lor2_values, possible_values2, rtol=0.05))
+
+        del worker

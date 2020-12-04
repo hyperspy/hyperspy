@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -25,18 +25,24 @@ name = 'hyperspy'
 # When running setup.py the ".dev" string will be replaced (if possible)
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
-version = "1.4.dev"
+version = "1.7.0.dev0"
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
 authors = {
-    'all': ('The HyperSpy developers',
-            'hyperspy-devel@googlegroups.com'), }
+    'all': ('The HyperSpy developers',), }
 
 url = 'http://hyperspy.org'
 
 download_url = 'http://www.hyperspy.org'
 documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
+
+PROJECT_URLS = {
+    'Bug Tracker': 'https://github.com/hyperspy/hyperspy/issues',
+    'Documentation': 'https://hyperspy.org/hyperspy-doc/current/index.html',
+    'Source Code': 'https://github.com/hyperspy/hyperspy',
+    'Support' : 'https://gitter.im/hyperspy/hyperspy'
+}
 
 platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME']
 

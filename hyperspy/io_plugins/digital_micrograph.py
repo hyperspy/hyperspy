@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright 2010 Stefano Mazzucco
-# Copyright 2011-2016 The HyperSpy developers
+# Copyright 2011-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy. It is a fork of the original PIL dm3 plugin
 # written by Stefano Mazzucco.
@@ -27,11 +27,14 @@ import dateutil.parser
 
 import numpy as np
 import traits.api as t
+from copy import deepcopy
 
 import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.docstrings.signal import OPTIMIZE_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -44,7 +47,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
-
 # Writing features
 writes = False
 # ----------------------
@@ -93,8 +95,7 @@ class DigitalMicrographReader(object):
                 "Currently we only support reading DM versions 3 and 4 but "
                 "this file "
                 "seems to be version %s " % self.dm_version)
-        self.skipif4()
-        filesizeB = iou.read_long(self.f, "big")
+        filesizeB = self.read_l_or_q(self.f, "big")
         is_little_endian = iou.read_long(self.f, "big")
 
         _logger.info('DM version: %i', self.dm_version)
@@ -131,17 +132,15 @@ class DigitalMicrographReader(object):
                 # Start reading the data
                 # Raises IOError if it is wrong
                 self.check_data_tag_delimiter()
-                self.skipif4()
-                infoarray_size = iou.read_long(self.f, 'big')
+                infoarray_size = self.read_l_or_q(self.f, 'big')
                 _logger.debug("Infoarray size: %s", infoarray_size)
-                self.skipif4()
                 if infoarray_size == 1:  # Simple type
                     _logger.debug("Reading simple data")
-                    etype = iou.read_long(self.f, "big")
+                    etype = self.read_l_or_q(self.f, "big")
                     data = self.read_simple_data(etype)
                 elif infoarray_size == 2:  # String
                     _logger.debug("Reading string")
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype != 18:
                         raise IOError("Expected 18 (string), got %i" % enctype)
                     string_length = self.parse_string_definition()
@@ -149,13 +148,13 @@ class DigitalMicrographReader(object):
                 elif infoarray_size == 3:  # Array of simple type
                     _logger.debug("Reading simple array")
                     # Read array header
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype != 20:  # Should be 20 if it is an array
                         raise IOError("Expected 20 (string), got %i" % enctype)
                     size, enc_eltype = self.parse_array_definition()
                     data = self.read_array(size, enc_eltype, skip=skip)
                 elif infoarray_size > 3:
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype == 15:  # It is a struct
                         _logger.debug("Reading struct")
                         definition = self.parse_struct_definition()
@@ -166,13 +165,11 @@ class DigitalMicrographReader(object):
                         # The structure is
                         # 20 <4>, ?  <4>, enc_dtype <4>, definition <?>,
                         # size <4>
-                        self.skipif4()
-                        enc_eltype = iou.read_long(self.f, "big")
+                        enc_eltype = self.read_l_or_q(self.f, "big")
                         if enc_eltype == 15:  # Array of structs
                             _logger.debug("Reading array of structs")
                             definition = self.parse_struct_definition()
-                            self.skipif4()  # Padding?
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             _logger.debug("Struct definition: %s", definition)
                             _logger.debug("Array size: %s", size)
                             data = self.read_array(
@@ -184,7 +181,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of strings")
                             string_length = \
                                 self.parse_string_definition()
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -194,7 +191,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of arrays")
                             el_length, enc_eltype = \
                                 self.parse_array_definition()
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -213,7 +210,7 @@ class DigitalMicrographReader(object):
                 _logger.debug(
                     'Reading Tag group at address: %s',
                     self.f.tell())
-                ntags = self.parse_tag_group(skip4=3)[2]
+                ntags = self.parse_tag_group(size=True)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
                     ntags=ntags,
@@ -240,8 +237,9 @@ class DigitalMicrographReader(object):
             # dm3 uses chars for 1-Byte signed integers
             9: (iou.read_char, 1, 'b'),
             10: (iou.read_byte, 1, 'b'),   # 0x0a
-            11: (iou.read_double, 8, 'l'),  # Unknown, new in DM4
-            12: (iou.read_double, 8, 'l'),  # Unknown, new in DM4
+            11: (iou.read_long_long, 8, 'q'),  # long long, new in DM4
+            # unsigned long long, new in DM4
+            12: (iou.read_ulong_long, 8, 'Q'),
             15: (self.read_struct, None, 'struct',),  # 0x0f
             18: (self.read_string, None, 'c'),  # 0x12
             20: (self.read_array, None, 'array'),  # 0x14
@@ -252,6 +250,13 @@ class DigitalMicrographReader(object):
         if self.dm_version == 4:
             self.f.seek(4 * n, 1)
 
+    @property
+    def read_l_or_q(self):
+        if self.dm_version == 4:
+            return iou.read_long_long
+        else:
+            return iou.read_long
+
     def parse_array_definition(self):
         """Reads and returns the element type and length of the array.
 
@@ -259,10 +264,8 @@ class DigitalMicrographReader(object):
         array encoded dtype.
 
         """
-        self.skipif4()
-        enc_eltype = iou.read_long(self.f, "big")
-        self.skipif4()
-        length = iou.read_long(self.f, "big")
+        enc_eltype = self.read_l_or_q(self.f, "big")
+        length = self.read_l_or_q(self.f, "big")
         return length, enc_eltype
 
     def parse_string_definition(self):
@@ -271,8 +274,7 @@ class DigitalMicrographReader(object):
         The position in the file must be just after the
         string encoded dtype.
         """
-        self.skipif4()
-        return iou.read_long(self.f, "big")
+        return self.read_l_or_q(self.f, "big")
 
     def parse_struct_definition(self):
         """Reads and returns the struct definition tuple.
@@ -281,14 +283,12 @@ class DigitalMicrographReader(object):
         struct encoded dtype.
 
         """
-        self.f.seek(4, 1)  # Skip the name length
-        self.skipif4(2)
-        nfields = iou.read_long(self.f, "big")
+        length = self.read_l_or_q(self.f, "big")
+        nfields = self.read_l_or_q(self.f, "big")
         definition = ()
         for ifield in range(nfields):
-            self.f.seek(4, 1)
-            self.skipif4(2)
-            definition += (iou.read_long(self.f, "big"),)
+            length2 = self.read_l_or_q(self.f, "big")
+            definition += (self.read_l_or_q(self.f, "big"),)
 
         return definition
 
@@ -307,9 +307,8 @@ class DigitalMicrographReader(object):
         return data
 
     def read_string(self, length, skip=False):
-        """Read a string defined by the infoArray iarray from
-         file f with a given endianness (byte order).
-        endian can be either 'big' or 'little'.
+        """Read a string defined by the infoArray iarray from file f with a
+        given endianness (byte order). endian can be either 'big' or 'little'.
 
         If it's a tag name, each char is 1-Byte;
         if it's a tag data, each char is 2-Bytes Unicode,
@@ -330,7 +329,7 @@ class DigitalMicrographReader(object):
             data += s.unpack(self.f.read(1))[0]
         try:
             data = data.decode('utf8')
-        except:
+        except BaseException:
             # Sometimes the dm3 file strings are encoded in latin-1
             # instead of utf8
             data = data.decode('latin-1', errors='ignore')
@@ -397,15 +396,17 @@ class DigitalMicrographReader(object):
                         for element in range(size)]
         return data
 
-    def parse_tag_group(self, skip4=1):
+    def parse_tag_group(self, size=False):
         """Parse the root TagGroup of the given DM3 file f.
         Returns the tuple (is_sorted, is_open, n_tags).
         endian can be either 'big' or 'little'.
         """
         is_sorted = iou.read_byte(self.f, "big")
         is_open = iou.read_byte(self.f, "big")
-        self.skipif4(n=skip4)
-        n_tags = iou.read_long(self.f, "big")
+        if self.dm_version == 4 and size:
+            # Just guessing that this is the size
+            size = self.read_l_or_q(self.f, "big")
+        n_tags = self.read_l_or_q(self.f, "big")
         return bool(is_sorted), bool(is_open), n_tags
 
     def find_next_tag(self):
@@ -540,16 +541,20 @@ class ImageObject(object):
         elif self.signal_type in ("EDS", "EDX"):
             if "keV" in self.units:
                 names[indices.pop(self.units.index("keV"))] = "Energy"
+        elif self.signal_type in ("CL"):
+            if "nm" in self.units:
+                names[indices.pop(self.units.index("nm"))] = "Wavelength"
         for index, name in zip(indices[::-1], ("x", "y", "z")):
             names[index] = name
         return names
 
     @property
     def title(self):
-        if "Name" in self.imdict:
-            return self.imdict.Name
-        else:
-            return ''
+        title = self.imdict.get_item("Name", "")
+        # ``if title else ""`` below is there to account for when Name
+        # contains an empty list.
+        # See https://github.com/hyperspy/hyperspy/issues/1937
+        return title if title else ""
 
     @property
     def record_by(self):
@@ -666,7 +671,8 @@ class ImageObject(object):
             return self.unpack_packed_complex(data)
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
-            data = data[['R', 'G', 'B', 'A']].copy()
+            data = data[['R', 'G', 'B', 'A']].astype(
+                [('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')])
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
@@ -785,6 +791,8 @@ class ImageObject(object):
     def _get_mode(self, mode):
         if 'STEM' in mode:
             return 'STEM'
+        elif 'SEM' in mode:
+            return 'SEM'
         else:
             return 'TEM'
 
@@ -792,25 +800,28 @@ class ImageObject(object):
         try:
             dt = dateutil.parser.parse(time)
             return dt.time().isoformat()
-        except:
+        except BaseException:
             _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
         try:
             dt = dateutil.parser.parse(date)
             return dt.date().isoformat()
-        except:
+        except BaseException:
             _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
-        try:
-            if ImageTags.Session_Info.Microscope != "[]":
-                return ImageTags.Session_Info.Microscope
-        except AttributeError:
-            if 'Name' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Name
-            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Microscope
+        locations = (
+            "Session_Info.Microscope",
+            "Microscope_Info.Name",
+            "Microscope_Info.Microscope",
+        )
+        for loc in locations:
+            mic = ImageTags.get_item(loc)
+            if mic and mic != "[]":
+                return mic
+        _logger.info("Microscope name not present")
+        return None
 
     def _get_marker_color(self, annotation):
         if ('ForegroundColor' in annotation) or ('Color' in annotation):
@@ -944,139 +955,219 @@ class ImageObject(object):
         else:
             return tag
 
+    def _get_EELS_exposure_time(self, tags):
+        # for GMS 2 and quantum/enfinium, the  "Integration time (s)" tag is
+        # only present for single spectrum acquisition;  for maps we need to
+        # compute exposure * number of frames
+        if 'Integration_time_s' in tags.keys():
+            return float(tags["Integration_time_s"])
+        elif 'Exposure_s' in tags.keys():
+            frame_number = 1
+            if "Number_of_frames" in tags.keys():
+                frame_number = float(tags["Number_of_frames"])
+            return float(tags["Exposure_s"]) * frame_number
+        else:
+            _logger.info("EELS exposure time can't be read.")
+
     def get_mapping(self):
-        is_scanning = "DigiScan" in self.imdict.ImageTags.keys()
+        if 'source' in self.imdict.ImageTags.keys():
+            # For stack created with the stack builder plugin
+            tags_path = 'ImageList.TagGroup0.ImageTags.source.Tags at creation'
+            image_tags_dict = self.imdict.ImageTags.source['Tags at creation']
+        else:
+            # Standard tags
+            tags_path = 'ImageList.TagGroup0.ImageTags'
+            image_tags_dict = self.imdict.ImageTags
+        is_scanning = "DigiScan" in image_tags_dict.keys()
         mapping = {
-            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Date": (
+            "{}.DataBar.Acquisition Date".format(tags_path): (
                 "General.date", self._get_date),
-            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Time": (
+            "{}.DataBar.Acquisition Time".format(tags_path): (
                 "General.time", self._get_time),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Voltage": (
+            "{}.Microscope Info.Voltage".format(tags_path): (
                 "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Alpha": (
+            "{}.Microscope Info.Stage Position.Stage Alpha".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage X": (
+            "{}.Microscope Info.Stage Position.Stage Beta".format(tags_path): (
+                "Acquisition_instrument.TEM.Stage.tilt_beta", None),
+            "{}.Microscope Info.Stage Position.Stage X".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Y": (
+            "{}.Microscope Info.Stage Position.Stage Y".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.y", lambda x: x * 1e-3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Z": (
+            "{}.Microscope Info.Stage Position.Stage Z".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.z", lambda x: x * 1e-3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
+            "{}.Microscope Info.Illumination Mode".format(tags_path): (
                 "Acquisition_instrument.TEM.acquisition_mode", self._get_mode),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
+            "{}.Microscope Info.Probe Current (nA)".format(tags_path): (
                 "Acquisition_instrument.TEM.beam_current", None),
-            "ImageList.TagGroup0.ImageTags.Session Info.Operator": (
+            "{}.Session Info.Operator".format(tags_path): (
                 "General.authors", self._parse_string),
-            "ImageList.TagGroup0.ImageTags.Session Info.Specimen": (
+            "{}.Session Info.Specimen".format(tags_path): (
                 "Sample.description", self._parse_string),
         }
 
-        if "Microscope_Info" in self.imdict.ImageTags.keys():
+        if "Microscope_Info" in image_tags_dict.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in self.imdict.ImageTags[
-                    'Microscope_Info'].keys():
+            if "Illumination_Mode" in image_tags_dict['Microscope_Info'].keys(
+            ):
                 is_TEM = (
-                    'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
-            if "Imaging_Mode" in self.imdict.ImageTags[
-                    'Microscope_Info'].keys():
+                    'TEM' == image_tags_dict.Microscope_Info.Illumination_Mode)
+            if "Imaging_Mode" in image_tags_dict['Microscope_Info'].keys():
                 is_diffraction = (
-                    'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
+                    'DIFFRACTION' == image_tags_dict.Microscope_Info.Imaging_Mode)
 
             if is_TEM:
                 if is_diffraction:
                     mapping.update({
-                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
                             "Acquisition_instrument.TEM.camera_length",
                             None),
                     })
                 else:
                     mapping.update({
-                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
                             "Acquisition_instrument.TEM.magnification",
                             None),
                     })
             else:
                 mapping.update({
-                    "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
+                    "{}.Microscope Info.STEM Camera Length".format(tags_path): (
                         "Acquisition_instrument.TEM.camera_length",
                         None),
-                    "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                    "{}.Microscope Info.Indicated Magnification".format(tags_path): (
                         "Acquisition_instrument.TEM.magnification",
                         None),
                 })
 
             mapping.update({
-                "ImageList.TagGroup0.ImageTags": (
+                tags_path: (
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
             })
-
+        if "SI" in self.imdict.ImageTags.keys():
+            mapping.update({
+                "{}.SI.Acquisition.Date".format(tags_path): (
+                    "General.date",
+                    self._get_date),
+                "{}.SI.Acquisition.Start time".format(tags_path): (
+                    "General.time",
+                    self._get_time),
+            })
         if self.signal_type == "EELS":
             if is_scanning:
                 mapped_attribute = 'dwell_time'
             else:
                 mapped_attribute = 'exposure'
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Date": (
+                "{}.EELS.Acquisition.Date".format(tags_path): (
                     "General.date",
                     self._get_date),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Start time": (
+                "{}.EELS.Acquisition.Start time".format(tags_path): (
                     "General.time",
                     self._get_time),
-                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "{}.EELS.Experimental Conditions.".format(tags_path) +
                 "Collection semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "{}.EELS.Experimental Conditions.".format(tags_path) +
                 "Convergence semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.convergence_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Integration time (s)": (
+                "{}.EELS.Acquisition".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.%s" % mapped_attribute,
-                    None),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Number_of_frames": (
+                    self._get_EELS_exposure_time),
+                "{}.EELS.Acquisition.Number_of_frames".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.frame_number",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
+                "{}.EELS_Spectrometer.Aperture_label".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
                     lambda string: float(string.replace('mm', ''))),
-                "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
+                "{}.EELS Spectrometer.Instrument name".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),
             })
         elif self.signal_type == "EDS_TEM":
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Date": (
+                "{}.EDS.Acquisition.Date".format(tags_path): (
                     "General.date",
                     self._get_date),
-                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Start time": (
+                "{}.EDS.Acquisition.Start time".format(tags_path): (
                     "General.time",
                     self._get_time),
-                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
+                "{}.EDS.Detector_Info.Azimuthal_angle".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Elevation_angle": (
+                "{}.EDS.Detector_Info.Elevation_angle".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Solid_angle": (
+                "{}.EDS.Solid_angle".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.solid_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Live_time": (
+                "{}.EDS.Live_time".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.live_time",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Real_time": (
+                "{}.EDS.Real_time".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
             })
-        elif "DigiScan" in self.imdict.ImageTags.keys():
+        elif self.signal_type == "CL":
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.DigiScan.Sample Time": (
+                "{}.CL.Acquisition.Date".format(tags_path): (
+                    "General.date", self._get_date),
+                "{}.CL.Acquisition.Start_time".format(tags_path): (
+                    "General.time", self._get_time),
+                "{}.Meta_Data.Acquisition_Mode".format(tags_path): (
+                    "Acquisition_instrument.CL.acquisition_mode", None),
+                "{}.Meta_Data.Format".format(tags_path): (
+                    "Signal.format", None),
+                "{}.CL.Acquisition.Dispersion_grating_(lines/mm)".format(tags_path): (
+                    "Acquisition_instrument.CL.dispersion_grating", None),
+                # Parallel spectrum
+                "{}.CL.Acquisition.Central_wavelength_(nm)".format(tags_path): (
+                    "Acquisition_instrument.CL.central_wavelength", None),
+                "{}.CL.Acquisition.Exposure_(s)".format(tags_path): (
+                    "Acquisition_instrument.CL.exposure", None),
+                "{}.CL.Acquisition.Number_of_frames".format(tags_path): (
+                    "Acquisition_instrument.CL.frame_number", None),
+                "{}.CL.Acquisition.Integration_time_(s)".format(tags_path): (
+                    "Acquisition_instrument.CL.integration_time", None),
+                "{}.CL.Acquisition.Saturation_fraction".format(tags_path): (
+                    "Acquisition_instrument.CL.saturation_fraction", None),
+                "{}.Acquisition.Parameters.High_Level.Binning".format(tags_path): (
+                    "Acquisition_instrument.CL.CCD.binning", None),
+                "{}.Acquisition.Parameters.High_Level.CCD_Read_Area".format(tags_path): (
+                    "Acquisition_instrument.CL.CCD.read_area", None),
+                "{}.Acquisition.Parameters.High_Level.Processing".format(tags_path): (
+                    "Acquisition_instrument.CL.CCD.processing", None),
+                # Serial Spectrum
+                "{}.CL.Acquisition.Acquisition_begin".format(tags_path): (
+                    "General.date", self._get_date),
+                "{}.CL.Acquisition.Detector_type".format(tags_path): (
+                    "Acquisition_instrument.CL.detector_type", None),
+                "{}.CL.Acquisition.Dwell_time_(s)".format(tags_path): (
+                    "Acquisition_instrument.CL.dwell_time", None),
+                "{}.CL.Acquisition.Start_wavelength_(nm)".format(tags_path): (
+                    "Acquisition_instrument.CL.start_wavelength", None),
+                "{}.CL.Acquisition.Step-size_(nm)".format(tags_path): (
+                    "Acquisition_instrument.CL.step_size", None),
+                # SI 
+                "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Periodicity".format(tags_path): (
+                    "Acquisition_instrument.CL.SI.drift_correction_periodicity", None),
+                "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Units".format(tags_path): (
+                    "Acquisition_instrument.CL.SI.drift_correction_units", None),
+                "{}.SI.Acquisition.SI_Application_Mode.Name".format(tags_path): (
+                    "Acquisition_instrument.CL.SI.mode", None),
+                
+            })
+        elif "DigiScan" in image_tags_dict.keys():
+            mapping.update({
+                "{}.DigiScan.Sample Time".format(tags_path): (
                     "Acquisition_instrument.TEM.dwell_time",
                     lambda x: x / 1e6),
             })
         else:
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
+                "{}.Acquisition.Parameters.Detector.".format(tags_path) +
                 "exposure_s": (
                     "Acquisition_instrument.TEM.Camera.exposure",
                     None),
@@ -1095,18 +1186,21 @@ class ImageObject(object):
         return mapping
 
 
-def file_reader(filename, record_by=None, order=None, lazy=False):
-    """Reads a DM3 file and loads the data into the appropriate class.
-    data_id can be specified to load a given image within a DM3 file that
+def file_reader(filename, record_by=None, order=None, lazy=False,
+                optimize=True):
+    """Reads a DM3/4 file and loads the data into the appropriate class.
+    data_id can be specified to load a given image within a DM3/4 file that
     contains more than one dataset.
 
     Parameters
     ----------
     record_by: Str
         One of: SI, Signal2D
-    order: Str
+    order : Str
         One of 'C' or 'F'
-
+    lazy : bool, default False
+        Load the signal lazily.
+    %s
     """
 
     with open(filename, "rb") as f:
@@ -1140,7 +1234,7 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
 
             post_process = []
             if image.to_spectrum is True:
-                post_process.append(lambda s: s.to_signal1D())
+                post_process.append(lambda s: s.to_signal1D(optimize=optimize))
             post_process.append(lambda s: s.squeeze())
             if lazy:
                 image.filename = filename
@@ -1151,13 +1245,20 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                                     dtype=image.dtype)
             else:
                 data = image.get_data()
+            # in the event there are multiple signals contained within this
+            # DM file, it is important to make a "deepcopy" of the metadata
+            # and original_metadata, since they are changed in each iteration
+            # of the "for image in images" loop, and using shallow copies
+            # will result in the final signal's metadata being used for all
+            # of the contained signals
             imd.append(
                 {'data': data,
                  'axes': axes,
-                 'metadata': mp,
-                 'original_metadata': dm.tags_dict,
+                 'metadata': deepcopy(mp),
+                 'original_metadata': deepcopy(dm.tags_dict),
                  'post_process': post_process,
                  'mapping': image.get_mapping(),
                  })
 
     return imd
+    file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

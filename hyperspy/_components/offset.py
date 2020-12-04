@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,21 +20,27 @@
 import numpy as np
 
 from hyperspy.component import Component
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
 class Offset(Component):
 
-    """Component to add a constant value in the y-axis
+    r"""Component to add a constant value in the y-axis.
 
-    f(x) = k + x
+    .. math::
+    
+        f(x) = k
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     k      |  offset   |
-    +------------+-----------+
+    ============ =============
+    Variable      Parameter 
+    ============ =============
+    :math:`k`     offset   
+    ============ =============
 
+    Parameters
+    -----------
+    offset : float 
+        
     """
 
     def __init__(self, offset=0.):
@@ -49,11 +55,14 @@ class Offset(Component):
         self.offset.grad = self.grad_offset
 
     def function(self, x):
-        return np.ones((len(x))) * self.offset.value
+        return self._function(x, self.offset.value)
+
+    def _function(self, x, o):
+        return np.ones_like(x) * o
 
     @staticmethod
     def grad_offset(x):
-        return np.ones((len(x)))
+        return np.ones_like(x)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
@@ -78,12 +87,11 @@ class Offset(Component):
         """
         super(Offset, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            if binned is True:
+            if self.binned:
                 self.offset.value /= axis.scale
             return True
         else:
@@ -92,9 +100,24 @@ class Offset(Component):
             dc = signal.data
             gi = [slice(None), ] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1, i2)
-            self.offset.map['values'][:] = dc[gi].mean(axis.index_in_array)
-            if binned is True:
+            self.offset.map['values'][:] = dc[tuple(
+                gi)].mean(axis.index_in_array)
+            if self.binned:
                 self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+    def function_nd(self, axis):
+        """%s
+
+        """
+        if self._is_navigation_multidimensional:
+            x = axis[np.newaxis, :]
+            o = self.offset.map['values'][..., np.newaxis]
+        else:
+            x = axis
+            o = self.offset.value
+        return self._function(x, o)
+
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

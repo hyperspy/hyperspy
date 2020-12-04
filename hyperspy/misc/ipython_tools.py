@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,8 +18,9 @@
 
 import __main__
 from distutils.version import LooseVersion
-import os
+
 from time import strftime
+from pathlib import Path
 
 
 def get_ipython():
@@ -73,8 +74,8 @@ def turn_logging_on(verbose=1):
             print("Already logging to " + ip.logger.logfname)
         return
 
-    filename = os.path.join(os.getcwd(), 'hyperspy_log.py')
-    new = not os.path.exists(filename)
+    filename = Path.cwd().joinpath('hyperspy_log.py')
+    new = not filename.is_file()
     ip.logger.logstart(logfname=filename, logmode='append')
     if new:
         ip.logger.log_write(

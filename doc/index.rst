@@ -4,19 +4,19 @@
    contain the root `toctree` directive.
 
 Welcome to HyperSpy's documentation!
-===================================
+====================================
 
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     user_guide/index.rst
+    Developer Guide <dev_guide/index.rst>
     Full HyperSpy API Documentation <api/modules.rst>
-    Developer Guide <dev_guide.rst>
     credits.rst
-    citing.rst    
+    citing.rst
 
-   
+
 Indices and tables
 ==================
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,8 +18,6 @@
 
 
 import numpy as np
-import numpy.testing as nt
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 
@@ -28,7 +26,7 @@ def test_add_phase_ramp():
     s = hs.signals.ComplexSignal2D(
         np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4)))
     s.add_phase_ramp(-1, -1, -4)
-    assert_allclose(s.phase.data, np.zeros_like(s.phase.data),
+    np.testing.assert_allclose(s.phase.data, np.zeros_like(s.phase.data),
                     atol=np.finfo(float).eps * 1.5)
 
 
@@ -36,9 +34,4 @@ def test_lazy_add_phase_ramp():
     s = hs.signals.ComplexSignal2D(
         np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4))).as_lazy()
     s.add_phase_ramp(-1, -1, -4)
-    nt.assert_almost_equal(s.phase.data.compute(), 0)
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)
+    np.testing.assert_almost_equal(s.phase.data.compute(), 0)

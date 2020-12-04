@@ -1,26 +1,30 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of HyperSpy.
+# This file is part of  HyperSpy.
 #
-# HyperSpy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HyperSpy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy.components1d import Gaussian
+from hyperspy.models.model1d import ComponentFit
+from hyperspy.exceptions import SignalDimensionError
 
 
 class TestFitOneComponent:
@@ -36,23 +40,34 @@ class TestFitOneComponent:
         self.model = m
         self.g = g
         self.axis = axis
-        self.rtol = 0.00
 
-    def test_fit_component(self):
+    @pytest.mark.parametrize("signal_range", [(4000, 6000), 'interactive'])
+    def test_fit_component(self, signal_range):
         m = self.model
         axis = self.axis
+        g = self.g
 
         g1 = Gaussian()
         m.append(g1)
-        m.fit_component(g1, signal_range=(4000, 6000))
-        np.testing.assert_allclose(self.g.function(axis),
+        cf = ComponentFit(m, g1, signal_range=signal_range)
+        if signal_range == 'interactive':
+            cf.ss_left_value, cf.ss_right_value = (4000, 6000)
+        cf._fit_fired()
+        np.testing.assert_allclose(g.function(axis),
                                    g1.function(axis),
-                                   rtol=self.rtol,
+                                   rtol=0.0,
                                    atol=10e-3)
 
     def test_component_not_in_model(self):
         with pytest.raises(ValueError):
             self.model.fit_component(self.g)
+
+
+def test_Component_fit_wrong_signal():
+    s = Signal2D(np.arange(2*3*4).reshape(2, 3, 4))
+    m = s.create_model()
+    with pytest.raises(SignalDimensionError):
+        ComponentFit(m, Gaussian())
 
 
 class TestFitSeveralComponent:
@@ -154,24 +169,26 @@ class TestFitSeveralComponent:
                                    rtol=self.rtol,
                                    atol=10e-3)
 
+
 class TestFitSI:
 
     def setup_method(self, method):
-        s = Signal1D(np.random.random((2,2,8)))
+        s = Signal1D(np.random.random((2, 2, 8)))
         m = s.create_model()
         G = Gaussian()
         m.append(G)
 
         self.model = m
         self.G = G
-    
+
     def test_fit_spectrum_image(self):
         m = self.model
         G = self.G
-        m.fit_component(G, signal_range=(2,7), only_current=False)
-        m.axes_manager.indices = (0,0)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.fit_component(G, signal_range=(2, 7), only_current=False,
+                        iterpath='serpentine')
+        m.axes_manager.indices = (0, 0)
         A = G.A.value
-        m.axes_manager.indices = (1,1)
+        m.axes_manager.indices = (1, 1)
         B = G.A.value
         assert not A == B
-        

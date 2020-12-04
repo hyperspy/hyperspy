@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,13 +20,13 @@ import numpy as np
 import pytest
 
 from hyperspy import signals
-
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 baseline_dir = 'plot_mva'
 default_tol = 2.0
 
 
-class TestPlotExplainedVarianceRatio:
+class TestPlotDecomposition:
 
     def setup_method(self, method):
         np.random.seed(1)
@@ -61,6 +61,12 @@ class TestPlotExplainedVarianceRatio:
                                                   xaxis_labeling=xaxis_labeling)
         return ax.get_figure()
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cumulative_explained_variance_ratio(self):
+        ax = self.s.plot_cumulative_explained_variance_ratio()
+        return ax.get_figure()
+
     @pytest.mark.parametrize("n", [3, [3, 4]])
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
@@ -82,3 +88,120 @@ class TestPlotExplainedVarianceRatio:
         return self.s2.plot_decomposition_loadings(n, per_row=per_row,
                                                    title='Loading',
                                                    axes_decor=axes_decor)
+
+@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+class TestPlotClusterAnalysis:
+
+    def setup_method(self, method):
+        np.random.seed(1)
+        # Use prime numbers to avoid fluke equivalences
+        # create 3 random clusters
+        n_samples=[250,100,50]
+        std = [1.0,2.0,0.5]
+        X = []
+        centers = np.array([[-15.0, -15.0,-15.0], [1.0, 1.0,1.0],
+                            [15.0, 15.0, 15.0]])
+        for i, (n, std) in enumerate(zip(n_samples, std)):
+            X.append(centers[i] + np.random.normal(scale=std, size=(n, 3)))
+
+        data = np.concatenate(X)
+
+        # nav1, sig1
+        s = signals.Signal1D(data.reshape(400, 3))
+        # nav2, sig1
+        s2 = signals.Signal1D(data.reshape(40, 10, 3))
+
+        # Run decomposition and cluster analysis
+        s.decomposition()
+        s.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
+                           preprocessing="minmax", random_state=0)
+        s.estimate_number_of_clusters("decomposition",metric="elbow")
+        
+        s2.decomposition()
+        s2.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
+                            preprocessing="minmax", random_state=0)
+        
+        data = np.zeros((2000, 5))
+        data[:250*5:5, :] = 10
+        data[2 + 250*5:350*5:5, :] = 2
+        data[350*5:400*5, 4] = 20
+
+        # nav2, sig2
+        s3 = signals.Signal2D(data.reshape(20, 20, 5, 5))
+        s3.decomposition()
+        s3.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
+                            preprocessing="minmax", random_state=0)
+        
+        self.s = s
+        self.s2 = s2
+        self.s3 = s3
+    
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_labels_nav1_sig1(self):
+        return self.s.plot_cluster_labels()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_signals_nav1_sig1(self):
+        return self.s.plot_cluster_signals()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_distances_nav1_sig1(self):
+        return self.s.plot_cluster_distances()
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_labels_nav2_sig1(self):
+        return self.s2.plot_cluster_labels()
+    
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_signals_nav2_sig1(self):
+        return self.s2.plot_cluster_signals()
+    
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_labels_nav2_sig2(self):
+        return self.s3.plot_cluster_labels()
+
+#    @pytest.mark.mpl_image_compare(
+#        baseline_dir=baseline_dir, tolerance=default_tol)
+#    def test_plot_cluster_distances_nav2_sig2(self):
+#        return self.s3.plot_cluster_distances()
+
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
+ #   @pytest.mark.mpl_image_compare(
+ #       baseline_dir=baseline_dir, tolerance=default_tol)
+ #   def test_plot_cluster_signals_nav2_sig2(self):
+ #       return self.s3.plot_cluster_signals()
+ #   @pytest.mark.skipif(sys.platform == "win32", 
+ #                       reason="does not run on windows 32")
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_cluster_metric(self):
+        ax = self.s.plot_cluster_metric()
+        return ax.get_figure()
+
+    def test_except_nocluster_metric(self):
+        with pytest.raises(ValueError):
+            self.s2.plot_cluster_metric()
+
+
+def test_plot_without_decomposition():
+    sources = np.random.random(size=(5, 100))
+    mixmat = np.random.random((100, 5))
+    s = signals.Signal1D(np.dot(mixmat, sources))
+    with pytest.raises(RuntimeError):
+        s.plot_decomposition_factors()
+    with pytest.raises(RuntimeError):
+        s.plot_decomposition_loadings()
+    with pytest.raises(RuntimeError):
+        s.plot_decomposition_results()
+    s.decomposition()
+    with pytest.raises(RuntimeError):
+        s.plot_bss_factors()
+    with pytest.raises(RuntimeError):
+        s.plot_bss_loadings()

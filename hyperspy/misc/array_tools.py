@@ -1,16 +1,27 @@
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:
-    # happens with Python < 2.7
-    ordict = False
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>
 
-import warnings
+
+from collections import OrderedDict
 import math as math
 import logging
-import numbers
 
 import numpy as np
+from numba import njit
 
 from hyperspy.misc.math_tools import anyfloatin
 
@@ -28,9 +39,9 @@ def get_array_memory_size_in_GiB(shape, dtype):
     dtype : data-type
         The desired data-type for the array.
     """
-    if isinstance(dtype, str):
+    if not isinstance(dtype, np.dtype):
         dtype = np.dtype(dtype)
-    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2. ** 30
+    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2.0 ** 30
 
 
 def are_aligned(shape1, shape2):
@@ -132,6 +143,9 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     Notes
     -----
     Fast re_bin function Adapted from scipy cookbook
+    If rebin function fails with error stating that the function is 'not binned
+    and therefore cannot be rebinned', add binned to metadata with:
+    >>> s.metadata.Signal.binned = True
 
     """
     # Series of if statements to check that only one out of new_shape or scale
@@ -140,11 +154,10 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     if new_shape is None and scale is None:
         raise ValueError("One of new_shape, or scale must be specified")
     elif new_shape is not None and scale is not None:
-        raise ValueError("Only one out of new_shape or scale should be specified.\
-                        Not both.")
+        raise ValueError("Only one out of new_shape or scale should be specified")
     elif new_shape is not None:
         scale = []
-        for i, axis in enumerate(a.shape):
+        for i, _ in enumerate(a.shape):
             scale.append(a.shape[i] / new_shape[i])
     else:
         new_shape = new_shape
@@ -152,6 +165,10 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     # check whether or not interpolation is needed.
     if _requires_linear_rebin(arr=a, scale=scale):
         _logger.debug("Using linear_bin")
+        if np.issubdtype(a.dtype, np.integer):
+            # The _linear_bin function below requires a float dtype
+            # because of the default numpy casting rule ('same_kind').
+            a = a.astype("float", casting="safe", copy=False)
         return _linear_bin(a, scale, crop)
     else:
         _logger.debug("Using standard rebin with lazy support")
@@ -164,9 +181,11 @@ def rebin(a, new_shape=None, scale=None, crop=True):
         # check function wont bin to zero.
         for item in new_shape:
             if item == 0:
-                raise ValueError("One of your dimensions collapses to zero.\
-                Re-adjust your scale values or run code with crop=False to\
-                avoid this.")
+                raise ValueError(
+                    "One of your dimensions collapses to zero. "
+                    "Re-adjust your scale values or run code with "
+                    "crop=False to avoid this error."
+                )
         scale = np.asarray(a.shape) // np.asarray(new_shape)
         if scale.max() < 2:
             return a.copy()
@@ -179,26 +198,20 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                 2 * i + 1 for i in range(lenShape)))
         else:
             import dask.array as da
+
             try:
                 return da.coarsen(np.sum, a, {i: int(f)
                                               for i, f in enumerate(scale)})
-            # we provide slightly better error message in hypersy context
+            # we provide slightly better error message in hyperspy context
             except ValueError:
-                raise ValueError("Rebinning does not align with data dask chunks."
-                                 " Rebin fewer dimensions at a time to avoid this"
-                                 " error")
+                raise ValueError(
+                    "Rebinning does not align with data dask chunks. "
+                    "Rebin fewer dimensions at a time to avoid this error"
+                )
 
 
-def jit_ifnumba(func):
-    try:
-        import numba
-        return numba.jit(func)
-    except ImportError:
-        return func
-
-
-@jit_ifnumba
-def _linear_bin_loop(result, data, scale):
+@njit(cache=True)
+def _linear_bin_loop(result, data, scale):  # pragma: no cover
     for j in range(result.shape[0]):
         # Begin by determining the upper and lower limits of a given new pixel.
         x1 = j * scale
@@ -217,7 +230,7 @@ def _linear_bin_loop(result, data, scale):
             x1 = cx1
             while (x2 - x1) >= 1:
                 # Main binning function to add full pixel values to the data.
-                value += data[x1]
+                value += data[int(x1)]
                 # Update x1 each time.
                 x1 += 1
             if x2 > x1:
@@ -240,8 +253,7 @@ def _linear_bin_loop(result, data, scale):
 
 
 def _linear_bin(dat, scale, crop=True):
-    """
-    Binning of the spectrum image by a non-integer pixel value.
+    """Binning of the spectrum image by a non-integer pixel value.
 
     Parameters
     ----------
@@ -272,16 +284,10 @@ def _linear_bin(dat, scale, crop=True):
     """
     if len(dat.shape) != len(scale):
         raise ValueError(
-            'The list of bins must match the number of dimensions, including',
-            'the energy dimension. In order to not bin in any of these ',
-            'dimensions specifically, simply set the value in shape to 1')
-
-    if not hasattr(_linear_bin_loop, "__numba__"):
-        _logger.warning("Install numba to speed up the computation of `rebin`")
-
-    all_integer = np.all([isinstance(n, numbers.Integral) for n in scale])
-    dtype = (dat.dtype if (all_integer or "complex" in dat.dtype.name)
-             else "float")
+            "The list of bins must match the number of dimensions, including "
+            "the energy dimension. In order to not bin in any of these "
+            "dimensions specifically, simply set the value in shape to 1."
+        )
 
     for axis, s in enumerate(scale):
         # For each iteration of linear_bin the axis being interated over has to
@@ -290,16 +296,21 @@ def _linear_bin(dat, scale, crop=True):
         # The new dimension size is old_size/step, this is rounded down normally
         # but if crop is switched off it is rounded up to the nearest whole
         # number.
+        if not np.issubdtype(s, np.floating):
+            s = float(s)
+
         dim = (math.floor(dat.shape[0] / s) if crop
                else math.ceil(dat.shape[0] / s))
         # check function wont bin to zero.
         if dim == 0:
-            raise ValueError("One of your dimensions collapses to zero.\
-            Re-adjust your scale values or run code with crop=False to\
-            avoid this.")
+            raise ValueError(
+                "One of your dimensions collapses to zero. "
+                "Re-adjust your scale values or run code with "
+                "crop=False to avoid this error."
+            )
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
-        result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
+        result = np.zeros((dim,) + dat.shape[1:])
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.
@@ -326,15 +337,9 @@ def sarray2dict(sarray, dictionary=None):
 
     """
     if dictionary is None:
-        if ordict:
-            dictionary = OrderedDict()
-        else:
-            warnings.warn(
-                "OrderedDict is not available, using a standard dictionary.")
-            dictionary = {}
+        dictionary = OrderedDict()
     for name in sarray.dtype.names:
-        dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 \
-            else sarray[name]
+        dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 else sarray[name]
     return dictionary
 
 
@@ -366,3 +371,32 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
         else:
             sarray[name] = dictionary[name]
     return sarray
+
+
+@njit(cache=True)
+def numba_histogram(data, bins, ranges):
+    """
+    Parameters
+    ----------
+    data : numpy array
+        Input data. The histogram is computed over the flattened array.
+    bins : int
+        Number of bins
+    ranges : (float, float)
+        The lower and upper range of the bins.
+
+    Returns
+    -------
+    hist : array
+        The values of the histogram.
+    """
+    # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
+    hist = np.zeros((bins,), dtype=np.intp)
+    delta = 1 / ((ranges[1] - ranges[0]) / bins)
+
+    for x in data.flat:
+        i = (x - ranges[0]) * delta
+        if 0 <= i < bins:
+            hist[int(i)] += 1
+
+    return hist

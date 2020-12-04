@@ -1,8 +1,34 @@
 # -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 # Set the PyQt API to 2 to avoid incompatibilities between matplotlib
 # traitsui
 
+import logging
+_logger = logging.getLogger(__name__)
+from hyperspy.logger import set_log_level
+from hyperspy.defaults_parser import preferences
+set_log_level(preferences.General.logging_level)
+from hyperspy import datasets
+from hyperspy.utils import *
+from hyperspy.io import load
+from hyperspy import signals
+from hyperspy.Release import version as __version__
 from hyperspy import docstrings
 
 __doc__ = """
@@ -71,16 +97,7 @@ For more details see their doctrings.
 del docstrings
 
 
-from hyperspy.Release import version as __version__
-from hyperspy import signals
-from hyperspy.io import load
-from hyperspy.defaults_parser import preferences
-from hyperspy.utils import *
-from hyperspy import datasets
-from hyperspy.logger import set_log_level
-set_log_level(preferences.General.logging_level)
-import logging
-_logger = logging.getLogger(__name__)
+
 
 
 def get_configuration_directory_path():

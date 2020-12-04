@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,46 +17,46 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os.path
-from os import cpu_count
+import os
 import configparser
 import logging
 
 import traits.api as t
+import matplotlib.pyplot as plt
 
-from hyperspy.misc.config_dir import config_path, os_name, data_path
+from pathlib import Path
+
+from hyperspy.misc.config_dir import config_path, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
-from hyperspy.io_plugins import default_write_ext
 from hyperspy.ui_registry import add_gui_method
 
-defaults_file = os.path.join(config_path, 'hyperspyrc')
-eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
+defaults_file = Path(config_path, 'hyperspyrc')
+eels_gos_files = Path(data_path, 'EELS_GOS.tar.gz')
 
 _logger = logging.getLogger(__name__)
 
 
 def guess_gos_path():
-    if os_name == 'windows':
+    if os.name in ["nt", "dos"]:
         # If DM is installed, use the GOS tables from the default
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
-        gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
-        gos_path = os.path.join(program_files, gos)
+        gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
+        gos_path = Path(program_files, gos)
 
         # Else, use the default location in the .hyperspy forlder
-        if os.path.isdir(gos_path) is False and \
-                'PROGRAMFILES(X86)' in os.environ:
+        if not gos_path.is_dir() and 'PROGRAMFILES(X86)' in os.environ:
             program_files = os.environ['PROGRAMFILES(X86)']
-            gos_path = os.path.join(program_files, gos)
-            if os.path.isdir(gos_path) is False:
-                gos_path = os.path.join(config_path, 'EELS_GOS')
+            gos_path = Path(program_files, gos)
+            if not gos_path.is_dir():
+                gos_path = Path(config_path, 'EELS_GOS')
     else:
-        gos_path = os.path.join(config_path, 'EELS_GOS')
+        gos_path = Path(config_path, 'EELS_GOS')
     return gos_path
 
 
-if os.path.isfile(defaults_file):
+if defaults_file.is_file():
     # Remove config file if obsolated
     with open(defaults_file) as f:
         if 'Not really' in f.readline():
@@ -139,6 +139,39 @@ class GUIs(t.HasTraits):
         desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
 
 
+class PlotConfig(t.HasTraits):
+    saturated_pixels = t.CFloat(0.,
+                                label='Saturated pixels (deprecated)',
+                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
+                                )
+    cmap_navigator = t.Enum(plt.colormaps(),
+                            label='Color map navigator',
+                            desc='Set the default color map for the navigator.',
+                            )
+    cmap_signal = t.Enum(plt.colormaps(),
+                         label='Color map signal',
+                         desc='Set the default color map for the signal plot.',
+                         )
+    dims_024_increase = t.Str('right',
+                              label='Navigate right'
+                              )
+    dims_024_decrease = t.Str('left',
+                              label='Navigate left',
+                              )
+    dims_135_increase = t.Str('down',
+                              label='Navigate down',
+                              )
+    dims_135_decrease = t.Str('up',
+                              label='Navigate up',
+                              )
+    modifier_dims_01 = t.Enum(['ctrl', 'alt', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 1st and 2nd dimensions')  # 0 elem is default
+    modifier_dims_23 = t.Enum(['shift', 'alt', 'ctrl', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
+    modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
+
+
 class EDSConfig(t.HasTraits):
     eds_mn_ka = t.CFloat(130.,
                          label='Energy resolution at Mn Ka (eV)',
@@ -165,10 +198,15 @@ template = {
     'GUIs': GUIs(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
+    'Plot': PlotConfig(),
 }
+
 
 # Set the enums defaults
 template['General'].logging_level = 'WARNING'
+template['Plot'].cmap_navigator = 'gray'
+template['Plot'].cmap_signal = 'gray'
+
 
 # Defaults template definition ends ######################################
 
@@ -200,6 +238,7 @@ def dictionary_from_template(template):
         dictionary[section] = traited_class.get()
     return dictionary
 
+
 config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
@@ -229,23 +268,26 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
-@add_gui_method(toolkey="Preferences")
+@add_gui_method(toolkey="hyperspy.Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
     GUIs = t.Instance(GUIs)
+    Plot = t.Instance(PlotConfig)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 
+
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
     General=template['General'],
     GUIs=template['GUIs'],
+    Plot=template['Plot'],
 )
 
 if preferences.General.logger_on:

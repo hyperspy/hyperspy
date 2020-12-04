@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,7 +23,6 @@ import logging
 import numpy as np
 from scipy.interpolate import splev
 
-from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
@@ -34,7 +33,7 @@ from hyperspy.ui_registry import add_gui_method
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="EELSCLEdge_Component")
+@add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
 class EELSCLEdge(Component):
 
     """EELS core loss ionisation edge from hydrogenic or tabulated
@@ -213,7 +212,7 @@ class EELSCLEdge(Component):
                 self.GOS.onset_energy,
                 self.convergence_angle,
                 self.collection_angle)
-        except:
+        except BaseException:
             # All the parameters may not be defined yet...
             pass
 
@@ -287,8 +286,8 @@ class EELSCLEdge(Component):
         E2 = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         y1 = self.GOS.qint[-2]  # in m**2/bin */
         y2 = self.GOS.qint[-1]  # in m**2/bin */
-        self.r = math.log(y2 / y1) / math.log(E1 / E2)
-        self.A = y1 / E1 ** -self.r
+        self._power_law_r = math.log(y2 / y1) / math.log(E1 / E2)
+        self._power_law_A = y1 / E1 ** -self._power_law_r
 
     def _calculate_knots(self):
         start = self.onset_energy.value
@@ -330,7 +329,7 @@ class EELSCLEdge(Component):
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])
         bsignal[itab] = False
-        cts[bsignal] = self.A * E[bsignal] ** -self.r
+        cts[bsignal] = self._power_law_A * E[bsignal] ** -self._power_law_r
         return cts * self.intensity.value
 
     def grad_intensity(self, E):
