@@ -1183,16 +1183,18 @@ undesired spectral channels from the fitting process:
 * :py:meth:`~.models.model1d.Model1D.remove_signal_range`
 * :py:meth:`~.models.model1d.Model1D.reset_signal_range`
 
-In 2D models, those methods are not implemented (hyperspy 1.6.0). Instead, the
-`m.channel_switches` attribute of a model can be set using boolean arrays of the
-same shape as the data's signal, where True means that the datapoint
+In 2D models, those methods are not implemented and the
+``m.channel_switches`` attribute of a model can be set using boolean arrays of the
+same shape as the data's signal, where ``True`` means that the datapoint
 will be used in the fitting routine.
 
 A signal range can be set using axes units by creating another signal2D object:
+The example below shows how a boolean array can be easily created from the
+signal and how the ``isig`` syntax can be used to define the signal range.
 
 .. code-block:: python
 
-    >>> #Creating a sample 2D gaussian dataset
+    >>> # Create a sample 2D gaussian dataset
     >>> g = hs.model.components2D.Gaussian2D(
     ...   A=1, centre_x=-5.0, centre_y=-5.0, sigma_x=1.0, sigma_y=2.0,)
 
@@ -1207,15 +1209,17 @@ A signal range can be set using axes units by creating another signal2D object:
     >>> im.axes_manager[1].scale = scale
     >>> im.axes_manager[1].offset = -10
 
-    >>> m = im.create_model() #Model initialisation
+    >>> m = im.create_model() # Model initialisation
     >>> gt = hs.model.components2D.Gaussian2D()
     >>> m.append(gt)
 
-    >>> sr = im._deepcopy_with_new_data( #signal range mask object
-    ...   np.zeros(im.axes_manager.signal_shape,dtype='bool'))
-    >>> sr.isig[-7.:-3.,-9.:-1.] = True
+    >>> # Create a boolean signal of the same shape as the signal space of im
+    >>> # and with all values set to `False`.
+    >>> signal_mask = hs.signals.Signal2D(np.zeros_like(im(), dtype=bool))
+    >>> # Specify the signal range using the isig syntax
+    >>> signal_mask.isig[-7.:-3.,-9.:-1.] = True
 
-    >>> m.channel_switches = sr.data #setting channel switches
+    >>> m.channel_switches = signal_mask.data # Set channel switches
     >>> m.fit()
 
 .. _model.multidimensional-label:
