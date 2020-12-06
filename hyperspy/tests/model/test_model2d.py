@@ -156,7 +156,8 @@ def test_Model2D_NotImplementedError_plot():
         with pytest.raises(NotImplementedError):
             _ = getattr(m, member_f)()
 
-    for member_f in ["_plot_component", "_connect_component_line"]:
+    for member_f in ["_plot_component", "_connect_component_line",
+                     "_disconnect_component_line"]:
         with pytest.raises(NotImplementedError):
             _ = getattr(m, member_f)(None)
 
