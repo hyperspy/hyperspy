@@ -29,7 +29,6 @@ import warnings
 import numpy as np
 import logging
 from functools import partial
-=======
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
 
