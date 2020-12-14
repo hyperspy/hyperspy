@@ -736,6 +736,23 @@ __ plot.spectra_
     functionality is only enabled if a ``matplotlib`` backend that supports the
     ``button_press_event`` in the figure canvas is being used.
 
+It is also possible to plot multiple images overlayed on the same figure using
+the :py:func:`~.drawing.utils.plot_overlay_images` function. Using the same
+data as above, the Fe and Pt signals can be plotted using different colours.
+Any color can be input via matplotlib color characters or hex values.
+
+.. code-block:: python
+
+    >>> si_EDS = hs.load("core_shell.hdf5")
+    >>> im = si_EDS.get_lines_intensity()
+    >>> hs.plot.plot_overlay_images(im, colors=['r','b'], alphas=[1.0,1.0],
+    >>>                             legend_list=['Fe','Pt'], scalebar=True,
+    >>>                             axes_decor='off')
+
+.. figure::  images/plot_images_overlay.png
+  :align:   center
+  :width:   500
+
 .. _plot.spectra:
 
 Plotting several spectra
