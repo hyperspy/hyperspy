@@ -1601,3 +1601,5 @@ def plot_overlay_images(images, colors, alphas, legend_list=None,
 
     if legend_list != None:
         plt.legend(handles=patches)
+    
+    return(ax)
