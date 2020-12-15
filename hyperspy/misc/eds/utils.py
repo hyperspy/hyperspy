@@ -547,10 +547,10 @@ def quantification_zeta_factor(intensities,
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor, absorption_correction in zip(intensities, zfactors, absorption_correction):
-        sumzi = sumzi + intensity * zfactor * absorption_correction
-    for i, (intensity, zfactor, absorption_correction) in enumerate(zip(intensities, zfactors, absorption_correction)):
-        composition[i] = intensity * zfactor * absorption_correction / sumzi
+    for intensity, zfactor, acf in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + intensity * zfactor * acf
+    for i, (intensity, zfactor, acf) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * acf / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
 
