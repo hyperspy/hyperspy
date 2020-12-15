@@ -63,3 +63,10 @@ class TestMa():
         r.mask(signal, outside=outside)
         assert np.ma.is_masked(signal.data)
         r.mask(lazy_signal,outside=outside)
+
+    def test_numpy(self,signal, lazy_signal):
+        #np.ma.masked_less(signal,2)
+
+        signal = np.add(signal,signal)
+        signal = np.add(lazy_signal, lazy_signal)
+        print(signal)

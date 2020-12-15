@@ -1918,6 +1918,13 @@ class BaseSignal(FancySlicing,
 
 # TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
 # np.log(s) -> da.log(s.data) wrapped.
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+
+        print(ufunc)
+        print(method)
+        print(inputs)
+        print(kwargs)
+        print("u funky")
     def __array__(self, dtype=None):
         if dtype:
             return self.data.astype(dtype)
