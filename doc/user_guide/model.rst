@@ -1188,7 +1188,6 @@ In 2D models, those methods are not implemented and the
 same shape as the data's signal, where ``True`` means that the datapoint
 will be used in the fitting routine.
 
-A signal range can be set using axes units by creating another signal2D object:
 The example below shows how a boolean array can be easily created from the
 signal and how the ``isig`` syntax can be used to define the signal range.
 
