@@ -68,7 +68,7 @@ be estimated using curve fitting by setting ``fast=False``.
 Example of usage:
 
 .. code-block:: python
-    
+
     s = hs.datasets.artificial_data.get_core_loss_eels_signal(add_powerlaw=True)
     s.remove_background(zero_fill=False)
 
@@ -124,13 +124,33 @@ Spike removal
 
 :py:meth:`~._signals.signal1d.Signal1D.spikes_removal_tool` provides an user
 interface to remove spikes from spectra. The ``derivative histogram`` allows to
-identify the appropriate threshold.
+identify the appropriate threshold. It is possible to use this tool
+on a specific interval of the data by :ref:`slicing the data
+<signal.indexing>`. For example, to use this tool in the signal between
+indices 8 and 17:
+
+.. code-block:: python
+
+   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
+   >>> s.isig[8:17].spikes_removal_tool()
+
+
+The options ``navigation_mask`` or ``signal_mask`` provide more flexibility in the
+selection of the data, but these require a mask (booleen array) as parameter, which needs
+to be created manually:
+
+.. code-block:: python
+
+   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
+   >>> mask = (s.data > 50) & (s.data < 150)
+   >>> s.spikes_removal_tool(signal_mask=mask)
 
 .. figure::  images/spikes_removal_tool.png
    :align:   center
    :width:   500
 
    Spikes removal tool.
+
 
 Peak finding
 ------------

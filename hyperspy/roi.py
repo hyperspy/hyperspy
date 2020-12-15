@@ -491,8 +491,7 @@ class BaseInteractiveROI(BaseROI):
             # disconnect events which has been added when
             if self.update in signal.axes_manager.events.any_axis_changed.connected:
                 signal.axes_manager.events.any_axis_changed.disconnect(
-                    self.update,
-                    [])
+                    self.update)
 
 
     def remove_widget(self, signal):

@@ -214,6 +214,20 @@ class Test_quantification:
             [22.70779, 22.70779],
             [22.70779, 22.70779]]), atol=1e-3)
 
+    def test_quant_lorimer_mask(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        mask = np.array([[1, 1], [0, 0]])
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               navigation_mask=mask)
+        np.testing.assert_allclose(res[0].data, np.array([
+            [0, 0],
+            [22.70779, 22.70779]]), atol=1e-3)
+
     def test_quant_lorimer_warning(self):
         s = self.signal
         method = 'CL'

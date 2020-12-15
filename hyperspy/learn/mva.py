@@ -232,6 +232,8 @@ class MVA:
         * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
 
         """
+        from hyperspy.signal import BaseSignal
+
         # Check data is suitable for decomposition
         if self.data.dtype.char not in np.typecodes["AllFloat"]:
             raise TypeError(

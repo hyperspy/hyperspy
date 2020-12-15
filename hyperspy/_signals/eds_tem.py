@@ -343,7 +343,8 @@ class EDSTEM_mixin:
             The navigation locations marked as True are not used in the
             quantification. If float is given the vacuum_mask method is used to
             generate a mask with the float value as threhsold.
-            Else provides a signal with the navigation shape.
+            Else provides a signal with the navigation shape. Only for the
+            'Cliff-Lorimer' method.
         closing: bool
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
@@ -390,9 +391,7 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
-        elif navigation_mask is not None:
-            navigation_mask = navigation_mask.data
+            navigation_mask = self.vacuum_mask(navigation_mask, closing)
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
@@ -431,7 +430,8 @@ class EDSTEM_mixin:
             quantification_method = utils_eds.quantification_cliff_lorimer
             kwargs = {"intensities" : int_stack.data,
                       "kfactors" : factors,
-                      "absorption_correction" : abs_corr_factor}
+                      "absorption_correction" : abs_corr_factor,
+                      "mask": navigation_mask}
 
         elif method == 'zeta':
             quantification_method = utils_eds.quantification_zeta_factor
@@ -579,6 +579,11 @@ class EDSTEM_mixin:
         opnening: bool
             If true, applied a morphologic opening to the mask
 
+        Returns
+        -------
+        mask: signal
+            The mask of the region
+
         Examples
         --------
         >>> # Simulate a spectrum image with vacuum region
@@ -589,11 +594,6 @@ class EDSTEM_mixin:
         >>> si = hs.stack([s]*3 + [s_vac])
         >>> si.vacuum_mask().data
         array([False, False, False,  True], dtype=bool)
-
-        Return
-        ------
-        mask: signal
-            The mask of the region
         """
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)

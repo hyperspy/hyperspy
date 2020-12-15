@@ -148,3 +148,13 @@ HISTOGRAM_MAX_BIN_ARGS = \
            When estimating the bins using one of the str methods, the
            number of bins is capped by this number to avoid a MemoryError
            being raised by :py:func:`numpy.histogram`."""
+
+SIGNAL_MASK_ARG = \
+    """signal_mask: bool array
+            Restricts the operation to the signal locations not marked
+            as True (masked)."""
+
+NAVIGATION_MASK_ARG = \
+    """navigation_mask: bool array
+            Restricts the operation to the navigation locations not marked
+            as True (masked)."""
