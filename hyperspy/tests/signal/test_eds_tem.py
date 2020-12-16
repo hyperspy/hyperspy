@@ -405,7 +405,7 @@ class Test_quantification:
         s = self.signal
         method = 'cross_section'
         zfactors = [20, 50]
-        factors = hs.hyperspy.misc.eds.utils.zeta_to_edx_cross_section(zfactors, ['Al', 'Zn'])
+        factors = utils_eds.zeta_to_edx_cross_section(zfactors, ['Al', 'Zn'])
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
                                absorption_correction=True)
