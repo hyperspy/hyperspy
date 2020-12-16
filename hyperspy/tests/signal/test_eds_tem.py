@@ -376,7 +376,7 @@ class Test_quantification:
              [36.2969, 36.2969]]), atol=1e-3)
 
 
-    def nt_cross_section(self):
+    def test_quant_cross_section(self):
         s = self.signal
         method = 'cross_section'
         factors = [3, 5]
@@ -404,17 +404,17 @@ class Test_quantification:
     def test_quant_cross_section_ac(self):
         s = self.signal
         method = 'cross_section'
-        factors = [3, 5]
+        zfactors = [20, 50]
+        factors = hs.hyperspy.misc.eds.utils.zeta_to_edx_cross_section(zfactors, ['Al', 'Zn'])
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
                                absorption_correction=True)
-        zfactors = utils_eds.edx_cross_section_to_zeta(factors, ['Al', 'Zn'])
         res2 = s.quantification(intensities, method='zeta',
                                 factors=zfactors,
                                 absorption_correction=True)
-        np.testing.assert_allclose(res[0][0].data, np.array(
-            [[49.4889, 49.4889],
-             [49.4889, 49.4889]]), atol=1e-3)
+        np.testing.assert_allclose(res[0][1].data, np.array(
+            [[44.02534, 44.02534],
+             [44.02534, 44.02534]]), atol=1e-3)
         np.testing.assert_allclose(res2[0][0].data, res[0][0].data, atol=1e-3)
 
     def eros(self):
