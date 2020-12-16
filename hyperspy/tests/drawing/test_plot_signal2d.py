@@ -567,7 +567,7 @@ def test_plot_autoscale_data_changed(autoscale):
 def test_plot_overlay():
     s1 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     s2 = hs.signals.Signal2D(np.arange(99,-1,-1).reshape(10, 10))
-    ax = hs.plot.plot_overlay_images([s1,s2], ['r','b'], [0.9,0.9],
-                                     scalebar=True, legend_list=['r','b'])
+    ax = hs.plot.plot_images([s1,s2], overlay=True,  colors=['r','b'],
+                             alphas=[0.9,0.9], scalebar='all', label=['r','b'])
     
-    return ax.figure
+    return ax[0].figure
