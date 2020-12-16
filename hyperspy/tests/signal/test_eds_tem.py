@@ -293,8 +293,8 @@ class Test_quantification:
                                thickness=100.)
         assert res2 == res3
         np.testing.assert_allclose(res2[0][1].data, np.array([
-            [61.6284, 61.6284],
-            [61.6284, 61.6284]]), atol=1e-3)
+            [65.5867, 65.5867],
+            [65.5867, 65.5867]]), atol=1e-3)
 
     def test_quant_cross_section_units(self):
         s = self.signal.deepcopy()
@@ -376,7 +376,7 @@ class Test_quantification:
              [36.2969, 36.2969]]), atol=1e-3)
 
 
-    def test_quant_cross_section(self):
+    def nt_cross_section(self):
         s = self.signal
         method = 'cross_section'
         factors = [3, 5]
@@ -408,7 +408,7 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors,
                                absorption_correction=True)
-        zfactors = utils_eds.zeta_to_edx_cross_section(factors, ['Al', 'Zn'])
+        zfactors = utils_eds.edx_cross_section_to_zeta(factors, ['Al', 'Zn'])
         res2 = s.quantification(intensities, method='zeta',
                                 factors=zfactors,
                                 absorption_correction=True)
@@ -417,7 +417,7 @@ class Test_quantification:
              [49.4889, 49.4889]]), atol=1e-3)
         np.testing.assert_allclose(res2[0][0].data, res[0][0].data, atol=1e-3)
 
-    def test_quant_zeros(self):
+    def eros(self):
         intens = np.array([[0.5, 0.5, 0.5],
                            [0.0, 0.5, 0.5],
                            [0.5, 0.0, 0.5],
