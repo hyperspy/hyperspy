@@ -654,7 +654,7 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle,
     #calculate the total_mass in kg/m^2, or mass thickness.
     total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
     for i, (weight) in enumerate(atomic_weights):
-        total_mass += (number_of_atoms[i] * weight / Av / 1E-3 / probe_area / 1E-18)
+        total_mass += (number_of_atoms[i] * weight / Av / 1E3 / probe_area / 1E-18)
     # determine mass absorption coefficients and convert from cm^2/g to m^2/kg.
     to_stack = material.mass_absorption_mixture(
         weight_percent=material.atomic_to_weight(composition)
