@@ -492,9 +492,8 @@ def plot_images(images,
                 vmax=None,
                 overlay=False,
                 overlay_title=None,
-                colors=[],
-                alphas=[],
-                legend='auto',
+                colors='auto',
+                alphas=1.0,
                 legend_picking=True,
                 legend_loc='upper right',
                 **kwargs):
@@ -609,7 +608,7 @@ def plot_images(images,
         value. It must be in the range [0, 100]
         See :py:func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
-        If float of integer, keep this value as bounds.
+        If float or integer, keep this value as bounds.
     overlay : boolean, optional
         If True, overlays the images with different colors rather than plotting
         each image as a subplot.
@@ -620,13 +619,10 @@ def plot_images(images,
 	    `colors` should be a list compromising either characters or hex
 		strings, corresponding to colors acceptable to matplotlib. Details
 		can be found at https://matplotlib.org/2.0.2/api/colors_api.html.
-    alphas : list of floats, optional
-        `alphas` should be a list of floats corresponding to the alpha
-		value of each color.
-    legend: {None, list of str, 'auto'}, optional
-       If list of string, legend for "cascade" or title for "mosaic" is
-       displayed. If 'auto', the title of each spectra (metadata.General.title)
-       is used.
+        If 'auto', colors will be taken from matplotlib.colors.BASE_COLORS.
+    alphas : float or list of floats, optional
+        `alphas` should be a single float value or a list of floats 
+        corresponding to the alpha value of each color.
     legend_picking: bool, optional
         If True (default), a spectrum can be toggled on and off by clicking on
         the legended line.
@@ -848,7 +844,13 @@ def plot_images(images,
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
         k = max(plt.rcParams['figure.figsize']) / max(per_row, rows)
-        f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
+        if overlay:
+            shape = images[0].data.shape
+            dpi = 100
+            sampling_factor = 10
+            f = plt.figure(figsize=[sampling_factor*v/dpi for v in shape], dpi=dpi)
+        else:
+            f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
     else:
         f = fig
 
@@ -925,32 +927,45 @@ def plot_images(images,
         original_cmap = plt.rcParams['image.cmap']
         plt.rcParams['image.cmap'] = 'gray'
         import matplotlib.patches as mpatches
-        ax = f.add_subplot(1, 1, 1)
+        ax = f.add_axes([0, 0, 1, 1])
         patches = []
         
         #If no colors are selected use BASE_COLORS
-        if colors == []:
+        if colors == 'auto':
+            colors = []
             for i in range(len(images)):
                 colors.append(list(BASE_COLORS)[i])
         
         #If no alphas are selected use 1.0
-        if alphas == []:
+        if isinstance(alphas, float):
+            alphas_list = []
             for i in range(len(images)):
-                alphas.append(1.0)
+                alphas_list.append(alphas)
+            alphas=alphas_list
     
         ax.imshow(np.zeros_like(images[0].data))
         
         #Loop through each image
         for i, im in enumerate(images):
+            
+            #Set vmin and vmax
+            centre = next(centre_colormaps)   # get next value for centreing
+            data = im.data
+            _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
+            _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
+            _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
+            if centre:
+                _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+                
             cols = ['k', colors[i]]
             cmap=LinearSegmentedColormap.from_list('cmap'+str(i), cols)
             my_cmap = cmap(np.arange(cmap.N))
             my_cmap[:,-1] = np.linspace(0.3, 1, cmap.N)
             my_cmap = ListedColormap(my_cmap)
-            ax.imshow(im.data, vmin=im.data.min(), vmax=im.data.max(),
+            ax.imshow(im.data, vmin=_vmin, vmax=_vmax,
                       cmap=my_cmap, alpha=alphas[i], **kwargs)
     
-            if legend is not None:
+            if label is not None:
                 if shared_titles:
                     legend_label = label_list[i][div_num - 1:]
                 else:
@@ -959,13 +974,11 @@ def plot_images(images,
                 patches.append(mpatches.Patch(color=colors[i],
                                               label=legend_label))
                 
-        if legend is not None:
+        if label is not None:
             plt.legend(handles=patches, loc=legend_loc)
             if legend_picking is True:
                 animate_legend(fig=f, ax=ax, plot_type='images')
         
-        if axes_decor == 'off':
-            ax.margins=(0,0)
         set_axes_decor(ax, axes_decor)
         
         if not overlay_title:
