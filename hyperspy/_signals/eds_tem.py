@@ -481,11 +481,12 @@ class EDSTEM_mixin:
                 number_of_atoms = composition._deepcopy_with_new_data(results[1])
 
             if method == 'cross_section':
-                abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
+                if absorption_correction:
+                    abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
                                                        number_of_atoms.split(),
                                                        toa,
                                                        probe_area)
-                kwargs["absorption_correction"] = abs_corr_factor
+                    kwargs["absorption_correction"] = abs_corr_factor
             else:
                 if absorption_correction:
                     abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
