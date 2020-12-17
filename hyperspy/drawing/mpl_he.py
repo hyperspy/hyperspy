@@ -49,7 +49,7 @@ class MPL_HyperExplorer(object):
         self.pointer = None
         self._pointer_nav_dim = None
 
-    def plot_signal(self, signal_widget=None, **kwargs):
+    def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.
         if self.axes_manager.signal_dimension == 0:
@@ -59,7 +59,7 @@ class MPL_HyperExplorer(object):
             for axis in self.axes_manager.signal_axes:
                 axis.offset = -axis.high_value / 2.
 
-    def plot_navigator(self, title=None, navigator_widget=None, **kwargs):
+    def plot_navigator(self, title=None, **kwargs):
         """
         Parameters
         ----------
@@ -82,7 +82,7 @@ class MPL_HyperExplorer(object):
 
         if len(self.navigator_data_function().shape) == 1:
             # Create the figure
-            sf = signal1d.Signal1DFigure(title=title, widget=navigator_widget)
+            sf = signal1d.Signal1DFigure(title=title, **kwargs)
             axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = '%s' % str(axis)
             if axis.units is not Undefined:
@@ -144,7 +144,7 @@ class MPL_HyperExplorer(object):
 
             if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
                 kwargs["cmap"] = preferences.Plot.cmap_navigator
-            imf.plot(widget=navigator_widget, **kwargs)
+            imf.plot(**kwargs)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 
@@ -182,58 +182,61 @@ class MPL_HyperExplorer(object):
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
 
+        navigator_kwds = kwargs.pop('navigator_kwds', {})
         # widgets can be specified to contain the figure
-        navigator_widget = kwargs.pop('navigator_widget', None)
-        signal_widget = kwargs.pop('signal_widget', None)
+        navigator_widget = navigator_kwds.get('widget', None)
+        signal_widget = kwargs.get('widget', None)
 
-        display_both_widgets_now = False # display Outputs now or later
-        display_nav_widget_now = False
-        display_sig_widget_now = False
+        backend = mpl.get_backend() # matplotlib plotting backend
 
-        if "ipympl" in mpl.get_backend() and preferences.Plot.enable_widget_plotting:
+        if "ipympl" in backend:
             from ipywidgets.widgets import HBox, VBox, Output
+            # If widgets do not already exist, we will `display` them at the end
             display_nav_widget_now = not navigator_widget
             display_sig_widget_now = not signal_widget
-            display_both_widgets_now = display_nav_widget_now and display_sig_widget_now
             
             # If not existing already, create output widgets
             navigator_widget = Output() if not navigator_widget else navigator_widget
             signal_widget = Output() if not signal_widget else signal_widget
+            navigator_kwds['widget'] = navigator_widget
+            kwargs['widget'] = signal_widget
+
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
                 self.pointer.connect_navigate()
-            self.plot_navigator(navigator_widget=navigator_widget, **kwargs.pop('navigator_kwds', {}))
+            self.plot_navigator(**navigator_kwds)
             if pointer is not None:
                 self.navigator_plot.events.closed.connect(
                     self.pointer.disconnect, [])
-        self.plot_signal(signal_widget=signal_widget, **kwargs)
+        self.plot_signal(**kwargs)
 
-        if display_both_widgets_now:
-            plot_style = preferences.Plot.widget_plot_style
-            if not self.navigator_plot:
+        if "ipympl" in backend:
+            if display_nav_widget_now and display_sig_widget_now:
+                plot_style = preferences.Plot.widget_plot_style
+                if not self.navigator_plot:
+                    display(signal_widget)
+                else:
+                    # auto margins makes the figures align to their "middles"
+                    if plot_style == "horizontal":
+                        margin = "auto 0px auto 0px"
+                        navigator_widget.layout.margin = margin
+                        signal_widget.layout.margin = margin
+                        widget_box = HBox([navigator_widget, signal_widget])
+                    else:
+                        margin = "0px auto 0px auto"
+                        navigator_widget.layout.margin = margin
+                        signal_widget.layout.margin = margin
+                        widget_box = VBox([navigator_widget, signal_widget])
+                    display(widget_box)
+            elif display_nav_widget_now:
+                display(navigator_widget)
+            elif display_sig_widget_now:
                 display(signal_widget)
             else:
-                # auto margins makes the figures align to their "middles"
-                if plot_style == "horizontal":
-                    margin = "auto 0px auto 0px"
-                    navigator_widget.layout.margin = margin
-                    signal_widget.layout.margin = margin
-                    box = HBox([navigator_widget, signal_widget])
-                else:
-                    margin = "0px auto 0px auto"
-                    navigator_widget.layout.margin = margin
-                    signal_widget.layout.margin = margin
-                    box = VBox([navigator_widget, signal_widget])
-                display(box)
-        elif display_nav_widget_now:
-            display(navigator_widget)
-        elif display_sig_widget_now:
-            display(signal_widget)
-        else:
-            pass
+                pass
 
 
     def assign_pointer(self):

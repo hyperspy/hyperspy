@@ -40,7 +40,7 @@ class HistogramTilePlot(BlittedFigure):
 
     def plot(self, db, **kwargs):
         if self.figure is None:
-            self.create_figure()
+            self.create_figure(widget=kwargs.pop('widget', None))
         ncomps = len(db)
 
         if not ncomps:

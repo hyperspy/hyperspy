@@ -23,18 +23,17 @@ from hyperspy.defaults_parser import preferences
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
-    def plot_signal(self, signal_widget=None, **kwargs):
+    def plot_signal(self, **kwargs):
         """
         Parameters
         ----------
-        signal_widget : widget or None
-            ipywidgets output widget to place the figure in (optional)
         **kwargs : dict
             The kwargs are passed to plot method of the image figure.
 
         """
+
         if self.signal_plot is not None:
-            self.signal_plot.plot(widget=signal_widget, **kwargs)
+            self.signal_plot.plot(**kwargs)
             return
         super().plot_signal()
         imf = image.ImagePlot()
@@ -54,7 +53,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         if "cmap" not in kwargs.keys() or kwargs['cmap'] is None:
             kwargs["cmap"] = preferences.Plot.cmap_signal
-        imf.plot(widget=signal_widget, **kwargs)
+        imf.plot(**kwargs)
         self.signal_plot = imf
 
         if imf.figure is not None:

@@ -276,7 +276,7 @@ class ImagePlot(BlittedFigure):
 
         return vmin, vmax
 
-    def create_figure(self, max_size=None, min_size=2, widget=None, **kwargs):
+    def create_figure(self, max_size=None, min_size=2, **kwargs):
         """Create matplotlib figure
 
         The figure size is automatically computed by default, taking into
@@ -308,7 +308,7 @@ class ImagePlot(BlittedFigure):
             kwargs["figsize"] = figsize.clip(min_size, max_size)
         if "disable_xyscale_keys" not in kwargs:
             kwargs["disable_xyscale_keys"] = True
-        super().create_figure(widget=widget, **kwargs)
+        super().create_figure(**kwargs)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -322,7 +322,7 @@ class ImagePlot(BlittedFigure):
         if self.axes_off:
             self.ax.axis('off')
 
-    def plot(self, widget=None, data_function_kwargs={}, **kwargs):
+    def plot(self, data_function_kwargs={}, **kwargs):
         """Plot the figure
 
         Arguments:
@@ -331,7 +331,7 @@ class ImagePlot(BlittedFigure):
         self.data_function_kwargs = data_function_kwargs
         self.configure()
         if self.figure is None:
-            self.create_figure(widget=widget)
+            self.create_figure(widget=kwargs.pop('widget', None))
             self.create_axis()
 
         if (not self.axes_manager or self.axes_manager.navigation_size == 0):

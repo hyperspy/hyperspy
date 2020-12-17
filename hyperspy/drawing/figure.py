@@ -43,7 +43,7 @@ class BlittedFigure(object):
         self.title = ""
         self.ax_markers = list()
 
-    def create_figure(self, widget=None, **kwargs):
+    def create_figure(self, **kwargs):
         """Create matplotlib figure
 
         Parameters
@@ -53,6 +53,7 @@ class BlittedFigure(object):
             All keyword arguments are passed to ``plt.figure``.
 
         """
+        widget = kwargs.pop('widget', None)
         self.figure = utils.create_figure(
             window_title="Figure " + self.title if self.title else None, 
             widget=widget,

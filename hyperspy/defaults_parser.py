@@ -140,12 +140,9 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    enable_widget_plotting = t.CBool(
-        False,
-        label='Enable widget plotting: Use the ipympl-based widget plotting for horizontal plotting. Requires ipywidgets_gui_hyperspy.')
     widget_plot_style = t.Enum(
         ['horizontal', 'vertical'],
-        label='ipympl plot style:')
+        label='Widget plot style: (requires jupyter-matplotlib)')
     saturated_pixels = t.CFloat(0.,
                                 label='Saturated pixels (deprecated)',
                                 desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'

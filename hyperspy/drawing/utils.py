@@ -151,15 +151,10 @@ def create_figure(window_title=None,
     fig : plt.figure
 
     """
-    if "ipympl" in mpl.get_backend() and preferences.Plot.enable_widget_plotting:
-        # this output is currently not used, just used for hiding.
-        # instead we get at the figure canvas widgets themselves later
-        from ipywidgets.widgets import Output
-        output_widget = widget if widget else Output()
-        with output_widget:
+    if widget:
+        with widget:
             fig = plt.figure(**kwargs)
     else:
-        output_widget = None
         fig = plt.figure(**kwargs)
     if window_title is not None:
         # remove non-alphanumeric characters to prevent file saving problems
