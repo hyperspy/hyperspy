@@ -1579,6 +1579,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
              norm="auto",
              axes_manager=None,
              navigator_kwds={},
+             SEEHERE={},
+
              **kwargs):
         """%s
         %s
@@ -1594,6 +1596,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                      norm=norm,
                      axes_manager=axes_manager,
                      navigator_kwds=navigator_kwds,
+                     SEEHERE=SEEHERE,
                      **kwargs)
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT1D_DOCSTRING)

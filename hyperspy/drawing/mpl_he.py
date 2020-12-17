@@ -183,6 +183,8 @@ class MPL_HyperExplorer(object):
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
 
         navigator_kwds = kwargs.pop('navigator_kwds', {})
+        SEEHERE = kwargs.pop('SEEHERE', {})
+
         # widgets can be specified to contain the figure
         navigator_widget = navigator_kwds.get('widget', None)
         signal_widget = kwargs.get('widget', None)
@@ -199,6 +201,8 @@ class MPL_HyperExplorer(object):
             navigator_widget = Output() if not navigator_widget else navigator_widget
             signal_widget = Output() if not signal_widget else signal_widget
             navigator_kwds['widget'] = navigator_widget
+            SEEHERE['THIS ISNT'] = "VISIBLE ON FIRST PLOT"
+
             kwargs['widget'] = signal_widget
 
         if self.pointer is None:
