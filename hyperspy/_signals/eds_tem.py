@@ -481,11 +481,12 @@ class EDSTEM_mixin:
                 number_of_atoms = composition._deepcopy_with_new_data(results[1])
 
             if method == 'cross_section':
-                abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
+                if absorption_correction:
+                    abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
                                                        number_of_atoms.split(),
                                                        toa,
                                                        probe_area)
-                kwargs["absorption_correction"] = abs_corr_factor
+                    kwargs["absorption_correction"] = abs_corr_factor
             else:
                 if absorption_correction:
                     abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
@@ -530,7 +531,7 @@ class EDSTEM_mixin:
             composition[i].metadata.set_item(
                 "Sample.xray_lines", ([xray_line]))
             if plot_result and composition[i].axes_manager.navigation_size == 1:
-                c = composition[i].data
+                c = np.float(composition[i].data)
                 print(f"{element} ({xray_line}): Composition = {c:.2f} percent")
         #For the cross section method this is repeated for the number of atom maps
         if method == 'cross_section':
