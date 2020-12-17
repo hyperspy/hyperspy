@@ -397,7 +397,7 @@ class Test_quantification:
                                    atol=1e-3)
         np.testing.assert_allclose(res2[0][0].data, res[0][0].data, atol=1e-3)
 
-    def eros(self):
+    def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
                            [0.0, 0.5, 0.5],
                            [0.5, 0.0, 0.5],
