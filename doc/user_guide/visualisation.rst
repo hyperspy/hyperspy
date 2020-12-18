@@ -748,8 +748,7 @@ hex values.
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(im, colors=['r','b'], alphas=[1.0,1.0],
-    >>>                     label=['Fe','Pt'], scalebar='all',
+    >>> hs.plot.plot_images(im,scalebar='all', overlay=True, suptitle=False, 
     >>>                     axes_decor='off')
 
 .. figure::  images/plot_images_overlay.png

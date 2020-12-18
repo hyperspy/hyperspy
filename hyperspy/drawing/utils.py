@@ -30,7 +30,7 @@ import numpy as np
 import logging
 from functools import partial
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
-from matplotlib.colors import BASE_COLORS
+from matplotlib.colors import BASE_COLORS, to_rgba
 
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
@@ -491,11 +491,11 @@ def plot_images(images,
                 vmin=None,
                 vmax=None,
                 overlay=False,
-                overlay_title=None,
                 colors='auto',
                 alphas=1.0,
                 legend_picking=True,
                 legend_loc='upper right',
+                pixsize_factor = 10,
                 **kwargs):
     """Plot multiple images either as sub-images or overlayed in one figure.
 
@@ -612,9 +612,6 @@ def plot_images(images,
     overlay : boolean, optional
         If True, overlays the images with different colors rather than plotting
         each image as a subplot.
-    overlay_title: boolean, optional
-        If True, use the default title options.
-        If False, don't plot a title.
     colors : list of char or hex string, optional
 	    `colors` should be a list compromising either characters or hex
 		strings, corresponding to colors acceptable to matplotlib. Details
@@ -629,6 +626,10 @@ def plot_images(images,
     legend_loc : {str, int}, optional
         This parameter controls where the legend is placed on the figure;
         see the pyplot.legend docstring for valid values
+    pixsize_factor : int, optional
+        Sets the size of the figure when plotting an overlay image. The higher
+        the number the larger the figure and therefore a greater number of 
+        pixels are used.
     **kwargs, optional
         Additional keyword arguments passed to matplotlib.imshow()
 
@@ -847,8 +848,8 @@ def plot_images(images,
         if overlay:
             shape = images[0].data.shape
             dpi = 100
-            sampling_factor = 10
-            f = plt.figure(figsize=[sampling_factor*v/dpi for v in shape], dpi=dpi)
+            f = plt.figure(figsize=[pixsize_factor*v/dpi for v in shape],
+                           dpi=dpi)
         else:
             f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
     else:
@@ -914,6 +915,11 @@ def plot_images(images,
     # Replot: create a list to store references to the images
     replot_ims = []
     
+    def transparent_single_color_cmap(color):
+        """ Return a single color matplotlib cmap with the transparency increasing
+        linearly from 0 to 1."""
+        return LinearSegmentedColormap.from_list("", [to_rgba(color, 0), to_rgba(color, 1)])
+    
     #Below is for overlayed images
     if overlay:
         
@@ -924,10 +930,13 @@ def plot_images(images,
                 raise ValueError("Images are not the same scale and so should"
                                  "not be overlayed.")
         
-        original_cmap = plt.rcParams['image.cmap']
-        plt.rcParams['image.cmap'] = 'gray'
         import matplotlib.patches as mpatches
-        ax = f.add_axes([0, 0, 1, 1])
+        if not suptitle and axes_decor == 'off':
+            ax = f.add_axes([0, 0, 1, 1])
+        elif not suptitle:
+            ax = f.add_axes([0.1, 0.1, 1, 1])
+        else:
+            ax = f.add_axes([0.1, 0.1, 0.9, 0.8])
         patches = []
         
         #If no colors are selected use BASE_COLORS
@@ -943,7 +952,7 @@ def plot_images(images,
                 alphas_list.append(alphas)
             alphas=alphas_list
     
-        ax.imshow(np.zeros_like(images[0].data))
+        ax.imshow(np.zeros_like(images[0].data), cmap='gray')
         
         #Loop through each image
         for i, im in enumerate(images):
@@ -955,15 +964,11 @@ def plot_images(images,
             _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
             if centre:
-                _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
-                
-            cols = ['k', colors[i]]
-            cmap=LinearSegmentedColormap.from_list('cmap'+str(i), cols)
-            my_cmap = cmap(np.arange(cmap.N))
-            my_cmap[:,-1] = np.linspace(0.3, 1, cmap.N)
-            my_cmap = ListedColormap(my_cmap)
+                _logger.warning('Centering is ignored when overlaying images.')
+            
             ax.imshow(im.data, vmin=_vmin, vmax=_vmax,
-                      cmap=my_cmap, alpha=alphas[i], **kwargs)
+                      cmap=transparent_single_color_cmap(colors[i]),
+                      alpha=alphas[i], **kwargs)
     
             if label is not None:
                 if shared_titles:
@@ -981,9 +986,6 @@ def plot_images(images,
         
         set_axes_decor(ax, axes_decor)
         
-        if not overlay_title:
-            suptitle=False
-        
         if scalebar=='all':
             axes = im.axes_manager.signal_axes
             ax.scalebar = ScaleBar(
@@ -991,7 +993,6 @@ def plot_images(images,
                         units=im.axes_manager[0].units,
                         color=scalebar_color,
                     )
-        plt.rcParams['image.cmap'] = original_cmap
         axes_list.append(ax)
     
     #Below is for non-overlayed images
