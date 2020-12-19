@@ -702,15 +702,15 @@ class SpanROI(BaseInteractiveROI):
     _ndim = 1
 
     def __init__(self, left, right):
-        super(SpanROI, self).__init__()
+        super().__init__()
         self._bounds_check = True   # Use reponsibly!
+        if left >= right:
+            raise ValueError("`left` must be smaller than `right`.")
         self.left, self.right = left, right
 
     def __getitem__(self, *args, **kwargs):
         _tuple = (self.left, self.right)
         return _tuple.__getitem__(*args, **kwargs)
-
-
 
     def is_valid(self):
         return (t.Undefined not in (self.left, self.right) and
