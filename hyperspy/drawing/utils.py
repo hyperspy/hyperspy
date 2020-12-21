@@ -495,7 +495,7 @@ def plot_images(images,
                 alphas=1.0,
                 legend_picking=True,
                 legend_loc='upper right',
-                pixsize_factor = 10,
+                pixel_size_factor = 1,
                 **kwargs):
     """Plot multiple images either as sub-images or overlayed in one figure.
 
@@ -605,10 +605,11 @@ def plot_images(images,
         For example, for a vmin of '1th', 1% of the lowest will be ignored to
         estimate the minimum value. Similarly, for a vmax value of '1th', 1%
         of the highest value will be ignored in the estimation of the maximum
-        value. It must be in the range [0, 100]
+        value. It must be in the range [0, 100].
         See :py:func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
         If float or integer, keep this value as bounds.
+        Note: vmin is ignored when overlaying images.
     overlay : boolean, optional
         If True, overlays the images with different colors rather than plotting
         each image as a subplot.
@@ -626,10 +627,11 @@ def plot_images(images,
     legend_loc : {str, int}, optional
         This parameter controls where the legend is placed on the figure;
         see the pyplot.legend docstring for valid values
-    pixsize_factor : int, optional
+    pixel_size_factor : int or float, optional
+        Default value is 1.
         Sets the size of the figure when plotting an overlay image. The higher
         the number the larger the figure and therefore a greater number of 
-        pixels are used.
+        pixels are used. This value will be ignored if a Figure is provided.
     **kwargs, optional
         Additional keyword arguments passed to matplotlib.imshow()
 
@@ -848,7 +850,7 @@ def plot_images(images,
         if overlay:
             shape = images[0].data.shape
             dpi = 100
-            f = plt.figure(figsize=[pixsize_factor*v/dpi for v in shape],
+            f = plt.figure(figsize=[pixel_size_factor*v/dpi for v in shape],
                            dpi=dpi)
         else:
             f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
@@ -930,6 +932,8 @@ def plot_images(images,
                 raise ValueError("Images are not the same scale and so should"
                                  "not be overlayed.")
         
+        _logger.warning('vmin is ignored when overlaying images.')
+        
         import matplotlib.patches as mpatches
         if not suptitle and axes_decor == 'off':
             ax = f.add_axes([0, 0, 1, 1])
@@ -960,7 +964,7 @@ def plot_images(images,
             #Set vmin and vmax
             centre = next(centre_colormaps)   # get next value for centreing
             data = im.data
-            _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
+            _vmin = data.min()
             _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
             if centre:
