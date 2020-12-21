@@ -391,7 +391,10 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing)
+            if self.axes_manager.navigation_dimension > 0:
+                navigation_mask = self.vacuum_mask(navigation_mask, closing)
+            else:
+                navigation_mask = None
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
@@ -596,6 +599,9 @@ class EDSTEM_mixin:
         >>> si.vacuum_mask().data
         array([False, False, False,  True], dtype=bool)
         """
+        if self.axes_manager.navigation_dimension == 0:
+            raise RuntimeError('Navigation dimenstion must be higher than 0 '
+                               'to estimate a vacuum mask.')
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
         if closing:
