@@ -210,11 +210,13 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, kfactors,
                                composition_units)
-        s2 = s.rebin(new_shape=(1,1,1024)).squeeze().squeeze()
-        s2.quantification(intensities, method, kfactors,
-                               composition_units, plot_result=True)
         np.testing.assert_allclose(res[0].data, np.ones((2, 2)) * 22.70779,
             atol=1e-3)
+
+        # Test plot_results
+        s2 = s.sum()
+        s2.quantification(intensities, method, kfactors,
+                          composition_units, plot_result=True)
 
     def test_quant_lorimer_mask(self):
         s = self.signal
@@ -486,6 +488,12 @@ class Test_vacum_mask:
         s = self.signal
         assert s.vacuum_mask().data[0]
         assert not s.vacuum_mask().data[-1]
+
+    def test_vacuum_mask_navigation_dimension_0(self):
+        s = self.signal
+        s2 = s.sum()
+        with pytest.raises(RuntimeError):
+            s2.vacuum_mask()
 
 
 @pytest.mark.parametrize('normalise_poissonian_noise', [True, False])
