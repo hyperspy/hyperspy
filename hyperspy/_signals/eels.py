@@ -1816,6 +1816,9 @@ collection_angle : float
         mask: signal
             The mask of the region.
         """
+        if self.axes_manager.navigation_dimension == 0:
+            raise RuntimeError('Navigation dimenstion must be higher than 0 '
+                               'to estimate a vacuum mask.')
         signal_axis = self.axes_manager.signal_axes[0]
         if start_energy is None:
             start_energy = 0.75 * signal_axis.high_value

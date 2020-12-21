@@ -477,7 +477,7 @@ class Test_quantification:
 
 
 @lazifyTestClass
-class Test_vacum_mask:
+class Test_vacuum_mask:
 
     def setup_method(self, method):
         s = EDSTEMSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
