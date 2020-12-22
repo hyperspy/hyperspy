@@ -29,7 +29,7 @@ import warnings
 import numpy as np
 import logging
 from functools import partial
-from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import BASE_COLORS, to_rgba
 
 import hyperspy as hs
@@ -495,7 +495,7 @@ def plot_images(images,
                 alphas=1.0,
                 legend_picking=True,
                 legend_loc='upper right',
-                pixel_size_factor = 1,
+                pixel_size_factor=1,
                 **kwargs):
     """Plot multiple images either as sub-images or overlayed in one figure.
 
@@ -619,7 +619,7 @@ def plot_images(images,
 		can be found at https://matplotlib.org/2.0.2/api/colors_api.html.
         If 'auto', colors will be taken from matplotlib.colors.BASE_COLORS.
     alphas : float or list of floats, optional
-        `alphas` should be a single float value or a list of floats 
+        `alphas` should be a single float value or a list of floats
         corresponding to the alpha value of each color.
     legend_picking: bool, optional
         If True (default), a spectrum can be toggled on and off by clicking on
@@ -630,10 +630,10 @@ def plot_images(images,
     pixel_size_factor : int or float, optional
         Default value is 1.
         Sets the size of the figure when plotting an overlay image. The higher
-        the number the larger the figure and therefore a greater number of 
+        the number the larger the figure and therefore a greater number of
         pixels are used. This value will be ignored if a Figure is provided.
     **kwargs, optional
-        Additional keyword arguments passed to matplotlib.imshow()
+        Additional keyword arguments passed to :py:func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
@@ -916,24 +916,24 @@ def plot_images(images,
 
     # Replot: create a list to store references to the images
     replot_ims = []
-    
+
     def transparent_single_color_cmap(color):
         """ Return a single color matplotlib cmap with the transparency increasing
         linearly from 0 to 1."""
         return LinearSegmentedColormap.from_list("", [to_rgba(color, 0), to_rgba(color, 1)])
-    
+
     #Below is for overlayed images
     if overlay:
-        
+
         #Check if images all have same scale and therefore can be overlayed.
         for im in images:
-            if (im.axes_manager[0].scale != 
+            if (im.axes_manager[0].scale !=
                 images[0].axes_manager[0].scale):
                 raise ValueError("Images are not the same scale and so should"
                                  "not be overlayed.")
-        
+
         _logger.warning('vmin is ignored when overlaying images.')
-        
+
         import matplotlib.patches as mpatches
         if not suptitle and axes_decor == 'off':
             ax = f.add_axes([0, 0, 1, 1])
@@ -942,25 +942,25 @@ def plot_images(images,
         else:
             ax = f.add_axes([0.1, 0.1, 0.9, 0.8])
         patches = []
-        
+
         #If no colors are selected use BASE_COLORS
         if colors == 'auto':
             colors = []
             for i in range(len(images)):
                 colors.append(list(BASE_COLORS)[i])
-        
+
         #If no alphas are selected use 1.0
         if isinstance(alphas, float):
             alphas_list = []
             for i in range(len(images)):
                 alphas_list.append(alphas)
             alphas=alphas_list
-    
+
         ax.imshow(np.zeros_like(images[0].data), cmap='gray')
-        
+
         #Loop through each image
         for i, im in enumerate(images):
-            
+
             #Set vmin and vmax
             centre = next(centre_colormaps)   # get next value for centreing
             data = im.data
@@ -969,11 +969,11 @@ def plot_images(images,
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
             if centre:
                 _logger.warning('Centering is ignored when overlaying images.')
-            
+
             ax.imshow(im.data, vmin=_vmin, vmax=_vmax,
                       cmap=transparent_single_color_cmap(colors[i]),
                       alpha=alphas[i], **kwargs)
-    
+
             if label is not None:
                 if shared_titles:
                     legend_label = label_list[i][div_num - 1:]
@@ -982,14 +982,14 @@ def plot_images(images,
 
                 patches.append(mpatches.Patch(color=colors[i],
                                               label=legend_label))
-                
+
         if label is not None:
             plt.legend(handles=patches, loc=legend_loc)
             if legend_picking is True:
                 animate_legend(fig=f, ax=ax, plot_type='images')
-        
+
         set_axes_decor(ax, axes_decor)
-        
+
         if scalebar=='all':
             axes = im.axes_manager.signal_axes
             ax.scalebar = ScaleBar(
@@ -998,7 +998,7 @@ def plot_images(images,
                         color=scalebar_color,
                     )
         axes_list.append(ax)
-    
+
     #Below is for non-overlayed images
     if not overlay:
         # Loop through each image, adding subplot for each one
@@ -1012,7 +1012,7 @@ def plot_images(images,
                 axes_list.append(ax)
                 data = im.data
                 centre = next(centre_colormaps)   # get next value for centreing
-    
+
                 # Enable RGB plotting
                 if rgb_tools.is_rgbx(data):
                     data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
@@ -1023,32 +1023,32 @@ def plot_images(images,
                     _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
                     if centre:
                         _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
-    
+
                 # Remove NaNs (if requested)
                 if no_nans:
                     data = np.nan_to_num(data)
-    
+
                 # Get handles for the signal axes and axes_manager
                 axes_manager = im.axes_manager
                 axes = axes_manager.signal_axes
-    
+
                 # Set dimensions of images
                 xaxis = axes[0]
                 yaxis = axes[1]
-    
+
                 extent = (
                     xaxis.low_value,
                     xaxis.high_value,
                     yaxis.high_value,
                     yaxis.low_value,
                 )
-    
+
                 if not isinstance(aspect, (int, float)) and aspect not in [
                         'auto', 'square', 'equal']:
                     _logger.warning("Did not understand aspect ratio input. "
                                     "Using 'auto' as default.")
                     aspect = 'auto'
-    
+
                 if aspect == 'auto':
                     if float(yaxis.size) / xaxis.size < min_asp:
                         factor = min_asp * float(xaxis.size) / yaxis.size
@@ -1065,14 +1065,14 @@ def plot_images(images,
                     asp = aspect
                 if 'interpolation' not in kwargs.keys():
                     kwargs['interpolation'] = 'nearest'
-    
+
                 # Plot image data, using _vmin and _vmax to set bounds,
                 # or allowing them to be set automatically if using individual
                 # colorbars
                 kwargs.update({'cmap':next(cmap), 'extent':extent, 'aspect':asp})
                 axes_im = ax.imshow(data, vmin=_vmin, vmax=_vmax, **kwargs)
                 ax_im_list[i] = axes_im
-    
+
                 # If an axis trait is undefined, shut off :
                 if (xaxis.units == t.Undefined or yaxis.units == t.Undefined or
                     xaxis.name == t.Undefined or yaxis.name == t.Undefined):
@@ -1088,7 +1088,7 @@ def plot_images(images,
                 else:
                     ax.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
                     ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
-    
+
                 if label:
                     if all_match:
                         title = ''
@@ -1103,21 +1103,21 @@ def plot_images(images,
                             title = label_list[idx]
                         else:
                             title = label_list[i]
-    
+
                     if ims.axes_manager.navigation_size > 1 and not user_labels:
                         title += " %s" % str(ims.axes_manager.indices)
-    
+
                     ax.set_title(textwrap.fill(title, labelwrap))
-    
+
                 # Set axes decorations based on user input
                 set_axes_decor(ax, axes_decor)
-    
+
                 # If using independent colorbars, add them
                 if colorbar == 'multi' and not isrgb[i]:
                     div = make_axes_locatable(ax)
                     cax = div.append_axes("right", size="5%", pad=0.05)
                     plt.colorbar(axes_im, cax=cax)
-    
+
                 # Add scalebars as necessary
                 if (scalelist and idx in scalebar) or scalebar == 'all':
                     ax.scalebar = ScaleBar(
@@ -1127,7 +1127,7 @@ def plot_images(images,
                     )
                 # Replot: store references to the images
                 replot_ims.append(im)
-    
+
                 idx += 1
 
     # If using a single colorbar, add it, and do tight_layout, ensuring that
@@ -1529,18 +1529,18 @@ def animate_legend(fig=None, ax=None, plot_type='spectra'):
         fig = plt.gcf()
     if ax is None:
         ax = plt.gca()
-    
+
     leg = ax.get_legend()
-    
+
     if plot_type=='spectra':
         lines = ax.lines[::-1]
         leglines = leg.get_lines()
     elif plot_type=='images':
         lines = ax.images[1:]
         leglines = leg.get_patches()
-    
+
     lined = dict()
-    
+
     for legline, origline in zip(leglines, lines):
         if plot_type=='spectra':
             legline.set_pickradius(5)  # 5 pts tolerance

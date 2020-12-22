@@ -574,6 +574,6 @@ def test_plot_overlay(axes_decor,label,colors,alphas):
     ax = hs.plot.plot_images([s1,s2], overlay=True, scalebar='all',
                              label=label, suptitle=False,
                              axes_decor=axes_decor, colors=colors,
-                             alphas=alphas)
-    
+                             alphas=alphas, pixel_size_factor=10)
+
     return ax[0].figure
