@@ -194,14 +194,11 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
         width = int(width)
         height = int(height)
 
-        energy = int(4096 / rebin_energy)
-        fd.seek(data_pos)
+        channel_number = int(4096 / rebin_energy)
 
+        fd.seek(data_pos)
         # read spectrum image
         rawdata = np.fromfile(fd, dtype="u2")
-
-        hypermap = np.zeros([height, width, energy], dtype=SI_dtype)
-        data = readcube(rawdata, hypermap, rebin_energy)
 
         if scale is not None:
             xscale = -scale[2] / width
@@ -218,6 +215,14 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
         ch_pos = header["PTTD Param"]["Params"]["PARAMPAGE1_EDXRF"]["Tpl"][ch_mod][
             "DigZ"
         ]
+
+        energy_offset = ch_ini - ch_res * ch_pos
+        energy_scale = ch_res * rebin_energy
+
+        if cutoff_at_kV is not None:
+            channel_number = int(
+                np.round((cutoff_at_kV - energy_offset) / energy_scale)
+                )
 
         axes = [
             {
@@ -236,12 +241,15 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
             },
             {
                 "name": "Energy",
-                "size": energy,
-                "offset": ch_ini - ch_res * ch_pos,
-                "scale": ch_res * rebin_energy,
+                "size": channel_number,
+                "offset": energy_offset,
+                "scale": energy_scale,
                 "units": "keV",
             },
         ]
+
+        hypermap = np.zeros([height, width, channel_number], dtype=SI_dtype)
+        data = readcube(rawdata, hypermap, rebin_energy, channel_number)
 
         hv = header["PTTD Data"]["AnalyzableMap MeasData"]["MeasCond"]["AccKV"]
         if hv <= 30.0:
@@ -384,7 +392,7 @@ def parsejeol(fd):
 
 
 @numba.njit(cache=True)
-def readcube(rawdata, hypermap, rebin_energy):  # pragma: no cover
+def readcube(rawdata, hypermap, rebin_energy, channel_number):  # pragma: no cover
     for value in rawdata:
         if value >= 32768 and value < 36864:
             y = int((value - 32768) / 8 - 1)
@@ -392,7 +400,8 @@ def readcube(rawdata, hypermap, rebin_energy):  # pragma: no cover
             x = int((value - 36864) / 8 - 1)
         elif value >= 45056 and value < 49152:
             z = int((value - 45056) / rebin_energy)
-            hypermap[x, y, z] += 1
+            if z < channel_number:
+                hypermap[x, y, z] += 1
     return hypermap
 
 

@@ -110,7 +110,6 @@ def test_load_datacube(SI_dtype):
 
 @pytest.mark.parametrize('rebin_energy', [1, 2])
 def test_load_datacube_rebin_energy(rebin_energy):
-    # test load eds datacube
     filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
     s = hs.load(filename, rebin_energy=rebin_energy)
     s_sum = s.sum()
@@ -123,3 +122,13 @@ def test_load_datacube_rebin_energy(rebin_energy):
         ref_data = ref_data.rebin(scale=(rebin_energy,))
 
     np.testing.assert_allclose(s_sum.isig[0.5:0.7].data, ref_data.data)
+
+
+def test_load_datacube_cutoff_at_kV():
+    cutoff_at_kV = 10.
+    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    s = hs.load(filename, cutoff_at_kV=None)
+    s2 = hs.load(filename, cutoff_at_kV=cutoff_at_kV)
+
+    np.testing.assert_allclose(s.sum().isig[:cutoff_at_kV].data, s2.sum().data)
+
