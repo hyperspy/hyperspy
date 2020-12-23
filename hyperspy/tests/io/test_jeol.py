@@ -31,72 +31,76 @@ test_files = ['rawdata.ASW',
               'View000_0000003.map',
               'View000_0000004.map',
               'View000_0000005.map',
-              'View000_0000006.pts']
+              'View000_0000006.pts'
+              ]
+
 
 def test_load_project():
-  # test load all elements of the project rawdata.ASW
-  filename = os.path.join(my_path, 'JEOL_files', test_files[0])
-  s = load(filename)
-  # first file is always a 16bit image of the work area
-  assert s[0].data.dtype == np.uint8
-  assert s[0].data.shape == (512,512)
-  assert s[0].axes_manager.signal_dimension == 2
-  assert s[0].axes_manager[0].units == 'µm'
-  assert s[0].axes_manager[0].name == 'width'
-  assert s[0].axes_manager[1].units == 'µm'
-  assert s[0].axes_manager[1].name == 'height'
-  # 1 to 16 files are a 16bit image of work area and elemental maps
-  for map in s[:-1]:
-    assert map.data.dtype == np.uint8
-    assert map.data.shape == (512,512)
-    assert map.axes_manager.signal_dimension == 2
-    assert map.axes_manager[0].units == 'µm'
-    assert map.axes_manager[0].name == 'width'
-    assert map.axes_manager[1].units == 'µm'
-    assert map.axes_manager[1].name == 'height'
-  # last file is the datacube
-  assert s[-1].data.dtype == np.uint8
-  assert s[-1].data.shape == (512,512,4096)
-  assert s[-1].axes_manager.signal_dimension == 1
-  assert s[-1].axes_manager.navigation_dimension == 2
-  assert s[-1].axes_manager[0].units == 'µm'
-  assert s[-1].axes_manager[0].name == 'width'
-  assert s[-1].axes_manager[1].units == 'µm'
-  assert s[-1].axes_manager[1].name == 'height'
-  assert s[-1].axes_manager[2].units == 'keV'
-  np.testing.assert_allclose(s[-1].axes_manager[2].offset, -0.000789965-0.00999866*96)
-  np.testing.assert_allclose(s[-1].axes_manager[2].scale, 0.00999866)
-  assert s[-1].axes_manager[2].name == 'Energy'
+    # test load all elements of the project rawdata.ASW
+    filename = os.path.join(my_path, 'JEOL_files', test_files[0])
+    s = load(filename)
+    # first file is always a 16bit image of the work area
+    assert s[0].data.dtype == np.uint8
+    assert s[0].data.shape == (512, 512)
+    assert s[0].axes_manager.signal_dimension == 2
+    assert s[0].axes_manager[0].units == 'µm'
+    assert s[0].axes_manager[0].name == 'width'
+    assert s[0].axes_manager[1].units == 'µm'
+    assert s[0].axes_manager[1].name == 'height'
+    # 1 to 16 files are a 16bit image of work area and elemental maps
+    for map in s[:-1]:
+        assert map.data.dtype == np.uint8
+        assert map.data.shape == (512, 512)
+        assert map.axes_manager.signal_dimension == 2
+        assert map.axes_manager[0].units == 'µm'
+        assert map.axes_manager[0].name == 'width'
+        assert map.axes_manager[1].units == 'µm'
+        assert map.axes_manager[1].name == 'height'
+    # last file is the datacube
+    assert s[-1].data.dtype == np.uint8
+    assert s[-1].data.shape == (512, 512, 4096)
+    assert s[-1].axes_manager.signal_dimension == 1
+    assert s[-1].axes_manager.navigation_dimension == 2
+    assert s[-1].axes_manager[0].units == 'µm'
+    assert s[-1].axes_manager[0].name == 'width'
+    assert s[-1].axes_manager[1].units == 'µm'
+    assert s[-1].axes_manager[1].name == 'height'
+    assert s[-1].axes_manager[2].units == 'keV'
+    np.testing.assert_allclose(s[-1].axes_manager[2].offset, -0.000789965-0.00999866*96)
+    np.testing.assert_allclose(s[-1].axes_manager[2].scale, 0.00999866)
+    assert s[-1].axes_manager[2].name == 'Energy'
+
 
 def test_load_image():
-  # test load work area haadf image
-  filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[1])
-  s = load(filename)
-  assert s.data.dtype == np.uint8
-  assert s.data.shape == (512,512)
-  assert s.axes_manager.signal_dimension == 2
-  assert s.axes_manager[0].units == 'px'
-  assert s.axes_manager[0].scale == 1
-  assert s.axes_manager[0].name == 'width'
-  assert s.axes_manager[1].units == 'px'
-  assert s.axes_manager[1].scale == 1
-  assert s.axes_manager[1].name == 'height'
+    # test load work area haadf image
+    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[1])
+    s = load(filename)
+    assert s.data.dtype == np.uint8
+    assert s.data.shape == (512,512)
+    assert s.axes_manager.signal_dimension == 2
+    assert s.axes_manager[0].units == 'px'
+    assert s.axes_manager[0].scale == 1
+    assert s.axes_manager[0].name == 'width'
+    assert s.axes_manager[1].units == 'px'
+    assert s.axes_manager[1].scale == 1
+    assert s.axes_manager[1].name == 'height'
+
 
 def test_load_datacube():
-  # test load eds datacube
-  filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
-  s = load(filename)
-  assert s.data.dtype == np.uint8
-  assert s.data.shape == (512,512,4096)
-  assert s.axes_manager.signal_dimension == 1
-  assert s.axes_manager.navigation_dimension == 2
-  assert s.axes_manager[0].units == 'px'
-  assert s.axes_manager[0].scale == 1
-  assert s.axes_manager[0].name == 'width'
-  assert s.axes_manager[1].units == 'px'
-  assert s.axes_manager[1].scale == 1
-  assert s.axes_manager[1].name == 'height'
-  assert s.axes_manager[2].units == 'keV'
-  np.testing.assert_allclose(s.axes_manager[2].offset, -0.000789965-0.00999866*96)
-  np.testing.assert_allclose(s.axes_manager[2].scale, 0.00999866)
-  assert s.axes_manager[2].name == 'Energy'
+    # test load eds datacube
+    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    s = load(filename)
+    assert s.data.dtype == np.uint8
+    assert s.data.shape == (512,512,4096)
+    assert s.axes_manager.signal_dimension == 1
+    assert s.axes_manager.navigation_dimension == 2
+    assert s.axes_manager[0].units == 'px'
+    assert s.axes_manager[0].scale == 1
+    assert s.axes_manager[0].name == 'width'
+    assert s.axes_manager[1].units == 'px'
+    assert s.axes_manager[1].scale == 1
+    assert s.axes_manager[1].name == 'height'
+    assert s.axes_manager[2].units == 'keV'
+    np.testing.assert_allclose(s.axes_manager[2].offset, -0.000789965-0.00999866*96)
+    np.testing.assert_allclose(s.axes_manager[2].scale, 0.00999866)
+    assert s.axes_manager[2].name == 'Energy'

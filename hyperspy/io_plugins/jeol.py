@@ -389,14 +389,26 @@ def parsejeol(fd):
                     tmp_dict[kwrd] = {}
                     tmp_dict[kwrd]["value"] = value
                 elif kwrd == "Limits":
-                    print("skip")
+                    pass
+                    # see https://github.com/hyperspy/hyperspy/pull/2488
+                    # first 16 bytes are encode in float32 and looks like limit values ([20. , 1., 2000, 1.] or [1., 0., 1000., 0.001])
+                    # next 4 bytes are ascii character and looks like number format (%.0f or %.3f)
+                    # next 12 bytes are unclear
+                    # next 4 bytes are ascii character and are units (kV or nA)
+                    # last 12 byes are unclear
                 elif val_type == 14:
                     tmp_dict[kwrd] = {}
                     tmp_dict[kwrd]["index"] = value
                 else:
                     tmp_dict[kwrd] = value
             if kwrd == "Limits":
-                print("skip2")
+                pass
+                # see https://github.com/hyperspy/hyperspy/pull/2488
+                # first 16 bytes are encode in int32 and looks like limit values (10, 1, 100000000, 1)
+                # next 4 bytes are ascii character and looks like number format (%d)
+                # next 12 bytes are unclear
+                # next 4 bytes are ascii character and are units (mag)
+                # last 12 byes are again unclear
             else:
                 tmp_dict = tmp_dict[kwrd]
         else:
