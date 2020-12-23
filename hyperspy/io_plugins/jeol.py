@@ -58,7 +58,7 @@ jTYPE = {
 }
 
 
-def file_reader(filename, *args, **kwds):
+def file_reader(filename, **kwds):
     dictionary = []
     file_ext = os.path.splitext(filename)[-1][1:].lower()
     if file_ext == "asw":
@@ -68,78 +68,33 @@ def file_reader(filename, *args, **kwds):
             fd.seek(12)
             filetree = parsejeol(fd)
             filepath, filen = os.path.split(os.path.abspath(filename))
-            # filepath = filename[:filename.rfind('/')+1]
             if "SampleInfo" in filetree.keys():
-                for i in sorted(filetree["SampleInfo"].keys(), key=float):
+                for i in filetree["SampleInfo"].keys():
                     if "ViewInfo" in filetree["SampleInfo"][i].keys():
-                        for j in sorted(
-                            filetree["SampleInfo"][i]["ViewInfo"].keys(), key=float
-                        ):
-                            if (
-                                "ViewData"
-                                in filetree["SampleInfo"][i]["ViewInfo"][j].keys()
-                            ):
-                                scale = (
-                                    filetree["SampleInfo"][i]["ViewInfo"][j][
-                                        "PositionMM"
-                                    ]
-                                    * 1000
-                                )
-                                for k in sorted(
-                                    filetree["SampleInfo"][i]["ViewInfo"][j][
-                                        "ViewData"
-                                    ].keys(),
-                                    key=float,
-                                ):
-                                    (
-                                        root,
-                                        sample_folder,
-                                        view_folder,
-                                        data_file,
-                                    ) = filetree["SampleInfo"][i]["ViewInfo"][j][
-                                        "ViewData"
-                                    ][
-                                        k
-                                    ][
-                                        "Filename"
-                                    ].split(
-                                        "\\"
-                                    )
-                                    subfile = os.path.join(
-                                        root, sample_folder, view_folder, data_file
-                                    )
+                        for j in filetree["SampleInfo"][i]["ViewInfo"].keys():
+                            node = filetree["SampleInfo"][i]["ViewInfo"][j]
+                            if "ViewData" in node.keys():
+                                scale = node["PositionMM"] * 1000
+                                for k in node["ViewData"].keys():
+                                    # path tuple contains:
+                                    # root, sample_folder, view_folder, data_file
+                                    path = node["ViewData"][k]["Filename"].split("\\")
+                                    subfile = os.path.join(*path)
                                     sub_ext = os.path.splitext(subfile)[-1][1:]
-                                    if sub_ext == "img" or sub_ext == "map":
-                                        dictionary.append(
-                                            read_img(
-                                                os.path.join(filepath, subfile), scale
-                                            )
-                                        )
-                                    elif sub_ext == "pts":
-                                        dictionary.append(
-                                            read_pts(
-                                                os.path.join(filepath, subfile), scale
-                                            )
-                                        )
-                                    elif sub_ext == "eds":
-                                        dictionary.append(
-                                            read_eds(os.path.join(filepath, subfile))
-                                        )
-                                    else:
-                                        print("Unknow extension")
+                                    file_path = os.path.join(filepath, subfile)
+                                    reader_function = extension_to_reader_mapping[sub_ext]
+                                    d = reader_function(file_path, scale, **kwds)
+                                    dictionary.append(d)
         else:
             print("Not a valid JEOL asw format")
-    elif file_ext == "img" or file_ext == "map":
-        dictionary.append(read_img(filename))
-    elif file_ext == "pts":
-        dictionary.append(read_pts(filename))
-    elif file_ext == "eds":
-        dictionary.append(read_eds(filename))
+    else:
+        d = extension_to_reader_mapping[file_ext](filename, **kwds)
+        dictionary.append(d)
 
     return dictionary
 
 
-def read_img(filename, scale=None):
+def read_img(filename, scale=None, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
     if file_magic == 52:
@@ -219,7 +174,8 @@ def read_img(filename, scale=None):
     return dictionary
 
 
-def read_pts(filename, scale=None):
+def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
+             cutoff_at_kV=None, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
     if file_magic == 304:
@@ -240,7 +196,7 @@ def read_pts(filename, scale=None):
 
         # read spectrum image
         rawdata = np.fromfile(fd, dtype="u2")
-        hypermap = np.zeros([height, width, energy], dtype=np.uint8)
+        hypermap = np.zeros([height, width, energy], dtype=SI_dtype)
         data = readcube(rawdata, hypermap)
 
         if scale is not None:
@@ -436,7 +392,7 @@ def readcube(rawdata, hypermap):  # pragma: no cover
     return hypermap
 
 
-def read_eds(filename):
+def read_eds(filename, **kwargs):
     header = {}
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
@@ -662,3 +618,9 @@ def read_eds(filename):
     }
 
     return dictionary
+
+
+extension_to_reader_mapping = {"img": read_img,
+                               "map": read_img,
+                               "pts": read_pts,
+                               "eds": read_eds}

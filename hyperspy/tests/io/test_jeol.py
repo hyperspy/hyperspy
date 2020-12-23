@@ -76,7 +76,7 @@ def test_load_image():
     filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[1])
     s = load(filename)
     assert s.data.dtype == np.uint8
-    assert s.data.shape == (512,512)
+    assert s.data.shape == (512, 512)
     assert s.axes_manager.signal_dimension == 2
     assert s.axes_manager[0].units == 'px'
     assert s.axes_manager[0].scale == 1
@@ -91,7 +91,7 @@ def test_load_datacube():
     filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
     s = load(filename)
     assert s.data.dtype == np.uint8
-    assert s.data.shape == (512,512,4096)
+    assert s.data.shape == (512, 512, 4096)
     assert s.axes_manager.signal_dimension == 1
     assert s.axes_manager.navigation_dimension == 2
     assert s.axes_manager[0].units == 'px'
@@ -104,3 +104,8 @@ def test_load_datacube():
     np.testing.assert_allclose(s.axes_manager[2].offset, -0.000789965-0.00999866*96)
     np.testing.assert_allclose(s.axes_manager[2].scale, 0.00999866)
     assert s.axes_manager[2].name == 'Energy'
+
+    s_sum = s.sum().isig[0.5:0.7]
+    np.testing.assert_allclose(s_sum.data,
+        np.array([1032, 1229, 1409, 1336, 1239, 1169, 969, 850, 759, 782, 773,
+                  779, 853, 810, 825, 927, 1110, 1271, 1656, 1948]))
