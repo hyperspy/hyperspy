@@ -17,7 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from collections.abc import Iterable
 from datetime import datetime, timedelta
+
 import numpy as np
 import numba
 
@@ -118,14 +120,14 @@ def read_img(filename, scale=None, **kwargs):
 
         axes = [
             {
-                "name": "height",
+                "name": "y",
                 "size": height,
                 "offset": 0,
                 "scale": yscale,
                 "units": units,
             },
             {
-                "name": "width",
+                "name": "x",
                 "size": width,
                 "offset": 0,
                 "scale": xscale,
@@ -175,11 +177,18 @@ def read_img(filename, scale=None, **kwargs):
 
 
 def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
-             cutoff_at_kV=None, **kwargs):
+             cutoff_at_kV=None, downsample=1, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
-    if rebin_energy > 1 and rebin_energy % 2 != 0:
-        raise ValueError('`rebin_energy` must be a multiple of 2.')
+
+
+    def check_multiple(factor, number, string):
+        if factor > 1 and number % factor != 0:
+            raise ValueError(f'`{string}` must be a multiple of {number}.')
+
+    check_multiple(rebin_energy, 4096, 'rebin_energy')
+    rebin_energy = int(rebin_energy)
+
     if file_magic == 304:
         fileformat = fd.read(8).rstrip(b"\x00").decode("utf-8")
         a, b, head_pos, head_len, data_pos, data_len = np.fromfile(fd, "<I", 6)
@@ -188,11 +197,31 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
         datefile = datetime(1899, 12, 30) + timedelta(days=np.fromfile(fd, "d", 1)[0])
         fd.seek(head_pos + 12)
         header = parsejeol(fd)
-        width, height = header["PTTD Data"]["AnalyzableMap MeasData"]["Meas Cond"][
-            "Pixels"
-        ].split("x")
+        meas_data_header = header["PTTD Data"]["AnalyzableMap MeasData"]
+        width, height = meas_data_header["Meas Cond"]["Pixels"].split("x")
         width = int(width)
         height = int(height)
+
+        if isinstance(downsample, Iterable):
+            if len(downsample) > 2:
+                raise ValueError("`downsample` can't be an iterable of length "
+                                 "different from 2.")
+            downsample_width = downsample[0]
+            downsample_height = downsample[1]
+            check_multiple(downsample_width, width, 'downsample[0]')
+            check_multiple(downsample_height, height, 'downsample[1]')
+        else:
+            downsample_width = downsample_height = int(downsample)
+            check_multiple(downsample_width, width, 'downsample')
+            check_multiple(downsample_height, height, 'downsample')
+
+        check_multiple(downsample_width, width, 'downsample[0]')
+        check_multiple(downsample_height, height, 'downsample[1]')
+        downsample_width = int(downsample_width)
+        downsample_height = int(downsample_height)
+
+        width = int(width / downsample_width)
+        height = int(height / downsample_height)
 
         channel_number = int(4096 / rebin_energy)
 
@@ -209,9 +238,9 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
             yscale = 1
             units = "px"
 
-        ch_mod = header["PTTD Data"]["AnalyzableMap MeasData"]["Meas Cond"]["Tpl"]
-        ch_res = header["PTTD Data"]["AnalyzableMap MeasData"]["Doc"]["CoefA"]
-        ch_ini = header["PTTD Data"]["AnalyzableMap MeasData"]["Doc"]["CoefB"]
+        ch_mod = meas_data_header["Meas Cond"]["Tpl"]
+        ch_res = meas_data_header["Doc"]["CoefA"]
+        ch_ini = meas_data_header["Doc"]["CoefB"]
         ch_pos = header["PTTD Param"]["Params"]["PARAMPAGE1_EDXRF"]["Tpl"][ch_mod][
             "DigZ"
         ]
@@ -226,14 +255,14 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
 
         axes = [
             {
-                "name": "height",
+                "name": "y",
                 "size": height,
                 "offset": 0,
                 "scale": yscale,
                 "units": units,
             },
             {
-                "name": "width",
+                "name": "x",
                 "size": width,
                 "offset": 0,
                 "scale": xscale,
@@ -249,38 +278,28 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
         ]
 
         hypermap = np.zeros([height, width, channel_number], dtype=SI_dtype)
-        data = readcube(rawdata, hypermap, rebin_energy, channel_number)
+        data = readcube(rawdata, hypermap, rebin_energy, channel_number,
+                        downsample_width, downsample_height)
 
-        hv = header["PTTD Data"]["AnalyzableMap MeasData"]["MeasCond"]["AccKV"]
+        hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
             mode = "SEM"
         else:
             mode = "TEM"
 
+        detector_hearder = header["PTTD Param"]["Params"]["PARAMPAGE0_SEM"]
         metadata = {
             "Acquisition_instrument": {
                 mode: {
                     "beam_energy": hv,
-                    "magnification": header["PTTD Data"]["AnalyzableMap MeasData"][
-                        "MeasCond"
-                    ]["Mag"],
+                    "magnification": meas_data_header["MeasCond"]["Mag"],
                     "Detector": {
                         "EDS": {
-                            "azimuth_angle": header["PTTD Param"]["Params"][
-                                "PARAMPAGE0_SEM"
-                            ]["DirAng"],
-                            "detector_type": header["PTTD Param"]["Params"][
-                                "PARAMPAGE0_SEM"
-                            ]["DetT"],
-                            "elevation_angle": header["PTTD Param"]["Params"][
-                                "PARAMPAGE0_SEM"
-                            ]["ElevAng"],
-                            "energy_resolution_MnKa": header["PTTD Param"]["Params"][
-                                "PARAMPAGE0_SEM"
-                            ]["MnKaRES"],
-                            "real_time": header["PTTD Data"]["AnalyzableMap MeasData"][
-                                "Doc"
-                            ]["RealTime"],
+                            "azimuth_angle": detector_hearder["DirAng"],
+                            "detector_type": detector_hearder["DetT"],
+                            "elevation_angle": detector_hearder["ElevAng"],
+                            "energy_resolution_MnKa": detector_hearder["MnKaRES"],
+                            "real_time": meas_data_header["Doc"]["RealTime"],
                         },
                     },
                 },
@@ -392,16 +411,17 @@ def parsejeol(fd):
 
 
 @numba.njit(cache=True)
-def readcube(rawdata, hypermap, rebin_energy, channel_number):  # pragma: no cover
+def readcube(rawdata, hypermap, rebin_energy, channel_number,
+             downsample_width, downsample_height):  # pragma: no cover
     for value in rawdata:
         if value >= 32768 and value < 36864:
-            y = int((value - 32768) / 8 - 1)
+            x = int((value - 32768) / downsample_width / 8)
         elif value >= 36864 and value < 40960:
-            x = int((value - 36864) / 8 - 1)
+            y = int((value - 36864) / downsample_height / 8)
         elif value >= 45056 and value < 49152:
             z = int((value - 45056) / rebin_energy)
             if z < channel_number:
-                hypermap[x, y, z] += 1
+                hypermap[y, x, z] += 1
     return hypermap
 
 

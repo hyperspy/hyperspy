@@ -45,27 +45,27 @@ def test_load_project():
     assert s[0].data.shape == (512, 512)
     assert s[0].axes_manager.signal_dimension == 2
     assert s[0].axes_manager[0].units == 'µm'
-    assert s[0].axes_manager[0].name == 'width'
+    assert s[0].axes_manager[0].name == 'x'
     assert s[0].axes_manager[1].units == 'µm'
-    assert s[0].axes_manager[1].name == 'height'
+    assert s[0].axes_manager[1].name == 'y'
     # 1 to 16 files are a 16bit image of work area and elemental maps
     for map in s[:-1]:
         assert map.data.dtype == np.uint8
         assert map.data.shape == (512, 512)
         assert map.axes_manager.signal_dimension == 2
         assert map.axes_manager[0].units == 'µm'
-        assert map.axes_manager[0].name == 'width'
+        assert map.axes_manager[0].name == 'x'
         assert map.axes_manager[1].units == 'µm'
-        assert map.axes_manager[1].name == 'height'
+        assert map.axes_manager[1].name == 'y'
     # last file is the datacube
     assert s[-1].data.dtype == np.uint8
     assert s[-1].data.shape == (512, 512, 4096)
     assert s[-1].axes_manager.signal_dimension == 1
     assert s[-1].axes_manager.navigation_dimension == 2
     assert s[-1].axes_manager[0].units == 'µm'
-    assert s[-1].axes_manager[0].name == 'width'
+    assert s[-1].axes_manager[0].name == 'x'
     assert s[-1].axes_manager[1].units == 'µm'
-    assert s[-1].axes_manager[1].name == 'height'
+    assert s[-1].axes_manager[1].name == 'y'
     assert s[-1].axes_manager[2].units == 'keV'
     np.testing.assert_allclose(s[-1].axes_manager[2].offset, -0.000789965-0.00999866*96)
     np.testing.assert_allclose(s[-1].axes_manager[2].scale, 0.00999866)
@@ -81,10 +81,10 @@ def test_load_image():
     assert s.axes_manager.signal_dimension == 2
     assert s.axes_manager[0].units == 'px'
     assert s.axes_manager[0].scale == 1
-    assert s.axes_manager[0].name == 'width'
+    assert s.axes_manager[0].name == 'x'
     assert s.axes_manager[1].units == 'px'
     assert s.axes_manager[1].scale == 1
-    assert s.axes_manager[1].name == 'height'
+    assert s.axes_manager[1].name == 'y'
 
 
 @pytest.mark.parametrize('SI_dtype', [np.int8, np.uint8])
@@ -98,10 +98,10 @@ def test_load_datacube(SI_dtype):
     assert s.axes_manager.navigation_dimension == 2
     assert s.axes_manager[0].units == 'px'
     assert s.axes_manager[0].scale == 1
-    assert s.axes_manager[0].name == 'width'
+    assert s.axes_manager[0].name == 'x'
     assert s.axes_manager[1].units == 'px'
     assert s.axes_manager[1].scale == 1
-    assert s.axes_manager[1].name == 'height'
+    assert s.axes_manager[1].name == 'y'
     assert s.axes_manager[2].units == 'keV'
     np.testing.assert_allclose(s.axes_manager[2].offset, -0.000789965-0.00999866*96)
     np.testing.assert_allclose(s.axes_manager[2].scale, 0.00999866)
@@ -130,5 +130,43 @@ def test_load_datacube_cutoff_at_kV():
     s = hs.load(filename, cutoff_at_kV=None)
     s2 = hs.load(filename, cutoff_at_kV=cutoff_at_kV)
 
+    assert s2.axes_manager[-1].size == 1096
+    np.testing.assert_allclose(s2.axes_manager[2].scale, 0.00999866)
+    np.testing.assert_allclose(s2.axes_manager[2].offset, -0.9606613)
+
     np.testing.assert_allclose(s.sum().isig[:cutoff_at_kV].data, s2.sum().data)
 
+
+def test_load_datacube_downsample():
+    downsample = 8
+    filename = os.path.join(my_path, 'JEOL_files', test_files[0])
+    s = hs.load(filename, downsample=1)[-1]
+    s2 = hs.load(filename, downsample=downsample)[-1]
+
+    s_sum = s.sum(-1).rebin(scale=(downsample, downsample))
+    s2_sum = s2.sum(-1)
+
+    assert s2.axes_manager[-1].size == 4096
+    np.testing.assert_allclose(s2.axes_manager[2].scale, 0.00999866)
+    np.testing.assert_allclose(s2.axes_manager[2].offset, -0.9606613)
+
+    for axis in s2.axes_manager.navigation_axes:
+        assert axis.size == 64
+        np.testing.assert_allclose(axis.scale, 0.069531247)
+        np.testing.assert_allclose(axis.offset, 0.0)
+
+    np.testing.assert_allclose(s_sum.data, s2_sum.data)
+
+    with pytest.raises(ValueError, match='must be a multiple'):
+        _ = hs.load(filename, downsample=10)[-1]
+
+    downsample = [8, 16]
+    s = hs.load(filename, downsample=downsample)[-1]
+    assert s.axes_manager['x'].size * downsample[0] == 512
+    assert s.axes_manager['y'].size * downsample[1] == 512
+
+    with pytest.raises(ValueError, match='must be a multiple'):
+        _ = hs.load(filename, downsample=[256, 100])[-1]
+
+    with pytest.raises(ValueError, match='must be a multiple'):
+        _ = hs.load(filename, downsample=[100, 256])[-1]
