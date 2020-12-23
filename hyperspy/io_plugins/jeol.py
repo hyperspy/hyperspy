@@ -178,6 +178,8 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
              cutoff_at_kV=None, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
+    if rebin_energy > 1 and rebin_energy % 2 != 0:
+        raise ValueError('`rebin_energy` must be a multiple of 2.')
     if file_magic == 304:
         fileformat = fd.read(8).rstrip(b"\x00").decode("utf-8")
         a, b, head_pos, head_len, data_pos, data_len = np.fromfile(fd, "<I", 6)
@@ -191,13 +193,15 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
         ].split("x")
         width = int(width)
         height = int(height)
-        energy = 4096
+
+        energy = int(4096 / rebin_energy)
         fd.seek(data_pos)
 
         # read spectrum image
         rawdata = np.fromfile(fd, dtype="u2")
+
         hypermap = np.zeros([height, width, energy], dtype=SI_dtype)
-        data = readcube(rawdata, hypermap)
+        data = readcube(rawdata, hypermap, rebin_energy)
 
         if scale is not None:
             xscale = -scale[2] / width
@@ -234,7 +238,7 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
                 "name": "Energy",
                 "size": energy,
                 "offset": ch_ini - ch_res * ch_pos,
-                "scale": ch_res,
+                "scale": ch_res * rebin_energy,
                 "units": "keV",
             },
         ]
@@ -380,15 +384,15 @@ def parsejeol(fd):
 
 
 @numba.njit(cache=True)
-def readcube(rawdata, hypermap):  # pragma: no cover
+def readcube(rawdata, hypermap, rebin_energy):  # pragma: no cover
     for value in rawdata:
-        if (value >= 32768) and (value < 36864):
+        if value >= 32768 and value < 36864:
             y = int((value - 32768) / 8 - 1)
-        elif (value >= 36864) and (value < 40960):
+        elif value >= 36864 and value < 40960:
             x = int((value - 36864) / 8 - 1)
-        elif (value >= 45056) and (value < 49152):
-            z = int(value - 45056)
-            hypermap[x, y, z] = hypermap[x, y, z] + 1
+        elif value >= 45056 and value < 49152:
+            z = int((value - 45056) / rebin_energy)
+            hypermap[x, y, z] += 1
     return hypermap
 
 

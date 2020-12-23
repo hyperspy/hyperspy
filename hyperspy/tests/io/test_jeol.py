@@ -18,9 +18,10 @@
 
 import os
 
+import pytest
 import numpy as np
 
-from hyperspy.io import load
+import hyperspy.api as hs
 
 my_path = os.path.dirname(__file__)
 
@@ -38,7 +39,7 @@ test_files = ['rawdata.ASW',
 def test_load_project():
     # test load all elements of the project rawdata.ASW
     filename = os.path.join(my_path, 'JEOL_files', test_files[0])
-    s = load(filename)
+    s = hs.load(filename)
     # first file is always a 16bit image of the work area
     assert s[0].data.dtype == np.uint8
     assert s[0].data.shape == (512, 512)
@@ -74,7 +75,7 @@ def test_load_project():
 def test_load_image():
     # test load work area haadf image
     filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[1])
-    s = load(filename)
+    s = hs.load(filename)
     assert s.data.dtype == np.uint8
     assert s.data.shape == (512, 512)
     assert s.axes_manager.signal_dimension == 2
@@ -86,11 +87,12 @@ def test_load_image():
     assert s.axes_manager[1].name == 'height'
 
 
-def test_load_datacube():
+@pytest.mark.parametrize('SI_dtype', [np.int8, np.uint8])
+def test_load_datacube(SI_dtype):
     # test load eds datacube
     filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
-    s = load(filename)
-    assert s.data.dtype == np.uint8
+    s = hs.load(filename, SI_dtype=SI_dtype)
+    assert s.data.dtype == SI_dtype
     assert s.data.shape == (512, 512, 4096)
     assert s.axes_manager.signal_dimension == 1
     assert s.axes_manager.navigation_dimension == 2
@@ -105,7 +107,19 @@ def test_load_datacube():
     np.testing.assert_allclose(s.axes_manager[2].scale, 0.00999866)
     assert s.axes_manager[2].name == 'Energy'
 
-    s_sum = s.sum().isig[0.5:0.7]
-    np.testing.assert_allclose(s_sum.data,
+
+@pytest.mark.parametrize('rebin_energy', [1, 2])
+def test_load_datacube_rebin_energy(rebin_energy):
+    # test load eds datacube
+    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    s = hs.load(filename, rebin_energy=rebin_energy)
+    s_sum = s.sum()
+
+    ref_data = hs.signals.Signal1D(
         np.array([1032, 1229, 1409, 1336, 1239, 1169, 969, 850, 759, 782, 773,
-                  779, 853, 810, 825, 927, 1110, 1271, 1656, 1948]))
+                  779, 853, 810, 825, 927, 1110, 1271, 1656, 1948])
+        )
+    if rebin_energy > 1:
+        ref_data = ref_data.rebin(scale=(rebin_energy,))
+
+    np.testing.assert_allclose(s_sum.isig[0.5:0.7].data, ref_data.data)
