@@ -108,20 +108,26 @@ def test_load_datacube(SI_dtype):
     assert s.axes_manager[2].name == 'Energy'
 
 
-@pytest.mark.parametrize('rebin_energy', [1, 2])
-def test_load_datacube_rebin_energy(rebin_energy):
+def test_load_datacube_rebin_energy():
     filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
-    s = hs.load(filename, rebin_energy=rebin_energy)
+    s = hs.load(filename)
     s_sum = s.sum()
 
     ref_data = hs.signals.Signal1D(
         np.array([1032, 1229, 1409, 1336, 1239, 1169, 969, 850, 759, 782, 773,
                   779, 853, 810, 825, 927, 1110, 1271, 1656, 1948])
         )
-    if rebin_energy > 1:
-        ref_data = ref_data.rebin(scale=(rebin_energy,))
-
     np.testing.assert_allclose(s_sum.isig[0.5:0.7].data, ref_data.data)
+
+    rebin_energy = 2
+    s2 = hs.load(filename, rebin_energy=rebin_energy)
+    s2_sum = s2.sum()
+
+    ref_data2 = ref_data.rebin(scale=(rebin_energy,))
+    np.testing.assert_allclose(s2_sum.isig[0.5:0.7].data, ref_data2.data)
+
+    with pytest.raises(ValueError, match='must be a multiple'):
+        _ = hs.load(filename, rebin_energy=10)
 
 
 def test_load_datacube_cutoff_at_kV():

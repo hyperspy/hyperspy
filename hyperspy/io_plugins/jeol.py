@@ -100,10 +100,9 @@ def read_img(filename, scale=None, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
     if file_magic == 52:
-        fileformat = fd.read(32).rstrip(b"\x00").decode("utf-8")
+        # fileformat
+        _ = fd.read(32).rstrip(b"\x00").decode("utf-8")
         head_pos, head_len, data_pos = np.fromfile(fd, "<I", 3)
-        fd.seek(head_pos + 12)
-        header_short = parsejeol(fd)
         fd.seek(data_pos + 12)
         header_long = parsejeol(fd)
         width, height = header_long["Image"]["Size"]
@@ -181,7 +180,6 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
 
-
     def check_multiple(factor, number, string):
         if factor > 1 and number % factor != 0:
             raise ValueError(f'`{string}` must be a multiple of {number}.')
@@ -190,10 +188,13 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
     rebin_energy = int(rebin_energy)
 
     if file_magic == 304:
-        fileformat = fd.read(8).rstrip(b"\x00").decode("utf-8")
+        # fileformat
+        _ = fd.read(8).rstrip(b"\x00").decode("utf-8")
         a, b, head_pos, head_len, data_pos, data_len = np.fromfile(fd, "<I", 6)
-        groupename = fd.read(128).rstrip(b"\x00").decode("utf-8")
-        memo = fd.read(132).rstrip(b"\x00").decode("utf-8")
+        # groupname
+        _ = fd.read(128).rstrip(b"\x00").decode("utf-8")
+        # memo
+        _ = fd.read(132).rstrip(b"\x00").decode("utf-8")
         datefile = datetime(1899, 12, 30) + timedelta(days=np.fromfile(fd, "d", 1)[0])
         fd.seek(head_pos + 12)
         header = parsejeol(fd)
@@ -428,7 +429,8 @@ def readcube(rawdata, hypermap, rebin_energy, channel_number,
 def read_eds(filename, **kwargs):
     header = {}
     fd = open(filename, "br")
-    file_magic = np.fromfile(fd, "<I", 1)[0]
+    # file_magic
+    _ = np.fromfile(fd, "<I", 1)[0]
     np.fromfile(fd, "<b", 6)
     header["filedate"] = datetime(1899, 12, 30) + timedelta(
         days=np.fromfile(fd, "<d", 1)[0]
@@ -467,7 +469,7 @@ def read_eds(filename, **kwargs):
     data = np.fromfile(fd, "<i", header["NumCH"])
 
     footer = {}
-    a = np.fromfile(fd, "<i", 1)
+    _ = np.fromfile(fd, "<i", 1)
 
     n_fbd_elem = np.fromfile(fd, "<i", 1)[0]
     if n_fbd_elem != 0:
@@ -478,18 +480,23 @@ def read_eds(filename, **kwargs):
     if n_elem != 0:
         elems = {}
         for i in range(n_elem):
-            mark_elem = np.fromfile(fd, "<i", 1)[0]  # = 2
-            Z = np.fromfile(fd, "<H", 1)[0]
+            # mark elem
+            _ = np.fromfile(fd, "<i", 1)[0]  # = 2
+            # Z
+            _ = np.fromfile(fd, "<H", 1)[0]
             mark1, mark2 = np.fromfile(fd, "<i", 2)  # = 1, 0
             roi_min, roi_max = np.fromfile(fd, "<H", 2)
-            skip = np.fromfile(fd, "<b", 14)
+            # unknown
+            _ = np.fromfile(fd, "<b", 14)
             energy, unknow1, unknow2, unknow3 = np.fromfile(fd, "<d", 4)
             elem_name = fd.read(32).rstrip(b"\x00").decode("utf-8")
-            mark3 = np.fromfile(fd, "<i", 1)[0]
+            # mark3?
+            _ = np.fromfile(fd, "<i", 1)[0]
             n_line = np.fromfile(fd, "<i", 1)[0]
             lines = {}
             for j in range(n_line):
-                mark_line = np.fromfile(fd, "<i", 1)[0]  # = 1
+                # mark_line?
+                _ = np.fromfile(fd, "<i", 1)[0]  # = 1
                 e_line = np.fromfile(fd, "<d", 1)[0]
                 z = np.fromfile(fd, "<H", 1)[0]
                 e_length = np.fromfile(fd, "<b", 1)[0]
@@ -513,15 +520,17 @@ def read_eds(filename, **kwargs):
 
     n_quanti = np.fromfile(fd, "<i", 1)[0]
     if n_quanti != 0:
-        unkn0 = np.fromfile(fd, "<i", 1)[0]
-        unkn1 = np.fromfile(fd, "<i", 1)[0]
-        unkn2 = np.fromfile(fd, "<i", 1)[0]
-        unkn3 = np.fromfile(fd, "<d", 1)[0]
-        unkn4 = np.fromfile(fd, "<i", 1)[0]
-        unkn5 = np.fromfile(fd, "<i", 1)[0]
+        # all unknown
+        _ = np.fromfile(fd, "<i", 1)[0]
+        _ = np.fromfile(fd, "<i", 1)[0]
+        _ = np.fromfile(fd, "<i", 1)[0]
+        _ = np.fromfile(fd, "<d", 1)[0]
+        _ = np.fromfile(fd, "<i", 1)[0]
+        _ = np.fromfile(fd, "<i", 1)[0]
         quanti = {}
         for i in range(n_quanti):
-            mark_elem = np.fromfile(fd, "<i", 1)[0]  # = 2
+            # mark elem
+            _ = np.fromfile(fd, "<i", 1)[0]  # = 2
             z = np.fromfile(fd, "<H", 1)[0]
             mark1, mark2 = np.fromfile(fd, "<i", 2)  # = 1, 0
             energy, unkn6 = np.fromfile(fd, "<d", 2)
@@ -530,13 +539,15 @@ def read_eds(filename, **kwargs):
             atom = np.fromfile(fd, "<d", 1)[0]
             ox_name = fd.read(16).rstrip(b"\x00").decode("utf-8")
             mass2 = np.fromfile(fd, "<d", 1)[0]
-            K = np.fromfile(fd, "<d", 1)[0]
+            # K
+            _ = np.fromfile(fd, "<d", 1)[0]
             counts = np.fromfile(fd, "<d", 1)[0]
-            unkn6 = np.fromfile(fd, "<d", 1)[0]
-            unkn7 = np.fromfile(fd, "<d", 1)[0]
-            unkn8 = np.fromfile(fd, "<i", 1)[0]
-            unkn9 = np.fromfile(fd, "<i", 1)[0]
-            unkn10 = np.fromfile(fd, "<d", 1)[0]
+            # all unknown
+            _ = np.fromfile(fd, "<d", 1)[0]
+            _ = np.fromfile(fd, "<d", 1)[0]
+            _ = np.fromfile(fd, "<i", 1)[0]
+            _ = np.fromfile(fd, "<i", 1)[0]
+            _ = np.fromfile(fd, "<d", 1)[0]
             quanti[ox_name] = {
                 "Z": z,
                 "Mass1 (%)": mass1,
