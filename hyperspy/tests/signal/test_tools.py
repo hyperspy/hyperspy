@@ -70,6 +70,23 @@ class TestDerivative:
             der.axes_manager[0].axis[4:-4]), atol=1e-2)
 
 
+def test_derivative():
+    data = np.arange(10)
+    scale = 0.1
+    s = signals.Signal1D(data)
+    s.axes_manager[0].scale = scale
+    der = s.derivative(axis=0)
+    np.testing.assert_allclose(der.data, (data[2]-data[1])/scale)
+
+
+def test_derivative_non_uniform_axis():
+    data = np.arange(1, 10)
+    axis_dict = {'axis': 1/data}
+    s = signals.Signal1D(data, axes=[axis_dict])
+    der = s.derivative(axis=0)
+    np.testing.assert_allclose(der.data[:4], np.array([-2, -5, -10, -17]))
+
+
 @lazifyTestClass
 class TestOutArg:
     def setup_method(self, method):
