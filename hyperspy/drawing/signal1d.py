@@ -23,6 +23,7 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
 import inspect
+from functools import partial
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
@@ -120,11 +121,11 @@ class Signal1DFigure(BlittedFigure):
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         if connect_navigation:
-            line.axes_manager.events.indices_changed.connect(
-                line._auto_update_line, [])
+            f = partial(line._auto_update_line, update_ylimits=True)
+            line.axes_manager.events.indices_changed.connect(f, [])
             line.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(
-                    line._auto_update_line), [])
+                lambda: line.axes_manager.events.indices_changed.disconnect(f),
+                [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -405,7 +406,7 @@ class Signal1DLine(object):
                                        **self.data_function_kwargs).real
         return ydata
 
-    def _auto_update_line(self, update_ylimits=True, **kwargs):
+    def _auto_update_line(self, update_ylimits=False, **kwargs):
         """Updates the line plot only if `auto_update` is `True`.
 
         This is useful to connect to events that automatically update the line.

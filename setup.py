@@ -64,7 +64,9 @@ install_req = ['scipy>=1.1',
                'sparse',
                'imageio',
                'pyyaml',
-               'PTable',
+               # prettytable and ptable are API compatible
+               # prettytable is maintained and ptable is an unmaintained fork
+               'prettytable',
                'tifffile>=2018.10.18',
                'numba',
                ]
@@ -331,6 +333,7 @@ with update_version_when_dev() as version:
                 'tests/io/FEI_old/*.emi',
                 'tests/io/FEI_old/*.ser',
                 'tests/io/FEI_old/*.npy',
+                'tests/io/FEI_old/*.tar.gz',
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/hdf5_files/*.hspy',

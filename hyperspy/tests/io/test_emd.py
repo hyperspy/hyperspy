@@ -218,7 +218,6 @@ class TestReadSeveralDatasets:
     def test_load_file(self):
         s = load(self.hdf5_dataset_path)
         assert len(s) == len(self.group_path_list)
-        title_list = [s_temp.metadata.General.title for s_temp in s]
         for _s, path in zip(s, self.group_path_list):
             assert _s.metadata.General.title in path
 
@@ -408,6 +407,44 @@ class TestFeiEMD():
         assert signal0.axes_manager[1].name == 'y'
         assert signal0.axes_manager[1].size == 50
         assert signal0.axes_manager[1].units == 'nm'
+
+        s = load(os.path.join(
+            self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
+            lazy=lazy,
+            load_SI_image_stack=True)
+        signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+
+        signal0 = s[0]
+        if lazy:
+            assert signal0._lazy
+            signal0.compute(close_file=True)
+        assert isinstance(signal0, Signal2D)
+        assert signal0.axes_manager[0].name == 'Time'
+        assert signal0.axes_manager[0].size == 10
+        assert signal0.axes_manager[0].units == 's'
+        assert signal0.axes_manager[1].name == 'x'
+        assert signal0.axes_manager[1].size == 10
+        assert signal0.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal0.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal0.axes_manager[2].name == 'y'
+        assert signal0.axes_manager[2].size == 50
+        assert signal0.axes_manager[2].units == 'nm'
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
@@ -633,3 +670,25 @@ def test_fei_no_frametime():
     assert isinstance(signal, Signal2D)
     assert signal.data.shape == (2, 3, 3)
     assert signal.axes_manager["Time"].scale == 0.8
+
+
+def test_fei_dpc_loading():
+    signals = load(os.path.join(my_path, 'emd_files', 'fei_example_dpc_titles.emd'))
+    assert signals[0].metadata.General.title == "B-D"
+    assert signals[1].metadata.General.title == "DPC"
+    assert signals[2].metadata.General.title == "iDPC"
+    assert signals[3].metadata.General.title == "DF4-C"
+    assert signals[4].metadata.General.title == "DF4-B"
+    assert signals[5].metadata.General.title == "DF4-A"
+    assert signals[6].metadata.General.title == "A-C"
+    assert signals[7].metadata.General.title == "DF4-D"
+    assert signals[8].metadata.General.title == "Filtered iDPC"
+    assert isinstance(signals[0], Signal2D)
+    assert isinstance(signals[1], ComplexSignal2D)
+    assert isinstance(signals[2], Signal2D)
+    assert isinstance(signals[3], Signal2D)
+    assert isinstance(signals[4], Signal2D)
+    assert isinstance(signals[5], Signal2D)
+    assert isinstance(signals[6], Signal2D)
+    assert isinstance(signals[7], Signal2D)
+    assert isinstance(signals[8], Signal2D)

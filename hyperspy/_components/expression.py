@@ -80,8 +80,8 @@ class Expression(Component):
         expression : str
             Component function in SymPy text expression format with
             substitutions separated by `;`. See examples and the SymPy
-            documentation for details. In order to vary the components along the 
-            signal dimensions, the variables `x` and `y` must be included for 1D 
+            documentation for details. In order to vary the components along the
+            signal dimensions, the variables `x` and `y` must be included for 1D
             or 2D components. Also, if `module` is "numexpr" the
             functions are limited to those that numexpr support. See its
             documentation for details.
@@ -120,9 +120,9 @@ class Expression(Component):
 
         Note
         ----
-        As of version 1.4, Sympy's lambdify function, that the ``Expression`` 
-        components uses internally, does not support the differentiation of 
-        some expressions, for example those containing a "where" condition. 
+        As of version 1.4, Sympy's lambdify function, that the ``Expression``
+        components uses internally, does not support the differentiation of
+        some expressions, for example those containing a "where" condition.
         In such cases, the gradients can be set manually if required.
 
         Examples
@@ -193,7 +193,7 @@ class Expression(Component):
 
     def compile_function(self, module="numpy", position=False):
         """
-        Compile the function and calculate the gradient automatically when 
+        Compile the function and calculate the gradient automatically when
         possible.
         Useful to recompile the function and gradient with a different module.
         """
@@ -269,24 +269,17 @@ class Expression(Component):
                     grad_expr = sympy.diff(eval_expr, parameter)
                     name = parameter.name if parameter.name not in self._rename_pars else self._rename_pars[
                         parameter.name]
-                    setattr(self,
-                            "_f_grad_%s" % name,
-                            lambdify(variables + parameters,
-                                     grad_expr.evalf(),
-                                     modules=module,
-                                     dummify=False)
-                            )
+                    f_grad = lambdify(variables + parameters,
+                                      grad_expr.evalf(),
+                                      modules=module,
+                                      dummify=False)
+                    grad_p = ffargs(f_grad).__get__(self, Expression)
+                    if len(grad_expr.free_symbols) == 0:
+                        # Vectorize in case of constant function
+                        # https://github.com/sympy/sympy/issues/5642
+                        grad_p = np.vectorize(grad_p)
+                    setattr(self, f"grad_{name}", grad_p)
 
-                    setattr(self,
-                            "grad_%s" % name,
-                            ffargs(
-                                getattr(
-                                    self,
-                                    "_f_grad_%s" %
-                                    name)).__get__(
-                                self,
-                                Expression)
-                            )
             except (SyntaxError, AttributeError):
                 warnings.warn("The gradients can not be computed with sympy.",
                               UserWarning)
