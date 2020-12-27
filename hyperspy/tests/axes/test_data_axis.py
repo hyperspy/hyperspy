@@ -75,7 +75,7 @@ class TestDataAxis:
     def test_value2index_fail_empty_string_in(self):
         with pytest.raises(ValueError):
             self.axis.value2index("")
-        
+
     def test_value2index_float_in(self):
         assert self.axis.value2index(10.15) == 2
 
@@ -114,7 +114,7 @@ class TestDataAxis:
     def test_calibrated_value2index_list_in(self):
         assert (
             self.axis.value2index(['0.01um', '0.0101um', '0.0103um']).tolist() == [0, 1, 3])
-        with pytest.raises(ValueError):
+        with pytest.raises(BaseException):
             self.axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
 
     def test_calibrated_value2index_in(self):
@@ -204,3 +204,8 @@ class TestDataAxis:
         ax = self.axis
         assert ax._get_index_from_value_with_units('10.5nm') == 5
         assert ax._get_index_from_value_with_units('10500pm') == 5
+
+    def test_slice_empty_string(self):
+        ax = self.axis
+        with pytest.raises(ValueError):
+            ax._parse_entry_to_calibrated_value("")

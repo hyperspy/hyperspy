@@ -419,7 +419,7 @@ class DataAxis(t.HasTraits, UnitConversion):
 
         my_slice = self._get_array_slices(slice_)
 
-        start, stop, step = my_slice.start, my_slice.stop, my_slice.step
+        start, _, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
             if step is None or step > 0:
@@ -490,20 +490,17 @@ class DataAxis(t.HasTraits, UnitConversion):
         return cp
 
     def _parse_value_from_string(self, value):
-        test_value = value if type(value) == str else value[0] # else array-like, and test first entry
-        if test_value == "":
+        """Return calibrated value from a suitable string """
+        if len(value) == 0:
             raise ValueError("Cannot index with an empty string")
-            # if first character is a digit, try unit conversion
-            # otherwise try relative (fractional) indexing
-        elif test_value[0].isdigit():
-            try:
-                value = self._get_value_from_value_with_units(value)
-            except pint.errors.UndefinedUnitError:
-                raise ValueError(f"Expected calibrated value with units like ['20nm'] (or iterable of this) but '{value}' could not be interpreted this way.")
-        elif test_value.startswith('rel'):
+        # if first character is a digit, try unit conversion
+        # otherwise try relative (fractional) indexing
+        elif value[0].isdigit():
+            value = self._get_value_from_value_with_units(value)
+        elif value.startswith('rel'):
             value = self._get_value_from_relative_string(value)
         else:
-            raise ValueError(f"Cannot index with string {value}")
+            raise ValueError(f"`{value}` is not a suitable string for slicing.")
         return value
 
     def _get_value_from_value_with_units(self, value):
@@ -536,7 +533,7 @@ class DataAxis(t.HasTraits, UnitConversion):
 
     def _get_value_from_relative_value(self, relative_value):
         '''
-        Gets the value of a position along the axis by relative or fractional value. The value is 
+        Gets the value of a position along the axis by relative or fractional value. The value is
         not necessarily in the .axis array.
         '''
         value = self.low_value + relative_value * (self.high_value - self.low_value)
@@ -548,7 +545,7 @@ class DataAxis(t.HasTraits, UnitConversion):
         elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
             value = np.asarray(value)
             if value.dtype.type is np.str_:
-                value = self._parse_value_from_string(value)
+                value = np.array([self._parse_value_from_string(v) for v in value])
         return value
 
     def value2index(self, value, rounding=round):
