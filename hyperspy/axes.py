@@ -112,12 +112,6 @@ class UnitConversion:
 
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
 
-    def _get_index_from_value_with_units(self, value):
-        value = _ureg.parse_expression(value)
-        if not hasattr(value, 'units'):
-            raise ValueError('"{}" should contains an units.'.format(value))
-        return self.value2index(value.to(self.units).magnitude)
-
     def _convert_units(self, converted_units, inplace=True):
         if self._ignore_conversion(converted_units) or \
                 self._ignore_conversion(self.units):
@@ -341,11 +335,6 @@ class DataAxis(t.HasTraits, UnitConversion):
         else:
             return value
 
-    def _parse_string_for_slice(self, value):
-        if isinstance(value, str):
-            value = self._get_index_from_value_with_units(value)
-        return value
-
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis without
         changing the offset and scale of the DataAxis.
@@ -373,9 +362,9 @@ class DataAxis(t.HasTraits, UnitConversion):
             stop = start + 1
             step = None
 
-        start = self._parse_string_for_slice(start)
-        stop = self._parse_string_for_slice(stop)
-        step = self._parse_string_for_slice(step)
+        start = self._parse_value(start)
+        stop = self._parse_value(stop)
+        step = self._parse_value(step)
 
         if isfloat(step):
             step = int(round(step / self.scale))
@@ -430,7 +419,7 @@ class DataAxis(t.HasTraits, UnitConversion):
 
         my_slice = self._get_array_slices(slice_)
 
-        start, stop, step = my_slice.start, my_slice.stop, my_slice.step
+        start, _, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
             if step is None or step > 0:
@@ -500,12 +489,49 @@ class DataAxis(t.HasTraits, UnitConversion):
         cp = self.copy()
         return cp
 
+    def _parse_value_from_string(self, value):
+        """Return calibrated value from a suitable string """
+        if len(value) == 0:
+            raise ValueError("Cannot index with an empty string")
+        # Starting with 'rel', it must be relative slicing
+        elif value.startswith('rel'):
+            try:
+                relative_value = float(value[3:])
+            except ValueError:
+                raise ValueError("`rel` must be followed by a number in range [0, 1].")
+            if relative_value < 0 or relative_value > 1:
+                raise ValueError("Relative value must be in range [0, 1]")
+            value = self.low_value + relative_value * (self.high_value - self.low_value)
+        # if first character is a digit, try unit conversion
+        # otherwise we don't support it
+        elif value[0].isdigit():
+            value = _ureg.parse_expression(value)
+            if not hasattr(value, 'units'):
+                raise ValueError(f"`{value}` should contain a unit.")
+            value = float(value.to(self.units).magnitude)
+        else:
+            raise ValueError(f"`{value}` is not a suitable string for slicing.")
+        return value
+
+    def _parse_value(self, value):
+        """Convert the inpute to calibrated value if string, otherwise,
+        return the same value."""
+        if isinstance(value, str):
+            value = self._parse_value_from_string(value)
+        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+            value = np.asarray(value)
+            if value.dtype.type is np.str_:
+                value = np.array([self._parse_value_from_string(v) for v in value])
+        return value
+
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value if between the axis limits.
 
         Parameters
         ----------
-        value : number or numpy array
+        value : number or string, or numpy array of number or string
+                if string, should either be a calibrated unit like "20nm"
+                or a relative slicing like "rel0.2".
 
         Returns
         -------
@@ -515,10 +541,13 @@ class DataAxis(t.HasTraits, UnitConversion):
         ------
         ValueError
             If any value is out of the axis limits.
+            If the value is incorrectly formatted.
 
         """
         if value is None:
             return None
+
+        value = self._parse_value(value)
 
         if isinstance(value, (np.ndarray, da.Array)):
             if rounding is round:
