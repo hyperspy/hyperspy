@@ -176,3 +176,29 @@ def test_load_datacube_downsample():
 
     with pytest.raises(ValueError, match='must be a multiple'):
         _ = hs.load(filename, downsample=[100, 256])[-1]
+
+
+def test_load_eds_file():
+    filename = os.path.join(my_path, 'JEOL_files', 'met03.EDS')
+    s = hs.load(filename)
+    assert isinstance(s, hs.signals.EDSTEMSpectrum)
+    assert s.data.shape == (2048,)
+    axis = s.axes_manager[0]
+    assert axis.name == 'Energy'
+    assert axis.size == 2048
+    assert axis.offset == -0.00176612
+    assert axis.scale == 0.0100004
+
+    md_dict = s.metadata.as_dictionary()
+    assert md_dict['General'] == {'original_filename': 'met03.EDS',
+                                  'time': '14:14:51',
+                                  'date':'2018-06-25',
+                                  'title': 'EDX'}
+    TEM_dict = md_dict['Acquisition_instrument']['TEM']
+    assert TEM_dict == {'beam_energy': 200.0,
+                        'Detector': {'EDS': {'azimuth_angle': 90.0,
+                                             'detector_type': 'EX24075JGT',
+                                             'elevation_angle': 22.299999237060547,
+                                             'energy_resolution_MnKa': 138.0,
+                                             'live_time': 30.0}},
+                        'Stage': {'tilt_alpha': 0.0}}

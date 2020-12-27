@@ -636,7 +636,7 @@ def read_eds(filename, **kwargs):
                         "detector_type": footer["Parameters"]["DetT"],
                         "elevation_angle": footer["Parameters"]["ElevAng"],
                         "energy_resolution_MnKa": footer["Parameters"]["MnKaRES"],
-                        "real_time": header["real time"],
+                        "live_time": header["live time"],
                     },
                 },
             },
