@@ -135,7 +135,7 @@ class Test1D:
         with pytest.raises(ValueError):
             self.signal.isig[:'4000.0']
             pytest.fail("should contains an units")
-    
+
     def test_relative_slicing(self):
         s = self.signal
         assert_array_equal(s.isig[:'rel0.5'].data, s.data[:4])
