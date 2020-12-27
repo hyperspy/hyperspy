@@ -462,7 +462,7 @@ features differ from numpy):
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
   + Support indexing with units.
-  + Support indexing with relative units i.e. 'rel0.5'
+  + Support indexing with relative coordinates i.e. 'rel0.5'
   + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
@@ -507,7 +507,7 @@ First consider indexing a single spectrum, which has only one signal dimension
 Unlike numpy, HyperSpy supports indexing using decimal numbers or strings
 (containing a decimal number and units), in which case
 HyperSpy indexes using the axis scales instead of the indices. Additionally,
-one can index using relative fractions like 'rel0.5' to index to or from the
+one can index using relative coordinates, for example 'rel0.5' to index the
 middle of the axis.
 
 .. code-block:: python
