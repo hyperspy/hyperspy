@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+
 import pytest
 
 import hyperspy.events as he
@@ -277,6 +278,17 @@ class TestEventsSuppression(EventsBase):
         self.trigger_check(self.events.b.trigger, True)
         self.trigger_check(self.events.c.trigger, True)
 
+    def test_suppressor_events_container(self):
+        es = he.EventSuppressor()
+        es.add(self.events)
+        with es.suppress():
+            self.trigger_check(self.events.a.trigger, False)
+            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.c.trigger, False)
+
+        self.trigger_check(self.events.a.trigger, True)
+        self.trigger_check(self.events.b.trigger, True)
+        self.trigger_check(self.events.c.trigger, True)
 
 def f_a(**kwargs): pass
 

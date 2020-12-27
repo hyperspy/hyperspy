@@ -18,6 +18,7 @@
 
 
 import numpy as np
+
 import hyperspy.misc.rgb_tools as rt
 
 

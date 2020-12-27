@@ -1,0 +1,150 @@
+name: Release
+# This workflow builds the wheels "on tag".
+# If run from the hyperspy/hyperspy repository, the wheels will be uploaded to pypi ;
+# otherwise, the wheels will be available as a github artifact.
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs: 
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  build_wheels:
+    name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
+    needs: create_release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: What OS and Python version
+        run: |
+          uname -a
+          python --version
+          which python
+
+      - name: Install Visual C++ for Python 2.7
+        if: runner.os == 'Windows'
+        run: |
+          choco install vcpython27 -f -y
+
+      - name: install pep517 and twine
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pep517 twine
+
+      - name: Build wheels
+        run: |
+          python -m pep517.build --binary --out-dir dist/ .
+
+      - name: Display content dist folder
+        run: |
+          ls dist/
+
+      - name: Install and test distribution
+        env:
+          MPLBACKEND: agg
+        run: |
+          pip install --pre --find-links dist hyperspy[tests]
+          pytest --pyargs hyperspy
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./dist/*.whl
+
+      - name: Publish wheels to PyPI
+        if: github.repository_owner == 'hyperspy'
+        env:
+          # Github secret set in the hyperspy/hyperspy repository
+          # Not available from fork or pull request
+          # Secrets are not passed to workflows that are triggered by a pull request from a fork
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          twine upload dist/*.whl --verbose
+
+  build_wheels_linux:
+    name: Wheels on ubuntu-latest
+    needs: create_release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: install twine
+        run: |
+          python -m pip install twine
+
+      - name: Build manylinux Python wheels
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2010_x86_64
+        with:
+          build-requirements: 'cython'
+
+      - name: Build source distribution
+        run: |
+          pip install pep517
+          python -m pep517.build --source --out-dir sdist/ .
+
+      - name: Display content dist folder
+        run: |
+          ls dist/
+          ls sdist/
+
+      - name: Install and test distribution
+        env:
+          MPLBACKEND: agg
+        run: |
+          pip install --pre --find-links dist hyperspy[tests]
+          pytest --pyargs hyperspy
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: |
+            ./dist/*-manylinux*.whl
+            ./sdist/*.tar.gz
+
+      - name: Publish wheels to PyPI
+        if: github.repository_owner == 'hyperspy'
+        env:
+          # Github secret set in the hyperspy/hyperspy repository
+          # Not available from fork or pull request
+          # Secrets are not passed to workflows that are triggered by a pull request from a fork
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          twine upload dist/*-manylinux*.whl --verbose 
+          twine upload sdist/*.tar.gz --verbose 
+

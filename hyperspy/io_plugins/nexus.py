@@ -128,11 +128,11 @@ def _parse_to_file(value):
         toreturn = value
     if isinstance(totest, (list, tuple)):
         totest = np.array(value)
-    if isinstance(totest, (np.ndarray)) and totest.dtype.char == "U":
+    if isinstance(totest, np.ndarray) and totest.dtype.char == "U":
         toreturn = np.array(totest).astype("S")
     elif isinstance(totest, (np.ndarray, da.Array)):
         toreturn = totest
-    if isinstance(totest, (str)):
+    if isinstance(totest, str):
         toreturn = totest.encode("utf-8")
         toreturn = np.string_(toreturn)
     return toreturn
@@ -449,12 +449,12 @@ def file_reader(filename, lazy=False, dataset_keys=None,
     mapping = kwds.get('mapping', {})
     original_metadata = {}
     learning = {}
-    fin = h5py.File(filename, "r+")
+    fin = h5py.File(filename, "r")
     signal_dict_list = []
 
     dataset_keys = _check_search_keys(dataset_keys)
     metadata_keys = _check_search_keys(metadata_keys)
-    original_metadata = _load_metadata(fin)
+    original_metadata = _load_metadata(fin, lazy=lazy)
     # some default values...
     nexus_data_paths = []
     hdf_data_paths = []
@@ -1055,12 +1055,11 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
     nxdata.attrs["signal"] = _parse_to_file("data")
     if smd.record_by:
         nxdata.attrs["interpretation"] = _parse_to_file(smd.record_by)
-    datastr = _parse_to_file("data")
-    overwrite_dataset(nxdata, signal.data, datastr, chunks=None, **kwds)
+    overwrite_dataset(nxdata, signal.data, "data", chunks=None, **kwds)
     axis_names = [_parse_to_file(".")] * len(signal.axes_manager.shape)
     for i, axis in enumerate(signal.axes_manager._axes):
         if axis.name != t.Undefined:
-            axname = _parse_to_file(axis.name)
+            axname = axis.name
             axindex = [axis.index_in_array]
             indices = _parse_to_file(axis.name + "_indices")
             nxdata.attrs[indices] = _parse_to_file(axindex)

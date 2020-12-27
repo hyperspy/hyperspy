@@ -18,14 +18,12 @@
 
 
 import os
+
 import pytest
+
 import hyperspy.api as hs
 
-try:
-    import imagecodecs
-except ImportError:
-    pytest.skip("skipping test_phenom tests, failed to import imagecodecs", allow_module_level=True)
-
+imagecodecs = pytest.importorskip("imagecodecs", reason="skipping test_phenom tests, requires imagecodecs")
 
 DIRPATH = os.path.dirname(__file__)
 ELID2VERSION0 = os.path.join(DIRPATH, 'phenom_data', 'Elid2Version0.elid')
@@ -52,7 +50,7 @@ def test_elid(pathname):
     assert s[0].metadata['General']['time'] == '09:37:31'
     assert s[0].metadata['General']['title'] == 'Image 1'
     assert s[0].metadata['Signal']['binned'] == False
-    assert s[0].metadata['Signal']['signal_type'] == 'image'
+    assert s[0].metadata['Signal']['signal_type'] == ''
     assert s[0].original_metadata['acquisition']['scan']['dwellTime']['value'] == '200'
     assert s[0].original_metadata['acquisition']['scan']['dwellTime']['unit'] == 'ns'
     assert s[0].original_metadata['acquisition']['scan']['fieldSize'] == 0.000019515585197840245

@@ -16,37 +16,36 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from collections import namedtuple
 
-import pytest
 import numpy as np
-import logging
+import pytest
 
 import hyperspy.api as hs
-from hyperspy.io import assign_signal_subclass
 from hyperspy import _lazy_signals
-
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.io import assign_signal_subclass
 
 testcase = namedtuple('testcase', ['dtype', 'sig_dim', 'sig_type', 'cls'])
 
-subclass_cases = (testcase('float', 1000, '', 'BaseSignal'),
-                  testcase('float', 1, '', 'Signal1D'),
-                  testcase('float', 2, '', 'Signal2D'),
-                  testcase('float', 1, 'EELS', 'EELSSpectrum'),
-                  testcase('float', 1, 'EDS_SEM', 'EDSSEMSpectrum'),
-                  testcase('float', 1, 'EDS_TEM', 'EDSTEMSpectrum'),
-                  testcase('complex', 1, 'DielectricFunction',
-                           'DielectricFunction'),
-                  testcase('complex', 1, 'dielectric function',
-                           'DielectricFunction'),
-                  testcase('complex', 1000, '', 'ComplexSignal'),
-                  testcase('complex', 1, '', 'ComplexSignal1D'),
-                  testcase('complex', 2, '', 'ComplexSignal2D'),
-                  testcase('float', 1000, 'weird', 'BaseSignal'),
-                  testcase('float', 1, 'weird', 'Signal1D'),
-                  testcase('complex', 1000, 'weird', 'ComplexSignal'),
-                  )
-
+subclass_cases = (
+    testcase("float", 1000, "", "BaseSignal"),
+    testcase("float", 1, "", "Signal1D"),
+    testcase("float", 2, "", "Signal2D"),
+    testcase("float", 1, "EELS", "EELSSpectrum"),
+    testcase("float", 1, "EDS_SEM", "EDSSEMSpectrum"),
+    testcase("float", 1, "EDS_TEM", "EDSTEMSpectrum"),
+    testcase("complex", 1, "DielectricFunction", "DielectricFunction"),
+    testcase("complex", 1, "dielectric function", "DielectricFunction"),
+    testcase("complex", 1000, "", "ComplexSignal"),
+    testcase("complex", 1, "", "ComplexSignal1D"),
+    testcase("complex", 2, "", "ComplexSignal2D"),
+    testcase("float", 1000, "DefinitelyNotAHyperSpySignal", "BaseSignal"),
+    testcase("float", 1, "DefinitelyNotAHyperSpySignal", "Signal1D"),
+    testcase("complex", 1000, "DefinitelyNotAHyperSpySignal", "ComplexSignal"),
+    testcase("float", 1, "DefinitelyNotAHyperSpySignal", "Signal1D"),
+)
 
 def test_assignment_class(caplog):
     for case in subclass_cases:
@@ -60,8 +59,11 @@ def test_assignment_class(caplog):
 
         assert new_subclass is getattr(hs.signals, case.cls)
 
-        if case.sig_type == "weird":
-            assert "not understood. Setting signal type to" in caplog.text
+        warn_msg = "not understood. See `hs.print_known_signal_types()` for a list of known signal types"
+        if case.sig_type == "DefinitelyNotAHyperSpySignal":
+            assert warn_msg in caplog.text
+        else:
+            assert warn_msg not in caplog.text
 
         lazyclass = 'Lazy' + case.cls if case.cls != 'BaseSignal' else 'LazySignal'
         new_subclass = assign_signal_subclass(
@@ -136,6 +138,13 @@ class TestConvertSignal1D:
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.Signal1D)
 
+    def test_deprecated(self):
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match=r"is deprecated. Use ",
+        ):
+            self.s.set_signal_type(None)
+
 
 class TestConvertComplexSignal:
 
@@ -163,9 +172,3 @@ class TestConvertComplexSignal1D:
         assert isinstance(self.s, hs.signals.DielectricFunction)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
-
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)

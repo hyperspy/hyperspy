@@ -72,8 +72,8 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
         navigator_kwds : dict
-            Only for image navigator, additional keyword arguments for 
-            matplotlib.pyplot.imshow().
+            Only for image navigator, additional keyword arguments for
+            :py:func:`matplotlib.pyplot.imshow`.
         """
 
 
@@ -88,20 +88,70 @@ BASE_PLOT_DOCSTRING = \
 
         Parameters
         ----------
-        %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
+        """
+
 
 PLOT1D_DOCSTRING = \
-"""norm : str, optional
+    """norm : str, optional
             The function used to normalize the data prior to plotting.
             Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
             (default value is ``'auto'``).
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
+        autoscale : str
+            The string must contain any combination of the 'x' and 'v'
+            characters. If 'x' or 'v' (for values) are in the string, the
+            corresponding horizontal or vertical axis limits are set to their
+            maxima and the axis limits will reset when the data or the
+            navigation indices are changed. Default is 'v'.
         """
+
 
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
+        autoscale : str
+            The string must contain any combination of the 'x', 'y' and 'v'
+            characters. If 'x' or 'y' are in the string, the corresponding
+            axis limits are set to cover the full range of the data at a given
+            position. If 'v' (for values) is in the string, the contrast of the
+            image will be set automatically according to `vmin` and `vmax` when
+            the data or navigation indices change. Default is 'v'.
+        saturated_pixels: scalar
+            The percentage of pixels that are left out of the bounds.
+            For example, the low and high bounds of a value of 1 are the 0.5%
+            and 99.5% percentiles. It must be in the [0, 100] range.
+            If None (default value), the value from the preferences is used.
+        .. deprecated:: 1.6.0
+           `saturated_pixels` will be removed in HyperSpy 2.0.0, it is replaced
+            by `vmin`, `vmax` and `autoscale`.
+        norm : {"auto", "linear", "power", "log", "symlog" or a subclass of
+                :py:class:`matplotlib.colors.Normalise`}
+            Set the norm of the image to display. If "auto", a linear scale is
+            used except if when `power_spectrum=True` in case of complex data
+            type. "symlog" can be used to display negative value on a negative
+            scale - read :py:class:`matplotlib.colors.SymLogNorm` and the
+            `linthresh` and `linscale` parameter for more details.
+        vmin, vmax : {scalar, str}, optional
+            `vmin` and `vmax` are used to normalise the displayed data. It can
+            be a float or a string. If string, it should be formatted as 'xth',
+            where 'x' must be an float in the [0, 100] range. 'x' is used to
+            compute the x-th percentile of the data. See
+            :py:func:`numpy.percentile` for more information.
+        gamma : float
+            Parameter used in the power-law normalisation when the parameter
+            norm="power". Read :py:class:`matplotlib.colors.PowerNorm` for more
+            details. Default value is 1.0.
+        linthresh : float
+            When used with norm="symlog", define the range within which the
+            plot is linear (to avoid having the plot go to infinity around
+            zero). Default value is 0.01.
+        linscale : float
+            This allows the linear range (-linthresh to linthresh) to be
+            stretched relative to the logarithmic range. Its value is the
+            number of powers of base to use for each half of the linear range.
+            See :py:class:`matplotlib.colors.SymLogNorm` for more details.
+            Defaulf value is 0.1.
         scalebar : bool, optional
             If True and the units and scale of the x and y axes are the same a
             scale bar is plotted.
@@ -111,13 +161,8 @@ PLOT2D_DOCSTRING = \
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds.
-            For example, the low and high bounds of a value of 1 are the 0.5%
-            and 99.5% percentiles. It must be in the [0, 100] range.
-            If None (default value), the value from the preferences is used.
-        vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data.
+        axes_off : {bool}
+            Default is False.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}
@@ -127,7 +172,8 @@ PLOT2D_DOCSTRING = \
         min_aspect : float
             Set the minimum aspect ratio of the image and the figure. To
             keep the image in the aspect limit the pixels are made
-            rectangular."""
+            rectangular.
+        """
 
 
 COMPLEX_DOCSTRING = \
@@ -143,12 +189,12 @@ COMPLEX_DOCSTRING = \
             the signal is one-dimensional.
         fft_shift : bool, default False
             If True, shift the zero-frequency component.
-            See `numpy.fft.fftshift` for more details.
+            See :py:func:`numpy.fft.fftshift` for more details.
         """
 
 
-KWARGS_DOCSTRING = \
+PLOT2D_KWARGS_DOCSTRING = \
     """**kwargs
-            Only for :py:class:`~hyperspy._signals.signal2d.Signal2D`:
-            additional (optional) keyword arguments for
-            :py:func:`matplotlib.pyplot.imshow`."""
+            Only when plotting an image: additional (optional) keyword
+            arguments for :py:func:`matplotlib.pyplot.imshow`.
+        """

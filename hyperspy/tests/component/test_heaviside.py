@@ -17,8 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
-
 from hyperspy.components1d import HeavisideStep
 
 
@@ -27,5 +25,5 @@ def test_function():
     g.A.value = 3
     g.n.value = 2
     assert g.function(1) == 0.
-    assert g.function(2) == 3.
+    assert g.function(2) == 1.5
     assert g.function(3) == 3.

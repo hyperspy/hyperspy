@@ -18,14 +18,14 @@
 
 from unittest import mock
 
+import logging
 import numpy as np
-from scipy.signal import savgol_filter
 import pytest
-import dask.array as da
+from scipy.signal import savgol_filter
 
-from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.decorators import lazifyTestClass
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
 
 
 @lazifyTestClass
@@ -62,7 +62,7 @@ class TestAlignTools:
                   self.scale)
         assert m.data_changed.called
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert np.allclose(s.data[:, i_zlp], 12)
+        np.testing.assert_allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
@@ -76,7 +76,7 @@ class TestAlignTools:
         s = self.signal
         s.align1D()
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert np.allclose(s.data[:, i_zlp], 12)
+        np.testing.assert_allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
@@ -100,7 +100,7 @@ class TestAlignTools:
 
         # Check actual alignment of zlp
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert np.allclose(s.data[:, i_zlp], 12)
+        np.testing.assert_allclose(s.data[:, i_zlp], 12)
 
 
 @lazifyTestClass
@@ -142,42 +142,30 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.signal.inav[0].find_peaks1D_ohaver()[0]
-        if self.signal._lazy:
-            peaks = peaks.compute()
-        assert np.allclose(
+        np.testing.assert_allclose(
             peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4)
 
     def test_two_spectra(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
-        assert np.allclose(
+        np.testing.assert_allclose(
             peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4)
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
-        assert np.allclose(
+        np.testing.assert_allclose(
             peaks['height'], 1.0, rtol=1e-5, atol=1e-4)
 
     def test_width(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
-        assert np.allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
 
     def test_n_peaks(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if self.signal._lazy:
-            peaks = peaks.compute()
         assert len(peaks) == 8
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
             peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)[1]
-            if self.signal._lazy:
-                peaks = peaks.compute()
             assert len(peaks) == min((8, n))
 
 
@@ -211,9 +199,7 @@ class TestInterpolateInBetween:
     def test_delta_int(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        tmp = np.zeros_like(s.data)
-        if isinstance(tmp, da.Array):
-            tmp = np.asarray(np.zeros_like(s.data))
+        tmp = np.zeros(s.data.shape)
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
@@ -224,9 +210,7 @@ class TestInterpolateInBetween:
     def test_delta_float(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        tmp = np.zeros_like(s.data)
-        if isinstance(tmp, da.Array):
-            tmp = np.asarray(np.zeros_like(s.data))
+        tmp = np.zeros(s.data.shape)
         tmp[12] = s.data[12]
         s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
@@ -274,6 +258,22 @@ class TestEstimatePeakWidth:
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
 
+    @pytest.mark.parametrize("parallel", [None, True])
+    def test_warnings_on_windows(self, parallel, caplog):
+        import os
+
+        if os.name not in ["nt", "dos"]:
+            pytest.skip("Ignored on non-Windows OS")
+
+        with caplog.at_level(logging.WARNING):
+            _ = self.s.estimate_peak_width(
+                window=0.5,
+                return_interval=True,
+                parallel=parallel,
+            )
+
+        assert "Parallel operation is not supported on Windows" in caplog.text
+
     def test_two_peaks(self):
         s = self.s.deepcopy()
         s.shift1D(np.array([1.0]))
@@ -302,30 +302,26 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_lowess(self, parallel):
-        pytest.importorskip("statsmodels")
-        from statsmodels.nonparametric.smoothers_lowess import lowess
-        frac = 0.5
-        it = 1
+        from hyperspy.misc.lowess_smooth import lowess
+        f = 0.5
+        n_iter = 1
         data = np.asanyarray(self.s.data, dtype='float')
         for i in range(data.shape[0]):
             data[i, :] = lowess(
-                endog=data[i, :],
-                exog=self.s.axes_manager[-1].axis,
-                frac=frac,
-                it=it,
-                is_sorted=True,
-                return_sorted=False,)
-        self.s.smooth_lowess(smoothing_parameter=frac,
-                             number_of_iterations=it,
+                x=self.s.axes_manager[-1].axis,
+                y=data[i, :],
+                f=f,
+                n_iter=n_iter,
+                )
+        self.s.smooth_lowess(smoothing_parameter=f,
+                             number_of_iterations=n_iter,
                              parallel=parallel)
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
 
-    @pytest.mark.parametrize('parallel',
-                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    @pytest.mark.parametrize('parallel', [True, False])
     def test_tv(self, parallel):
         weight = 1
         data = np.asanyarray(self.s.data, dtype='float')

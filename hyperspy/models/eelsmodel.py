@@ -17,14 +17,14 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import warnings
 import logging
+import warnings
 
-from hyperspy.models.model1d import Model1D
-from hyperspy.components1d import EELSCLEdge
-from hyperspy.components1d import PowerLaw
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
+from hyperspy.components1d import EELSCLEdge, PowerLaw
+from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
+from hyperspy.models.model1d import Model1D
 
 _logger = logging.getLogger(__name__)
 
@@ -124,6 +124,7 @@ class EELSModel(Model1D):
     def remove(self, component):
         super(EELSModel, self).remove(component)
         self._classify_components()
+
     remove.__doc__ = Model1D.remove.__doc__
 
     def _classify_components(self):
@@ -287,105 +288,76 @@ class EELSModel(Model1D):
         else:
             return
 
-    def fit(self, fitter=None, method='ls', grad=False,
-            bounded=False, ext_bounding=False, update_plot=False,
-            kind='std', **kwargs):
-        """Fits the model to the experimental data
+    def fit(self, kind="std", **kwargs):
+        """Fits the model to the experimental data.
+
+        Read more in the :ref:`User Guide <model.fitting>`.
 
         Parameters
         ----------
-        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
-            The optimizer to perform the fitting. If None the fitter
-            defined in the Preferences is used. leastsq is the most
-            stable but it does not support bounding. mpfit supports
-            bounding. fmin is the only one that supports
-            maximum likelihood estimation, but it is less robust than
-            the Levenberg–Marquardt based leastsq and mpfit, and it is
-            better to use it after one of them to refine the estimation.
-        method : {'ls', 'ml'}
-            Choose 'ls' (default) for least squares and 'ml' for
-            maximum-likelihood estimation. The latter only works with
-            fitter = 'fmin'.
-        grad : bool
-            If True, the analytical gradient is used if defined to
-            speed up the estimation.
-        ext_bounding : bool
-            If True, enforce bounding by keeping the value of the
-            parameters constant out of the defined bounding area.
-        bounded : bool
-            If True performs bounded optimization if the fitter
-            supports it. Currently only mpfit support bounding.
-        update_plot : bool
-            If True, the plot is updated during the optimization
-            process. It slows down the optimization but it permits
-            to visualize the optimization evolution.
-        kind : {'std', 'smart'}
-            If 'std' (default) performs standard fit. If 'smart'
-            performs smart_fit
+        kind : {"std", "smart"}, default "std"
+            If "std", performs standard fit. If "smart",
+            performs a smart_fit - for more details see
+            the :ref:`User Guide <eels.fitting>`.
+        %s
 
-        **kwargs : key word arguments
-            Any extra key word argument will be passed to the chosen
-            fitter
+        Returns
+        -------
+        None
 
         See Also
         --------
-        multifit, smart_fit
+        * :py:meth:`~hyperspy.model.BaseModel.fit`
+        * :py:meth:`~hyperspy.model.BaseModel.multifit`
+        * :py:meth:`~hyperspy.model.EELSModel.smart_fit`
 
         """
-        if kind == 'smart':
-            self.smart_fit(fitter=fitter,
-                           method=method,
-                           grad=grad,
-                           bounded=bounded,
-                           ext_bounding=ext_bounding,
-                           update_plot=update_plot,
-                           **kwargs)
-        elif kind == 'std':
-            Model1D.fit(self,
-                        fitter=fitter,
-                        method=method,
-                        grad=grad,
-                        bounded=bounded,
-                        ext_bounding=ext_bounding,
-                        update_plot=update_plot,
-                        **kwargs)
-        else:
-            raise ValueError('kind must be either \'std\' or \'smart\'.'
-                             '\'%s\' provided.' % kind)
+        if kind not in ["smart", "std"]:
+            raise ValueError(
+                f"kind must be either 'std' or 'smart', not '{kind}'"
+            )
+        elif kind == "smart":
+            return self.smart_fit(**kwargs)
+        elif kind == "std":
+            return Model1D.fit(self, **kwargs)
+
+    fit.__doc__ %= FIT_PARAMETERS_ARG
 
     def smart_fit(self, start_energy=None, **kwargs):
-        """ Fits EELS edges in a cascade style.
-        The fitting procedure acts in iterative manner along the energy-loss-axis.
-        First it fits only the background up to the first edge.
-        It continues by deactivating all edges except the first one, then performs the fit. 
-        Then it only activates the the first two, fits, and repeats this until all 
-        edges are fitted simultanously.
+        """Fits EELS edges in a cascade style.
 
-        Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
+        The fitting procedure acts in iterative manner along
+        the energy-loss-axis. First it fits only the background
+        up to the first edge. It continues by deactivating all
+        edges except the first one, then performs the fit. Then
+        it only activates the the first two, fits, and repeats
+        this until all edges are fitted simultanously.
+
+        Other, non-EELSCLEdge components, are never deactivated,
+        and fitted on every iteration.
 
         Parameters
         ----------
-
         start_energy : {float, None}
             If float, limit the range of energies from the left to the
             given value.
-        **kwargs : key word arguments
-            Any extra key word argument will be passed to
-            the fit method. See the fit method documentation for
-            a list of valid arguments.
+        %s
 
         See Also
         --------
-        fit, multifit
+        * :py:meth:`~hyperspy.model.BaseModel.fit`
+        * :py:meth:`~hyperspy.model.BaseModel.multifit`
+        * :py:meth:`~hyperspy.model.EELSModel.fit`
 
         """
-
         # Fit background
         self.fit_background(start_energy, **kwargs)
 
         # Fit the edges
         for i in range(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
+
+    smart_fit.__doc__ %= FIT_PARAMETERS_ARG
 
     def _get_first_ionization_edge_energy(self, start_energy=None):
         """Calculate the first ionization edge energy.

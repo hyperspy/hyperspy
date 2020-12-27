@@ -36,7 +36,7 @@ def _get_element_and_line(xray_line):
     """
     lim = xray_line.find('_')
     if lim == -1:
-        raise ValueError("Invalid xray-line: %" % xray_line)
+        raise ValueError(f"Invalid xray-line: {xray_line}")
     return xray_line[:lim], xray_line[lim + 1:]
 
 
@@ -253,10 +253,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
 
-def take_off_angle(tilt_stage,
-                   azimuth_angle,
-                   elevation_angle,
-                   beta_tilt=0.):
+def take_off_angle(tilt_stage, azimuth_angle, elevation_angle, beta_tilt=0.0):
     """Calculate the take-off-angle (TOA).
 
     TOA is the angle with which the X-rays leave the surface towards
@@ -288,17 +285,36 @@ def take_off_angle(tilt_stage,
     28.865971201155283
     """
 
+    if tilt_stage is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Stage.tilt_alpha` is not set."
+        )
+
+    if azimuth_angle is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Detector.EDS.azimuth_angle` is not set."
+        )
+
+    if elevation_angle is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Detector.EDS.elevation_angle` is not set."
+        )
+
     alpha = math.radians(tilt_stage)
     beta = -math.radians(beta_tilt)
     phi = math.radians(azimuth_angle)
     theta = -math.radians(elevation_angle)
 
-    return(90-math.degrees(np.arccos(math.sin(alpha)*math.cos(beta)*
-                                     math.cos(phi)*math.cos(theta)-
-                                     math.sin(beta)*math.sin(phi)*
-                                     math.cos(theta)-math.cos(alpha)*
-                                     math.cos(beta)*math.sin(theta))))
-
+    return 90 - math.degrees(
+        np.arccos(
+            math.sin(alpha) * math.cos(beta) * math.cos(phi) * math.cos(theta)
+            - math.sin(beta) * math.sin(phi) * math.cos(theta)
+            - math.cos(alpha) * math.cos(beta) * math.sin(theta)
+        )
+    )
 
 def xray_lines_model(elements,
                      beam_energy=200,
@@ -384,7 +400,7 @@ def quantification_cliff_lorimer(intensities,
     kfactors: list of float
         The list of kfactor in same order as intensities eg. kfactors =
         [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
-    mask: array of bool
+    mask: array of bool of signal of bool
         The mask with the dimension of intensities[0]. If a pixel is True,
         the composition is set to zero.
 
@@ -418,8 +434,11 @@ def quantification_cliff_lorimer(intensities,
                     intens[index[0], i] = 1.
         intens = intens.reshape(dim)
         if mask is not None:
+            from hyperspy.signals import BaseSignal
+            if isinstance(mask, BaseSignal):
+                mask = mask.data
             for i in range(dim[0]):
-                intens[i][mask] = 0
+                intens[i][(mask==True)] = 0
         return intens
     else:
         index = np.where(intensities > min_intensity)[0]
@@ -531,10 +550,10 @@ def quantification_zeta_factor(intensities,
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor, absorption_correction in zip(intensities, zfactors, absorption_correction):
-        sumzi = sumzi + intensity * zfactor * absorption_correction
-    for i, (intensity, zfactor, absorption_correction) in enumerate(zip(intensities, zfactors, absorption_correction)):
-        composition[i] = intensity * zfactor * absorption_correction / sumzi
+    for intensity, zfactor, acf in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + (intensity * zfactor * acf)
+    for i, (intensity, zfactor, acf) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * acf / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
 
@@ -557,10 +576,12 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
     toa_rad = np.radians(take_off_angle)
     csc_toa = 1.0/np.sin(toa_rad)
     # convert from cm^2/g to m^2/kg
-    mac = stack(material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
-    acf = mac.data * mass_thickness.data * csc_toa
-    acf = acf/(1.0 - np.exp(-(acf)))
-
+    mac = stack(
+        material.mass_absorption_mixture(weight_percent=weight_percent),
+        show_progressbar=False
+        ) * 0.1
+    expo = mac.data * mass_thickness.data * csc_toa
+    acf = expo/(1.0 - np.exp(-(expo)))
     return acf
 
 def quantification_cross_section(intensities,
@@ -610,7 +631,8 @@ def quantification_cross_section(intensities,
     return composition, number_of_atoms
 
 
-def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, probe_area): # take_off_angle, temporary value for testing
+def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle,
+                               probe_area):
     """
     Calculate absorption correction terms.
 
@@ -630,24 +652,23 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle, pro
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
 
-    number_of_atoms = stack(number_of_atoms).data
+    number_of_atoms = stack(number_of_atoms, show_progressbar=False).data
 
-    #calculate the total_mass per pixel, or mass thicknessself.
+    #calculate the total_mass in kg/m^2, or mass thickness.
     total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
     for i, (weight) in enumerate(atomic_weights):
-        total_mass += (number_of_atoms[i] * weight / Av / probe_area / 1E-15)
-
-     # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
-    mac = stack(material.mass_absorption_mixture(weight_percent=material.atomic_to_weight(composition))) * 0.1
-
+        total_mass += (number_of_atoms[i] * weight / Av / 1E3 / probe_area / 1E-18)
+    # determine mass absorption coefficients and convert from cm^2/g to m^2/kg.
+    to_stack = material.mass_absorption_mixture(
+        weight_percent=material.atomic_to_weight(composition)
+        )
+    mac = stack(to_stack, show_progressbar=False) * 0.1
     acf = np.zeros_like(number_of_atoms)
-    constant = 1/(Av * math.sin(toa_rad) * probe_area * 1E-16)
-
-    #determine an absorption coeficcient per element per pixel.
+    csc_toa = 1/math.sin(toa_rad)
+    #determine an absorption coeficient per element per pixel.
     for i, (weight) in enumerate(atomic_weights):
-        expo = (mac.data[i] * total_mass * constant)
-        acf[i] = expo/(1 - math.e**(-expo))
-
+        expo = (mac.data[i] * total_mass * csc_toa)
+        acf[i] = expo/(1 - np.exp(-expo))
     return acf
 
 

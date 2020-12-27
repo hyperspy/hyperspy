@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.eds.utils import xray_range
-from hyperspy.misc.eds.utils import electron_range
-from hyperspy.misc.eds.utils import take_off_angle
-from hyperspy.misc.eds.utils import get_xray_lines_near_energy
-from hyperspy.misc.eds.utils import edx_cross_section_to_zeta, zeta_to_edx_cross_section
+from hyperspy.misc.eds.utils import (edx_cross_section_to_zeta, electron_range,
+                                     get_xray_lines_near_energy,
+                                     take_off_angle, xray_range,
+                                     zeta_to_edx_cross_section)
