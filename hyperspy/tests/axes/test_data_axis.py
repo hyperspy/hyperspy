@@ -302,6 +302,19 @@ class TestUniformDataAxis:
         ac.offset = 100
         assert ac.axis[0] == ac.offset
 
+    def test_value2index_None(self):
+        assert self.axis.value2index(None) is None
+
+    def test_value2index_fail_string_in(self):
+        ax = self.axis
+        ax.units = 'nm'
+        with pytest.raises(ValueError):
+            ax.value2index("10.15")
+
+    def test_value2index_fail_empty_string_in(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index("")
+
     def test_value2index_float_in(self):
         assert self.axis.value2index(10.15) == 2
 
@@ -320,6 +333,11 @@ class TestUniformDataAxis:
             self.axis.value2index(np.array([10.15, 10.15])).tolist() ==
             [2, 2])
 
+    def test_value2index_list_in(self):
+        assert (
+            self.axis.value2index([10.15, 10.15]).tolist() ==
+            [2, 2])
+
     def test_value2index_array_in_ceil(self):
         assert (
             self.axis.value2index(np.array([10.14, 10.14]),
@@ -332,6 +350,30 @@ class TestUniformDataAxis:
                                   rounding=math.floor).tolist() ==
             [1, 1])
 
+    def test_calibrated_value2index_list_in(self):
+        ax = self.axis
+        ax.units = 'nm'
+        np.testing.assert_allclose(
+            ax.value2index(['0.01um', '0.0101um', '0.0103um']),
+            np.array([0, 1, 3])
+            )
+        with pytest.raises(BaseException):
+            ax.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
+
+    def test_calibrated_value2index_in(self):
+        ax = self.axis
+        ax.units = 'nm'
+        assert ax.value2index("0.0101um") == 1
+
+    def test_relative_value2index_in(self):
+        assert self.axis.value2index("rel0.5") == 4
+
+    def test_relative_value2index_list_in(self):
+        np.testing.assert_allclose(
+            self.axis.value2index(["rel0.0", "rel0.5", "rel1.0"]),
+            np.array([0, 4, 9])
+            )
+
     def test_value2index_array_out(self):
         with pytest.raises(ValueError):
             self.axis.value2index(np.array([10, 11]))
@@ -339,7 +381,8 @@ class TestUniformDataAxis:
     def test_slice_me(self):
         assert (
             self.axis._slice_me(slice(np.float32(10.2), 10.4, 2)) ==
-            slice(2, 4, 2))
+            slice(2, 4, 2)
+            )
 
     def test_update_from(self):
         ax2 = UniformDataAxis(size=2, units="nm", scale=0.5)
@@ -421,3 +464,33 @@ class TestUniformDataAxis:
         np.testing.assert_almost_equal(axis.axis[-1], 10.3)
         np.testing.assert_almost_equal(axis.offset, 10.2)
         np.testing.assert_almost_equal(axis.scale, 0.1)
+
+    def test_parse_value(self):
+        ax = self.axis
+        ax.units = 'nm'
+        # slicing by index
+        assert ax._parse_value(5) == 5
+        assert type(ax._parse_value(5)) is int
+        # slicing by calibrated value
+        assert ax._parse_value(10.5) == 10.5
+        assert type(ax._parse_value(10.5)) is float
+        # slicing by unit
+        assert ax._parse_value('10.5nm') == 10.5
+        np.testing.assert_almost_equal(ax._parse_value('10500pm'), 10.5)
+
+    def test_parse_value_from_relative_string(self):
+        ax = self.axis
+        assert ax._parse_value_from_string('rel0.0') == 10.0
+        assert ax._parse_value_from_string('rel0.5') == 10.45
+        assert ax._parse_value_from_string('rel1.0') == 10.9
+        with pytest.raises(ValueError):
+            ax._parse_value_from_string('rela0.5')
+        with pytest.raises(ValueError):
+            ax._parse_value_from_string('rela1.5')
+        with pytest.raises(ValueError):
+            ax._parse_value_from_string('abcd')
+
+    def test_slice_empty_string(self):
+        ax = self.axis
+        with pytest.raises(ValueError):
+            ax._parse_value("")
