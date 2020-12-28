@@ -19,9 +19,14 @@
 import os
 from collections.abc import Iterable
 from datetime import datetime, timedelta
+import logging
 
 import numpy as np
 import numba
+
+
+_logger = logging.getLogger(__name__)
+
 
 # Plugin characteristics
 # ----------------------
@@ -88,7 +93,7 @@ def file_reader(filename, **kwds):
                                     d = reader_function(file_path, scale, **kwds)
                                     dictionary.append(d)
         else:
-            print("Not a valid JEOL asw format")
+            _logger.warning("Not a valid JEOL asw format")
     else:
         d = extension_to_reader_mapping[file_ext](filename, **kwds)
         dictionary.append(d)
@@ -168,7 +173,7 @@ def read_img(filename, scale=None, **kwargs):
             "original_metadata": header_long,
         }
     else:
-        print("Not a valid JEOL img format")
+        _logger.warning("Not a valid JEOL img format")
 
     fd.close()
 
@@ -328,7 +333,7 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
             "original_metadata": header,
         }
     else:
-        print("Not a valid JEOL pts format")
+        _logger.warning("Not a valid JEOL pts format")
 
     fd.close()
 
