@@ -89,9 +89,10 @@ def file_reader(filename, **kwds):
                                     subfile = os.path.join(*path)
                                     sub_ext = os.path.splitext(subfile)[-1][1:]
                                     file_path = os.path.join(filepath, subfile)
-                                    reader_function = extension_to_reader_mapping[sub_ext]
-                                    d = reader_function(file_path, scale, **kwds)
-                                    dictionary.append(d)
+                                    if sub_ext in extension_to_reader_mapping.keys():
+                                        reader_function = extension_to_reader_mapping[sub_ext]
+                                        d = reader_function(file_path, scale, **kwds)
+                                        dictionary.append(d)
         else:
             _logger.warning("Not a valid JEOL asw format")
     else:
