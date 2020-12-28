@@ -255,17 +255,19 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +-----------------------------------+--------+--------+--------+
     | Protochips log                    |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
-    | EDAX .spc and .spd                |    Yes |    No  |    Yes |
+    | EDAX spc and spd                  |    Yes |    No  |    Yes |
     +-----------------------------------+--------+--------+--------+
-    | h5USID .h5                        |    Yes |   Yes  |   Yes  |
+    | h5USID h5                         |    Yes |   Yes  |   Yes  |
     +-----------------------------------+--------+--------+--------+
-    | Phenom .elid                      |    Yes |    No  |    No  |
+    | Phenom elid                       |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
-    | DigitalSurf's .sur and .pro       |    Yes |    No  |    No  |
+    | DigitalSurf's sur and pro         |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
-    | Nexus .nxs                        |    Yes |   Yes  |   Yes  |
+    | Nexus nxs                         |    Yes |   Yes  |   Yes  |
     +-----------------------------------+--------+--------+--------+
-    | EMPAD .xml                        |    Yes |    No  |   Yes  |
+    | EMPAD xml                         |    Yes |    No  |   Yes  |
+    +-----------------------------------+--------+--------+--------+
+    | JEOL asw, map, img, pts, eds      |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
 
 .. _hspy-format:
@@ -345,7 +347,7 @@ This feature is particularly useful when using
 
 The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
 of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
-full signal shape. It is possible to customise the chunk shape using the ``chunks`` keyword. 
+full signal shape. It is possible to customise the chunk shape using the ``chunks`` keyword.
 For example, to save the data with ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks
 for this signal:
 
@@ -368,7 +370,7 @@ See the `chunking section <big_data.html#Chunking>`__ under `Working with big da
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
+- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
   ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
 .. note::
@@ -937,14 +939,14 @@ the data size in memory.
     <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
 
 .. note::
-    
+
     FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
     The FFT is not centered and only positive frequencies are stored in the file.
     Lazy reading of these datasets is not supported. Making FFTs with HyperSpy
     from the respective image datasets is recommended.
 
 .. note::
-    
+
     DPC data is loaded in as a HyperSpy ComplexSignal2D object. Lazy reading of these
     datasets is not supported.
 
@@ -1559,6 +1561,53 @@ will convert all signals and its metadata into hyperspy signals.
 The current implementation supports ELID files created with Element Identification version
 3.8.0 and later. You can convert older ELID files by loading the file into a recent Element
 Identification release and then save the ELID file into the newer file format.
+
+.. _jeol_format-label:
+
+JEOL ASW format
+---------------
+
+This is the file format used by the `JEOL Analysist Station software` for which
+hyperspy can read the ``asw``, ``pts``, ``map`` and ``eds`` format. To read the
+calibration, it is required to load the ``asw`` file, which will load all others
+files automatically.
+
+Extra loading arguments
++++++++++++++++++++++++
+
+- ``rebin_energy`` : Factor used to rebin the energy dimension. It must be a
+  multiple of the number of channels, typically 4096. (default 1)
+- ``SI_dtype`` : set dtype of the eds dataset. Useful to adjust memory usage
+  and maximum number of X-rays per channel. (default np.unit8)
+- ``cutoff_at_kV`` : if set (can be int or float >= 0), use to crop the energy
+  range up the specified energy. If ``None``, the whole energy range is loaded.
+  Useful to reduce memory usage. (default None).
+- ``downsample`` : the downsample ratio of the navigation dimension of EDS
+  dataset, it can be integer or a tuple of length 2 to define ``x`` and ``y``
+  separetely and it must be a mutiple of the size of the navigation dimension.
+  (default 1).
+
+Example of loading data downsampled, and with energy range cropped with the
+original navigation dimension 512 x 512 and the EDS range 40 keV over 4096
+channels:
+
+.. code-block:: python
+
+    >>> hs.load("sample40kv.asw", downsample=8, cutoff_at_kV=10)
+    [<Signal2D, title: IMG1, dimensions: (|512, 512)>,
+     <Signal2D, title: C K, dimensions: (|512, 512)>,
+     <Signal2D, title: O K, dimensions: (|512, 512)>,
+     <EDSTEMSpectrum, title: EDX, dimensions: (64, 64|1096)>]
+
+load the same file without extra arguments:
+
+.. code-block:: python
+
+    >>> hs.load("sample40kv.asw")
+    [<Signal2D, title: IMG1, dimensions: (|512, 512)>,
+     <Signal2D, title: C K, dimensions: (|512, 512)>,
+     <Signal2D, title: O K, dimensions: (|512, 512)>,
+     <EDSTEMSpectrum, title: EDX, dimensions: (512, 512|4096)>]
 
 
 Reading data generated by HyperSpy using other software packages
