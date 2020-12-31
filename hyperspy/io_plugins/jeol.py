@@ -19,9 +19,14 @@
 import os
 from collections.abc import Iterable
 from datetime import datetime, timedelta
+import logging
 
 import numpy as np
 import numba
+
+
+_logger = logging.getLogger(__name__)
+
 
 # Plugin characteristics
 # ----------------------
@@ -84,11 +89,12 @@ def file_reader(filename, **kwds):
                                     subfile = os.path.join(*path)
                                     sub_ext = os.path.splitext(subfile)[-1][1:]
                                     file_path = os.path.join(filepath, subfile)
-                                    reader_function = extension_to_reader_mapping[sub_ext]
-                                    d = reader_function(file_path, scale, **kwds)
-                                    dictionary.append(d)
+                                    if sub_ext in extension_to_reader_mapping.keys():
+                                        reader_function = extension_to_reader_mapping[sub_ext]
+                                        d = reader_function(file_path, scale, **kwds)
+                                        dictionary.append(d)
         else:
-            print("Not a valid JEOL asw format")
+            _logger.warning("Not a valid JEOL asw format")
     else:
         d = extension_to_reader_mapping[file_ext](filename, **kwds)
         dictionary.append(d)
@@ -168,7 +174,7 @@ def read_img(filename, scale=None, **kwargs):
             "original_metadata": header_long,
         }
     else:
-        print("Not a valid JEOL img format")
+        _logger.warning("Not a valid JEOL img format")
 
     fd.close()
 
@@ -218,8 +224,11 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
 
         check_multiple(downsample_width, width, 'downsample[0]')
         check_multiple(downsample_height, height, 'downsample[1]')
-        downsample_width = int(downsample_width)
-        downsample_height = int(downsample_height)
+
+        # Normalisation factor for the x and y position in the stream; depends
+        # on the downsampling and the size of the navigation space
+        width_norm = int(4096 / width * downsample_width)
+        height_norm = int(4096 / height * downsample_height)
 
         width = int(width / downsample_width)
         height = int(height / downsample_height)
@@ -278,9 +287,9 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
             },
         ]
 
-        hypermap = np.zeros([height, width, channel_number], dtype=SI_dtype)
-        data = readcube(rawdata, hypermap, rebin_energy, channel_number,
-                        downsample_width, downsample_height)
+        data = np.zeros([height, width, channel_number], dtype=SI_dtype)
+        data = readcube(rawdata, data, rebin_energy, channel_number,
+                        width_norm, height_norm)
 
         hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
@@ -325,7 +334,7 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
             "original_metadata": header,
         }
     else:
-        print("Not a valid JEOL pts format")
+        _logger.warning("Not a valid JEOL pts format")
 
     fd.close()
 
@@ -413,12 +422,12 @@ def parsejeol(fd):
 
 @numba.njit(cache=True)
 def readcube(rawdata, hypermap, rebin_energy, channel_number,
-             downsample_width, downsample_height):  # pragma: no cover
+             width_norm, height_norm):  # pragma: no cover
     for value in rawdata:
         if value >= 32768 and value < 36864:
-            x = int((value - 32768) / downsample_width / 8)
+            x = int((value - 32768) / width_norm)
         elif value >= 36864 and value < 40960:
-            y = int((value - 36864) / downsample_height / 8)
+            y = int((value - 36864) / height_norm)
         elif value >= 45056 and value < 49152:
             z = int((value - 45056) / rebin_energy)
             if z < channel_number:
