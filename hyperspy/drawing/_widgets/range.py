@@ -404,8 +404,8 @@ class ModifiableSpanSelector(SpanSelector):
         """Update the patch drawing.
         """
         try:
-            if self.useblit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._update_animated()
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig.render_figure()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -577,7 +577,7 @@ class ModifiableSpanSelector(SpanSelector):
             return
         x_increment = self._get_mouse_position(event) - self.pressv
         if self.step_ax is not None:
-            if (self.bounds_check  
+            if (self.bounds_check
                 and self._range[0] <= self.step_ax.low_value
                 and self._get_mouse_position(event) <= self.pressv):
                 return
