@@ -182,11 +182,10 @@ class WidgetBase(object):
         if self.ax is not None and self.is_on():
             self.disconnect()
         self.ax = ax
-        canvas = ax.figure.canvas
         if self.is_on() is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            canvas.draw_idle()
+            ax.figure.canvas.draw_idle()
             self.select()
 
     def select(self):
@@ -257,8 +256,8 @@ class WidgetBase(object):
         """Update the patch drawing.
         """
         try:
-            if self.blit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._update_animated()
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig.render_figure()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -976,6 +975,7 @@ class ResizersMixin(object):
         elif self.picked:
             if self.resizers and not self._resizers_on:
                 self._set_resizers(True, self.ax)
+                self.ax.figure.canvas.draw_idle()
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
             self.pick_offset = (x - self._pos[0], y - self._pos[1])

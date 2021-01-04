@@ -460,6 +460,8 @@ class BaseInteractiveROI(BaseROI):
 
         # Set DataAxes
         widget.axes = axes
+        with widget.events.changed.suppress_callback(self._on_widget_change):
+            self._apply_roi2widget(widget)
         if widget.ax is None:
             if signal._plot is None or signal._plot.signal_plot is None:
                 raise Exception(
@@ -468,8 +470,6 @@ class BaseInteractiveROI(BaseROI):
 
             ax = _get_mpl_ax(signal._plot, axes)
             widget.set_mpl_ax(ax)
-        with widget.events.changed.suppress_callback(self._on_widget_change):
-            self._apply_roi2widget(widget)
 
         # Connect widget changes to on_widget_change
         widget.events.changed.connect(self._on_widget_change,
