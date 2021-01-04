@@ -24,6 +24,7 @@ import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.events import Events, Event
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -85,7 +86,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.can_switch = True
         self.span.events.changed.connect(self._span_changed, {'obj': 'widget'})
         self.span.step_ax = self.axes[0]
-        self.span.tolerance = 5
+        self.span.tolerance = preferences.Plot.pick_tolerance
         self.patch = [self.span.rect]
         self.patch[0].set_color(self.color)
         self.patch[0].set_alpha(self.alpha)
@@ -285,7 +286,7 @@ class ModifiableSpanSelector(SpanSelector):
         SpanSelector.__init__(self, ax, onselect, direction=direction,
                               useblit=useblit, span_stays=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
-        self.tolerance = 2
+        self.tolerance = preferences.Plot.pick_tolerance
         self.on_move_cid = None
         self._range = None
         self.step_ax = None

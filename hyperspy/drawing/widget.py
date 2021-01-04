@@ -24,6 +24,7 @@ import numpy as np
 
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.events import Events, Event
+from hyperspy.defaults_parser import preferences
 
 
 class WidgetBase(object):
@@ -835,7 +836,8 @@ class ResizersMixin(object):
         self.resizer_picked = False
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
-        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        pick_tol = preferences.Plot.pick_tolerance
+        self.resize_pixel_size = (pick_tol, pick_tol)  # Set to None to make one data pixel
         self._resizers = resizers
         self._resizer_handles = []
         self._resizers_on = False
