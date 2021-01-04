@@ -60,7 +60,7 @@ class WidgetBase(object):
         self.color = color
         self.alpha = alpha
         self.cids = list()
-        self.blit = True
+        self.blit = None
         self.events = Events()
         self.events.changed = Event(doc="""
             Event that triggers when the widget has a significant change.
@@ -884,7 +884,6 @@ class ResizersMixin(object):
                         if r in container:
                             container.remove(r)
             self._resizers_on = value
-            self.draw_patch()
 
     def _get_resizer_size(self):
         """Gets the size of the resizer handles in axes coordinates. If
@@ -946,9 +945,8 @@ class ResizersMixin(object):
         rsize = self._get_resizer_size()
         pos = self._get_resizer_pos()
         for i in range(len(pos)):
-            r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
-                              fill=True, lw=0, fc=self.resize_color,
-                              picker=True,)
+            r = plt.Rectangle(pos[i], rsize[0], rsize[1], fill=True, lw=0,
+                              fc=self.resize_color, picker=True,)
             self._resizer_handles.append(r)
 
     def set_on(self, value):
