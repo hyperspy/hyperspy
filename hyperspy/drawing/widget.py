@@ -104,7 +104,7 @@ class WidgetBase(object):
         """
         return self.__is_on
 
-    def set_on(self, value):
+    def set_on(self, value, render_figure=True):
         """Change the on state of the widget. If turning off, all patches will
         be removed from the matplotlib axes and the widget will disconnect from
         all events. If turning on, the patch(es) will be added to the
@@ -129,7 +129,8 @@ class WidgetBase(object):
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
         if did_something:
-            self.draw_patch()
+            if render_figure:
+                self.draw_patch()
             if value is False:
                 self.ax = None
         self.__is_on = value
@@ -246,11 +247,11 @@ class WidgetBase(object):
         if self._navigating:
             self.disconnect_navigate()
 
-    def close(self, window=None):
+    def close(self, window=None, render_figure=False):
         """Set the on state to off (removes patch and disconnects), and trigger
         events.closed.
         """
-        self.set_on(False)
+        self.set_on(False, render_figure=render_figure)
         self.events.closed.trigger(obj=self)
 
     def draw_patch(self, *args):

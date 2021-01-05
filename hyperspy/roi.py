@@ -480,10 +480,10 @@ class BaseInteractiveROI(BaseROI):
         self.signal_map[signal] = (widget, axes)
         return widget
 
-    def _remove_widget(self, widget):
+    def _remove_widget(self, widget, render_figure=True):
         widget.events.closed.disconnect(self._remove_widget)
         widget.events.changed.disconnect(self._on_widget_change)
-        widget.close()
+        widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
                 self.signal_map.pop(signal)
@@ -494,11 +494,30 @@ class BaseInteractiveROI(BaseROI):
                     self.update,
                     [])
 
+    def remove_widget(self, signal, render_figure=True):
+        """
+        Removing a widget from a signal consists in two tasks:
+            1. Disconnect the interactive operations associated with this ROI
+               and the specified signal `signal`.
+            2. Removing the widget from the plot.
 
-    def remove_widget(self, signal):
+        Parameters
+        ----------
+        signal : BaseSignal
+            The signal from the which the interactive operations will be
+            disconnected.
+        render_figure : bool, optional
+            If False, the figure will not be rendered after removing the widget
+            in order to save redraw events. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if signal in self.signal_map:
             w = self.signal_map.pop(signal)[0]
-            self._remove_widget(w)
+            self._remove_widget(w, render_figure)
 
 
 class BasePointROI(BaseInteractiveROI):
