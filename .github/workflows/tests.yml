@@ -96,3 +96,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           path: ./doc/_build/*
+          name: doc_build
+
