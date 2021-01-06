@@ -1543,3 +1543,71 @@ def is_binned(signal, axis=-1):
         return signal.metadata.Signal.binned
     else:
         return signal.axes_manager[axis].is_binned
+
+
+def is_cupy_array(array):
+    """
+    Convenience function to determine if an array is a cupy array
+
+    Parameters
+    ----------
+    array : array
+        The array to determine whether it is a cupy array or not.
+
+    Returns
+    -------
+    bool
+        True if it is cupy array, False otherwise.
+
+    """
+    try:
+        import cupy as cp
+        return isinstance(array, cp.ndarray)
+    except ImportError:
+        return False
+
+
+def to_numpy(array):
+    """
+    Returns the array as an numpy array
+
+    Parameters
+    ----------
+    array : numpy or cupy array
+        Array to determine whether numpy or cupy should be used
+
+    Returns
+    -------
+    array : numpy.ndarray
+
+    """
+    if is_cupy_array(array):
+        import cupy as cp
+        array = cp.asnumpy(array)
+
+    return array
+
+
+def get_array_module(array):
+    """
+    Returns the array module for the given array
+
+    Parameters
+    ----------
+    array : numpy or cupy array
+        Array to determine whether numpy or cupy should be used
+
+    Returns
+    -------
+    module : module
+
+    """
+    module = np
+    try:
+        import cupy as cp
+        if isinstance(array, cp.ndarray):
+            module = cp
+    except ImportError:
+        pass
+
+    return module

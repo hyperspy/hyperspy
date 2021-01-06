@@ -49,7 +49,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.utils import underline, isiterable
+from hyperspy.misc.utils import underline, isiterable, to_numpy
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
@@ -2418,7 +2418,9 @@ class BaseSignal(FancySlicing,
 
     @data.setter
     def data(self, value):
-        if not isinstance(value, da.Array):
+        # Calling asanyarray to convert to numpy array
+        if not isinstance(value, da.Array) or not \
+            hasattr(value, '__cuda_array_interface__'):
             value = np.asanyarray(value)
         self._data = np.atleast_1d(value)
 
@@ -2697,7 +2699,7 @@ class BaseSignal(FancySlicing,
         if self._lazy:
             value = self._get_cache_dask_chunk(indices)
         else:
-            value = self.data.__getitem__(indices)
+            value = to_numpy(self.data.__getitem__(indices))
         value = np.atleast_1d(value)
         if fft_shift:
             value = np.fft.fftshift(value)
@@ -2782,7 +2784,7 @@ class BaseSignal(FancySlicing,
                 navigator = navigator.sum(
                     am.signal_axes + am.navigation_axes[1:]
                     )
-            return np.nan_to_num(navigator.data).squeeze()
+            return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
             navigator.axes_manager.indices = self.axes_manager.indices[
@@ -2866,7 +2868,7 @@ class BaseSignal(FancySlicing,
                     self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
                         self.data)
                 else:
-                    self._plot.navigator_data_function = lambda axes_manager=None: self.data
+                    self._plot.navigator_data_function = lambda axes_manager=None: to_numpy(self.data)
             elif navigator == "spectrum":
                 self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
