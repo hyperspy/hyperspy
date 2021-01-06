@@ -8,6 +8,7 @@ What's new
 RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
+* Drop support for numpy<1.15, in line with NEP 29 (#2616)
 
 
 Changelog
