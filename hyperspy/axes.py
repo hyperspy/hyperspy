@@ -26,7 +26,6 @@ import traits.api as t
 from traits.trait_errors import TraitError
 import pint
 from sympy.utilities.lambdify import lambdify
-import itertools
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
@@ -81,9 +80,9 @@ def generate_uniform_axis(offset, scale, size, offset_index=0):
 
 
 def create_axis(**kwargs):
-    """Creates a uniform, a non-uniform axis or a functional axis depending on 
+    """Creates a uniform, a non-uniform axis or a functional axis depending on
     the kwargs provided. If `axis` or  `expression` are provided, a non-uniform
-    or a functional axis is created, respectively. Otherwise a uniform axis is 
+    or a functional axis is created, respectively. Otherwise a uniform axis is
     created, which can be defined by `scale`, `size` and `offset`.
 
     Alternatively, the offset_index of the offset channel can be specified.
@@ -146,11 +145,13 @@ class UnitConversion:
 
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
 
-    def _get_index_from_value_with_units(self, value):
+    def _get_value_from_value_with_units(self, value):
         value = _ureg.parse_expression(value)
+        if self.units == t.Undefined:
+            raise RuntimeError("Axis units is not defined.")
         if not hasattr(value, 'units'):
-            raise ValueError('"{}" should contains an units.'.format(value))
-        return self.value2index(value.to(self.units).magnitude)
+            raise ValueError(f'`{value}` should contain an units.')
+        return float(value.to(self.units).magnitude)
 
     def _convert_units(self, converted_units, inplace=True):
         if self._ignore_conversion(converted_units) or \
@@ -371,11 +372,6 @@ class BaseDataAxis(t.HasTraits):
         else:
             return value
 
-    def _parse_string_for_slice(self, value):
-        if isinstance(value, str):
-            value = self._get_index_from_value_with_units(value)
-        return value
-
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis.
 
@@ -407,9 +403,9 @@ class BaseDataAxis(t.HasTraits):
             stop = start + 1
             step = None
 
-        start = self._parse_string_for_slice(start)
-        stop = self._parse_string_for_slice(stop)
-        step = self._parse_string_for_slice(step)
+        start = self._parse_value(start)
+        stop = self._parse_value(stop)
+        step = self._parse_value(step)
 
         if isfloat(step):
             step = int(round(step / self.scale))
@@ -509,6 +505,30 @@ class BaseDataAxis(t.HasTraits):
             return self.axis[index.ravel()].reshape(index.shape)
         else:
             return self.axis[index]
+
+    def _parse_value_from_string(self, value):
+        """Return calibrated value from a suitable string """
+        if len(value) == 0:
+            raise ValueError("Cannot index with an empty string")
+        # if first character is a digit, try unit conversion
+        # otherwise we don't support it
+        elif value[0].isdigit():
+            value = self._get_value_from_value_with_units(value)
+        else:
+            raise ValueError(f"`{value}` is not a suitable string for slicing.")
+
+        return value
+
+    def _parse_value(self, value):
+        """Convert the input to calibrated value if string, otherwise,
+        return the same value."""
+        if isinstance(value, str):
+            value = self._parse_value_from_string(value)
+        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+            value = np.asarray(value)
+            if value.dtype.type is np.str_:
+                value = np.array([self._parse_value_from_string(v) for v in value])
+        return value
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -615,7 +635,7 @@ class DataAxis(BaseDataAxis):
         self.update_axis()
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and set the 
+        """Returns a slice to slice the corresponding data axis and set the
         axis accordingly.
 
         Parameters
@@ -892,12 +912,36 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                   'offset': self.offset})
         return d
 
+    def _parse_value_from_string(self, value):
+        """Return calibrated value from a suitable string """
+        if len(value) == 0:
+            raise ValueError("Cannot index with an empty string")
+        # Starting with 'rel', it must be relative slicing
+        elif value.startswith('rel'):
+            try:
+                relative_value = float(value[3:])
+            except ValueError:
+                raise ValueError("`rel` must be followed by a number in range [0, 1].")
+            if relative_value < 0 or relative_value > 1:
+                raise ValueError("Relative value must be in range [0, 1]")
+            value = self.low_value + relative_value * (self.high_value - self.low_value)
+        # if first character is a digit, try unit conversion
+        # otherwise we don't support it
+        elif value[0].isdigit():
+            value = self._get_value_from_value_with_units(value)
+        else:
+            raise ValueError(f"`{value}` is not a suitable string for slicing.")
+
+        return value
+
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value if between the axis limits.
 
         Parameters
         ----------
-        value : number or numpy array
+        value : number or string, or numpy array of number or string
+                if string, should either be a calibrated unit like "20nm"
+                or a relative slicing like "rel0.2".
 
         Returns
         -------
@@ -905,11 +949,15 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         Raises
         ------
-        ValueError if any value is out of the axis limits.
+        ValueError
+            If any value is out of the axis limits.
+            If the value is incorrectly formatted.
 
         """
         if value is None:
             return None
+
+        value = self._parse_value(value)
 
         if isinstance(value, (np.ndarray, da.Array)):
             if rounding is round:
@@ -1343,8 +1391,8 @@ class AxesManager(t.HasTraits):
 
     def create_axes(self, axes_list):
         """Given a list of either axes dictionaries or axes objects, these are
-        added to the AxesManager. In case dictionaries defining the axes 
-        properties are passed, the DataAxis/UniformDataAxis/FunctionalDataAxis 
+        added to the AxesManager. In case dictionaries defining the axes
+        properties are passed, the DataAxis/UniformDataAxis/FunctionalDataAxis
         instances are first created.
 
         The index of the axis in the array and in the `_axes` lists

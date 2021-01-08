@@ -230,9 +230,10 @@ class TestSpikesRemovalToolZLP:
         self.signal = s
 
     def _add_spikes(self):
-        self.signal.data[1, 0, 1] += 200
-        self.signal.data[0, 2, 29] += 500
-        self.signal.data[1, 2, 14] += 1000
+        s = self.signal
+        s.data[1, 0, 1] += 200
+        s.data[0, 2, 29] += 500
+        s.data[1, 2, 14] += 1000
 
     def test_get_zero_loss_peak_mask(self):
         mask = self.signal.get_zero_loss_peak_mask()
@@ -260,21 +261,16 @@ class TestSpikesRemovalToolZLP:
 
         zlp_mask = self.signal.get_zero_loss_peak_mask()
         hist_data = self.signal._get_spikes_diagnosis_histogram_data(
-            signal_mask=zlp_mask, max_num_bins=1000)
-        expected_data = np.zeros(544)
-        expected_data[:13] = [41, 46, 31, 31, 30, 15, 14,  4,  5,  5,  2,  1,  1,]
-        expected_data[-4:] = [1, 0, 0, 1]
+            signal_mask=zlp_mask, bins=25)
+        expected_data = np.zeros(25)
+        expected_data[0] = 232
+        expected_data[12] = 1
+        expected_data[-1] = 1
         np.testing.assert_allclose(hist_data.data, expected_data)
 
-        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data(
-            max_num_bins=1000)
-        expected_data2 = np.array([266, 12, 0, 12, 0, 0, 0, 0, 0, 12, 0, 0, 0,
-                                   2, 0, 0, 0, 0, 0, 0, 12, 12, 1, 0, 0, 0,
-                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,
-                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   10, 2, 0, 2, 9, 0, 0, 0, 0, 0, 0, 0, 12,
-                                   0, 0, 2, 0, 0, 0, 1])
-        np.testing.assert_allclose(hist_data2.data, expected_data2)
+        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data(bins=25)
+        expected_data2 = np.array([285, 11, 13, 0, 0, 1, 12,  0])
+        np.testing.assert_allclose(hist_data2.data[:8], expected_data2)
 
 
 def test_spikes_removal_tool_no_zlp():
@@ -599,3 +595,9 @@ class TestVacuumMask:
         assert not mask.data[9]
         assert mask.data[10]
         assert mask.data[-1]
+
+    def test_vacuum_mask_navigation_dimension_0(self):
+        s = self.signal
+        s2 = s.sum()
+        with pytest.raises(RuntimeError):
+            s2.vacuum_mask()

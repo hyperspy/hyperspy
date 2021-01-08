@@ -550,10 +550,10 @@ def quantification_zeta_factor(intensities,
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor, absorption_correction in zip(intensities, zfactors, absorption_correction):
-        sumzi = sumzi + intensity * zfactor * absorption_correction
-    for i, (intensity, zfactor, absorption_correction) in enumerate(zip(intensities, zfactors, absorption_correction)):
-        composition[i] = intensity * zfactor * absorption_correction / sumzi
+    for intensity, zfactor, acf in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + (intensity * zfactor * acf)
+    for i, (intensity, zfactor, acf) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * acf / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
 
@@ -580,9 +580,8 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
         material.mass_absorption_mixture(weight_percent=weight_percent),
         show_progressbar=False
         ) * 0.1
-    acf = mac.data * mass_thickness.data * csc_toa
-    acf = acf/(1.0 - np.exp(-(acf)))
-
+    expo = mac.data * mass_thickness.data * csc_toa
+    acf = expo/(1.0 - np.exp(-(expo)))
     return acf
 
 def quantification_cross_section(intensities,
@@ -655,25 +654,21 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle,
 
     number_of_atoms = stack(number_of_atoms, show_progressbar=False).data
 
-    #calculate the total_mass per pixel, or mass thicknessself.
+    #calculate the total_mass in kg/m^2, or mass thickness.
     total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
     for i, (weight) in enumerate(atomic_weights):
-        total_mass += (number_of_atoms[i] * weight / Av / probe_area / 1E-15)
-
-    # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
+        total_mass += (number_of_atoms[i] * weight / Av / 1E3 / probe_area / 1E-18)
+    # determine mass absorption coefficients and convert from cm^2/g to m^2/kg.
     to_stack = material.mass_absorption_mixture(
         weight_percent=material.atomic_to_weight(composition)
         )
     mac = stack(to_stack, show_progressbar=False) * 0.1
-
     acf = np.zeros_like(number_of_atoms)
-    constant = 1/(Av * math.sin(toa_rad) * probe_area * 1E-16)
-
-    #determine an absorption coeficcient per element per pixel.
+    csc_toa = 1/math.sin(toa_rad)
+    #determine an absorption coeficient per element per pixel.
     for i, (weight) in enumerate(atomic_weights):
-        expo = (mac.data[i] * total_mass * constant)
-        acf[i] = expo/(1 - math.e**(-expo))
-
+        expo = (mac.data[i] * total_mass * csc_toa)
+        acf[i] = expo/(1 - np.exp(-expo))
     return acf
 
 
