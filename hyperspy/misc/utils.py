@@ -1091,6 +1091,67 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     return func, iterators
 
+def process_function_blockwise(data,
+                               *args,
+                               function,
+                               nav_indexes=None,
+                               output_signal_size=None,
+                               iterating_kwargs=None,
+                               block_info=None,
+                               **kwargs):
+    """
+    Function for processing the function blockwise...
+    This gets passed to map_blocks so that the function
+    only gets applied to the signal axes.
+
+    Parameters:
+    ------------
+    data: np.array
+        The data for one chunk
+    *args: np.array
+        Any signal the is iterated alongside the data
+    function: function
+        The function to applied to the signal axis
+    nav_shape: tuple
+        The shape of the navigation axes
+    output_signal_shape: tuple
+        The shape of the output signal.  For a ragged signal
+        this is equal to 1.
+    dtype: np.dtype
+        The datatype for the output array. For preallocating.
+        For a ragged array this is np.object.
+    iterating_kwargs: list str
+        The keys for anything that is being mapped
+        alongside the data.
+    **kwargs: dict
+        Any additional key value pairs to be used by the function
+        (Note that these are the constants that are applied.)
+
+    """
+    # Both of these values need to be passed in
+    dtype = block_info[None]["dtype"]
+    chunk_nav_shape = tuple([data.shape[i] for i in nav_indexes])
+    output_shape = chunk_nav_shape + tuple(output_signal_size)
+    # Pre-allocating the output array
+    output_array = np.empty(output_shape, dtype=dtype)
+    print("dtype", output_array.dtype)
+    print("the shape of the output:", output_array.shape)
+    if len(args) == 0:
+        # There aren't any BaseSignals for iterating
+        for nav_index in np.ndindex(chunk_nav_shape):
+            islice = np.s_[nav_index]
+            output_array[islice] = function(data[islice],
+                                            **kwargs)
+    else:
+        # There are BaseSignals which iterate alongside the data
+        for index in np.ndindex(chunk_nav_shape):
+            islice = np.s_[index]
+            iter_args = [a[islice].squeeze() for a in args]
+            iter_dict = {k: v for k, v in zip(iterating_kwargs, iter_args)}
+            output_array[islice] = function(data[islice],
+                                            **iter_dict,
+                                            **kwargs)
+    return output_array
 
 def map_result_construction(signal,
                             inplace,
