@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -40,6 +40,8 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         super(MPL_HyperSignal1D_Explorer, self).__init__(number_of_rois=number_of_rois,number_of_slices=number_of_slices,signal=signal)
         self.xlabel = ''
         self.ylabel = ''
+        self.right_pointer = None
+        self._right_pointer_on = False
         self._auto_update_plot = True
         self.signal=signal
         self.number_of_rois=number_of_rois
@@ -65,12 +67,29 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         for line in self.signal_plot.ax_lines + \
                 self.signal_plot.right_ax_lines:
             line.auto_update = value
+        if self.pointer is not None:
+            if value is True:
+                self.pointer.set_mpl_ax(self.navigator_plot.ax)
+            else:
+                self.pointer.disconnect()
+
+    @property
+    def right_pointer_on(self):
+        """I'm the 'x' property."""
+        return self._right_pointer_on
+
+    @right_pointer_on.setter
+    def right_pointer_on(self, value):
+        if value == self._right_pointer_on:
+            return
+        self._right_pointer_on = value
+        if value is True:
+            self.add_right_pointer()
+        else:
+            self.remove_right_pointer()
 
     def plot_signal(self, **kwargs):
         super().plot_signal()
-        if self.signal_plot is not None:
-            self.signal_plot.plot(**kwargs)
-            return
         # Create the figure
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
@@ -87,7 +106,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             else 'Intensity'
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
-
 
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
