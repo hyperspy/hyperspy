@@ -45,6 +45,7 @@ from hyperspy.misc.array_tools import numba_histogram
 _logger = logging.getLogger(__name__)
 
 
+
 class SpanSelectorInSignal1D(t.HasTraits):
     ss_left_value = t.Float(np.nan)
     ss_right_value = t.Float(np.nan)

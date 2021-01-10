@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,7 +23,6 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
 import inspect
-from functools import partial
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
@@ -38,6 +37,7 @@ _logger = logging.getLogger(__name__)
 class Signal1DFigure(BlittedFigure):
 
     """
+    Signal1DFigure has also an 'axis' property that has to be properly defined at initialization
     """
 
     def __init__(self, title=""):
@@ -62,54 +62,71 @@ class Signal1DFigure(BlittedFigure):
             'line': utils.ColorCycle(),
             'step': utils.ColorCycle(),
             'scatter': utils.ColorCycle(), }
+        #spines
+        self.spine_spacing=1
 
     def create_axis(self):
-        self.ax = self.figure.add_subplot(111)
+        self.ax = self.figure.add_subplot(111,picker=True)
         animated = self.figure.canvas.supports_blit
         self.ax.yaxis.set_animated(animated)
         self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
-    def create_right_axis(self, color='black'):
+    def create_right_axis(self):
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
-            self.right_ax.tick_params(axis='y', labelcolor=color)
         plt.tight_layout()
 
-    def close_right_axis(self):
-        if self.right_ax is not None:
-            for lines in self.right_ax_lines:
-                lines.close()
-            self.right_ax.axes.get_yaxis().set_visible(False)
-            self.right_ax = None
-
-    def add_line(self, line, ax='left', connect_navigation=False):
+    def make_patch_spines_invisible(self,ax):
         """
-        Add Signal1DLine to figure
-
-        Parameters
-        ----------
-        line : Signal1DLine object
-            Line to be added to the figure.
-        ax : {'left', 'right'}, optional
-            Position the y axis, either 'left'. The default is 'left'.
-        connect_navigation : bool, optional
-            Connect the update of the line to the `indices_changed` event of
-            the axes_manager. This only necessary when adding a line to the
-            left since the `indices_changed` event is already connected to
-            the `update` method of `Signal1DFigure`. The default is False.
-
-        Returns
-        -------
-        None.
-
+        from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
+        :param ax:
+        :return:
         """
+        ax.set_frame_on(True)
+        ax.patch.set_visible(False)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+
+    def add_line(self, line, ax='left'):
+
+
+        # i am not using the "right" axis anymore, but keep it here for backward compatibility
         if ax == 'left':
-            line.ax = self.ax
+            if not self.ax_lines:
+                line.ax=self.ax
+                line.exponent_position=0
+                line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
+            else:
+                line.ax = self.ax.twinx()# twinx is difficult with picker use from mpl_toolkits.axes_grid1 import host_subplot instead
+                #see https://github.com/matplotlib/matplotlib/issues/5581
+                #see snippet at the end of the file
+
+       #largely inspired from https://matplotlib.org/3.1.1/gallery/ticks_and_spines/multiple_yaxis_with_spines.html
+
+                line.ax.spines["right"].set_position(("axes", self.spine_spacing))
+
+                line.exponent_position=self.spine_spacing
+                line.ax.yaxis.offsetText.set_position((self.spine_spacing,1))
+                self.spine_spacing+=0.15
+                #position the exponent at the right position
+
+                self.make_patch_spines_invisible(line.ax)
+
+                line.ax.spines["right"].set_visible(True)
+
+            line.ax.hspy_fig = self
+            #sometimes you need to change the figure ax to the last line; otherwise, you might add a ROI to the wrong ax, then it would be responsive form the UI
+            #obviously not now...
+            line.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
+            line.ax.ticklabel_format(axis='y', style='sci',scilimits=(0,0),useOffset=True)
+            line.ax.yaxis.label.set_color(line.color)
+            line.ax.tick_params(axis='y', colors=line.color)
+
             if line.axes_manager is None:
                 line.axes_manager = self.axes_manager
             self.ax_lines.append(line)
@@ -120,12 +137,11 @@ class Signal1DFigure(BlittedFigure):
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
-        if connect_navigation:
-            f = partial(line._auto_update_line, update_ylimits=True)
-            line.axes_manager.events.indices_changed.connect(f, [])
-            line.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(f),
-                [])
+        line.axes_manager.events.indices_changed.connect(
+            line._auto_update_line, [])
+        self.events.closed.connect(
+            lambda: line.axes_manager.events.indices_changed.disconnect(
+                line._auto_update_line), [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -137,6 +153,14 @@ class Signal1DFigure(BlittedFigure):
             if rgba_color in self._color_cycles[line.type].color_cycle:
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
+        self.ax.figure.canvas.draw()
+        if hasattr(self.figure, 'tight_layout'):
+            try:
+                self.figure.tight_layout()
+            except BaseException:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.ax.set_xlabel(self.xlabel)
@@ -176,32 +200,11 @@ class Signal1DFigure(BlittedFigure):
         _logger.debug('Signal1DFigure Closed.')
 
     def update(self):
-        """
-        Update lines, markers and render at the end.
-        This method is connected to the `indices_changed` event of the
-        `axes_manager`.
-        """
-
-        def update_lines(ax, ax_lines):
-            y_min, y_max = np.nan, np.nan
-            for line in ax_lines:
-                # save on figure rendering and do it at the end
-                # don't update the y limits
-                line._auto_update_line(render_figure=False,
-                                       update_ylimits=False)
-                y_min = np.nanmin([y_min, line._y_min])
-                y_max = np.nanmax([y_max, line._y_max])
-            ax.set_ylim(y_min, y_max)
-
         for marker in self.ax_markers:
             marker.update()
-
-        # Left and right axis needs to be updated separetely to set the
-        # correct y limits of each axes
-        update_lines(self.ax, self.ax_lines)
-        if self.right_ax is not None:
-            update_lines(self.right_ax, self.right_ax_lines)
-
+        for line in self.ax_lines + self.right_ax_lines:
+            # save on figure rendering and do it at the end
+            line._auto_update_line(render_figure=False)
         if self.ax.figure.canvas.supports_blit:
             self.ax.hspy_fig._update_animated()
         else:
@@ -255,20 +258,22 @@ class Signal1DLine(object):
         self.data_function_kwargs = {}
         self.axis = None
         self.axes_manager = None
+        self.auto_update = True
         self._plot_imag = False
         self.norm = 'linear'
 
         # Properties
-        self.auto_update = True
-        self.autoscale = 'v'
-        self._y_min = np.nan
-        self._y_max = np.nan
         self.line = None
+        self.autoscale = False
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
         self._line_properties = {}
         self.type = "line"
+        self.exponent_position=None# a list of the x positions (ie, fitting the spine position) for the exponent
+        self.time=0 # for debugging purpose
+        self.axbackground=None
+
 
     @property
     def get_complex(self):
@@ -359,16 +364,13 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1, **kwargs):
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-
+    def plot(self, data=1, data_function_kwargs={}, norm='linear'):
+        self.data_function_kwargs = data_function_kwargs
+        self.norm = norm
         data = self._get_data()
         if self.line is not None:
             self.line.remove()
 
-        norm = self.norm
         if norm == 'log':
             plot = self.ax.semilogy
         elif (isinstance(norm, mpl.colors.Normalize) or
@@ -394,7 +396,6 @@ class Signal1DLine(object):
                                      fontsize=12,
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
-        self._y_min, self._y_max = self.ax.get_ylim()
         self.ax.figure.canvas.draw_idle()
 
     def _get_data(self, real_part=False):
@@ -406,7 +407,7 @@ class Signal1DLine(object):
                                        **self.data_function_kwargs).real
         return ydata
 
-    def _auto_update_line(self, update_ylimits=False, **kwargs):
+    def _auto_update_line(self, *args, **kwargs):
         """Updates the line plot only if `auto_update` is `True`.
 
         This is useful to connect to events that automatically update the line.
@@ -418,44 +419,25 @@ class Signal1DLine(object):
                 # once the markers have been updated
                 kwargs['render_figure'] = (
                     len(self.ax.hspy_fig.ax_markers) == 0)
-            self.update(self, update_ylimits=update_ylimits, **kwargs)
+            self.update(self, *args, **kwargs)
 
-    def update(self, force_replot=False, render_figure=True,
-               update_ylimits=False):
-        """Update the current spectrum figure
-
-        Parameters:
-        -----------
-        force_replot : bool
-            If True, close and open the figure. Default is False.
-        render_figure : bool
-            If True, render the figure. Useful to avoid firing matplotlib
-            drawing events too often. Default is True.
-        update_ylimits : bool
-            If True, update the y-limits. This is useful to avoid the figure
-            flickering when different lines update the y-limits consecutively,
-            in which case, this is done in `Signal1DFigure.update`.
-            Default is False.
-
-        """
+    def update(self, force_replot=False, render_figure=True):
+        """Update the current spectrum figure"""
         if force_replot is True:
             self.close()
             self.plot(data_function_kwargs=self.data_function_kwargs,
                       norm=self.norm)
 
-        self._y_min, self._y_max = self.ax.get_ylim()
         ydata = self._get_data()
         old_xaxis = self.line.get_xdata()
         if len(old_xaxis) != self.axis.size or \
                 np.any(np.not_equal(old_xaxis, self.axis.axis)):
+            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
             self.line.set_data(self.axis.axis, ydata)
         else:
             self.line.set_ydata(ydata)
 
-        if 'x' in self.autoscale:
-            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
-
-        if 'v' in self.autoscale:
+        if self.autoscale is True:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())
@@ -482,24 +464,49 @@ class Signal1DLine(object):
                 y_min = None  # data are -inf or all NaN
             if not np.isfinite(y_max):
                 y_max = None  # data are inf or all NaN
-            if y_min is not None:
-                self._y_min = y_min
-            if y_max is not None:
-                self._y_max = y_max
-            if update_ylimits:
-                # Most of the time, we don't want to call `set_ylim` now to
-                # avoid flickering of the figure. However, we use the values
-                # `self._y_min` and `self._y_max` in `Signal1DFigure.update`
-                self.ax.set_ylim(self._y_min, self._y_max)
-
+            self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
-
         if render_figure:
             if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
+                #my tests showed using update_animated was longer than using draw_idle
+                #self.ax.hspy_fig._update_animated()
+
+                #In case the solution with blit does not work... use only draw_idle!
+                #self.ax.figure.canvas.draw_idle()
+
+                #the following seems to work (not sure why, but the following order of actions have to be kept this way)
+                #note that the axbackground should be initialized when the corresponding ROI widget is selected
+                #otherwise we have the wrong background displayed until the roi is released
+                #this probably requires modifying roi.BaseInteractiveROI to add a "on_selected" event
+
+                #if we add the next line, it is slower still workable, and the shadow disseapears...
+                #self.ax.figure.canvas.draw_idle()
+
+
+                self.axbackground = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
+                self.ax.draw_artist(self.line)
+                self.ax.figure.canvas.blit(self.ax.bbox)
+
+                self.ax.figure.canvas.restore_region(self.axbackground)
+                #don't forget the flush_events here...
+                self.ax.figure.canvas.flush_events()
+                self.ax.figure.canvas.draw_idle()
+
+
+                #the following is a copy of a working version
+                #self.axbackground = self.ax.figure.canvas.copy_from_bbox(self.ax.bbox)
+                #self.ax.draw_artist(self.line)
+                #self.ax.figure.canvas.blit(self.ax.bbox)
+                #self.ax.figure.canvas.restore_region(self.axbackground)
+                #self.ax.figure.canvas.flush_events()
+                #self.ax.figure.canvas.draw_idle()
+
+
             else:
                 self.ax.figure.canvas.draw_idle()
+        #this last line is to make sure that the exponents are on their respetive spines
+        self.ax.yaxis.get_offset_text().set_x(self.exponent_position)
 
     def close(self):
         _logger.debug('Closing `Signal1DLine`.')
@@ -562,3 +569,29 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         ax.step(x, loadings[idx])
     else:
         raise ValueError('View not supported')
+
+# #snippet for an alternative to twinx that would support picking with multiple axes
+# from matplotlib import pyplot as plt
+# from mpl_toolkits.axes_grid1 import host_subplot
+# from numpy import arange, sin,cos, pi
+#
+# host_a = host_subplot(111)
+# para_a = host_a.twin()
+# para2=host_a.twin()
+#
+#
+# t = arange(0.0, 3.0, 0.01)
+# s = sin(2*pi*t)
+# u=cos(2*pi*t)
+# v=s*u
+# line, = host_a.plot(t, s, picker=5)
+# host_a.yaxis.label.set_color('red')
+#
+# otherline,=para_a.plot(t, u, picker=5)
+# thirdline,=para2.plot(t, v, picker=5)
+# host_a.spines['left'].set_picker(5)
+#
+# def onpick(event):
+#     print("picked")
+# plt.gcf().canvas.mpl_connect('pick_event', onpick)
+#

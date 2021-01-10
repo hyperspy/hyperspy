@@ -554,6 +554,7 @@ class ImagePlot(BlittedFigure):
                 ims[0].changed()
             if self.figure.canvas.supports_blit:
                 self._update_animated()
+                self.figure.canvas.flush_events()
             else:
                 self.figure.canvas.draw_idle()
         else:  # no signal have been drawn yet
