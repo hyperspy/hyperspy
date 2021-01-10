@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,9 +18,8 @@
 
 
 import numpy as np
-from numpy.testing import assert_array_equal
-
 import pytest
+from numpy.testing import assert_array_equal
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass

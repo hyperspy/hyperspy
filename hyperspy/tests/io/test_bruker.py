@@ -1,13 +1,11 @@
-import os
-
 import json
+import os
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
-from hyperspy.io import load
 from hyperspy import signals
+from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 test_files = ['30x30_instructively_packed_16bit_compressed.bcf',
@@ -78,17 +76,17 @@ def test_hyperspy_wrap():
     with pytest.warns(VisibleDeprecationWarning):
         hype = load(filename, select_type='spectrum')
     hype = load(filename, select_type='spectrum_image')
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[0].scale,
         1.66740910949362,
         atol=1E-12)
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[1].scale,
         1.66740910949362,
         atol=1E-12)
     assert hype.axes_manager[1].units == 'µm'
-    assert_allclose(hype.axes_manager[2].scale, 0.009999)
-    assert_allclose(hype.axes_manager[2].offset, -0.47225277)
+    np.testing.assert_allclose(hype.axes_manager[2].scale, 0.009999)
+    np.testing.assert_allclose(hype.axes_manager[2].offset, -0.47225277)
     assert hype.axes_manager[2].units == 'keV'
 
     md_ref = {
@@ -150,11 +148,11 @@ def test_hyperspy_wrap_downsampled():
     filename = os.path.join(my_path, 'bruker_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
     hype = load(filename, select_type='spectrum_image', downsample=5)
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[0].scale,
         8.337045547468101,
         atol=1E-12)
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[1].scale,
         8.337045547468101,
         atol=1E-12)

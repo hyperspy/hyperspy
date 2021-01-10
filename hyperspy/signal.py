@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,13 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import os.path
 import warnings
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
 from pint import UnitRegistry, UndefinedUnitError
+from pathlib import Path
 
 import numpy as np
 import scipy as sp
@@ -46,21 +46,23 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
-from hyperspy.external.astroML.histtools import histogram
+from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
-                                      KWARGS_DOCSTRING)
+                                      BASE_PLOT_DOCSTRING_PARAMETERS,
+                                      PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
+from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -260,55 +262,58 @@ class MVATools(object):
                                 cmap=plt.cm.gray, quiver_color='white',
                                 vector_scale=1,
                                 per_row=3, ax=None):
-        """Plot components from PCA or ICA, or peak characteristics
+        """Plot components from PCA or ICA, or peak characteristics.
+
         Parameters
         ----------
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given
+            If None, returns maps of all components.
+            If int, returns maps of components with ids from 0 to given
             int.
             if list of ints, returns maps of components with ids in
             given list.
         calibrate : bool
-            if True, plots are calibrated according to the data in the
-            axes
-            manager.
+            If True, plots are calibrated according to the data in the
+            axes manager.
         same_window : bool
-            if True, plots each factor to the same window.  They are
-            not scaled. Default True.
+            If True, plots each factor to the same window. They are not scaled.
+            Default True.
         comp_label : str
             Title of the plot
         cmap : a matplotlib colormap
-            The colormap used for factor images or
-            any peak characteristic scatter map
-            overlay.
+            The colormap used for factor images or any peak characteristic
+            scatter map overlay. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
 
-        Parameters only valid for peak characteristics (or pk char factors)
-        -------------------------------------------------------------------
-        img_data - 2D numpy array,
-            The array to overlay peak characteristics onto.  If None,
+        Other Parameters
+        ----------------
+        img_data : 2D numpy array,
+            The array to overlay peak characteristics onto. If None,
             defaults to the average image of your stack.
-        plot_shifts - bool, default is True
+        plot_shifts : bool, default is True
             If true, plots a quiver (arrow) plot showing the shifts for
             each
             peak present in the component being plotted.
-        plot_char - None or int
+        plot_char : None or int
             If int, the id of the characteristic to plot as the colored
             scatter plot.
             Possible components are:
-               4: peak height
-               5: peak orientation
-               6: peak eccentricity
-       quiver_color : any color recognized by matplotlib
-           Determines the color of vectors drawn for
-           plotting peak shifts.
-       vector_scale : integer or None
-           Scales the quiver plot arrows.  The vector
-           is defined as one data unit along the X axis.
-           If shifts are small, set vector_scale so
-           that when they are multiplied by vector_scale,
-           they are on the scale of the image plot.
-           If None, uses matplotlib's autoscaling.
+
+            * 4: peak height
+            * 5: peak orientation
+            * 6: peak eccentricity
+        quiver_color : any color recognized by matplotlib
+            Determines the color of vectors drawn for
+            plotting peak shifts.
+        vector_scale : integer or None
+            Scales the quiver plot arrows. The vector is defined as one data
+            unit along the X axis. If shifts are small, set vector_scale so
+            that when they are multiplied by vector_scale, they are on the
+            scale of the image plot. If None, uses matplotlib's autoscaling.
+
+        Returns
+        -------
+        matplotlib figure or list of figure if same_window=False
 
         """
         if same_window is None:
@@ -374,7 +379,6 @@ class MVATools(object):
                 plt.title(title)
             else:
                 plt.suptitle(title)
-            animate_legend(f)
         try:
             plt.tight_layout()
         except BaseException:
@@ -523,7 +527,7 @@ class MVATools(object):
                 filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
-                    filename = os.path.join(folder, filename)
+                    filename = Path(folder, filename)
                 ensure_directory(filename)
                 _args = {'dpi': 600,
                          'format': save_figures_format}
@@ -570,7 +574,7 @@ class MVATools(object):
                             (factor_prefix, self.metadata.General.title), }})
             filename = '%ss.%s' % (factor_prefix, factor_format)
             if folder is not None:
-                filename = os.path.join(folder, filename)
+                filename = Path(folder, filename)
             s.save(filename)
         else:  # Separate files
             if self.axes_manager.signal_dimension == 1:
@@ -590,7 +594,7 @@ class MVATools(object):
                                              dim,
                                              factor_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     s.save(filename)
 
             if self.axes_manager.signal_dimension == 2:
@@ -615,7 +619,7 @@ class MVATools(object):
                                              dim,
                                              factor_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     im.save(filename)
 
     def _export_loadings(self,
@@ -664,7 +668,7 @@ class MVATools(object):
                 filename = '%s_%02i.%s' % (loading_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
-                    filename = os.path.join(folder, filename)
+                    filename = Path(folder, filename)
                 ensure_directory(filename)
                 _args = {'dpi': 600,
                          'format': save_figures_format}
@@ -713,7 +717,7 @@ class MVATools(object):
                                  }})
             filename = '%ss.%s' % (loading_prefix, loading_format)
             if folder is not None:
-                filename = os.path.join(folder, filename)
+                filename = Path(folder, filename)
             s.save(filename)
         else:  # Separate files
             if self.axes_manager.navigation_dimension == 1:
@@ -727,7 +731,7 @@ class MVATools(object):
                                              dim,
                                              loading_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     s.save(filename)
             elif self.axes_manager.navigation_dimension == 2:
                 axes_dicts = []
@@ -750,24 +754,24 @@ class MVATools(object):
                                              dim,
                                              loading_format)
                     if folder is not None:
-                        filename = os.path.join(folder, filename)
+                        filename = Path(folder, filename)
                     s.save(filename)
 
     def plot_decomposition_factors(self,
                                    comp_ids=None,
                                    calibrate=True,
                                    same_window=True,
-                                   comp_label=None,
+                                   title=None,
                                    cmap=plt.cm.gray,
                                    per_row=3,
-                                   title=None):
+                                   **kwargs,
+                                   ):
         """Plot factors from a decomposition. In case of 1D signal axis, each
         factors line can be toggled on and off by clicking on their
         corresponding line in the legend.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
@@ -777,23 +781,18 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             If ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-
         title : str
             Title of the plot.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the factor images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -808,8 +807,13 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.factors is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
+        if self.learning_results.factors is None:
+            raise RuntimeError("Run a decomposition first.")
         factors = self.learning_results.factors
         if comp_ids is None:
             if self.learning_results.output_dimension:
@@ -818,10 +822,11 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
-                                         same_window)
+                                         same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
@@ -831,9 +836,16 @@ class MVATools(object):
                                             cmap=cmap,
                                             per_row=per_row)
 
-    def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=True, comp_label=None,
-                         per_row=3, title=None):
+    def plot_bss_factors(
+        self,
+        comp_ids=None,
+        calibrate=True,
+        same_window=True,
+        title=None,
+        cmap=plt.cm.gray,
+        per_row=3,
+        **kwargs,
+        ):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
@@ -847,21 +859,18 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
-
-        comp_label : str
-            Will be deprecated in 2.0, please use `title` instead
-
         title : str
             Title of the plot.
-
+        cmap : :py:class:`~matplotlib.colors.Colormap`
+            The colormap used for the factor images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -876,13 +885,19 @@ class MVATools(object):
                                       "signals of dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.bss_factors is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
 
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('BSS factors of', same_window)
+            title = self._get_plot_title('BSS factors of',
+                                         same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
@@ -895,20 +910,20 @@ class MVATools(object):
                                     comp_ids=None,
                                     calibrate=True,
                                     same_window=True,
-                                    comp_label=None,
+                                    title=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
                                     per_row=3,
                                     axes_decor='all',
-                                    title=None):
+                                    **kwargs,
+                                    ):
         """Plot loadings from a decomposition. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
@@ -918,34 +933,26 @@ class MVATools(object):
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             if ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
-
         same_window : bool
             if ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-
         title : str
             Title of the plot.
-
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the loadings images, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
-
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-
         axes_decor : str or None, optional
             One of: ``'all'``, ``'ticks'``, ``'off'``, or ``None``
             Controls how the axes are displayed on each image; default is
@@ -966,8 +973,13 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
+        if self.learning_results.loadings is None:
+            raise RuntimeError("No learning results found. A 'decomposition' "
+                               "needs to be performed first.")
         if same_window is None:
             same_window = True
+        if self.learning_results.loadings is None:
+            raise RuntimeError("Run a decomposition first.")
         loadings = self.learning_results.loadings.T
         if with_factors:
             factors = self.learning_results.factors
@@ -981,10 +993,11 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('Decomposition loadings of',
-                                         same_window)
+            title = self._get_plot_title(
+                'Decomposition loadings of', same_window=same_window)
 
         return self._plot_loadings(
             loadings,
@@ -998,55 +1011,52 @@ class MVATools(object):
             per_row=per_row,
             axes_decor=axes_decor)
 
-    def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=True, comp_label=None,
-                          with_factors=False, cmap=plt.cm.gray,
-                          no_nans=False, per_row=3, axes_decor='all',
-                          title=None):
+    def plot_bss_loadings(self,
+                          comp_ids=None,
+                          calibrate=True,
+                          same_window=True,
+                          title=None,
+                          with_factors=False,
+                          cmap=plt.cm.gray,
+                          no_nans=False,
+                          per_row=3,
+                          axes_decor='all',
+                          **kwargs,
+                          ):
         """Plot loadings from blind source separation results. In case of 1D
         navigation axis, each loading line can be toggled on and off by
         clicking on their corresponding line in the legend.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list (of ints)
             If `comp_ids` is ``None``, maps of all components will be
             returned. If it is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
             returned.
-
         calibrate : bool
             if ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
-
         same_window : bool
             If ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-
         comp_label : str
             Will be deprecated in 2.0, please use `title` instead
-
         title : str
             Title of the plot.
-
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
-
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-
+            The colormap used for the loading image, or for peak
+            characteristics,. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
-
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-
         axes_decor : str or None, optional
             One of: ``'all'``, ``'ticks'``, ``'off'``, or ``None``
             Controls how the axes are displayed on each image;
@@ -1066,12 +1076,17 @@ class MVATools(object):
                                       "dimension higher than 2."
                                       "You can use "
                                       "`plot_bss_results` instead.")
+        if self.learning_results.bss_loadings is None:
+            raise RuntimeError("No learning results found. A "
+                               "'blind_source_separation' needs to be "
+                               "performed first.")
         if same_window is None:
             same_window = True
+        comp_label = kwargs.get("comp_label", None)
         title = _change_API_comp_label(title, comp_label)
         if title is None:
-            title = self._get_plot_title('BSS loadings of',
-                                         same_window)
+            title = self._get_plot_title(
+                'BSS loadings of', same_window=same_window)
         loadings = self.learning_results.bss_loadings.T
         if with_factors:
             factors = self.learning_results.bss_factors
@@ -1139,6 +1154,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1147,6 +1163,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -1171,9 +1188,9 @@ class MVATools(object):
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
+            The colormap used for images, such as factors, loadings, or for peak
+            characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : :py:class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1187,34 +1204,154 @@ class MVATools(object):
 
         factors = self.learning_results.factors
         loadings = self.learning_results.loadings.T
-        self._export_factors(
-            factors,
-            folder=folder,
-            comp_ids=comp_ids,
-            calibrate=calibrate,
-            multiple_files=multiple_files,
-            factor_prefix=factor_prefix,
-            factor_format=factor_format,
-            comp_label=comp_label,
-            save_figures=save_figures,
-            cmap=cmap,
-            no_nans=no_nans,
-            same_window=same_window,
-            per_row=per_row,
-            save_figures_format=save_figures_format)
-        self._export_loadings(
-            loadings,
-            comp_ids=comp_ids, folder=folder,
-            calibrate=calibrate,
-            multiple_files=multiple_files,
-            loading_prefix=loading_prefix,
-            loading_format=loading_format,
-            comp_label=comp_label,
-            cmap=cmap,
-            save_figures=save_figures,
-            same_window=same_window,
-            no_nans=no_nans,
-            per_row=per_row)
+        self._export_factors(factors,
+                             folder=folder,
+                             comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             multiple_files=multiple_files,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             save_figures=save_figures,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
+        self._export_loadings(loadings,
+                              comp_ids=comp_ids, folder=folder,
+                              calibrate=calibrate,
+                              multiple_files=multiple_files,
+                              loading_prefix=loading_prefix,
+                              loading_format=loading_format,
+                              comp_label=comp_label,
+                              cmap=cmap,
+                              save_figures=save_figures,
+                              same_window=same_window,
+                              no_nans=no_nans,
+                              per_row=per_row)
+
+    def export_cluster_results(self,
+                               cluster_ids=None,
+                               folder=None,
+                               calibrate=True,
+                               center_prefix='cluster_center',
+                               center_format="hspy",
+                               membership_prefix='cluster_label',
+                               membership_format="hspy",
+                               comp_label=None,
+                               cmap=plt.cm.gray,
+                               same_window=False,
+                               multiple_files=True,
+                               no_nans=True,
+                               per_row=3,
+                               save_figures=False,
+                               save_figures_format='png'):
+        """Export results from a cluster analysis to any of the supported
+        formats.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None, returns all clusters/centers.
+            if int, returns clusters/centers with ids from 0 to
+            given int.
+            if list of ints, returnsclusters/centers with ids in
+            given list.
+        folder : str or None
+            The path to the folder where the file will be saved.
+            If `None` the
+            current folder is used by default.
+        center_prefix : string
+            The prefix that any exported filenames for
+            cluster centers
+            begin with
+        center_format : string
+            The extension of the format that you wish to save to. Default is
+            "hspy". See `loading format` for more details.
+        label_prefix : string
+            The prefix that any exported filenames for
+            cluster labels
+            begin with
+        label_format : string
+            The extension of the format that you wish to save to. default
+            is "hspy". The format determines the kind of output.
+
+                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                  plots are created using the plotting flags as below, and saved
+                  at 600 dpi. One plot is saved per loading.
+                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                  are saved in single files.  All loadings are contained in the
+                  one file.
+                * For spectral formats (``'msa'``), each loading is saved to a
+                  separate file.
+
+        multiple_files : bool
+            If True, on exporting a file per center will
+            be created. Otherwise only two files will be created, one for
+            the centers and another for the membership. The default value can
+            be chosen in the preferences.
+        save_figures : bool
+            If True the same figures that are obtained when using the plot
+            methods will be saved with 600 dpi resolution
+
+        Plotting options (for save_figures = True ONLY)
+        ----------------------------------------------
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from
+            the axes_manager.  If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.
+        comp_label : string, the label that is either the plot title
+            (if plotting in separate windows) or the label in the legend
+            (if plotting in the same window)
+        cmap : The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        per_row : int, the number of plots in each row, when the
+        same_window
+            parameter is True.
+        save_figures_format : str
+            The image format extension.
+
+        See Also
+        --------
+        get_cluster_signals,
+        get_cluster_labels.
+
+        """
+
+        factors = self.learning_results.cluster_centers.T
+        loadings = self.learning_results.cluster_labels
+        self._export_factors(factors,
+                             folder=folder,
+                             comp_ids=cluster_ids,
+                             calibrate=calibrate,
+                             multiple_files=multiple_files,
+                             factor_prefix=center_prefix,
+                             factor_format=center_format,
+                             comp_label=comp_label,
+                             save_figures=save_figures,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
+        self._export_loadings(loadings,
+                              comp_ids=cluster_ids,
+                              folder=folder,
+                              calibrate=calibrate,
+                              multiple_files=multiple_files,
+                              loading_prefix=membership_prefix,
+                              loading_format=membership_format,
+                              comp_label=comp_label,
+                              cmap=cmap,
+                              save_figures=save_figures,
+                              same_window=same_window,
+                              no_nans=no_nans,
+                              per_row=per_row)
 
     def export_bss_results(self,
                            comp_ids=None,
@@ -1256,6 +1393,7 @@ class MVATools(object):
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
+
                 * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
                   plots are created using the plotting flags as below, and saved
                   at 600 dpi. One plot is saved per loading.
@@ -1264,6 +1402,7 @@ class MVATools(object):
                   one file.
                 * For spectral formats (``'msa'``), each loading is saved to a
                   separate file.
+
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
             Otherwise, only two files will be created, one for
@@ -1288,9 +1427,9 @@ class MVATools(object):
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :py:class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor image, or for peak
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
+            The colormap used for images, such as factors, loadings, or
+            for peak characteristics. Default is the matplotlib gray colormap
+            (``plt.cm.gray``).
         per_row : :py:class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1335,19 +1474,26 @@ class MVATools(object):
                               save_figures_format=save_figures_format)
 
     def _get_loadings(self, loadings):
+        if loadings is None:
+            raise RuntimeError("No learning results found.")
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
-        signal = signals.BaseSignal(
-            data,
-            axes=(
-                [{"size": data.shape[0], "navigate": True}] +
-                self.axes_manager._get_navigation_axes_dicts()))
-        for axis in signal.axes_manager._axes[1:]:
-            axis.navigate = False
+        if data.shape[0] > 1:
+            signal = signals.BaseSignal(
+                data,
+                axes=(
+                    [{"size": data.shape[0], "navigate": True}] +
+                    self.axes_manager._get_navigation_axes_dicts()))
+            for axis in signal.axes_manager._axes[1:]:
+                axis.navigate = False
+        else:
+            signal = self._get_navigation_signal(data.squeeze())
         return signal
 
     def _get_factors(self, factors):
+        if factors is None:
+            raise RuntimeError("No learning results found.")
         signal = self.__class__(
             factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
             axes=[{"size": factors.shape[-1], "navigate": True}] +
@@ -1358,14 +1504,19 @@ class MVATools(object):
         return signal
 
     def get_decomposition_loadings(self):
-        """Return the decomposition loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition loadings.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
         get_decomposition_factors, export_decomposition_results
 
         """
+        if self.learning_results.loadings is None:
+            raise RuntimeError("Run a decomposition first.")
         signal = self._get_loadings(self.learning_results.loadings)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = "Decomposition loadings of " + \
@@ -1373,14 +1524,19 @@ class MVATools(object):
         return signal
 
     def get_decomposition_factors(self):
-        """Return the decomposition factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the decomposition factors.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
         get_decomposition_loadings, export_decomposition_results
 
         """
+        if self.learning_results.factors is None:
+            raise RuntimeError("Run a decomposition first.")
         signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = ("Decomposition factors of " +
@@ -1388,8 +1544,11 @@ class MVATools(object):
         return signal
 
     def get_bss_loadings(self):
-        """Return the blind source separation loadings as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation loadings.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1404,8 +1563,11 @@ class MVATools(object):
         return signal
 
     def get_bss_factors(self):
-        """Return the blind source separation factors as a
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass).
+        """Return the blind source separation factors.
+
+        Returns
+        -------
+        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See also
         --------
@@ -1508,6 +1670,7 @@ class MVATools(object):
         plot_bss_results
 
         """
+
         factors = self.get_decomposition_factors()
         loadings = self.get_decomposition_loadings()
         _plot_x_results(factors=factors, loadings=loadings,
@@ -1515,6 +1678,387 @@ class MVATools(object):
                         loadings_navigator=loadings_navigator,
                         factors_dim=factors_dim,
                         loadings_dim=loadings_dim)
+
+    def get_cluster_labels(self, merged=False):
+        """Return cluster labels as a Signal.
+
+        Parameters:
+        --------
+        merged : bool
+            If False the cluster label signal has a navigation axes of length
+            number_of_clusters and the signal along the the navigation
+            direction is binary - 0 the point is not in the cluster, 1 it is
+            included. If True, the cluster labels are merged (no navigation
+            axes). The value of the signal at any point will be between -1 and
+            the number of clusters. -1 represents the points that
+            were masked for cluster analysis if any.
+
+        See Also
+        --------
+        get_cluster_signals
+
+        Returns
+        --------
+        signal Hyperspy signal of cluster labels
+        """
+        if self.learning_results.cluster_labels is None:
+            raise RuntimeError(
+                "Cluster analysis needs to be performed first.")
+        if merged:
+            data = (np.arange(1, self.learning_results.number_of_clusters + 1)
+                    [:, np.newaxis] *
+                    self.learning_results.cluster_labels ).sum(0) - 1
+            label_signal = self._get_loadings(data)
+        else:
+            label_signal = self._get_loadings(
+                self.learning_results.cluster_labels.T)
+            label_signal.axes_manager._axes[0].name = "Cluster index"
+        label_signal.metadata.General.title = (
+            "Cluster labels of " + self.metadata.General.title)
+        return label_signal
+
+    def _get_cluster_signals_factors(self, signal):
+        if self.learning_results.cluster_centroid_signals is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        if signal == "mean":
+            members = self.learning_results.cluster_labels.sum(1, keepdims=True)
+            cs = self.learning_results.cluster_sum_signals / members
+        elif signal == "sum":
+            cs=self.learning_results.cluster_sum_signals
+        elif signal == "centroid":
+            cs=self.learning_results.cluster_centroid_signals
+        return cs
+
+    def get_cluster_signals(self, signal="mean"):
+        """Return the cluster centers as a Signal.
+
+        Parameter
+        ---------
+        %s
+
+        See Also
+        -------
+        get_cluster_labels
+
+        """
+        cs = self._get_cluster_signals_factors(signal=signal)
+        signal = self._get_factors(cs.T)
+        signal.axes_manager._axes[0].name="Cluster index"
+        signal.metadata.General.title = (
+            f"Cluster {signal} signals of {self.metadata.General.title}")
+        return signal
+    get_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+
+    def get_cluster_distances(self):
+        """Euclidian distances to the centroid of each cluster
+
+        See Also
+        --------
+        get_cluster_signals
+
+        Returns
+        --------
+        signal
+            Hyperspy signal of cluster distances
+
+        """
+        if self.learning_results.cluster_distances is None:
+            raise RuntimeError("Cluster analysis needs to be performed first.")
+        distance_signal = self._get_loadings(self.learning_results.cluster_distances.T)
+        distance_signal.axes_manager._axes[0].name = "Cluster index"
+        distance_signal.metadata.General.title = \
+            "Cluster distances of " + self.metadata.General.title
+        return distance_signal
+
+
+    def plot_cluster_signals(
+        self,
+        signal="mean",
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        comp_label="Cluster centers",
+        per_row=3):
+        """Plot centers from a cluster analysis.
+
+        Parameters
+        ----------
+        %s
+        cluster_ids : None, int, or list of ints
+            if None, returns maps of all clusters.
+            if int, returns maps of clusters with ids from 0 to given
+            int.
+            if list of ints, returns maps of clusters with ids in
+            given list.
+        calibrate :
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each center to the same window.  They are
+            not scaled.
+        comp_label : string
+            the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting
+            in the same window)
+        per_row : int
+            the number of plots in each row, when the same_window parameter is
+            True.
+
+        See Also
+        --------
+        plot_cluster_labels
+
+        """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2.")
+        cs = self._get_cluster_signals_factors(signal=signal)
+        if same_window is None:
+            same_window = True
+        factors = cs.T
+        if cluster_ids is None:
+            cluster_ids = range(factors.shape[1])
+
+        return self._plot_factors_or_pchars(factors,
+                                            comp_ids=cluster_ids,
+                                            calibrate=calibrate,
+                                            same_window=same_window,
+                                            comp_label=comp_label,
+                                            per_row=per_row)
+    plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+
+    def plot_cluster_labels(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None,
+        **kwargs):
+        """Plot cluster labels from a cluster analysis. In case of 1D navigation axis,
+        each loading line can be toggled on and off by clicking on the legended
+        line.
+
+        Parameters
+        ----------
+
+        cluster_ids : None, int, or list of ints
+            if None (default), returns maps of all components using the
+            number_of_cluster was defined when
+            executing ``cluster``. Otherwise it raises a ValueError.
+            if int, returns maps of cluster labels with ids from 0 to
+            given int.
+            if list of ints, returns maps of cluster labels with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.  They are
+            not scaled. Default is True.
+        title : string
+            Title of the plot.
+        with_centers : bool
+            If True, also returns figure(s) with the cluster centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the loading plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_results.
+
+        """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot labels of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_cluster_results` instead.")
+        if same_window is None:
+            same_window = True
+        labels = self.learning_results.cluster_labels.astype("uint")
+        if with_centers:
+            centers = self.learning_results.cluster_centers.T
+        else:
+            centers = None
+
+        if cluster_ids is None:
+            cluster_ids = range(labels.shape[0])
+
+        comp_label = kwargs.get("comp_label", None)
+        title = _change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title(
+                'Cluster labels of', same_window=same_window)
+
+        return self._plot_loadings(labels,
+                                   comp_ids=cluster_ids,
+                                   with_factors=with_centers,
+                                   factors=centers,
+                                   same_window=same_window,
+                                   comp_label=title,
+                                   cmap=cmap,
+                                   no_nans=no_nans,
+                                   per_row=per_row,
+                                   axes_decor=axes_decor)
+
+
+    def plot_cluster_distances(
+        self,
+        cluster_ids=None,
+        calibrate=True,
+        same_window=True,
+        with_centers=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor='all',
+        title=None,
+        **kwargs):
+        """Plot the euclidian distances to the centroid of each cluster.
+
+        In case of 1D navigation axis,
+        each line can be toggled on and off by clicking on the legended
+        line.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None (default), returns maps of all components using the
+            number_of_cluster was defined when
+            executing ``cluster``. Otherwise it raises a ValueError.
+            if int, returns maps of cluster labels with ids from 0 to
+            given int.
+            if list of ints, returns maps of cluster labels with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each factor to the same window.  They are
+            not scaled. Default is True.
+        title : string
+            Title of the plot.
+        with_centers : bool
+            If True, also returns figure(s) with the cluster centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the loading plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_results, plot_cluster_labels
+
+        """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot labels of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_cluster_results` instead.")
+        if same_window is None:
+            same_window = True
+        distances = self.learning_results.cluster_distances
+        if with_centers:
+            centers = self.learning_results.cluster_centers.T
+        else:
+            centers = None
+
+        if cluster_ids is None:
+            cluster_ids = range(distances.shape[0])
+
+        comp_label = kwargs.get("comp_label", None)
+        title = _change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title(
+                'Cluster distances of', same_window=same_window)
+
+        return self._plot_loadings(distances,
+                                   comp_ids=cluster_ids,
+                                   with_factors=with_centers,
+                                   factors=centers,
+                                   same_window=same_window,
+                                   comp_label=title,
+                                   cmap=cmap,
+                                   no_nans=no_nans,
+                                   per_row=per_row,
+                                   axes_decor=axes_decor)
+
+
+    def plot_cluster_results(self,
+                             centers_navigator="smart_auto",
+                             labels_navigator="smart_auto",
+                             centers_dim=2,
+                             labels_dim=2,
+                             ):
+        """Plot the cluster labels and centers.
+
+        Unlike `plot_cluster_labels` and `plot_cluster_signals`, this
+        method displays one component at a time.
+        Therefore it provides a more compact visualization than then other
+        two methods.  The labels and centers  are displayed in different
+        windows and each has its own navigator/sliders to navigate them if
+        they are multidimensional. The component index axis is synchronized
+        between the two.
+
+        Parameters
+        ----------
+        centers_navigator, labels_navigator : {"smart_auto",
+        "auto", None, "spectrum", Signal}
+            "smart_auto" (default) displays sliders if the navigation
+            dimension is less than 3. For a description of the other options
+            see `plot` documentation for details.
+        labels_dim, centers_dims : int
+            Currently HyperSpy cannot plot signals of dimension higher than
+            two. Therefore, to visualize the clustering results when the
+            centers or the labels have signal dimension greater than 2
+            we can view the data as spectra(images) by setting this parameter
+            to 1(2). (Default 2)
+
+        See Also
+        --------
+        plot_cluster_signals, plot_cluster_labels.
+
+        """
+        centers = self.get_cluster_signals()
+        distances = self.get_cluster_distances()
+        self.get_cluster_labels(merged=True).plot()
+        _plot_x_results(factors=centers,
+                        loadings=distances,
+                        factors_navigator=centers_navigator,
+                        loadings_navigator=labels_navigator,
+                        factors_dim=centers_dim,
+                        loadings_dim=labels_dim)
+
 
 
 def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
@@ -1837,22 +2381,20 @@ class BaseSignal(FancySlicing,
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
             following items:
-            data : :py:class:`numpy.ndarray`
-               The signal data. It can be an array of any dimensions.
-            axes : dict, optional
-                Dictionary to define the axes (see the
-                documentation of the AxesManager class for more details).
-            attributes : dict, optional
-                A dictionary whose items are stored as attributes.
-            metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `metadata` attribute.
-                Some parameters might be mandatory in some cases.
-            original_metadata : dict, optional
-                A dictionary containing a set of parameters
-                that will to stores in the `original_metadata` attribute. It
-                typically contains all the parameters that has been
-                imported from the original data file.
+
+            * data: the signal data. It can be an array of any dimensions.
+
+            * axes: a dictionary to define the axes (see the documentation of
+              the :py:class:`~hyperspy.axes.AxesManager` class for more details).
+            * attributes: a dictionary whose items are stored as attributes.
+
+            * metadata: a dictionary containing a set of parameters that will
+              to stores in the `metadata` attribute. Some parameters might be
+              mandatory in some cases.
+            * original_metadata: a dictionary containing a set of parameters
+              that will to stores in the `original_metadata` attribute. It
+              typically contains all the parameters that has been
+              imported from the original data file.
 
         """
         self.data = file_data_dict['data']
@@ -1995,19 +2537,16 @@ class BaseSignal(FancySlicing,
         """%s
         %s
         %s
+        %s
         """
         if self._plot is not None:
-            try:
-                self._plot.close()
-            except BaseException:
-                # If it was already closed it will raise an exception,
-                # but we want to carry on...
-                pass
-        if ('power_spectrum' in kwargs and
-                not self.metadata.Signal.get_item('FFT', False)):
-            _logger.warning('The option `power_spectrum` is considered only '
-                            'for signals in Fourier space.')
-            del kwargs['power_spectrum']
+            self._plot.close()
+        if 'power_spectrum' in kwargs:
+            from hyperspy._signals.complex_signal import ComplexSignal
+            if not isinstance(self, ComplexSignal):
+                raise ValueError('The parameter `power_spectrum` required a '
+                                 'signal with complex data type.')
+                del kwargs['power_spectrum']
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -2123,8 +2662,8 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
-                    "navigator must be one of \"spectrum\",\"auto\","
-                    " \"slider\", None, a Signal instance")
+                    'navigator must be one of "spectrum","auto", '
+                    '"slider", None, a Signal instance')
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
@@ -2137,7 +2676,8 @@ class BaseSignal(FancySlicing,
             if self.metadata.has_item('Markers'):
                 self._plot_permanent_markers()
 
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING, KWARGS_DOCSTRING)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -2145,12 +2685,13 @@ class BaseSignal(FancySlicing,
 
         The function gets the format from the specified extension (see
         :ref:`supported-formats` in the User Guide for more information):
-            * ``'hspy'`` for HyperSpy's HDF5 specification
-            * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
-            * ``'msa'`` for EMSA/MSA single spectrum saving.
-            * ``'unf'`` for SEMPER unf binary format.
-            * ``'blo'`` for Blockfile diffraction stack saving.
-            * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
+
+        * ``'hspy'`` for HyperSpy's HDF5 specification
+        * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
+        * ``'msa'`` for EMSA/MSA single spectrum saving.
+        * ``'unf'`` for SEMPER unf binary format.
+        * ``'blo'`` for Blockfile diffraction stack saving.
+        * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
@@ -2181,15 +2722,16 @@ class BaseSignal(FancySlicing,
             compatibility with HyperSpy versions older than 1.2 is required.
             If ``None``, the extension is determined from the following list in
             this order:
-                i) the filename
-                ii)  `Signal.tmp_parameters.extension`
-                iii) ``'hspy'`` (the default extension)
+
+            i) the filename
+            ii)  `Signal.tmp_parameters.extension`
+            iii) ``'hspy'`` (the default extension)
 
         """
         if filename is None:
             if (self.tmp_parameters.has_item('filename') and
                     self.tmp_parameters.has_item('folder')):
-                filename = os.path.join(
+                filename = Path(
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
                 extension = (self.tmp_parameters.extension
@@ -2199,9 +2741,10 @@ class BaseSignal(FancySlicing,
                 filename = self.metadata.General.original_filename
             else:
                 raise ValueError('File name not defined')
+
+        filename = Path(filename)
         if extension is not None:
-            basename, ext = os.path.splitext(filename)
-            filename = basename + '.' + extension
+            filename = filename.with_suffix(f".{extension}")
         io.save(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):
@@ -2546,6 +3089,10 @@ class BaseSignal(FancySlicing,
             A list of the split signals
 
         """
+        if number_of_parts != 'auto' and step_sizes != 'auto':
+            raise ValueError(
+                "You can define step_sizes or number_of_parts but not both."
+            )
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
@@ -2569,18 +3116,13 @@ class BaseSignal(FancySlicing,
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
             number_of_parts = len_axis
-        elif number_of_parts != 'auto' and step_sizes != 'auto':
-            raise ValueError(
-                "You can define step_sizes or number_of_parts "
-                "but not both.")
         elif step_sizes == 'auto':
             if number_of_parts > shape[axis]:
                 raise ValueError(
-                    "The number of parts is greater than "
-                    "the axis size.")
-            else:
-                step_sizes = ([shape[axis] // number_of_parts, ] *
-                              number_of_parts)
+                    "The number of parts is greater than the axis size."
+                )
+
+            step_sizes = ([shape[axis] // number_of_parts, ] * number_of_parts)
 
         if isinstance(step_sizes, numbers.Integral):
             step_sizes = [step_sizes] * int(len_axis / step_sizes)
@@ -2863,7 +3405,8 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.navigation_size < 2:
             while True:
                 yield self()
-            return
+            return  # pragma: no cover
+
         self._make_sure_data_is_contiguous()
         axes = [axis.index_in_array for
                 axis in self.axes_manager.signal_axes]
@@ -2889,8 +3432,7 @@ class BaseSignal(FancySlicing,
             getitem[unfolded_axis] = i
             yield(data[tuple(getitem)])
             i += 1
-            if i == Ni:
-                i = 0
+            i = 0 if i == Ni else i
 
     def _remove_axis(self, axes):
         am = self.axes_manager
@@ -3383,7 +3925,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shift=False, apodization=False, **kwargs):
+    def fft(self, shift=False, apodization=False, real_fft_only=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3403,6 +3945,9 @@ class BaseSignal(FancySlicing,
             If ``True`` or ``'hann'``, applies a Hann window.
             If ``'hamming'`` or ``'tukey'``, applies Hamming or Tukey
             windows, respectively (default is ``False``).
+        real_fft_only : bool, default False
+            If ``True`` and data is real-valued, uses :py:func:`numpy.fft.rfftn`
+            instead of :py:func:`numpy.fft.fftn`
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.fftn`
 
@@ -3437,20 +3982,33 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+
+        use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
+
         if isinstance(self.data, da.Array):
+            if use_real_fft:
+                fft_f = da.fft.rfftn
+            else:
+                fft_f = da.fft.fftn
+
             if shift:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    da.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
+                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
-                    da.fft.fftn(self.data, axes=axes, **kwargs))
+                    fft_f(self.data, axes=axes, **kwargs))
         else:
+            if use_real_fft:
+                fft_f = np.fft.rfftn
+            else:
+                fft_f = np.fft.fftn
+
             if shift:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    np.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
+                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
-                    np.fft.fftn(self.data, axes=axes, **kwargs))
+                    fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
@@ -3472,7 +4030,7 @@ class BaseSignal(FancySlicing,
                 axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shift=None, **kwargs):
+    def ifft(self, shift=None, return_real=True, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3489,6 +4047,9 @@ class BaseSignal(FancySlicing,
             If ``True``, the origin of the FFT will be shifted to the centre.
             If ``False``, the origin will be kept at (0, 0)
             (default is ``None``).
+        return_real : bool, default True
+            If ``True``, returns only the real part of the inverse FFT.
+            If ``False``, returns all parts.
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.ifftn`
 
@@ -3538,7 +4099,9 @@ class BaseSignal(FancySlicing,
             im_ifft.metadata.General.title)
         if im_ifft.metadata.has_item('Signal.FFT'):
             del im_ifft.metadata.Signal.FFT
-        im_ifft = im_ifft.real
+
+        if return_real:
+            im_ifft = im_ifft.real
 
         ureg = UnitRegistry()
         for axis in im_ifft.axes_manager.signal_axes:
@@ -3727,27 +4290,25 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def get_histogram(self, bins='freedman', range_bins=None, out=None,
+    def get_histogram(self, bins='fd', range_bins=None, max_num_bins=250, out=None,
                       **kwargs):
         """Return a histogram of the signal data.
 
-        More sophisticated algorithms for determining bins can be used.
-        Aside from the `bins` argument allowing a string specified how bins
-        are computed, the parameters are the same as :py:func:`numpy.histogram`.
+        More sophisticated algorithms for determining the bins can be used
+        by passing a string as the ``bins`` argument. Other than the ``'blocks'``
+        and ``'knuth'`` methods, the available algorithms are the same as
+        :py:func:`numpy.histogram`.
+
+        Note: The lazy version of the algorithm only supports ``"scott"``
+        and ``"fd"`` as a string argument for ``bins``.
 
         Parameters
         ----------
-        bins : int, list, or str, optional
-            If `bins` is a string, then it must be one of:
-
-                - ``'knuth'`` : use Knuth's rule to determine bins
-                - ``'scotts'`` : use Scott's rule to determine bins
-                - ``'freedman'`` : use the Freedman-diaconis rule to
-                  determine bins
-                - ``'blocks'`` : use bayesian blocks for dynamic bin widths
+        %s
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If
             `range_bins` is ``None``, (``x.min()``, ``x.max()``) will be used.
+        %s
         %s
         %s
         **kwargs
@@ -3761,17 +4322,9 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        print_summary_statistics,
-        :py:func:`astroML.density_estimation.histogram`,
-        :py:func:`numpy.histogram`
-
-        Notes
-        -----
-            - The lazy version of the algorithm does not support the
-              ``'knuth'`` and ``'blocks'`` `bins` arguments.
-            - The estimators for `bins` are taken from the AstroML project.
-              Read the documentation of
-              :py:func:`astroML.density_estimation.histogram` for more info.
+        * print_summary_statistics
+        * :py:func:`numpy.histogram`
+        * :py:func:`dask.histogram`
 
         Examples
         --------
@@ -3784,10 +4337,15 @@ class BaseSignal(FancySlicing,
         """
         from hyperspy import signals
         data = self.data[~np.isnan(self.data)].flatten()
-        hist, bin_edges = histogram(data,
-                                    bins=bins,
-                                    range=range_bins,
-                                    **kwargs)
+
+        hist, bin_edges = histogram(
+            data,
+            bins=bins,
+            max_num_bins=max_num_bins,
+            range=range_bins,
+            **kwargs
+        )
+
         if out is None:
             hist_spec = signals.Signal1D(hist)
         else:
@@ -3796,16 +4354,20 @@ class BaseSignal(FancySlicing,
                 hist_spec.data[:] = hist
             else:
                 hist_spec.data = hist
-        if bins == 'blocks':
+
+        if isinstance(bins, str) and bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
-                "The options `bins = 'blocks'` is not fully supported in this "
-                "versions of hyperspy. It should be used for plotting purpose"
-                "only.")
+                "The option `bins='blocks'` is not fully supported in this "
+                "version of HyperSpy. It should be used for plotting purposes "
+                "only.",
+                UserWarning,
+            )
         else:
             hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
             hist_spec.axes_manager[0].offset = bin_edges[0]
             hist_spec.axes_manager[0].size = hist.shape[-1]
+
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
@@ -3814,12 +4376,19 @@ class BaseSignal(FancySlicing,
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
-    get_histogram.__doc__ %= (OUT_ARG, RECHUNK_ARG)
 
-    def map(self, function,
-            show_progressbar=None,
-            parallel=None, inplace=True, ragged=None,
-            **kwargs):
+    get_histogram.__doc__ %= (HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, OUT_ARG, RECHUNK_ARG)
+
+    def map(
+        self,
+        function,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        inplace=True,
+        ragged=None,
+        **kwargs
+    ):
         """Apply a function to the signal data at all the navigation
         coordinates.
 
@@ -3842,14 +4411,16 @@ class BaseSignal(FancySlicing,
             Any function that can be applied to the signal.
         %s
         %s
-        inplace : bool
-            if ``True`` (default), the data is replaced by the result. Otherwise
+        %s
+        inplace : bool, default True
+            if ``True``, the data is replaced by the result. Otherwise
             a new Signal with the results is returned.
-        ragged : None or bool
+        ragged : None or bool, default None
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
-            the appropriate choice is made while processing. Note: ``None``
-            is not allowed for Lazy signals!
+            the appropriate choice is made while processing. If True in case
+            of lazy signal, the signal will be compute at the end of the
+            mapping. Note: ``None`` is not allowed for Lazy signals!
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
 
@@ -3886,7 +4457,7 @@ class BaseSignal(FancySlicing,
         """
         # Sepate ndkwargs
         ndkwargs = ()
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 
@@ -3936,14 +4507,14 @@ class BaseSignal(FancySlicing,
             # Iteration over coordinates.
             res = self._map_iterate(function, iterating_kwargs=ndkwargs,
                                     show_progressbar=show_progressbar,
-                                    parallel=parallel, inplace=inplace,
-                                    ragged=ragged,
+                                    parallel=parallel, max_workers=max_workers,
+                                    ragged=ragged, inplace=inplace,
                                     **kwargs)
         if inplace:
             self.events.data_changed.trigger(obj=self)
         return res
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
@@ -3956,10 +4527,17 @@ class BaseSignal(FancySlicing,
             return None
         return self._deepcopy_with_new_data(newdata)
 
-    def _map_iterate(self, function, iterating_kwargs=(),
-                     show_progressbar=None, parallel=None,
-                     ragged=None,
-                     inplace=True, **kwargs):
+    def _map_iterate(
+        self,
+        function,
+        iterating_kwargs=(),
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        ragged=None,
+        inplace=True,
+        **kwargs,
+    ):
         """Iterates the signal navigation space applying the function.
 
         Parameters
@@ -3973,16 +4551,17 @@ class BaseSignal(FancySlicing,
             with the signal navigation.
         %s
         %s
-        inplace : bool
-            if ``True`` (default), the data is replaced by the result. Otherwise
+        %s
+        inplace : bool, default True
+            if ``True``, the data is replaced by the result. Otherwise
             a new signal with the results is returned.
-        ragged : None or bool
+        ragged : None or bool, default None
             Indicates if results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             an appropriate choice is made while processing. Note: ``None`` is
             not allowed for Lazy signals!
         **kwargs : dict
-            Additional keyword arguments are passed to `function`
+            Additional keyword arguments passed to :std:term:`function`
 
         Notes
         -----
@@ -4002,10 +4581,10 @@ class BaseSignal(FancySlicing,
         ...                                    np.random.rand(5,400).flat),))
         >>> s.data.T
         array([[  0.82869603,   1.04961735,   2.21513949,   3.61329091,
-                  4.2481755 ,   5.81184375,   6.47696867,   7.07682618,
-                  8.16850697,   9.37771809,  10.42794054,  11.24362699,
-                 12.11434077,  13.98654036,  14.72864184,  15.30855499,
-                 16.96854373,  17.65077064,  18.64925703,  19.16901297]])
+                    4.2481755 ,   5.81184375,   6.47696867,   7.07682618,
+                    8.16850697,   9.37771809,  10.42794054,  11.24362699,
+                    12.11434077,  13.98654036,  14.72864184,  15.30855499,
+                    16.96854373,  17.65077064,  18.64925703,  19.16901297]])
 
         Storing function result to other signal (e.g. calculated shifts)
 
@@ -4021,75 +4600,106 @@ class BaseSignal(FancySlicing,
         array([  6.,  22.,  38.,  54.,  70.])
 
         """
-        if parallel is None:
-            parallel = preferences.General.parallel
-        if parallel is True:
-            from os import cpu_count
-            parallel = cpu_count() or 1
-        # Because by default it's assumed to be I/O bound, and cpu_count*5 is
-        # used. For us this is not the case.
+        from os import cpu_count
+        from hyperspy.misc.utils import create_map_objects, map_result_construction
 
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
+        if parallel is None:
+            parallel = preferences.General.parallel
+
         size = max(1, self.axes_manager.navigation_size)
-        from hyperspy.misc.utils import (create_map_objects,
-                                         map_result_construction)
-        func, iterators = create_map_objects(function, size, iterating_kwargs,
-                                             **kwargs)
+        func, iterators = create_map_objects(function, size, iterating_kwargs, **kwargs)
         iterators = (self._iterate_signal(),) + iterators
         res_shape = self.axes_manager._navigation_shape_in_array
+
         # no navigation
         if not len(res_shape):
             res_shape = (1,)
+
         # pre-allocate some space
-        res_data = np.empty(res_shape, dtype='O')
+        res_data = np.empty(res_shape, dtype="O")
         shapes = set()
 
-        # parallel or sequential maps
+        if show_progressbar:
+            pbar = progressbar(total=size, leave=True, disable=not show_progressbar)
+
+        # We set this value to equal cpu_count, with a maximum
+        # of 32 cores, since the earlier default value was inappropriate
+        # for many-core machines.
+        if max_workers is None:
+            max_workers = min(32, cpu_count())
+
+        # Avoid any overhead of additional threads
+        if max_workers < 2:
+            parallel = False
+
+        # parallel or sequential mapping
         if parallel:
             from concurrent.futures import ThreadPoolExecutor
-            executor = ThreadPoolExecutor(max_workers=parallel)
-            thismap = executor.map
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                for ind, res in zip(
+                    range(res_data.size), executor.map(func, zip(*iterators))
+                ):
+                    res = np.asarray(res)
+                    res_data.flat[ind] = res
+
+                    if ragged is False:
+                        shapes.add(res.shape)
+                        if len(shapes) != 1:
+                            raise ValueError(
+                                "The result shapes are not identical, but ragged=False"
+                            )
+                    else:
+                        try:
+                            shapes.add(res.shape)
+                        except AttributeError:
+                            shapes.add(None)
+
+                    if show_progressbar:
+                        pbar.update(1)
+
         else:
-            from builtins import map as thismap
-        pbar = progressbar(total=size, leave=True, disable=not
-                           show_progressbar)
-        for ind, res in zip(range(res_data.size),
-                            thismap(func, zip(*iterators))):
-            # In what follows we assume that res is a numpy scalar or array
-            # The following line guarantees that that's the case.
-            res = np.asarray(res)
-            res_data.flat[ind] = res
-            if ragged is False:
-                # to be able to break quickly and not waste time / resources
-                shapes.add(res.shape)
-                if len(shapes) != 1:
-                    raise ValueError('The result shapes are not identical, but'
-                                     'ragged=False')
-            else:
-                try:
+            from builtins import map
+
+            for ind, res in zip(range(res_data.size), map(func, zip(*iterators))):
+                res = np.asarray(res)
+                res_data.flat[ind] = res
+
+                if ragged is False:
                     shapes.add(res.shape)
-                except AttributeError:
-                    shapes.add(None)
-            pbar.update(1)
-        if parallel:
-            executor.shutdown()
+                    if len(shapes) != 1:
+                        raise ValueError(
+                            "The result shapes are not identical, but ragged=False"
+                        )
+                else:
+                    try:
+                        shapes.add(res.shape)
+                    except AttributeError:
+                        shapes.add(None)
+
+                if show_progressbar:
+                    pbar.update(1)
 
         # Combine data if required
         shapes = list(shapes)
         suitable_shapes = len(shapes) == 1 and shapes[0] is not None
         ragged = ragged or not suitable_shapes
         sig_shape = None
+
         if not ragged:
             sig_shape = () if shapes[0] == (1,) else shapes[0]
             res_data = np.stack(res_data.ravel()).reshape(
-                self.axes_manager._navigation_shape_in_array + sig_shape)
-        res = map_result_construction(self, inplace, res_data, ragged,
-                                      sig_shape)
+                self.axes_manager._navigation_shape_in_array + sig_shape
+            )
+
+        res = map_result_construction(self, inplace, res_data, ragged, sig_shape)
+
         return res
 
-    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def copy(self):
         """
@@ -4301,12 +4911,12 @@ class BaseSignal(FancySlicing,
         variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
                                                             gain_offset,
                                                             correlation_factor)
+
         variance = BaseSignal(variance, attributes={'_lazy': self._lazy})
         variance.axes_manager = self.axes_manager
-        variance.metadata.General.title = ("Variance of " +
-                                           self.metadata.General.title)
-        self.metadata.set_item(
-            "Signal.Noise_properties.variance", variance)
+        variance.metadata.General.title = ("Variance of " + self.metadata.General.title)
+
+        self.set_noise_variance(variance)
 
     @staticmethod
     def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
@@ -4314,6 +4924,64 @@ class BaseSignal(FancySlicing,
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
+
+    def set_noise_variance(self, variance):
+        """Set the noise variance of the signal.
+
+        Equivalent to ``s.metadata.set_item("Signal.Noise_properties.variance", variance)``.
+
+        Parameters
+        ----------
+        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+            Value or values of the noise variance. A value of None is
+            equivalent to clearing the variance.
+
+        Returns
+        -------
+        None
+
+        """
+        if isinstance(variance, BaseSignal):
+            if (
+                variance.axes_manager.navigation_shape
+                != self.axes_manager.navigation_shape
+            ):
+                raise ValueError(
+                    "The navigation shape of the `variance` is "
+                    "not equal to the navigation shape of the signal"
+                )
+        elif isinstance(variance, numbers.Number):
+            pass
+        elif variance is None:
+            pass
+        else:
+            raise ValueError(
+                "`variance` must be one of [None, float, "
+                f"hyperspy.signal.BaseSignal], not {type(variance)}."
+            )
+
+        self.metadata.set_item("Signal.Noise_properties.variance", variance)
+
+    def get_noise_variance(self):
+        """Get the noise variance of the signal, if set.
+
+        Equivalent to ``s.metadata.Signal.Noise_properties.variance``.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+            Noise variance of the signal, if set.
+            Otherwise returns None.
+
+        """
+        if "Signal.Noise_properties.variance" in self.metadata:
+            return self.metadata.Signal.Noise_properties.variance
+
+        return None
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a
@@ -4563,7 +5231,7 @@ class BaseSignal(FancySlicing,
         Raises
         ------
         DataDimensionError
-            when `data.ndim` < 2
+            When `data.ndim` < 2
 
         See also
         --------
@@ -4612,7 +5280,7 @@ class BaseSignal(FancySlicing,
         if self._lazy:
             self._make_lazy()
 
-    def set_signal_type(self, signal_type=None):
+    def set_signal_type(self, signal_type=""):
         """Set the signal type and convert the current signal accordingly.
 
         The ``signal_type`` attribute specifies the type of data that the signal
@@ -4628,14 +5296,16 @@ class BaseSignal(FancySlicing,
 
         HyperSpy ships with a minimal set of known signal types. External
         packages can register extra signal types. To print a list of
-        registered signal types in the current installation run this method
-        without arguments. Note that
-
+        registered signal types in the current installation, call
+        :py:meth:`hyperspy.utils.print_known_signal_types`, and see
+        the developer guide for details on how to add new signal_types.
+        A non-exhaustive list of HyperSpy extensions is also maintained
+        here: https://github.com/hyperspy/hyperspy-extensions-list.
 
         Parameters
         ----------
         signal_type : str, optional
-            If no arguments are passed, the `signal_type` is set to undefined
+            If no arguments are passed, the ``signal_type`` is set to undefined
             and the current signal converted to a generic signal subclass.
             Otherwise, set the signal_type to the given signal
             type or to the signal type corresponding to the given signal type
@@ -4646,12 +5316,12 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        print_known_signal_types
+        * :py:meth:`hyperspy.utils.print_known_signal_types`
 
         Examples
         --------
 
-        Let's first print all known `signal_type`s:
+        Let's first print all known signal types:
 
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s
@@ -4690,6 +5360,13 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (|4)>
 
         """
+        if signal_type is None:
+            warnings.warn(
+                "`s.set_signal_type(signal_type=None)` is deprecated. "
+                "Use `s.set_signal_type(signal_type='')` instead.",
+                VisibleDeprecationWarning
+            )
+
         self.metadata.Signal.signal_type = signal_type
         # _assign_subclass takes care of matching aliases with their
         # corresponding signal class
@@ -4941,84 +5618,101 @@ class BaseSignal(FancySlicing,
                 marker.plot(render_figure=False)
         self._render_figure()
 
-    def add_poissonian_noise(self, keep_dtype=True):
-        """Add Poissonian noise to the data
+    def add_poissonian_noise(self, keep_dtype=True, random_state=None):
+        """Add Poissonian noise to the data.
 
-        This method works in-place. The resulting data type is ``int64``. If
-        this is different from the original data type a warning is added to the
-        log.
+        This method works in-place. The resulting data type is ``int64``.
+        If this is different from the original data type then a warning
+        is added to the log.
 
         Parameters
         ----------
-        keep_dtype : bool
+        keep_dtype : bool, default True
             If ``True``, keep the original data type of the signal data. For
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
-            ``'float64'``. The default is ``True`` for convenience.
+            ``'float64'``.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.poisson`
-        (or :py:func:`dask.array.random.poisson` for lazy signals) to
-        generate the Gaussian noise. In order to seed it,
-        you must use :py:func:`numpy.random.seed`.
+        (or :py:func:`dask.array.random.poisson` for lazy signals)
+        to generate the Poissonian noise.
 
         """
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import poisson
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import poisson
+
         original_dtype = self.data.dtype
-        self.data = poisson(lam=self.data, **kwargs)
+
+        self.data = random_state.poisson(lam=self.data, **kwargs)
+
         if self.data.dtype != original_dtype:
             if keep_dtype:
                 _logger.warning(
-                    "Changing data type from %s to the original %s." % (
-                        self.data.dtype, original_dtype)
+                    f"Changing data type from {self.data.dtype} "
+                    f"to the original {original_dtype}"
                 )
                 # Don't change the object if possible
                 self.data = self.data.astype(original_dtype, copy=False)
             else:
-                _logger.warning("The data type changed from %s to %s" % (
-                    original_dtype, self.data.dtype
-                ))
+                _logger.warning(
+                    f"The data type changed from {original_dtype} "
+                    f"to {self.data.dtype}"
+                )
+
         self.events.data_changed.trigger(obj=self)
 
-    def add_gaussian_noise(self, std):
+    def add_gaussian_noise(self, std, random_state=None):
         """Add Gaussian noise to the data.
 
         The operation is performed in-place (*i.e.* the data of the signal
-        is modified). This method requires a float data type, otherwise numpy
-        raises a :py:exc:`TypeError`.
+        is modified). This method requires the signal to have a float data type,
+        otherwise it will raise a :py:exc:`TypeError`.
 
         Parameters
         ----------
         std : float
             The standard deviation of the Gaussian noise.
+        random_state : None or int or RandomState instance, default None
+            Seed for the random generator.
 
         Note
         ----
         This method uses :py:func:`numpy.random.normal` (or
-        :py:func:`dask.array.random.normal` for lazy signals) to generate the
-        Gaussian noise. In order to seed it, you must use
-        :py:func:`numpy.random.seed`.
+        :py:func:`dask.array.random.normal` for lazy signals)
+        to generate the noise.
+
         """
 
+        if self.data.dtype.char not in np.typecodes["AllFloat"]:
+            raise TypeError(
+                "`s.add_gaussian_noise()` requires the data to have "
+                f"a float datatype, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64'))."
+            )
+
         kwargs = {}
+        random_state = check_random_state(random_state, lazy=self._lazy)
+
         if self._lazy:
-            from dask.array.random import normal
             kwargs["chunks"] = self.data.chunks
-        else:
-            from numpy.random import normal
-        noise = normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
+        noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+
         if self._lazy:
             # With lazy data we can't keep the same array object
             self.data = self.data + noise
         else:
             # Don't change the object
             self.data += noise
+
         self.events.data_changed.trigger(obj=self)
 
     def transpose(self, signal_axes=None,
@@ -5166,13 +5860,14 @@ class BaseSignal(FancySlicing,
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
         res._assign_subclass()
-        if res.metadata.has_item("Signal.Noise_properties.variance"):
-            var = res.metadata.Signal.Noise_properties.variance
-            if isinstance(var, BaseSignal):
-                var = var.transpose(signal_axes=idx_sig,
-                                    navigation_axes=idx_nav,
-                                    optimize=optimize)
-                res.metadata.set_item('Signal.Noise_properties.variance', var)
+
+        var = res.get_noise_variance()
+        if isinstance(var, BaseSignal):
+            var = var.transpose(signal_axes=idx_sig,
+                                navigation_axes=idx_nav,
+                                optimize=optimize)
+            res.set_noise_variance(var)
+
         if optimize:
             res._make_sure_data_is_contiguous()
         if res.metadata.has_item('Markers'):
@@ -5192,6 +5887,21 @@ class BaseSignal(FancySlicing,
         parameters as a property of a Signal.
         """
         return self.transpose()
+
+
+    def _check_navigation_mask(self, mask):
+        if mask is not None:
+            if (mask.axes_manager.navigation_shape !=
+                self.axes_manager.navigation_shape):
+                raise ValueError("mask must be a signal with the same "
+                                 "navigation shape as the current signal.")
+
+    def _check_signal_mask(self, mask):
+        if mask is not None:
+            if (mask.axes_manager.signal_shape !=
+                self.axes_manager.signal_shape):
+                raise ValueError("mask must be a signal with the same "
+                                 "signal shape as the current signal.")
 
     def apply_apodization(self, window='hann',
                           hann_order=None, tukey_alpha=0.5, inplace=False):
@@ -5281,6 +5991,70 @@ class BaseSignal(FancySlicing,
             self.events.data_changed.trigger(obj=self)
         else:
             return self * window_nd
+
+    def _check_navigation_mask(self, mask):
+        """
+        Check the shape of the navigation mask.
+
+        Parameters
+        ----------
+        mask : numpy array or BaseSignal.
+            Mask to check the shape.
+
+        Raises
+        ------
+        ValueError
+            If shape doesn't match the shape of the navigation dimension.
+
+        Returns
+        -------
+        None.
+
+        """
+        if isinstance(mask, BaseSignal):
+            if mask.axes_manager.signal_dimension != 0:
+                raise ValueError("`mask` must be a signal with "
+                                 "`signal_dimension` equal to 0")
+            elif (mask.axes_manager.navigation_shape !=
+                  self.axes_manager.navigation_shape):
+                raise ValueError("`mask` must be a signal with the same "
+                                 "`navigation_shape` as the current signal.")
+        if isinstance(mask, np.ndarray) and (
+                mask.shape != self.axes_manager.navigation_shape):
+            raise ValueError("The shape of `mask` must match the shape of "
+                             "the `navigation_shape`.")
+
+    def _check_signal_mask(self, mask):
+        """
+        Check the shape of the signal mask.
+
+        Parameters
+        ----------
+        mask : numpy array or BaseSignal.
+            Mask to check the shape.
+
+        Raises
+        ------
+        ValueError
+            If shape doesn't match the shape of the signal dimension.
+
+        Returns
+        -------
+        None.
+
+        """
+        if isinstance(mask, BaseSignal):
+            if mask.axes_manager.navigation_dimension != 0:
+                raise ValueError("`mask` must be a signal with "
+                                 "`navigation_dimension` equal to 0")
+            elif (mask.axes_manager.signal_shape !=
+                  self.axes_manager.signal_shape):
+                raise ValueError("`mask` must be a signal with the same "
+                                 "`signal_shape` as the current signal.")
+        if isinstance(mask, np.ndarray) and (
+                mask.shape != self.axes_manager.signal_shape):
+            raise ValueError("The shape of `mask` must match the shape of "
+                             "the `signal_shape`.")
 
 
 ARITHMETIC_OPERATORS = (

@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,11 +17,10 @@
 
 
 import numpy as np
-from numpy.testing import assert_array_equal
 import pytest
+from numpy.testing import assert_array_equal
 
-from hyperspy import signals
-from hyperspy import roi
+from hyperspy import roi, signals
 
 
 class Test1D:
@@ -136,6 +135,11 @@ class Test1D:
         with pytest.raises(ValueError):
             self.signal.isig[:'4000.0']
             pytest.fail("should contains an units")
+
+    def test_relative_slicing(self):
+        s = self.signal
+        assert_array_equal(s.isig[:'rel0.5'].data, s.data[:4])
+        assert_array_equal(s.isig['rel0.0':'rel1.0'].data, s.data[:-1])
 
 
 class Test2D:

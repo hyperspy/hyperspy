@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -96,6 +96,16 @@ class BlittedFigure(object):
             marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
+
+    def remove_markers(self, render_figure=False):
+        """ Remove all markers """
+        for marker in self.ax_markers:
+            marker.close(render_figure=False)
+        if render_figure:
+            if self.ax.figure.canvas.supports_blit:
+                self.ax.hspy_fig._update_animated()
+            else:
+                self.ax.figure.canvas.draw_idle()
 
     def _on_close(self):
         _logger.debug('Closing `BlittedFigure`.')

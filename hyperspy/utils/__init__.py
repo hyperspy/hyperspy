@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 
 Functions that operate on Signal instances and other goodies.
@@ -18,21 +36,21 @@ Subpackages:
 
 
 """
-import hyperspy.utils.material
-import hyperspy.utils.eds
-import hyperspy.utils.plot
 import hyperspy.datasets.example_signals
+import hyperspy.utils.eds
+import hyperspy.utils.material
 import hyperspy.utils.model
-from hyperspy.misc.utils import (stack, transpose)
-from hyperspy.interactive import interactive
+import hyperspy.utils.plot
 import hyperspy.utils.roi
 import hyperspy.utils.samfire
+from hyperspy.interactive import interactive
+from hyperspy.misc.utils import stack, transpose
 
 
 def print_known_signal_types():
-    """Print all known `signal_type`s
+    """Print all known `signal_type`\s
 
-    This includes `signal_type`s from all installed packages that
+    This includes `signal_type`\s from all installed packages that
     extend HyperSpy.
 
     Examples

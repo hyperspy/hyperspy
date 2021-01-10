@@ -4,13 +4,14 @@ Working with big data
 *********************
 
 .. warning:: All the features described in this chapter are in beta state.
-   Although most of them work, their opearation may not always be optimal,
-   well documented and/or consistent with their in-memory counterparts.
+
+   Although most of them work as described, their operation may not always
+   be optimal, well-documented and/or consistent with their in-memory counterparts.
+
    Therefore, although efforts will be taken to minimise major disruptions,
    the syntax and features described here may change in patch and minor
    HyperSpy releases. If you experience issues with HyperSpy's lazy features
    please report them to the developers.
-
 
 .. versionadded:: 1.2
 
@@ -116,14 +117,77 @@ operations are only performed lazily, use the
     >>> sl
     <LazySignal1D, title: , dimensions: (3|50)>
 
+
+.. _big_data.decomposition:
+
+Machine learning
+----------------
+
+:ref:`mva.decomposition` algorithms for machine learning often perform
+large matrix manipulations, requiring significantly more memory than the data size.
+To perform decomposition operation lazily, HyperSpy provides access to several "online"
+algorithms  as well as `dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
+Online algorithms perform the decomposition by operating serially on chunks of
+data, enabling the lazy decomposition of large datasets. In line with the
+standard HyperSpy signals, lazy :py:meth:`~._signals.lazy.LazySignal.decomposition`
+offers the following online algorithms:
+
+.. _lazy_decomposition-table:
+
+.. table:: Available lazy decomposition algorithms in HyperSpy
+
+   +--------------------------+----------------------------------------------------------------+
+   | Algorithm                | Method                                                         |
+   +==========================+================================================================+
+   | "SVD" (default)          | :py:func:`dask.array.linalg.svd`                               |
+   +--------------------------+----------------------------------------------------------------+
+   | "PCA"                    | :py:class:`sklearn.decomposition.IncrementalPCA`               |
+   +--------------------------+----------------------------------------------------------------+
+   | "ORPCA"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
+   +--------------------------+----------------------------------------------------------------+
+   | "ORNMF"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
+   +--------------------------+----------------------------------------------------------------+
+
+.. seealso::
+
+  :py:meth:`~.learn.mva.MVA.decomposition` for more details on decomposition
+  with non-lazy signals.
+
 Practical tips
 --------------
 
 Despite the limitations detailed below, most HyperSpy operations can be
-performed lazily. Important points of note are:
+performed lazily. Important points are:
 
 Chunking
 ^^^^^^^^
+
+Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory, 
+allowing lazy loading. Chunk size can dramatically affect the speed of various HyperSpy algorithms, so chunk size is
+worth careful consideration when saving a signal. HyperSpy's default chunking sizes are probably not optimal
+for a given data analysis technique. For more comprehensible documentation on chunking,
+see the dask `array chunks
+<https://docs.dask.org/en/latest/array-chunks.html>`_ and `best practices
+<https://docs.dask.org/en/latest/array-best-practices.html>`_ docs. The chunks saved into HDF5 will
+match the dask array chunks in ``s.data.chunks`` when lazy loading.
+Chunk shape should follow the axes order of the numpy shape (``s.data.shape``), not the hyperspy shape.
+The following example shows how to chunk one of the two navigation dimensions into smaller chunks:
+
+.. code-block:: python
+
+    >>> import dask.array as da
+    >>> data = da.random.random((10,200,300))
+    >>> data.chunksize
+    (10, 200, 300)
+    
+    >>> s = hs.signals.Signal1D(data)
+    >>> s # Note the reversed order of navigation dimensions
+    <Signal1D, title: , dimensions: (200, 10|300)>
+    
+    >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
+    >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
+    >>> s2.data.chunksize
+    (10, 100, 300)
 
 .. versionadded:: 1.3.2
 
@@ -245,32 +309,6 @@ Or even better:
     >>> s = hs.signals.BaseSignal([0]).as_lazy()
     >>> s1 = s + 1
 
-Machine learning (decomposition)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:ref:`decomposition` algorithms often performs large matrix manipulations,
-requiring significantly more memory than the data size. To perform
-decomposition operation lazily HyperSpy provides several "online" algorithms and
-`dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
-Online algorithms perform the decomposition by operating serially on chunks of
-data, enabling the lazy decomposition of large datasets. In line with the
-standard HyperSpy signals,
-:py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
-online algorithms:
-
-* **PCA** (``algorithm='PCA'``): performs `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
-  from ``scikit-learn``. Please refer to its documentation for a description
-  of the several keyword arguments taken by its :meth:``fit`` method.
-* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. Please
-  refer to the docstring of :py:meth:`~.learn.rpca.ORPCA` for details on
-  usage and keyword arguments.
-* **NMF** (``algorithm='ONMF'``): performs Online Robust NMF, as per "OPGD"
-  algorithm in :ref:`[Zhao2016] <Zhao2016>`. Please
-  refer to the docstring of :py:meth:`~.learn.onmf.ONMF` for details on
-  usage and keyword arguments.
-
-
-
 Other minor differences
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -307,9 +345,9 @@ requested, the way to the root is found and evaluated in the correct sequence
 on the correct blocks.
 
 The "magic" is performed by (for the sake of simplicity) storing the data not
-as ``numpy.ndarray``, but ``dask.array.Array`` (more information `here
-<https://dask.readthedocs.io/en/latest/>`_). ``dask`` offers a couple of
-advantages:
+as ``numpy.ndarray``, but ``dask.array.Array`` (see the
+`dask documentation <https://dask.readthedocs.io/en/latest/>`_). ``dask``
+offers a couple of advantages:
 
 * **Arbitrary-sized data processing is possible**. By only loading a couple of
   chunks at a time, theoretically any signal can be processed, albeit slower.
@@ -320,8 +358,8 @@ advantages:
   not required for the final result, it will not be loaded at all, saving time
   and resources.
 * **Able to extend to a distributed computing environment (clusters)**.
-  ``dask.distributed`` (documentation `here
-  <https://distributed.readthedocs.io/en/latest/>`_) offers a straightforward
-  way to expand the effective memory for computations to that of a cluster,
-  which allows performing the operations significantly faster than on a single
-  machine.
+  :py:``dask.distributed`` (see
+  `the dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers
+  a straightforward way to expand the effective memory for computations to that
+  of a cluster, which allows performing the operations significantly faster
+  than on a single machine.

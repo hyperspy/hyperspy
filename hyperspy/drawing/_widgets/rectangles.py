@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -112,12 +112,16 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         """
         Set bounds by indices. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, top, width, height)
-         OR
-         * 'x'/'left'
-         * 'y'/'top'
-         * 'w'/'width', alternatively 'right'
-         * 'h'/'height', alternatively 'bottom'
+
+        * 'bounds': tuple (left, top, width, height)
+
+        OR
+
+        * 'x'/'left'
+        * 'y'/'top'
+        * 'w'/'width', alternatively 'right'
+        * 'h'/'height', alternatively 'bottom'
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """
@@ -138,12 +142,16 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         """
         Set bounds by values. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, top, width, height)
-         OR
-         * 'x'/'left'
-         * 'y'/'top'
-         * 'w'/'width', alternatively 'right' (x+w)
-         * 'h'/'height', alternatively 'bottom' (y+h)
+
+        * 'bounds': tuple (left, top, width, height)
+
+        OR
+
+        * 'x'/'left'
+        * 'y'/'top'
+        * 'w'/'width', alternatively 'right' (x+w)
+        * 'h'/'height', alternatively 'bottom' (y+h)
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """

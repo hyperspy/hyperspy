@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
+    'sphinx_toggleprompt',
 ]
 
 try:
@@ -133,7 +134,7 @@ html_logo = '_static/hyperspy_logo.png'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = 'hyperspy.ico'
+html_favicon = '_static/hyperspy.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -238,12 +239,15 @@ man_pages = [
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       'hyperspyweb': ('http://hyperspy.org/', None),
+                       'hyperspyweb': ('https://hyperspy.org/', None),
                        'matplotlib': ('https://matplotlib.org', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
                        'dask': ('https://docs.dask.org/en/latest', None),
-                       'astroML': ('https://www.astroml.org/', None)}
+                       'astroML': ('https://www.astroml.org/', None),
+                       'sklearn': ('https://scikit-learn.org/stable', None),
+                       'skimage': ('https://scikit-image.org/docs/stable', None),
+                       }
 
 graphviz_output_format = "svg"
 
@@ -259,9 +263,10 @@ def run_apidoc(_):
     cur_dir = os.path.normpath(os.path.dirname(__file__))
     output_path = os.path.join(cur_dir, 'api')
     modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
-    main(['-e', '-f', '-P', '-o', output_path, modules])
+    exclude_pattern = "../hyperspy/tests"
+    exclude_pattern2 = "../hyperspy/external"
+    main(['-e', '-f', '-P', '-o', output_path, modules, exclude_pattern, exclude_pattern2])
 
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
-    app.add_javascript('copybutton.js')

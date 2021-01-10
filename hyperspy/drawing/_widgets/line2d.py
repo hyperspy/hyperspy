@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +21,7 @@ import numpy as np
 import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
+from hyperspy.drawing.utils import picker_kwargs
 
 
 _logger = logging.getLogger(__name__)
@@ -32,14 +33,16 @@ def unit_vector(vector):
 
 
 def angle_between(v1, v2):
-    """ Returns the angle in radians between @D vectors 'v1' and 'v2'::
+    """ Returns the angle in radians between the vectors 'v1' and 'v2'.
 
-            >>> angle_between((1, 0), (0, 1))
-            1.5707963267948966
-            >>> angle_between((1, 0), (1, 0))
-            0.0
-            >>> angle_between((1, 0), (-1, 0))
-            3.141592653589793
+    Examples
+    --------
+    >>> angle_between((1, 0), (0, 1))
+    1.5707963267948966
+    >>> angle_between((1, 0), (1, 0))
+    0.0
+    >>> angle_between((1, 0), (-1, 0))
+    3.141592653589793
     """
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)
@@ -77,11 +80,18 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     accessible (putting it lower is an easy way to disable the functionality).
 
 
-    NOTE: This widget's internal position does not lock to axes points by
-          default.
-    NOTE: The 'position' is now a 2D tuple: tuple(tuple(x1, x2), tuple(y1, y2))
-    NOTE: The 'size' property corresponds to line width, so it has a len() of
-    only one.
+    Notes
+    -----
+    This widget's internal position does not lock to axes points by default.
+
+    Notes
+    -----
+    The 'position' is now a 2D tuple: tuple(tuple(x1, x2), tuple(y1, y2))
+    
+    Notes
+    -----
+    The 'size' property corresponds to line width, so it has a len() of only
+    one.
     """
 
     # Bitfield values for different mouse interaction functions
@@ -249,6 +259,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         xy = np.array(self._pos)
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
+        kwargs = picker_kwargs(max_r)
         self.patch = self.ax.plot(
             xy[:, 0], xy[:, 1],
             linestyle='-',
@@ -260,10 +271,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             markersize=self.radius_resize,
             mew=0.1,
             mfc='lime',
-            picker=max_r,)[0:1]
+            **kwargs,)[0:1]
 
     def _set_size_patch(self):
         wc = self._get_width_indicator_coords()
+        kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
             wi, = self.ax.plot(
                 wc[i][0], wc[i][1],
@@ -271,7 +283,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 animated=self.blit,
                 lw=self.linewidth,
                 c=self.color,
-                picker=self.radius_move)
+                **kwargs)
             self.patch.append(wi)
             self._width_indicator_patches.append(wi)
 

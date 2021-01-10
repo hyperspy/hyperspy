@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,15 +18,12 @@
 
 import numpy as np
 
-from numpy.testing import assert_allclose
-
-from hyperspy.utils.model_selection import AIC, AICc, BIC
-from hyperspy.signals import Signal1D
 from hyperspy.components1d import Gaussian, Lorentzian
+from hyperspy.signals import Signal1D
+from hyperspy.utils.model_selection import AIC, BIC, AICc
 
 
 class TestModelSelection:
-
     def setup_method(self, method):
         s = Signal1D(range(10))
         m1 = s.create_model()
@@ -41,17 +38,17 @@ class TestModelSelection:
     def test_AIC(self):
         _aic1 = AIC(self.m1)
         _aic2 = AIC(self.m2)
-        assert_allclose(_aic1, 74.477061729373233)
-        assert_allclose(_aic2, 72.749265802224159)
+        np.testing.assert_allclose(_aic1, 74.477061729373233)
+        np.testing.assert_allclose(_aic2, 72.749265802224159)
 
     def test_AICc(self):
         _aicc1 = AICc(self.m1)
         _aicc2 = AICc(self.m2)
-        assert_allclose(_aicc1, 82.477061729373233)
-        assert_allclose(_aicc2, 80.749265802224159)
+        np.testing.assert_allclose(_aicc1, 82.477061729373233)
+        np.testing.assert_allclose(_aicc2, 80.749265802224159)
 
     def test_BIC(self):
         _bic1 = BIC(self.m1)
         _bic2 = BIC(self.m2)
-        assert_allclose(_bic1, 75.68740210134942)
-        assert_allclose(_bic2, 73.959606174200346)
+        np.testing.assert_allclose(_bic1, 75.687402101349420)
+        np.testing.assert_allclose(_bic2, 73.959606174200346)

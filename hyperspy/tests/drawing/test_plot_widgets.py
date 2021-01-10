@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import numpy.testing as nt
-import pytest
 import matplotlib
+import numpy as np
+import pytest
 
-from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.drawing import widgets
-
+from hyperspy.signals import Signal1D, Signal2D
 
 baseline_dir = 'plot_widgets'
 default_tol = 2.0
@@ -44,34 +42,34 @@ class TestPlotLine2DWidget():
         assert self.line2d.linewidth == 1
         assert self.line2d.color == 'red'
         assert self.line2d._size == np.array([0])
-        nt.assert_allclose(self.line2d._pos, np.array([[0, 0], [1.2, 0]]))
+        np.testing.assert_allclose(self.line2d._pos, np.array([[0, 0], [1.2, 0]]))
 
         assert self.line2d.position == ([0.0, 0.0], [1.2, 0.0])
-        nt.assert_allclose(self.line2d.indices[0], np.array([0, 0]))
-        nt.assert_allclose(self.line2d.indices[1], np.array([1, 0]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([0.6, 0.]))
+        np.testing.assert_allclose(self.line2d.indices[0], np.array([0, 0]))
+        np.testing.assert_allclose(self.line2d.indices[1], np.array([1, 0]))
+        np.testing.assert_allclose(self.line2d.get_centre(), np.array([0.6, 0.]))
 
     def test_position(self):
         self.line2d.position = ([12.0, 60.0], [36.0, 96.0])
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
-        nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
-        nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
+        np.testing.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
+        np.testing.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
+        np.testing.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
 
     def test_position_snap_position(self):
         self.line2d.snap_position = True
         self.line2d.position = ([12.5, 61.0], [36.0, 96.0])
-        nt.assert_allclose(self.line2d.position, ([12.0, 61.2], [36.0, 96.0]))
-        nt.assert_allclose(self.line2d.indices[0], np.array([10, 51]))
-        nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.6]))
+        np.testing.assert_allclose(self.line2d.position, ([12.0, 61.2], [36.0, 96.0]))
+        np.testing.assert_allclose(self.line2d.indices[0], np.array([10, 51]))
+        np.testing.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
+        np.testing.assert_allclose(self.line2d.get_centre(), np.array([24., 78.6]))
 
     def test_indices(self):
         self.line2d.indices = ([10, 50], [30, 80])
-        nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
-        nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
+        np.testing.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
+        np.testing.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
+        np.testing.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
 
     def test_length(self):
         x = 10
@@ -80,7 +78,7 @@ class TestPlotLine2DWidget():
 
         y = 20
         self.line2d.position = ([20.0, 10.0], [20.0 + x, 10 + y])
-        nt.assert_almost_equal(self.line2d.get_line_length(),
+        np.testing.assert_almost_equal(self.line2d.get_line_length(),
                                np.sqrt(x**2 + y**2))
 
     def test_change_size(self):
@@ -108,19 +106,19 @@ class TestPlotLine2DWidget():
         self.line2d.snap_size = True
         self.line2d.position = ([12.0, 60.0], [36.0, 96.0])
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
-        nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
-        nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
+        np.testing.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
+        np.testing.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
+        np.testing.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
         assert self.line2d.size == np.array([0])
 
         self.line2d.size = [3]
-        nt.assert_allclose(self.line2d.size, np.array([2.4]))
+        np.testing.assert_allclose(self.line2d.size, np.array([2.4]))
         self.line2d.size = (5, )
-        nt.assert_allclose(self.line2d.size, np.array([4.8]))
+        np.testing.assert_allclose(self.line2d.size, np.array([4.8]))
         self.line2d.size = np.array([7.4])
-        nt.assert_allclose(self.line2d.size, np.array([7.2]))
+        np.testing.assert_allclose(self.line2d.size, np.array([7.2]))
         self.line2d.increase_size()
-        nt.assert_allclose(self.line2d.size, np.array([8.4]))
+        np.testing.assert_allclose(self.line2d.size, np.array([8.4]))
 
     def test_change_size_snap_size_different_scale(self):
         self.line2d.axes[0].scale = 0.8
@@ -151,12 +149,12 @@ class TestPlotLine2DWidget():
         line2d_snap_all.snap_all = True
         line2d_snap_all.set_mpl_ax(self.im._plot.signal_plot.ax)
         line2d_snap_all.position = ([50.0, 60.0], [96.0, 54.0])
-        nt.assert_allclose(line2d_snap_all.position[0], [50.4, 60.0])
-        nt.assert_allclose(line2d_snap_all.position[1], [96.0, 54.0])
+        np.testing.assert_allclose(line2d_snap_all.position[0], [50.4, 60.0])
+        np.testing.assert_allclose(line2d_snap_all.position[1], [96.0, 54.0])
 
         line2d_snap_all.size = (15.0, )
-        nt.assert_allclose(line2d_snap_all.size[0], 14.4)
-        nt.assert_allclose(line2d_snap_all.size[0], 14.4)
+        np.testing.assert_allclose(line2d_snap_all.size[0], 14.4)
+        np.testing.assert_allclose(line2d_snap_all.size[0], 14.4)
 
         return self.im._plot.signal_plot.figure
 
@@ -186,8 +184,8 @@ class TestPlotRangeWidget():
         color_rgba = matplotlib.colors.to_rgba('blue', alpha=0.5)
         assert w.span.rect.get_fc() == color_rgba
         assert w.span.rect.get_ec() == color_rgba
-        nt.assert_allclose(w.position[0], 4.8)
-        nt.assert_allclose(w.size[0], 3.6)
+        np.testing.assert_allclose(w.position[0], 4.8)
+        np.testing.assert_allclose(w.size[0], 3.6)
 
         w2 = widgets.RangeWidget(self.s.axes_manager)
         w2.set_mpl_ax(self.s._plot.signal_plot.ax)
@@ -244,8 +242,8 @@ class TestPlotRangeWidget():
         assert span_h.rect.get_fc() == color_rgba
         assert span_h.rect.get_ec() == color_rgba
         span_h.set_initial((50.4, 55.2))
-        nt.assert_allclose(span_h.range[0], 50.4)
-        nt.assert_allclose(span_h.range[1], 55.2)
+        np.testing.assert_allclose(span_h.range[0], 50.4)
+        np.testing.assert_allclose(span_h.range[1], 55.2)
 
         span_h.range = (40, 45)
         assert span_h.range == (40, 45)

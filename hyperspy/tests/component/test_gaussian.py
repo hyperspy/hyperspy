@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,8 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
 from hyperspy.components1d import Gaussian
@@ -36,8 +36,8 @@ def test_function():
     g.centre.value = 1
     g.sigma.value = 2 / sigma2fwhm
     g.A.value = 3 * sqrt2pi * g.sigma.value
-    assert_allclose(g.function(2), 1.5)
-    assert_allclose(g.function(1), 3)
+    np.testing.assert_allclose(g.function(2), 1.5)
+    np.testing.assert_allclose(g.function(1), 3)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -57,7 +57,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2.binned == binned
-    assert_allclose(g1.A.value, g2.A.value * factor)
+    np.testing.assert_allclose(g1.A.value, g2.A.value * factor)
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
     assert abs(g2.sigma.value - g1.sigma.value) <= 0.1
 
@@ -79,39 +79,39 @@ def test_function_nd(binned, lazy):
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
-    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data)
+    np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data)
 
 
 def test_util_fwhm_set():
     g1 = Gaussian()
     g1.fwhm = 1.0
-    assert_allclose(g1.sigma.value, 1.0 / sigma2fwhm)
+    np.testing.assert_allclose(g1.sigma.value, 1.0 / sigma2fwhm)
 
 
 def test_util_fwhm_get():
     g1 = Gaussian()
     g1.sigma.value = 1.0
-    assert_allclose(g1.fwhm, 1.0 * sigma2fwhm)
+    np.testing.assert_allclose(g1.fwhm, 1.0 * sigma2fwhm)
 
 
 def test_util_fwhm_getset():
     g1 = Gaussian()
     g1.fwhm = 1.0
-    assert_allclose(g1.fwhm, 1.0)
+    np.testing.assert_allclose(g1.fwhm, 1.0)
 
 def test_util_height_set():
     g1 = Gaussian()
     g1.sigma.value = 3.0
     g1.height = 2.0/sqrt2pi
-    assert_allclose(g1.A.value, 6)
+    np.testing.assert_allclose(g1.A.value, 6)
 
 def test_util_height_get():
     g1 = Gaussian()
     g1.sigma.value = 4.0
     g1.A.value = sqrt2pi*8
-    assert_allclose(g1.height, 2)
+    np.testing.assert_allclose(g1.height, 2)
 
 def test_util_height_getset():
     g1 = Gaussian()
     g1.height = 4.0
-    assert_allclose(g1.height, 4.0)
+    np.testing.assert_allclose(g1.height, 4.0)

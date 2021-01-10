@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,10 +18,13 @@
 
 # custom exceptions
 
-class test():
-    def __init__(self):
-        pass
+class MountainsMapFileError(Exception):
 
+    def __init__(self, msg = "Corrupt Mountainsmap file"):
+        self.error =  msg
+
+    def __str__(self):
+        return repr(self.error)
 
 class ByteOrderError(Exception):
 

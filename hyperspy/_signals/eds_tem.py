@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -217,9 +217,8 @@ class EDSTEM_mixin:
         """.format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
-        """Check if the EDS parameters necessary for quantification
-        are defined in metadata. Raise in interactive mode
-         an UI item to fill or change the values"""
+        """Check if the EDS parameters necessary for quantification are
+        defined in metadata."""
         must_exist = (
             'Acquisition_instrument.TEM.beam_energy',
             'Acquisition_instrument.TEM.Detector.EDS.live_time',)
@@ -292,16 +291,17 @@ class EDSTEM_mixin:
                        intensities,
                        method,
                        factors,
-                       composition_units = 'atomic',
-                       absorption_correction = False,
-                       take_off_angle = 'auto',
-                       thickness = 'auto',
-                       convergence_criterion = 0.5,
-                       navigation_mask = 1.0,
-                       closing = True,
-                       plot_result = False,
-                       probe_area = 'auto',
-                       max_iterations = 30,
+                       composition_units='atomic',
+                       absorption_correction=False,
+                       take_off_angle='auto',
+                       thickness='auto',
+                       convergence_criterion=0.5,
+                       navigation_mask=1.0,
+                       closing=True,
+                       plot_result=False,
+                       probe_area='auto',
+                       max_iterations=30,
+                       show_progressbar=None,
                        **kwargs):
         """
         Absorption corrected quantification using Cliff-Lorimer, the zeta-factor
@@ -343,7 +343,8 @@ class EDSTEM_mixin:
             The navigation locations marked as True are not used in the
             quantification. If float is given the vacuum_mask method is used to
             generate a mask with the float value as threhsold.
-            Else provides a signal with the navigation shape.
+            Else provides a signal with the navigation shape. Only for the
+            'Cliff-Lorimer' method.
         closing: bool
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
@@ -361,7 +362,7 @@ class EDSTEM_mixin:
             The extra keyword arguments are passed to plot.
 
         Returns
-        ------
+        -------
         A list of quantified elemental maps (signal) giving the composition of
         the sample in weight or atomic percent with absorption correciton taken
         into account based on the sample thickness estimate provided.
@@ -390,16 +391,23 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
-        elif navigation_mask is not None:
-            navigation_mask = navigation_mask.data
+            if self.axes_manager.navigation_dimension > 0:
+                navigation_mask = self.vacuum_mask(navigation_mask, closing)
+            else:
+                navigation_mask = None
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
         if absorption_correction:
-            pbar = progressbar(total=max_iterations+1)
+            if show_progressbar is None:  # pragma: no cover
+                show_progressbar = preferences.General.show_progressbar
+            if show_progressbar:
+                pbar = progressbar(total=None,
+                                   desc='Absorption correction calculation')
 
-        composition = utils.stack(intensities, lazy=False)
+        composition = utils.stack(intensities, lazy=False,
+                                  show_progressbar=False)
+
         if take_off_angle == 'auto':
             toa = self.get_take_off_angle()
         else:
@@ -415,36 +423,36 @@ class EDSTEM_mixin:
                     probe_area = self.get_probe_area(
                         navigation_axes=self.axes_manager.navigation_axes)
 
-        int_stack = utils.stack(intensities, lazy=False)
-
-        comp_old = utils.stack(intensities)
-        comp_old.data = np.zeros_like(comp_old.data)
+        int_stack = utils.stack(intensities, lazy=False,
+                                show_progressbar=False)
+        comp_old = np.zeros_like(int_stack.data)
 
         abs_corr_factor = None # initial
 
         if method == 'CL':
             quantification_method = utils_eds.quantification_cliff_lorimer
             kwargs = {"intensities" : int_stack.data,
-                    "kfactors" : factors,
-                    "absorption_correction" : abs_corr_factor}
+                      "kfactors" : factors,
+                      "absorption_correction" : abs_corr_factor,
+                      "mask": navigation_mask}
 
         elif method == 'zeta':
             quantification_method = utils_eds.quantification_zeta_factor
             kwargs = {"intensities" : int_stack.data,
-                    "zfactors" : factors,
-                    "dose" : self._get_dose(method),
-                    "absorption_correction" : abs_corr_factor}
+                      "zfactors" : factors,
+                      "dose" : self._get_dose(method),
+                      "absorption_correction" : abs_corr_factor}
 
         elif method =='cross_section':
             quantification_method = utils_eds.quantification_cross_section
             kwargs = {"intensities" : int_stack.data,
-                    "cross_sections" : factors,
-                    "dose" : self._get_dose(method, **kwargs),
-                    "absorption_correction" : abs_corr_factor}
+                      "cross_sections" : factors,
+                      "dose" : self._get_dose(method, **kwargs),
+                      "absorption_correction" : abs_corr_factor}
 
         else:
             raise ValueError('Please specify method for quantification, '
-                             'as \'CL\', \'zeta\' or \'cross_section\'.')
+                             'as "CL", "zeta" or "cross_section".')
 
         while True:
             results = quantification_method(**kwargs)
@@ -454,13 +462,17 @@ class EDSTEM_mixin:
                 if absorption_correction:
                     if thickness is not None:
                         mass_thickness = intensities[0].deepcopy()
-                        mass_thickness.data = self.CL_get_mass_thickness(composition.split(),
-                                                                thickness)
+                        mass_thickness.data = self.CL_get_mass_thickness(
+                            composition.split(),
+                            thickness
+                            )
                         mass_thickness.metadata.General.title = 'Mass thickness'
                     else:
-                        warnings.warn('Thickness is required for absorption '
-                        'correction with k-factor method. Results will contain '
-                        'no correction for absorption.')
+                        raise ValueError(
+                            'Thickness is required for absorption correction '
+                            'with k-factor method. Results will contain no '
+                            'correction for absorption.'
+                        )
 
             elif method == 'zeta':
                 composition.data = results[0] * 100
@@ -472,11 +484,12 @@ class EDSTEM_mixin:
                 number_of_atoms = composition._deepcopy_with_new_data(results[1])
 
             if method == 'cross_section':
-                abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
+                if absorption_correction:
+                    abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
                                                        number_of_atoms.split(),
                                                        toa,
                                                        probe_area)
-                kwargs["absorption_correction"] = abs_corr_factor
+                    kwargs["absorption_correction"] = abs_corr_factor
             else:
                 if absorption_correction:
                     abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
@@ -484,21 +497,18 @@ class EDSTEM_mixin:
                                                        toa)
                     kwargs["absorption_correction"] = abs_corr_factor
 
-            res_max = np.max((composition - comp_old).data)
-            comp_old.data = composition.data
+            res_max = np.max(composition.data - comp_old)
+            comp_old = composition.data
 
-            it += 1
-            if absorption_correction:
+            if absorption_correction and show_progressbar:
                 pbar.update(1)
+            it += 1
             if not absorption_correction or abs(res_max) < convergence_criterion:
                 break
-                pbar.close()
             elif it >= max_iterations:
                 raise Exception('Absorption correction failed as solution '
-                                'did not converge after %d iterations'
-                                % (max_iterations))
-
-
+                                f'did not converge after {max_iterations} '
+                                'iterations')
 
         if method == 'cross_section':
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
@@ -523,11 +533,9 @@ class EDSTEM_mixin:
             composition[i].metadata.set_item("Sample.elements", ([element]))
             composition[i].metadata.set_item(
                 "Sample.xray_lines", ([xray_line]))
-            if plot_result and \
-                    composition[i].axes_manager.navigation_size == 1:
-                print("%s (%s): Composition = %.2f %s percent"
-                      % (element, xray_line, composition[i].data,
-                         composition_units))
+            if plot_result and composition[i].axes_manager.navigation_size == 1:
+                c = np.float(composition[i].data)
+                print(f"{element} ({xray_line}): Composition = {c:.2f} percent")
         #For the cross section method this is repeated for the number of atom maps
         if method == 'cross_section':
             for i, xray_line in enumerate(xray_lines):
@@ -557,8 +565,8 @@ class EDSTEM_mixin:
             else:
                 return composition
         else:
-            raise ValueError('Please specify method for quantification, as \
-            ''CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError('Please specify method for quantification, as '
+                             '"CL", "zeta" or "cross_section"')
 
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
@@ -575,6 +583,11 @@ class EDSTEM_mixin:
         opnening: bool
             If true, applied a morphologic opening to the mask
 
+        Returns
+        -------
+        mask: signal
+            The mask of the region
+
         Examples
         --------
         >>> # Simulate a spectrum image with vacuum region
@@ -585,12 +598,10 @@ class EDSTEM_mixin:
         >>> si = hs.stack([s]*3 + [s_vac])
         >>> si.vacuum_mask().data
         array([False, False, False,  True], dtype=bool)
-
-        Return
-        ------
-        mask: signal
-            The mask of the region
         """
+        if self.axes_manager.navigation_dimension == 0:
+            raise RuntimeError('Navigation dimenstion must be higher than 0 '
+                               'to estimate a vacuum mask.')
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
         if closing:
@@ -607,47 +618,93 @@ class EDSTEM_mixin:
                       closing=True,
                       *args,
                       **kwargs):
-        """
-        Decomposition with a choice of algorithms
+        """Apply a decomposition to a dataset with a choice of algorithms.
 
-        The results are stored in self.learning_results
+        The results are stored in ``self.learning_results``.
+
+        Read more in the :ref:`User Guide <mva.decomposition>`.
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool
-            If True, scale the SI to normalize Poissonian noise
-        navigation_mask : None or float or boolean numpy array
+        normalize_poissonian_noise : bool, default True
+            If True, scale the signal to normalize Poissonian noise using
+            the approach described in [Keenan2004]_.
+        navigation_mask : None or float or boolean numpy array, default 1.0
             The navigation locations marked as True are not used in the
             decomposition. If float is given the vacuum_mask method is used to
             generate a mask with the float value as threshold.
-        closing: bool
-            If true, applied a morphologic closing to the maks obtained by
+        closing: bool, default True
+            If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
-        algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca'
+        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
+            The decomposition algorithm to use. If algorithm is an object,
+            it must implement a ``fit_transform()`` method or ``fit()`` and
+            ``transform()`` methods, in the same manner as a scikit-learn estimator.
         output_dimension : None or int
-            number of components to keep/calculate
-        centre : None | 'variables' | 'trials'
-            If None no centring is applied. If 'variable' the centring will be
-            performed in the variable axis. If 'trials', the centring will be
-            performed in the 'trials' axis. It only has effect when using the
-            svd or fast_svd algorithms
-        auto_transpose : bool
+            Number of components to keep/calculate.
+            Default is None, i.e. ``min(data.shape)``.
+        centre : {None, "navigation", "signal"}, default None
+            * If None, the data is not centered prior to decomposition.
+            * If "navigation", the data is centered along the navigation axis.
+              Only used by the "SVD" algorithm.
+            * If "signal", the data is centered along the signal axis.
+              Only used by the "SVD" algorithm.
+        auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
-            Only has effect when using the svd of fast_svd algorithms.
+            Only used by the "SVD" algorithm.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
         var_array : numpy array
-            Array of variance for the maximum likelihood PCA algorithm
-        var_func : function or numpy array
-            If function, it will apply it to the dataset to obtain the
-            var_array. Alternatively, it can a an array with the coefficients
-            of a polynomial.
-        polyfit :
-        reproject : None | signal | navigation | both
+            Array of variance for the maximum likelihood PCA algorithm.
+            Only used by the "MLPCA" algorithm.
+        var_func : None or function or numpy array, default None
+            * If None, ignored
+            * If function, applies the function to the data to obtain ``var_array``.
+              Only used by the "MLPCA" algorithm.
+            * If numpy array, creates ``var_array`` by applying a polynomial function
+              defined by the array of coefficients to the data. Only used by
+              the "MLPCA" algorithm.
+        reproject : {None, "signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
+        return_info: bool, default False
+            The result of the decomposition is stored internally. However,
+            some algorithms generate some extra information that is not
+            stored. If True, return any extra information if available.
+            In the case of sklearn.decomposition objects, this includes the
+            sklearn Estimator object.
+        print_info : bool, default True
+            If True, print information about the decomposition being performed.
+            In the case of sklearn.decomposition objects, this includes the
+            values of all arguments of the chosen sklearn algorithm.
+        svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
+            If auto:
+                The solver is selected by a default policy based on `data.shape` and
+                `output_dimension`: if the input data is larger than 500x500 and the
+                number of components to extract is lower than 80% of the smallest
+                dimension of the data, then the more efficient "randomized"
+                method is enabled. Otherwise the exact full SVD is computed and
+                optionally truncated afterwards.
+            If full:
+                run exact SVD, calling the standard LAPACK solver via
+                :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            If arpack:
+                use truncated SVD, calling ARPACK solver via
+                :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+                `0 < output_dimension < min(data.shape)`
+            If randomized:
+                use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+                to estimate a limited number of components
+        copy : bool, default True
+            * If True, stores a copy of the data before any pre-treatments
+              such as normalization in ``s._data_before_treatments``. The original
+              data can then be restored by calling ``s.undo_treatments()``.
+            * If False, no copy is made. This can be beneficial for memory
+              usage, but care must be taken since data will be overwritten.
+        **kwargs : extra keyword arguments
+            Any keyword arguments are passed to the decomposition algorithm.
+
 
         Examples
         --------
@@ -661,7 +718,7 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
+            navigation_mask = self.vacuum_mask(navigation_mask, closing)
         super().decomposition(
             normalize_poissonian_noise=normalize_poissonian_noise,
             navigation_mask=navigation_mask, *args, **kwargs)
@@ -674,10 +731,10 @@ class EDSTEM_mixin:
 
         Parameters
         ----------
-        auto_background : boolean, default True
+        auto_background : bool, default True
             If True, adds automatically a polynomial order 6 to the model,
             using the edsmodel.add_polynomial_background method.
-        auto_add_lines : boolean, default True
+        auto_add_lines : bool, default True
             If True, automatically add Gaussians for all X-rays generated in
             the energy range by an element using the edsmodel.add_family_lines
             method.
@@ -828,32 +885,29 @@ class EDSTEM_mixin:
             raise Exception("Method need to be 'zeta' or 'cross_section'.")
 
 
-    def CL_get_mass_thickness(self, weight_percent, thickness):
+    @staticmethod
+    def CL_get_mass_thickness(weight_percent, thickness):
         """
-        Creates a array of mass_thickness based on a known material composition and
-        measured thickness. Required for absorption correction calcultions using the
-        Cliff Lorimer method.
-
-        Input given by i*t*N, i the current, t the
-        acquisition time, and N the number of electron by unit electric charge.
+        Creates a array of mass_thickness based on a known material composition
+        and measured thickness. Required for absorption correction calcultions
+        using the Cliff Lorimer method.
 
         Parameters
         ----------
-
-        composition: stack of compositions as determined from an initial k_factor
+        weight_percent : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+            Stack of compositions as determined from an initial k_factor
             quantification.
-            Probe current in nA
-        thickness: float or array
-            Either a float value for thickness in nm or an array equal to the size
-            of the EDX map with thickness at each position of the sample.
+        thickness : float or :py:class:`numpy.ndarray`
+            Either a float value for thickness in nm or an array equal to the
+            size of the EDX map with thickness at each position of the sample.
 
         Returns
-        --------
-        Mass_thickness as an array in kg/m².
-
+        -------
+        mass_thickness : :py:class:`numpy.ndarray`
+            Mass thickness in kg/m².
         """
-        if type(thickness)==float or type(thickness)==int:
-            thickness_map = np.ones_like(weight_percent[0])*thickness
+        if isinstance(thickness, (float, int)):
+            thickness_map = np.ones_like(weight_percent[0]) * thickness
         else:
             thickness_map = thickness
 
@@ -863,7 +917,10 @@ class EDSTEM_mixin:
             [elements_db[element]['Physical_properties']['density (g/cm^3)']
                     for element in elements])
         for density, element_composition in zip(densities, weight_percent):
-            elemental_mt = element_composition * thickness_map * 1E-9 * density
+            # convert composition from % to fraction: factor of 1E-2
+            # convert thickness from nm to m: factor of 1E-9
+            # convert density from g/cm3 to kg/m2: factor of 1E3
+            elemental_mt = element_composition * thickness_map * density * 1E-8
             mass_thickness += elemental_mt
         return mass_thickness
 

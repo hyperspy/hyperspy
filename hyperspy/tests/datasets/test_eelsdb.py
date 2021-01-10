@@ -1,12 +1,36 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+import warnings
+
 import pytest
 import requests
-from hyperspy.misc.eels.eelsdb import eelsdb
 from requests.exceptions import SSLError
-import warnings
+
+from hyperspy.misc.eels.eelsdb import eelsdb
+
 
 def eelsdb_down():
     try:
-        request = requests.get('http://api.eelsdb.eu', verify=False)
+        _ = requests.get('http://api.eelsdb.eu', verify=True)
+        return False
+    except SSLError:
+        _ = requests.get('http://api.eelsdb.eu', verify=False)
         return False
     except requests.exceptions.ConnectionError:
         return True
@@ -50,6 +74,10 @@ def test_eelsdb_eels():
             order_direction='DESC',
             monochromated=False,
             verify_certificate=False)
+    except Exception as e:
+        # e.g. failures such as ConnectionError or MaxRetryError
+        pytest.skip(f"Skipping eelsdb test due to {e}")
+
     assert len(ss) == 2
     md = ss[0].metadata
     assert md.General.author == "Odile Stephan"
@@ -72,6 +100,10 @@ def test_eelsdb_xas():
     except SSLError:
         ss = eelsdb(
             spectrum_type="xrayabs", max_n=1, verify_certificate=False)
+    except Exception as e:
+        # e.g. failures such as ConnectionError or MaxRetryError
+        pytest.skip(f"Skipping eelsdb test due to {e}")
+
     assert len(ss) == 1
     md = ss[0].metadata
     assert md.Signal.signal_type == "XAS"

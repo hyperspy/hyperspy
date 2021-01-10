@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,7 +19,7 @@
 
 import warnings
 
-from hyperspy.misc.test_utils import ignore_warning, assert_warns, all_warnings
+from hyperspy.misc.test_utils import all_warnings, assert_warns, ignore_warning
 
 
 def warnsA():

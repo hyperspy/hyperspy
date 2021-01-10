@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,13 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import traits.api as t
-import pytest
 import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+import traits.api as t
 
-from hyperspy.misc.test_utils import update_close_figure
 import hyperspy.api as hs
+from hyperspy.drawing.signal1d import Signal1DFigure, Signal1DLine
+from hyperspy.drawing.image import ImagePlot
+from hyperspy.misc.test_utils import update_close_figure, check_closing_plot
 
 
 scalebar_color = 'blue'
@@ -133,11 +135,12 @@ def _get_figure(test_plot, data_type, plot_type):
 
     if "complex" in data_type and test_plot.sdim == 2:
         if data_type == "complex_real":
-            fig = test_plot.real_plot.__dict__[plot].figure
+            plot_part = 'real_plot'
         elif data_type == "complex_imag":
-            fig = test_plot.real_plot.__dict__[plot].figure
+            plot_part = 'real_plot'
+        fig = getattr(getattr(test_plot, plot_part), plot).figure
     else:
-        fig = test_plot.signal._plot.__dict__[plot].figure
+        fig = getattr(test_plot.signal._plot, plot).figure
     return fig
 
 
@@ -181,3 +184,127 @@ def test_plot_nav2_sig2_close():
     test_plot = _TestPlot(ndim=2, sdim=2, data_type="real")
     test_plot.signal.plot()
     return test_plot.signal
+
+
+@pytest.mark.parametrize("sdim", [1, 2])
+def test_plot_close_cycle(sdim):
+    test_plot = _TestPlot(ndim=2, sdim=sdim, data_type="real")
+    s = test_plot.signal
+    s.plot()
+    s._plot.close()
+    assert s._plot.signal_plot is None
+    assert s._plot.navigator_plot is None
+    s.plot()
+    assert s._plot.signal_plot is not None
+    assert s._plot.navigator_plot is not None
+    s._plot.close()
+
+
+@pytest.mark.parametrize('autoscale', ['', 'x', 'xv', 'v'])
+@pytest.mark.parametrize("ndim", [1, 2])
+def test_plot_navigator_kwds(ndim, autoscale):
+    test_plot_nav1d = _TestPlot(ndim=ndim, sdim=2, data_type="real")
+    s = test_plot_nav1d.signal
+    s.plot(navigator_kwds={'norm':'log', 'autoscale':autoscale})
+    if ndim == 1:
+        assert isinstance(s._plot.navigator_plot, Signal1DFigure)
+        plot = s._plot.navigator_plot.ax_lines[0]
+        assert isinstance(plot, Signal1DLine)
+    else:
+        plot = s._plot.navigator_plot
+        assert isinstance(plot, ImagePlot)
+
+    assert plot.norm == 'log'
+    assert plot.autoscale == autoscale
+    s._plot.close()
+
+
+def test_plot_signal_dim0():
+    s = hs.signals.BaseSignal(np.arange(100)).T
+    s.plot()
+    assert s._plot.signal_plot is None
+    assert s._plot.navigator_plot is not None
+    s._plot.close()
+    check_closing_plot(s)
+
+
+@pytest.mark.parametrize('bool_value', [True, False])
+@pytest.mark.parametrize("sdim", [1, 2])
+def test_data_function_kwargs(sdim, bool_value):
+    test_plot_nav1d = _TestPlot(ndim=1, sdim=sdim, data_type="complex")
+    s = test_plot_nav1d.signal
+    s.plot(power_spectrum=bool_value, fft_shift=bool_value)
+    if sdim == 1:
+        for key in ['power_spectrum', 'fft_shift']:
+            assert s._plot.signal_data_function_kwargs[key] is bool_value
+    else:
+        for key in ['power_spectrum', 'fft_shift']:
+            assert s._plot_kwargs[key] is bool_value
+
+
+def test_plot_power_spectrum():
+    s = hs.signals.Signal1D(np.arange(100))
+    with pytest.raises(ValueError):
+        s.plot(power_spectrum=True)
+
+    s = hs.signals.ComplexSignal1D(np.arange(100))
+    s.plot(power_spectrum=True)
+    assert s._plot.signal_data_function_kwargs['power_spectrum'] is True
+
+
+@pytest.mark.parametrize("sdim", [1, 2])
+@pytest.mark.parametrize("ndim", [1, 2, 3])
+def test_plot_slider(ndim, sdim):
+    test_plot_nav1d = _TestPlot(ndim=ndim, sdim=sdim, data_type="real")
+    s = test_plot_nav1d.signal
+    # Plot twice to check that the args of the second call are used.
+    s.plot()
+    s.plot(navigator='slider')
+    assert s._plot.signal_plot is not None
+    assert s._plot.navigator_plot is None
+    s._plot.close()
+    check_closing_plot(s)
+
+    if ndim > 1:
+        s.plot(navigator='spectrum')
+        assert s._plot.signal_plot is not None
+        assert s._plot.navigator_plot is not None
+        assert isinstance(s._plot.navigator_plot, Signal1DFigure)
+        s._plot.close()
+        check_closing_plot(s)
+    if ndim > 2:
+        s.plot()
+        assert s._plot.signal_plot is not None
+        assert s._plot.navigator_plot is not None
+        assert len(s.axes_manager.events.indices_changed.connected) >= 2
+        s._plot.close()
+        check_closing_plot(s)
+
+
+@pytest.mark.parametrize("ndim", [1, 2])
+def test_plot_navigator_plot_signal(ndim):
+    test_plot_nav1d = _TestPlot(ndim=ndim, sdim=1, data_type="real")
+    s = test_plot_nav1d.signal
+    navigator = -s.sum(-1).T
+    s.plot(navigator=navigator)
+    if ndim == 1:
+        navigator_data = s._plot.navigator_plot.ax_lines[0]._get_data()
+    else:
+        navigator_data = s._plot.navigator_plot._current_data
+    np.testing.assert_allclose(navigator_data, navigator.data)
+    s._plot.close()
+    check_closing_plot(s)
+
+    s.plot(navigator=None)
+    assert s._plot.signal_plot is not None
+    assert s._plot.navigator_plot is None
+    s._plot.close()
+    check_closing_plot(s)
+
+
+@pytest.mark.parametrize("sdim", [1, 2])
+def test_plot_autoscale(sdim):
+    test_plot_nav1d = _TestPlot(ndim=1, sdim=sdim, data_type="real")
+    s = test_plot_nav1d.signal
+    with pytest.raises(ValueError):
+        s.plot(autoscale='xa')

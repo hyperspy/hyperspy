@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,7 +23,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.drawing import utils
 
 
 class HistogramTilePlot(BlittedFigure):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -49,7 +49,7 @@ FACTOR_DOCSTRING = \
 class ndindex_nat(np.ndindex):
 
     def __next__(self):
-        return super(ndindex_nat, self).next()[::-1]
+        return super(ndindex_nat, self).__next__()[::-1]
 
 
 def generate_axis(offset, scale, size, offset_index=0):
@@ -111,12 +111,6 @@ class UnitConversion:
         return self._convert_units(converted_units, inplace=inplace)
 
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
-
-    def _get_index_from_value_with_units(self, value):
-        value = _ureg.parse_expression(value)
-        if not hasattr(value, 'units'):
-            raise ValueError('"{}" should contains an units.'.format(value))
-        return self.value2index(value.to(self.units).magnitude)
 
     def _convert_units(self, converted_units, inplace=True):
         if self._ignore_conversion(converted_units) or \
@@ -341,11 +335,6 @@ class DataAxis(t.HasTraits, UnitConversion):
         else:
             return value
 
-    def _parse_string_for_slice(self, value):
-        if isinstance(value, str):
-            value = self._get_index_from_value_with_units(value)
-        return value
-
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis without
         changing the offset and scale of the DataAxis.
@@ -373,9 +362,9 @@ class DataAxis(t.HasTraits, UnitConversion):
             stop = start + 1
             step = None
 
-        start = self._parse_string_for_slice(start)
-        stop = self._parse_string_for_slice(stop)
-        step = self._parse_string_for_slice(step)
+        start = self._parse_value(start)
+        stop = self._parse_value(stop)
+        step = self._parse_value(step)
 
         if isfloat(step):
             step = int(round(step / self.scale))
@@ -430,7 +419,7 @@ class DataAxis(t.HasTraits, UnitConversion):
 
         my_slice = self._get_array_slices(slice_)
 
-        start, stop, step = my_slice.start, my_slice.stop, my_slice.step
+        start, _, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
             if step is None or step > 0:
@@ -500,12 +489,49 @@ class DataAxis(t.HasTraits, UnitConversion):
         cp = self.copy()
         return cp
 
+    def _parse_value_from_string(self, value):
+        """Return calibrated value from a suitable string """
+        if len(value) == 0:
+            raise ValueError("Cannot index with an empty string")
+        # Starting with 'rel', it must be relative slicing
+        elif value.startswith('rel'):
+            try:
+                relative_value = float(value[3:])
+            except ValueError:
+                raise ValueError("`rel` must be followed by a number in range [0, 1].")
+            if relative_value < 0 or relative_value > 1:
+                raise ValueError("Relative value must be in range [0, 1]")
+            value = self.low_value + relative_value * (self.high_value - self.low_value)
+        # if first character is a digit, try unit conversion
+        # otherwise we don't support it
+        elif value[0].isdigit():
+            value = _ureg.parse_expression(value)
+            if not hasattr(value, 'units'):
+                raise ValueError(f"`{value}` should contain a unit.")
+            value = float(value.to(self.units).magnitude)
+        else:
+            raise ValueError(f"`{value}` is not a suitable string for slicing.")
+        return value
+
+    def _parse_value(self, value):
+        """Convert the inpute to calibrated value if string, otherwise,
+        return the same value."""
+        if isinstance(value, str):
+            value = self._parse_value_from_string(value)
+        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+            value = np.asarray(value)
+            if value.dtype.type is np.str_:
+                value = np.array([self._parse_value_from_string(v) for v in value])
+        return value
+
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value if between the axis limits.
 
         Parameters
         ----------
-        value : number or numpy array
+        value : number or string, or numpy array of number or string
+                if string, should either be a calibrated unit like "20nm"
+                or a relative slicing like "rel0.2".
 
         Returns
         -------
@@ -513,11 +539,15 @@ class DataAxis(t.HasTraits, UnitConversion):
 
         Raises
         ------
-        ValueError if any value is out of the axis limits.
+        ValueError
+            If any value is out of the axis limits.
+            If the value is incorrectly formatted.
 
         """
         if value is None:
             return None
+
+        value = self._parse_value(value)
 
         if isinstance(value, (np.ndarray, da.Array)):
             if rounding is round:
@@ -596,6 +626,7 @@ class DataAxis(t.HasTraits, UnitConversion):
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised.
+
         Returns
         -------
         A boolean indicating whether any changes were made.
@@ -627,6 +658,25 @@ class DataAxis(t.HasTraits, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
+def serpentine_iter(shape):
+    '''Similar to np.ndindex, but yields indices
+    in serpentine pattern, like snake game
+
+    Code by Stackoverflow user Paul Panzer,
+    from https://stackoverflow.com/questions/57366966/
+    '''
+    N = len(shape)
+    idx = N*[0]
+    drc = N*[1]
+    while True:
+        yield (*idx,)
+        for j in reversed(range(N)):
+            if idx[j] + drc[j] not in (-1, shape[j]):
+                idx[j] += drc[j]
+                break
+            drc[j] *= -1
+        else:  # pragma: no cover
+            break
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
@@ -754,7 +804,10 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self._index = None  # index for the iterator
+        self._index = None  # index for the iterpath
+        # Can use serpentine or flyback scan pattern
+        # for the axes manager indexing
+        self._iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -880,7 +933,8 @@ class AxesManager(t.HasTraits):
 
         Raises
         ------
-        ValueError if the Axis is not present.
+        ValueError
+            If the Axis is not present.
 
         """
         axis = self._axes_getter(axis)
@@ -948,18 +1002,38 @@ class AxesManager(t.HasTraits):
             iteration.
 
         """
+        if self._iterpath not in ['serpentine', 'flyback']:
+            raise ValueError('''The iterpath scan pattern is set to {}. \
+            It must be either "serpentine" or "flyback", and is set either \
+            as multifit `iterpath` argument or \
+            `axes_manager._iterpath`'''.format(self._iterpath))
         if self._index is None:
             self._index = 0
-            val = (0,) * self.navigation_dimension
+            if self._iterpath == 'serpentine':
+                self._iterpath_generator = serpentine_iter(
+                    self._navigation_shape_in_array)
+                val = next(self._iterpath_generator)
+            else: # flyback
+                val = (0,) * self.navigation_dimension
             self.indices = val
         elif self._index >= self._max_index:
             raise StopIteration
         else:
             self._index += 1
-            val = np.unravel_index(
-                self._index,
-                tuple(self._navigation_shape_in_array)
-            )[::-1]
+            if self._iterpath == 'serpentine':
+                # In case we need to start further out in the generator
+                # for some reason. This is possibly expensive, as it needs
+                # to calculate all previous values first
+                # self._iterpath_generator = itertools.islice(
+                #     serpentine_iter(self._navigation_shape_in_array),
+                #     self._index,
+                #     None)
+                val = next(self._iterpath_generator)[::-1]
+            else:
+                val = np.unravel_index(
+                    self._index,
+                    tuple(self._navigation_shape_in_array)
+                )[::-1]
             self.indices = val
         return val
 
@@ -1166,8 +1240,8 @@ class AxesManager(t.HasTraits):
 
         Raises
         ------
-        ValueError if value if greater than the number of axes or
-        is negative
+        ValueError
+            If value if greater than the number of axes or is negative.
 
         """
         if len(self._axes) == 0:
@@ -1254,9 +1328,11 @@ class AxesManager(t.HasTraits):
     def __deepcopy__(self, *args):
         return AxesManager(self._get_axes_dicts())
 
-    def _get_axes_dicts(self):
+    def _get_axes_dicts(self, axes=None):
+        if axes is None:
+            axes = self._axes
         axes_dicts = []
-        for axis in self._axes:
+        for axis in axes:
             axes_dicts.append(axis.get_axis_dictionary())
         return axes_dicts
 
@@ -1495,11 +1571,21 @@ class AxesManager(t.HasTraits):
         self._axes = list(new_axes)
 
     def gui_navigation_sliders(self, title="", display=True, toolkit=None):
-        return get_gui(self=self.navigation_axes,
-                       toolkey="hyperspy.navigation_sliders",
-                       display=display,
-                       toolkit=toolkit,
-                       title=title)
+        # With traits 6.1 and traitsui 7.0, we have this deprecation warning,
+        # which is fine to filter
+        # https://github.com/enthought/traitsui/issues/883
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning,
+                                    message="'TraitPrefixList'",
+                                    module='traitsui')
+            warnings.filterwarnings("ignore", category=DeprecationWarning,
+                                    message="'TraitMap'",
+                                    module='traits')
+            return get_gui(self=self.navigation_axes,
+                           toolkey="hyperspy.navigation_sliders",
+                           display=display,
+                           toolkit=toolkit,
+                           title=title)
     gui_navigation_sliders.__doc__ = \
         """
         Navigation sliders to control the index of the navigation axes.
@@ -1510,3 +1596,5 @@ class AxesManager(t.HasTraits):
         %s
         %s
         """
+
+

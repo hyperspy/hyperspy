@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,10 +18,10 @@
 
 import numpy as np
 
-from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
+from hyperspy.exceptions import WrongObjectError
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 
 
 class Model2D(BaseModel):
@@ -95,12 +95,11 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
-        self._adjust_position_all = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
             self.axes_manager.signal_axes[1].axis)
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, [])
+            self._on_navigating, [])
         self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
         self.chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -164,7 +163,7 @@ class Model2D(BaseModel):
             for component in self:  # Cut the parameters list
                 np.add(sum_, component.function(self.xaxis, self.yaxis),
                        sum_)
-        return sum_
+        return sum_[self.channel_switches]
 
     def _errfunc(self, param, y, weights=None):
         if weights is None:
@@ -199,7 +198,21 @@ class Model2D(BaseModel):
     def reset_the_signal_range(self):
         raise NotImplementedError
 
+    def _check_analytical_jacobian(self):
+        """Check all components have analytical gradients.
+
+        If they do, return True and an empty string.
+        If they do not, return False and an error message.
+        """
+        return False, "Analytical gradients not implemented for Model2D"
+
     def _jacobian(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _function4odr(self, param, x):
+        raise NotImplementedError
+
+    def _jacobian4odr(self, param, x):
         raise NotImplementedError
 
     def _poisson_likelihood_function(self, param, y, weights=None):
@@ -209,6 +222,12 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def _gradient_ls(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _huber_loss_function(self, param, y, weights=None, huber_delta=None):
+        raise NotImplementedError
+
+    def _gradient_huber(self, param, y, weights=None, huber_delta=None):
         raise NotImplementedError
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
@@ -233,6 +252,10 @@ class Model2D(BaseModel):
 
     @staticmethod
     def _connect_component_line(component):
+        raise NotImplementedError
+
+    @staticmethod
+    def _disconnect_component_line(component):
         raise NotImplementedError
 
     def _plot_component(self, component):
