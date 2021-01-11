@@ -701,6 +701,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         if self.picked:
             self._drag_store = (self.position, self.size)
 
+
     def _apply_changes(self, old_size, old_position):
         """Evalutes whether the widget has been moved/resized, and triggers
         the correct events and updates the patch geometry. This function has
@@ -836,7 +837,7 @@ class ResizersMixin(object):
         self.resizer_picked = False
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
-        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        self.resize_pixel_size = (10, 10)  # Set to None to make one data pixel
         self._resizers = resizers
         self._resizer_handles = []
         self._resizers_on = False
@@ -971,6 +972,7 @@ class ResizersMixin(object):
         `_onmousemove` to ease dragging code (prevent widget center/corner
         snapping to mouse).
         """
+
         if event.artist in self._resizer_handles:
             corner = self._resizer_handles.index(event.artist)
             self.resizer_picked = corner

@@ -34,7 +34,10 @@ class MPL_HyperExplorer(object):
 
     """
 
-    def __init__(self):
+    def __init__(self,number_of_rois=1,number_of_slices=0,signal=None):
+        self.number_of_rois=number_of_rois
+        self.number_of_slices=number_of_slices
+        self.signal=signal
         self.signal_data_function = None
         self.navigator_data_function = None
         # args to pass to `__call__`
