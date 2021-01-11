@@ -86,7 +86,6 @@ class WidgetBase(object):
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
 
-
     def _get_axes(self):
         return self._axes
 
@@ -339,7 +338,6 @@ class DraggableWidgetBase(WidgetBase):
                 self.axes = self.axes_manager.signal_axes[0:1]
         else:
             self._pos = np.array([0.])
-
 
     def _set_axes(self, axes):
         super(DraggableWidgetBase, self)._set_axes(axes)

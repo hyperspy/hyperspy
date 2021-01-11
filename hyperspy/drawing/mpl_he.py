@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2020 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -81,10 +82,8 @@ class MPL_HyperExplorer(object):
             self._get_navigation_sliders()
             return
         title = title or self.signal_title + " Navigator" if self.signal_title else ""
-        if self.navigator_plot is not None:
-            self.navigator_plot.plot()
-            return
-        elif len(self.navigator_data_function().shape) == 1:
+
+        if len(self.navigator_data_function().shape) == 1:
             # Create the figure
             sf = signal1d.Signal1DFigure(title=title)
             axis = self.axes_manager.navigation_axes[0]
@@ -95,8 +94,8 @@ class MPL_HyperExplorer(object):
             sf.axis = axis
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
-            # Create a line to the left axis with the default
-            # indices
+
+            # Create a line to the left axis with the default indices
             sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
 
