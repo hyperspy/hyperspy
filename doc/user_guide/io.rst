@@ -1577,6 +1577,11 @@ Extra loading arguments
 
 - ``rebin_energy`` : Factor used to rebin the energy dimension. It must be a
   multiple of the number of channels, typically 4096. (default 1)
+- ``sum_frames`` : If False, each individual frame (sweep in JEOL software jargon)
+  is loaded. Be aware that loading each individual will use a lot of memory,
+  however, it can be used in combination with ``rebin_energy``, ``cutoff_at_kV``
+  and ``downsample`` to reduce memory usage.
+  (default True).
 - ``SI_dtype`` : set dtype of the eds dataset. Useful to adjust memory usage
   and maximum number of X-rays per channel. (default np.unit8)
 - ``cutoff_at_kV`` : if set (can be int or float >= 0), use to crop the energy
