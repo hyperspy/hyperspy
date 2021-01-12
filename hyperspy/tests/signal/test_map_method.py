@@ -59,8 +59,7 @@ class TestSignal2D:
     def test_variable_sigma(self, parallel):
         s = self.im
 
-        sigmas = hs.signals.BaseSignal(np.array([0, 1]))
-        sigmas.axes_manager.set_signal_dimension(0)
+        sigmas = np.array([0, 1])
 
         s.map(gaussian_filter,
               sigma=sigmas, parallel=parallel, ragged=self.ragged)
@@ -77,9 +76,7 @@ class TestSignal2D:
     def test_variable_sigma_navdim0(self, parallel):
         s = self.im
 
-        sigma = hs.signals.BaseSignal(np.array([1, ]))
-        sigma.axes_manager.set_signal_dimension(0)
-
+        sigma = np.array([1,])
         s.map(gaussian_filter, sigma=sigma, parallel=parallel,
               ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
@@ -347,7 +344,7 @@ def test_singleton(lazy, ragged):
     if lazy and ragged:
         sig_list = (sig1, sig2)
     else:
-        sig_list =  (sig1, sig2, sig)
+        sig_list = (sig1, sig2, sig)
         sig.map(np.sum, ragged=ragged, inplace=True)
     for _s in sig_list:
         assert len(_s.axes_manager._axes) == 1

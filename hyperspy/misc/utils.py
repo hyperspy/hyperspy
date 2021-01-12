@@ -1130,16 +1130,21 @@ def process_function_blockwise(data,
     """
     # Both of these values need to be passed in
     dtype = block_info[None]["dtype"]
-    chunk_nav_shape = tuple([data.shape[i] for i in nav_indexes])
+    print("nav indexes", nav_indexes)
+    chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
+    print("nav_shape", chunk_nav_shape)
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
     output_array = np.empty(output_shape, dtype=dtype)
     print("dtype", output_array.dtype)
     print("the shape of the output:", output_array.shape)
+    print("Output shape", np.shape(output_array))
     if len(args) == 0:
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
             islice = np.s_[nav_index]
+            print("slice", data[islice])
+
             output_array[islice] = function(data[islice],
                                             **kwargs)
     else:
@@ -1152,6 +1157,7 @@ def process_function_blockwise(data,
                                             **iter_dict,
                                             **kwargs)
     return output_array
+
 
 def map_result_construction(signal,
                             inplace,

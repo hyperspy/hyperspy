@@ -36,7 +36,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import _requires_linear_rebin
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import multiply, dummy_context_manager
+from hyperspy.misc.utils import multiply, dummy_context_manager, process_function_blockwise
 
 _logger = logging.getLogger(__name__)
 
@@ -221,6 +221,11 @@ class LazySignal(BaseSignal):
             else:
                 chunks.append((dc.shape[i], ))
         return tuple(chunks)
+
+    def _get_navigation_chunk_size(self):
+        nav_axes = self.axes_manager.navigation_indices_in_array
+        nav_chunks = tuple([self.data.chunks[i] for i in nav_axes])
+        return nav_chunks
 
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
@@ -521,54 +526,30 @@ class LazySignal(BaseSignal):
                      ragged=False,
                      inplace=True,
                      output_signal_size=None,
+                     dtype=None,
                      **kwargs):
         """This function has two different implementations
-        based on if there is a BaseSignal passed as an arguement
+        based on if there is a BaseSignal passed as an argument
         or not.
         """
-        nav_indexes = self.axes_manager.navigation_indices_in_array
-        dtype = self.data.dtype  # This might need to be passed in...
-        chunks = None
-        if output_signal_size is None:
-            output_signal_size = self.axes_manager.signal_shape
-            drop_axis = None
-            new_axis = None
-            axes_changed = False
-        else:
-            axes_changed = True
-            if len(output_signal_size) != len(self.axes_manager.signal_shape):
-                # drop everything
-                drop_axis = self.axes_manager.signal_indices_in_array
-                # add to front
-                new_axis = 0
-                chunks = tuple([self.data.chunks[i] for i in nav_indexes]) + output_signal_size
-            else:
-                # drop index if not equal to output size
-                drop_axis = [it for (o, i, it) in zip(output_signal_size,
-                                                      self.axes_manager.signal_shape,
-                                                      self.axes_manager.signal_indices_in_array)
-                             if o != i]
-                new_axis = drop_axis
-                chunks = tuple([self.data.chunks[i] for i in nav_indexes]) + output_signal_size
-
-        if ragged:
-            # This allows for a different signal shape at every point.
-            dtype = np.object
-            output_signal_size = ()
-            drop_axis = self.axes_manager.signal_indices_in_array
-            chunks = tuple([self.data.chunks[i] for i in nav_indexes])
+        # unpacking keyword arguments
         rechunked_iter_signal = ()
         iter_keys = []
+        testing_kwargs = kwargs.copy()
+        nav_indexes = self.axes_manager.navigation_indices_in_array
         if len(iterating_kwargs) > 0:
             iter_signals = [i[1] for i in iterating_kwargs]
             i_keys = tuple([i[0] for i in iterating_kwargs])
             for key, signal in zip(i_keys, iter_signals):
                 if (signal.axes_manager.navigation_shape != self.axes_manager.navigation_shape and
                         signal.axes_manager.navigation_shape != ()):
-                    raise ValueError('the size of the navigation_shape: <' +
-                                     str(signal.axes_manager.navigation_shape) +
-                                     '> must be consistent with the size of the mapped signal <' +
-                                     str(self.axes_manager.navigation_shape) + '>')
+                    if signal.axes_manager.signal_shape == ():
+                        kwargs[key] = signal.data  # this really isn't an iterating signal.
+                    else:
+                        raise ValueError('the size of the navigation_shape: <' +
+                                        str(signal.axes_manager.navigation_shape) +
+                                        '> must be consistent with the size of the mapped signal <' +
+                                        str(self.axes_manager.navigation_shape) + '>')
                 elif signal.axes_manager.navigation_shape == ():
                     kwargs[key] = signal.data  # this really isn't an iterating signal.
                 else:
@@ -578,8 +559,56 @@ class LazySignal(BaseSignal):
                     signal.data.rechunk(new_chunks)
                     rechunked_iter_signal += (signal.data,)
                     kwargs.pop(key)  # removing the kwarg
+                    test_ind = (0,)*len(self.axes_manager.navigation_axes)
+                    testing_kwargs[key] = testing_kwargs[key].inav[test_ind].data
                     iter_keys.append(key)
-        da.ma
+        # determining output size, chunking and datatype
+        if ragged:
+            # This allows for a different signal shape at every point.
+            if inplace:
+                raise ValueError("Ragged and inplace are not compatible with a lazy signal")
+            dtype = np.object
+            output_signal_size = ()
+            drop_axis = self.axes_manager.signal_indices_in_array
+            new_axis = None
+            axes_changed = True
+            chunks = tuple([self.data.chunks[i] for i in nav_indexes])
+        else:
+            chunks = None
+            if dtype is None and output_signal_size is None:
+                try:
+                    test_shape = self.axes_manager.signal_shape
+                    ones = np.ones(test_shape,
+                                   dtype=self.data.dtype)
+                    output = function(ones, **testing_kwargs)
+                    output_signal_size = np.shape(output)
+                    dtype = output.dtype
+                except:
+                    print("Automatic output sizing and data type didn't work")
+                    output_signal_size = self.axes_manager.signal_shape
+                    dtype = self.data.dtype
+
+            # determining if axes need to be dropped
+            if output_signal_size == self.axes_manager.signal_shape:
+                drop_axis = None
+                new_axis = None
+                axes_changed = False
+            else:
+                axes_changed = True
+                if len(output_signal_size) != len(self.axes_manager.signal_shape):
+                    # drop everything
+                    drop_axis = self.axes_manager.signal_indices_in_array
+                    # add to front
+                    new_axis = tuple(range(len(output_signal_size)))
+                    chunks = tuple([self.data.chunks[i] for i in nav_indexes]) + output_signal_size
+                else:
+                    # drop index if not equal to output size
+                    drop_axis = [it for (o, i, it) in zip(output_signal_size,
+                                                          self.axes_manager.signal_shape,
+                                                          self.axes_manager.signal_indices_in_array)
+                                 if o != i]
+                    new_axis = drop_axis
+                    chunks = tuple([self.data.chunks[i] for i in nav_indexes]) + output_signal_size
         mapped = da.map_blocks(process_function_blockwise,
                                self.data,
                                *rechunked_iter_signal,
