@@ -305,7 +305,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         data = np.zeros(data_shape, dtype=SI_dtype)
         datacube_reader = readcube if sum_frames else readcube_frames
         data = datacube_reader(rawdata, data, rebin_energy, channel_number,
-                               width_norm, height_norm)
+                               width_norm, height_norm, np.iinfo(SI_dtype).max)
 
         hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
@@ -438,7 +438,7 @@ def parsejeol(fd):
 
 @numba.njit(cache=True)
 def readcube(rawdata, hypermap, rebin_energy, channel_number, width_norm,
-             height_norm):  # pragma: no cover
+             height_norm, max_value):  # pragma: no cover
     for value in rawdata:
         if value >= 32768 and value < 36864:
             x = int((value - 32768) / width_norm)
@@ -448,12 +448,16 @@ def readcube(rawdata, hypermap, rebin_energy, channel_number, width_norm,
             z = int((value - 45056) / rebin_energy)
             if z < channel_number:
                 hypermap[y, x, z] += 1
+                if hypermap[y, x, z] == max_value:
+                    raise ValueError("The range of the dtype is too small, "
+                                     "use `SI_dtype` to set a dtype with "
+                                     "higher range.")
     return hypermap
 
 
 @numba.njit(cache=True)
 def readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
-             width_norm, height_norm):  # pragma: no cover
+             width_norm, height_norm, max_value):  # pragma: no cover
     """
     We need to create a separate function, because numba.njit doesn't play well
     with an array having its shape depending on something else
@@ -472,6 +476,10 @@ def readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
             z = int((value - 45056) / rebin_energy)
             if z < channel_number:
                 hypermap[frame_idx, y, x, z] += 1
+                if hypermap[frame_idx, y, x, z] == max_value:
+                    raise ValueError("The range of the dtype is too small, "
+                                     "use `SI_dtype` to set a dtype with "
+                                     "higher range.")
     return hypermap
 
 
