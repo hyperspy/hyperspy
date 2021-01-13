@@ -1508,19 +1508,17 @@ class AxesManager(t.HasTraits):
                 if masked_elements:
                     # Checking if mask indices exist in the iterpath could take a long time,
                     # or may not be possible in the case of a generator.
-                    warnings.warn(
+                    _logger.info(
                     ("The progressbar length cannot be estimated when using both custom iterpath and a mask."
                     "The progressbar may terminate before it appears complete. This can safely be ignored."),
-                    UserWarning
                     )
             except TypeError:
                 # progressbar is shown, so user can monitor "iterations per second"
                 # but the length of the bar is unknown
                 maxval = None
-                warnings.warn(
+                _logger.info(
                     ("The AxesManager `iterpath` is missing the `__len__` method, so does not have a known length. "
                     "The progressbar will only show run time and iterations per second, but no actual progress indicator."),
-                    UserWarning
                     )
         return maxval
 

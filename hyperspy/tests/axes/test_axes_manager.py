@@ -442,14 +442,12 @@ class TestIterPathScanPattern:
     def test_get_iterpath_size2(self):
         self.am.iterpath = generator()
         assert self.am._get_iterpath_size() == None
-        with pytest.warns(UserWarning):
-            assert self.am._get_iterpath_size(masked_elements = 1) == None
+        assert self.am._get_iterpath_size(masked_elements = 1) == None
 
     def test_get_iterpath_size3(self):
         self.am.iterpath =[(0,0,0), (0,0,1)]
         assert self.am._get_iterpath_size() == 2
-        with pytest.warns(UserWarning):
-            assert self.am._get_iterpath_size(masked_elements = 1) == 2
+        assert self.am._get_iterpath_size(masked_elements = 1) == 2
 
     def test_GeneratorLen(self):
         gen = GeneratorLen(gen=generator(), length=3)
