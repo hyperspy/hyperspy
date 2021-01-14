@@ -581,3 +581,69 @@ at least when printing. As an example:
 In the background, HyperSpy also takes care of storing the data in memory in
 a "machine-friendly" way, so that iterating over the navigation axes is always
 fast.
+
+.. _iterating_axesmanager:
+
+Iterating over the AxesManager
+------------------------------
+One can iterate over the AxesManager to produce indices to the navigation axes. Each iteration will yield a new tuple of indices, sorted according to the iteration path specified in :py:attr:`~.axes.AxesManager.iterpath`. Setting the :py:attr:`~.axes.AxesManager.indices` property to a new index will update the accompanying signal so that signal methods that operate at a specific navigation index will now use that index, like ``s.plot()``.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
+    >>> s.axes_manager.iterpath # check current iteration path
+    'flyback' # default until Hyperspy 2.0, then 'serpentine'
+    >>> for index in s.axes_manager:
+    ...     s.axes_manager.indices = i # s.plot() will change with this
+    ...     print(index)
+    (0, 0)
+    (1, 0)
+    (2, 0)
+    (0, 1)
+    (1, 1)
+    (2, 1)
+
+
+The ``AxesManager.iterpath`` specifies the strategy that the AxesManager should use to iterate over the navigation axes. Two built-in strategies exist: ``'flyback'`` and ``'serpentine'``. The flyback strategy starts at (0,0), continues down the row until the final column, "flies back" to the first column, and continues from (1,0). The serpentine strategy begins the same way, but when it reaches the final column (of index N), it continues from (1, N) along the next row, in the same way that a snake might slither, left and right.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
+    >>> s.axes_manager.iterpath = 'serpentine'
+    >>> for index in s.axes_manager:
+    ...     print(index)
+
+The iterpath can also be set to be a specific list of indices, like [(0,0), (0,1)], but can also be any generator of indices. Storing a high-dimensional set of indices as a list or array can take a significant amount of memory. By using a generator instead, one almost entirely removes such a memory footprint:
+
+.. code-block:: python
+
+    >>> s.axes_manager.iterpath = [(0,1), (1,1), (0,1)]
+    >>> for index in s.axes_manager:
+    ...     print(index)
+    (0, 1)
+    (1, 1)
+    (0, 1)
+
+    >>> def reverse_flyback_generator():
+    >>>     for i in reversed(range(3)):
+    ...         for j in reversed(range(2)):
+    ...             yield (i,j)
+
+    >>> s.axes_manager.iterpath = reverse_flyback_generator()
+    >>> for index in s.axes_manager:
+    ...     print(index)
+    (2, 1)
+    (2, 0)
+    (1, 1)
+    (1, 0)
+    (0, 1)
+    (0, 0)
+
+
+Since generators do not have a defined length, and does not need to include all navigation indices, a progressbar will be unable to determine how long it needs to be. To resolve this, a helper class can be imported that takes both a generator and a manually specified length as inputs:
+
+.. code-block:: python
+
+>>> from hyperspy.axes import GeneratorLen
+>>> gen = GeneratorLen(reverse_flyback_generator(), 6)
+>>> s.axes_manager.iterpath = gen
