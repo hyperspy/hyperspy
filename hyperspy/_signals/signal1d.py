@@ -385,8 +385,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        shift_array : numpy array
-            An array containing the shifting amount. It must have
+        shift_array : BaseSignal or np.array
+            An array containing the shifting amount. It must have the same
+            `axes_manager._navigation_shape`
             `axes_manager._navigation_shape_in_array` shape.
         interpolation_method : str or int
             Specifies the kind of interpolation as a string ('linear',
@@ -470,17 +471,24 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
 
-        self._map_iterate(_shift1D, (('shift', shift_array.ravel()),),
-                          original_axis=axis.axis,
-                          fill_value=fill_value,
-                          kind=interpolation_method,
-                          offset=axis.offset,
-                          scale=axis.scale,
-                          size=axis.size,
-                          show_progressbar=show_progressbar,
-                          parallel=parallel,
-                          max_workers=max_workers,
-                          ragged=False)
+        if isinstance(shift_array, np.ndarray):
+            shift_array = BaseSignal(shift_array).T
+
+        if self.axes_manager.navigation_shape != shift_array.axes_manager.navagation_shape:
+            raise ValueError("The navigation shapes must be the same")
+
+        self.map(_shift1D,
+                 shift_array=shift_array,
+                 original_axis=axis.axis,
+                 fill_value=fill_value,
+                 kind=interpolation_method,
+                 offset=axis.offset,
+                 scale=axis.scale,
+                 size=axis.size,
+                 show_progressbar=show_progressbar,
+                 parallel=parallel,
+                 max_workers=max_workers,
+                 ragged=False)
 
         if crop and not expand:
             _logger.debug("Cropping %s from index %i to %i"

@@ -533,6 +533,7 @@ class LazySignal(BaseSignal):
         or not.
         """
         # unpacking keyword arguments
+        print("here")
         rechunked_iter_signal = ()
         iter_keys = []
         testing_kwargs = kwargs.copy()
@@ -572,20 +573,20 @@ class LazySignal(BaseSignal):
             drop_axis = self.axes_manager.signal_indices_in_array
             new_axis = None
             axes_changed = True
-            chunks = tuple([self.data.chunks[i] for i in nav_indexes])
+            chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)])
         else:
             chunks = None
             if dtype is None and output_signal_size is None:
-                try:
-                    test_shape = self.axes_manager.signal_shape
-                    ones = np.ones(test_shape,
+                test_shape = tuple(reversed(self.axes_manager.signal_shape))  #numpy-like
+                ones = np.ones(test_shape,
                                    dtype=self.data.dtype)
-                    output = function(ones, **testing_kwargs)
+                try:
+                    output = np.array(function(ones, **testing_kwargs))
                     output_signal_size = np.shape(output)
                     dtype = output.dtype
                 except:
                     print("Automatic output sizing and data type didn't work")
-                    output_signal_size = self.axes_manager.signal_shape
+                    output_signal_size = tuple(reversed(self.axes_manager.signal_shape)) #numpy-like
                     dtype = self.data.dtype
 
             # determining if axes need to be dropped
@@ -600,7 +601,8 @@ class LazySignal(BaseSignal):
                     drop_axis = self.axes_manager.signal_indices_in_array
                     # add to front
                     new_axis = tuple(range(len(output_signal_size)))
-                    chunks = tuple([self.data.chunks[i] for i in nav_indexes]) + output_signal_size
+                    #sorted to account for numpy <-> hyperspy axes convention
+                    chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
                 else:
                     # drop index if not equal to output size
                     drop_axis = [it for (o, i, it) in zip(output_signal_size,
@@ -608,7 +610,7 @@ class LazySignal(BaseSignal):
                                                           self.axes_manager.signal_indices_in_array)
                                  if o != i]
                     new_axis = drop_axis
-                    chunks = tuple([self.data.chunks[i] for i in nav_indexes]) + output_signal_size
+                    chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
         mapped = da.map_blocks(process_function_blockwise,
                                self.data,
                                *rechunked_iter_signal,
@@ -630,6 +632,8 @@ class LazySignal(BaseSignal):
                 sig.axes_manager.remove(sig.axes_manager.signal_axes)
                 sig.__class__ = LazySignal
                 sig.__init__(**sig._to_dictionary(add_models=True))
+                if len(sig.axes_manager._axes) == 0:
+                    sig.axes_manager._append_axis(1, navigate=True, name='Scalar')
                 return sig
             # remove if too many axes
         if axes_changed:
@@ -640,6 +644,8 @@ class LazySignal(BaseSignal):
                 sig.axes_manager._append_axis(output_signal_size[-ind], navigate=False)
         if not ragged:
             sig.get_dimensions_from_data()
+        if len(sig.axes_manager._axes) == 0:
+            sig.axes_manager._append_axis(1, navigate=True, name='Scalar')
         return sig
 
     def _iterate_signal(self):

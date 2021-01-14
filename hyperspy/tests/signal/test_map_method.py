@@ -49,7 +49,7 @@ class TestSignal2D:
     @pytest.mark.parametrize('parallel', [True, False])
     def test_constant_sigma_navdim0(self, parallel):
         s = self.im.inav[0]
-        s.map(gaussian_filter, sigma=1, parallel=parallel, ragged=self.ragged)
+        s.map(gaussian_filter, sigma=1, parallel=parallel, ragged=self.ragged, inplace= not self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             [[1.68829507, 2.2662213, 2.84414753],
              [3.42207377, 4., 4.57792623],
@@ -64,19 +64,19 @@ class TestSignal2D:
         s.map(gaussian_filter,
               sigma=sigmas, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
-            [[[0., 1., 2.],
-                [3., 4., 5.],
-                [6., 7., 8.]],
+            [[[0.42207377, 1., 1.57792623],
+              [3.42207377, 4., 4.57792623],
+              [6.42207377, 7., 7.57792623]],
 
-             [[10.68829507, 11.2662213, 11.84414753],
+             [[9.42207377, 10., 10.57792623],
               [12.42207377, 13., 13.57792623],
-              [14.15585247, 14.7337787, 15.31170493]]]))
+              [15.42207377, 16., 16.57792623]]]))
 
     @pytest.mark.parametrize('parallel', [True, False])
     def test_variable_sigma_navdim0(self, parallel):
         s = self.im
 
-        sigma = np.array([1,])
+        sigma = 1
         s.map(gaussian_filter, sigma=sigma, parallel=parallel,
               ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
@@ -325,34 +325,43 @@ def test_new_axes(parallel):
     assert 0 == sl.axes_manager.navigation_dimension
 
 
-@pytest.mark.parametrize('lazy', [True, False])
 @pytest.mark.parametrize('ragged', [True, False, None])
-def test_singleton(lazy, ragged):
+def test_singleton(ragged):
     sig = hs.signals.Signal2D(np.empty((3, 2)))
-    if lazy:
-        sig = sig.as_lazy()
-        from hyperspy._signals.lazy import LazySignal
-        if ragged is None:
-            pytest.skip("Not compatible with lazy signal.")
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
-
-    # One without arguments
     sig1 = sig.map(lambda x: 3, inplace=False, ragged=ragged)
     sig2 = sig.map(np.sum, inplace=False, ragged=ragged)
-    # in place not supported for lazy signal and ragged
-    if lazy and ragged:
-        sig_list = (sig1, sig2)
-    else:
-        sig_list = (sig1, sig2, sig)
-        sig.map(np.sum, ragged=ragged, inplace=True)
+    sig.map(np.sum, inplace=True, ragged=ragged)
+    sig_list = (sig, sig1, sig2)
     for _s in sig_list:
         assert len(_s.axes_manager._axes) == 1
         assert _s.axes_manager[0].name == 'Scalar'
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
-        if lazy and not ragged:
-            assert isinstance(_s, LazySignal)
+
+@pytest.mark.parametrize('ragged', [True, False])
+def test_lazy_singleton(ragged):
+    from hyperspy._signals.lazy import LazySignal
+    sig = hs.signals.Signal2D(np.empty((3, 2)))
+    sig = sig.as_lazy()
+    sig.axes_manager[0].name = 'x'
+    sig.axes_manager[1].name = 'y'
+    # One without arguments
+    sig1 = sig.map(lambda x: 3, inplace=False, ragged=ragged)
+    sig2 = sig.map(np.sum, inplace=False, ragged=ragged)
+    # in place not supported for lazy signal and ragged
+    if ragged:
+        sig_list = (sig1, sig2)
+    else:
+        sig.map(np.sum, ragged=ragged, inplace=True)
+        sig_list = [sig1, sig2, sig]
+    for _s in sig_list:
+        assert len(_s.axes_manager._axes) == 1
+        assert _s.axes_manager[0].name == 'Scalar'
+        assert isinstance(_s, hs.signals.BaseSignal)
+        assert not isinstance(_s, hs.signals.Signal1D)
+        assert isinstance(_s, LazySignal)
 
 
 def test_map_ufunc(caplog):
