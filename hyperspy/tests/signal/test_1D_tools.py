@@ -26,6 +26,7 @@ from scipy.signal import savgol_filter
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.signal import BaseSignal
 
 
 @lazifyTestClass
@@ -112,7 +113,8 @@ class TestShift1D:
 
     def test_crop_left(self):
         s = self.s
-        s.shift1D(np.array((0.01)), crop=True)
+        shifts = BaseSignal([0.1])
+        s.shift1D(shifts, crop=True)
         assert (
             tuple(
                 s.axes_manager[0].axis) == tuple(
@@ -121,7 +123,8 @@ class TestShift1D:
 
     def test_crop_right(self):
         s = self.s
-        s.shift1D(np.array((-0.01)), crop=True)
+        shifts = BaseSignal([-0.1])
+        s.shift1D(shifts, crop=True)
         assert (
             tuple(
                 s.axes_manager[0].axis) == tuple(

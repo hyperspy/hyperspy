@@ -253,13 +253,14 @@ def _shift1D(data, **kwargs):
     if np.isnan(shift) or shift == 0:
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
-
+    print("What is size",size)
     si = sp.interpolate.interp1d(original_axis,
                                  data,
                                  bounds_error=False,
                                  fill_value=fill_value,
                                  kind=kind)
     offset = float(offset - shift)
+    print("outputsize:",np.shape(si))
     axis = np.linspace(offset, offset + scale * (size - 1), size)
     return si(axis)
 
@@ -472,13 +473,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
 
         if isinstance(shift_array, np.ndarray):
-            shift_array = BaseSignal(shift_array.squeeze()).T
+            shift_array = BaseSignal(shift_array.ravel()).T
 
         if self.axes_manager.navigation_shape != shift_array.axes_manager.navigation_shape:
             raise ValueError("The navigation shapes must be the same"+str(self.axes_manager.navigation_shape)+
                              " "+str(shift_array.axes_manager.navigation_shape))
         self.map(_shift1D,
-                 shift_array=shift_array,
+                 shift=shift_array,
                  original_axis=axis.axis,
                  fill_value=fill_value,
                  kind=interpolation_method,
@@ -1441,6 +1442,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          parallel=parallel,
                          max_workers=max_workers,
                          inplace=False)
+
+        if peaks._lazy:
+            peaks.compute()
         return peaks.data
 
     find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -1509,6 +1513,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             parallel = False
 
         axis = self.axes_manager.signal_axes[0]
+        print(self)
         # x = axis.axis
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
