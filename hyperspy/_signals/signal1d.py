@@ -1513,16 +1513,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
             parallel = False
 
         axis = self.axes_manager.signal_axes[0]
-        print(self)
         # x = axis.axis
+        print(axis.axis)
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
 
         def estimating_function(spectrum,
                                 window=None,
                                 factor=0.5,
-                                axis=None):
-            x = axis.axis
+                                axis2=None):
+            x = axis2.axis
             if window is not None:
                 vmax = axis.index2value(spectrum.argmax())
                 slices = axis._get_array_slices(
@@ -1542,12 +1542,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
         both = self.map(estimating_function,
                                  window=window,
                                  factor=factor,
-                                 axis=axis,
+                                 axis2=axis,
                                  ragged=False,
                                  inplace=False,
                                  parallel=parallel,
                                  show_progressbar=show_progressbar,
                                  max_workers=None)
+        if both._lazy:
+            both.data[0].compute()
         left, right = both.T.split()
         width = right - left
         if factor == 0.5:
