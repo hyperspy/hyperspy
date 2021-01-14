@@ -712,11 +712,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         # Translate, with sub-pixel precision if necesary,
         # note that we operate in-place here
-        if isinstance(shifts,np.ndarray):
-            shifts = Signal1D(shifts)
+        if isinstance(shifts, np.ndarray):
+            signal_shifts = Signal1D(shifts)
         self.map(
             shift_image,
-            shift=shifts,
+            shift=signal_shifts,
             show_progressbar=show_progressbar,
             parallel=parallel,
             max_workers=max_workers,
@@ -725,12 +725,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
             fill_value=fill_value,
             interpolation_order=interpolation_order,
         )
-
+        shifts = shifts.data
         if crop and not expand:
             max_shift = np.max(shifts, axis=0) - np.min(shifts, axis=0)
-
             if np.any(max_shift >= np.array(self.axes_manager.signal_shape)):
-                raise ValueError("Shift outside range of signal axes. Cannot crop signal.")
+                raise ValueError("Shift outside range of signal axes. Cannot crop signal."+
+                                 "Max shift:" + str(max_shift) + " shape" + str(self.axes_manager.signal_shape))
 
             # Crop the image to the valid size
             shifts = -shifts
