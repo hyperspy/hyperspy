@@ -35,6 +35,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize, optimal_fft_size
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.signal_tools import PeaksFinder2D
@@ -711,9 +712,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         # Translate, with sub-pixel precision if necesary,
         # note that we operate in-place here
-        self._map_iterate(
+        if isinstance(shifts,np.ndarray):
+            shifts = Signal1D(shifts)
+        self.map(
             shift_image,
-            iterating_kwargs=(("shift", -shifts),),
+            shift=shifts,
             show_progressbar=show_progressbar,
             parallel=parallel,
             max_workers=max_workers,

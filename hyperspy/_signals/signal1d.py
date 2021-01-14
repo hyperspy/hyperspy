@@ -472,11 +472,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
 
         if isinstance(shift_array, np.ndarray):
-            shift_array = BaseSignal(shift_array).T
+            shift_array = BaseSignal(shift_array.squeeze()).T
 
-        if self.axes_manager.navigation_shape != shift_array.axes_manager.navagation_shape:
-            raise ValueError("The navigation shapes must be the same")
-
+        if self.axes_manager.navigation_shape != shift_array.axes_manager.navigation_shape:
+            raise ValueError("The navigation shapes must be the same"+str(self.axes_manager.navigation_shape)+
+                             " "+str(shift_array.axes_manager.navigation_shape))
         self.map(_shift1D,
                  shift_array=shift_array,
                  original_axis=axis.axis,
@@ -638,12 +638,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         if interpolate is True:
             ref = interpolate1D(ip, ref)
-        iterating_kwargs = ()
-        if mask is not None:
-            iterating_kwargs += (('mask', mask),)
-        shift_signal = self._map_iterate(
+        shift_signal = self.map(
             _estimate_shift1D,
-            iterating_kwargs=iterating_kwargs,
+            mask=mask,
             data_slice=slice(i1, i2),
             ref=ref,
             ip=ip,
@@ -1537,7 +1534,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             else:
                 return np.full((2,), np.nan)
 
-        both = self._map_iterate(estimating_function,
+        both = self.map(estimating_function,
                                  window=window,
                                  factor=factor,
                                  axis=axis,
