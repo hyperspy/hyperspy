@@ -163,7 +163,12 @@ class TestAlignTools:
 
     def test_align_expand(self):
         s = self.signal
+        print(s.data)
+        if s._lazy:
+            s.data = s.data.rechunk(chunks=(5, -1, -1)) #chunks are bad here appear
+        print(s.data)
         s.align2D(expand=True)
+        print(s.data)
         # Check the numbers of NaNs to make sure expansion happened properly
         ds = self.ishifts.max(0) - self.ishifts.min(0)
         Nnan = np.sum(ds) * 100 + np.prod(ds)

@@ -1151,10 +1151,15 @@ def process_function_blockwise(data,
             iter_args = [a[islice].squeeze() for a in args]
             iter_dict = {k: v for k, v in zip(iterating_kwargs, iter_args)}
             print(dtype)
+            print(function)
             output_array[islice] = function(data[islice],
                                             **iter_dict,
                                             **kwargs)
-    return output_array.squeeze()
+    try:
+        output_array = output_array.squeeze(-1)
+    except ValueError:
+        pass
+    return output_array
 
 
 def map_result_construction(signal,

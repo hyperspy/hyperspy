@@ -557,7 +557,8 @@ class LazySignal(BaseSignal):
                     nav_chunks = self._get_navigation_chunk_size()
                     signal = signal.as_lazy()
                     new_chunks = tuple(reversed(list(nav_chunks))) + (*signal.axes_manager.signal_shape,)
-                    signal.data.rechunk(new_chunks)
+                    print(new_chunks)
+                    signal.data = signal.data.rechunk(new_chunks)
                     rechunked_iter_signal += (signal.data,)
                     kwargs.pop(key)  # removing the kwarg
                     test_ind = (0,)*len(self.axes_manager.navigation_axes)
@@ -605,6 +606,7 @@ class LazySignal(BaseSignal):
                     new_axis = tuple(range(len(output_signal_size)))
                     #sorted to account for numpy <-> hyperspy axes convention
                     chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
+
                 else:
                     # drop index if not equal to output size
                     drop_axis = [it for (o, i, it) in zip(output_signal_size,
