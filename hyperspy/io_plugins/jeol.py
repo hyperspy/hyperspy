@@ -181,8 +181,8 @@ def read_img(filename, scale=None, **kwargs):
     return dictionary
 
 
-def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
-             cutoff_at_kV=None, downsample=1, **kwargs):
+def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
+             SI_dtype=np.uint8, cutoff_at_kV=None, downsample=1, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
 
@@ -286,10 +286,26 @@ def read_pts(filename, scale=None, rebin_energy=1, SI_dtype=np.uint8,
                 "units": "keV",
             },
         ]
+        # pixel time in milliseconds
+        pixel_time = meas_data_header["Doc"]["DwellTime(msec)"]
 
-        data = np.zeros([height, width, channel_number], dtype=SI_dtype)
-        data = readcube(rawdata, data, rebin_energy, channel_number,
-                        width_norm, height_norm)
+        data_shape = [height, width, channel_number]
+        if not sum_frames:
+            sweep = meas_data_header["Doc"]["Sweep"]
+            data_shape.insert(0, sweep)
+            axes.insert(0, {
+                "index_in_array": 0,
+                "name": "Frame",
+                "size": sweep,
+                "offset": 0,
+                "scale": pixel_time*height*width/1E3,
+                "units": 's',
+            })
+
+        data = np.zeros(data_shape, dtype=SI_dtype)
+        datacube_reader = readcube if sum_frames else readcube_frames
+        data = datacube_reader(rawdata, data, rebin_energy, channel_number,
+                               width_norm, height_norm, np.iinfo(SI_dtype).max)
 
         hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
@@ -421,8 +437,8 @@ def parsejeol(fd):
 
 
 @numba.njit(cache=True)
-def readcube(rawdata, hypermap, rebin_energy, channel_number,
-             width_norm, height_norm):  # pragma: no cover
+def readcube(rawdata, hypermap, rebin_energy, channel_number, width_norm,
+             height_norm, max_value):  # pragma: no cover
     for value in rawdata:
         if value >= 32768 and value < 36864:
             x = int((value - 32768) / width_norm)
@@ -432,6 +448,38 @@ def readcube(rawdata, hypermap, rebin_energy, channel_number,
             z = int((value - 45056) / rebin_energy)
             if z < channel_number:
                 hypermap[y, x, z] += 1
+                if hypermap[y, x, z] == max_value:
+                    raise ValueError("The range of the dtype is too small, "
+                                     "use `SI_dtype` to set a dtype with "
+                                     "higher range.")
+    return hypermap
+
+
+@numba.njit(cache=True)
+def readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
+             width_norm, height_norm, max_value):  # pragma: no cover
+    """
+    We need to create a separate function, because numba.njit doesn't play well
+    with an array having its shape depending on something else
+    """
+    frame_idx = 0
+    previous_y = 0
+    for value in rawdata:
+        if value >= 32768 and value < 36864:
+            x = int((value - 32768) / width_norm)
+        elif value >= 36864 and value < 40960:
+            y = int((value - 36864) / height_norm)
+            if y < previous_y:
+                frame_idx += 1
+            previous_y = y
+        elif value >= 45056 and value < 49152:
+            z = int((value - 45056) / rebin_energy)
+            if z < channel_number:
+                hypermap[frame_idx, y, x, z] += 1
+                if hypermap[frame_idx, y, x, z] == max_value:
+                    raise ValueError("The range of the dtype is too small, "
+                                     "use `SI_dtype` to set a dtype with "
+                                     "higher range.")
     return hypermap
 
 
