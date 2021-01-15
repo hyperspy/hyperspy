@@ -108,7 +108,6 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         ro, ri = self.size
         self.patch = [plt.Circle(
             xy, radius=ro,
-            animated=self.blit,
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
@@ -118,7 +117,6 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             self.patch.append(
                 plt.Circle(
                     xy, radius=ro,
-                    animated=self.blit,
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,

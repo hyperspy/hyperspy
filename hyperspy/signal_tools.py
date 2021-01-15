@@ -1026,10 +1026,7 @@ class ImageContrastEditor(t.HasTraits):
         if self._vmin == self._vmax:
             return
         self.line.set_data(*self._get_line())
-        if self.ax.figure.canvas.supports_blit:
-            self.hspy_fig._update_animated()
-        else:
-            self.ax.figure.canvas.draw_idle()
+        self.hspy_fig.render_figure()
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:

@@ -102,7 +102,6 @@ class LabelWidget(Widget1DBase):
             transform=trans,
             horizontalalignment='left',
             bbox=self.bbox,
-            animated=self.blit,
             picker=True)]
 
     def _onmousemove(self, event):

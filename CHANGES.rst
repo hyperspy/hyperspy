@@ -31,6 +31,7 @@ API changes
 RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
+* Widgets plotting improvement and add `pick_tolerance` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
 
 
 Changelog
