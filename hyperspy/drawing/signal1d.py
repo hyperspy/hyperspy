@@ -202,10 +202,7 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is not None:
             update_lines(self.right_ax, self.right_ax_lines)
 
-        if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._update_animated()
-        else:
-            self.ax.figure.canvas.draw_idle()
+        self.render_figure()
 
 
 class Signal1DLine(object):
@@ -496,10 +493,7 @@ class Signal1DLine(object):
             self.text.set_text(self.axes_manager.indices)
 
         if render_figure:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self.ax.hspy_fig.render_figure()
 
     def close(self):
         _logger.debug('Closing `Signal1DLine`.')
