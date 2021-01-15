@@ -4388,6 +4388,7 @@ class BaseSignal(FancySlicing,
         inplace=True,
         ragged=None,
         output_signal_size=None,
+        output_dtype=None,
         **kwargs
     ):
         """Apply a function to the signal data at all the navigation
@@ -4458,6 +4459,8 @@ class BaseSignal(FancySlicing,
         """
         if output_signal_size in kwargs and not self._lazy:
             kwargs.pop("output_signal_size")
+        if output_dtype in kwargs and not self._lazy:
+            kwargs.pop("output_dtype")
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in list(kwargs.items()):

@@ -478,6 +478,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if self.axes_manager.navigation_shape != shift_array.axes_manager.navigation_shape:
             raise ValueError("The navigation shapes must be the same"+str(self.axes_manager.navigation_shape)+
                              " "+str(shift_array.axes_manager.navigation_shape))
+
+        if self._lazy:
+            output_dtype=float
+        else:
+            output_dtype=None
+        print("odtype:", output_dtype)
         self.map(_shift1D,
                  shift=shift_array,
                  original_axis=axis.axis,
@@ -489,7 +495,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                  show_progressbar=show_progressbar,
                  parallel=parallel,
                  max_workers=max_workers,
-                 ragged=False)
+                 ragged=False,
+                 output_dtype=output_dtype)
 
         if crop and not expand:
             _logger.debug("Cropping %s from index %i to %i"

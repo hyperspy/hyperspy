@@ -53,7 +53,10 @@ _logger = logging.getLogger(__name__)
 
 
 def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
-    if np.any(shift):
+    print("shift", shift)
+    if not np.any(shift):
+        return im
+    else:
         fractional, integral = np.modf(shift)
         if fractional.any():
             order = interpolation_order
@@ -61,8 +64,6 @@ def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
             # Disable interpolation
             order = 0
         return ndimage.shift(im, shift, cval=fill_value, order=order)
-    else:
-        return im
 
 
 def triu_indices_minus_diag(n):
@@ -710,10 +711,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
             if np.any((top < 0, bottom > 0)):
                 yaxis.size += bottom - top
 
-        # Translate, with sub-pixel precision if necesary,
+        # Translate, with sub-pixel precision if necessary,
         # note that we operate in-place here
         if isinstance(shifts, np.ndarray):
-            signal_shifts = Signal1D(shifts)
+            signal_shifts = Signal1D(-shifts)
         self.map(
             shift_image,
             shift=signal_shifts,

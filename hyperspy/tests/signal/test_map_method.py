@@ -226,7 +226,7 @@ class TestSignal0D:
         s.events.data_changed.connect(m.data_changed)
         s.map(lambda x, e: x ** e, e=2, parallel=parallel, ragged=self.ragged)
         np.testing.assert_allclose(
-            s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
+            s.data, (np.arange(0., 6) ** 2).reshape((2, 3,)))
         assert m.data_changed.called
 
     @pytest.mark.parametrize('parallel', [True, False])

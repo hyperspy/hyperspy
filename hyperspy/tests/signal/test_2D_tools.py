@@ -132,8 +132,6 @@ class TestAlignTools:
     def test_estimate_shift(self):
         s = self.signal
         shifts = s.estimate_shift2D()
-        print(shifts)
-        print(self.ishifts)
         np.testing.assert_allclose(shifts, self.ishifts)
 
     def test_align_no_shift(self):
@@ -146,9 +144,11 @@ class TestAlignTools:
 
     def test_align_twice(self):
         s = self.signal
-        s.align2D()
+        shifts = s.align2D()
+        print(shifts)
         with pytest.warns(UserWarning, match="the images are already aligned"):
             shifts = s.align2D()
+            print(shifts)
             assert shifts.sum() == 0
 
     def test_align(self):
@@ -164,7 +164,6 @@ class TestAlignTools:
     def test_align_expand(self):
         s = self.signal
         s.align2D(expand=True)
-
         # Check the numbers of NaNs to make sure expansion happened properly
         ds = self.ishifts.max(0) - self.ishifts.min(0)
         Nnan = np.sum(ds) * 100 + np.prod(ds)

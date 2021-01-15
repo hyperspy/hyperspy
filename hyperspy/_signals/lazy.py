@@ -526,7 +526,7 @@ class LazySignal(BaseSignal):
                      ragged=False,
                      inplace=True,
                      output_signal_size=None,
-                     dtype=None,
+                     output_dtype=None,
                      **kwargs):
         """This function has two different implementations
         based on if there is a BaseSignal passed as an argument
@@ -556,19 +556,21 @@ class LazySignal(BaseSignal):
                 else:
                     nav_chunks = self._get_navigation_chunk_size()
                     signal = signal.as_lazy()
-                    new_chunks = nav_chunks + (*signal.axes_manager.signal_shape,)
+                    new_chunks = tuple(reversed(list(nav_chunks))) + (*signal.axes_manager.signal_shape,)
                     signal.data.rechunk(new_chunks)
                     rechunked_iter_signal += (signal.data,)
                     kwargs.pop(key)  # removing the kwarg
                     test_ind = (0,)*len(self.axes_manager.navigation_axes)
                     testing_kwargs[key] = testing_kwargs[key].inav[test_ind].data
+                    if isinstance(testing_kwargs[key], np.ndarray) and testing_kwargs[key].shape ==(1,):
+                        testing_kwargs[key]=testing_kwargs[key][0]
                     iter_keys.append(key)
         # determining output size, chunking and datatype
         if ragged:
             # This allows for a different signal shape at every point.
             if inplace:
                 raise ValueError("Ragged and inplace are not compatible with a lazy signal")
-            dtype = np.object
+            output_dtype = np.object
             output_signal_size = ()
             drop_axis = self.axes_manager.signal_indices_in_array
             new_axis = None
@@ -576,21 +578,18 @@ class LazySignal(BaseSignal):
             chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)])
         else:
             chunks = None
-            if dtype is None and output_signal_size is None:
-                test_shape = tuple(reversed(self.axes_manager.signal_shape))  #numpy-like
-                ones = np.ones(test_shape,
-                                   dtype=self.data.dtype)
+            if output_signal_size is None:
+                test_data = self.inav[(0,) * len(self.axes_manager.navigation_shape)].data # first signal
                 try:
-                    output = np.array(function(ones, **testing_kwargs))
+                    output = np.array(function(test_data, **testing_kwargs))
                     output_signal_size = np.shape(output)
-                    dtype = output.dtype
+                    odtype = output.dtype
                 except:
                     print("Automatic output sizing and data type didn't work")
                     output_signal_size = tuple(reversed(self.axes_manager.signal_shape)) #numpy-like
-                    dtype = self.data.dtype
-            elif output_signal_size is not None:
-                dtype= self.data.dtype
-
+                    odtype = self.data.dtype
+            if output_dtype is None:
+                output_dtype = odtype
 
             # determining if axes need to be dropped
             if output_signal_size == self.axes_manager.signal_shape:
@@ -622,7 +621,7 @@ class LazySignal(BaseSignal):
                                drop_axis=drop_axis,
                                new_axis=new_axis,
                                output_signal_size=output_signal_size,
-                               dtype=dtype,
+                               dtype=output_dtype,
                                chunks=chunks,
                                iterating_kwargs=iter_keys,
                                **kwargs)
