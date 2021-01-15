@@ -1537,6 +1537,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             if len(roots) == 2:
                 return np.array(roots)
             else:
+                print("return", np.full((2,), np.nan))
                 return np.full((2,), np.nan)
 
         both = self.map(estimating_function,
@@ -1547,6 +1548,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                  inplace=False,
                                  parallel=parallel,
                                  show_progressbar=show_progressbar,
+                                 output_signal_size =(2,),
                                  max_workers=None)
         if both._lazy:
             both.data[0].compute()

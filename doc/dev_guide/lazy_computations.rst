@@ -18,14 +18,24 @@ the two arrays are indeed almost identical, the most important differences are
    shape of the result depends on the values and cannot be inferred without
    execution. Hence, few operations can be run on ``res`` lazily, and it should
    be avoided if possible.
+ - **Computations in Dask are Lazy**: This means that operations only run when
+   the ``signal.compute()`` function is called. It also means that for things
+   like plotting sections of the signal will need to be computed.
 
 The easiest way to add new methods that work both with arbitrary navigation
-dimensions and ``LazySignals`` is by using the ``map`` (or, for more control,
-``_map_all`` or ``_map_iterate``) method to map your function ``func`` across
+dimensions and ``LazySignals`` is by using the ``map`` method to map your function ``func`` across
 all "navigation pixels" (e.g. spectra in a spectrum-image). ``map`` methods
 will run the function on all pixels efficiently and put the results back in the
 correct order. ``func`` is not constrained by ``dask`` and can use whatever
 code (assignment, etc.) you wish.
+
+The ``map`` function is flexible and should be able to handle most operations that
+operate on some signal. If you add a ``BaseSignal`` with the same navigation size
+as the signal it will be iterated alongside the mapped signal otherwise a keyword
+argument is assumed to be constant and is applied to every signal.
+
+There are additional protected methods ``_map_iterate`` and ``_map_all`` which are
+called by the ``map`` function but it is discouraged to directly call these methods.
 
 If the new method cannot be coerced into a shape suitable for ``map``, separate
 cases for lazy signals will have to be written. If a function operates on

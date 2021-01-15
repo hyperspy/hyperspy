@@ -927,9 +927,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
             peaks = self.map(method_func, show_progressbar=show_progressbar,
                              parallel=parallel, inplace=False, ragged=True,
                              max_workers=max_workers, **kwargs)
+            if peaks._lazy:
+                peaks.compute()
 
-        if peaks._lazy:
-            peaks.compute()
+
 
         return peaks
 

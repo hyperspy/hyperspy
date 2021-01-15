@@ -581,16 +581,16 @@ class LazySignal(BaseSignal):
                 ones = np.ones(test_shape,
                                    dtype=self.data.dtype)
                 try:
-                    print("testing Keywords: ", testing_kwargs)
                     output = np.array(function(ones, **testing_kwargs))
                     output_signal_size = np.shape(output)
                     dtype = output.dtype
-                    print(dtype)
                 except:
                     print("Automatic output sizing and data type didn't work")
                     output_signal_size = tuple(reversed(self.axes_manager.signal_shape)) #numpy-like
                     dtype = self.data.dtype
-                print("SignalSize:", output_signal_size)
+            elif output_signal_size is not None:
+                dtype= self.data.dtype
+
 
             # determining if axes need to be dropped
             if output_signal_size == self.axes_manager.signal_shape:
