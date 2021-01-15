@@ -635,8 +635,9 @@ class LazySignal(BaseSignal):
                 sig.axes_manager.remove(sig.axes_manager.signal_axes)
                 sig.__class__ = LazySignal
                 sig.__init__(**sig._to_dictionary(add_models=True))
-                if len(sig.axes_manager._axes) == 0:
-                    sig.axes_manager._append_axis(1, navigate=True, name='Scalar')
+                #if len(sig.axes_manager._axes) == 0:
+                #    sig.axes_manager._append_axis(1, navigate=True, name='Scalar')
+
                 return sig
             # remove if too many axes
         if axes_changed:

@@ -340,25 +340,37 @@ def test_singleton(ragged):
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
 
-@pytest.mark.parametrize('ragged', [True, False])
-def test_lazy_singleton(ragged):
+def test_lazy_singleton():
     from hyperspy._signals.lazy import LazySignal
     sig = hs.signals.Signal2D(np.empty((3, 2)))
     sig = sig.as_lazy()
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
     # One without arguments
-    sig1 = sig.map(lambda x: 3, inplace=False, ragged=ragged)
-    sig2 = sig.map(np.sum, inplace=False, ragged=ragged)
+    sig1 = sig.map(lambda x: 3, inplace=False, ragged=False)
+    sig2 = sig.map(np.sum, inplace=False, ragged=False)
     # in place not supported for lazy signal and ragged
-    if ragged:
-        sig_list = (sig1, sig2)
-    else:
-        sig.map(np.sum, ragged=ragged, inplace=True)
-        sig_list = [sig1, sig2, sig]
+    sig.map(np.sum, ragged=False, inplace=True)
+    sig_list = [sig1, sig2, sig]
     for _s in sig_list:
         assert len(_s.axes_manager._axes) == 1
         assert _s.axes_manager[0].name == 'Scalar'
+        assert isinstance(_s, hs.signals.BaseSignal)
+        assert not isinstance(_s, hs.signals.Signal1D)
+        assert isinstance(_s, LazySignal)
+
+def test_lazy_singleton_ragged():
+    from hyperspy._signals.lazy import LazySignal
+    sig = hs.signals.Signal2D(np.empty((3, 2)))
+    sig = sig.as_lazy()
+    sig.axes_manager[0].name = 'x'
+    sig.axes_manager[1].name = 'y'
+    # One without arguments
+    sig1 = sig.map(lambda x: 3, inplace=False, ragged=True)
+    sig2 = sig.map(np.sum, inplace=False, ragged=True)
+    # in place not supported for lazy signal and ragged
+    sig_list = (sig1, sig2)
+    for _s in sig_list:
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
         assert isinstance(_s, LazySignal)
