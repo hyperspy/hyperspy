@@ -725,7 +725,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
             fill_value=fill_value,
             interpolation_order=interpolation_order,
         )
-        shifts = shifts.data
         if crop and not expand:
             max_shift = np.max(shifts, axis=0) - np.min(shifts, axis=0)
             if np.any(max_shift >= np.array(self.axes_manager.signal_shape)):
