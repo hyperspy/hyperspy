@@ -36,6 +36,8 @@ from hyperspy._components.expression import _parse_substitutions
 
 
 import warnings
+import inspect
+import collections
 
 _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
@@ -124,7 +126,7 @@ class UnitConversion:
         except pint.errors.UndefinedUnitError:
             warnings.warn('Unit "{}" not supported for conversion. Nothing '
                           'done.'.format(units),
-                          UserWarning)
+                          )
             return True
         return False
 
@@ -1100,18 +1102,23 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         d["_type"] = 'DataAxis'
         self.__init__(**d, axis=self.axis)
 
-def serpentine_iter(shape):
+def _serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices
-    in serpentine pattern, like snake game
+    in serpentine pattern, like snake game.
+    Takes shape in hyperspy order, not numpy order.
 
     Code by Stackoverflow user Paul Panzer,
     from https://stackoverflow.com/questions/57366966/
+
+    Note that the [::-1] reversing is necessary to iterate first along
+    the x-direction on multidimensional navigators.
     '''
+    shape = shape[::-1]
     N = len(shape)
     idx = N*[0]
     drc = N*[1]
     while True:
-        yield (*idx,)
+        yield (*idx,)[::-1]
         for j in reversed(range(N)):
             if idx[j] + drc[j] not in (-1, shape[j]):
                 idx[j] += drc[j]
@@ -1119,6 +1126,16 @@ def serpentine_iter(shape):
             drc[j] *= -1
         else:  # pragma: no cover
             break
+
+def _flyback_iter(shape):
+    "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape in hyperspy order, not numpy order."
+    shape = shape[::-1]
+    class ndindex_reversed(np.ndindex):
+        def __next__(self):
+            next(self._it)
+            return self._it.multi_index[::-1]
+
+    return ndindex_reversed(shape)
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
@@ -1150,6 +1167,10 @@ class AxesManager(t.HasTraits):
         AttributeError when attempting to set its value.
     signal_axes, navigation_axes : list
         Contain the corresponding DataAxis objects
+    iterpath : string or iterable
+        Sets the order of iterating through the indices in the navigation dimension.
+        Can be either "flyback" or "serpentine", or an iterable
+        of hyperspy navigation indices.
 
     Examples
     --------
@@ -1246,10 +1267,7 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self._index = None  # index for the iterpath
-        # Can use serpentine or flyback scan pattern
-        # for the axes manager indexing
-        self._iterpath = 'flyback'
+        self.iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -1447,57 +1465,101 @@ class AxesManager(t.HasTraits):
         if self._max_index != 0:
             self._max_index -= 1
 
+    @property
+    def iterpath(self):
+        "Sets or returns the current iteration path through the axes indices"
+        return self._iterpath
+
+    @iterpath.setter
+    def iterpath(self, path):
+        if isinstance(path, str):
+            if path == 'serpentine':
+                self._iterpath = 'serpentine'
+                self._iterpath_generator = _serpentine_iter(self.navigation_shape)
+            elif path == 'flyback':
+                self._iterpath = 'flyback'
+                self._iterpath_generator = _flyback_iter(self.navigation_shape)
+            else:
+                raise ValueError(
+                    f'The iterpath scan pattern is set to `"{path}"`. '
+                    'It must be either "serpentine" or "flyback", or an iterable '
+                    'of navigation indices, and is set either as multifit '
+                    '`iterpath` argument or `axes_manager.iterpath`'
+                    )
+        else:
+            # Passing a custom indices iterator
+            try:
+                iter(path) # If this fails, its not an iterable and we raise TypeError
+            except TypeError as e:
+                raise TypeError(
+                    f'The iterpath `{path}` is not an iterable. '
+                    'Ensure it is an iterable like a list, array or generator.'
+                    ) from e
+            try:
+                if not (inspect.isgenerator(path) or type(path) is GeneratorLen):
+                # If iterpath is a generator, then we can't check its first value, have to trust it
+                    first_indices = path[0]
+                    if not isinstance(first_indices, collections.Iterable):
+                        raise TypeError
+                    assert len(first_indices) == self.navigation_dimension
+            except TypeError as e:
+                raise TypeError(
+                    f"Each set of indices in the iterpath should be an iterable, e.g. `(0,)` or `(0,0,0)`. " 
+                    f"The first entry currently looks like: `{first_indices}`, and does not satisfy this requirement."
+                    ) from e
+            except AssertionError as e:
+                raise ValueError(
+                    f"The current iterpath yields indices of length "
+                    f"{len(path)}. It should deliver incides with length "
+                    f"equal to the navigation dimension, which is {self.navigation_dimension}."
+                    ) from e
+            else:
+                self._iterpath = path
+                self._iterpath_generator = iter(self._iterpath)
+
+    def _get_iterpath_size(self, masked_elements=0):
+        "Attempts to get the iterpath size, returning None if it is unknown"
+        if isinstance(self.iterpath, str):
+            # flyback and serpentine have well-defined lengths <- navigation_size
+            maxval = self.navigation_size - masked_elements
+        else:
+            try:
+                maxval = len(self.iterpath)
+                if masked_elements:
+                    # Checking if mask indices exist in the iterpath could take a long time,
+                    # or may not be possible in the case of a generator.
+                    _logger.info(
+                    ("The progressbar length cannot be estimated when using both custom iterpath and a mask."
+                    "The progressbar may terminate before it appears complete. This can safely be ignored."),
+                    )
+            except TypeError:
+                # progressbar is shown, so user can monitor "iterations per second"
+                # but the length of the bar is unknown
+                maxval = None
+                _logger.info(
+                    ("The AxesManager `iterpath` is missing the `__len__` method, so does not have a known length. "
+                    "The progressbar will only show run time and iterations per second, but no actual progress indicator."),
+                    )
+        return maxval
+
     def __next__(self):
         """
-        Standard iterator method, updates the index and returns the
-        current coordinates
+        Standard iterator method, returns the current coordinates
 
         Returns
         -------
-        val : tuple of ints
+        self.indices : tuple of ints
             Returns a tuple containing the coordinates of the current
             iteration.
 
         """
-        if self._iterpath not in ['serpentine', 'flyback']:
-            raise ValueError('''The iterpath scan pattern is set to {}. \
-            It must be either "serpentine" or "flyback", and is set either \
-            as multifit `iterpath` argument or \
-            `axes_manager._iterpath`'''.format(self._iterpath))
-        if self._index is None:
-            self._index = 0
-            if self._iterpath == 'serpentine':
-                self._iterpath_generator = serpentine_iter(
-                    self._navigation_shape_in_array)
-                val = next(self._iterpath_generator)
-            else: # flyback
-                val = (0,) * self.navigation_dimension
-            self.indices = val
-        elif self._index >= self._max_index:
-            raise StopIteration
-        else:
-            self._index += 1
-            if self._iterpath == 'serpentine':
-                # In case we need to start further out in the generator
-                # for some reason. This is possibly expensive, as it needs
-                # to calculate all previous values first
-                # self._iterpath_generator = itertools.islice(
-                #     serpentine_iter(self._navigation_shape_in_array),
-                #     self._index,
-                #     None)
-                val = next(self._iterpath_generator)[::-1]
-            else:
-                val = np.unravel_index(
-                    self._index,
-                    tuple(self._navigation_shape_in_array)
-                )[::-1]
-            self.indices = val
-        return val
+        self.indices = next(self._iterpath_generator)
+        return self.indices
 
     def __iter__(self):
-        # Reset the _index that can have a value != None due to
-        # a previous iteration that did not hit a StopIteration
-        self._index = None
+        # re-initialize iterpath as it is set before correct data shape
+        # is created before data shape is known
+        self.iterpath = self._iterpath
         return self
 
     def _append_axis(self, **kwargs):
@@ -2081,4 +2143,26 @@ class AxesManager(t.HasTraits):
         %s
         """
 
+class GeneratorLen: 
+    """Helper class for creating a generator-like object with a known length.
+    Useful when giving a generator as input to the AxesManager iterpath, so that the 
+    length is known for the progressbar.
 
+    Found at: https://stackoverflow.com/questions/7460836/how-to-lengenerator/7460986
+
+    Parameters
+        ----------
+        gen : generator
+            The Generator containing hyperspy navigation indices.
+        length : int
+            The manually-specified length of the generator.
+    """
+    def __init__(self, gen, length):
+        self.gen = gen
+        self.length = length
+
+    def __len__(self): 
+        return self.length
+
+    def __iter__(self):
+        return self.gen
