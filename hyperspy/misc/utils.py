@@ -207,7 +207,7 @@ def slugify(value, valid_variable_name=False):
     return value
 
 
-class DictionaryTreeBrowser(object):
+class DictionaryTreeBrowser:
 
     """A class to comfortably browse a dictionary using a CLI.
 
@@ -268,7 +268,6 @@ class DictionaryTreeBrowser(object):
         self._double_lines = double_lines
         if not dictionary:
             dictionary = {}
-        super(DictionaryTreeBrowser, self).__init__()
         self.add_dictionary(dictionary, double_lines=double_lines)
 
     def add_dictionary(self, dictionary, double_lines=False):
@@ -419,7 +418,7 @@ class DictionaryTreeBrowser(object):
         if isinstance(name, bytes):
             name = name.decode()
         name = slugify(name, valid_variable_name=True)
-        item = super(DictionaryTreeBrowser, self).__getattribute__(name)
+        item = super().__getattribute__(name)
         if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
             return item['_dtb_value_']
         else:
@@ -441,9 +440,7 @@ class DictionaryTreeBrowser(object):
                 value = DictionaryTreeBrowser(
                     value,
                     double_lines=self._double_lines)
-        super(DictionaryTreeBrowser, self).__setattr__(
-            slugified_key,
-            {'key': key, '_dtb_value_': value})
+        super().__setattr__(slugified_key, {'key': key, '_dtb_value_': value})
 
     def __len__(self):
         return len(
