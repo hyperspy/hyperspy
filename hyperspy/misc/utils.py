@@ -468,7 +468,7 @@ class DictionaryTreeBrowser:
         if name in keys or f"_sig_{name}" in keys:
             # It is a lazy attribute, we need to process the lazy attribute
             self.process_lazy_attributes()
-            return getattr(self, name)
+            return self.__dict__[name]['_dtb_value_']
         else:
             raise AttributeError(name)
 
@@ -495,7 +495,7 @@ class DictionaryTreeBrowser:
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if slugified_key in self.__dict__.keys():
-                self.get_item(slugified_key).add_dictionary(
+                self.__dict__[slugified_key]['_dtb_value_'].add_dictionary(
                     value,
                     double_lines=self._double_lines)
                 return
@@ -601,18 +601,16 @@ class DictionaryTreeBrowser:
         default :
             The value to return if the path does not exist.
 
-
         Examples
         --------
-
         >>> dict = {'To' : {'be' : True}}
         >>> dict_browser = DictionaryTreeBrowser(dict)
-        >>> dict_browser.has_item('To')
+        >>> dict_browser.get_item('To')
+        └── be = True
+        >>> dict_browser.get_item('To.be')
         True
-        >>> dict_browser.has_item('To.be')
-        True
-        >>> dict_browser.has_item('To.be.or')
-        False
+        >>> dict_browser.get_item('To.be.or', 'default_value')
+        'default_value'
 
         """
         if isinstance(item_path, str):
