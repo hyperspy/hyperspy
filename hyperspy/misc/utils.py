@@ -23,7 +23,7 @@ import copy
 import types
 from io import StringIO
 import codecs
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 import unicodedata
 from contextlib import contextmanager
 import importlib
@@ -264,20 +264,59 @@ class DictionaryTreeBrowser:
 
     """
 
-    def __init__(self, dictionary=None, double_lines=False):
+    def __init__(self, dictionary=None, double_lines=False, lazy=False):
+        """When creating or adding dictionary lazily, the dictionary is added
+        to the `_lazy_attribute` attribute.
+        The DictionaryTreeBrowser process the lazy attribute when
+        `process_lazy_attributes` is called.
+
+        """
+        self._lazy_attribute = {}
         self._double_lines = double_lines
-        if not dictionary:
+
+        if dictionary is None:
             dictionary = {}
-        self.add_dictionary(dictionary, double_lines=double_lines)
+
+        if lazy:
+            self._lazy_attribute.update(dictionary)
+        else:
+            self._process_dictionary(dictionary)
+
+    def _process_dictionary(self, dictionary):
+        """Process the provided dictionary to set the attributes
+        """
+        for key, value in dictionary.items():
+            if key == '_double_lines':
+                value = self.double_lines
+            self.__setattr__(key, value)
+
+    def process_lazy_attributes(self):
+        """
+        Run the DictionaryTreeBrowser machinery for the lazy attributes.
+
+        Returns
+        -------
+        None.
+
+        """
+        if len(self._lazy_attribute) > 0:
+            self._process_dictionary(self._lazy_attribute)
+        self._lazy_attribute = {}
 
     def add_dictionary(self, dictionary, double_lines=False):
         """Add new items from dictionary.
 
         """
-        for key, value in dictionary.items():
-            if key == '_double_lines':
-                value = double_lines
-            self.__setattr__(key, value)
+        if len(self._lazy_attribute) > 0:
+            # To simplify merging lazy and non lazy attribute, we get self
+            # as a dictionary and update the dictionary with the attributes
+            d = self.as_dictionary()
+            nested_dictionary_merge(d, dictionary)
+            self.__init__(d, lazy=True)
+        else:
+            self._process_dictionary(dictionary)
+
+        self._double_lines = double_lines
 
     def export(self, filename, encoding='utf8'):
         """Export the dictionary to a text file
@@ -331,7 +370,8 @@ class DictionaryTreeBrowser:
                                     else " <tuple>")
                             value = DictionaryTreeBrowser(
                                 {'[%d]' % i: v for i, v in enumerate(value)},
-                                double_lines=True)
+                                double_lines=True,
+                                lazy=False)
                         else:
                             string += "%s%s%s = %s\n" % (
                                 padding, symbol, key, strvalue)
@@ -379,7 +419,8 @@ class DictionaryTreeBrowser:
                                     else " <tuple>")
                             value = DictionaryTreeBrowser(
                                 {'[%d]' % i: v for i, v in enumerate(value)},
-                                double_lines=True)
+                                double_lines=True,
+                                lazy=False)
                         else:
                             string += add_key_value(key, strvalue)
                             continue # skips the next if-else
@@ -403,9 +444,11 @@ class DictionaryTreeBrowser:
         return string
 
     def __repr__(self):
+        self.process_lazy_attributes()
         return self._get_print_items()
 
     def _repr_html_(self):
+        self.process_lazy_attributes()
         return self._get_html_print_items()
 
     def __getitem__(self, key):
@@ -414,24 +457,42 @@ class DictionaryTreeBrowser:
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
 
+    def __getattr__(self, name):
+        if name.startswith("__"):
+            raise AttributeError(name)
+        # Attribute name are been slugified, so we need to do the same for
+        # the dictionary keys. Also check with `_sig_` prefix for signal attributes.
+        keys = [slugify(k) for k in self._lazy_attribute.keys()]
+        if name in keys or f"_sig_{name}" in keys:
+            # It is a lazy attribute, we need to process the lazy attribute
+            self.process_lazy_attributes()
+            return getattr(self, name)
+        else:
+            raise AttributeError(name)
+
     def __getattribute__(self, name):
         if isinstance(name, bytes):
             name = name.decode()
         name = slugify(name, valid_variable_name=True)
         item = super().__getattribute__(name)
+
         if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
             return item['_dtb_value_']
         else:
             return item
 
     def __setattr__(self, key, value):
+        if key in ['_double_lines', '_lazy_attribute']:
+            super().__setattr__(key, value)
+            return
+
         if key.startswith('_sig_'):
             key = key[5:]
             from hyperspy.signal import BaseSignal
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            if self.has_item(slugified_key):
+            if slugified_key in self.__dict__.keys():
                 self.get_item(slugified_key).add_dictionary(
                     value,
                     double_lines=self._double_lines)
@@ -439,7 +500,8 @@ class DictionaryTreeBrowser:
             else:
                 value = DictionaryTreeBrowser(
                     value,
-                    double_lines=self._double_lines)
+                    double_lines=self._double_lines,
+                    lazy=False)
         super().__setattr__(slugified_key, {'key': key, '_dtb_value_': value})
 
     def __len__(self):
@@ -457,13 +519,16 @@ class DictionaryTreeBrowser:
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal import BaseSignal
         par_dict = {}
+
+        if len(self._lazy_attribute) > 0:
+            par_dict.update(self._lazy_attribute)
+        from hyperspy.signal import BaseSignal
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
-                key = item_['key']
-                if key in ["_db_index", "_double_lines"]:
+                if key_ in ["_db_index", "_double_lines", "_lazy_attribute"]:
                     continue
+                key = item_['key']
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
                 elif isinstance(item_['_dtb_value_'], BaseSignal):
@@ -473,7 +538,7 @@ class DictionaryTreeBrowser:
                     item = item_['_dtb_value_']._to_dictionary()
                 else:
                     item = item_['_dtb_value_']
-                par_dict.__setitem__(key, item)
+                par_dict.update({key:item})
         return par_dict
 
     def has_item(self, item_path):
@@ -1223,3 +1288,14 @@ def is_hyperspy_signal(input_object):
     """
     from hyperspy.signals import BaseSignal
     return isinstance(input_object,BaseSignal)
+
+
+def nested_dictionary_merge(dict1, dict2):
+    """ Merge dict2 into dict1 recursively
+    """
+    for key, value in dict2.items():
+        if (key in dict1 and isinstance(dict1[key], dict)
+            and isinstance(dict2[key], Mapping)):
+            nested_dictionary_merge(dict1[key], dict2[key])
+        else:
+            dict1[key] = dict2[key]
