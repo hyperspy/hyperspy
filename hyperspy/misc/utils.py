@@ -507,8 +507,11 @@ class DictionaryTreeBrowser:
         super().__setattr__(slugified_key, {'key': key, '_dtb_value_': value})
 
     def __len__(self):
-        return len(
-            [key for key in self.__dict__.keys() if not key.startswith("_")])
+        if len(self._lazy_attribute) > 0:
+            d = self._lazy_attribute
+        else:
+            d = self.__dict__
+        return len([key for key in d.keys() if not key.startswith("_")])
 
     def keys(self):
         """Returns a list of non-private keys.
@@ -716,6 +719,7 @@ class DictionaryTreeBrowser:
             raise StopIteration
         else:
             self._db_index += 1
+        self.process_lazy_attributes()
         key = list(self.keys())[self._db_index]
         return key, getattr(self, key)
 

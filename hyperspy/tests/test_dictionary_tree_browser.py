@@ -218,6 +218,13 @@ class TestDictionaryBrowser:
         tree['mybrokenhtmltag2>'] = ""
         tree._get_html_print_items()
 
+    def test_length(self, tree):
+        length = len(tree._lazy_attribute)
+        assert len(tree) == 2
+        assert len(tree._lazy_attribute) == length
+
+    def test_iteration(self, tree):
+        assert [key for key, value in tree] == ['Node1', 'Node2']
 
 def test_check_long_string():
     max_len = 20
