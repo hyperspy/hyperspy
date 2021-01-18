@@ -177,6 +177,8 @@ class TestDictionaryBrowser:
         assert not tree.has_item('..Node1')
 
     def test_get_item(self, tree):
+        assert tree['Node1']['leaf11'] == 11
+
         # Check that it gets all leaf nodes:
         assert tree.get_item('Node1.leaf11') == 11
         assert tree.get_item('Node1.Node11.leaf111') == 111

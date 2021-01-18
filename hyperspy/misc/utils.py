@@ -264,7 +264,7 @@ class DictionaryTreeBrowser:
 
     """
 
-    def __init__(self, dictionary=None, double_lines=False, lazy=False):
+    def __init__(self, dictionary=None, double_lines=False, lazy=True):
         """When creating or adding dictionary lazily, the dictionary is added
         to the `_lazy_attribute` attribute.
         The DictionaryTreeBrowser process the lazy attribute when
@@ -300,6 +300,7 @@ class DictionaryTreeBrowser:
 
         """
         if len(self._lazy_attribute) > 0:
+            _logger.debug("Processing lazy attributes DictionaryBrowserTree")
             self._process_dictionary(self._lazy_attribute)
         self._lazy_attribute = {}
 
@@ -452,6 +453,7 @@ class DictionaryTreeBrowser:
         return self._get_html_print_items()
 
     def __getitem__(self, key):
+        self.process_lazy_attributes()
         return self.__getattribute__(key)
 
     def __setitem__(self, key, value):
