@@ -210,6 +210,27 @@ To update hyperspy to the latest release using pip:
 
        $ pip install hyperspy --upgrade
 
+Install specific version
+------------------------
+
+Using conda
+^^^^^^^^^^^
+
+To install a specific version of hyperspy (for example ``1.6.1``) using conda:
+
+   .. code-block:: bash
+
+       $ conda install hyperspy=1.6.1 -c conda-forge
+
+Using pip
+^^^^^^^^^
+
+To install a specific version of hyperspy (for example ``1.6.1``) using pip:
+
+   .. code-block:: bash
+
+       $ pip install hyperspy==1.6.1
+
 
 .. _install-dev:
 
