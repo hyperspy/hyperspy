@@ -73,7 +73,7 @@ class TestDictionaryBrowser:
         tree.add_dictionary({'a key with a space': 'a value'})
         assert tree.a_key_with_a_space == 'a value'
         # All lazy attribute should have been processed
-        assert len(tree._lazy_attribute) == 0
+        assert len(tree._lazy_attributes) == 0
 
     def test_add_signal_in_dictionary(self, tree):
         s = BaseSignal([1., 2, 3])
@@ -219,9 +219,9 @@ class TestDictionaryBrowser:
         tree._get_html_print_items()
 
     def test_length(self, tree):
-        length = len(tree._lazy_attribute)
+        length = len(tree._lazy_attributes)
         assert len(tree) == 2
-        assert len(tree._lazy_attribute) == length
+        assert len(tree._lazy_attributes) == length
 
     def test_iteration(self, tree):
         assert [key for key, value in tree] == ['Node1', 'Node2']

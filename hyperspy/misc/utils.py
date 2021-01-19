@@ -265,59 +265,53 @@ class DictionaryTreeBrowser:
     """
 
     def __init__(self, dictionary=None, double_lines=False, lazy=True):
-        """When creating or adding dictionary lazily, the dictionary is added
-        to the `_lazy_attribute` attribute.
-        The DictionaryTreeBrowser process the lazy attribute when
-        `process_lazy_attributes` is called.
+        """When creating a DictionaryTreeBrowser lazily, the dictionary is
+        added to the `_lazy_attributes` attribute. The first time a lazy
+        attribute is called or the DictionaryTreeBrowser is printed, the
+        DictionaryTreeBrowser process the lazy attributes with the
+        `process_lazy_attributes` method.
+        DictionaryTreeBrowser is lazy by default, using non-lazy instances
+        can be useful for debugging purposes.
 
         """
-        self._lazy_attribute = {}
+        self._lazy_attributes = {}
         self._double_lines = double_lines
 
         if dictionary is None:
             dictionary = {}
 
         if lazy:
-            self._lazy_attribute.update(dictionary)
+            self._lazy_attributes.update(dictionary)
         else:
-            self._process_dictionary(dictionary)
+            self._process_dictionary(dictionary, double_lines)
 
-    def _process_dictionary(self, dictionary):
+    def _process_dictionary(self, dictionary, double_lines):
         """Process the provided dictionary to set the attributes
         """
         for key, value in dictionary.items():
             if key == '_double_lines':
-                value = self.double_lines
+                value = double_lines
             self.__setattr__(key, value)
 
     def process_lazy_attributes(self):
+        """Run the DictionaryTreeBrowser machinery for the lazy attributes.
         """
-        Run the DictionaryTreeBrowser machinery for the lazy attributes.
-
-        Returns
-        -------
-        None.
-
-        """
-        if len(self._lazy_attribute) > 0:
+        if len(self._lazy_attributes) > 0:
             _logger.debug("Processing lazy attributes DictionaryBrowserTree")
-            self._process_dictionary(self._lazy_attribute)
-        self._lazy_attribute = {}
+            self._process_dictionary(self._lazy_attributes, self._double_lines)
+        self._lazy_attributes = {}
 
     def add_dictionary(self, dictionary, double_lines=False):
         """Add new items from dictionary.
-
         """
-        if len(self._lazy_attribute) > 0:
+        if len(self._lazy_attributes) > 0:
             # To simplify merging lazy and non lazy attribute, we get self
             # as a dictionary and update the dictionary with the attributes
             d = self.as_dictionary()
             nested_dictionary_merge(d, dictionary)
-            self.__init__(d, lazy=True)
+            self.__init__(d, double_lines=double_lines, lazy=True)
         else:
-            self._process_dictionary(dictionary)
-
-        self._double_lines = double_lines
+            self._process_dictionary(dictionary, double_lines)
 
     def export(self, filename, encoding='utf8'):
         """Export the dictionary to a text file
@@ -460,11 +454,18 @@ class DictionaryTreeBrowser:
         self.__setattr__(key, value)
 
     def __getattr__(self, name):
+        """__getattr__ is called when the default attribute access (
+        __getattribute__) fails with an AttributeError.
+
+        """
+        # Skip the attribute we are not interested in. This is also necessary
+        # to recursive loops.
         if name.startswith("__"):
             raise AttributeError(name)
+
         # Attribute name are been slugified, so we need to do the same for
         # the dictionary keys. Also check with `_sig_` prefix for signal attributes.
-        keys = [slugify(k) for k in self._lazy_attribute.keys()]
+        keys = [slugify(k) for k in self._lazy_attributes.keys()]
         if name in keys or f"_sig_{name}" in keys:
             # It is a lazy attribute, we need to process the lazy attribute
             self.process_lazy_attributes()
@@ -484,7 +485,7 @@ class DictionaryTreeBrowser:
             return item
 
     def __setattr__(self, key, value):
-        if key in ['_double_lines', '_lazy_attribute']:
+        if key in ['_double_lines', '_lazy_attributes']:
             super().__setattr__(key, value)
             return
 
@@ -507,8 +508,8 @@ class DictionaryTreeBrowser:
         super().__setattr__(slugified_key, {'key': key, '_dtb_value_': value})
 
     def __len__(self):
-        if len(self._lazy_attribute) > 0:
-            d = self._lazy_attribute
+        if len(self._lazy_attributes) > 0:
+            d = self._lazy_attributes
         else:
             d = self.__dict__
         return len([key for key in d.keys() if not key.startswith("_")])
@@ -526,12 +527,12 @@ class DictionaryTreeBrowser:
         """
         par_dict = {}
 
-        if len(self._lazy_attribute) > 0:
-            par_dict.update(self._lazy_attribute)
+        if len(self._lazy_attributes) > 0:
+            par_dict.update(self._lazy_attributes)
         from hyperspy.signal import BaseSignal
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
-                if key_ in ["_db_index", "_double_lines", "_lazy_attribute"]:
+                if key_ in ["_db_index", "_double_lines", "_lazy_attributes"]:
                     continue
                 key = item_['key']
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
@@ -693,7 +694,7 @@ class DictionaryTreeBrowser:
         dtb = self
         for key in keys:
             if dtb.has_item(key) is False:
-                dtb[key] = DictionaryTreeBrowser()
+                dtb[key] = DictionaryTreeBrowser(lazy=False)
             dtb = dtb[key]
 
     def __next__(self):
