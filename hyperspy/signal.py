@@ -4457,10 +4457,6 @@ class BaseSignal(FancySlicing,
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
-        if output_signal_size in kwargs and not self._lazy:
-            kwargs.pop("output_signal_size")
-        if output_dtype in kwargs and not self._lazy:
-            kwargs.pop("output_dtype")
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in list(kwargs.items()):
@@ -4511,11 +4507,19 @@ class BaseSignal(FancySlicing,
             res = self._map_all(function, inplace=inplace, **kwargs)
         else:
             # Iteration over coordinates.
-            res = self._map_iterate(function, iterating_kwargs=ndkwargs,
-                                    show_progressbar=show_progressbar,
-                                    parallel=parallel, max_workers=max_workers,
-                                    ragged=ragged, inplace=inplace,
-                                    **kwargs)
+            if self._lazy:
+                res = self._map_iterate(function, iterating_kwargs=ndkwargs,
+                                        show_progressbar=show_progressbar,
+                                        parallel=parallel, max_workers=max_workers,
+                                        ragged=ragged, inplace=inplace, output_dtype=output_dtype,
+                                        output_signal_size=output_signal_size,
+                                        **kwargs)
+            else:
+                res = self._map_iterate(function, iterating_kwargs=ndkwargs,
+                                        show_progressbar=show_progressbar,
+                                        parallel=parallel, max_workers=max_workers,
+                                        ragged=ragged, inplace=inplace,
+                                        **kwargs)
         if inplace:
             self.events.data_changed.trigger(obj=self)
         return res
