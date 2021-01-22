@@ -1411,7 +1411,7 @@ def animate_legend(fig=None, ax=None):
     lined = dict()
     leg = ax.get_legend()
     for legline, origline in zip(leg.get_lines(), lines):
-        legline.set_pickradius(5)  # 5 pts tolerance
+        legline.set_pickradius(preferences.Plot.pick_tolerance)
         legline.set_picker(True)
         lined[legline] = origline
 

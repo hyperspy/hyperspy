@@ -102,10 +102,7 @@ class BlittedFigure(object):
         for marker in self.ax_markers:
             marker.close(render_figure=False)
         if render_figure:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self.render_figure()
 
     def _on_close(self):
         _logger.debug('Closing `BlittedFigure`.')
@@ -138,3 +135,9 @@ class BlittedFigure(object):
     def title(self, value):
         # Wrap the title so that each line is not longer than 60 characters.
         self._title = textwrap.fill(value, 60)
+
+    def render_figure(self):
+        if self.figure.canvas.supports_blit:
+            self._update_animated()
+        else:
+            self.figure.canvas.draw_idle()
