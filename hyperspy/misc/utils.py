@@ -1129,8 +1129,6 @@ def process_function_blockwise(data,
 
     """
     # Both of these values need to be passed in
-    for a in args:
-        print("the args:", a)
     dtype = block_info[None]["dtype"]
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
@@ -1146,12 +1144,7 @@ def process_function_blockwise(data,
         # There are BaseSignals which iterate alongside the data
         for index in np.ndindex(chunk_nav_shape):
             islice = np.s_[index]
-            print(args[0])
-            print("Stuff", args[0][islice])
-            iter_args = [a[islice].squeeze() for a in args]
-            iter_dict = {k: v for k, v in zip(iterating_kwargs, iter_args)}
-            print(dtype)
-            print(function)
+            iter_dict = {a[0]: a[1][islice].squeeze() for a in args}
             output_array[islice] = function(data[islice],
                                             **iter_dict,
                                             **kwargs)
@@ -1161,6 +1154,42 @@ def process_function_blockwise(data,
         pass
     return output_array
 
+
+def rechunk_signal(signal,
+                   key,
+                   nav_chunks,
+                   test=False,
+                   ):
+    test_kwarg = {}
+    if test:
+        test_ind = (0,) * len(signal.axes_manager.navigation_axes)
+        if signal.axes_manager.signal_shape == ():
+            test_kwarg[key] = signal.inav[test_ind].data[0]
+        else:
+            test_kwarg[key] = signal.inav[test_ind].data
+    signal = signal.as_lazy()
+    new_chunks = nav_chunks + (*signal.axes_manager.signal_shape,)
+    signal.data = signal.data.rechunk(new_chunks)
+    rechunked_signal = (key, signal.data)
+    return rechunked_signal, test_kwarg
+
+
+def guess_output_signal_size(test_signal,
+                             function,
+                             ragged,
+                             **kwargs):
+    """This function is for guessing the output signal shape and size.
+    It will attempt to apply the function to some test signal and then output
+    the resulting signal shape and datatype.
+    """
+    if ragged:
+        output_dtype = np.object
+        output_signal_size = ()
+    else:
+        output = function(test_signal, **kwargs)
+        output_dtype = output.dtype
+        output_signal_size = np.shape(output)
+    return output_signal_size, output_dtype
 
 def map_result_construction(signal,
                             inplace,

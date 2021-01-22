@@ -4457,6 +4457,9 @@ class BaseSignal(FancySlicing,
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
+        if self.axes_manager.navigation_shape == () and self._lazy:
+            print("Converting signal to a non-lazy signal because there are no nav dimensions")
+            self.compute()
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in list(kwargs.items()):

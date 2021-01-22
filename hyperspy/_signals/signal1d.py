@@ -239,7 +239,7 @@ def _estimate_shift1D(data, **kwargs):
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
-    return np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1
+    return (np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1).astype(float)
 
 
 def _shift1D(data, **kwargs):
@@ -253,14 +253,12 @@ def _shift1D(data, **kwargs):
     if np.isnan(shift) or shift == 0:
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
-    print("What is size",size)
     si = sp.interpolate.interp1d(original_axis,
                                  data,
                                  bounds_error=False,
                                  fill_value=fill_value,
                                  kind=kind)
     offset = float(offset - shift)
-    print("outputsize:",np.shape(si))
     axis = np.linspace(offset, offset + scale * (size - 1), size)
     return si(axis)
 
@@ -478,12 +476,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if self.axes_manager.navigation_shape != shift_array.axes_manager.navigation_shape:
             raise ValueError("The navigation shapes must be the same"+str(self.axes_manager.navigation_shape)+
                              " "+str(shift_array.axes_manager.navigation_shape))
-
-        if self._lazy:
-            output_dtype=float
-        else:
-            output_dtype=None
-        print("odtype:", output_dtype)
         self.map(_shift1D,
                  shift=shift_array,
                  original_axis=axis.axis,
@@ -495,8 +487,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                  show_progressbar=show_progressbar,
                  parallel=parallel,
                  max_workers=max_workers,
-                 ragged=False,
-                 output_dtype=output_dtype)
+                 ragged=False)
 
         if crop and not expand:
             _logger.debug("Cropping %s from index %i to %i"
@@ -1521,7 +1512,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         axis = self.axes_manager.signal_axes[0]
         # x = axis.axis
-        print(axis.axis)
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
 

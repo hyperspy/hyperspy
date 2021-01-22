@@ -36,7 +36,8 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import _requires_linear_rebin
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import multiply, dummy_context_manager, process_function_blockwise
+from hyperspy.misc.utils import multiply, dummy_context_manager,\
+    process_function_blockwise, guess_output_signal_size, rechunk_signal
 
 _logger = logging.getLogger(__name__)
 
@@ -224,7 +225,7 @@ class LazySignal(BaseSignal):
 
     def _get_navigation_chunk_size(self):
         nav_axes = self.axes_manager.navigation_indices_in_array
-        nav_chunks = tuple([self.data.chunks[i] for i in nav_axes])
+        nav_chunks = tuple([self.data.chunks[i] for i in sorted(nav_axes)])
         return nav_chunks
 
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
@@ -533,15 +534,16 @@ class LazySignal(BaseSignal):
         or not.
         """
         # unpacking keyword arguments
-        print("here")
-        rechunked_iter_signal = ()
+        if ragged and inplace:
+            raise ValueError("Ragged and inplace are not compatible with a lazy signal")
+        autodetermine = (output_signal_size is None or output_dtype is None)
+
+        rechunked_signals = ()
         iter_keys = []
-        testing_kwargs = kwargs.copy()
+        testing_kwargs = {}
         nav_indexes = self.axes_manager.navigation_indices_in_array
         if len(iterating_kwargs) > 0:
-            iter_signals = [i[1] for i in iterating_kwargs]
-            i_keys = tuple([i[0] for i in iterating_kwargs])
-            for key, signal in zip(i_keys, iter_signals):
+            for key, signal in iterating_kwargs:
                 if (signal.axes_manager.navigation_shape != self.axes_manager.navigation_shape and
                         signal.axes_manager.navigation_shape != ()):
                     if signal.axes_manager.signal_shape == ():
@@ -552,72 +554,45 @@ class LazySignal(BaseSignal):
                                         '> must be consistent with the size of the mapped signal <' +
                                         str(self.axes_manager.navigation_shape) + '>')
                 elif signal.axes_manager.navigation_shape == ():
-                    kwargs[key] = signal.data  # this really isn't an iterating signal.
+                    if signal.axes_manager.signal_shape == (1,):
+                        kwargs[key] = signal.data[0]  # this really isn't an iterating signal.
+                    else:
+                        kwargs[key] = signal.data
                 else:
-                    nav_chunks = self._get_navigation_chunk_size()
-                    signal = signal.as_lazy()
-                    new_chunks = tuple(reversed(list(nav_chunks))) + (*signal.axes_manager.signal_shape,)
-                    print(new_chunks)
-                    signal.data = signal.data.rechunk(new_chunks)
-                    rechunked_iter_signal += (signal.data,)
-                    kwargs.pop(key)  # removing the kwarg
-                    test_ind = (0,)*len(self.axes_manager.navigation_axes)
-                    testing_kwargs[key] = testing_kwargs[key].inav[test_ind].data
-                    if isinstance(testing_kwargs[key], np.ndarray) and testing_kwargs[key].shape ==(1,):
-                        testing_kwargs[key]=testing_kwargs[key][0]
-                    iter_keys.append(key)
-        # determining output size, chunking and datatype
-        if ragged:
-            # This allows for a different signal shape at every point.
-            if inplace:
-                raise ValueError("Ragged and inplace are not compatible with a lazy signal")
-            output_dtype = np.object
-            output_signal_size = ()
-            drop_axis = self.axes_manager.signal_indices_in_array
+                    rechunked_signal, test_kwarg = rechunk_signal(signal,
+                                                                  key,
+                                                                  nav_chunks=self._get_navigation_chunk_size(),
+                                                                  test=autodetermine)
+                    rechunked_signals += (rechunked_signal,)
+                    testing_kwargs.update(test_kwarg)
+                    kwargs.pop(key)
+        if autodetermine:
+            testing_kwargs = {**kwargs, **testing_kwargs}
+            test_data = np.array(self.inav[(0,) * len(self.axes_manager.navigation_shape)].data.compute())
+            output_signal_size, output_dtype = guess_output_signal_size(test_signal=test_data,
+                                                                        function=function,
+                                                                        ragged=ragged,
+                                                                        **testing_kwargs)
+        # Dropping/Adding Axes
+        if output_signal_size == self.axes_manager.signal_shape:
+            drop_axis = None
             new_axis = None
-            axes_changed = True
-            chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)])
+            axes_changed = False
         else:
-            chunks = None
-            if output_signal_size is None:
-                test_data = self.inav[(0,) * len(self.axes_manager.navigation_shape)].data # first signal
-                try:
-                    output = np.array(function(test_data, **testing_kwargs))
-                    output_signal_size = np.shape(output)
-                    odtype = output.dtype
-                except:
-                    print("Automatic output sizing and data type didn't work")
-                    output_signal_size = tuple(reversed(self.axes_manager.signal_shape)) #numpy-like
-                    odtype = self.data.dtype
-            if output_dtype is None:
-                output_dtype = odtype
-
-            # determining if axes need to be dropped
-            if output_signal_size == self.axes_manager.signal_shape:
-                drop_axis = None
-                new_axis = None
-                axes_changed = False
+            axes_changed = True
+            if len(output_signal_size) != len(self.axes_manager.signal_shape):
+                drop_axis = self.axes_manager.signal_indices_in_array
+                new_axis = tuple(range(len(output_signal_size)))
             else:
-                axes_changed = True
-                if len(output_signal_size) != len(self.axes_manager.signal_shape):
-                    # drop everything
-                    drop_axis = self.axes_manager.signal_indices_in_array
-                    # add to front
-                    new_axis = tuple(range(len(output_signal_size)))
-                    #sorted to account for numpy <-> hyperspy axes convention
-                    chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
-
-                else:
-                    # drop index if not equal to output size
-                    drop_axis = [it for (o, i, it) in zip(output_signal_size,
-                                                          self.axes_manager.signal_shape,
-                                                          self.axes_manager.signal_indices_in_array)
-                                 if o != i]
-                    new_axis = drop_axis
-                    chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
+                drop_axis = [it for (o, i, it) in zip(output_signal_size,
+                                                      self.axes_manager.signal_shape,
+                                                      self.axes_manager.signal_indices_in_array)
+                             if o != i]
+                new_axis = drop_axis
+        chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
         mapped = da.map_blocks(process_function_blockwise,
                                self.data,
-                               *rechunked_iter_signal,
+                               *rechunked_signals,
                                function=function,
                                nav_indexes=nav_indexes,
                                drop_axis=drop_axis,
