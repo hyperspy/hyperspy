@@ -70,6 +70,5 @@ def test_spikes_removal_tool_non_interactive():
     s.data[1, 2, 14] += 1
 
     sr = s.spikes_removal_tool(threshold=0.5, interactive=False)
-    np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=5)
     np.testing.assert_almost_equal(s.data[1, 0, 1], 1, decimal=5)
     assert isinstance(sr, SpikesRemoval)
