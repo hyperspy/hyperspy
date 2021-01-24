@@ -116,7 +116,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         if ri > 0:
             self.patch.append(
                 plt.Circle(
-                    xy, radius=ro,
+                    xy, radius=ri,
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,

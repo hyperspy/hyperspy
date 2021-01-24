@@ -120,6 +120,8 @@ class TestPlotROI():
         objs = _transpose_space(im=self.im, space=space)
         p = roi.CircleROI(cx=0.1, cy=0.1, r=0.1)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
+        p2 = roi.CircleROI(cx=0.3, cy=0.3, r=0.15, r_inner=0.05)
+        p2.add_widget(signal=objs["im"], axes=objs["axes"])
         return objs["figure"]
 
     @pytest.mark.parametrize("space", ("signal", "navigation"))
