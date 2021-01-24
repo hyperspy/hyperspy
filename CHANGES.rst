@@ -9,7 +9,7 @@ RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
 * Widgets plotting improvement and add `pick_tolerance` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
-
+* Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 
 Changelog
 *********
