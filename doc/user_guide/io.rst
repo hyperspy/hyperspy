@@ -492,7 +492,7 @@ EMSA/MSA
 --------
 
 This `open standard format
-<http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`__
+<https://www.microscopy.org/resources/scientific_data/index.cfm>`__
 is widely used to exchange single spectrum data, but it does not support
 multidimensional data. It can be used to exchange single spectra with Gatan's
 Digital Micrograph.
@@ -529,12 +529,12 @@ using the `encoding` argument, e.g.:
 Ripple
 ------
 
-This `open standard format
-<http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`__ is
-widely used to exchange multidimensional data. However, it only supports data of
-up to three dimensions. It can be used to exchange data with Bruker and `Lispix
-<http://www.nist.gov/lispix/>`_. Used in combination with the :ref:`import-rpl`
-it is very useful for exporting data to Gatan's Digital Micrograph.
+This *open standard format* developed at NIST as native format for
+`Lispix <http://www.nist.gov/lispix/>`_ is widely used to exchange
+multidimensional data. However, it only supports data of up to three
+dimensions. It can also be used to exchange data with Bruker and used in
+combination with the :ref:`import-rpl` it is very useful for exporting data
+to Gatan's Digital Micrograph.
 
 The default encoding is latin-1. It is possible to set a different encoding
 using the encoding argument, e.g.:
@@ -634,7 +634,8 @@ Gatan Digital Micrograph
 
 HyperSpy can read both dm3 and dm4 files but the reading features are not
 complete (and probably they will be unless Gatan releases the specifications of
-the format). That said, we understand that this is an important feature and if
+the format and creates a more consistent metadata-structure). That said, we
+understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make
 us aware of the problem.
@@ -660,11 +661,11 @@ Extra loading arguments
 
 .. _edax-format:
 
-EDAX TEAM SPD and SPC
----------------------
+EDAX TEAM/Genesis SPD and SPC
+-----------------------------
 
 HyperSpy can read both ``.spd`` (spectrum image) and ``.spc`` (single spectra)
-files from the EDAX TEAM software.
+files from the EDAX TEAM software and its predecessor EDAX Genesis.
 If reading an ``.spd`` file, the calibration of the
 spectrum image is loaded from the corresponding ``.ipr`` and ``.spc`` files
 stored in the same directory, or from specific files indicated by the user.
