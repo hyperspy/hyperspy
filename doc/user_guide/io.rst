@@ -554,8 +554,9 @@ the "r+" mode are incompatible).
 Images
 ------
 
-HyperSpy is able to read and write data too all the image formats supported by
-`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
+HyperSpy is able to read and write data too `all the image formats 
+<https://imageio.readthedocs.io/en/stable/formats.html>`_ supported by
+`imageio`, which used the Python Image Library  (PIL/pillow).
 This includes png, pdf, gif etc.
 
 It is important to note that these image formats only support 8-bit files, and

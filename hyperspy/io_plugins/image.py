@@ -38,15 +38,16 @@ writes = [(2, 0), ]
 
 # TODO Extend it to support SI
 def file_writer(filename, signal, file_format='png', **kwds):
-    """Writes data to any format supported by PIL
+    """Writes data to any format supported by imageio (PIL/pillow).
 
-        Parameters
-        ----------
-        filename: str
-        signal: a Signal instance
-        file_format : str
-            The fileformat defined by its extension that is any one supported by
-            PIL.
+    Parameters
+    ----------
+    filename: str
+    signal: a Signal instance
+    file_format : str
+        The fileformat defined by its extension that is any one supported by
+        imageio (PIL/pillow), for a list see 
+        https://imageio.readthedocs.io/en/stable/formats.html.
     """
     data = signal.data
     if rgb_tools.is_rgbx(data):
@@ -55,7 +56,7 @@ def file_writer(filename, signal, file_format='png', **kwds):
 
 
 def file_reader(filename, **kwds):
-    """Read data from any format supported by PIL.
+    """Read data from any format supported by imageio (PIL/pillow).
 
     Parameters
     ----------
