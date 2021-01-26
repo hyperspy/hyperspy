@@ -37,20 +37,24 @@ writes = [(2, 0), ]
 
 
 # TODO Extend it to support SI
-def file_writer(filename, signal, file_format='png', **kwds):
+def file_writer(filename, signal, **kwds):
     """Writes data to any format supported by imageio (PIL/pillow).
     For a list of formats see https://imageio.readthedocs.io/en/stable/formats.html
 
     Parameters
     ----------
-    filename: str
+    filename: {str, pathlib.Path, bytes, file}
+        The resource to write the image to, e.g. a filename, pathlib.Path or
+        file object, see the docs for more info. The file format is defined by 
+        the file extension that is any one supported by imageio.
     signal: a Signal instance
-    file_format : str
-        The fileformat defined by its extension that is any one supported by
-        imageio (PIL/pillow).
+    format: str, optional
+        The format to use to read the file. By default imageio selects the
+        appropriate for you based on the filename and its contents.
     **kwds: keyword arguments
         Allows to pass keyword arguments supported by the individual file
         writers as documented at https://imageio.readthedocs.io/en/stable/formats.html
+        
     """
     data = signal.data
     if rgb_tools.is_rgbx(data):
@@ -64,7 +68,13 @@ def file_reader(filename, **kwds):
 
     Parameters
     ----------
-    filename: str
+    filename: {str, pathlib.Path, bytes, file}
+        The resource to load the image from, e.g. a filename, pathlib.Path,
+        http address or file object, see the docs for more info. The file format
+        is defined by the file extension that is any one supported by imageio.
+    format: str, optional
+        The format to use to read the file. By default imageio selects the
+        appropriate for you based on the filename and its contents.
     **kwds: keyword arguments
         Allows to pass keyword arguments supported by the individual file
         readers as documented at https://imageio.readthedocs.io/en/stable/formats.html
