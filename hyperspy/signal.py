@@ -2631,19 +2631,25 @@ class BaseSignal(FancySlicing,
             # check first if we have a signal to avoid comparion of signal with
             # string
             if isinstance(navigator, BaseSignal):
-                # Dynamic navigator
-                if (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape +
-                        navigator.axes_manager.navigation_shape):
-                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
-
-                elif (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape or
-                        axes_manager.navigation_shape[:2] ==
-                        navigator.axes_manager.signal_shape or
-                        (axes_manager.navigation_shape[0],) ==
-                        navigator.axes_manager.signal_shape):
+                def is_shape_compatible(navigation_shape, shape):
+                    return (navigation_shape == shape or
+                            navigation_shape[:2] == shape or
+                            (navigation_shape[0],) == shape
+                            )
+                # Static navigator
+                if is_shape_compatible(axes_manager.navigation_shape,
+                                       navigator.axes_manager.signal_shape):
                     self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Static transposed navigator
+                elif is_shape_compatible(axes_manager.navigation_shape,
+                                         navigator.axes_manager.navigation_shape):
+                    navigator = navigator.T
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Dynamic navigator
+                elif (axes_manager.navigation_shape ==
+                      navigator.axes_manager.signal_shape +
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
                 else:
                     raise ValueError(
                         "The navigator dimensions are not compatible with "
