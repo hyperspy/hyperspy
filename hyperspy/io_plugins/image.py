@@ -39,6 +39,7 @@ writes = [(2, 0), ]
 # TODO Extend it to support SI
 def file_writer(filename, signal, file_format='png', **kwds):
     """Writes data to any format supported by imageio (PIL/pillow).
+    For a list of formats see https://imageio.readthedocs.io/en/stable/formats.html
 
     Parameters
     ----------
@@ -46,24 +47,30 @@ def file_writer(filename, signal, file_format='png', **kwds):
     signal: a Signal instance
     file_format : str
         The fileformat defined by its extension that is any one supported by
-        imageio (PIL/pillow), for a list see 
-        https://imageio.readthedocs.io/en/stable/formats.html.
+        imageio (PIL/pillow).
+    **kwds: keyword arguments
+        Allows to pass keyword arguments supported by the individual file
+        writers as documented at https://imageio.readthedocs.io/en/stable/formats.html
     """
     data = signal.data
     if rgb_tools.is_rgbx(data):
         data = rgb_tools.rgbx2regular_array(data)
-    imwrite(filename, data)
+    imwrite(filename, data, **kwds)
 
 
 def file_reader(filename, **kwds):
     """Read data from any format supported by imageio (PIL/pillow).
+    For a list of formats see https://imageio.readthedocs.io/en/stable/formats.html
 
     Parameters
     ----------
     filename: str
+    **kwds: keyword arguments
+        Allows to pass keyword arguments supported by the individual file
+        readers as documented at https://imageio.readthedocs.io/en/stable/formats.html
 
     """
-    dc = _read_data(filename)
+    dc = _read_data(filename, **kwds)
     lazy = kwds.pop('lazy', False)
     if lazy:
         # load the image fully to check the dtype and shape, should be cheap.
@@ -82,7 +89,7 @@ def file_reader(filename, **kwds):
              }]
 
 
-def _read_data(filename):
+def _read_data(filename, **kwds):
     dc = imread(filename)
     if len(dc.shape) > 2:
         # It may be a grayscale image that was saved in the RGB or RGBA
