@@ -688,9 +688,26 @@ def test_save_ragged_array(tmp_path):
         np.testing.assert_allclose(s.data[i], s1.data[i])
     assert s.__class__ == s1.__class__
 
+
 def test_load_missing_extension(caplog):
     path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
     s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
        _ = s.models.restore("a")
+
+
+def test_chunking_saving_lazy():
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.hspy')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.hspy')
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (7, 25, 25)

@@ -549,11 +549,12 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
 
 def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
     if chunks is None:
-        if signal_axes is None:
-            # Use automatic h5py chunking
-            chunks = True
+        if isinstance(data, da.Array):
+            # For lazy dataset, by default, we use the current dask chunking
+            chunks = tuple([c[0] for c in data.chunks])
         else:
-            # Optimise the chunking to contain at least one signal per chunk
+            # If signal_axes=None, use automatic h5py chunking, otherwise
+            # optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
     if np.issubdtype(data.dtype, np.dtype('U')):
