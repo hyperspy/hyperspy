@@ -33,7 +33,8 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import _requires_linear_rebin
+from hyperspy.misc.array_tools import (_requires_linear_rebin,
+                                       get_signal_chunk_slice)
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import multiply, dummy_context_manager
@@ -86,6 +87,7 @@ class LazySignal(BaseSignal):
     (assuming storing the full result of computation in memory is not feasible)
     """
     _lazy = True
+    _navigator = None
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
@@ -542,7 +544,7 @@ class LazySignal(BaseSignal):
             if inplace:
                 raise ValueError("In place computation is not compatible with "
                                   "ragged array for lazy signal.")
-            # Shape of the signal dimension will change for the each nav. 
+            # Shape of the signal dimension will change for the each nav.
             # index, which means we can't predict the shape and the dtype needs
             # to be python object to support numpy ragged array
             sig_shape = ()
@@ -590,7 +592,7 @@ class LazySignal(BaseSignal):
                             pixels[s:e], axis=0) for s, e in zip(starts, ends)
                     ]
             res_data = pixels[0]
-    
+
         res = map_result_construction(
             self, inplace, res_data, ragged, sig_shape, lazy=not ragged)
 
@@ -798,8 +800,7 @@ class LazySignal(BaseSignal):
 
         blocksize *= num_chunks
 
-        # Initialize return_info and print_info
-        to_return = None
+        # Initialize print_info
         to_print = [
             "Decomposition info:",
             "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
@@ -1012,6 +1013,70 @@ class LazySignal(BaseSignal):
         # Print details about the decomposition we just performed
         if print_info:
             print("\n".join([str(pr) for pr in to_print]))
+
+    def plot(self, **kwargs):
+        nav_dim = self.axes_manager.navigation_dimension
+        if "navigator" not in kwargs and nav_dim > 0:
+            if self._navigator is None:
+                if nav_dim in [1, 2]:
+                    self.compute_navigator()
+                    navigator = self._navigator
+                else:
+                    navigator = "slider"
+                kwargs["navigator"] = navigator
+        super().plot(**kwargs)
+
+    def compute_navigator(self, chunks_number=None):
+        """
+        Compute the navigator by taking the sum over a single chunk located
+        in the centre of the signal space.
+
+        Parameters
+        ----------
+        chunks_number : (int, None), optional
+            The number of chunks in the signal space used for the calculation
+            of the navigator. If None, the existing chunking will be
+            considered when picking the chunk used for the calculation.
+
+        Returns
+        -------
+        None.
+
+        Note
+        ----
+        The number of chunks will affect where the sum is taken. If the sum
+        need to be taken in the centre of the signal space, the number of
+        chunks needs to be an odd number.
+
+        """
+        signal_shape = self.axes_manager.signal_shape
+        if chunks_number is None:
+            chunks = self.data.chunks
+        else:
+            # Determine the chunk size
+            signal_chunks = da.core.normalize_chunks(
+                int(signal_shape[0] / chunks_number),
+                shape=signal_shape
+                )
+            navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
+            chunks = self.data.rechunk([*navigation_chunks, *signal_chunks],
+                                       balance=True).chunks
+
+        # Get the slice of the corresponding chunk
+        signal_size = len(signal_shape)
+        signal_chunks = tuple(chunks[i-signal_size] for i in range(signal_size))
+        _logger.info(f"Signal chunks: {signal_chunks}")
+        index = [round(shape / 2) for shape in signal_shape]
+        isig_slice = get_signal_chunk_slice(index, chunks)
+
+        _logger.info(f'Computing sum over signal dimension: {isig_slice}')
+        axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
+        navigator = self.isig[isig_slice].sum(axes)
+        navigator.compute()
+        navigator.original_metadata.set_item('sum_from', isig_slice)
+
+        # transposing after computation should be more efficient
+        self._navigator = navigator.T
 
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
