@@ -2542,8 +2542,7 @@ class BaseSignal(FancySlicing,
         if self._plot is not None:
             self._plot.close()
         if 'power_spectrum' in kwargs:
-            from hyperspy._signals.complex_signal import ComplexSignal
-            if not isinstance(self, ComplexSignal):
+            if not np.issubdtype(self.data.dtype, np.complexfloating):
                 raise ValueError('The parameter `power_spectrum` required a '
                                  'signal with complex data type.')
                 del kwargs['power_spectrum']
@@ -2582,7 +2581,10 @@ class BaseSignal(FancySlicing,
             self._plot.signal_title = self.tmp_parameters.filename
 
         def get_static_explorer_wrapper(*args, **kwargs):
-            return navigator()
+            if np.issubdtype(navigator.data.dtype, np.complexfloating):
+                return np.abs(navigator())
+            else:
+                return navigator()
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
@@ -2673,10 +2675,11 @@ class BaseSignal(FancySlicing,
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
-        if self._plot.signal_plot:
-            self._plot.signal_plot.events.closed.connect(
-                lambda: self.events.data_changed.disconnect(self.update_plot),
-                [])
+
+        p = self._plot.signal_plot if self._plot.signal_plot else self._plot.navigator_plot
+        p.events.closed.connect(
+            lambda: self.events.data_changed.disconnect(self.update_plot),
+            [])
 
         if plot_markers:
             if self.metadata.has_item('Markers'):
