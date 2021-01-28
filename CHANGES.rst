@@ -9,6 +9,8 @@ RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
 * Widgets plotting improvement and add `pick_tolerance` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
+* Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Pass keyword argument to the image IO plugins (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
 
 
 Changelog
