@@ -116,6 +116,11 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
     Typically, using a 4K resolution with a small scaling factor (<150 %), setting
     the pick tolerance to 15 instead of 7.5 makes the widgets easier to manipulate.
 
+If instantiated without arguments, (i.e. ``rect = RectangularROI()`` the roi
+will automatically determine sensible values to center it when 
+interactively adding it to a signal. This provides a conventient starting point
+to further manipulate the ROI, either by hand or using the gui (i.e. ``rect.gui``).
+
 Notably, since ROIs are independent from the signals they sub-select, the widget
 can be plotted on a different signal altogether.
 

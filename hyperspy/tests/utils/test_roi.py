@@ -504,6 +504,18 @@ class TestROIs():
         repr(SpanROI(3., 5.))
         repr(CircleROI(5, 5, 3, 1))
 
+    def test_undefined_call(self):
+        rect = RectangularROI(None, None, None, None)
+        with pytest.raises(AttributeError, match='not yet been set'):
+            rect(self.s_s)
+
+    def test_undefined_call_circle(self):
+        circ1 = CircleROI(None, None, None, None)
+        with pytest.raises(AttributeError, match='not yet been set'):
+            circ1(self.s_s)
+        circ2 = CircleROI(5, 5, 1, None)
+        circ2(self.s_s) # r_inner as undefined should not raise error
+
     def test_central_half(self):
         assert get_central_half_limits_of_axis(self.s_s.axes_manager[0]) == (73.75, 221.25)
 
