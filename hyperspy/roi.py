@@ -832,7 +832,7 @@ class RectangularROI(BaseInteractiveROI):
         self.left, self.top, self.right, self.bottom = left, top, right, bottom
 
     def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self._get_attributes().values())
+        _tuple = (self.left, self.right, self.top, self.bottom)
         return _tuple.__getitem__(*args, **kwargs)
 
     def _set_default_attributes(self, signal):
