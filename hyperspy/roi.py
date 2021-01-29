@@ -1250,11 +1250,6 @@ class Line2DROI(BaseInteractiveROI):
         widget.position = (self.x1, self.y1), (self.x2, self.y2)
         widget.size = np.array([self.linewidth])
 
-    def _get_default_parameters(self, s):
-        """When the ROI is called interactively with Undefined parameters,
-        use these values instead.
-        """
-        return 
 
     def _get_widget_type(self, axes, signal):
         return widgets.Line2DWidget
