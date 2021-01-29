@@ -359,17 +359,19 @@ class BaseInteractiveROI(BaseROI):
         signal : Signal
             The source signal to slice
         navigation_signal : Signal, None or "same" (default)
+            The signal the ROI will be added to, for navigation purposes
+            only. Only the source signal will be sliced.
             If not None, it will automatically create a widget on
-            navigation_signal. Passing "same" is identical to passing the same
-            signal to 'signal' and 'navigation_signal', but is less ambigous,
-            and allows "same" to be the default value.
+            navigation_signal. Passing "same" is identical to passing the 
+            same signal to 'signal' and 'navigation_signal', but is less 
+            ambigous, and allows "same" to be the default value.
         out : Signal
-            If not None, it will use 'out' as the output instead of returning
-            a new Signal.
+            If not None, it will use 'out' as the output instead of 
+            returning a new Signal.
         color : Matplotlib color specifier (default: 'green')
-            The color for the widget. Any format that matplotlib uses should be
-            ok. This will not change the color fo any widget passed with the
-            'widget' argument.
+            The color for the widget. Any format that matplotlib uses should
+            be ok. This will not change the color fo any widget passed with 
+            the 'widget' argument.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
             interactively on any roi attribute change.
@@ -974,8 +976,8 @@ class RectangularROI(BaseInteractiveROI):
 @add_gui_method(toolkey="hyperspy.CircleROI")
 class CircleROI(BaseInteractiveROI):
     """Selects a circular or annular region in a 2D space. The coordinates of
-    the center of the circle are stored in the 'cx' and 'cy' attributes. The
-    radious in the `r` attribute. If an internal radious is defined using the
+    the center of the circle are stored in the 'cx' and 'cy' attributes and the
+    radius in the `r` attribute. If an internal radius is defined using the
     `r_inner` attribute, then an annular region is selected instead.
     `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
     cy, r, r_inner)` when `r_inner` is not `None`.
