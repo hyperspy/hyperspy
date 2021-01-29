@@ -1017,10 +1017,10 @@ class LazySignal(BaseSignal):
     def plot(self, **kwargs):
         nav_dim = self.axes_manager.navigation_dimension
         if "navigator" not in kwargs and nav_dim > 0:
-            if self._navigator is None:
+            if self.navigator is None:
                 if nav_dim in [1, 2]:
                     self.compute_navigator()
-                    navigator = self._navigator
+                    navigator = self.navigator
                 else:
                     navigator = "slider"
                 kwargs["navigator"] = navigator
@@ -1076,7 +1076,7 @@ class LazySignal(BaseSignal):
         navigator.original_metadata.set_item('sum_from', isig_slice)
 
         # transposing after computation should be more efficient
-        self._navigator = navigator.T
+        self.navigator = navigator.T
 
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):

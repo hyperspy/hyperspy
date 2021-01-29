@@ -2532,6 +2532,14 @@ class BaseSignal(FancySlicing,
             value = np.fft.fftshift(value)
         return value
 
+    @property
+    def navigator(self):
+        return self.metadata.get_item('_HyperSpy.navigator')
+
+    @navigator.setter
+    def navigator(self, navigator):
+        self.metadata.set_item('_HyperSpy.navigator', navigator)
+
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
              **kwargs):
         """%s
@@ -2602,6 +2610,8 @@ class BaseSignal(FancySlicing,
             else:
                 return navigator()
 
+        if navigator == "auto" and self.navigator is not None:
+            navigator = self.navigator
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):

@@ -16,6 +16,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import dask.array as da
+import numpy as np
 import pytest
 
 import hyperspy.api as hs
@@ -31,9 +32,8 @@ def test_plot_lazy(ndim):
     if ndim == 0:
         assert s._plot.navigator_data_function == None
     elif ndim in [1, 2]:
-        navigator = s._navigator
-        assert navigator.data.shape == tuple([N]*ndim)
-        assert isinstance(navigator, hs.signals.BaseSignal)
+        assert s.navigator.data.shape == tuple([N]*ndim)
+        assert isinstance(s.navigator, hs.signals.BaseSignal)
     else:
         assert s._plot.navigator_data_function == 'slider'
 
@@ -44,8 +44,7 @@ def test_plot_lazy_chunks():
     s = hs.signals.Signal1D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
     s.data = s.data.rechunk(("auto", "auto", 5))
     s.plot()
-    navigator = s._navigator
-    assert navigator.original_metadata.sum_from == [slice(5, 10, None)]
+    assert s.navigator.original_metadata.sum_from == [slice(5, 10, None)]
 
 
 def test_compute_navigator():
@@ -53,5 +52,10 @@ def test_compute_navigator():
     dim = 3
     s = hs.signals.Signal1D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
     s.compute_navigator(chunks_number=3)
-    navigator = s._navigator
-    assert navigator.original_metadata.sum_from == [slice(5, 10, None)]
+    assert s.navigator.original_metadata.sum_from == [slice(5, 10, None)]
+
+    # change the navigator and check it is used when plotting
+    s.navigator = s.navigator / s.navigator.mean()
+    s.plot()
+    np.testing.assert_allclose(s._plot.navigator_data_function(),
+                               s.navigator.data)
