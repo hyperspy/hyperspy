@@ -507,7 +507,7 @@ class TestROIs():
     def test_undefined_attributes(self):
         assert CircleROI()._attributes_have_undefined()
         assert not CircleROI(1, 1, 1, None)._attributes_have_undefined()
-        assert not CircleROI(1, 1, 1, 1)._attributes_have_undefined()
+        assert not CircleROI(1, 1, 1, 0.5)._attributes_have_undefined()
 
         assert Point1DROI()._attributes_have_undefined()
         assert not Point1DROI(1)._attributes_have_undefined()
