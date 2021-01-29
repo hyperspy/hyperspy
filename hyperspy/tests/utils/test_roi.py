@@ -504,6 +504,14 @@ class TestROIs():
         repr(SpanROI(3., 5.))
         repr(CircleROI(5, 5, 3, 1))
 
+    def test_undefined_attributes(self):
+        assert CircleROI()._attributes_have_undefined()
+        assert not CircleROI(1, 1, 1, None)._attributes_have_undefined()
+        assert not CircleROI(1, 1, 1, 1)._attributes_have_undefined()
+
+        assert Point1DROI()._attributes_have_undefined()
+        assert not Point1DROI(1)._attributes_have_undefined()
+
     def test_undefined_call(self):
         rect = RectangularROI(None, None, None, None)
         with pytest.raises(AttributeError, match='not yet been set'):
