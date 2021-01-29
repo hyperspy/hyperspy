@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
-                          RectangularROI, SpanROI)
+                          RectangularROI, SpanROI, get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
 
 
@@ -486,6 +486,27 @@ class TestROIs():
         with pytest.raises(ValueError):
             r.angle(axis='z')
 
+    def test_repr_None(self):
+        # Setting the args=None sets them as traits.Undefined, which didn't 
+        # have a string representation in the old %s style.
+        repr(Point1DROI())
+        repr(Point2DROI())
+        repr(Line2DROI())
+        repr(RectangularROI())
+        repr(SpanROI())
+        repr(CircleROI())
+
+    def test_repr_vals(self):
+        repr(Point1DROI(1.1))
+        repr(Point2DROI(1.1, 2.1))
+        repr(Line2DROI(0, 0, 1, 1, 0.1))
+        repr(RectangularROI(0, 1, 0, 1))
+        repr(SpanROI(3., 5.))
+        repr(CircleROI(5, 5, 3, 1))
+
+    def test_central_half(self):
+        assert get_central_half_limits_of_axis(self.s_s.axes_manager[0]) == (73.75, 221.25)
+
 
 class TestInteractive:
 
@@ -538,3 +559,4 @@ class TestInteractive:
         r.x += 5
         sr2 = r(s)
         np.testing.assert_array_equal(sr.data, sr2.data)
+

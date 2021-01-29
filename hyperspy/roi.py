@@ -641,7 +641,7 @@ class Point1DROI(BasePointROI):
             raise ValueError("direction must be either horizontal or vertical")
 
     def __repr__(self):
-        return "%s(value=%g)" % (
+        return "{}(value={})".format(
             self.__class__.__name__,
             self.value)
 
@@ -713,9 +713,10 @@ class Point2DROI(BasePointROI):
         return widgets.SquareWidget
 
     def __repr__(self):
-        return "%s(x=%g, y=%g)" % (
+        return "{}(x={}, y={})".format(
             self.__class__.__name__,
-            self.x, self.y)
+            self.x, 
+            self.y)
 
 
 @add_gui_method(toolkey="hyperspy.SpanROI")
@@ -798,7 +799,7 @@ class SpanROI(BaseInteractiveROI):
             raise ValueError("direction must be either horizontal or vertical")
 
     def __repr__(self):
-        return "%s(left=%g, right=%g)" % (
+        return "{}(left={}, right={})".format(
             self.__class__.__name__,
             self.left,
             self.right)
@@ -965,7 +966,7 @@ class RectangularROI(BaseInteractiveROI):
         return widgets.RectangleWidget
 
     def __repr__(self):
-        return "%s(left=%g, top=%g, right=%g, bottom=%g)" % (
+        return "{}(left={}, top={}, right={}, bottom={})".format(
             self.__class__.__name__,
             self.left,
             self.top,
@@ -1157,18 +1158,20 @@ class CircleROI(BaseInteractiveROI):
 
     def __repr__(self):
         if self.r_inner == t.Undefined:
-            return "%s(cx=%g, cy=%g, r=%g)" % (
+            return "{}(cx={}, cy={}, r={})".format(
                 self.__class__.__name__,
                 self.cx,
                 self.cy,
-                self.r)
+                self.r
+            )
         else:
-            return "%s(cx=%g, cy=%g, r=%g, r_inner=%g)" % (
+            return "{}(cx={}, cy={}, r={}, r_inner={})".format(
                 self.__class__.__name__,
                 self.cx,
                 self.cy,
                 self.r,
-                self.r_inner)
+                self.r_inner
+            )
 
 
 @add_gui_method(toolkey="hyperspy.Line2DROI")
@@ -1505,10 +1508,11 @@ class Line2DROI(BaseInteractiveROI):
             out.events.data_changed.trigger(out)
 
     def __repr__(self):
-        return "%s(x1=%g, y1=%g, x2=%g, y2=%g, linewidth=%g)" % (
+        return "{}(x1={}, y1={}, x2={}, y2={}, linewidth={})".format(
             self.__class__.__name__,
             self.x1,
             self.y1,
             self.x2,
             self.y2,
-            self.linewidth)
+            self.linewidth,
+            )
