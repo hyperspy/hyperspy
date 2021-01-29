@@ -540,12 +540,12 @@ class DictionaryTreeBrowser(object):
 
         >>> dict = {'To' : {'be' : True}}
         >>> dict_browser = DictionaryTreeBrowser(dict)
-        >>> dict_browser.has_item('To')
+        >>> dict_browser.get_item('To')
+        be = True
+        >>> dict_browser.get_item('To.be')
         True
-        >>> dict_browser.has_item('To.be')
-        True
-        >>> dict_browser.has_item('To.be.or')
-        False
+        >>> dict_browser.get_item('To.be.or')
+        None
 
         """
         if isinstance(item_path, str):
@@ -564,6 +564,123 @@ class DictionaryTreeBrowser(object):
                     return default
         else:
             return default
+
+    def _nested_get(self, item, wild=False, return_path=False):
+        """Search for an item key in a nested DictionaryTreeBrowser and yield a
+        list of values. If `wild` is `True`, looks for any key that contains
+        the string `item` (case insensitive)."""
+        for key_, item_ in self.__dict__.items():
+            if not isinstance(item_, types.MethodType):
+                key = item_['key']
+                if key in ["_db_index", "_double_lines"]:
+                    continue
+                if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
+                    for result in item_['_dtb_value_']._nested_get(item, wild, return_path):
+                        if return_path:
+                            yield key + '.' + result[0], result[1]
+                        else:
+                            yield result
+                else:
+                    if key == item or (wild and (str(item).lower() in str(key).lower())):
+                        if return_path:
+                            yield key, item_['_dtb_value_']
+                        else:
+                            yield item_['_dtb_value_']
+
+    def has_nested_item(self, item, wild=False):
+        """Given an item key, return True if it exists anywhere within the tree.
+
+        Parameters
+        ----------
+        item : Str
+            Item key string.
+        wild : boolean
+            If `True`, searches for any items where `item` matches a substring of
+            the item key (case insensitive).
+
+
+        Examples
+        --------
+
+        >>> dict = {'To' : {'be' : True}}
+        >>> dict_browser = DictionaryTreeBrowser(dict)
+        >>> dict_browser.has_nested_item('be')
+        True
+
+        """
+        return list(self._nested_get(item, wild)) != []
+
+    def get_nested_path(self, item, default=None, wild=False):
+        """Given an item key, if it exists anywhere within the tree, return the
+        path, a list of paths for multiple matches, or default value if missing.
+
+        Parameters
+        ----------
+        item : Str
+            Item key string.
+        default :
+            The value to return if the path does not exist.
+        wild : boolean
+            If `True`, searches for any items where `item` matches a substring of
+            the item key (case insensitive).
+        
+
+        Examples
+        --------
+
+        >>> dict = {'To' : {'be' : True}}
+        >>> dict_browser = DictionaryTreeBrowser(dict)
+        >>> dict_browser.get_nested_path('be')
+        'To.be'
+
+        """
+        result = list(self._nested_get(item, wild, return_path=True))
+        if len(result) == 0:
+            return default
+        elif len(result) == 1:
+            return result[0][0]
+        return [i[0] for i in result]
+
+    def get_nested_item(self, item, default=None, wild=False, return_path=False):
+        """Given an item key, return its value if it exists anywhere within
+        the tree, a list if several items exist, or default value if missing.
+
+        Parameters
+        ----------
+        item : Str
+            Item key string.
+        default :
+            The value to return if the path does not exist.
+        wild: boolean
+            If `True` searches for any items where `item` matches a substring of
+            the item key (case insensitive).
+        return_path : boolean
+            Default `False`. If `True`, returns an additional list of paths to
+            the item(s) that match `key`.
+
+
+        Examples
+        --------
+
+        >>> dict = {'To' : {'be' : True}}
+        >>> dict_browser = DictionaryTreeBrowser(dict)
+        >>> dict_browser.get_nested_item('be')
+        True
+
+        """
+        result = list(self._nested_get(item, wild, return_path))
+        if len(result) == 0:
+            return default
+        elif len(result) == 1:
+            if return_path:
+                return result[0][1], result[0][0]
+            else:
+                return result[0]
+        else:
+            if return_path:
+                return [i[1] for i in result], [i[0] for i in result]
+            else:
+                return result
 
     def __contains__(self, item):
         return self.has_item(item_path=item)
