@@ -466,7 +466,7 @@ class BaseInteractiveROI(BaseROI):
                 signal.axes_manager, **kwargs)
             widget.color = color
 
-        # Remove existing ROI, if it exsists and axes match
+        # Remove existing ROI, if it exists and axes match
         if signal in self.signal_map and \
                 self.signal_map[signal][1] == axes:
             self.remove_widget(signal)
@@ -572,8 +572,7 @@ def guess_vertical_or_horizontal(axes, signal):
             "Could not find valid widget type for the given `axes` value")
 
 def get_central_half_limits_of_axis(ax):
-    diff = ax.high_value - ax.low_value
-    return (ax.low_value + diff/4, ax.low_value + 3*diff/4)
+    return ax._parse_value("rel0.25"), ax._parse_value("rel0.75")
 
 @add_gui_method(toolkey="hyperspy.Point1DROI")
 class Point1DROI(BasePointROI):
@@ -606,11 +605,10 @@ class Point1DROI(BasePointROI):
         return _tuple.__getitem__(*args, **kwargs)
 
     def _set_default_attributes(self, signal):
-        axes = self._parse_axes(None, signal.axes_manager)
+        ax0, *_ = self._parse_axes(None, signal.axes_manager)
         # If roi attributes are undefined, use center of axes
         if t.Undefined in self._get_attributes():
-            l, h = axes[0].low_value, axes[0].high_value
-            self.value = l + (h - l)/2
+            self.value = ax0._parse_value('rel0.5')
 
     def _get_attributes(self):
         return (self.value, )
@@ -624,7 +622,6 @@ class Point1DROI(BasePointROI):
     def _get_ranges(self):
         ranges = ((self.value,),)
         return ranges
-
 
     def _set_from_widget(self, widget):
         self.value = widget.position[0]
@@ -682,13 +679,11 @@ class Point2DROI(BasePointROI):
         return _tuple.__getitem__(*args, **kwargs)
 
     def _set_default_attributes(self, signal):
-        axes = self._parse_axes(None, signal.axes_manager)
+        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi attributes are undefined, use center of axes
         if t.Undefined in self._get_attributes():
-            l, h = axes[0].low_value, axes[0].high_value
-            self.x = l + (h - l)/2
-            l, h = axes[1].low_value, axes[1].high_value
-            self.y = l + (h - l)/2
+            self.x = ax0._parse_value("rel0.5")
+            self.y = ax1._parse_value("rel0.5")
 
     def _get_attributes(self):
         return self.x, self.y
@@ -754,10 +749,10 @@ class SpanROI(BaseInteractiveROI):
         return _tuple.__getitem__(*args, **kwargs)
 
     def _set_default_attributes(self, signal):
-        axes = self._parse_axes(None, signal.axes_manager)
+        ax0, *_ = self._parse_axes(None, signal.axes_manager)
         # If roi attributes are undefined, use center of axes
         if t.Undefined in self._get_attributes():
-            self.left, self.right = get_central_half_limits_of_axis(axes[0])
+            self.left, self.right = get_central_half_limits_of_axis(ax0)
 
     def _get_attributes(self):
         return self.left, self.right
@@ -844,11 +839,11 @@ class RectangularROI(BaseInteractiveROI):
         # Need to turn of bounds checking or undefined values trigger error
         old_bounds_check = self._bounds_check
         self._bounds_check = False
-        axes = self._parse_axes(None, signal.axes_manager)
+        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi attributes are undefined, use center of axes
         if t.Undefined in self._get_attributes():
-            self.left, self.right = get_central_half_limits_of_axis(axes[0])
-            self.top, self.bottom = get_central_half_limits_of_axis(axes[1])
+            self.left, self.right = get_central_half_limits_of_axis(ax0)
+            self.top, self.bottom = get_central_half_limits_of_axis(ax1)
         self._bounds_check = old_bounds_check
 
     def _get_attributes(self):
@@ -1008,16 +1003,15 @@ class CircleROI(BaseInteractiveROI):
         return _tuple.__getitem__(*args, **kwargs)
 
     def _set_default_attributes(self, signal):
-        axes = self._parse_axes(None, signal.axes_manager)
+        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi attributes are undefined, use center of axes
         if t.Undefined in (self.cx, self.cy, self.r):
-            l, h = axes[0].low_value, axes[0].high_value
-            rx = (h - l)/2
-            self.cx = l + rx
-            l, h = axes[1].low_value, axes[1].high_value
-            ry = (h - l)/2
-            self.cy = l + ry
-            self.r = np.min([rx,ry])
+            self.cx = ax0._parse_value('rel0.5')
+            self.cy = ax1._parse_value('rel0.5')
+
+            rx = (ax0.high_value - ax0.low_value)/2
+            ry = (ax1.high_value - ax1.low_value)/2
+            self.r = min(rx,ry)
 
     def _get_attributes(self):
         # should really get r_inner here, but it is
@@ -1200,11 +1194,11 @@ class Line2DROI(BaseInteractiveROI):
         return _tuple.__getitem__(*args, **kwargs)
 
     def _set_default_attributes(self, signal):
-        axes = self._parse_axes(None, signal.axes_manager)
+        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi attributes are undefined, use center of axes
         if t.Undefined in (self.x1, self.y1, self.x2, self.y2):
-            self.x1, self.x2 = get_central_half_limits_of_axis(axes[0])
-            self.y1, self.y2 = get_central_half_limits_of_axis(axes[1])
+            self.x1, self.x2 = get_central_half_limits_of_axis(ax0)
+            self.y1, self.y2 = get_central_half_limits_of_axis(ax1)
 
     def _get_attributes(self):
         return self.x1, self.y1, self.x2, self.y2, self.linewidth
