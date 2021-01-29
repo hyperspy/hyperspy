@@ -187,7 +187,7 @@ class TestROIs():
 
     def test_rectroi_getitem(self):
         r = RectangularROI(left=2.3, top=5.6, right=3.5, bottom=12.2)
-        assert tuple(r) == (2.3, 3.5, 5.6, 12.2)
+        assert tuple(r) == (2.3, 5.6, 3.5, 12.2)
 
     def test_rect_image_boundary_roi(self):
         s = self.s_i
