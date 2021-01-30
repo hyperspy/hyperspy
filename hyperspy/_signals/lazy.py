@@ -87,7 +87,6 @@ class LazySignal(BaseSignal):
     (assuming storing the full result of computation in memory is not feasible)
     """
     _lazy = True
-    _navigator = None
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
@@ -1026,7 +1025,7 @@ class LazySignal(BaseSignal):
                 kwargs["navigator"] = navigator
         super().plot(**kwargs)
 
-    def compute_navigator(self, chunks_number=None):
+    def compute_navigator(self, chunks_number=None, show_progressbar=None):
         """
         Compute the navigator by taking the sum over a single chunk located
         in the centre of the signal space.
@@ -1037,6 +1036,7 @@ class LazySignal(BaseSignal):
             The number of chunks in the signal space used for the calculation
             of the navigator. If None, the existing chunking will be
             considered when picking the chunk used for the calculation.
+        %s
 
         Returns
         -------
@@ -1072,11 +1072,13 @@ class LazySignal(BaseSignal):
         _logger.info(f'Computing sum over signal dimension: {isig_slice}')
         axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
         navigator = self.isig[isig_slice].sum(axes)
-        navigator.compute()
+        navigator.compute(show_progressbar=show_progressbar)
         navigator.original_metadata.set_item('sum_from', isig_slice)
 
         # transposing after computation should be more efficient
         self.navigator = navigator.T
+
+    compute_navigator.__doc__ %= SHOW_PROGRESSBAR_ARG
 
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
