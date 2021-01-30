@@ -572,6 +572,8 @@ class DictionaryTreeBrowser(object):
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
                 key = item_['key']
+                if key_.startswith("_"): # Skip any private attributes
+                    continue
                 if key in ["_db_index", "_double_lines"]:
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
@@ -835,7 +837,7 @@ def swapelem(obj, i, j):
     Example
     -------
     >>> L = ['a', 'b', 'c']
-    >>> spwapelem(L, 1, 2)
+    >>> swapelem(L, 1, 2)
     >>> print(L)
     ['a', 'c', 'b']
 

@@ -17,6 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import os.path
+import tempfile
 
 from hyperspy.misc.utils import (DictionaryTreeBrowser, check_long_string,
                                  replace_html_symbols)
@@ -59,6 +61,10 @@ class TestDictionaryBrowser:
                        },
              "Node3": {"leaf31": 31},
              } == self.tree.as_dictionary())
+        self.tree.add_dictionary({'_double_lines': ''}, double_lines=True)
+        assert self.tree._double_lines == True
+        self.tree.add_dictionary({'_double_lines': ''}, double_lines=False)
+        assert self.tree._double_lines == False
 
     def test_add_signal_in_dictionary(self):
         tree = self.tree
@@ -72,6 +78,24 @@ class TestDictionaryBrowser:
                 s.metadata.as_dictionary())
         assert (tree.signal_name.axes_manager._get_axes_dicts() ==
                 s.axes_manager._get_axes_dicts())
+
+    def test_export(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname = os.path.join(tmpdir, 'testdict.txt')
+            self.tree.export(fname)
+            f = open(fname, "r")
+            assert f.read(9) == '├── Node1'
+            f.close()
+            self.tree.export(fname, encoding='utf16')
+            f = open(fname, "r", encoding='utf16')
+            assert f.read(9) == '├── Node1'
+            f.close()
+            self.tree._double_lines = True
+            self.tree.export(fname)
+            f = open(fname, "r")
+            assert f.read(9) == '╠══ Node1'
+            f.close()
+
 
     def test_signal_to_dictionary(self):
         tree = self.tree
@@ -257,6 +281,27 @@ class TestDictionaryBrowser:
         tree['<mybrokenhtmltag'] = "<hello>"
         tree['mybrokenhtmltag2>'] = ""
         tree._get_html_print_items()
+        tree.add_dictionary({
+            "Node3": {
+                "leaf31": (31, 32),
+                "leaf32": [31, 32]},
+        })
+        tree._get_html_print_items()
+
+    def test_print_item_list(self):
+        self.tree.add_dictionary({
+            "Node3": {
+                "leaf31": (31, 32),
+                "leaf32": [31, 32]},
+        })
+        self.tree._get_print_items()
+        assert self.tree._get_print_items()[-35:-27] == '(31, 32)'
+        assert self.tree._get_print_items()[-9:-1] == '[31, 32]'
+
+    def test_copy(self):
+        treecopy = self.tree.copy()
+        assert treecopy.get_item('Node1.leaf11') == \
+               self.tree.get_item('Node1.leaf11')
 
 def test_check_long_string():
     max_len = 20
