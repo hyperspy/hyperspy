@@ -83,7 +83,7 @@ class TestDictionaryBrowser:
         with tempfile.TemporaryDirectory() as tmpdir:
             fname = os.path.join(tmpdir, 'testdict.txt')
             self.tree.export(fname)
-            f = open(fname, "r")
+            f = open(fname, "r", encoding='utf8')
             assert f.read(9) == '├── Node1'
             f.close()
             self.tree.export(fname, encoding='utf16')
