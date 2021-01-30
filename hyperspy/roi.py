@@ -91,7 +91,7 @@ class BaseROI(t.HasTraits):
             else:
                 # otherwise format value with the General specifer
                 attr.append(f"{name}={value:G}")
-        return f"{self.__class__.__name__}" + "(" + ", ".join(attr) + ")"
+        return f"{self.__class__.__name__}({', '.join(attr)})"
 
     _ndim = 0
     ndim = property(lambda s: s._ndim)
