@@ -1013,17 +1013,21 @@ class LazySignal(BaseSignal):
         if print_info:
             print("\n".join([str(pr) for pr in to_print]))
 
-    def plot(self, **kwargs):
+    def plot(self, navigator='auto', **kwargs):
         nav_dim = self.axes_manager.navigation_dimension
-        if "navigator" not in kwargs and nav_dim > 0:
-            if self.navigator is None:
-                if nav_dim in [1, 2]:
+        if navigator == 'spectrum':
+            # We don't support the 'spectrum' option to keep it simple
+            _logger.warning("The `navigator='spectrum'` option is not "
+                            "supported for lazy signals, 'auto' is used instead.")
+            navigator = 'auto'
+        if navigator == 'auto':
+            if nav_dim in [1, 2]:
+                if self.navigator is None:
                     self.compute_navigator()
-                    navigator = self.navigator
-                else:
-                    navigator = "slider"
-                kwargs["navigator"] = navigator
-        super().plot(**kwargs)
+                navigator = self.navigator
+            elif nav_dim > 2:
+                navigator = 'slider'
+        super().plot(navigator=navigator, **kwargs)
 
     def compute_navigator(self, chunks_number=None, show_progressbar=None):
         """
@@ -1045,8 +1049,9 @@ class LazySignal(BaseSignal):
         Note
         ----
         The number of chunks will affect where the sum is taken. If the sum
-        need to be taken in the centre of the signal space, the number of
-        chunks needs to be an odd number.
+        needs to be taken in the centre of the signal space (for example, in
+        the case of diffraction pattern), the number of chunk needs to be an
+        odd number, so that the middle is centered.
 
         """
         signal_shape = self.axes_manager.signal_shape
@@ -1075,7 +1080,6 @@ class LazySignal(BaseSignal):
         navigator.compute(show_progressbar=show_progressbar)
         navigator.original_metadata.set_item('sum_from', isig_slice)
 
-        # transposing after computation should be more efficient
         self.navigator = navigator.T
 
     compute_navigator.__doc__ %= SHOW_PROGRESSBAR_ARG

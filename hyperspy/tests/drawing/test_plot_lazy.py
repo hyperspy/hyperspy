@@ -38,12 +38,16 @@ def test_plot_lazy(ndim):
         assert s._plot.navigator_data_function == 'slider'
 
 
-def test_plot_lazy_chunks():
+@pytest.mark.parametrize('plot_kwargs', [{},
+                                         {'navigator':'auto'} ,
+                                         {'navigator':'spectrum'}])
+def test_plot_lazy_chunks(plot_kwargs):
     N = 15
     dim = 3
     s = hs.signals.Signal1D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
     s.data = s.data.rechunk(("auto", "auto", 5))
-    s.plot()
+    s.plot(**plot_kwargs)
+    assert s.navigator.data.shape == tuple([N]*(dim-1))
     assert s.navigator.original_metadata.sum_from == [slice(5, 10, None)]
 
 
