@@ -83,34 +83,42 @@ class BaseROI(t.HasTraits):
             """, arguments=['roi'])
         self.signal_map = dict()
 
+    def __getitem__(self, *args, **kwargs):
+        return self.values.__getitem__(*args, **kwargs)
+
     def __repr__(self):
-        attr = []
-        for name, value in self._get_attributes().items():
+        para = []
+        for name, value in self.parameters.items():
             if value is t.Undefined:
-                attr.append(f"{name}={value}")
+                para.append(f"{name}={value}")
             else:
                 # otherwise format value with the General specifer
-                attr.append(f"{name}={value:G}")
-        return f"{self.__class__.__name__}({', '.join(attr)})"
+                para.append(f"{name}={value:G}")
+        return f"{self.__class__.__name__}({', '.join(para)})"
 
     _ndim = 0
     ndim = property(lambda s: s._ndim)
 
-    def _get_attributes(self):
+    @property
+    def parameters(self):
         raise NotImplementedError()
 
-    def _attributes_have_undefined(self):
-        "Check if any attribute values are Undefined."
-        if t.Undefined in self._get_attributes().values():
+    @property
+    def values(self):
+        return tuple(self.parameters.values())
+
+    def _parameters_have_undefined(self):
+        "Check if any parameter values are undefined."
+        if t.Undefined in self.values:
             return True
         else:
             return False
 
-    def _raise_error_if_undefined_attrs(self):
+    def _raise_error_if_undefined_para(self):
         "Raise an error i.e. when about to __call__ on a signal, with Undefined attrs."
-        if self._attributes_have_undefined():
+        if self._parameters_have_undefined():
             raise AttributeError(
-        "Some ROI attributes have not yet been set. Set them before slicing a signal.")
+        "Some ROI parameters have not yet been set. Set them before slicing a signal.")
 
     def is_valid(self):
         """
@@ -119,7 +127,7 @@ class BaseROI(t.HasTraits):
         This is typically determined by all the coordinates being defined,
         and that the values makes sense relative to each other.
         """
-        raise NotImplementedError()
+        raise not self._parameters_have_undefined()
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -199,7 +207,7 @@ class BaseROI(t.HasTraits):
               space can fit the right number of axis, and use that if it
               fits. If not, it will try the signal space.
         """
-        self._raise_error_if_undefined_attrs()
+        self._raise_error_if_undefined_para()
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -269,7 +277,6 @@ class BaseROI(t.HasTraits):
                 raise ValueError("Could not find valid axes configuration.")
 
         return axes_out
-
 
 def _get_mpl_ax(plot, axes):
     """
@@ -360,14 +367,10 @@ class BaseInteractiveROI(BaseROI):
         """
         raise NotImplementedError()
 
-    def _set_default_attributes(self, signal):
-        """When the ROI is called interactively with Undefined attributes,
+    def _set_default_values(self, signal):
+        """When the ROI is called interactively with Undefined parameters,
         use these values instead.
         """
-        raise NotImplementedError()
-
-    def _get_attributes(self):
-        "Returns the roi attributes"
         raise NotImplementedError()
 
     def _set_from_widget(self, widget):
@@ -401,7 +404,7 @@ class BaseInteractiveROI(BaseROI):
             the 'widget' argument.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
-            interactively on any roi attribute change.
+            interactively on any roi parameter change.
 
         """
         if hasattr(signal, '_plot_kwargs'):
@@ -413,9 +416,9 @@ class BaseInteractiveROI(BaseROI):
                     'fft_shift', False):
                 raise NotImplementedError('ROIs are not supported when data '
                                           'are shifted during plotting.')
-        # Undefined if roi initialised without specifying attributes
-        if t.Undefined in self._get_attributes().values():
-            self._set_default_attributes(signal)
+        # Undefined if roi initialised without specifying parameters
+        if self._parameters_have_undefined():
+            self._set_default_values(signal)
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
@@ -568,7 +571,7 @@ class BasePointROI(BaseInteractiveROI):
     """
 
     def __call__(self, signal, out=None, axes=None):
-        self._raise_error_if_undefined_attrs()
+        self._raise_error_if_undefined_para()
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -576,7 +579,6 @@ class BasePointROI(BaseInteractiveROI):
         s = super(BasePointROI, self).__call__(signal=signal, out=out,
                                                axes=axes)
         return s
-
 
 def guess_vertical_or_horizontal(axes, signal):
     # Figure out whether to use horizontal or vertical line:
@@ -630,21 +632,15 @@ class Point1DROI(BasePointROI):
         value = value if value is not None else t.Undefined
         self.value = value
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self._get_attributes().values())
-        return _tuple.__getitem__(*args, **kwargs)
-
-    def _set_default_attributes(self, signal):
+    def _set_default_values(self, signal):
         ax0, *_ = self._parse_axes(None, signal.axes_manager)
-        # If roi attributes are undefined, use center of axes
-        if t.Undefined in self._get_attributes().values():
+        # If roi parameters are undefined, use center of axes
+        if self._parameters_have_undefined():
             self.value = ax0._parse_value('rel0.5')
 
-    def _get_attributes(self):
+    @property
+    def parameters(self):
         return {"value" : self.value}
-
-    def is_valid(self):
-        return self.value != t.Undefined
 
     def _value_changed(self, old, new):
         self.update()
@@ -699,22 +695,16 @@ class Point2DROI(BasePointROI):
 
         self.x, self.y = x, y
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self._get_attributes().values())
-        return _tuple.__getitem__(*args, **kwargs)
-
-    def _set_default_attributes(self, signal):
+    def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
-        # If roi attributes are undefined, use center of axes
-        if t.Undefined in self._get_attributes().values():
+        # If roi parameters are undefined, use center of axes
+        if self._parameters_have_undefined():
             self.x = ax0._parse_value("rel0.5")
             self.y = ax1._parse_value("rel0.5")
 
-    def _get_attributes(self):
+    @property
+    def parameters(self):
         return {"x":self.x, "y":self.y}
-
-    def is_valid(self):
-        return t.Undefined not in (self.x, self.y)
 
     def _x_changed(self, old, new):
         self.update()
@@ -764,21 +754,18 @@ class SpanROI(BaseInteractiveROI):
         self._bounds_check = True   # Use reponsibly!
         self.left, self.right = left, right
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self._get_attributes().values())
-        return _tuple.__getitem__(*args, **kwargs)
-
-    def _set_default_attributes(self, signal):
+    def _set_default_values(self, signal):
         ax0, *_ = self._parse_axes(None, signal.axes_manager)
-        # If roi attributes are undefined, use center of axes
-        if t.Undefined in self._get_attributes().values():
+        # If roi parameters are undefined, use center of axes
+        if self._parameters_have_undefined():
             self.left, self.right = get_central_half_limits_of_axis(ax0)
 
-    def _get_attributes(self):
+    @property
+    def parameters(self):
         return {"left":self.left, "right":self.right}
 
     def is_valid(self):
-        return (t.Undefined not in (self.left, self.right) and
+        return (not self._parameters_have_undefined() and
                 self.right >= self.left)
 
     def _right_changed(self, old, new):
@@ -847,26 +834,28 @@ class RectangularROI(BaseInteractiveROI):
         self.left, self.top, self.right, self.bottom = left, top, right, bottom
 
     def __getitem__(self, *args, **kwargs):
+        # Note: RectangularROI is currently indexed in a different way
+        # than it is initialised. This should be fixed properly in a PR.
         _tuple = (self.left, self.right, self.top, self.bottom)
         return _tuple.__getitem__(*args, **kwargs)
 
-    def _set_default_attributes(self, signal):
+    def _set_default_values(self, signal):
         # Need to turn of bounds checking or undefined values trigger error
         old_bounds_check = self._bounds_check
         self._bounds_check = False
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
-        # If roi attributes are undefined, use center of axes
-        if t.Undefined in self._get_attributes().values():
+        # If roi parameters are undefined, use center of axes
+        if self._parameters_have_undefined():
             self.left, self.right = get_central_half_limits_of_axis(ax0)
             self.top, self.bottom = get_central_half_limits_of_axis(ax1)
         self._bounds_check = old_bounds_check
 
-    def _get_attributes(self):
+    @property
+    def parameters(self):
         return {"left":self.left, "top":self.top, "right":self.right, "bottom":self.bottom}
 
     def is_valid(self):
-        return (t.Undefined not in (self.top, self.bottom,
-                                    self.left, self.right) and
+        return (not self._parameters_have_undefined() and
                 self.right >= self.left and self.bottom >= self.top)
 
     def _top_changed(self, old, new):
@@ -981,9 +970,9 @@ class RectangularROI(BaseInteractiveROI):
 @add_gui_method(toolkey="hyperspy.CircleROI")
 class CircleROI(BaseInteractiveROI):
     """Selects a circular or annular region in a 2D space. The coordinates of
-    the center of the circle are stored in the 'cx' and 'cy' attributes and the
-    radius in the `r` attribute. If an internal radius is defined using the
-    `r_inner` attribute, then an annular region is selected instead.
+    the center of the circle are stored in the 'cx' and 'cy' parameters and the
+    radius in the `r` parameter. If an internal radius is defined using the
+    `r_inner` parameter, then an annular region is selected instead.
     `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
     cy, r, r_inner)` when `r_inner` is not `None`.
     """
@@ -1002,29 +991,17 @@ class CircleROI(BaseInteractiveROI):
         if r_inner:
             self.r_inner = r_inner
 
-    @property
-    def parameters(self):
-        return {
-            "cx":self.cx,
-            "cy":self.cy,
-            "r": self.r
-            }
-
-    @property
-    def parameters_optional(self):
-        return {"r_inner":self.r_inner}
-
     def __getitem__(self, *args, **kwargs):
         if self.r_inner and self.r_inner is not t.Undefined:
-            _tuple = tuple(self._get_attributes().values())
+            values = self.values
         else:
             # don't include r_inner
-            _tuple = tuple(self._get_attributes().values())[:-1]
-        return _tuple.__getitem__(*args, **kwargs)
+            values = self.values[:-1]
+        return values.__getitem__(*args, **kwargs)
 
-    def _set_default_attributes(self, signal):
+    def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
-        # If roi attributes are undefined, use center of axes
+        # If roi parameters are undefined, use center of axes
         if t.Undefined in (self.cx, self.cy, self.r):
             self.cx = ax0._parse_value('rel0.5')
             self.cy = ax1._parse_value('rel0.5')
@@ -1033,19 +1010,20 @@ class CircleROI(BaseInteractiveROI):
             ry = (ax1.high_value - ax1.low_value)/2
             self.r = min(rx,ry)
 
-    def _get_attributes(self):
+    @property
+    def parameters(self):
         return {
-            "cx":self.cx, 
-            "cy":self.cy, 
+            "cx":self.cx,
+            "cy":self.cy,
             "r": self.r,
             "r_inner": self.r_inner
             }
 
-    def _attributes_have_undefined(self):
+    def _parameters_have_undefined(self):
         # Redefine this method for CircleROI, since r_inner
         # can is ok to set as undefined, but would normally 
-        # be caught in self._get_attributes(). It is the last entry.
-        if t.Undefined in tuple(self._get_attributes().values())[:-1]:
+        # be caught in self.parameters. It is the last entry.
+        if t.Undefined in self.values[:-1]:
             return True
         else:
             return False
@@ -1113,7 +1091,7 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
-        self._raise_error_if_undefined_attrs()
+        self._raise_error_if_undefined_para()
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -1187,8 +1165,8 @@ class CircleROI(BaseInteractiveROI):
 
 @add_gui_method(toolkey="hyperspy.Line2DROI")
 class Line2DROI(BaseInteractiveROI):
-    """Selects a line of a given width in 2D space. The coordinates of the end points of the line are stored in the `x1`, `y1`, `x2`, `y2` attributes.
-    The length is available in the `length` attribute and the method `angle` computes the angle of the line with the axes.
+    """Selects a line of a given width in 2D space. The coordinates of the end points of the line are stored in the `x1`, `y1`, `x2`, `y2` parameters.
+    The length is available in the `length` parameter and the method `angle` computes the angle of the line with the axes.
 
     `Line2DROI` can be used in place of a tuple containing the coordinates of the two end-points of the line and the linewdith `(x1, y1, x2, y2, linewidth)`.
     """
@@ -1205,22 +1183,16 @@ class Line2DROI(BaseInteractiveROI):
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self._get_attributes().values())
-        return _tuple.__getitem__(*args, **kwargs)
-
-    def _set_default_attributes(self, signal):
+    def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
-        # If roi attributes are undefined, use center of axes
+        # If roi parameters are undefined, use center of axes
         if t.Undefined in (self.x1, self.y1, self.x2, self.y2):
             self.x1, self.x2 = get_central_half_limits_of_axis(ax0)
             self.y1, self.y2 = get_central_half_limits_of_axis(ax1)
 
-    def _get_attributes(self):
+    @property
+    def parameters(self):
         return {"x1":self.x1, "y1":self.y1, "x2":self.x2, "y2":self.y2, "linewidth":self.linewidth}
-
-    def is_valid(self):
-        return t.Undefined not in (self.x1, self.y1, self.x2, self.y2)
 
     def _x1_changed(self, old, new):
         self.update()
@@ -1249,7 +1221,6 @@ class Line2DROI(BaseInteractiveROI):
     def _apply_roi2widget(self, widget):
         widget.position = (self.x1, self.y1), (self.x2, self.y2)
         widget.size = np.array([self.linewidth])
-
 
     def _get_widget_type(self, axes, signal):
         return widgets.Line2DWidget
@@ -1471,7 +1442,7 @@ class Line2DROI(BaseInteractiveROI):
             profile. 0 means nearest-neighbor interpolation, and is both the
             default and the fastest.
         """
-        self._raise_error_if_undefined_attrs()
+        self._raise_error_if_undefined_para()
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
