@@ -9,6 +9,8 @@ RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
 * Widgets plotting improvement and add `pick_tolerance` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
+* Fix disconnect event when closing navigator only plot (fixes `#996 <https://github.com/hyperspy/hyperspy/issues/996>`_), (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
+* Improve plotting navigator of lazy signals, add `navigator` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
 
 
 Changelog
