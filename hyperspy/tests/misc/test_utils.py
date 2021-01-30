@@ -28,6 +28,8 @@ from hyperspy.misc.utils import (
     swapelem,
     fsdict,
     generate_axis,
+    closest_power_of_two,
+    shorten_name,
 )
 
 
@@ -94,3 +96,13 @@ def test_fsdict():
 
 def test_generate_axis():
     assert (generate_axis(3,0.2,20,index=5) == generate_axis(2,0.2,20)).all()
+
+def test_closest_power_of_two():
+    assert closest_power_of_two(5) == 8
+    assert closest_power_of_two(13) == 16
+    assert closest_power_of_two(120) == 128
+    assert closest_power_of_two(973) == 1024
+
+def test_shorten_name():
+    assert shorten_name('And now for soemthing completely different.', 16) == \
+           'And now for so..'

@@ -980,6 +980,10 @@ def underline(line, character="-"):
 
 
 def closest_power_of_two(n):
+    """Returns next higher power of two, not the closest one as its name
+    suggests.
+    """
+    # np.ceil would have to be replaced by np.round to do what the name says
     return int(2 ** np.ceil(np.log2(n)))
 
 

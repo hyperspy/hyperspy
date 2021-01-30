@@ -217,6 +217,8 @@ class TestDictionaryBrowser:
         assert self.tree.has_nested_item('leaf333') == False
         assert self.tree.has_nested_item('211',wild=True) == True
         assert self.tree.has_nested_item('333',wild=True) == False
+        self.tree.add_dictionary({"_double_lines": False, })
+        assert self.tree.has_nested_item('leaf211') == True
 
     def test_get_nested_path(self):
         assert self.tree.get_nested_path('leaf333') == None
@@ -285,6 +287,9 @@ class TestDictionaryBrowser:
             "Node3": {
                 "leaf31": (31, 32),
                 "leaf32": [31, 32]},
+            "Node4": {
+                "leaf41": 'And now for something completely different. This '
+                    'string is so long that it exceeds the max_len limit.'},
         })
         tree._get_html_print_items()
 
@@ -297,6 +302,13 @@ class TestDictionaryBrowser:
         self.tree._get_print_items()
         assert self.tree._get_print_items()[-35:-27] == '(31, 32)'
         assert self.tree._get_print_items()[-9:-1] == '[31, 32]'
+        self.tree.add_dictionary({
+            "Node4": {
+                "leaf41": 'And now for something completely different. This '
+                    'string is so long that it exceeds the max_len limit.'},
+        })
+        assert self.tree._get_print_items()[-102:-59] == \
+               'And now for something completely different.'
 
     def test_copy(self):
         treecopy = self.tree.copy()
