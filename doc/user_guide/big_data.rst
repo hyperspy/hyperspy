@@ -162,7 +162,7 @@ performed lazily. Important points are:
 Chunking
 ^^^^^^^^
 
-Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory, 
+Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory,
 allowing lazy loading. Chunk size can dramatically affect the speed of various HyperSpy algorithms, so chunk size is
 worth careful consideration when saving a signal. HyperSpy's default chunking sizes are probably not optimal
 for a given data analysis technique. For more comprehensible documentation on chunking,
@@ -179,11 +179,11 @@ The following example shows how to chunk one of the two navigation dimensions in
     >>> data = da.random.random((10,200,300))
     >>> data.chunksize
     (10, 200, 300)
-    
+
     >>> s = hs.signals.Signal1D(data)
     >>> s # Note the reversed order of navigation dimensions
     <Signal1D, title: , dimensions: (200, 10|300)>
-    
+
     >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
     >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
     >>> s2.data.chunksize
@@ -220,25 +220,72 @@ Navigator plot
 
 The default signal navigator is the sum of the signal across all signal
 dimensions and all but 1 or 2 navigation dimensions. If the dataset is large,
-this can take a significant amount of time to perform with every plot. A more
-convenient alternative is to calculate the summed navigation signal manually
-once, and only pass it for all other plots. Pay attention to the transpose
-(``.T``):
+this can take a significant amount of time to perform with every plot.
+By default, the sum is taken on a single chunk of the signal space, in order to
+avoid to compute the navigator for the whole dataset. In the following example,
+the signal space is divided in 25 chunks (5 along on each axis), and therefore
+computing the navigation will only be perfomed over a small part of the whole
+dataset.
 
 .. code-block:: python
 
+    >>> import dask.array as da
+    >>> import hyperspy.api as hs
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 200, 200))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s.plot()
+
+In the example above, the calculation of the navigation is fast but the actual
+visualisation of the dataset is slow, each for each navigation index change,
+25 chunks of the dataset needs to be fetched from the harddrive. In the
+following example, the signal space contains a single chunk (instead of 25, in
+the previous example) and the calculating the navigator will then be slower (~20x)
+because the whole dataset will need to processed, however in this case, the
+visualisation will be faster, because only a single chunk will fetched from the
+harddrive when changing navigation indices:
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 1000, 1000))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s.plot()
+
+The py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator` can be used
+to calculate the navigator efficient and store the navigator, so that it can be
+used when plotting and saved for the later loading of the dataset. The
+py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator` can take an
+argument to rechunk the dataset when calculating the navigator. This allows to
+efficiently calculate the navigator without changing the actual chunking of the
+dataset, since the rechunking only takes during the computation of the navigator:
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s.compute_navigator(chunks_number=5)
+    >>> s.plot()
+
+An alternative is to calculate the navigator separetely and store it in the
+signal using the py:meth:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
+
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
     >>> s
-    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
+    <LazySignal2D, title: , dimensions: (100, 100|1000, 1000)>
     >>> # for fastest results, just pick one signal space pixel
-    >>> nav = s.transpose(optimize=True).inav[256, 256]
-    >>> # Alternatively, sum as per default behaviour
-    >>> nav = s.sum(s.axes_manager.signal_axes).T
+    >>> nav = s.isig[500, 500]
+    >>> # Alternatively, sum as per default behaviour of non-lazy signal
+    >>> nav = s.sum(s.axes_manager.signal_axes)
     >>> nav
-    <LazySignal2D, title: , dimensions: (|200, 200)>
+    <LazySignal2D, title: , dimensions: (|100, 100)>
     >>> # Compute the result
     >>> nav.compute()
     [########################################] | 100% Completed | 13.1s
-    >>> s.plot(navigator=nav)
+    >>> s.navigator = nav
+    >>> s.plot()
 
 Alternatively, it is possible to not have a navigator, and use sliders
 instead:
