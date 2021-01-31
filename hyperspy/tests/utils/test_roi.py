@@ -298,7 +298,7 @@ class TestROIs():
 
     def test_circle_getitem(self):
         r = CircleROI(20, 25, 20)
-        assert tuple(r) == (20, 25, 20)
+        assert tuple(r) == (20, 25, 20, 0)
 
     def test_annulus_getitem(self):
         r_ann = CircleROI(20, 25, 20, 15)
@@ -504,16 +504,6 @@ class TestROIs():
         repr(SpanROI(3., 5.))
         repr(CircleROI(5, 5, 3))
         repr(CircleROI(5, 5, 3, 1))
-
-    def test_undefined_parameters(self):
-        with pytest.raises(AttributeError, match='not yet been set'):
-            CircleROI()._raise_error_if_undefined_para()
-        CircleROI(1, 1, 1, None)._raise_error_if_undefined_para()
-        CircleROI(1, 1, 1, 0.5)._raise_error_if_undefined_para()
-
-        with pytest.raises(AttributeError, match='not yet been set'):
-            Point1DROI()._raise_error_if_undefined_para()
-        Point1DROI(1)._raise_error_if_undefined_para()
 
     def test_undefined_call(self):
         rect = RectangularROI(None, None, None, None)

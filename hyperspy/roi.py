@@ -971,11 +971,10 @@ class CircleROI(BaseInteractiveROI):
         cx, cy, r = (
             para if para is not None 
             else t.Undefined for para in (cx, cy, r))
+        r_inner = r_inner if r_inner is not None else 0
 
         self._bounds_check = True   # Use reponsibly!
-        self.cx, self.cy, self.r = cx, cy, r
-        if r_inner:
-            self.r_inner = r_inner
+        self.cx, self.cy, self.r, self.r_inner = cx, cy, r, r_inner
 
     def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
