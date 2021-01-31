@@ -225,8 +225,14 @@ class DictionaryTreeBrowser(object):
         file.
     keys : returns a list of non-private keys.
     as_dictionary : returns a dictionary representation of the object.
-    set_item : easily set items, creating any necessary node on the way.
-    add_node : adds a node.
+    set_item : easily set items, creating any necessary nodes on the way.
+    has_item: given a path, checks if the item exists.
+    get_item  given a path, return the value of the item.
+    add_node : add all non existing nodes in a given path.
+    add_dictionary: add new items from dictionary.
+    has_nested_item: check if a given key exists anywhere in the dictionary.
+    get_nested_path: return path to specific key.
+    get_nested_item: return value corresponding to specific key, for unknown path.
 
     Examples
     --------
