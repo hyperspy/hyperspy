@@ -15,6 +15,7 @@ New
 * Plot overlayed images (`#2599 <https://github.com/hyperspy/hyperspy/pull/2599>`_)
 * Support for reading JEOL EDS data (`#2488 <https://github.com/hyperspy/hyperspy/pull/2488>`_, 
   `#2607 <https://github.com/hyperspy/hyperspy/pull/2607>`_, `#2620 <https://github.com/hyperspy/hyperspy/pull/2620>`_)
+* Add functionality to search for certain keys in the metadata tree (`#2633 <https://github.com/hyperspy/hyperspy/pull/2633>`_)
 
 Enhancements
 ------------
