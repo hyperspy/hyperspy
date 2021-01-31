@@ -221,11 +221,13 @@ Navigator plot
 The default signal navigator is the sum of the signal across all signal
 dimensions and all but 1 or 2 navigation dimensions. If the dataset is large,
 this can take a significant amount of time to perform with every plot.
-By default, the sum is taken on a single chunk of the signal space, in order to
-avoid to compute the navigator for the whole dataset. In the following example,
-the signal space is divided in 25 chunks (5 along on each axis), and therefore
-computing the navigation will only be perfomed over a small part of the whole
-dataset.
+By default, a navigator is computed with minimally required approach to obtain
+a good signal-to-noise ratio image: the sum is taken on a single chunk of the
+signal space, in order to avoid to compute the navigator for the whole dataset.
+In the following example, the signal space is divided in 25 chunks (5 along on
+each axis), and therefore computing the navigation will only be perfomed over
+a small small sbset of the whole dataset by taking the sum on only 1 chunk out
+of 25:
 
 .. code-block:: python
 
@@ -250,11 +252,13 @@ harddrive when changing navigation indices:
     >>> s = hs.signals.Signal2D(data).as_lazy()
     >>> s.plot()
 
-The py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator` can be used
-to calculate the navigator efficient and store the navigator, so that it can be
-used when plotting and saved for the later loading of the dataset. The
-py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator` can take an
-argument to rechunk the dataset when calculating the navigator. This allows to
+This approach depends heavily on the chunking of the data and may not be
+always suitable. The :py:meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+can be used to calculate the navigator efficient and store the navigator, so
+that it can be used when plotting and saved for the later loading of the dataset.
+The :py:meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator` has optional
+argument to specify the index where the sum needs to be calculated and how to
+rechunk the dataset when calculating the navigator. This allows to
 efficiently calculate the navigator without changing the actual chunking of the
 dataset, since the rechunking only takes during the computation of the navigator:
 
@@ -265,8 +269,33 @@ dataset, since the rechunking only takes during the computation of the navigator
     >>> s.compute_navigator(chunks_number=5)
     >>> s.plot()
 
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 2000, 400), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s
+    <LazySignal2D, title: , dimensions: (100, 100|400, 2000)>
+    >>> s.compute_navigator(chunks_number=(2, 10))
+    >>> s.plot()
+    >>> s.navigator.original_metadata
+    └── sum_from = [slice(200, 400, None), slice(1000, 1200, None)]
+
+The index can also be specified following the
+:ref:`HyperSpy indexing signal1D <signal.indexing>` syntax for float and
+interger.
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 2000, 400), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s
+    <LazySignal2D, title: , dimensions: (100, 100|400, 2000)>
+    >>> s.compute_navigator(index=0, chunks_number=(2, 10))
+    >>> s.navigator.original_metadata
+    └── sum_from = [slice(0, 200, None), slice(0, 200, None)]
+
 An alternative is to calculate the navigator separetely and store it in the
-signal using the py:meth:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
+signal using the :py:attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
 
 
 .. code-block:: python
