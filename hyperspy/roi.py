@@ -960,7 +960,7 @@ class CircleROI(BaseInteractiveROI):
     cy, r, r_inner)` when `r_inner` is not `None`.
     """
 
-    cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
+    cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 3 + (t.CFloat(0.),)
     _ndim = 2
 
     def __init__(self, cx=None, cy=None, r=None, r_inner=0):
@@ -994,10 +994,10 @@ class CircleROI(BaseInteractiveROI):
             }
 
     def is_valid(self):
-        return (t.Undefined not in (self.cx, self.cy, self.r,) and
-                (self.r_inner is t.Undefined or
-                 t.Undefined not in (self.r, self.r_inner) and
-                 self.r >= self.r_inner))
+        return (
+            t.Undefined not in list(self) 
+            and self.r >= self.r_inner
+            )
 
     def _cx_changed(self, old, new):
         self.update()
@@ -1006,8 +1006,7 @@ class CircleROI(BaseInteractiveROI):
         self.update()
 
     def _r_changed(self, old, new):
-        if self._bounds_check and \
-                self.r_inner is not t.Undefined and new < self.r_inner:
+        if self._bounds_check and new < self.r_inner:
             self.r = old
         else:
             self.update()
@@ -1028,8 +1027,7 @@ class CircleROI(BaseInteractiveROI):
 
     def _apply_roi2widget(self, widget):
         widget.position = (self.cx, self.cy)
-        inner = self.r_inner if self.r_inner != t.Undefined else 0.0
-        widget.size = (self.r, inner)
+        widget.size = (self.r, self.r_inner)
 
     def _get_widget_type(self, axes, signal):
         return widgets.CircleWidget
@@ -1080,8 +1078,7 @@ class CircleROI(BaseInteractiveROI):
         gx, gy = np.meshgrid(vx, vy)
         gr = gx**2 + gy**2
         mask = gr > self.r**2
-        if self.r_inner != t.Undefined:
-            mask |= gr < self.r_inner**2
+        mask |= gr < self.r_inner**2
         tiles = []
         shape = []
         chunks = []
@@ -1140,7 +1137,7 @@ class Line2DROI(BaseInteractiveROI):
     `Line2DROI` can be used in place of a tuple containing the coordinates of the two end-points of the line and the linewdith `(x1, y1, x2, y2, linewidth)`.
     """
 
-    x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
+    x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 4 + (t.CFloat(0.),)
     _ndim = 2
 
     def __init__(self, x1=None, y1=None, x2=None, y2=None, linewidth=0):
