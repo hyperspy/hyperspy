@@ -103,12 +103,6 @@ class BaseROI(t.HasTraits):
     def parameters(self):
         raise NotImplementedError()
 
-    def _raise_error_if_undefined_para(self):
-        "Raise an error i.e. when about to __call__ on a signal, with Undefined attrs."
-        if t.Undefined in list(self):
-            raise AttributeError(
-        "Some ROI parameters have not yet been set. Set them before slicing a signal.")
-
     def is_valid(self):
         """
         Determine if the ROI is in a valid state.
@@ -196,7 +190,11 @@ class BaseROI(t.HasTraits):
               space can fit the right number of axis, and use that if it
               fits. If not, it will try the signal space.
         """
-        self._raise_error_if_undefined_para()
+        if t.Undefined in list(self):
+            raise AttributeError(
+        "Some ROI parameters have not yet been set. "
+        "Set them before slicing a signal."
+        )
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -968,7 +966,7 @@ class CircleROI(BaseInteractiveROI):
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
 
-    def __init__(self, cx=None, cy=None, r=None, r_inner=None):
+    def __init__(self, cx=None, cy=None, r=None, r_inner=0):
         super(CircleROI, self).__init__()
         cx, cy, r = (
             para if para is not None 
@@ -978,13 +976,6 @@ class CircleROI(BaseInteractiveROI):
         self.cx, self.cy, self.r = cx, cy, r
         if r_inner:
             self.r_inner = r_inner
-
-    def __getitem__(self, *args, **kwargs):
-        values = tuple(self.parameters.values())
-        # don't include r_inner (final entry in values) if its not used
-        if not (self.r_inner and self.r_inner is not t.Undefined):
-            values = values[:-1]
-        return tuple(values).__getitem__(*args, **kwargs)
 
     def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
@@ -1069,7 +1060,11 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
-        self._raise_error_if_undefined_para()
+        if t.Undefined in list(self):
+            raise AttributeError(
+        "Some ROI parameters have not yet been set. "
+        "Set them before slicing a signal."
+        )
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -1420,7 +1415,11 @@ class Line2DROI(BaseInteractiveROI):
             profile. 0 means nearest-neighbor interpolation, and is both the
             default and the fastest.
         """
-        self._raise_error_if_undefined_para()
+        if t.Undefined in list(self):
+            raise AttributeError(
+        "Some ROI parameters have not yet been set. "
+        "Set them before slicing a signal."
+        )
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
