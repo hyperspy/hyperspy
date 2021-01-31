@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
-                          RectangularROI, SpanROI, get_central_half_limits_of_axis)
+                          RectangularROI, SpanROI)
 from hyperspy.signals import Signal1D, Signal2D
 
 
@@ -516,9 +516,6 @@ class TestROIs():
             circ1(self.s_s)
         circ2 = CircleROI(5, 5, 1, None)
         circ2(self.s_s) # r_inner as undefined should not raise error
-
-    def test_central_half(self):
-        assert get_central_half_limits_of_axis(self.s_s.axes_manager[0]) == (73.75, 221.25)
 
 
 class TestInteractive:

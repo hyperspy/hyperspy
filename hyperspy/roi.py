@@ -55,7 +55,7 @@ from hyperspy.interactive import interactive
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
 from hyperspy.ui_registry import add_gui_method
-
+from hyperspy.utils.axes import get_central_half_limits_of_axis
 
 class BaseROI(t.HasTraits):
 
@@ -588,9 +588,6 @@ def guess_vertical_or_horizontal(axes, signal):
     else:
         raise ValueError(
             "Could not find valid widget type for the given `axes` value")
-
-def get_central_half_limits_of_axis(ax):
-    return ax._parse_value("rel0.25"), ax._parse_value("rel0.75")
 
 @add_gui_method(toolkey="hyperspy.Point1DROI")
 class Point1DROI(BasePointROI):

@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 
 from hyperspy.axes import DataAxis
-
+from hyperspy.utils.axes import get_central_half_limits_of_axis
 
 class TestDataAxis:
 
@@ -209,3 +209,7 @@ class TestDataAxis:
         ax = self.axis
         with pytest.raises(ValueError):
             ax._parse_value("")
+
+    def test_get_central_half_limits(self):
+        ax = self.axis
+        assert get_central_half_limits_of_axis(ax) == (10.225, 10.675)
