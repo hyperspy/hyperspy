@@ -20,7 +20,6 @@ import os
 import logging
 from datetime import datetime, timedelta
 from dateutil import parser
-import pint
 from tifffile import imwrite, TiffFile, TIFF
 import tifffile
 import traits.api as t
@@ -29,6 +28,7 @@ from distutils.version import LooseVersion
 
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
+from hyperspy.axes import _ureg
 
 _logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ axes_label_codes = {
     '_': t.Undefined}
 
 
-ureg = pint.UnitRegistry()
+
 
 
 def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
@@ -516,7 +516,7 @@ def _parse_tuple_Zeiss(tup):
 def _parse_tuple_Zeiss_with_units(tup, to_units=None):
     (value, parse_units) = tup[1:]
     if to_units is not None:
-        v = value * ureg(parse_units)
+        v = value * _ureg(parse_units)
         value = float("%.6e" % v.to(to_units).magnitude)
     return value
 

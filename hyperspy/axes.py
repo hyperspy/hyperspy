@@ -23,7 +23,8 @@ import numpy as np
 import dask.array as da
 import traits.api as t
 from traits.trait_errors import TraitError
-import pint
+from lazyasd import lazyobject
+from hyperspy.lazy_imports import pint
 import logging
 
 from hyperspy.events import Events, Event
@@ -36,7 +37,11 @@ from hyperspy.defaults_parser import preferences
 import warnings
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
+
+
+@lazyobject
+def _ureg():
+    return pint.UnitRegistry()
 
 
 FACTOR_DOCSTRING = \

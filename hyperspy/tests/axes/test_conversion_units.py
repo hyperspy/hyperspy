@@ -23,6 +23,7 @@ import traits.api as t
 from hyperspy.axes import AxesManager, DataAxis, UnitConversion, _ureg
 from hyperspy.misc.test_utils import assert_deep_almost_equal, assert_warns
 
+import pint
 
 class TestUnitConversion:
 

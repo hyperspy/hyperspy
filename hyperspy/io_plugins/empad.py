@@ -21,14 +21,13 @@ import ast
 import xml.etree.ElementTree as ET
 import numpy as np
 import logging
-import pint
+from hyperspy.axes import _ureg
 import traits.api as t
 
 from hyperspy.misc.io.tools import convert_xml_to_dict
 
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
 
 
 # Plugin characteristics

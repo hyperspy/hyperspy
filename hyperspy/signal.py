@@ -22,7 +22,7 @@ import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
-from pint import UnitRegistry, UndefinedUnitError
+from hyperspy.lazy_imports import pint
 from pathlib import Path
 
 import numpy as np
@@ -32,7 +32,7 @@ from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, _ureg
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
@@ -4004,14 +4004,13 @@ class BaseSignal(FancySlicing,
         if hasattr(self.metadata.Signal, 'quantity'):
             self.metadata.Signal.__delattr__('quantity')
 
-        ureg = UnitRegistry()
         for axis in im_fft.axes_manager.signal_axes:
             axis.scale = 1. / axis.size / axis.scale
             axis.offset = 0.0
             try:
-                units = ureg.parse_expression(str(axis.units))**(-1)
+                units = _ureg.parse_expression(str(axis.units))**(-1)
                 axis.units = '{:~}'.format(units.units)
-            except UndefinedUnitError:
+            except pint.UndefinedUnitError:
                 _logger.warning('Units are not set or cannot be recognized')
             if shift:
                 axis.offset = -axis.high_value / 2.
@@ -4081,13 +4080,12 @@ class BaseSignal(FancySlicing,
         if return_real:
             im_ifft = im_ifft.real
 
-        ureg = UnitRegistry()
         for axis in im_ifft.axes_manager.signal_axes:
             axis.scale = 1. / axis.size / axis.scale
             try:
-                units = ureg.parse_expression(str(axis.units)) ** (-1)
+                units = _ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = '{:~}'.format(units.units)
-            except UndefinedUnitError:
+            except pint.UndefinedUnitError:
                 _logger.warning('Units are not set or cannot be recognized')
             axis.offset = 0.
         return im_ifft

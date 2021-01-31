@@ -23,8 +23,7 @@ import logging
 import traits.api as t
 import numpy as np
 from scipy import constants
-import pint
-
+from hyperspy.lazy_imports import pint
 from hyperspy.signal import BaseSetMetadataItems
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
