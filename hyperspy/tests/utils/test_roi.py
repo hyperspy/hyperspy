@@ -22,7 +22,7 @@ import pytest
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
                           RectangularROI, SpanROI)
 from hyperspy.signals import Signal1D, Signal2D
-
+import traits.api as t
 
 class TestROIs():
 
@@ -152,13 +152,11 @@ class TestROIs():
         assert tuple(r) == (15, 30)
 
     def test_widget_initialisation(self):
-        s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
-        s.axes_manager[0].scale = 0.5
-        s.axes_manager[1].scale = 1.0
-
-        roi_nav = RectangularROI(0, 0, 1, 0.5)
-        s.plot()
-        roi_nav.add_widget(s)
+        self.s_s.plot()
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+            r = roi()
+            r._set_default_values(self.s_s)
+            r.add_widget(self.s_s)
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -489,12 +487,17 @@ class TestROIs():
     def test_repr_None(self):
         # Setting the args=None sets them as traits.Undefined, which didn't 
         # have a string representation in the old %s style.
-        repr(Point1DROI())
-        repr(Point2DROI())
-        repr(Line2DROI())
-        repr(RectangularROI())
-        repr(SpanROI())
-        repr(CircleROI())
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI]:
+            r = roi()
+            for value in tuple(r):
+                assert value == t.Undefined
+            repr(r)
+        for roi in [CircleROI, Line2DROI]:
+            r = roi()
+            for value in tuple(r)[:-1]:
+                assert value == t.Undefined
+            assert tuple(r)[-1] == 0
+            repr(r)
 
     def test_repr_vals(self):
         repr(Point1DROI(1.1))
@@ -506,16 +509,16 @@ class TestROIs():
         repr(CircleROI(5, 5, 3, 1))
 
     def test_undefined_call(self):
-        rect = RectangularROI(None, None, None, None)
-        with pytest.raises(AttributeError, match='not yet been set'):
-            rect(self.s_s)
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+            r = roi()
+            with pytest.raises(ValueError, match='not yet been set'):
+                r(self.s_s)
 
-    def test_undefined_call_circle(self):
-        circ1 = CircleROI(None, None, None, None)
-        with pytest.raises(AttributeError, match='not yet been set'):
-            circ1(self.s_s)
-        circ2 = CircleROI(5, 5, 1, None)
-        circ2(self.s_s) # r_inner as undefined should not raise error
+    def test_default_values_call(self):
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+            r = roi()
+            r._set_default_values(self.s_s)
+            r(self.s_s)
 
 
 class TestInteractive:

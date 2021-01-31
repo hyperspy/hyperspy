@@ -57,6 +57,10 @@ from hyperspy.drawing import widgets
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.utils.axes import get_central_half_limits_of_axis
 
+not_set_error_msg = (
+        "Some ROI parameters have not yet been set. "
+        "Set them before slicing a signal."
+        )
 class BaseROI(t.HasTraits):
 
     """Base class for all ROIs.
@@ -110,7 +114,7 @@ class BaseROI(t.HasTraits):
         This is typically determined by all the coordinates being defined,
         and that the values makes sense relative to each other.
         """
-        return not t.Undefined in list(self)
+        return t.Undefined not in tuple(self)
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -190,11 +194,8 @@ class BaseROI(t.HasTraits):
               space can fit the right number of axis, and use that if it
               fits. If not, it will try the signal space.
         """
-        if t.Undefined in list(self):
-            raise AttributeError(
-        "Some ROI parameters have not yet been set. "
-        "Set them before slicing a signal."
-        )
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -404,7 +405,7 @@ class BaseInteractiveROI(BaseROI):
                 raise NotImplementedError('ROIs are not supported when data '
                                           'are shifted during plotting.')
         # Undefined if roi initialised without specifying parameters
-        if t.Undefined in list(self):
+        if t.Undefined in tuple(self):
             self._set_default_values(signal)
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
@@ -452,8 +453,8 @@ class BaseInteractiveROI(BaseROI):
         Arguments
         ---------
         signal : Signal
-            The signal to witch the widget is added. This is used to determine
-            with plot to add the widget to, and it supplies the axes_manager
+            The signal to which the widget is added. This is used to determine
+            which plot to add the widget to, and it supplies the axes_manager
             for the widget.
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
@@ -618,7 +619,7 @@ class Point1DROI(BasePointROI):
     def _set_default_values(self, signal):
         ax0, *_ = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if t.Undefined in list(self):
+        if t.Undefined in tuple(self):
             self.value = ax0._parse_value('rel0.5')
 
     @property
@@ -681,7 +682,7 @@ class Point2DROI(BasePointROI):
     def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if t.Undefined in list(self):
+        if t.Undefined in tuple(self):
             self.x = ax0._parse_value("rel0.5")
             self.y = ax1._parse_value("rel0.5")
 
@@ -740,7 +741,7 @@ class SpanROI(BaseInteractiveROI):
     def _set_default_values(self, signal):
         ax0, *_ = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if t.Undefined in list(self):
+        if t.Undefined in tuple(self):
             self.left, self.right = get_central_half_limits_of_axis(ax0)
 
     @property
@@ -748,7 +749,7 @@ class SpanROI(BaseInteractiveROI):
         return {"left":self.left, "right":self.right}
 
     def is_valid(self):
-        return (not t.Undefined in list(self) and
+        return (t.Undefined not in tuple(self) and
                 self.right >= self.left)
 
     def _right_changed(self, old, new):
@@ -828,7 +829,7 @@ class RectangularROI(BaseInteractiveROI):
         self._bounds_check = False
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if t.Undefined in list(self):
+        if t.Undefined in tuple(self):
             self.left, self.right = get_central_half_limits_of_axis(ax0)
             self.top, self.bottom = get_central_half_limits_of_axis(ax1)
         self._bounds_check = old_bounds_check
@@ -838,7 +839,7 @@ class RectangularROI(BaseInteractiveROI):
         return {"left":self.left, "top":self.top, "right":self.right, "bottom":self.bottom}
 
     def is_valid(self):
-        return (not t.Undefined in list(self) and
+        return (not t.Undefined in tuple(self) and
                 self.right >= self.left and self.bottom >= self.top)
 
     def _top_changed(self, old, new):
@@ -968,7 +969,6 @@ class CircleROI(BaseInteractiveROI):
         cx, cy, r = (
             para if para is not None 
             else t.Undefined for para in (cx, cy, r))
-        r_inner = r_inner if r_inner is not None else 0
 
         self._bounds_check = True   # Use reponsibly!
         self.cx, self.cy, self.r, self.r_inner = cx, cy, r, r_inner
@@ -995,7 +995,7 @@ class CircleROI(BaseInteractiveROI):
 
     def is_valid(self):
         return (
-            t.Undefined not in list(self) 
+            t.Undefined not in tuple(self)
             and self.r >= self.r_inner
             )
 
@@ -1054,11 +1054,8 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
-        if t.Undefined in list(self):
-            raise AttributeError(
-        "Some ROI parameters have not yet been set. "
-        "Set them before slicing a signal."
-        )
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -1408,11 +1405,8 @@ class Line2DROI(BaseInteractiveROI):
             profile. 0 means nearest-neighbor interpolation, and is both the
             default and the fastest.
         """
-        if t.Undefined in list(self):
-            raise AttributeError(
-        "Some ROI parameters have not yet been set. "
-        "Set them before slicing a signal."
-        )
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
