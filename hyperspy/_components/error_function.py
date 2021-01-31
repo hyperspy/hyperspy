@@ -18,7 +18,7 @@
 
 from hyperspy._components.expression import Expression
 from distutils.version import LooseVersion
-import sympy
+from hyperspy.lazy_imports import sympy
 
 
 class Erf(Expression):

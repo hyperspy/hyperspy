@@ -18,7 +18,7 @@
 
 from functools import wraps
 import numpy as np
-import sympy
+from hyperspy.lazy_imports import sympy
 import warnings
 
 from hyperspy.component import Component
@@ -197,7 +197,7 @@ class Expression(Component):
         possible.
         Useful to recompile the function and gradient with a different module.
         """
-        import sympy
+        from hyperspy.lazy_imports import sympy
         from sympy.utilities.lambdify import lambdify
         try:  # Expression is just a constant
             float(self._str_expression)

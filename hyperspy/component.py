@@ -20,8 +20,8 @@ import numpy as np
 from dask.array import Array as dArray
 import traits.api as t
 from traits.trait_numeric import Array
-import sympy
-from sympy.utilities.lambdify import lambdify
+from hyperspy.lazy_imports import sympy
+from hyperspy.lazy_imports import Lambdify
 from distutils.version import LooseVersion
 from pathlib import Path
 
@@ -240,13 +240,13 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain one variable, "
                              "it contains none.")
         x = tuple(expr.free_symbols)[0]
-        self.twin_function = lambdify(x, expr.evalf())
+        self.twin_function = Lambdify.lambdify(x, expr.evalf())
         self._twin_function_expr = value
         if not self.twin_inverse_function:
             y = sympy.Symbol(x.name + "2")
             try:
                 inv = list(sympy.solveset(sympy.Eq(y, expr), x))
-                self._twin_inverse_sympy = lambdify(y, inv)
+                self._twin_inverse_sympy = Lambdify.lambdify(y, inv)
                 self._twin_inverse_function = None
             except BaseException:
                 # Not all may have a suitable solution.
@@ -278,7 +278,7 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain one variable, "
                              "it contains none.")
         x = tuple(expr.free_symbols)[0]
-        self._twin_inverse_function = lambdify(x, expr.evalf())
+        self._twin_inverse_function = Lambdify.lambdify(x, expr.evalf())
         self._twin_inverse_function_expr = value
 
     @property

@@ -21,7 +21,7 @@ import dask.array as da
 
 from hyperspy._components.expression import Expression
 from distutils.version import LooseVersion
-import sympy
+from hyperspy.lazy_imports import sympy
 
 sqrt2pi = np.sqrt(2 * np.pi)
 

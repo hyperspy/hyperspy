@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import sympy
+from hyperspy.lazy_imports import sympy
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
