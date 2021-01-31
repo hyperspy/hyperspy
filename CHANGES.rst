@@ -32,7 +32,10 @@ RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
 * Widgets plotting improvement and add `pick_tolerance` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
-
+* Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Pass keyword argument to the image IO plugins (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Drop support for numpy<1.16, in line with NEP 29 and fix protochip reader for numpy 1.20 (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
+* Run test suite against upstream dependencies (numpy, scipy, scikit-learn and scikit-image) (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
 
 Changelog
 *********
