@@ -63,3 +63,30 @@ def test_compute_navigator():
     s.plot()
     np.testing.assert_allclose(s._plot.navigator_data_function(),
                                s.navigator.data)
+
+
+def test_compute_navigator_index():
+    N = 15
+    dim = 4
+    s = hs.signals.Signal2D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
+    for ax in s.axes_manager.signal_axes:
+        ax.scale = 0.1
+        ax.offset = -0.75
+
+    s.compute_navigator(index=0.0, chunks_number=3)
+    assert s.navigator.original_metadata.sum_from ==  [slice(5, 10, None), slice(5, 10, None)]
+
+    s.compute_navigator(index=0, chunks_number=3)
+    assert s.navigator.original_metadata.sum_from == [slice(0, 5, None), slice(0, 5, None)]
+
+    s.compute_navigator(index=-0.7, chunks_number=3)
+    assert s.navigator.original_metadata.sum_from == [slice(0, 5, None), slice(0, 5, None)]
+
+    s.compute_navigator(index=[-0.7, 0.0], chunks_number=3)
+    assert s.navigator.original_metadata.sum_from ==  [slice(0, 5, None), slice(5, 10, None)]
+
+    s.compute_navigator(index=0.0, chunks_number=[3, 5])
+    assert s.navigator.original_metadata.sum_from ==  [slice(5, 10, None), slice(6, 9, None)]
+
+    s.compute_navigator(index=[0.7, -0.7], chunks_number=[3, 5])
+    assert s.navigator.original_metadata.sum_from ==  [slice(10, 15, None), slice(0, 3, None)]

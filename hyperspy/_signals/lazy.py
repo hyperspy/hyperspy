@@ -37,7 +37,8 @@ from hyperspy.misc.array_tools import (_requires_linear_rebin,
                                        get_signal_chunk_slice)
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import multiply, dummy_context_manager
+from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
+
 
 _logger = logging.getLogger(__name__)
 
@@ -1029,17 +1030,26 @@ class LazySignal(BaseSignal):
                 navigator = 'slider'
         super().plot(navigator=navigator, **kwargs)
 
-    def compute_navigator(self, chunks_number=None, show_progressbar=None):
+    def compute_navigator(self, index=None, chunks_number=None,
+                          show_progressbar=None):
         """
-        Compute the navigator by taking the sum over a single chunk located
-        in the centre of the signal space.
+        Compute the navigator by taking the sum over a single chunk conatained
+        the specified coordinate. Taking the sum over a single chunk is an
+        computationally efficient approach to compute the navigator. The data
+        can be rechunk by specifying the ``chunks_number`` argument.
 
         Parameters
         ----------
-        chunks_number : (int, None), optional
-            The number of chunks in the signal space used for the calculation
-            of the navigator. If None, the existing chunking will be
-            considered when picking the chunk used for the calculation.
+        index : (int, float, None) or iterable, optional
+            Specified where to take the sum, follows HyperSpy indexing syntax
+            for integer and float. If None, the index is the centre of the
+            signal_space
+        chunks_number : (int, None) or iterable, optional
+            Define the number of chunks in the signal space used for rechunk
+            the when calculating of the navigator. Useful to define the range
+            over which the sum is calculated.
+            If None, the existing chunking will be considered when picking the
+            chunk used in the navigator calculation.
         %s
 
         Returns
@@ -1054,15 +1064,30 @@ class LazySignal(BaseSignal):
         odd number, so that the middle is centered.
 
         """
+
         signal_shape = self.axes_manager.signal_shape
+
+        if index is None:
+            index = [round(shape / 2) for shape in signal_shape]
+        else:
+            if not isiterable(index):
+                index = [index] * len(signal_shape)
+            index = [axis._get_index(_idx)
+                     for _idx, axis in zip(index, self.axes_manager.signal_axes)]
+        _logger.info(f"Using index: {index}")
+
         if chunks_number is None:
             chunks = self.data.chunks
         else:
+            if not isiterable(chunks_number):
+                chunks_number = [chunks_number] * len(signal_shape)
             # Determine the chunk size
             signal_chunks = da.core.normalize_chunks(
-                int(signal_shape[0] / chunks_number),
+                [int(size / cn) for cn, size in zip(chunks_number, signal_shape)],
                 shape=signal_shape
                 )
+            # Needs to reverse the chunks list to match dask chunking order
+            signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
             chunks = self.data.rechunk([*navigation_chunks, *signal_chunks],
                                        balance=True).chunks
@@ -1071,7 +1096,6 @@ class LazySignal(BaseSignal):
         signal_size = len(signal_shape)
         signal_chunks = tuple(chunks[i-signal_size] for i in range(signal_size))
         _logger.info(f"Signal chunks: {signal_chunks}")
-        index = [round(shape / 2) for shape in signal_shape]
         isig_slice = get_signal_chunk_slice(index, chunks)
 
         _logger.info(f'Computing sum over signal dimension: {isig_slice}')
