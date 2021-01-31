@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -35,6 +35,7 @@ matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.saturated_pixels = 0.0
 hs.preferences.Plot.cmap_navigator = 'viridis'
 hs.preferences.Plot.cmap_signal = 'viridis'
+hs.preferences.Plot.pick_tolerance = 5.0
 
 # Set parallel to False by default, so only
 # those tests with parallel=True are run in parallel

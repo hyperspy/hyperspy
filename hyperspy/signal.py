@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -5578,10 +5578,7 @@ class BaseSignal(FancySlicing,
         for p in plot:
             if hasattr(self._plot, p):
                 p = getattr(self._plot, p)
-                if p.figure.canvas.supports_blit:
-                    p.ax.hspy_fig._update_animated()
-                else:
-                    p.ax.hspy_fig._draw_animated()
+                p.render_figure()
 
     def _plot_permanent_markers(self):
         marker_name_list = self.metadata.Markers.keys()

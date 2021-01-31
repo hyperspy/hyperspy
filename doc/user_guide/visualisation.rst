@@ -70,17 +70,18 @@ more will disable the extra cursor:
 
 In matplotlib, left and right arrow keys are by default set to navigate the
 "zoom" history. To avoid the problem of changing zoom while navigating,
-Ctrl + arrows can be used instead. Navigating without using the modifier keys
+``Ctrl`` + arrows can be used instead. Navigating without using the modifier keys
 will be deprecated in version 2.0.
 
 To navigate navigation dimensions larger than 2, modifier keys can be used.
-The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down)
+The defaults are ``Shift`` + ``left``/``right`` and ``Shift`` + ``up``/``down``,
+(``Alt`` + ``left``/``right`` and ``Alt`` + ``up``/``down``)
 for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
 
-Hotkeys and modifier keys for navigating the plot can be set in the ``hs.preferences.gui()``.
+Hotkeys and modifier keys for navigating the plot can be set in the
+:ref:`HyperSpy plot preferences <configuring-hyperspy-label>``.
 Note that some combinations will not work for all platforms, as some systems reserve them for
 other purposes.
-.. _second_pointer.png:
 
 .. figure::  images/second_pointer.png
    :align:   center
