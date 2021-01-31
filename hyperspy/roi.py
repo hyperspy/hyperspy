@@ -84,7 +84,7 @@ class BaseROI(t.HasTraits):
         self.signal_map = dict()
 
     def __getitem__(self, *args, **kwargs):
-        return self.values.__getitem__(*args, **kwargs)
+        return tuple(self.parameters.values()).__getitem__(*args, **kwargs)
 
     def __repr__(self):
         para = []
@@ -103,20 +103,9 @@ class BaseROI(t.HasTraits):
     def parameters(self):
         raise NotImplementedError()
 
-    @property
-    def values(self):
-        return tuple(self.parameters.values())
-
-    def _parameters_have_undefined(self):
-        "Check if any parameter values are undefined."
-        if t.Undefined in self.values:
-            return True
-        else:
-            return False
-
     def _raise_error_if_undefined_para(self):
         "Raise an error i.e. when about to __call__ on a signal, with Undefined attrs."
-        if self._parameters_have_undefined():
+        if t.Undefined in list(self):
             raise AttributeError(
         "Some ROI parameters have not yet been set. Set them before slicing a signal.")
 
@@ -127,7 +116,7 @@ class BaseROI(t.HasTraits):
         This is typically determined by all the coordinates being defined,
         and that the values makes sense relative to each other.
         """
-        raise not self._parameters_have_undefined()
+        return not t.Undefined in list(self)
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -417,7 +406,7 @@ class BaseInteractiveROI(BaseROI):
                 raise NotImplementedError('ROIs are not supported when data '
                                           'are shifted during plotting.')
         # Undefined if roi initialised without specifying parameters
-        if self._parameters_have_undefined():
+        if t.Undefined in list(self):
             self._set_default_values(signal)
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
@@ -571,7 +560,6 @@ class BasePointROI(BaseInteractiveROI):
     """
 
     def __call__(self, signal, out=None, axes=None):
-        self._raise_error_if_undefined_para()
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -635,7 +623,7 @@ class Point1DROI(BasePointROI):
     def _set_default_values(self, signal):
         ax0, *_ = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if self._parameters_have_undefined():
+        if t.Undefined in list(self):
             self.value = ax0._parse_value('rel0.5')
 
     @property
@@ -698,7 +686,7 @@ class Point2DROI(BasePointROI):
     def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if self._parameters_have_undefined():
+        if t.Undefined in list(self):
             self.x = ax0._parse_value("rel0.5")
             self.y = ax1._parse_value("rel0.5")
 
@@ -757,7 +745,7 @@ class SpanROI(BaseInteractiveROI):
     def _set_default_values(self, signal):
         ax0, *_ = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if self._parameters_have_undefined():
+        if t.Undefined in list(self):
             self.left, self.right = get_central_half_limits_of_axis(ax0)
 
     @property
@@ -765,7 +753,7 @@ class SpanROI(BaseInteractiveROI):
         return {"left":self.left, "right":self.right}
 
     def is_valid(self):
-        return (not self._parameters_have_undefined() and
+        return (not t.Undefined in list(self) and
                 self.right >= self.left)
 
     def _right_changed(self, old, new):
@@ -845,7 +833,7 @@ class RectangularROI(BaseInteractiveROI):
         self._bounds_check = False
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        if self._parameters_have_undefined():
+        if t.Undefined in list(self):
             self.left, self.right = get_central_half_limits_of_axis(ax0)
             self.top, self.bottom = get_central_half_limits_of_axis(ax1)
         self._bounds_check = old_bounds_check
@@ -855,7 +843,7 @@ class RectangularROI(BaseInteractiveROI):
         return {"left":self.left, "top":self.top, "right":self.right, "bottom":self.bottom}
 
     def is_valid(self):
-        return (not self._parameters_have_undefined() and
+        return (not t.Undefined in list(self) and
                 self.right >= self.left and self.bottom >= self.top)
 
     def _top_changed(self, old, new):
@@ -992,12 +980,11 @@ class CircleROI(BaseInteractiveROI):
             self.r_inner = r_inner
 
     def __getitem__(self, *args, **kwargs):
-        if self.r_inner and self.r_inner is not t.Undefined:
-            values = self.values
-        else:
-            # don't include r_inner
-            values = self.values[:-1]
-        return values.__getitem__(*args, **kwargs)
+        values = tuple(self.parameters.values())
+        # don't include r_inner (final entry in values) if its not used
+        if not (self.r_inner and self.r_inner is not t.Undefined):
+            values = values[:-1]
+        return tuple(values).__getitem__(*args, **kwargs)
 
     def _set_default_values(self, signal):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
@@ -1018,15 +1005,6 @@ class CircleROI(BaseInteractiveROI):
             "r": self.r,
             "r_inner": self.r_inner
             }
-
-    def _parameters_have_undefined(self):
-        # Redefine this method for CircleROI, since r_inner
-        # can is ok to set as undefined, but would normally 
-        # be caught in self.parameters. It is the last entry.
-        if t.Undefined in self.values[:-1]:
-            return True
-        else:
-            return False
 
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and

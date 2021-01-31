@@ -502,6 +502,7 @@ class TestROIs():
         repr(Line2DROI(0, 0, 1, 1, 0.1))
         repr(RectangularROI(0, 0, 1, 1))
         repr(SpanROI(3., 5.))
+        repr(CircleROI(5, 5, 3))
         repr(CircleROI(5, 5, 3, 1))
 
     def test_undefined_parameters(self):
