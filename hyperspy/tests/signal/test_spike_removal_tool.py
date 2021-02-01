@@ -74,3 +74,13 @@ def test_spikes_removal_tool_non_interactive():
     np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=5)
     np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
     assert isinstance(sr, SpikesRemoval)
+
+    navigation_mask = np.zeros((2,3), dtype='bool')
+    navigation_mask[1,0] = True
+    signal_mask = np.zeros((30,), dtype='bool')
+    signal_mask[28:] = True
+    sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=False,
+                               navigation_mask=navigation_mask, signal_mask=signal_mask)
+    np.testing.assert_almost_equal(s.data[1, 0, 1], 2,)
+    np.testing.assert_almost_equal(s.data[0, 2, 29], 1,)
+    np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
