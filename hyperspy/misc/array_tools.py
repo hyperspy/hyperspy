@@ -411,7 +411,7 @@ def get_signal_chunk_slice(index, chunks):
 
     Parameters
     ----------
-    index : int
+    index : int or tuple of int
         Index determining the wanted chunk.
     chunks : tuple
         Dask array chunks.

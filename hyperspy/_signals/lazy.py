@@ -1033,8 +1033,8 @@ class LazySignal(BaseSignal):
     def compute_navigator(self, index=None, chunks_number=None,
                           show_progressbar=None):
         """
-        Compute the navigator by taking the sum over a single chunk conatained
-        the specified coordinate. Taking the sum over a single chunk is an
+        Compute the navigator by taking the sum over a single chunk contained
+        the specified coordinate. Taking the sum over a single chunk is a
         computationally efficient approach to compute the navigator. The data
         can be rechunk by specifying the ``chunks_number`` argument.
 

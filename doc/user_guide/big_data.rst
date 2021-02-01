@@ -165,7 +165,7 @@ a good signal-to-noise ratio image: the sum is taken on a single chunk of the
 signal space, in order to avoid to compute the navigator for the whole dataset.
 In the following example, the signal space is divided in 25 chunks (5 along on
 each axis), and therefore computing the navigation will only be perfomed over
-a small small sbset of the whole dataset by taking the sum on only 1 chunk out
+a small subset of the whole dataset by taking the sum on only 1 chunk out
 of 25:
 
 .. code-block:: python
@@ -233,7 +233,7 @@ interger.
     >>> s.navigator.original_metadata
     └── sum_from = [slice(0, 200, None), slice(0, 200, None)]
 
-An alternative is to calculate the navigator separetely and store it in the
+An alternative is to calculate the navigator separately and store it in the
 signal using the :py:attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
 
 
