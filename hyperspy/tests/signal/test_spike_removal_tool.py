@@ -64,28 +64,24 @@ add_noise_params = [
     [False, 5],
     [True, 1]
 ]
-def test_spikes_removal_tool_non_interactive():
-    for noise_bool, assert_decimal in add_noise_params:
-        s = Signal1D(np.ones((2, 3, 30)))
-        np.random.seed(1)
-        s.add_gaussian_noise(1e-5)
-        # Add three spikes
-        s.data[1, 0, 1] += 2
-        s.data[0, 2, 29] += 1
-        s.data[1, 2, 14] += 1
-        s.metadata.Signal.set_item("Noise_properties.variance", 1e-5)
-
-        sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=noise_bool)
-        np.testing.assert_almost_equal(s.data[1, 0, 1], 1, decimal=assert_decimal)
-        np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=assert_decimal)
-        np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=assert_decimal)
-        assert isinstance(sr, SpikesRemoval)
 
 
-def test_spikes_removal_tool_non_interactive_noise():
-    @pytest.mark.parametrize("test_input, expected", [("3+5", 8), ("2+4", 6), ("6*9", 42)])
-    def test_eval(test_input, expected):
-        assert eval(test_input) == expected
+@pytest.mark.parametrize(("add_noise, decimal"), [(True, 1), (False, 5)])
+def test_spikes_removal_tool_non_interactive(add_noise, decimal):
+    s = Signal1D(np.ones((2, 3, 30)))
+    np.random.seed(1)
+    s.add_gaussian_noise(1e-5)
+    # Add three spikes
+    s.data[1, 0, 1] += 2
+    s.data[0, 2, 29] += 1
+    s.data[1, 2, 14] += 1
+    s.metadata.Signal.set_item("Noise_properties.variance", 1e-5)
+
+    sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=add_noise)
+    np.testing.assert_almost_equal(s.data[1, 0, 1], 1, decimal=decimal)
+    np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=decimal)
+    np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=decimal)
+    assert isinstance(sr, SpikesRemoval)
 
 
 def test_spikes_removal_tool_non_interactive_masking():
@@ -97,8 +93,8 @@ def test_spikes_removal_tool_non_interactive_masking():
     s.data[0, 2, 29] += 1
     s.data[1, 2, 14] += 1
 
-    navigation_mask = np.zeros((2,3), dtype='bool')
-    navigation_mask[1,0] = True
+    navigation_mask = np.zeros((2, 3), dtype='bool')
+    navigation_mask[1, 0] = True
     signal_mask = np.zeros((30,), dtype='bool')
     signal_mask[28:] = True
     sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=False,
