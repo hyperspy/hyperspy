@@ -40,3 +40,11 @@ def dask_diag():
 @lazyobject
 def numba():
     return importlib.import_module('numba')
+
+@lazyobject
+def IO_plugins():
+    return importlib.import_module('hyperspy.io_plugins')
+
+@lazyobject
+def pyUSID():
+    return importlib.import_module('pyUSID')

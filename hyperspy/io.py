@@ -32,7 +32,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
 from hyperspy.misc.utils import strlist2enumeration
 from hyperspy.misc.utils import stack as stack_method
-from hyperspy.io_plugins import io_plugins, default_write_ext
+from hyperspy.lazy_imports import IO_plugins
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
@@ -64,7 +64,7 @@ def _infer_file_reader(extension):
         The inferred file reader.
 
     """
-    rdrs = [rdr for rdr in io_plugins if extension.lower() in rdr.file_extensions]
+    rdrs = [rdr for rdr in IO_plugins.io_plugins if extension.lower() in rdr.file_extensions]
 
     if not rdrs:
         # Try to load it with the python imaging library
@@ -695,6 +695,8 @@ def save(filename, signal, overwrite=None, **kwds):
     None
 
     """
+    from hyperspy.io_plugins import default_write_ext
+
     filename = Path(filename).resolve()
     extension = filename.suffix
     if extension == '':
@@ -702,7 +704,7 @@ def save(filename, signal, overwrite=None, **kwds):
         filename = filename.with_suffix(extension)
 
     writer = None
-    for plugin in io_plugins:
+    for plugin in IO_plugins.io_plugins:
         # Drop the "." separator from the suffix
         if extension[1:].lower() in plugin.file_extensions:
             writer = plugin
@@ -725,7 +727,7 @@ def save(filename, signal, overwrite=None, **kwds):
         )
 
     if writer.writes is not True and (sd, nd) not in writer.writes:
-        yes_we_can = [plugin.format_name for plugin in io_plugins
+        yes_we_can = [plugin.format_name for plugin in IO_plugins.io_plugins
                       if plugin.writes is True or
                       plugin.writes is not False and
                       (sd, nd) in plugin.writes]

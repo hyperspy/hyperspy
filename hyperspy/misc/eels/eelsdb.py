@@ -20,7 +20,6 @@
 import requests
 import logging
 
-from hyperspy.io_plugins.msa import parse_msa_string
 from hyperspy.io import dict2signal
 
 _logger = logging.getLogger(__name__)
@@ -230,6 +229,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         download_link = json_spectrum['download_link']
         msa_string = requests.get(download_link, verify=verify_certificate).text
         try:
+            from hyperspy.io_plugins.msa import parse_msa_string
             s = dict2signal(parse_msa_string(msa_string)[0])
             emsa = s.original_metadata
             s.original_metadata = s.original_metadata.__class__(

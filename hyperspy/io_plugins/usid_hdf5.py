@@ -5,7 +5,7 @@ from functools import partial
 from collections.abc import MutableMapping
 import h5py
 import numpy as np
-from hyperspy.lazy_imports import usis # import pyUSID as usid
+from hyperspy.lazy_imports import pyUSID as usid
 
 import sidpy
 

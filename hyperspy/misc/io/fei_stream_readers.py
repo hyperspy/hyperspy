@@ -21,7 +21,6 @@ from hyperspy.lazy_imports import dask_array as da
 import sparse
 
 from hyperspy.lazy_imports import numba
-raise ValueError("fei")
 class DenseSliceCOO(sparse.COO):
     """Just like sparse.COO, but returning a dense array on indexing/slicing"""
 
