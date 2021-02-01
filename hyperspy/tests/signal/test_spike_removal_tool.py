@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-
+import pytest
 from hyperspy.signal_tools import SpikesRemovalInteractive, SpikesRemoval
 from hyperspy.signals import Signal1D
 
@@ -60,20 +60,33 @@ def test_spikes_removal_tool():
     assert s.axes_manager.indices == (0, 0)
 
 
+add_noise_params = [
+    [False, 5],
+    [True, 1]
+]
 def test_spikes_removal_tool_non_interactive():
-    s = Signal1D(np.ones((2, 3, 30)))
-    np.random.seed(1)
-    s.add_gaussian_noise(1e-5)
-    # Add three spikes
-    s.data[1, 0, 1] += 2
-    s.data[0, 2, 29] += 1
-    s.data[1, 2, 14] += 1
+    for noise_bool, assert_decimal in add_noise_params:
+        s = Signal1D(np.ones((2, 3, 30)))
+        np.random.seed(1)
+        s.add_gaussian_noise(1e-5)
+        # Add three spikes
+        s.data[1, 0, 1] += 2
+        s.data[0, 2, 29] += 1
+        s.data[1, 2, 14] += 1
+        s.metadata.Signal.set_item("Noise_properties.variance", 1e-5)
 
-    sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=False)
-    np.testing.assert_almost_equal(s.data[1, 0, 1], 1, decimal=5)
-    np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=5)
-    np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
-    assert isinstance(sr, SpikesRemoval)
+        sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=noise_bool)
+        np.testing.assert_almost_equal(s.data[1, 0, 1], 1, decimal=assert_decimal)
+        np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=assert_decimal)
+        np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=assert_decimal)
+        assert isinstance(sr, SpikesRemoval)
+
+
+def test_spikes_removal_tool_non_interactive_noise():
+    @pytest.mark.parametrize("test_input, expected", [("3+5", 8), ("2+4", 6), ("6*9", 42)])
+    def test_eval(test_input, expected):
+        assert eval(test_input) == expected
+
 
 def test_spikes_removal_tool_non_interactive_masking():
     s = Signal1D(np.ones((2, 3, 30)))
@@ -90,6 +103,6 @@ def test_spikes_removal_tool_non_interactive_masking():
     signal_mask[28:] = True
     sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=False,
                                navigation_mask=navigation_mask, signal_mask=signal_mask)
-    np.testing.assert_almost_equal(s.data[1, 0, 1], 3,)
-    np.testing.assert_almost_equal(s.data[0, 2, 29], 2,)
+    np.testing.assert_almost_equal(s.data[1, 0, 1], 3, decimal=5)
+    np.testing.assert_almost_equal(s.data[0, 2, 29], 2, decimal=5)
     np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
