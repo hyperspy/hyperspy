@@ -25,7 +25,7 @@ import logging
 import warnings
 
 from scipy import ndimage
-from hyperspy.lazy_imports import skimage_correlation as correlation
+from hyperspy.lazy_imports import skimage_correlation as skcorrelation
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -249,7 +249,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         normalization = (image_product.size * sub_pixel_factor ** 2)
         # Matrix multiply DFT around the current shift estimate
         sample_region_offset = dftshift - shifts * sub_pixel_factor
-        correlation = correlation._upsampled_dft(image_product.conj(),
+        correlation = skcorrelation._upsampled_dft(image_product.conj(),
                                      upsampled_region_size,
                                      sub_pixel_factor,
                                      sample_region_offset).conj()

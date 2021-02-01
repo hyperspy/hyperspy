@@ -27,7 +27,7 @@ from scipy.sparse.linalg import svds
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import (
-    randomized_svd,
+    extmath,
     sklearn_installed,
 )
 
@@ -149,7 +149,7 @@ def svd_solve(
             raise ImportError(
                 "svd_solver='randomized' requires scikit-learn to be installed"
             )
-        U, S, V = randomized_svd(data, n_components=output_dimension, **kwargs)
+        U, S, V = extmath.randomized_svd(data, n_components=output_dimension, **kwargs)
     elif svd_solver == "arpack":
         if LooseVersion(scipy.__version__) < LooseVersion("1.4.0"):  # pragma: no cover
             raise ValueError('`svd_solver="arpack"` requires scipy >= 1.4.0')

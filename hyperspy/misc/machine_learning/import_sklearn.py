@@ -21,17 +21,36 @@ Import sklearn.* and randomized_svd from scikit-learn
 """
 
 import warnings
-
+import importlib
+from lazyasd import lazyobject
 
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        import sklearn
-        import sklearn.decomposition
-        import sklearn.cluster
-        import sklearn.preprocessing
-        import sklearn.metrics
-        from sklearn.utils.extmath import randomized_svd
+
+        @lazyobject
+        def sklearn():
+            return importlib.import_module('sklearn')
+
+        @lazyobject
+        def decomposition():
+            return importlib.import_module('sklearn.decomposition')
+
+        @lazyobject
+        def cluster():
+            return importlib.import_module('sklearn.cluster')
+
+        @lazyobject
+        def preprocessing():
+            return importlib.import_module('sklearn.preprocessing')
+
+        @lazyobject
+        def metrics():
+            return importlib.import_module('sklearn.metrics')
+
+        @lazyobject
+        def extmath():
+            return importlib.import_module('sklearn.utils.extmath')
 
         sklearn_installed = True
 

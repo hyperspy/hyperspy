@@ -816,7 +816,7 @@ class LazySignal(BaseSignal):
             if not import_sklearn.sklearn_installed:
                 raise ImportError("algorithm='PCA' requires scikit-learn")
 
-            obj = import_sklearn.sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
+            obj = import_sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
             reproject = True
             to_print.extend(["scikit-learn estimator:", obj])

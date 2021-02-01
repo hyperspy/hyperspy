@@ -103,7 +103,7 @@ class TestCluster1D:
         )
 
     def test_custom_preprocessing(self):
-        custom_method = import_sklearn.sklearn.preprocessing.Normalizer()
+        custom_method = import_sklearn.preprocessing.Normalizer()
         self.signal.cluster_analysis(
             "signal", n_clusters=3, preprocessing=custom_method, algorithm="kmeans"
         )

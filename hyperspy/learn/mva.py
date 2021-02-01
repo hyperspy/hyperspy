@@ -48,26 +48,29 @@ _logger = logging.getLogger(__name__)
 
 
 if import_sklearn.sklearn_installed:
-    decomposition_algorithms = {
-        "sklearn_pca": import_sklearn.sklearn.decomposition.PCA,
-        "NMF": import_sklearn.sklearn.decomposition.NMF,
-        "sparse_pca": import_sklearn.sklearn.decomposition.SparsePCA,
-        "mini_batch_sparse_pca": import_sklearn.sklearn.decomposition.MiniBatchSparsePCA,
-        "sklearn_fastica": import_sklearn.sklearn.decomposition.FastICA,
-    }
-    cluster_algorithms = {
-        None : import_sklearn.sklearn.cluster.KMeans,
-        'kmeans' : import_sklearn.sklearn.cluster.KMeans,
-        'agglomerative' : import_sklearn.sklearn.cluster.AgglomerativeClustering,
-        'minibatchkmeans' : import_sklearn.sklearn.cluster.MiniBatchKMeans,
-        'spectralclustering' : import_sklearn.sklearn.cluster.SpectralClustering
-    }
-    cluster_preprocessing_algorithms = {
-        None: None,
-        "norm": import_sklearn.sklearn.preprocessing.Normalizer,
-        "standard": import_sklearn.sklearn.preprocessing.StandardScaler,
-        "minmax": import_sklearn.sklearn.preprocessing.MinMaxScaler
-    }
+    def get_decomposition_algorithms():
+        return {
+            "sklearn_pca": import_sklearn.decomposition.PCA,
+            "NMF": import_sklearn.decomposition.NMF,
+            "sparse_pca": import_sklearn.decomposition.SparsePCA,
+            "mini_batch_sparse_pca": import_sklearn.decomposition.MiniBatchSparsePCA,
+            "sklearn_fastica": import_sklearn.decomposition.FastICA,
+        }
+    def get_cluster_algorithms():
+        return {
+            None : import_sklearn.cluster.KMeans,
+            'kmeans' : import_sklearn.cluster.KMeans,
+            'agglomerative' : import_sklearn.cluster.AgglomerativeClustering,
+            'minibatchkmeans' : import_sklearn.cluster.MiniBatchKMeans,
+            'spectralclustering' : import_sklearn.cluster.SpectralClustering
+        }
+    def get_cluster_preprocessing_algorithms():
+        return {
+            None: None,
+            "norm": import_sklearn.preprocessing.Normalizer,
+            "standard": import_sklearn.preprocessing.StandardScaler,
+            "minmax": import_sklearn.preprocessing.MinMaxScaler
+        }
 
 
 
@@ -303,7 +306,7 @@ class MVA:
 
             # Initialize the sklearn estimator
             is_sklearn_like = True
-            estim = decomposition_algorithms[algorithm](
+            estim = get_decomposition_algorithms()[algorithm](
                 n_components=output_dimension, **kwargs
             )
 
@@ -857,7 +860,7 @@ class MVA:
 
             # Initialize the sklearn estimator
             is_sklearn_like = True
-            estim = decomposition_algorithms[algorithm](**kwargs)
+            estim = get_decomposition_algorithms()[algorithm](**kwargs)
 
             # Check whiten argument
             if estim.whiten and whiten_method is not None:
@@ -2167,14 +2170,14 @@ class MVA:
         and instantiates it with n_clusters or if it's an object check that
         the object has a fit method
         """
-        algorithms_sklearn = list(cluster_algorithms.keys())
+        algorithms_sklearn = list(get_cluster_algorithms().keys())
         if isinstance(algorithm, str):
             if algorithm in algorithms_sklearn:
                 if not import_sklearn.sklearn_installed:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
-                cluster_algorithm = cluster_algorithms[algorithm](**kwargs)
+                cluster_algorithm = get_cluster_algorithms()[algorithm](**kwargs)
         elif algorithm is None:
-            cluster_algorithm = cluster_algorithms[None](**kwargs)
+            cluster_algorithm = get_cluster_algorithms()[None](**kwargs)
         elif hasattr(algorithm, "fit"):
             cluster_algorithm = algorithm
         else:
@@ -2187,12 +2190,12 @@ class MVA:
         """Convenience method to lookup method if algorithm is a string
         or if it's an object check that the object has a fit_transform method
         """
-        preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
+        preprocessing_methods = list(get_cluster_preprocessing_algorithms().keys())
         if algorithm in preprocessing_methods:
             if algorithm is not None:
                 if not import_sklearn.sklearn_installed:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
-                process_algorithm = cluster_preprocessing_algorithms[algorithm](**kwargs)
+                process_algorithm = get_cluster_preprocessing_algorithms()[algorithm](**kwargs)
             else:
                 process_algorithm = None
         elif hasattr(algorithm, "fit_transform"):
@@ -2228,7 +2231,7 @@ class MVA:
 
         """
         distances = \
-            [import_sklearn.sklearn.metrics.pairwise.\
+            [import_sklearn.metrics.pairwise.\
                 euclidean_distances(cluster_data[memberships == c, :],
             squared=squared)
             for c in range(np.max(memberships) + 1)]
@@ -2348,10 +2351,10 @@ class MVA:
         if max_clusters < 2:
             raise ValueError("The max number of clusters, max_clusters, "
                              "must be specified and be >= 2.")
-        if algorithm not in cluster_algorithms:
+        if algorithm not in get_cluster_algorithms():
             raise ValueError("Estimate number of clusters only works with "
                              "supported clustering algorithms")
-        if preprocessing not in cluster_preprocessing_algorithms:
+        if preprocessing not in get_cluster_preprocessing_algorithms():
             raise ValueError("Estimate number of clusters only works with "
                              "supported preprocessing algorithms")
 
@@ -2422,7 +2425,7 @@ class MVA:
                     alg = self._cluster_analysis(scaled_data,cluster_algorithm)
                     cluster_labels = alg.labels_
                     silhouette_avg.append(
-                        import_sklearn.sklearn.metrics.silhouette_score(
+                        import_sklearn.metrics.silhouette_score(
                         scaled_data,
                         cluster_labels))
                     pbar.update(1)
