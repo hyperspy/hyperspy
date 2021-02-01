@@ -90,3 +90,15 @@ def test_compute_navigator_index():
 
     s.compute_navigator(index=[0.7, -0.7], chunks_number=[3, 5])
     assert s.navigator.original_metadata.sum_from ==  [slice(10, 15, None), slice(0, 3, None)]
+
+
+def test_plot_navigator_signal():
+    N = 15
+    dim = 4
+    s = hs.signals.Signal2D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
+    nav = s.inav[10, 10]
+    nav.compute()
+    nav *= -1
+    s.plot(navigator=nav)
+    np.testing.assert_allclose(s._plot.navigator_data_function(), nav)
+

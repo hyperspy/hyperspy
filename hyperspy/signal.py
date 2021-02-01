@@ -2610,10 +2610,10 @@ class BaseSignal(FancySlicing,
             else:
                 return navigator()
 
-        if navigator == "auto" and self.navigator is not None:
-            navigator = self.navigator
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
-            if (self.axes_manager.navigation_dimension == 1 and
+            if self.navigator is not None:
+                navigator = self.navigator
+            elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
                 navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:

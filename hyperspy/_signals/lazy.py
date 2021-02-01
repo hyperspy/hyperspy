@@ -1016,19 +1016,21 @@ class LazySignal(BaseSignal):
             print("\n".join([str(pr) for pr in to_print]))
 
     def plot(self, navigator='auto', **kwargs):
-        nav_dim = self.axes_manager.navigation_dimension
-        if navigator == 'spectrum':
-            # We don't support the 'spectrum' option to keep it simple
-            _logger.warning("The `navigator='spectrum'` option is not "
-                            "supported for lazy signals, 'auto' is used instead.")
-            navigator = 'auto'
-        if navigator == 'auto':
-            if nav_dim in [1, 2]:
-                if self.navigator is None:
-                    self.compute_navigator()
-                navigator = self.navigator
-            elif nav_dim > 2:
-                navigator = 'slider'
+        if isinstance(navigator, str):
+            if navigator == 'spectrum':
+                # We don't support the 'spectrum' option to keep it simple
+                _logger.warning("The `navigator='spectrum'` option is not "
+                                "supported for lazy signals, 'auto' is used "
+                                "instead.")
+                navigator = 'auto'
+            if navigator == 'auto':
+                nav_dim = self.axes_manager.navigation_dimension
+                if nav_dim in [1, 2]:
+                    if self.navigator is None:
+                        self.compute_navigator()
+                    navigator = self.navigator
+                elif nav_dim > 2:
+                    navigator = 'slider'
         super().plot(navigator=navigator, **kwargs)
 
     def compute_navigator(self, index=None, chunks_number=None,
