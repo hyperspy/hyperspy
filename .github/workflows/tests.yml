@@ -23,7 +23,7 @@ jobs:
           - os: ubuntu-latest
             PYTHON_VERSION: 3.6
             OLDEST_SUPPORTED_VERSION: true
-            DEPENDENCIES: matplotlib==2.2.3 numpy==1.15.4 scipy==1.1 imagecodecs==2019.12.3
+            DEPENDENCIES: matplotlib==2.2.3 numpy==1.15.4 scipy==1.1 imagecodecs==2019.12.3 dask==2.0.0
             PIP_SELECTOR: '[all, tests]'
             LABEL: /oldest
           # test minimum requirement
