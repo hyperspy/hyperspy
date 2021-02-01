@@ -20,10 +20,10 @@ import os
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 import logging
+from lazyasd import lazyobject
 
 import numpy as np
-import numba
-
+from hyperspy.lazy_imports import numba
 
 _logger = logging.getLogger(__name__)
 
@@ -436,53 +436,6 @@ def parsejeol(fd):
     return final_dict
 
 
-@numba.njit(cache=True)
-def readcube(rawdata, hypermap, rebin_energy, channel_number, width_norm,
-             height_norm, max_value):  # pragma: no cover
-    for value in rawdata:
-        if value >= 32768 and value < 36864:
-            x = int((value - 32768) / width_norm)
-        elif value >= 36864 and value < 40960:
-            y = int((value - 36864) / height_norm)
-        elif value >= 45056 and value < 49152:
-            z = int((value - 45056) / rebin_energy)
-            if z < channel_number:
-                hypermap[y, x, z] += 1
-                if hypermap[y, x, z] == max_value:
-                    raise ValueError("The range of the dtype is too small, "
-                                     "use `SI_dtype` to set a dtype with "
-                                     "higher range.")
-    return hypermap
-
-
-@numba.njit(cache=True)
-def readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
-             width_norm, height_norm, max_value):  # pragma: no cover
-    """
-    We need to create a separate function, because numba.njit doesn't play well
-    with an array having its shape depending on something else
-    """
-    frame_idx = 0
-    previous_y = 0
-    for value in rawdata:
-        if value >= 32768 and value < 36864:
-            x = int((value - 32768) / width_norm)
-        elif value >= 36864 and value < 40960:
-            y = int((value - 36864) / height_norm)
-            if y < previous_y:
-                frame_idx += 1
-            previous_y = y
-        elif value >= 45056 and value < 49152:
-            z = int((value - 45056) / rebin_energy)
-            if z < channel_number:
-                hypermap[frame_idx, y, x, z] += 1
-                if hypermap[frame_idx, y, x, z] == max_value:
-                    raise ValueError("The range of the dtype is too small, "
-                                     "use `SI_dtype` to set a dtype with "
-                                     "higher range.")
-    return hypermap
-
-
 def read_eds(filename, **kwargs):
     header = {}
     fd = open(filename, "br")
@@ -720,7 +673,60 @@ def read_eds(filename, **kwargs):
 
     return dictionary
 
+@lazyobject
+def readcube():
 
+    @numba.jit(cache=True)
+    def _readcube(rawdata, hypermap, rebin_energy, channel_number, width_norm,
+                height_norm, max_value):  # pragma: no cover
+        for value in rawdata:
+            if value >= 32768 and value < 36864:
+                x = int((value - 32768) / width_norm)
+            elif value >= 36864 and value < 40960:
+                y = int((value - 36864) / height_norm)
+            elif value >= 45056 and value < 49152:
+                z = int((value - 45056) / rebin_energy)
+                if z < channel_number:
+                    hypermap[y, x, z] += 1
+                    if hypermap[y, x, z] == max_value:
+                        raise ValueError("The range of the dtype is too small, "
+                                        "use `SI_dtype` to set a dtype with "
+                                        "higher range.")
+        return hypermap
+    return _readcube
+
+
+@lazyobject
+def readcube_frames():
+
+    @numba.jit(cache=True)
+    def _readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
+                width_norm, height_norm, max_value):  # pragma: no cover
+        """
+        We need to create a separate function, because numba.njit doesn't play well
+        with an array having its shape depending on something else
+        """
+        frame_idx = 0
+        previous_y = 0
+        for value in rawdata:
+            if value >= 32768 and value < 36864:
+                x = int((value - 32768) / width_norm)
+            elif value >= 36864 and value < 40960:
+                y = int((value - 36864) / height_norm)
+                if y < previous_y:
+                    frame_idx += 1
+                previous_y = y
+            elif value >= 45056 and value < 49152:
+                z = int((value - 45056) / rebin_energy)
+                if z < channel_number:
+                    hypermap[frame_idx, y, x, z] += 1
+                    if hypermap[frame_idx, y, x, z] == max_value:
+                        raise ValueError("The range of the dtype is too small, "
+                                        "use `SI_dtype` to set a dtype with "
+                                        "higher range.")
+        return hypermap
+    return _readcube_frames
+    
 extension_to_reader_mapping = {"img": read_img,
                                "map": read_img,
                                "pts": read_pts,

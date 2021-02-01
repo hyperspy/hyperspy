@@ -20,15 +20,14 @@ import copy
 
 import numpy as np
 import scipy.ndimage as ndi
-from numba import njit
 from hyperspy.lazy_imports import skimage_feature as feature
-
+from hyperspy.lazy_imports import numba
 from hyperspy.misc.machine_learning import import_sklearn
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
 
-@njit(cache=True)
+@numba.jit(cache=True)
 def _fast_mean(X):  # pragma: no cover
     """JIT-compiled mean of array.
 
@@ -51,7 +50,7 @@ def _fast_mean(X):  # pragma: no cover
     return np.mean(X)
 
 
-@njit(cache=True)
+@numba.jit(cache=True)
 def _fast_std(X):  # pragma: no cover
     """JIT-compiled standard deviation of array.
 

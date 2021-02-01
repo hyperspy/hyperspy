@@ -37,3 +37,6 @@ def threaded():
 def dask_diag():
     return importlib.import_module('dask.diagnostics')
 
+@lazyobject
+def numba():
+    return importlib.import_module('numba')

@@ -20,9 +20,8 @@ import numpy as np
 from hyperspy.lazy_imports import dask_array as da
 import sparse
 
-from numba import njit
-
-
+from hyperspy.lazy_imports import numba
+raise ValueError("fei")
 class DenseSliceCOO(sparse.COO):
     """Just like sparse.COO, but returning a dense array on indexing/slicing"""
 
@@ -35,7 +34,7 @@ class DenseSliceCOO(sparse.COO):
             return obj
 
 
-@njit(cache=True)
+@numba.jit(cache=True)
 def _stream_to_sparse_COO_array_sum_frames(
         stream_data,
         last_frame,
@@ -122,7 +121,7 @@ def _stream_to_sparse_COO_array_sum_frames(
     return coords, data, final_shape
 
 
-@njit(cache=True)
+@numba.jit(cache=True)
 def _stream_to_sparse_COO_array(
         stream_data,
         last_frame,
@@ -254,7 +253,7 @@ def stream_to_sparse_COO_array(
     return dask_sparse
 
 
-@njit(cache=True)
+@numba.jit(cache=True)
 def _fill_array_with_stream_sum_frames(
         spectrum_image,
         stream,
@@ -284,7 +283,7 @@ def _fill_array_with_stream_sum_frames(
             navigation_index += 1
 
 
-@njit(cache=True)
+@numba.jit(cache=True)
 def _fill_array_with_stream(
         spectrum_image,
         stream,
@@ -368,7 +367,7 @@ def stream_to_array(
     return spectrum_image
 
 
-@njit(cache=True)
+@numba.jit(cache=True)
 def array_to_stream(array):  # pragma: no cover
     """Convert an array to a FEI stream
 

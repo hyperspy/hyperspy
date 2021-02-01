@@ -39,9 +39,7 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
-from hyperspy.utils.peakfinders2D import (
-        find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
-        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
+
 
 
 _logger = logging.getLogger(__name__)
@@ -882,6 +880,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
             the `x, y` pixel coordinates of peaks found in each image sorted
             first along `y` and then along `x`.
         """
+        from hyperspy.utils.peakfinders2D import (
+            find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
+            find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
         method_dict = {
             'local_max': find_local_max,
             'max': find_peaks_max,

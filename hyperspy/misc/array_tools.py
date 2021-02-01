@@ -21,9 +21,9 @@ import math as math
 import logging
 
 import numpy as np
-from numba import njit
-
+from hyperspy.lazy_imports import numba
 from hyperspy.misc.math_tools import anyfloatin
+from lazyasd import lazyobject
 
 
 _logger = logging.getLogger(__name__)
@@ -209,47 +209,50 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                     "Rebin fewer dimensions at a time to avoid this error"
                 )
 
+@lazyobject
+def _linear_bin_loop():
 
-@njit(cache=True)
-def _linear_bin_loop(result, data, scale):  # pragma: no cover
-    for j in range(result.shape[0]):
-        # Begin by determining the upper and lower limits of a given new pixel.
-        x1 = j * scale
-        x2 = min((1 + j) * scale, data.shape[0])
-        value = result[j:j + 1]
+    @numba.jit(cache=True)
+    def _linear_bin_loop_numba(result, data, scale):  # pragma: no cover
+        for j in range(result.shape[0]):
+            # Begin by determining the upper and lower limits of a given new pixel.
+            x1 = j * scale
+            x2 = min((1 + j) * scale, data.shape[0])
+            value = result[j:j + 1]
 
-        if (x2 - x1) >= 1:
-            # When binning, the first part is to deal with the fractional pixel
-            # left over from it being non-integer binning e.g. when x1=1.4
-            cx1 = math.ceil(x1)
-            rem = cx1 - x1
-            # This will add a value of fractional pixel to the bin, eg if x1=1.4,
-            # the fist step will be to add 0.6*data[1]
-            value += data[math.floor(x1)] * rem
-            # Update x1 to remove the part of the bin we have just added.
-            x1 = cx1
-            while (x2 - x1) >= 1:
-                # Main binning function to add full pixel values to the data.
-                value += data[int(x1)]
-                # Update x1 each time.
-                x1 += 1
-            if x2 > x1:
-                # Finally take into account the fractional pixel left over.
-                value += data[math.floor(x1)] * (x2 - x1)
-        else:
-            # When step < 1, so we are upsampling
-            fx1 = math.floor(x1)
-            cx1 = math.ceil(x1)
-            if scale > (cx1 - x1) > 0:
-                # If our step is smaller than rounding up to the nearest whole
-                # number.
-                value += data[fx1] * (cx1 - x1)
-                x1 = cx1  # This step is needed when this particular bin straddes
-                # two neighbouring pixels.
-            if x1 < x2:
-                # The standard upsampling function where each new pixel is a
-                # fraction of the original pixel.
-                value += data[math.floor(x1)] * (x2 - x1)
+            if (x2 - x1) >= 1:
+                # When binning, the first part is to deal with the fractional pixel
+                # left over from it being non-integer binning e.g. when x1=1.4
+                cx1 = math.ceil(x1)
+                rem = cx1 - x1
+                # This will add a value of fractional pixel to the bin, eg if x1=1.4,
+                # the fist step will be to add 0.6*data[1]
+                value += data[math.floor(x1)] * rem
+                # Update x1 to remove the part of the bin we have just added.
+                x1 = cx1
+                while (x2 - x1) >= 1:
+                    # Main binning function to add full pixel values to the data.
+                    value += data[int(x1)]
+                    # Update x1 each time.
+                    x1 += 1
+                if x2 > x1:
+                    # Finally take into account the fractional pixel left over.
+                    value += data[math.floor(x1)] * (x2 - x1)
+            else:
+                # When step < 1, so we are upsampling
+                fx1 = math.floor(x1)
+                cx1 = math.ceil(x1)
+                if scale > (cx1 - x1) > 0:
+                    # If our step is smaller than rounding up to the nearest whole
+                    # number.
+                    value += data[fx1] * (cx1 - x1)
+                    x1 = cx1  # This step is needed when this particular bin straddes
+                    # two neighbouring pixels.
+                if x1 < x2:
+                    # The standard upsampling function where each new pixel is a
+                    # fraction of the original pixel.
+                    value += data[math.floor(x1)] * (x2 - x1)
+    return _linear_bin_loop_numba
 
 
 def _linear_bin(dat, scale, crop=True):
@@ -373,30 +376,34 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
     return sarray
 
 
-@njit(cache=True)
-def numba_histogram(data, bins, ranges):
-    """
-    Parameters
-    ----------
-    data : numpy array
-        Input data. The histogram is computed over the flattened array.
-    bins : int
-        Number of bins
-    ranges : (float, float)
-        The lower and upper range of the bins.
+@lazyobject
+def numba_histogram():
 
-    Returns
-    -------
-    hist : array
-        The values of the histogram.
-    """
-    # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
-    hist = np.zeros((bins,), dtype=np.intp)
-    delta = 1 / ((ranges[1] - ranges[0]) / bins)
+    @numba.jit(cache=True)
+    def _numba_histogram(data, bins, ranges):
+        """
+        Parameters
+        ----------
+        data : numpy array
+            Input data. The histogram is computed over the flattened array.
+        bins : int
+            Number of bins
+        ranges : (float, float)
+            The lower and upper range of the bins.
 
-    for x in data.flat:
-        i = (x - ranges[0]) * delta
-        if 0 <= i < bins:
-            hist[int(i)] += 1
+        Returns
+        -------
+        hist : array
+            The values of the histogram.
+        """
+        # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
+        hist = np.zeros((bins,), dtype=np.intp)
+        delta = 1 / ((ranges[1] - ranges[0]) / bins)
 
-    return hist
+        for x in data.flat:
+            i = (x - ranges[0]) * delta
+            if 0 <= i < bins:
+                hist[int(i)] += 1
+
+        return hist
+    return _numba_histogram
