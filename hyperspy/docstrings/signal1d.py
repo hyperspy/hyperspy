@@ -48,7 +48,8 @@ SPIKES_DIAGNOSIS_DOCSTRING = \
         """
 
 SPIKES_REMOVAL_TOOL_DOCSTRING =\
-        """Graphical interface to remove spikes from EELS spectra. 
+        """Graphical interface to remove spikes from EELS spectra or 
+        luminescence data. 
         If non-interactive, it removes all spikes and returns a
         `~hyperspy.signals._signal_tools.SpikesRemoval` object.
 
@@ -67,8 +68,8 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
             If True, remove the spikes using the graphical user interface. 
             If False, remove all the spikes automatically, which can
             introduce artefacts if used with signal containing peak-like 
-            features. However, this can be mitigated by it in combination
-            with the `signal_mask` argument to mask the signal of interest.
+            features. However, this can be mitigated by using the 
+            `signal_mask` argument to mask the signal of interest.
         %s
         %s
         %s
