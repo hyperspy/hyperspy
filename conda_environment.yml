@@ -8,6 +8,7 @@ dependencies:
 - h5py
 - imageio
 - ipyparallel
+- lazyasd
 - matplotlib-base
 - mrcz
 - natsort

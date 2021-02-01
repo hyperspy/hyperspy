@@ -69,6 +69,7 @@ install_req = ['scipy>=1.1',
                'prettytable',
                'tifffile>=2018.10.18',
                'numba',
+               'lazyasd'
                ]
 
 extras_require = {
