@@ -4004,30 +4004,17 @@ class BaseSignal(FancySlicing,
 
         use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
 
-        if isinstance(self.data, da.Array):
-            if use_real_fft:
-                fft_f = da.fft.rfftn
-            else:
-                fft_f = da.fft.fftn
-
-            if shift:
-                im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if use_real_fft:
+            fft_f = np.fft.rfftn
         else:
-            if use_real_fft:
-                fft_f = np.fft.rfftn
-            else:
-                fft_f = np.fft.fftn
+            fft_f = np.fft.fftn
 
-            if shift:
-                im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if shift:
+            im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
+        else:
+            im_fft = self._deepcopy_with_new_data(
+                fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
@@ -4098,21 +4085,12 @@ class BaseSignal(FancySlicing,
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
-        if isinstance(self.data, da.Array):
-            if shift:
-                fft_data_shift = da.fft.ifftshift(self.data, axes=axes)
-                im_ifft = self._deepcopy_with_new_data(
-                    da.fft.ifftn(fft_data_shift, axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+        if shift:
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
         else:
-            if shift:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                self.data, axes=axes, **kwargs))
 
         im_ifft.metadata.General.title = 'iFFT of {}'.format(
             im_ifft.metadata.General.title)
