@@ -36,8 +36,8 @@ import traits.api as t
 
 import h5py
 import numpy as np
-import dask.array as da
 from hyperspy.axes import _ureg
+from hyperspy.lazy_imports import dask_array as da
 from dateutil import tz
 
 from hyperspy.misc.elements import atomic_number2name

@@ -22,7 +22,7 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import scipy.interpolate
 import scipy as sp
 from scipy.signal import savgol_filter

@@ -19,7 +19,7 @@
 import logging
 from itertools import zip_longest
 
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import numpy as np
 
 from hyperspy.misc.axis_tools import check_axes_calibration

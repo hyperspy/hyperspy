@@ -24,3 +24,16 @@ def skimage_correlation():
         return importlib.import_module('skimage.registration._phase_cross_correlation')
     except ModuleNotFoundError:
         return importlib.import_module('skimage.feature.register_translation')
+
+@lazyobject
+def dask_array():
+    return importlib.import_module('dask.array')
+
+@lazyobject
+def threaded():
+    return importlib.import_module('dask.threaded')
+
+@lazyobject
+def dask_diag():
+    return importlib.import_module('dask.diagnostics')
+

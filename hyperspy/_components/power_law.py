@@ -127,7 +127,7 @@ class PowerLaw(Expression):
         else:
             s = signal
         if s._lazy:
-            import dask.array as da
+            from hyperspy.lazy_imports import dask_array as da
             log = da.log
             I1 = s.isig[i1:i3].integrate1D(2j).data
             I2 = s.isig[i3:i2].integrate1D(2j).data

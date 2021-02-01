@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from dask.array import Array
+from hyperspy.lazy_imports import dask_array as da
 
 rgba8 = np.dtype({'names': ['R', 'G', 'B', 'A'],
                   'formats': ['u1', 'u1', 'u1', 'u1']})
@@ -68,7 +68,7 @@ def rgbx2regular_array(data, plot_friendly=False):
 
     """
     # Make sure that the data is contiguous
-    if isinstance(data, Array):
+    if isinstance(data, da.Array):
         from dask.diagnostics import ProgressBar
         # an expensive thing, but nothing to be done for now...
         with ProgressBar():

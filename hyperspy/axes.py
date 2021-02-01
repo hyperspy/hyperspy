@@ -20,7 +20,7 @@ import copy
 import math
 
 import numpy as np
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import traits.api as t
 from traits.trait_errors import TraitError
 from lazyasd import lazyobject

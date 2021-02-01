@@ -5,7 +5,8 @@ from functools import partial
 from collections.abc import MutableMapping
 import h5py
 import numpy as np
-import pyUSID as usid
+from hyperspy.lazy_imports import usis # import pyUSID as usid
+
 import sidpy
 
 _logger = logging.getLogger(__name__)

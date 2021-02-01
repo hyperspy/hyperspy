@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 
 from hyperspy._components.expression import Expression
 from distutils.version import LooseVersion

@@ -1059,7 +1059,7 @@ class CircleROI(BaseInteractiveROI):
         roi = slicer(slices, out=out)
         roi = out or roi
         if roi._lazy:
-            import dask.array as da
+            from hyperspy.lazy_imports import dask_array as da
             mask = da.from_array(mask, chunks=chunks)
             mask = da.broadcast_to(mask, tiles)
             # By default promotes dtype to float if required

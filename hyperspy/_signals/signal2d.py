@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 import numpy.ma as ma
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import logging
 import warnings
 
@@ -795,7 +795,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
         if self._lazy:
-            import dask.array as da
+            from hyperspy.lazy_imports import dask_array as da
             ramp = offset * da.ones(self.data.shape, dtype=self.data.dtype,
                                     chunks=self.data.chunks)
         else:

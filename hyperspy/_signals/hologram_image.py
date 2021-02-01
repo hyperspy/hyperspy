@@ -20,7 +20,7 @@ import logging
 from collections import OrderedDict
 import scipy.constants as constants
 import numpy as np
-from dask.array import Array as daArray
+from hyperspy.lazy_imports import dask_array as da
 from hyperspy.lazy_imports import pint
 from hyperspy.axes import _ureg
 from hyperspy._signals.signal2d import Signal2D
@@ -60,7 +60,7 @@ def _parse_sb_position(s, reference, sb_position, sb, high_cf, parallel):
 
         if not isinstance(sb_position, Signal1D):
             sb_position = Signal1D(sb_position)
-            if isinstance(sb_position.data, daArray):
+            if isinstance(sb_position.data, da.Array):
                 sb_position = sb_position.as_lazy()
 
         if not sb_position.axes_manager.signal_size == 2:
@@ -90,12 +90,12 @@ def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
     else:
         if not isinstance(sb_size, BaseSignal):
             if isinstance(sb_size,
-                          (np.ndarray, daArray)) and sb_size.size > 1:
+                          (np.ndarray, da.Array)) and sb_size.size > 1:
                 # transpose if np.array of multiple instances
                 sb_size = BaseSignal(sb_size).T
             else:
                 sb_size = BaseSignal(sb_size)
-            if isinstance(sb_size.data, daArray):
+            if isinstance(sb_size.data, da.Array):
                 sb_size = sb_size.as_lazy()
 
     if sb_size.axes_manager.navigation_size != s.axes_manager.navigation_size:
@@ -380,7 +380,7 @@ class HologramImage(Signal2D):
                 reference.set_signal_type('hologram')
             elif reference is not None:
                 reference = HologramImage(reference)
-                if isinstance(reference.data, daArray):
+                if isinstance(reference.data, da.Array):
                     reference = reference.as_lazy()
 
         # Testing match of navigation axes of reference and self
@@ -419,11 +419,11 @@ class HologramImage(Signal2D):
             if not isinstance(sb_smoothness, BaseSignal):
                 if isinstance(
                     sb_smoothness,
-                        (np.ndarray, daArray)) and sb_smoothness.size > 1:
+                        (np.ndarray, da.Array)) and sb_smoothness.size > 1:
                     sb_smoothness = BaseSignal(sb_smoothness).T
                 else:
                     sb_smoothness = BaseSignal(sb_smoothness)
-                if isinstance(sb_smoothness.data, daArray):
+                if isinstance(sb_smoothness.data, da.Array):
                     sb_smoothness = sb_smoothness.as_lazy()
 
         if sb_smoothness.axes_manager.navigation_size != self.axes_manager.navigation_size:

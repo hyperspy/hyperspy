@@ -103,7 +103,7 @@ class Exponential(Expression):
             s = signal
 
         if s._lazy:
-            import dask.array as da
+            from hyperspy.lazy_imports import dask_array as da
             exp = da.exp
             log = da.log
         else:

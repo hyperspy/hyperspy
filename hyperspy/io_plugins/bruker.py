@@ -32,8 +32,7 @@ import re
 import logging
 from zlib import decompress as unzip_block
 from struct import unpack as strct_unp
-import dask.delayed as dd
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import numpy as np
 from datetime import datetime, timedelta
 from ast import literal_eval
@@ -968,6 +967,7 @@ class BCF_reader(SFS_reader):
                                                    downsample=downsample,
                                                    for_numpy=True)
         if lazy:
+            import dask.delayed as dd
             value = dd(parse_func)(vrt_file_hand, shape,
                                    dtype, downsample=downsample)
             result = da.from_delayed(value, shape=shape, dtype=dtype)

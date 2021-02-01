@@ -24,7 +24,7 @@ import ast
 
 import h5py
 import numpy as np
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager

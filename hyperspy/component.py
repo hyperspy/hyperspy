@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from dask.array import Array as dArray
+from hyperspy.lazy_imports import dask_array as da
 import traits.api as t
 from traits.trait_numeric import Array
 from hyperspy.lazy_imports import sympy
@@ -521,9 +521,9 @@ class Parameter(t.HasTraits):
         if self.map['is_set'][indices]:
             value = self.map['values'][indices]
             std = self.map['std'][indices]
-            if isinstance(value, dArray):
+            if isinstance(value, da.Array):
                 value = value.compute()
-            if isinstance(std, dArray):
+            if isinstance(std, da.Array):
                 std = std.compute()
             self.value = value
             self.std = std

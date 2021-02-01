@@ -27,7 +27,7 @@ from pathlib import Path
 
 import numpy as np
 import scipy as sp
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers

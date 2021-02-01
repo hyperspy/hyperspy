@@ -21,10 +21,9 @@ from functools import partial
 import warnings
 
 import numpy as np
-import dask.array as da
-import dask.delayed as dd
-from dask import threaded
-from dask.diagnostics import ProgressBar
+from hyperspy.lazy_imports import dask_array as da
+from hyperspy.lazy_imports import threaded # import dask.threaded as threaded
+from hyperspy.lazy_imports import dask_diag # dask.diagnostics
 from itertools import product
 
 
@@ -114,7 +113,7 @@ class LazySignal(BaseSignal):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        cm = ProgressBar if show_progressbar else dummy_context_manager
+        cm = dask_diag.ProgressBar if show_progressbar else dummy_context_manager
 
         with cm():
             da = self.data
@@ -505,6 +504,7 @@ class LazySignal(BaseSignal):
         return _mean, _std, _min, _q1, _q2, _q3, _max
 
     def _map_all(self, function, inplace=True, **kwargs):
+        import dask.delayed as dd
         calc_result = dd(function)(self.data, **kwargs)
         if inplace:
             self.data = da.from_delayed(calc_result, shape=self.data.shape,
@@ -535,7 +535,7 @@ class LazySignal(BaseSignal):
         # no navigation
         if not len(res_shape) and ragged:
             res_shape = (1,)
-
+        import dask.delayed as dd
         all_delayed = [dd(func)(data) for data in zip(*iterators)]
 
         if ragged:
@@ -569,7 +569,7 @@ class LazySignal(BaseSignal):
             res_data = np.empty(res_shape, dtype=sig_dtype)
             _logger.info("Lazy signal is computed to make the ragged array.")
             if show_progressbar:
-                cm = ProgressBar
+                cm = dask_diag.ProgressBar
             else:
                 cm = dummy_context_manager
             with cm():
@@ -614,7 +614,7 @@ class LazySignal(BaseSignal):
 
     def _block_iterator(self,
                         flat_signal=True,
-                        get=threaded.get,
+                        get=None,
                         navigation_mask=None,
                         signal_mask=None):
         """A function that allows iterating lazy signal data by blocks,
@@ -639,6 +639,8 @@ class LazySignal(BaseSignal):
             to NaN or 0.
 
         """
+        if get is None:
+            get = threaded.get
         self._make_lazy()
         data = self._data_aligned_with_axes
         nav_chunks = data.chunks[:self.axes_manager.navigation_dimension]
@@ -698,7 +700,7 @@ class LazySignal(BaseSignal):
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
-        get=threaded.get,
+        get=None,
         num_chunks=None,
         reproject=True,
         print_info=True,
@@ -757,6 +759,8 @@ class LazySignal(BaseSignal):
         * :py:class:`~.learn.ornmf.ORNMF`
 
         """
+        if get is None:
+            get = threaded.get
         if kwargs.get("bounds", False):
             warnings.warn(
                 "The `bounds` keyword is deprecated and will be removed "

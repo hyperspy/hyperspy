@@ -18,7 +18,7 @@
 
 from operator import attrgetter
 import numpy as np
-from dask.array import Array as dArray
+from hyperspy.lazy_imports import dask_array as da
 
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
@@ -55,7 +55,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[:nav_dims])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
+        if isinstance(target, da.Array):
             return target[sl]
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '
@@ -66,7 +66,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[-sig_dims:])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
+        if isinstance(target, da.Array):
             return target[sl]
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '
@@ -276,7 +276,7 @@ class FancySlicing(object):
         array_slices = self._get_array_slices(slices, isNavigation)
         new_data = self.data[array_slices]
         if new_data.size == 1 and new_data.dtype is np.dtype('O'):
-            if isinstance(new_data[0], (np.ndarray, dArray)):
+            if isinstance(new_data[0], (np.ndarray, da.Array)):
                 return self.__class__(new_data[0]).transpose(navigation_axes=0)
             else:
                 return new_data[0]

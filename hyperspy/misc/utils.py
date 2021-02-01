@@ -907,7 +907,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     """
     from hyperspy.signals import BaseSignal
-    import dask.array as da
+    from hyperspy.lazy_imports import dask_array as da
     from numbers import Number
 
     for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:

@@ -20,7 +20,7 @@
 import logging
 import types
 import warnings
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, MaxNLocator

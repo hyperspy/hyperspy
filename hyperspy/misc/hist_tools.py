@@ -19,7 +19,7 @@
 import logging
 import warnings
 
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import numpy as np
 
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS

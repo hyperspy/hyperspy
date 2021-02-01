@@ -197,7 +197,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
             return a.reshape(rshape).sum(axis=tuple(
                 2 * i + 1 for i in range(lenShape)))
         else:
-            import dask.array as da
+            from hyperspy.lazy_imports import dask_array as da
 
             try:
                 return da.coarsen(np.sum, a, {i: int(f)

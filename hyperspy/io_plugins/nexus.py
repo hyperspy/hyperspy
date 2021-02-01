@@ -19,7 +19,7 @@
 #
 import logging
 import numpy as np
-import dask.array as da
+from hyperspy.lazy_imports import dask_array as da
 import os
 import h5py
 import pprint
