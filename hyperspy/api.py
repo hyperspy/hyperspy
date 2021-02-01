@@ -17,24 +17,35 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.api_nogui import *
+import importlib
+from lazyasd import lazyobject
 import logging
 _logger = logging.getLogger(__name__)
 
 __doc__ = hyperspy.api_nogui.__doc__
 
-try:
-    # Register ipywidgets by importing the module
-    import hyperspy_gui_ipywidgets
-except ImportError:  # pragma: no cover
+# Register ipywidgets by importing the module
+module = 'hyperspy_gui_ipywidgets'
+spam_loader = importlib.util.find_spec(module)
+if spam_loader is not None:
+    @lazyobject
+    def hyperspy_gui_traitsui():
+        return importlib.import_module(module)
+else:
     from hyperspy.defaults_parser import preferences
     if preferences.GUIs.warn_if_guis_are_missing:
         _logger.warning(
             "The ipywidgets GUI elements are not available, probably because the "
             "hyperspy_gui_ipywidgets package is not installed.")
-try:
-    # Register traitui UI elements by importing the module
-    import hyperspy_gui_traitsui
-except ImportError:  # pragma: no cover
+
+# Register traitui UI elements by importing the module
+module = 'hyperspy_gui_traitsui'
+spam_loader = importlib.util.find_spec(module)
+if spam_loader is not None:
+    @lazyobject
+    def hyperspy_gui_traitsui():
+        return importlib.import_module(module)
+else:
     from hyperspy.defaults_parser import preferences
     if preferences.GUIs.warn_if_guis_are_missing:
         _logger.warning(
