@@ -67,3 +67,55 @@ will recythonize all Cython code and compile it.
 
 Cythonization and compilation will also take place during continous
 integration (CI).
+
+Delaying imports to keep hyperspy imports fast
+----------------------------------------------
+
+If we eagerly import all functionality used by hyperspy during 
+``import hyperspy.api``, the import will be very slow. This can be avoided
+by lazily importing modules so that they are only imported when (if!) they
+are actually used. We can use the `lazyasd module <https://github.com/xonsh/lazyasd>`_ 
+to lazily import ``numba`` in the following way:
+
+.. code-block:: python
+
+   import importlib
+   from lazyasd import lazyobject
+
+   @lazyobject
+   def numba():
+      return importlib.import_module('numba')
+
+The ``numba`` object will function exactly like after ``import numba``, but will 
+only be actually imported into the namespace when used (e.g. when using ``numba.jit``).
+
+This will be enough for most modules. For ``@numba.jit`` decorators however, another
+step is needed. A simple numba function like below will eagerly import numba with the
+jit decorator.
+
+.. code-block:: python
+
+   @numba.jit(nopython=True)
+   def add(N):
+      "Add 1 N times"
+      n = 0
+      for i in range(N):
+         n = n + 1
+      return n
+
+To fix this, we wrap the entire function in a ``lazyobject``, and rename the function:
+
+.. code-block:: python
+
+   @lazyobject
+   def add():
+      @numba.jit(nopython=True)
+      def _add(N):
+         "Add 1 N times"
+         n = 0
+         for i in range(N):
+            n = n + 1
+         return n
+      return _add
+
+The function can now be used as ``add(100)``, will only compile once, and lazily import numba.
