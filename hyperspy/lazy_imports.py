@@ -13,3 +13,14 @@ def sympy():
 def Lambdify():
     return importlib.import_module('sympy.utilities.lambdify')
 
+@lazyobject
+def skimage_feature():
+    return importlib.import_module('skimage.feature')
+
+@lazyobject
+def skimage_correlation():
+    try:
+        # For scikit-image >= 0.17.0
+        return importlib.import_module('skimage.registration._phase_cross_correlation')
+    except ModuleNotFoundError:
+        return importlib.import_module('skimage.feature.register_translation')

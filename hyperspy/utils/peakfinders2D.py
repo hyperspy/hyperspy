@@ -21,13 +21,7 @@ import copy
 import numpy as np
 import scipy.ndimage as ndi
 from numba import njit
-from skimage.feature import (
-    blob_dog, 
-    blob_log, 
-    corner_peaks,
-    match_template,
-    peak_local_max,
-)
+from hyperspy.lazy_imports import skimage_feature as feature
 
 from hyperspy.misc.machine_learning import import_sklearn
 
@@ -124,7 +118,7 @@ def find_local_max(z, **kwargs):
         Peak pixel coordinates.
 
     """
-    peaks = peak_local_max(z, **kwargs)
+    peaks = feature.peak_local_max(z, **kwargs)
     return clean_peaks(peaks)
 
 
@@ -483,7 +477,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
 
     """
     z = z / np.max(z)
-    blobs = blob_dog(z, min_sigma=min_sigma, max_sigma=max_sigma,
+    blobs = feature.blob_dog(z, min_sigma=min_sigma, max_sigma=max_sigma,
                      sigma_ratio=sigma_ratio, threshold=threshold,
                      overlap=overlap, exclude_border=exclude_border)
     try:
@@ -528,7 +522,7 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     z = z / np.max(z)
     if isinstance(num_sigma, float):
         raise ValueError("`num_sigma` parameter should be an integer.")
-    blobs = blob_log(z, min_sigma=min_sigma, max_sigma=max_sigma,
+    blobs = feature.blob_log(z, min_sigma=min_sigma, max_sigma=max_sigma,
                      num_sigma=num_sigma, threshold=threshold, overlap=overlap,
                      log_scale=log_scale, exclude_border=exclude_border)
     # Attempt to return only peak positions. If no peaks exist, return an
@@ -568,7 +562,7 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
         Array of peak coordinates.
     """
     pad_input = kwargs.pop('pad_input', True)
-    response_image = match_template(z, template, pad_input=pad_input, **kwargs)
+    response_image = feature.match_template(z, template, pad_input=pad_input, **kwargs)
     peaks = find_peaks_minmax(response_image,
                               distance=distance,
                               threshold=threshold)
