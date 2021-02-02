@@ -55,7 +55,6 @@ from hyperspy.interactive import interactive
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
 from hyperspy.ui_registry import add_gui_method
-from hyperspy.utils.axes import get_central_half_limits_of_axis
 
 not_set_error_msg = (
         "Some ROI parameters have not yet been set. "
@@ -742,7 +741,7 @@ class SpanROI(BaseInteractiveROI):
         ax0, *_ = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
         if t.Undefined in tuple(self):
-            self.left, self.right = get_central_half_limits_of_axis(ax0)
+            self.left, self.right = _get_central_half_limits_of_axis(ax0)
 
     @property
     def parameters(self):
@@ -830,8 +829,8 @@ class RectangularROI(BaseInteractiveROI):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
         if t.Undefined in tuple(self):
-            self.left, self.right = get_central_half_limits_of_axis(ax0)
-            self.top, self.bottom = get_central_half_limits_of_axis(ax1)
+            self.left, self.right = _get_central_half_limits_of_axis(ax0)
+            self.top, self.bottom = _get_central_half_limits_of_axis(ax1)
         self._bounds_check = old_bounds_check
 
     @property
@@ -1150,8 +1149,8 @@ class Line2DROI(BaseInteractiveROI):
         ax0, ax1 = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
         if t.Undefined in (self.x1, self.y1, self.x2, self.y2):
-            self.x1, self.x2 = get_central_half_limits_of_axis(ax0)
-            self.y1, self.y2 = get_central_half_limits_of_axis(ax1)
+            self.x1, self.x2 = _get_central_half_limits_of_axis(ax0)
+            self.y1, self.y2 = _get_central_half_limits_of_axis(ax1)
 
     @property
     def parameters(self):
@@ -1448,3 +1447,8 @@ class Line2DROI(BaseInteractiveROI):
                 ax.size = len(profile)
                 ax.scale = length / len(profile)
             out.events.data_changed.trigger(out)
+
+
+def _get_central_half_limits_of_axis(ax):
+    "Return indices of the central half of a DataAxis"
+    return ax._parse_value("rel0.25"), ax._parse_value("rel0.75")
