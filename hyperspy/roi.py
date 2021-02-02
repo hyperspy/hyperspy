@@ -703,9 +703,9 @@ class SpanROI(BaseInteractiveROI):
 
     def __init__(self, left, right):
         super().__init__()
-        self._bounds_check = True   # Use reponsibly!
+        self._bounds_check = True   # Use responsibly!
         if left >= right:
-            raise ValueError("`left` must be smaller than `right`.")
+            raise ValueError(f"`left` ({left}) must be smaller than `right` ({right}).")
         self.left, self.right = left, right
 
     def __getitem__(self, *args, **kwargs):
