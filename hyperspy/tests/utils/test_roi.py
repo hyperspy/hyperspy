@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
-                          RectangularROI, SpanROI)
+                          RectangularROI, SpanROI, _get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
 import traits.api as t
 
@@ -520,22 +520,9 @@ class TestROIs():
             r._set_default_values(self.s_s)
             r(self.s_s)
 
-
-    def test_interactive_default_values(self):
-        rois = [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]
-        values = [
-            (147.5,),
-            (147.5, 122.5),
-            (73.75, 221.25, 61.25, 183.75),
-            (73.75, 221.25),
-            (73.75, 61.25, 221.25, 183.75, 0.0),
-            (147.5, 122.5, 122.5, 0.0),
-        ]
-        self.s_s.plot()
-        for roi, vals in zip(rois, values):
-            r = roi()
-            r.interactive(signal=self.s_s)
-            assert tuple(r) == vals
+    def test_get_central_half_limits(self):
+        ax = self.s_s.axes_manager[0]
+        assert _get_central_half_limits_of_axis(ax) == (73.75, 221.25)
 
 class TestInteractive:
 
@@ -589,3 +576,18 @@ class TestInteractive:
         sr2 = r(s)
         np.testing.assert_array_equal(sr.data, sr2.data)
 
+    def test_interactive_default_values(self):
+        rois = [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]
+        values = [
+            (4.5,),
+            (4.5, 9.5),
+            (2.25, 6.75, 4.75, 14.25),
+            (2.25, 6.75),
+            (2.25, 4.75, 6.75, 14.25, 0.0),
+            (4.5, 9.5, 4.5, 0.0),
+        ]
+        self.s.plot()
+        for roi, vals in zip(rois, values):
+            r = roi()
+            r.interactive(signal=self.s)
+            assert tuple(r) == vals
