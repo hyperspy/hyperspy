@@ -25,7 +25,6 @@ import pytest
 
 from hyperspy.axes import DataAxis
 
-
 class TestDataAxis:
 
     def setup_method(self, method):
