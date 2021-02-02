@@ -560,8 +560,9 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         if signal_type not in set(valid_signal_types):
             _logger.warning(
                 f"`signal_type='{signal_type}'` not understood. "
-                f"See `hs.print_known_signal_types()` for a list of known signal types, "
-                f"and the developer guide for details on how to add new signal_types."
+                "See `hs.print_known_signal_types()` for a list of installed "
+                "signal types or https://github.com/hyperspy/hyperspy-extensions-list "
+                "for the list of all hyperspy extensions providing signals."
             )
 
         # If the following dict is not empty, only signal_dimension and dtype match.
