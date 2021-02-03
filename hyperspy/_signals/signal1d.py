@@ -356,7 +356,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return sr
 
     spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
-        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT, "")
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT,)
 
     def create_model(self, dictionary=None):
         """Create a model for the current data.

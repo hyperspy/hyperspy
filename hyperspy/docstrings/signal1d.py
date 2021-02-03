@@ -72,7 +72,6 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
             `signal_mask` argument to mask the signal of interest.
         %s
         %s
-        %s
         **kwargs : dict
             Keyword arguments pass to
                 :py:meth:`~hyperspy.signals._signal_tools.SpikesRemoval`
