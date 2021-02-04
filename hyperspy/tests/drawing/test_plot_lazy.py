@@ -65,6 +65,19 @@ def test_compute_navigator():
                                s.navigator.data)
 
 
+def test_compute_navigator_tranpose():
+    shape = (15, 15, 30, 30)
+    s = hs.signals.Signal2D(da.arange(np.prod(shape)).reshape(shape)).as_lazy()
+    s.compute_navigator(chunks_number=3)
+    s1 = s.T
+    # After transpose, the navigator is still there it has the wrong shape
+    with pytest.raises(ValueError):
+        s1.plot()
+    # we need to calculate it again if we want to plot
+    s1.compute_navigator(chunks_number=3)
+    s1.plot()
+
+
 def test_compute_navigator_index():
     N = 15
     dim = 4
@@ -101,4 +114,3 @@ def test_plot_navigator_signal():
     nav *= -1
     s.plot(navigator=nav)
     np.testing.assert_allclose(s._plot.navigator_data_function(), nav)
-

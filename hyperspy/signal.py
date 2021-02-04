@@ -2664,8 +2664,8 @@ class BaseSignal(FancySlicing,
                     self._plot.navigator_data_function = get_dynamic_explorer_wrapper
                 else:
                     raise ValueError(
-                        "The navigator dimensions are not compatible with "
-                        "those of self.")
+                        "The dimensions of the provided (or stored) navigator "
+                        "are not compatible with this signal.")
             elif navigator == "slider":
                 self._plot.navigator_data_function = "slider"
             elif navigator is None:
