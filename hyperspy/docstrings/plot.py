@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,10 +22,10 @@
 
 
 BASE_PLOT_DOCSTRING_PARAMETERS = \
-    """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
-        Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
+    """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass). \
+       Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
 
-        If ``'auto'``:
+            If ``'auto'``:
 
                 - If `navigation_dimension` > 0, a navigator is
                   provided to explore the data.
@@ -45,6 +45,9 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
                   current `Z` index and a window with sliders for the `X`, `Y`,
                   and `Z` axes will be raised. Notice that changing the `Z`-axis
                   index changes the navigator in this case.
+                - For lazy signals, the navigator will be calculated using the
+                  :py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+                  method.
 
             If ``'slider'``:
 
@@ -55,13 +58,14 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
 
                 - If `navigation_dimension` > 0 the navigator is always a
                   spectrum obtained by integrating the data over all other axes.
+                - Not supported for lazy signals, the ``'auto'`` option will
+                  be used instead.
 
             If ``None``, no navigator will be provided.
 
             Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
-            instance can be provided. The `signal_dimension` must be 1 (for a
-            spectrum navigator) or 2 (for a image navigator) and
-            `navigation_shape` must be 0 (for a static navigator) or
+            instance can be provided. The navigation or signal shape must
+            match the navigation shape of the signal to plot or the
             `navigation_shape` + `signal_shape` must be equal to the
             `navigator_shape` of the current object (for a dynamic navigator).
             If the signal `dtype` is RGB or RGBA this parameter has no effect and
