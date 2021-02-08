@@ -87,7 +87,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     Notes
     -----
     The 'position' is now a 2D tuple: tuple(tuple(x1, x2), tuple(y1, y2))
-    
+
     Notes
     -----
     The 'size' property corresponds to line width, so it has a len() of only
@@ -263,7 +263,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self.patch = self.ax.plot(
             xy[:, 0], xy[:, 1],
             linestyle='-',
-            animated=self.blit,
             lw=self.linewidth,
             c=self.color,
             alpha=self.alpha,
@@ -280,9 +279,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             wi, = self.ax.plot(
                 wc[i][0], wc[i][1],
                 linestyle=':',
-                animated=self.blit,
                 lw=self.linewidth,
                 c=self.color,
+                animated=self.blit,
                 **kwargs)
             self.patch.append(wi)
             self._width_indicator_patches.append(wi)

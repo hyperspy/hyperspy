@@ -178,6 +178,20 @@ def test_load_datacube_downsample():
         _ = hs.load(filename, downsample=[100, 256])[-1]
 
 
+def test_load_datacube_frames():
+    rebin_energy = 2048
+    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    s = hs.load(filename, sum_frames=True, rebin_energy=rebin_energy)
+    assert s.data.shape == (512, 512, 2)
+    s_frame = hs.load(filename, sum_frames=False, rebin_energy=rebin_energy)
+    assert s_frame.data.shape == (14, 512, 512, 2)
+    np.testing.assert_allclose(s_frame.sum(axis='Frame').data, s.data)
+    np.testing.assert_allclose(s_frame.sum(axis=['x', 'y', 'Energy']).data,
+                               np.array([22355, 21975, 22038, 21904, 21846,
+                                         22115, 22021, 21917, 22123, 21919,
+                                         22141, 22024, 22086, 21797]))
+
+
 def test_load_eds_file():
     filename = os.path.join(my_path, 'JEOL_files', 'met03.EDS')
     s = hs.load(filename)
@@ -202,3 +216,4 @@ def test_load_eds_file():
                                              'energy_resolution_MnKa': 138.0,
                                              'live_time': 30.0}},
                         'Stage': {'tilt_alpha': 0.0}}
+

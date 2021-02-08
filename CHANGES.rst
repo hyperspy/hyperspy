@@ -5,9 +5,33 @@ What's new
   Add a single entry in the corresponding section below.
   See https://keepachangelog.com for details
 
+RELEASE_next_minor (Unreleased)
++++++++++++++++++++++++++++++++
+
+New
+---
+* Add `filter_zero_loss_peak` argument to the `spikes_removal_tool` method (`#1412 <https://github.com/hyperspy/hyperspy/pull/1412>`_)
+* Add `vacuum_mask` method for EELSSpectrum (`#2183 <https://github.com/hyperspy/hyperspy/pull/2183>`_)
+* Plot overlayed images (`#2599 <https://github.com/hyperspy/hyperspy/pull/2599>`_)
+* Support for reading JEOL EDS data (`#2488 <https://github.com/hyperspy/hyperspy/pull/2488>`_, 
+  `#2607 <https://github.com/hyperspy/hyperspy/pull/2607>`_, `#2620 <https://github.com/hyperspy/hyperspy/pull/2620>`_)
+
+Enhancements
+------------
+
+* Support for relative slicing (`#2386 <https://github.com/hyperspy/hyperspy/pull/2386>`_)
+* Read Cathodoluminescence metadata (`#2590 <https://github.com/hyperspy/hyperspy/pull/2590>`_)
+* Document reading Attolight data with the sur/pro format reader. (`#2559 <https://github.com/hyperspy/hyperspy/pull/2559/files>`_)
+* mpfit cleanup (`#2494 <https://github.com/hyperspy/hyperspy/pull/2494>`_)
+
+API changes
+-----------
+
+
 RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
+* Widgets plotting improvement and add `pick_tolerance` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
 
 
 Changelog

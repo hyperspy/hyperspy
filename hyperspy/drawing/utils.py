@@ -1543,7 +1543,7 @@ def animate_legend(fig=None, ax=None, plot_type='spectra'):
 
     for legline, origline in zip(leglines, lines):
         if plot_type=='spectra':
-            legline.set_pickradius(5)  # 5 pts tolerance
+            legline.set_pickradius(preferences.Plot.pick_tolerance)
         legline.set_picker(True)
         lined[legline] = origline
 

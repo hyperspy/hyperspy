@@ -48,7 +48,6 @@ class SquareWidget(Widget2DBase):
         xs, ys = self.size
         self.patch = [plt.Rectangle(
             xy, xs, ys,
-            animated=self.blit,
             fill=False,
             lw=self.border_thickness,
             ec=self.color,

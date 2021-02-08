@@ -35,6 +35,7 @@ matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.saturated_pixels = 0.0
 hs.preferences.Plot.cmap_navigator = 'viridis'
 hs.preferences.Plot.cmap_signal = 'viridis'
+hs.preferences.Plot.pick_tolerance = 5.0
 
 # Set parallel to False by default, so only
 # those tests with parallel=True are run in parallel
