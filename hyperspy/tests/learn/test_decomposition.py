@@ -28,6 +28,9 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
+skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+
+
 def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):
     """Generate a low-rank matrix with specified size and rank for testing."""
     rng = np.random.RandomState(random_seed)
@@ -144,7 +147,7 @@ class TestGetModel:
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         assert rms < 5e-7
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_get_bss_model(self):
         s = self.s
         s.decomposition(algorithm="SVD")
@@ -217,7 +220,7 @@ class TestEstimateElbowPosition:
     # Should be removed in scikit-learn 0.26
     # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
     @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_store_number_significant_components(self):
         s = signals.Signal1D(generate_low_rank_matrix())
         s.decomposition()
@@ -338,13 +341,16 @@ class TestDecompositionAlgorithm:
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["RPCA", "ORPCA", "ORNMF", "MLPCA"])
     def test_decomposition_output_dimension_not_given(self, algorithm):
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm=algorithm, return_info=False)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["fast_svd", "fast_mlpca"])
     def test_fast_deprecation_warning(self, algorithm):
         with pytest.warns(
@@ -353,7 +359,7 @@ class TestDecompositionAlgorithm:
         ):
             self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "svd", "mlpca", "nmf",])
     def test_name_deprecation_warning(self, algorithm):
         with pytest.warns(
@@ -377,10 +383,10 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
 
-    # Should be removed in scikit-learn 0.26
-    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
-    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    @skip_sklearn
     @pytest.mark.parametrize(
         "algorithm", ["sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca"]
     )
@@ -410,10 +416,10 @@ class TestReturnInfo:
             is None
         )
 
-    # Should be removed in scikit-learn 0.26
-    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
-    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    @skip_sklearn
     @pytest.mark.parametrize("return_info", [True, False])
     @pytest.mark.parametrize(
         "algorithm",
@@ -509,7 +515,7 @@ def test_decomposition_reproject(reproject):
     s.decomposition(reproject=reproject)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @pytest.mark.parametrize("reproject", ["signal", "both"])
 def test_decomposition_reproject_warning(reproject):
     s = signals.Signal1D(generate_low_rank_matrix())
@@ -519,7 +525,7 @@ def test_decomposition_reproject_warning(reproject):
         s.decomposition(algorithm="NMF", reproject=reproject)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_decomposition_pipeline():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
     s = signals.Signal1D(generate_low_rank_matrix())
@@ -535,7 +541,7 @@ def test_decomposition_pipeline():
     assert hasattr(out.named_steps["PCA"], "explained_variance_")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_decomposition_gridsearchcv():
     """Tests that a simple sklearn GridSearchCV is an acceptable algorithm."""
     s = signals.Signal1D(generate_low_rank_matrix())

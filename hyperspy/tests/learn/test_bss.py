@@ -28,6 +28,9 @@ from hyperspy.misc.machine_learning.tools import amari
 from hyperspy.signals import BaseSignal
 
 
+skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+
+
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
     """Check if two list of components are equivalent.
 
@@ -69,7 +72,7 @@ def test_amari_distance(n=16, tol=1e-6):
     np.testing.assert_allclose(amari(X, A), 0.0, rtol=tol)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_bss_FastICA_object():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
     rng = np.random.RandomState(123)
@@ -87,7 +90,7 @@ def test_bss_FastICA_object():
     assert hasattr(out, "components_")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_bss_pipeline():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
     rng = np.random.RandomState(123)
@@ -149,7 +152,7 @@ def test_factors_error():
         s.blind_source_separation(2, factors=factors)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @pytest.mark.parametrize("num_components", [None, 2])
 def test_num_components(num_components):
     s = artificial_data.get_core_loss_eels_line_scan_signal()
@@ -157,7 +160,7 @@ def test_num_components(num_components):
     s.blind_source_separation(number_of_components=num_components)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_components_list():
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition(output_dimension=3)
@@ -165,7 +168,7 @@ def test_components_list():
     assert s.learning_results.unmixing_matrix.shape == (2, 2)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_num_components_error():
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition()
@@ -185,7 +188,7 @@ def test_algorithm_error():
         s.blind_source_separation(2, algorithm="uniform")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_normalize_components_errors():
     rng = np.random.RandomState(123)
     s = Signal1D(rng.random_sample(size=(20, 100)))
@@ -200,7 +203,7 @@ def test_normalize_components_errors():
         s.normalize_bss_components(target="uniform")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_sklearn_convergence_warning():
     # Import here to avoid error if sklearn missing
     from sklearn.exceptions import ConvergenceWarning
@@ -222,7 +225,7 @@ def test_sklearn_convergence_warning():
         )
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @pytest.mark.parametrize("whiten_method", [None, "PCA", "ZCA"])
 def test_fastica_whiten_method(whiten_method):
     rng = np.random.RandomState(123)
@@ -236,7 +239,7 @@ def test_fastica_whiten_method(whiten_method):
     assert s.learning_results.unmixing_matrix.shape == A.shape
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @lazifyTestClass
 class TestReverseBSS:
     def setup_method(self, method):
@@ -266,7 +269,7 @@ class TestReverseBSS:
             self.s.blind_source_separation(2, reverse_component_criterion="toto")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @lazifyTestClass
 class TestBSS1D:
     def setup_method(self, method):
@@ -324,7 +327,7 @@ class TestBSS1D:
         )
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @lazifyTestClass
 class TestBSS2D:
     def setup_method(self, method):
@@ -472,7 +475,7 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Blind source separation info:" in captured.out
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_bss_sklearn(self, capfd):
         self.s.blind_source_separation(2)
         captured = capfd.readouterr()
@@ -492,10 +495,10 @@ class TestReturnInfo:
             is None
         )
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_bss_supported_return_true(self):
         assert self.s.blind_source_separation(return_info=True) is not None
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_bss_supported_return_false(self):
         assert self.s.blind_source_separation(return_info=False) is None
