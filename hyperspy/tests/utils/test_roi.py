@@ -30,21 +30,25 @@ class TestROIs():
 
     def setup_method(self, method):
         np.random.seed(0)  # Same random every time, Line2DROi test requires it
-        self.s_s = Signal1D(np.random.rand(50, 60, 4))
-        self.s_s.axes_manager[0].scale = 5
-        self.s_s.axes_manager[0].units = 'nm'
-        self.s_s.axes_manager[1].scale = 5
-        self.s_s.axes_manager[1].units = 'nm'
+        s_s = Signal1D(np.random.rand(50, 60, 4))
+        s_s.axes_manager[0].scale = 5
+        s_s.axes_manager[0].units = 'nm'
+        s_s.axes_manager[1].scale = 5
+        s_s.axes_manager[1].units = 'nm'
 
         # 4D dataset
-        self.s_i = Signal2D(np.random.rand(100, 100, 4, 4))
+        s_i = Signal2D(np.random.rand(100, 100, 4, 4))
 
         # Generate ROI for test of angle measurements
-        self.r = []
+        r = []
         t = np.tan(30. / 180. * np.pi)
         for x in [-1., -t, t, 1]:
             for y in [-1., -t, t, 1]:
-                self.r.append(Line2DROI(x1=0., x2=x, y1=0., y2=y))
+                r.append(Line2DROI(x1=0., x2=x, y1=0., y2=y))
+
+        self.s_s = s_s
+        self.s_i = s_i
+        self.r = r
 
     def test_point1d_spectrum(self):
         s = self.s_s
@@ -307,33 +311,33 @@ class TestROIs():
         # Check that mask is same for all images:
         for i in range(n):
             for j in range(n):
-                assert (np.all(sr.data.mask[j, i, :] == True) or
-                        np.all(sr.data.mask[j, i, :] == False))
-                assert (np.all(sr_ann.data.mask[j, i, :] == True) or
-                        np.all(sr_ann.data.mask[j, i, :] == False))
+                assert (np.all(sr.data[j, i, :] == np.nan) or
+                        np.all(sr.data[j, i, :] != np.nan))
+                assert (np.all(sr_ann.data[j, i, :] == np.nan) or
+                        np.all(sr_ann.data[j, i, :] != np.nan))
         # Check that the correct elements has been masked out:
-        mask = sr.data.mask[:, :, 0]
+        mask = sr.data[:, :, 0]
         print(mask)   # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(
-            np.where(mask.flatten())[0],
+            np.where(np.isnan(mask.flatten()))[0],
             [0, 1, 6, 7, 8, 15, 48, 55, 56, 57, 62, 63])
-        mask_ann = sr_ann.data.mask[:, :, 0]
+        mask_ann = sr_ann.data[:, :, 0]
         print(mask_ann)   # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(
-            np.where(mask_ann.flatten())[0],
+            np.where(np.isnan(mask_ann.flatten()))[0],
             [0, 1, 6, 7, 8, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 25,
              26, 27, 28, 29, 30, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46,
              48, 50, 51, 52, 53, 55, 56, 57, 62, 63])
         # Check that mask works for sum
-        assert np.sum(sr.data) == (n**2 - 3 * 4) * 4
-        assert np.sum(sr_ann.data) == 4 * 5 * 4
+        assert np.nansum(sr.data) == (n**2 - 3 * 4) * 4
+        assert np.nansum(sr_ann.data) == 4 * 5 * 4
 
         s.plot()
         r_signal = r.interactive(signal=s)
         r_ann_signal = r_ann.interactive(signal=s)
 
-        assert np.sum(r_signal.sum().data) == (n**2 - 3 * 4) * 4
-        assert np.sum(r_ann_signal.sum().data) == 4 * 5 * 4
+        assert np.sum(r_signal.nansum().data) == (n**2 - 3 * 4) * 4
+        assert np.sum(r_ann_signal.nansum().data) == 4 * 5 * 4
 
     def test_circle_getitem(self):
         r = CircleROI(20, 25, 20)
@@ -582,7 +586,8 @@ class TestROIs():
 class TestInteractive:
 
     def setup_method(self, method):
-        self.s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
+        s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
+        self.s = s
 
     def test_out(self):
         s = self.s
@@ -600,13 +605,13 @@ class TestInteractive:
         s = self.s.inav[0]
         r = CircleROI(3, 5, 2)
         sr = r(s)
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 12, 15])
         r.r_inner = 1
         r.cy = 16
         sr2 = r(s)
         r(s, out=sr)
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 5, 6, 9, 10, 12, 15])
         np.testing.assert_array_equal(sr2.data, sr.data)
 
@@ -614,12 +619,12 @@ class TestInteractive:
         s = self.s.inav[0]
         r = CircleROI(3, 5, 2)
         sr = r.interactive(s, None, color="blue")
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 12, 15])
         r.r_inner = 1
         r.cy = 16
         sr2 = r(s)
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 5, 6, 9, 10, 12, 15])
         np.testing.assert_array_equal(sr2.data, sr.data)
 
