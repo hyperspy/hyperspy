@@ -49,3 +49,6 @@ class TestCupy:
         np.testing.assert_allclose(np.nan_to_num(sr0), np.zeros_like(sr0))
         assert sr.isig[0].nansum() == 4.360798E08
 
+    def as_signal(self):
+        s = self.s
+        s2 = s.as_signal2D([0, 1])
