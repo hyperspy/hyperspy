@@ -50,12 +50,11 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.utils import underline, isiterable, to_numpy
+from hyperspy.misc.utils import underline, isiterable, slugify, to_numpy
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import slugify
 from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.misc.utils import (
     process_function_blockwise, guess_output_signal_size,_get_block_pattern)
@@ -77,6 +76,12 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 _logger = logging.getLogger(__name__)
+
+try:
+    import cupy as cp
+    CUPY_INSTALLED = True
+except ImportError:
+    CUPY_INSTALLED = False
 
 
 class ModelManager(object):
@@ -5396,6 +5401,7 @@ class BaseSignal(FancySlicing,
         <Signal2D, title:  (2, 1), dimensions: (32, 32)>
 
         """
+        from dask.array import Array
 
         metadata = self.metadata.deepcopy()
 
@@ -5422,6 +5428,9 @@ class BaseSignal(FancySlicing,
             self(),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
+
+        if isinstance(cs.data, Array):
+            cs.data = cs.data.compute()
 
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
@@ -6427,6 +6436,15 @@ class BaseSignal(FancySlicing,
                 mask.shape != self.axes_manager.signal_shape):
             raise ValueError("The shape of signal mask array must match "
                              "`signal_shape`.")
+
+    def to_gpu(self):
+        if not CUPY_INSTALLED:
+            raise BaseException('cupy is required.')
+        else:
+            self.data = cp.asarray(self.data)
+
+    def to_cpu(self):
+        self.data = to_numpy(self.data)
 
 
 ARITHMETIC_OPERATORS = (

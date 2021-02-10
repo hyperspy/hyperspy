@@ -28,6 +28,7 @@ import unicodedata
 from contextlib import contextmanager
 import importlib
 import logging
+from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -1611,3 +1612,21 @@ def get_array_module(array):
         pass
 
     return module
+
+
+def get_numpy_kwargs(array):
+    """
+    Convenience funtion to return a dictionary containing the `like` keyword
+    if numpy>=1.20.
+
+    Note
+    ----
+    `like` keyword is an experimental feature introduced in numpy 1.20 and is
+    pending on acceptance of NEP 35
+
+    """
+    kw = {}
+    if LooseVersion(np.__version__) >= LooseVersion("1.20"):
+         kw['like'] = array
+
+    return kw
