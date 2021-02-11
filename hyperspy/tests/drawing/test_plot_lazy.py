@@ -65,17 +65,37 @@ def test_compute_navigator():
                                s.navigator.data)
 
 
-def test_compute_navigator_tranpose():
+def test_navigator_deepcopy_with_new_data():
+    shape = (15, 15, 30, 30)
+    s = hs.signals.Signal2D(da.arange(np.prod(shape)).reshape(shape)).as_lazy()
+    s.compute_navigator(chunks_number=3)
+
+    s1 = s._deepcopy_with_new_data()
+    # After transpose, the navigator should be removed
+    assert not s1.metadata.has_item('_HyperSpy.navigator')
+    assert s1.navigator is None
+
+    s2 = s._deepcopy_with_new_data(copy_navigator=True)
+    # After transpose, the navigator should be removed
+    assert s2.metadata.has_item('_HyperSpy.navigator')
+    assert s2.navigator == s.navigator
+
+
+def test_remove_navigator_operation():
     shape = (15, 15, 30, 30)
     s = hs.signals.Signal2D(da.arange(np.prod(shape)).reshape(shape)).as_lazy()
     s.compute_navigator(chunks_number=3)
     s1 = s.T
-    # After transpose, the navigator is still there it has the wrong shape
-    with pytest.raises(ValueError):
-        s1.plot()
-    # we need to calculate it again if we want to plot
-    s1.compute_navigator(chunks_number=3)
+    # After transpose, the navigator should be removed
+    assert not s1.metadata.has_item('_HyperSpy.navigator')
+    assert s1.navigator is None
     s1.plot()
+
+    s2 = s1.sum(-1)
+    # After transpose, the navigator should be removed
+    assert not s2.metadata.has_item('_HyperSpy.navigator')
+    assert s2.navigator is None
+    s2.plot()
 
 
 def test_compute_navigator_index():
