@@ -280,7 +280,7 @@ The same example with the feature disabled:
    :align:   center
    :width:   500
 
-   Divergent color map with ``Centre colormap`` disabled.
+   Divergent color map with ``centre_colormap`` disabled.
 
 
 .. _plot.customize_navigator:
