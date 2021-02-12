@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,9 +20,9 @@ import numpy as np
 import pytest
 
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
-                          RectangularROI, SpanROI)
+                          RectangularROI, SpanROI, _get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
-
+import traits.api as t
 
 class TestROIs():
 
@@ -152,13 +152,11 @@ class TestROIs():
         assert tuple(r) == (15, 30)
 
     def test_widget_initialisation(self):
-        s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
-        s.axes_manager[0].scale = 0.5
-        s.axes_manager[1].scale = 1.0
-
-        roi_nav = RectangularROI(0, 0, 1, 0.5)
-        s.plot()
-        roi_nav.add_widget(s)
+        self.s_s.plot()
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+            r = roi()
+            r._set_default_values(self.s_s)
+            r.add_widget(self.s_s)
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -298,7 +296,7 @@ class TestROIs():
 
     def test_circle_getitem(self):
         r = CircleROI(20, 25, 20)
-        assert tuple(r) == (20, 25, 20)
+        assert tuple(r) == (20, 25, 20, 0)
 
     def test_annulus_getitem(self):
         r_ann = CircleROI(20, 25, 20, 15)
@@ -486,6 +484,45 @@ class TestROIs():
         with pytest.raises(ValueError):
             r.angle(axis='z')
 
+    def test_repr_None(self):
+        # Setting the args=None sets them as traits.Undefined, which didn't 
+        # have a string representation in the old %s style.
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI]:
+            r = roi()
+            for value in tuple(r):
+                assert value == t.Undefined
+            repr(r)
+        for roi in [CircleROI, Line2DROI]:
+            r = roi()
+            for value in tuple(r)[:-1]:
+                assert value == t.Undefined
+            assert tuple(r)[-1] == 0
+            repr(r)
+
+    def test_repr_vals(self):
+        repr(Point1DROI(1.1))
+        repr(Point2DROI(1.1, 2.1))
+        repr(Line2DROI(0, 0, 1, 1, 0.1))
+        repr(RectangularROI(0, 0, 1, 1))
+        repr(SpanROI(3., 5.))
+        repr(CircleROI(5, 5, 3))
+        repr(CircleROI(5, 5, 3, 1))
+
+    def test_undefined_call(self):
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+            r = roi()
+            with pytest.raises(ValueError, match='not yet been set'):
+                r(self.s_s)
+
+    def test_default_values_call(self):
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+            r = roi()
+            r._set_default_values(self.s_s)
+            r(self.s_s)
+
+    def test_get_central_half_limits(self):
+        ax = self.s_s.axes_manager[0]
+        assert _get_central_half_limits_of_axis(ax) == (73.75, 221.25)
 
 class TestInteractive:
 
@@ -538,3 +575,19 @@ class TestInteractive:
         r.x += 5
         sr2 = r(s)
         np.testing.assert_array_equal(sr.data, sr2.data)
+
+    def test_interactive_default_values(self):
+        rois = [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]
+        values = [
+            (4.5,),
+            (4.5, 9.5),
+            (2.25, 6.75, 4.75, 14.25),
+            (2.25, 6.75),
+            (2.25, 4.75, 6.75, 14.25, 0.0),
+            (4.5, 9.5, 4.5, 0.0),
+        ]
+        self.s.plot()
+        for roi, vals in zip(rois, values):
+            r = roi()
+            r.interactive(signal=self.s)
+            assert tuple(r) == vals

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -736,6 +736,9 @@ def write_signal(signal, group, **kwds):
     if default_version < LooseVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
+    # Remove chunks from the kwds since it wouldn't have the same rank as the
+    # dataset and can't be used
+    kwds.pop('chunks', None)
     dict2hdfgroup(metadata_dict, mapped_par, **kwds)
     original_par = group.create_group(original_metadata)
     dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,

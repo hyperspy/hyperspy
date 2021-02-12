@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -217,21 +217,21 @@ class TestPlotNonLinearAxis:
         return s2._plot.navigator_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_nav0_close():
     test_plot = _TestPlot(ndim=0, sdim=1)
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_nav1_close():
     test_plot = _TestPlot(ndim=1, sdim=1)
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure(check_data_changed_close=False)
 def test_plot_nav2_close():
     test_plot = _TestPlot(ndim=2, sdim=1)
     test_plot.signal.plot()
@@ -282,8 +282,7 @@ def test_plot_log_scale():
     return s._plot.signal_plot.figure
 
 
-@pytest.mark.parametrize(("ndim", "plot_type"),
-                         _generate_parameter())
+@pytest.mark.parametrize(("ndim", "plot_type"), _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_two_cursors(ndim, plot_type):
@@ -298,7 +297,7 @@ def test_plot_two_cursors(ndim, plot_type):
     return f
 
 
-@update_close_figure
+@update_close_figure(check_data_changed_close=False)
 def test_plot_nav2_sig1_two_cursors_close():
     return _test_plot_two_cursors(ndim=2)
 

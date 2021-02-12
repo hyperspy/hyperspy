@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -187,22 +187,26 @@ def assert_warns(message=None, category=None):
             raise ValueError(msg)
 
 
-def check_closing_plot(s):
+def check_closing_plot(s, check_data_changed_close=True):
+    # When using the interactive function with the pointer, some events can't
+    # be closed. Fix it once the ROI has been implemented for the pointer.
     assert s._plot.signal_plot is None
     assert s._plot.navigator_plot is None
     # Ideally we should check all events
     assert len(s.axes_manager.events.indices_changed.connected) == 0
+    if check_data_changed_close:
+        assert len(s.events.data_changed.connected) == 0
 
 
-@simple_decorator
-def update_close_figure(function):
-    def wrapper():
-        signal = function()
-        p = signal._plot
-        p.close()
-        check_closing_plot(signal)
-
-    return wrapper
+def update_close_figure(check_data_changed_close=True):
+    def decorator2(function):
+        def wrapper():
+            signal = function()
+            p = signal._plot
+            p.close()
+            check_closing_plot(signal, check_data_changed_close)
+        return wrapper
+    return decorator2
 
 
 # Adapted from:

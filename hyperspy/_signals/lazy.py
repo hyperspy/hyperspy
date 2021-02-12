@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,9 +23,10 @@ import warnings
 import numpy as np
 import dask.array as da
 import dask.delayed as dd
-from dask import threaded
+import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
+from distutils.version import LooseVersion
 
 
 from hyperspy.signal import BaseSignal
@@ -33,10 +34,12 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import _requires_linear_rebin
+from hyperspy.misc.array_tools import (_requires_linear_rebin,
+                                       get_signal_chunk_slice)
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import multiply, dummy_context_manager
+from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
+
 
 _logger = logging.getLogger(__name__)
 
@@ -547,7 +550,7 @@ class LazySignal(BaseSignal):
             if inplace:
                 raise ValueError("In place computation is not compatible with "
                                   "ragged array for lazy signal.")
-            # Shape of the signal dimension will change for the each nav. 
+            # Shape of the signal dimension will change for the each nav.
             # index, which means we can't predict the shape and the dtype needs
             # to be python object to support numpy ragged array
             sig_shape = ()
@@ -595,7 +598,7 @@ class LazySignal(BaseSignal):
                             pixels[s:e], axis=0) for s, e in zip(starts, ends)
                     ]
             res_data = pixels[0]
-    
+
         res = map_result_construction(
             self, inplace, res_data, ragged, sig_shape, lazy=not ragged)
 
@@ -619,7 +622,7 @@ class LazySignal(BaseSignal):
 
     def _block_iterator(self,
                         flat_signal=True,
-                        get=threaded.get,
+                        get=dask.threaded.get,
                         navigation_mask=None,
                         signal_mask=None):
         """A function that allows iterating lazy signal data by blocks,
@@ -703,7 +706,7 @@ class LazySignal(BaseSignal):
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
-        get=threaded.get,
+        get=dask.threaded.get,
         num_chunks=None,
         reproject=True,
         print_info=True,
@@ -803,8 +806,7 @@ class LazySignal(BaseSignal):
 
         blocksize *= num_chunks
 
-        # Initialize return_info and print_info
-        to_return = None
+        # Initialize print_info
         to_print = [
             "Decomposition info:",
             "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
@@ -1017,6 +1019,106 @@ class LazySignal(BaseSignal):
         # Print details about the decomposition we just performed
         if print_info:
             print("\n".join([str(pr) for pr in to_print]))
+
+    def plot(self, navigator='auto', **kwargs):
+        if isinstance(navigator, str):
+            if navigator == 'spectrum':
+                # We don't support the 'spectrum' option to keep it simple
+                _logger.warning("The `navigator='spectrum'` option is not "
+                                "supported for lazy signals, 'auto' is used "
+                                "instead.")
+                navigator = 'auto'
+            if navigator == 'auto':
+                nav_dim = self.axes_manager.navigation_dimension
+                if nav_dim in [1, 2]:
+                    if self.navigator is None:
+                        self.compute_navigator()
+                    navigator = self.navigator
+                elif nav_dim > 2:
+                    navigator = 'slider'
+        super().plot(navigator=navigator, **kwargs)
+
+    def compute_navigator(self, index=None, chunks_number=None,
+                          show_progressbar=None):
+        """
+        Compute the navigator by taking the sum over a single chunk contained
+        the specified coordinate. Taking the sum over a single chunk is a
+        computationally efficient approach to compute the navigator. The data
+        can be rechunk by specifying the ``chunks_number`` argument.
+
+        Parameters
+        ----------
+        index : (int, float, None) or iterable, optional
+            Specified where to take the sum, follows HyperSpy indexing syntax
+            for integer and float. If None, the index is the centre of the
+            signal_space
+        chunks_number : (int, None) or iterable, optional
+            Define the number of chunks in the signal space used for rechunk
+            the when calculating of the navigator. Useful to define the range
+            over which the sum is calculated.
+            If None, the existing chunking will be considered when picking the
+            chunk used in the navigator calculation.
+        %s
+
+        Returns
+        -------
+        None.
+
+        Note
+        ----
+        The number of chunks will affect where the sum is taken. If the sum
+        needs to be taken in the centre of the signal space (for example, in
+        the case of diffraction pattern), the number of chunk needs to be an
+        odd number, so that the middle is centered.
+
+        """
+
+        signal_shape = self.axes_manager.signal_shape
+
+        if index is None:
+            index = [round(shape / 2) for shape in signal_shape]
+        else:
+            if not isiterable(index):
+                index = [index] * len(signal_shape)
+            index = [axis._get_index(_idx)
+                     for _idx, axis in zip(index, self.axes_manager.signal_axes)]
+        _logger.info(f"Using index: {index}")
+
+        if chunks_number is None:
+            chunks = self.data.chunks
+        else:
+            if not isiterable(chunks_number):
+                chunks_number = [chunks_number] * len(signal_shape)
+            # Determine the chunk size
+            signal_chunks = da.core.normalize_chunks(
+                [int(size / cn) for cn, size in zip(chunks_number, signal_shape)],
+                shape=signal_shape
+                )
+            # Needs to reverse the chunks list to match dask chunking order
+            signal_chunks = list(signal_chunks)[::-1]
+            navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
+            if LooseVersion(dask.__version__) >= LooseVersion("2.30.0"):
+                kwargs = {'balance':True}
+            else:
+                kwargs = {}
+            chunks = self.data.rechunk([*navigation_chunks, *signal_chunks],
+                                       **kwargs).chunks
+
+        # Get the slice of the corresponding chunk
+        signal_size = len(signal_shape)
+        signal_chunks = tuple(chunks[i-signal_size] for i in range(signal_size))
+        _logger.info(f"Signal chunks: {signal_chunks}")
+        isig_slice = get_signal_chunk_slice(index, chunks)
+
+        _logger.info(f'Computing sum over signal dimension: {isig_slice}')
+        axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
+        navigator = self.isig[isig_slice].sum(axes)
+        navigator.compute(show_progressbar=show_progressbar)
+        navigator.original_metadata.set_item('sum_from', isig_slice)
+
+        self.navigator = navigator.T
+
+    compute_navigator.__doc__ %= SHOW_PROGRESSBAR_ARG
 
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):

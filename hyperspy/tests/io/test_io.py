@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -127,7 +127,7 @@ def test_glob_wildcards():
         for f in fnames:
             s.save(f)
 
-        with pytest.raises(ValueError, match="No filename matches this pattern"):
+        with pytest.raises(ValueError, match="No filename matches the pattern"):
             _ = hs.load(fnames[0])
 
         t = hs.load([fnames[0]])
@@ -142,7 +142,7 @@ def test_glob_wildcards():
         t = hs.load(os.path.join(dirpath, "temp[*].hspy"), escape_square_brackets=True,)
         assert len(t) == 2
 
-        with pytest.raises(ValueError, match="No filename matches this pattern"):
+        with pytest.raises(ValueError, match="No filename matches the pattern"):
             _ = hs.load(os.path.join(dirpath, "temp[*].hspy"))
 
         # Test pathlib.Path
@@ -166,7 +166,7 @@ def test_file_not_found_error():
         if os.path.exists(temp_fname):
             os.remove(temp_fname)
 
-        with pytest.raises(ValueError, match="No filename matches this pattern"):
+        with pytest.raises(ValueError, match='No filename matches the pattern'):
             _ = hs.load(temp_fname)
 
         with pytest.raises(FileNotFoundError):

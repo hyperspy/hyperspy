@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -515,7 +515,7 @@ class EELSSpectrum_mixin:
                                     interactive=interactive,
                                     display=display, toolkit=toolkit)
     spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
-        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, MASK_ZERO_LOSS_PEAK_WIDTH, DISPLAY_DT, TOOLKIT_DT)
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, MASK_ZERO_LOSS_PEAK_WIDTH, DISPLAY_DT, TOOLKIT_DT,)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):

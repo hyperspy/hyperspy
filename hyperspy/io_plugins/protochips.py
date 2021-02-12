@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,7 +22,6 @@ import os
 from datetime import datetime as dt
 import warnings
 import logging
-from distutils.version import LooseVersion
 
 
 # Plugin characteristics
@@ -141,13 +140,10 @@ class ProtochipsCSV(object):
 
     def _read_data(self):
         names = [name.replace(' ', '_') for name in self.column_name]
-        # Necessary for numpy >= 1.14
-        kwargs = {'encoding': 'latin1'} if np.__version__ >= LooseVersion("1.14") else {
-        }
         data = np.genfromtxt(self.filename, delimiter=',', dtype=None,
                              names=names,
                              skip_header=self.header_last_line_number,
-                             unpack=True, **kwargs)
+                             encoding='latin1')
 
         self._data_dictionary = dict()
         for i, name, name_dtype in zip(range(len(names)), self.column_name,

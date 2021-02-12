@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -31,6 +31,7 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
     axis = signal.axes_manager.signal_axes[0]
     i1, i2 = axis.value_range_to_indices(x1, x2)
     X = axis.axis[i1:i2]
+
     if only_current is True:
         data = signal()[i1:i2]
         X_shape = (len(X),)
@@ -46,20 +47,11 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
         centre_shape = list(data.shape)
         centre_shape[i] = 1
 
-    if isinstance(data, da.Array):
-        _sum = da.sum
-        _sqrt = da.sqrt
-        _abs = abs
-    else:
-        _sum = np.sum
-        _sqrt = np.sqrt
-        _abs = np.abs
-
-    centre = _sum(X.reshape(X_shape) * data, i) / _sum(data, i)
-
-    sigma = _sqrt(_abs(_sum((X.reshape(X_shape) - centre.reshape(
-        centre_shape)) ** 2 * data, i) / _sum(data, i)))
+    centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
+    sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - centre.reshape(
+        centre_shape)) ** 2 * data, i) / np.sum(data, i)))
     height = data.max(i)
+
     if isinstance(data, da.Array):
         return da.compute(centre, height, sigma)
     else:
@@ -87,11 +79,11 @@ class Gaussian(Expression):
     Parameters
     -----------
     A : float
-        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` 
-        implements the Gaussian function with a height parameter 
+        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF``
+        implements the Gaussian function with a height parameter
         corresponding to the peak height.
     sigma : float
-        Scale parameter of the Gaussian distribution. 
+        Scale parameter of the Gaussian distribution.
     centre : float
         Location of the Gaussian maximum (peak position).
     **kwargs

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -34,7 +34,6 @@ from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.lowess_smooth import lowess
 
-
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
     Signal1DCalibration,
@@ -53,7 +52,6 @@ from hyperspy.docstrings.signal import (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_
                                         SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
-
 
 _logger = logging.getLogger(__name__)
 
@@ -266,7 +264,6 @@ def _shift1D(data, **kwargs):
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
-
     """
     """
     _signal_dimension = 1
@@ -342,10 +339,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     spikes_diagnosis.__doc__ %= (SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
 
-
     def spikes_removal_tool(self, signal_mask=None, navigation_mask=None,
                             threshold='auto', interactive=True,
-                            display=True, toolkit=None):
+                            display=True, toolkit=None, **kwargs):
         self._check_signal_dimension_equals_one()
         if interactive:
             sr = SpikesRemovalInteractive(self,
@@ -354,13 +350,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                           threshold=threshold)
             return sr.gui(display=display, toolkit=toolkit)
         else:
-            SpikesRemoval(self,
-                          signal_mask=signal_mask,
-                          navigation_mask=navigation_mask,
-                          threshold=threshold)
+            sr = SpikesRemoval(self,
+                               signal_mask=signal_mask,
+                               navigation_mask=navigation_mask,
+                               threshold=threshold, **kwargs)
+            sr.remove_all_spikes()
+            return sr
 
     spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
-        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT)
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT,)
 
     def create_model(self, dictionary=None):
         """Create a model for the current data.

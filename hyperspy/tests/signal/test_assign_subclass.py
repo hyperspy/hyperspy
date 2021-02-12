@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -59,7 +59,7 @@ def test_assignment_class(caplog):
 
         assert new_subclass is getattr(hs.signals, case.cls)
 
-        warn_msg = "not understood. See `hs.print_known_signal_types()` for a list of known signal types"
+        warn_msg = "not understood. See `hs.print_known_signal_types()` for a list"
         if case.sig_type == "DefinitelyNotAHyperSpySignal":
             assert warn_msg in caplog.text
         else:
