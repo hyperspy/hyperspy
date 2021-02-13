@@ -335,9 +335,6 @@ class TestDecompositionAlgorithm:
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize("algorithm", ["RPCA", "ORPCA", "ORNMF", "MLPCA"])
     def test_decomposition_output_dimension_not_given(self, algorithm):
@@ -377,9 +374,6 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize(
         "algorithm", ["sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca"]
@@ -410,9 +404,6 @@ class TestReturnInfo:
             is None
         )
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize(
         "algorithm",
@@ -434,9 +425,6 @@ class TestReturnInfo:
             is not None
         )
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize(
         "algorithm",
