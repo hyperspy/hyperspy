@@ -1942,7 +1942,15 @@ class PeaksFinder2D(t.HasTraits):
         if 'template' in kwargs.keys():
             self.xc_template = kwargs['template']
         if method is not None:
-            self.method = method.capitalize().replace('_', ' ')
+            method_dict = {'local_max':'Local max',
+                           'max':'Max',
+                           'minmax':'Minmax',
+                           'zaefferer':'Zaefferer',
+                           'stat':'Stat',
+                           'laplacian_of_gaussian':'Laplacian of Gaussian',
+                           'difference_of_gaussian':'Difference of Gaussian',
+                           'template_matching':'Template matching'}
+            self.method = method_dict[method]
         self._parse_paramaters_initial_values(**kwargs)
         self._update_peak_finding()
 
