@@ -1480,7 +1480,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = np.float(value) * self.ureg(units)
+        v = float(value) * self.ureg(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)
