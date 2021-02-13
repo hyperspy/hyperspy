@@ -22,8 +22,8 @@ import numpy as np
 import scipy.ndimage as ndi
 from numba import njit
 from skimage.feature import (
-    blob_dog, 
-    blob_log, 
+    blob_dog,
+    blob_log,
     corner_peaks,
     match_template,
     peak_local_max,
@@ -412,7 +412,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         """Identify adjacent 'on' coordinates via DBSCAN."""
         bi = binarised_image.astype("bool")
         coordinates = np.indices(bi.shape).reshape(2, -1).T[bi.flatten()]
-        db = import_sklearn.sklearn.cluster.DBSCAN(2, 3)
+        db = import_sklearn.sklearn.cluster.DBSCAN(2, min_samples=3)
         peaks = []
         if coordinates.shape[0] > 0:  # we have at least some peaks
             labeled_points = db.fit_predict(coordinates)

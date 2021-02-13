@@ -23,8 +23,6 @@ import re
 import numpy as np
 from numpy.testing import assert_allclose
 
-from hyperspy.decorators import simple_decorator
-
 
 @contextmanager
 def ignore_warning(message="", category=None):
