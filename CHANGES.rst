@@ -17,6 +17,7 @@ RELEASE_next_patch (Unreleased)
 * Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
 * Fix disconnect event when closing navigator only plot (fixes `#996 <https://github.com/hyperspy/hyperspy/issues/996>`_), (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
 * Improve plotting navigator of lazy signals, add `navigator` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
+* Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
 
 
 Changelog
