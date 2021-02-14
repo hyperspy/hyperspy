@@ -807,6 +807,9 @@ class FunctionalDataAxis(BaseDataAxis):
         d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
+        del self._expression
+        del self._function
+        self.remove_trait('x')
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -1073,14 +1076,21 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         this_kwargs = self.get_axis_dictionary()
         self.__class__ = FunctionalDataAxis
         d["_type"] = 'FunctionalDataAxis'
+        self.remove_trait('scale')
+        self.remove_trait('offset')
         self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
+        super()._init_trait_listeners()
         self.__class__ = DataAxis
         d["_type"] = 'DataAxis'
+        self.remove_trait('scale')
+        self.remove_trait('offset')
         self.__init__(**d, axis=self.axis)
+        #del self.scale
+        #del self.offset
 
 def _serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices

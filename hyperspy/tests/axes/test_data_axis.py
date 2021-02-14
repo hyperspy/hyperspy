@@ -418,6 +418,8 @@ class TestUniformDataAxis:
         assert self.axis.low_value == 10
         assert self.axis.high_value == 10 + 0.1 * 9
         np.testing.assert_allclose(self.axis.axis, axis)
+        with pytest.raises(AttributeError):
+            self.axis.scale
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
