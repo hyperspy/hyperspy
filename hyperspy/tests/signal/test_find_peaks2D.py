@@ -85,7 +85,7 @@ PEAK_METHODS = ['local_max', 'max', 'minmax', 'zaefferer', 'stat',
                 'template_matching']
 DATASETS = _generate_dataset()
 DATASETS_NAME = ["dense", "sparse_nav0d", "sparse_nav1d", "sparse_nav2d"]
-
+REF_PATTERN = _generate_reference()
 
 @lazifyTestClass
 class TestFindPeaks2D:
@@ -97,7 +97,7 @@ class TestFindPeaks2D:
         self.sparse_nav1d = DATASETS[2]
         self.sparse_nav2d = DATASETS[3]
         self.sparse_nav2d_shifted = DATASETS[4]
-        self.ref, self.xref, self.yref = _generate_reference()
+        self.ref, self.xref, self.yref = REF_PATTERN
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('dataset_name', DATASETS_NAME)
@@ -184,3 +184,22 @@ class TestFindPeaks2D:
         pf2D.close()
 
         assert peaks.data.shape == (3, 2)
+
+
+@pytest.mark.parametrize('method', ['local_max', 'minmax', 'zaefferer', 'stat',
+                                    'laplacian_of_gaussian',
+                                    'difference_of_gaussian'])
+def test_find_peaks_zeros(method):
+    if method == 'stat':
+        pytest.importorskip("sklearn")
+    n = 64
+    s = Signal2D(np.zeros([n]*2))
+    s.find_peaks(method=method, interactive=False)
+
+
+@pytest.mark.parametrize('method', PEAK_METHODS)
+def test_find_peaks_interactive(method):
+    if method == 'stat':
+        pytest.importorskip("sklearn")
+    s = DATASETS[0]
+    s.find_peaks(method=method)

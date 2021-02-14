@@ -18,16 +18,10 @@
 
 import copy
 
+from numba import njit
 import numpy as np
 import scipy.ndimage as ndi
-from numba import njit
-from skimage.feature import (
-    blob_dog, 
-    blob_log, 
-    corner_peaks,
-    match_template,
-    peak_local_max,
-)
+from skimage.feature import blob_dog, blob_log, match_template, peak_local_max
 
 from hyperspy.misc.machine_learning import import_sklearn
 
