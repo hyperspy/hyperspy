@@ -1844,7 +1844,7 @@ class PeaksFinder2D(t.HasTraits):
     # For "Laplacian of Gaussian" method
     log_min_sigma = t.Range(0, 2., value=1)
     log_max_sigma = t.Range(0, 100., value=50)
-    log_num_sigma = t.Range(0, 20., value=10)
+    log_num_sigma = t.Range(0, 20, value=10)
     log_threshold = t.Range(0, 0.4, value=0.2)
     log_overlap = t.Range(0, 1., value=0.5)
     log_log_scale = t.Bool(False)
@@ -1964,7 +1964,7 @@ class PeaksFinder2D(t.HasTraits):
 
     def _update_peak_finding(self, method=None):
         if method is None:
-            method = self.method.lower().replace(' ', '_')
+            method = self.method
         self._find_peaks_current_index(method=method)
         self._plot_markers()
 
@@ -2010,11 +2010,14 @@ class PeaksFinder2D(t.HasTraits):
         x_axis = self.signal.axes_manager.signal_axes[0]
         y_axis = self.signal.axes_manager.signal_axes[1]
 
-        marker_list = [Point(x=x_axis.index2value(x),
-                             y=y_axis.index2value(y),
-                             color=color,
-                             size=markersize)
-            for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
+        if np.isnan(self.peaks.data).all():
+            marker_list = []
+        else:
+            marker_list = [Point(x=x_axis.index2value(x),
+                                 y=y_axis.index2value(y),
+                                 color=color,
+                                 size=markersize)
+                for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
 
         return marker_list
 
