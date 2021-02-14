@@ -2013,8 +2013,8 @@ class PeaksFinder2D(t.HasTraits):
         if np.isnan(self.peaks.data).all():
             marker_list = []
         else:
-            marker_list = [Point(x=x_axis.index2value(round(x)),
-                                 y=y_axis.index2value(round(y)),
+            marker_list = [Point(x=x_axis.index2value(int(round(x))),
+                                 y=y_axis.index2value(int(round(y))),
                                  color=color,
                                  size=markersize)
                 for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
