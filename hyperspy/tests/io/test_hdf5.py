@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -720,9 +720,22 @@ def test_save_ragged_array(tmp_path):
         np.testing.assert_allclose(s.data[i], s1.data[i])
     assert s.__class__ == s1.__class__
 
+
 def test_load_missing_extension(caplog):
     path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
     s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
        _ = s.models.restore("a")
+
+
+def test_save_chunks_signal_metadata():
+    N = 10
+    dim = 3
+    s = Signal1D(np.arange(N**dim).reshape([N]*dim))
+    s.navigator = s.sum(-1)
+    s.change_dtype('float')
+    s.decomposition()
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_save_chunks_signal_metadata.hspy')
+    s.save(filename, chunks=(5, 5, 10))

@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -144,42 +144,42 @@ def _get_figure(test_plot, data_type, plot_type):
     return fig
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_nav0_sig1_close():
     test_plot = _TestPlot(ndim=0, sdim=1, data_type="real")
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_nav1_sig1_close():
     test_plot = _TestPlot(ndim=1, sdim=1, data_type="real")
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure(check_data_changed_close=False)
 def test_plot_nav2_sig1_close():
     test_plot = _TestPlot(ndim=2, sdim=1, data_type="real")
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_nav0_sig2_close():
     test_plot = _TestPlot(ndim=0, sdim=2, data_type="real")
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure(check_data_changed_close=False)
 def test_plot_nav1_sig2_close():
     test_plot = _TestPlot(ndim=1, sdim=2, data_type="real")
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure(check_data_changed_close=False)
 def test_plot_nav2_sig2_close():
     test_plot = _TestPlot(ndim=2, sdim=2, data_type="real")
     test_plot.signal.plot()
@@ -263,7 +263,7 @@ def test_plot_slider(ndim, sdim):
     assert s._plot.signal_plot is not None
     assert s._plot.navigator_plot is None
     s._plot.close()
-    check_closing_plot(s)
+    check_closing_plot(s, check_data_changed_close=False)
 
     if ndim > 1:
         s.plot(navigator='spectrum')
@@ -271,21 +271,24 @@ def test_plot_slider(ndim, sdim):
         assert s._plot.navigator_plot is not None
         assert isinstance(s._plot.navigator_plot, Signal1DFigure)
         s._plot.close()
-        check_closing_plot(s)
+        check_closing_plot(s, check_data_changed_close=False)
     if ndim > 2:
         s.plot()
         assert s._plot.signal_plot is not None
         assert s._plot.navigator_plot is not None
         assert len(s.axes_manager.events.indices_changed.connected) >= 2
         s._plot.close()
-        check_closing_plot(s)
+        check_closing_plot(s, check_data_changed_close=False)
 
 
+@pytest.mark.parametrize("tranpose", [True, False])
 @pytest.mark.parametrize("ndim", [1, 2])
-def test_plot_navigator_plot_signal(ndim):
+def test_plot_navigator_plot_signal(ndim, tranpose):
     test_plot_nav1d = _TestPlot(ndim=ndim, sdim=1, data_type="real")
     s = test_plot_nav1d.signal
-    navigator = -s.sum(-1).T
+    navigator = -s.sum(-1)
+    if tranpose:
+        navigator = navigator.T
     s.plot(navigator=navigator)
     if ndim == 1:
         navigator_data = s._plot.navigator_plot.ax_lines[0]._get_data()

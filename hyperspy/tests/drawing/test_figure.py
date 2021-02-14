@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -77,7 +77,7 @@ def test_close_figure(navigator, nav_dim, sig_dim):
     s = Signal(np.arange(pow(10, total_dim)).reshape([10]*total_dim))
     s.plot(navigator=navigator)
     s._plot.close()
-    check_closing_plot(s)
+    check_closing_plot(s, check_data_changed_close=False)
 
     if sig_dim == 1:
         m = s.create_model()

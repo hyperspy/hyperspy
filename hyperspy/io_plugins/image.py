@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -38,32 +38,50 @@ non_uniform_axis = False
 
 
 # TODO Extend it to support SI
-def file_writer(filename, signal, file_format='png', **kwds):
-    """Writes data to any format supported by PIL
+def file_writer(filename, signal, **kwds):
+    """Writes data to any format supported by imageio (PIL/pillow).
+    For a list of formats see https://imageio.readthedocs.io/en/stable/formats.html
 
-        Parameters
-        ----------
-        filename: str
-        signal: a Signal instance
-        file_format : str
-            The fileformat defined by its extension that is any one supported by
-            PIL.
+    Parameters
+    ----------
+    filename: {str, pathlib.Path, bytes, file}
+        The resource to write the image to, e.g. a filename, pathlib.Path or
+        file object, see the docs for more info. The file format is defined by 
+        the file extension that is any one supported by imageio.
+    signal: a Signal instance
+    format: str, optional
+        The format to use to read the file. By default imageio selects the
+        appropriate for you based on the filename and its contents.
+    **kwds: keyword arguments
+        Allows to pass keyword arguments supported by the individual file
+        writers as documented at https://imageio.readthedocs.io/en/stable/formats.html
+        
     """
     data = signal.data
     if rgb_tools.is_rgbx(data):
         data = rgb_tools.rgbx2regular_array(data)
-    imwrite(filename, data)
+    imwrite(filename, data, **kwds)
 
 
 def file_reader(filename, **kwds):
-    """Read data from any format supported by PIL.
+    """Read data from any format supported by imageio (PIL/pillow).
+    For a list of formats see https://imageio.readthedocs.io/en/stable/formats.html
 
     Parameters
     ----------
-    filename: str
+    filename: {str, pathlib.Path, bytes, file}
+        The resource to load the image from, e.g. a filename, pathlib.Path,
+        http address or file object, see the docs for more info. The file format
+        is defined by the file extension that is any one supported by imageio.
+    format: str, optional
+        The format to use to read the file. By default imageio selects the
+        appropriate for you based on the filename and its contents.
+    **kwds: keyword arguments
+        Allows to pass keyword arguments supported by the individual file
+        readers as documented at https://imageio.readthedocs.io/en/stable/formats.html
 
     """
-    dc = _read_data(filename)
+    dc = _read_data(filename, **kwds)
     lazy = kwds.pop('lazy', False)
     if lazy:
         # load the image fully to check the dtype and shape, should be cheap.
@@ -82,7 +100,7 @@ def file_reader(filename, **kwds):
              }]
 
 
-def _read_data(filename):
+def _read_data(filename, **kwds):
     dc = imread(filename)
     if len(dc.shape) > 2:
         # It may be a grayscale image that was saved in the RGB or RGBA

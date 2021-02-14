@@ -625,11 +625,13 @@ class ImageObject(object):
 
     @property
     def signal_type(self):
-        if 'ImageTags.Meta_Data.Signal' in self.imdict:
-            if self.imdict.ImageTags.Meta_Data.Signal == "X-ray":
-                return "EDS_TEM"
-            return self.imdict.ImageTags.Meta_Data.Signal
-        elif 'ImageTags.spim.eels' in self.imdict:  # Orsay's tag group
+        md_signal = self.imdict.get_item('ImageTags.Meta_Data.Signal', "")
+        if md_signal == 'X-ray':
+            return "EDS_TEM"
+        elif md_signal == 'CL':
+            return "CL"
+        # 'ImageTags.spim.eels' is Orsay's tag group
+        elif md_signal == 'EELS' or 'ImageTags.spim.eels' in self.imdict:
             return "EELS"
         else:
             return ""

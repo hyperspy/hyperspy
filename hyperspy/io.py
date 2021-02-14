@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -314,6 +314,7 @@ def load(filenames=None,
             raise ValueError("No file provided to reader")
 
     if isinstance(filenames, str):
+        pattern = filenames
         if escape_square_brackets:
             filenames = _escape_square_brackets(filenames)
 
@@ -321,7 +322,7 @@ def load(filenames=None,
                                if os.path.isfile(f)])
 
         if not filenames:
-            raise ValueError('No filename matches this pattern')
+            raise ValueError(f'No filename matches the pattern "{pattern}"')
 
     elif isinstance(filenames, Path):
         # Just convert to list for now, pathlib.Path not
@@ -560,8 +561,9 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         if signal_type not in set(valid_signal_types):
             _logger.warning(
                 f"`signal_type='{signal_type}'` not understood. "
-                f"See `hs.print_known_signal_types()` for a list of known signal types, "
-                f"and the developer guide for details on how to add new signal_types."
+                "See `hs.print_known_signal_types()` for a list of installed "
+                "signal types or https://github.com/hyperspy/hyperspy-extensions-list "
+                "for the list of all hyperspy extensions providing signals."
             )
 
         # If the following dict is not empty, only signal_dimension and dtype match.

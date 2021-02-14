@@ -4,8 +4,8 @@ on: [push, pull_request]
 
 jobs:
   run_test_site:
-    name: ${{ matrix.os }}/py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }}-py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
+    runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
@@ -15,31 +15,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu, windows, macos]
         PYTHON_VERSION: [3.7, 3.8]
         PIP_SELECTOR: ['[all, tests]']
+        UPSTREAM_DEV: [false]
         include:
           # test oldest supported version of main dependencies on python 3.6 
-          - os: ubuntu-latest
+          - os: ubuntu
             PYTHON_VERSION: 3.6
             OLDEST_SUPPORTED_VERSION: true
-            DEPENDENCIES: matplotlib==2.2.3 numpy==1.15.4 scipy==1.1 imagecodecs==2019.12.3
-            PIP_SELECTOR: '[learning, speed, tests]'
-            LABEL: /oldest
+            DEPENDENCIES: matplotlib==2.2.3 numpy==1.16.0 scipy==1.1 imagecodecs==2019.12.3 dask==2.0.0
+            PIP_SELECTOR: '[all, tests]'
+            LABEL: -oldest
           # test minimum requirement
-          - os: ubuntu-latest
+          - os: ubuntu
             PYTHON_VERSION: 3.7
             PIP_SELECTOR: '[tests]'
-            LABEL: /minimum
+            LABEL: -minimum
           # Run coverage
-          - os: ubuntu-latest
+          - os: ubuntu
             PYTHON_VERSION: 3.7
             PIP_SELECTOR: '[all, tests, coverage]'
             PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
-            LABEL: /coverage
+            LABEL: -coverage
+          # Run test suite against upstream development version
+          - os: ubuntu
+            PYTHON_VERSION: 3.8
+            PIP_SELECTOR: '[all, tests]'
+            LABEL: -upstream_dev
+            UPSTREAM_DEV: true
+            DEPENDENCIES: numpy scipy scikit-learn scikit-image
         exclude:
           # redundant build (same as coverage) 
-          - os: ubuntu-latest
+          - os: ubuntu
             PYTHON_VERSION: 3.7
 
     steps:
@@ -64,6 +72,13 @@ jobs:
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
         run: |
           pip install ${{ matrix.DEPENDENCIES }}
+
+      - name: Install dependencies development version
+        if: ${{ matrix.UPSTREAM_DEV }}
+        run: |
+          pip install --upgrade --no-deps --pre \
+            -i https://pypi.anaconda.org/scipy-wheels-nightly/simple \
+            ${{ matrix.DEPENDENCIES }}
 
       - name: Run test suite
         run: |
@@ -96,3 +111,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           path: ./doc/_build/*
+          name: doc_build
+

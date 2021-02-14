@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -2533,6 +2533,14 @@ class BaseSignal(FancySlicing,
             value = np.fft.fftshift(value)
         return value
 
+    @property
+    def navigator(self):
+        return self.metadata.get_item('_HyperSpy.navigator')
+
+    @navigator.setter
+    def navigator(self, navigator):
+        self.metadata.set_item('_HyperSpy.navigator', navigator)
+
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
              **kwargs):
         """%s
@@ -2543,8 +2551,7 @@ class BaseSignal(FancySlicing,
         if self._plot is not None:
             self._plot.close()
         if 'power_spectrum' in kwargs:
-            from hyperspy._signals.complex_signal import ComplexSignal
-            if not isinstance(self, ComplexSignal):
+            if not np.issubdtype(self.data.dtype, np.complexfloating):
                 raise ValueError('The parameter `power_spectrum` required a '
                                  'signal with complex data type.')
                 del kwargs['power_spectrum']
@@ -2583,7 +2590,10 @@ class BaseSignal(FancySlicing,
             self._plot.signal_title = self.tmp_parameters.filename
 
         def get_static_explorer_wrapper(*args, **kwargs):
-            return navigator()
+            if np.issubdtype(navigator.data.dtype, np.complexfloating):
+                return np.abs(navigator())
+            else:
+                return navigator()
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
@@ -2602,7 +2612,9 @@ class BaseSignal(FancySlicing,
                 return navigator()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
-            if (self.axes_manager.navigation_dimension > 1 and
+            if self.navigator is not None:
+                navigator = self.navigator
+            elif (self.axes_manager.navigation_dimension > 1 and
                     np.any(np.array([not axis.is_uniform for axis in
                                      self.axes_manager.navigation_axes]))):
                 navigator = "slider"
@@ -2640,23 +2652,29 @@ class BaseSignal(FancySlicing,
             # check first if we have a signal to avoid comparion of signal with
             # string
             if isinstance(navigator, BaseSignal):
-                # Dynamic navigator
-                if (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape +
-                        navigator.axes_manager.navigation_shape):
-                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
-
-                elif (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape or
-                        axes_manager.navigation_shape[:2] ==
-                        navigator.axes_manager.signal_shape or
-                        (axes_manager.navigation_shape[0],) ==
-                        navigator.axes_manager.signal_shape):
+                def is_shape_compatible(navigation_shape, shape):
+                    return (navigation_shape == shape or
+                            navigation_shape[:2] == shape or
+                            (navigation_shape[0],) == shape
+                            )
+                # Static navigator
+                if is_shape_compatible(axes_manager.navigation_shape,
+                                       navigator.axes_manager.signal_shape):
                     self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Static transposed navigator
+                elif is_shape_compatible(axes_manager.navigation_shape,
+                                         navigator.axes_manager.navigation_shape):
+                    navigator = navigator.T
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Dynamic navigator
+                elif (axes_manager.navigation_shape ==
+                      navigator.axes_manager.signal_shape +
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
                 else:
                     raise ValueError(
-                        "The navigator dimensions are not compatible with "
-                        "those of self.")
+                        "The dimensions of the provided (or stored) navigator "
+                        "are not compatible with this signal.")
             elif navigator == "slider":
                 self._plot.navigator_data_function = "slider"
             elif navigator is None:
@@ -2676,10 +2694,11 @@ class BaseSignal(FancySlicing,
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
-        if self._plot.signal_plot:
-            self._plot.signal_plot.events.closed.connect(
-                lambda: self.events.data_changed.disconnect(self.update_plot),
-                [])
+
+        p = self._plot.signal_plot if self._plot.signal_plot else self._plot.navigator_plot
+        p.events.closed.connect(
+            lambda: self.events.data_changed.disconnect(self.update_plot),
+            [])
 
         if plot_markers:
             if self.metadata.has_item('Markers'):
@@ -4064,30 +4083,18 @@ class BaseSignal(FancySlicing,
             raise NotImplementedError(
                     "Not implemented for non-uniform axes.")
         use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
-        if isinstance(self.data, da.Array):
-            if use_real_fft:
-                fft_f = da.fft.rfftn
-            else:
-                fft_f = da.fft.fftn
 
-            if shift:
-                im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if use_real_fft:
+            fft_f = np.fft.rfftn
         else:
-            if use_real_fft:
-                fft_f = np.fft.rfftn
-            else:
-                fft_f = np.fft.fftn
+            fft_f = np.fft.fftn
 
-            if shift:
-                im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if shift:
+            im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
+        else:
+            im_fft = self._deepcopy_with_new_data(
+                fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
@@ -4161,21 +4168,12 @@ class BaseSignal(FancySlicing,
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
-        if isinstance(self.data, da.Array):
-            if shift:
-                fft_data_shift = da.fft.ifftshift(self.data, axes=axes)
-                im_ifft = self._deepcopy_with_new_data(
-                    da.fft.ifftn(fft_data_shift, axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+        if shift:
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
         else:
-            if shift:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                self.data, axes=axes, **kwargs))
 
         im_ifft.metadata.General.title = 'iFFT of {}'.format(
             im_ifft.metadata.General.title)
