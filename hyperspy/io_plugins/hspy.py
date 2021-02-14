@@ -28,7 +28,7 @@ import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
-from collections import namedtuple
+
 
 _logger = logging.getLogger(__name__)
 
