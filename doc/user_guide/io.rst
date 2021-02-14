@@ -345,8 +345,8 @@ This feature is particularly useful when using
 
 The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
 of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
-full signal shape for lazy signal, while for lazy signal, the chunking of the dask is used. It is possible to
-customise the chunk shape using the ``chunks`` keyword. 
+full signal shape for non-lazy signal, while for lazy signal, the chunking of the dask is used. It is possible to
+customise the chunk shape using the ``chunks`` keyword.
 For example, to save the data with ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks
 for this signal:
 
@@ -369,7 +369,7 @@ See the `chunking section <big_data.html#Chunking>`__ under `Working with big da
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
+- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
   ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
 .. note::
@@ -555,7 +555,7 @@ the "r+" mode are incompatible).
 Images
 ------
 
-HyperSpy is able to read and write data too `all the image formats 
+HyperSpy is able to read and write data too `all the image formats
 <https://imageio.readthedocs.io/en/stable/formats.html>`_ supported by
 `imageio`, which used the Python Image Library  (PIL/pillow).
 This includes png, pdf, gif etc.
@@ -890,7 +890,7 @@ Extra loading arguments
   path. Relevant for emd file version >= 0.5 where groups can be named
   'group0000', 'group0001', etc.
 - ``chunks`` : None, True or tuple. Determine the chunking of the dataset to save.
-  See the ``chunks`` arguments of the ``hspy`` file format for more details. 
+  See the ``chunks`` arguments of the ``hspy`` file format for more details.
 
 
 For files containing several datasets, the `dataset_name` argument can be
@@ -938,14 +938,14 @@ the data size in memory.
     <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
 
 .. note::
-    
+
     FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
     The FFT is not centered and only positive frequencies are stored in the file.
     Lazy reading of these datasets is not supported. Making FFTs with HyperSpy
     from the respective image datasets is recommended.
 
 .. note::
-    
+
     DPC data is loaded in as a HyperSpy ComplexSignal2D object. Lazy reading of these
     datasets is not supported.
 
