@@ -17,7 +17,7 @@ RELEASE_next_patch (Unreleased)
 * Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
 * Fix disconnect event when closing navigator only plot (fixes `#996 <https://github.com/hyperspy/hyperspy/issues/996>`_), (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
 * Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
-* Use 'dask_auto' when rechunk=True in ``change_dtype`` fo lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
+* Use 'dask_auto' when rechunk=True in ``change_dtype`` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
 
 Changelog
 *********
