@@ -824,7 +824,8 @@ class EMD_NCEM:
         self._write_signal_to_group(signal_group, signal, **kwargs)
         emd_file.close()
 
-    def _write_signal_to_group(self, signal_group, signal, **kwargs):
+    def _write_signal_to_group(self, signal_group, signal, chunks=None,
+                               **kwargs):
         # Save data:
         title = signal.metadata.General.title or '__unnamed__'
         dataset = signal_group.require_group(title)
@@ -833,15 +834,20 @@ class EMD_NCEM:
         if np.issubdtype(data.dtype, np.dtype('U')):
             # Saving numpy unicode type is not supported in h5py
             data = data.astype(np.dtype('S'))
-        if 'chunks' not in kwargs.keys():
+        if chunks is None:
             if isinstance(data, da.Array):
                 # For lazy dataset, by default, we use the current dask chunking
-                kwargs['chunks'] = tuple([c[0] for c in data.chunks])
+                chunks = tuple([c[0] for c in data.chunks])
             else:
                 signal_axes = signal.axes_manager.signal_indices_in_array
-                kwargs['chunks'] = get_signal_chunks(data.shape, data.dtype,
-                                                     signal_axes)
-        dataset.create_dataset('data', data=data, maxshape=maxshape, **kwargs)
+                chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+        # when chunks=True, we leave it to h5py `guess_chunk`
+        elif chunks is not True:
+            # Need to reverse since the data is transposed when saving
+            chunks = chunks[::-1]
+
+        dataset.create_dataset('data', data=data, maxshape=maxshape,
+                               chunks=chunks, **kwargs)
 
         array_indices = np.arange(0, len(data.shape))
         dim_indices = (array_indices + 1)[::-1]
