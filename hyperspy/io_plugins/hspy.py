@@ -502,7 +502,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
 
 
 def get_signal_chunks(shape, dtype, signal_axes=None):
-    """Function that claculates chunks for the signal, preferably at least one
+    """Function that calculates chunks for the signal, preferably at least one
     chunk per signal space.
 
     Parameters
