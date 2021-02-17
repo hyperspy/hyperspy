@@ -1084,7 +1084,6 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
-        super()._init_trait_listeners()
         self.__class__ = DataAxis
         d["_type"] = 'DataAxis'
         self.remove_trait('scale')
