@@ -723,7 +723,6 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
-    x = t.Instance(BaseDataAxis)
     def __init__(self,
                  expression,
                  x=None,
@@ -734,6 +733,8 @@ class FunctionalDataAxis(BaseDataAxis):
                  size=t.Undefined,
                  **parameters):
         super().__init__(index_in_array, name, units, navigate, **parameters)
+        # These trait needs to added dynamically to be removed when necessary
+        self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
@@ -807,6 +808,9 @@ class FunctionalDataAxis(BaseDataAxis):
         d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
+        del self._expression
+        del self._function
+        self.remove_trait('x')
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -857,9 +861,6 @@ class FunctionalDataAxis(BaseDataAxis):
 
 
 class UniformDataAxis(BaseDataAxis, UnitConversion):
-    scale = t.CFloat(1)
-    offset = t.CFloat(0)
-    size = t.CInt(0)
     def __init__(self,
                  index_in_array=None,
                  name=t.Undefined,
@@ -876,6 +877,9 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             navigate=navigate,
             **kwargs
             )
+        # These traits need to added dynamically to be removed when necessary
+        self.add_trait("scale", t.CFloat)
+        self.add_trait("offset", t.CFloat)
         self.scale = scale
         self.offset = offset
         self.size = size
@@ -1071,6 +1075,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             d["name"] = name
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
+        self.remove_trait('scale')
+        self.remove_trait('offset')
         self.__class__ = FunctionalDataAxis
         d["_type"] = 'FunctionalDataAxis'
         self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
@@ -1080,7 +1086,10 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         d = super().get_axis_dictionary()
         self.__class__ = DataAxis
         d["_type"] = 'DataAxis'
+        self.remove_trait('scale')
+        self.remove_trait('offset')
         self.__init__(**d, axis=self.axis)
+
 
 def _serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices
@@ -1484,7 +1493,7 @@ class AxesManager(t.HasTraits):
                     assert len(first_indices) == self.navigation_dimension
             except TypeError as e:
                 raise TypeError(
-                    f"Each set of indices in the iterpath should be an iterable, e.g. `(0,)` or `(0,0,0)`. " 
+                    f"Each set of indices in the iterpath should be an iterable, e.g. `(0,)` or `(0,0,0)`. "
                     f"The first entry currently looks like: `{first_indices}`, and does not satisfy this requirement."
                     ) from e
             except AssertionError as e:
@@ -2123,9 +2132,9 @@ class AxesManager(t.HasTraits):
         %s
         """
 
-class GeneratorLen: 
+class GeneratorLen:
     """Helper class for creating a generator-like object with a known length.
-    Useful when giving a generator as input to the AxesManager iterpath, so that the 
+    Useful when giving a generator as input to the AxesManager iterpath, so that the
     length is known for the progressbar.
 
     Found at: https://stackoverflow.com/questions/7460836/how-to-lengenerator/7460986
@@ -2141,7 +2150,7 @@ class GeneratorLen:
         self.gen = gen
         self.length = length
 
-    def __len__(self): 
+    def __len__(self):
         return self.length
 
     def __iter__(self):

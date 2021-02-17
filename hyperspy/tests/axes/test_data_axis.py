@@ -211,6 +211,21 @@ class TestFunctionalDataAxis:
         np.testing.assert_almost_equal(axis.axis[0], 4.)
         np.testing.assert_almost_equal(axis.axis[-1], 64.)
 
+    def test_convert_to_non_uniform_axis(self):
+        axis = np.copy(self.axis.axis)
+        self.axis.convert_to_non_uniform_axis()
+        assert isinstance(self.axis, DataAxis)
+        assert self.axis.size == 10
+        assert self.axis.low_value == 0
+        assert self.axis.high_value == 81
+        np.testing.assert_allclose(self.axis.axis, axis)
+        with pytest.raises(AttributeError):
+            self.axis._expression
+        with pytest.raises(AttributeError):
+            self.axis._function
+        with pytest.raises(AttributeError):
+            self.axis.x
+
 
 class TestReciprocalDataAxis:
 
@@ -417,6 +432,25 @@ class TestUniformDataAxis:
         assert self.axis.low_value == 10
         assert self.axis.high_value == 10 + 0.1 * 9
         np.testing.assert_allclose(self.axis.axis, axis)
+        with pytest.raises(AttributeError):
+            self.axis.offset
+        with pytest.raises(AttributeError):
+            self.axis.scale
+
+    def test_convert_to_functional_data_axis(self):
+        axis = np.copy(self.axis.axis)
+        self.axis.convert_to_functional_data_axis(expression = 'x**2')
+        assert isinstance(self.axis, FunctionalDataAxis)
+        assert self.axis.size == 10
+        assert self.axis.low_value == 10**2
+        assert self.axis.high_value == (10 + 0.1 * 9)**2
+        assert self.axis._expression == 'x**2'
+        assert isinstance(self.axis.x, UniformDataAxis)
+        np.testing.assert_allclose(self.axis.axis, axis**2)
+        with pytest.raises(AttributeError):
+            self.axis.offset
+        with pytest.raises(AttributeError):
+            self.axis.scale
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
