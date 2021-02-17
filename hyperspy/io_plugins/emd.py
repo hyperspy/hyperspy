@@ -40,9 +40,10 @@ import dask.array as da
 from dateutil import tz
 import pint
 
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.io_plugins.hspy import get_signal_chunks
 
 
 # Plugin characteristics
@@ -64,40 +65,6 @@ EMD_VERSION = '0.2'
 # ----------------------
 
 _logger = logging.getLogger(__name__)
-
-
-def calculate_chunks(shape, dtype, chunk_size_mb=100):
-    """Calculate chunks to get target chunk size.
-
-    The chunks are optimized for C-order reading speed.
-
-    Parameters
-    ----------
-    shape: tuple of ints
-        The shape of the array
-    dtype: string or numpy dtype
-        The dtype of the array
-    chunk_size_mb: int
-        The maximum size of the resulting chunks in MB. The default is
-        100MB as reccommended by the dask documentation.
-
-    """
-
-    target = chunk_size_mb * 1e6
-    items = int(target // np.dtype(dtype).itemsize)
-    chunks = ()
-    dimsize = np.cumprod(shape[::-1])[::-1][1:]
-    for i, ds in enumerate(dimsize):
-        chunk = items // ds
-        if not chunk:
-            chunks += (1,)
-        elif chunk <= shape[i]:
-            chunks += (chunk, )
-        else:
-            chunks += (shape[i],)
-    # At least one signal
-    chunks += (shape[-1], )
-    return chunks
 
 
 class EMD(object):
@@ -628,12 +595,15 @@ class EMD_NCEM:
         """Read dataset and use the h5py AsStrWrapper when the dataset is of
         string type (h5py 3.0 and newer)
         """
+        chunks = dataset.chunks
+        if chunks is None:
+            chunks = 'auto'
         if (h5py.check_string_dtype(dataset.dtype) and
             hasattr(dataset, 'asstr')):
             # h5py 3.0 and newer
             # https://docs.h5py.org/en/3.0.0/strings.html
             dataset = dataset.asstr()[:]
-        return dataset
+        return dataset, chunks
 
     def _read_emd_version(self, group):
         """ Return the group version if the group is an EMD group, otherwise
@@ -655,32 +625,27 @@ class EMD_NCEM:
         if None in array_list:
             raise IOError("Dataset can't be found.")
 
-        if self.lazy:
-            chunks = array_list[0].chunks
-            if chunks is None:
-                chunks = calculate_chunks(array_list[0].shape, array_list[0].dtype)
-
         if len(array_list) > 1:
             # Squeeze the data only when
             if self.lazy:
-                data_list = [da.from_array(self._read_dataset(d),
-                                           chunks=chunks) for d in array_list]
+                data_list = [da.from_array(*self._read_dataset(d))
+                             for d in array_list]
                 if transpose_required:
                     data_list = [da.transpose(d) for d in data_list]
                 data = da.stack(data_list)
                 data = da.squeeze(data)
             else:
-                data_list = [np.asanyarray(self._read_dataset(d))
+                data_list = [np.asanyarray(self._read_dataset(d)[0])
                              for d in array_list]
                 if transpose_required:
                     data_list = [np.transpose(d) for d in data_list]
                 data = np.stack(data_list).squeeze()
         else:
+            d = array_list[0]
             if self.lazy:
-                data = da.from_array(self._read_dataset(array_list[0]),
-                                     chunks=chunks)
+                data = da.from_array(*self._read_dataset(d))
             else:
-                data = np.asanyarray(self._read_dataset(array_list[0]))
+                data = np.asanyarray(self._read_dataset(d)[0])
             if transpose_required:
                 data = data.transpose()
 
@@ -834,8 +799,8 @@ class EMD_NCEM:
         signal : instance of hyperspy signal
             The signal to save.
         **kwargs : dict
-            Dictionary containing metadata which will be written as attribute
-            of the root group.
+            Keyword argument are passed to the ``h5py.Group.create_dataset``
+            method.
 
         """
         if isinstance(file, str):
@@ -857,10 +822,11 @@ class EMD_NCEM:
         # Write signals:
         signal_group = emd_file.require_group('signals')
         signal_group.attrs['emd_group_type'] = 1
-        self._write_signal_to_group(signal_group, signal)
+        self._write_signal_to_group(signal_group, signal, **kwargs)
         emd_file.close()
 
-    def _write_signal_to_group(self, signal_group, signal):
+    def _write_signal_to_group(self, signal_group, signal, chunks=None,
+                               **kwargs):
         # Save data:
         title = signal.metadata.General.title or '__unnamed__'
         dataset = signal_group.require_group(title)
@@ -869,8 +835,20 @@ class EMD_NCEM:
         if np.issubdtype(data.dtype, np.dtype('U')):
             # Saving numpy unicode type is not supported in h5py
             data = data.astype(np.dtype('S'))
-        dataset.create_dataset('data', data=data, chunks=True,
-                               maxshape=maxshape)
+        if chunks is None:
+            if isinstance(data, da.Array):
+                # For lazy dataset, by default, we use the current dask chunking
+                chunks = tuple([c[0] for c in data.chunks])
+            else:
+                signal_axes = signal.axes_manager.signal_indices_in_array
+                chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+        # when chunks=True, we leave it to h5py `guess_chunk`
+        elif chunks is not True:
+            # Need to reverse since the data is transposed when saving
+            chunks = chunks[::-1]
+
+        dataset.create_dataset('data', data=data, maxshape=maxshape,
+                               chunks=chunks, **kwargs)
 
         array_indices = np.arange(0, len(data.shape))
         dim_indices = (array_indices + 1)[::-1]

@@ -738,4 +738,30 @@ def test_save_chunks_signal_metadata():
     s.decomposition()
     with tempfile.TemporaryDirectory() as tmp:
         filename = os.path.join(tmp, 'test_save_chunks_signal_metadata.hspy')
-    s.save(filename, chunks=(5, 5, 10))
+    chunks = (5, 5, 10)
+    s.save(filename, chunks=chunks)
+    s2 = load(filename, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == chunks
+
+
+def test_chunking_saving_lazy():
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.hspy')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.hspy')
+        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specified.hspy')
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (7, 25, 25)
+
+    # specify chunks
+    chunks = (50, 10, 10)
+    s.save(filename3, chunks=chunks)
+    s3 = load(filename3, lazy=True)
+    assert tuple([c[0] for c in s3.data.chunks]) == chunks

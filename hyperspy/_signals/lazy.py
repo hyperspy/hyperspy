@@ -229,12 +229,16 @@ class LazySignal(BaseSignal):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
 
     def change_dtype(self, dtype, rechunk=True):
+        # To be consistent with the rechunk argument of other method, we use
+        # 'dask_auto' in favour of a chunking which doesn't split signal space.
+        if rechunk:
+            rechunk = 'dask_auto'
         from hyperspy.misc import rgb_tools
         if not isinstance(dtype, np.dtype) and (dtype not in
                                                 rgb_tools.rgb_dtypes):
             dtype = np.dtype(dtype)
-            self._make_lazy(rechunk=rechunk, dtype=dtype)
         super().change_dtype(dtype)
+        self._make_lazy(rechunk=rechunk, dtype=dtype)
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
     def _lazy_data(self, axis=None, rechunk=True, dtype=None):

@@ -2754,6 +2754,23 @@ class BaseSignal(FancySlicing,
             i) the filename
             ii)  `Signal.tmp_parameters.extension`
             iii) ``'hspy'`` (the default extension)
+        chunks : tuple or True or None (default)
+            HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
+            saving. The chunk shape should follow the order of the array
+            (``s.data.shape``), not the shape of the ``axes_manager``.
+            If None and lazy signal, the dask array chunking is used.
+            If None and non-lazy signal, the chunks are estimated automatically
+            to have at least one chunk per signal space.
+            If True, the chunking is determined by the the h5py ``guess_chunk``
+            function.
+        save_original_metadata : bool , default : False
+            Nexus file only. Option to save hyperspy.original_metadata with
+            the signal. A loaded Nexus file may have a large amount of data
+            when loaded which you may wish to omit on saving
+        use_default : bool , default : False
+            Nexus file only. Define the default dataset in the file.
+            If set to True the signal or first signal in the list of signals
+            will be defined as the default (following Nexus v3 data rules).
 
         """
         if filename is None:

@@ -28,7 +28,7 @@ import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
-from collections import namedtuple
+
 
 _logger = logging.getLogger(__name__)
 
@@ -508,7 +508,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
 
 
 def get_signal_chunks(shape, dtype, signal_axes=None):
-    """Function that claculates chunks for the signal, preferably at least one
+    """Function that calculates chunks for the signal, preferably at least one
     chunk per signal space.
 
     Parameters
@@ -555,11 +555,12 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
 
 def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
     if chunks is None:
-        if signal_axes is None:
-            # Use automatic h5py chunking
-            chunks = True
+        if isinstance(data, da.Array):
+            # For lazy dataset, by default, we use the current dask chunking
+            chunks = tuple([c[0] for c in data.chunks])
         else:
-            # Optimise the chunking to contain at least one signal per chunk
+            # If signal_axes=None, use automatic h5py chunking, otherwise
+            # optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
     if np.issubdtype(data.dtype, np.dtype('U')):
@@ -599,9 +600,11 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
         # just a reference to already created thing
         pass
     else:
-        _logger.info("Chunks used for saving: %s" % str(dset.chunks))
+        _logger.info(f"Chunks used for saving: {dset.chunks}")
         if isinstance(data, da.Array):
-            da.store(data.rechunk(dset.chunks), dset)
+            if data.chunks != dset.chunks:
+                data = data.rechunk(dset.chunks)
+            da.store(data, dset)
         elif data.flags.c_contiguous:
             dset.write_direct(data)
         else:
