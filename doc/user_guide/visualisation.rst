@@ -70,17 +70,18 @@ more will disable the extra cursor:
 
 In matplotlib, left and right arrow keys are by default set to navigate the
 "zoom" history. To avoid the problem of changing zoom while navigating,
-Ctrl + arrows can be used instead. Navigating without using the modifier keys
+``Ctrl`` + arrows can be used instead. Navigating without using the modifier keys
 will be deprecated in version 2.0.
 
 To navigate navigation dimensions larger than 2, modifier keys can be used.
-The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down)
+The defaults are ``Shift`` + ``left``/``right`` and ``Shift`` + ``up``/``down``,
+(``Alt`` + ``left``/``right`` and ``Alt`` + ``up``/``down``)
 for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
 
-Hotkeys and modifier keys for navigating the plot can be set in the ``hs.preferences.gui()``.
+Hotkeys and modifier keys for navigating the plot can be set in the
+:ref:`HyperSpy plot preferences <configuring-hyperspy-label>``.
 Note that some combinations will not work for all platforms, as some systems reserve them for
 other purposes.
-.. _second_pointer.png:
 
 .. figure::  images/second_pointer.png
    :align:   center
@@ -279,7 +280,7 @@ The same example with the feature disabled:
    :align:   center
    :width:   500
 
-   Divergent color map with ``Centre colormap`` disabled.
+   Divergent color map with ``centre_colormap`` disabled.
 
 
 .. _plot.customize_navigator:
@@ -735,6 +736,25 @@ __ plot.spectra_
     selecting and enlarging some of them and allowing comfortable zooming. This
     functionality is only enabled if a ``matplotlib`` backend that supports the
     ``button_press_event`` in the figure canvas is being used.
+
+It is also possible to plot multiple images overlayed on the same figure by 
+passing the argument `overlay=True` to the 
+:py:func:`~.drawing.utils.plot_images` function. This should only be done when
+images have the same scale (eg. for elemental maps from the same dataset).
+Using the same data as above, the Fe and Pt signals can be plotted using
+different colours. Any color can be input via matplotlib color characters or
+hex values.
+
+.. code-block:: python
+
+    >>> si_EDS = hs.load("core_shell.hdf5")
+    >>> im = si_EDS.get_lines_intensity()
+    >>> hs.plot.plot_images(im,scalebar='all', overlay=True, suptitle=False, 
+    >>>                     axes_decor='off')
+
+.. figure::  images/plot_images_overlay.png
+  :align:   center
+  :width:   500
 
 .. _plot.spectra:
 

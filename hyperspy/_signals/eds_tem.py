@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -391,7 +391,10 @@ class EDSTEM_mixin:
         vacuum_mask
         """
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, closing)
+            if self.axes_manager.navigation_dimension > 0:
+                navigation_mask = self.vacuum_mask(navigation_mask, closing)
+            else:
+                navigation_mask = None
 
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         it = 0
@@ -481,11 +484,12 @@ class EDSTEM_mixin:
                 number_of_atoms = composition._deepcopy_with_new_data(results[1])
 
             if method == 'cross_section':
-                abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
+                if absorption_correction:
+                    abs_corr_factor = utils_eds.get_abs_corr_cross_section(composition.split(),
                                                        number_of_atoms.split(),
                                                        toa,
                                                        probe_area)
-                kwargs["absorption_correction"] = abs_corr_factor
+                    kwargs["absorption_correction"] = abs_corr_factor
             else:
                 if absorption_correction:
                     abs_corr_factor = utils_eds.get_abs_corr_zeta(composition.split(),
@@ -530,7 +534,7 @@ class EDSTEM_mixin:
             composition[i].metadata.set_item(
                 "Sample.xray_lines", ([xray_line]))
             if plot_result and composition[i].axes_manager.navigation_size == 1:
-                c = composition[i].data
+                c = np.float(composition[i].data)
                 print(f"{element} ({xray_line}): Composition = {c:.2f} percent")
         #For the cross section method this is repeated for the number of atom maps
         if method == 'cross_section':
@@ -595,6 +599,9 @@ class EDSTEM_mixin:
         >>> si.vacuum_mask().data
         array([False, False, False,  True], dtype=bool)
         """
+        if self.axes_manager.navigation_dimension == 0:
+            raise RuntimeError('Navigation dimenstion must be higher than 0 '
+                               'to estimate a vacuum mask.')
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
         if closing:

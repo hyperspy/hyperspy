@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -49,10 +49,11 @@ class TestPlotROI():
 
     def setup_method(self, method):
         # Create test image 100x100 pixels:
-        self.im = Signal2D(np.arange(50000).reshape([10, 50, 100]))
-        self.im.axes_manager[0].scale = 1e-1
-        self.im.axes_manager[1].scale = 1e-2
-        self.im.axes_manager[2].scale = 1e-3
+        im = Signal2D(np.arange(50000).reshape([10, 50, 100]))
+        im.axes_manager[0].scale = 1e-1
+        im.axes_manager[1].scale = 1e-2
+        im.axes_manager[2].scale = 1e-3
+        self.im = im
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
@@ -129,6 +130,14 @@ class TestPlotROI():
         p = roi.RectangularROI(left=0.01, top=0.01, right=0.1, bottom=0.03)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
         return objs["figure"]
+
+    @pytest.mark.parametrize("render_figure", [True, False])
+    def test_plot_rectangular_roi_remove(self, render_figure):
+        im = self.im
+        im.plot()
+        p = roi.RectangularROI(left=0.01, top=0.01, right=0.1, bottom=0.03)
+        p.add_widget(signal=im)
+        p.remove_widget(im, render_figure=render_figure)
 
     @pytest.mark.parametrize("space", ("signal", "navigation"))
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,

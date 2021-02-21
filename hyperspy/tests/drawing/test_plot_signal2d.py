@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -561,3 +561,19 @@ def test_plot_autoscale_data_changed(autoscale):
     else:
         np.testing.assert_allclose(imf._vmin, _vmin)
         np.testing.assert_allclose(imf._vmax, _vmax)
+
+@pytest.mark.parametrize("axes_decor", ['all', 'off'])
+@pytest.mark.parametrize("label", ['auto', ['b','g']])
+@pytest.mark.parametrize("colors", ['auto', ['b','g']])
+@pytest.mark.parametrize("alphas", [1.0, [0.9,0.9]])
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_overlay(axes_decor,label,colors,alphas):
+    s1 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s2 = hs.signals.Signal2D(np.arange(99,-1,-1).reshape(10, 10))
+    ax = hs.plot.plot_images([s1,s2], overlay=True, scalebar='all',
+                             label=label, suptitle=False,
+                             axes_decor=axes_decor, colors=colors,
+                             alphas=alphas, pixel_size_factor=10)
+
+    return ax[0].figure

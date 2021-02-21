@@ -6,7 +6,7 @@
 # Analytica Chimica Acta 350, no. 3 (September 19, 1997): 341-352.
 #
 # Copyright 1997 Darren T. Andrews and Peter D. Wentzell
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #

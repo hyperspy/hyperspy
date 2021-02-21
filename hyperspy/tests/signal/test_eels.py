@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -599,3 +599,9 @@ class TestVacuumMask:
         assert not mask.data[9]
         assert mask.data[10]
         assert mask.data[-1]
+
+    def test_vacuum_mask_navigation_dimension_0(self):
+        s = self.signal
+        s2 = s.sum()
+        with pytest.raises(RuntimeError):
+            s2.vacuum_mask()
