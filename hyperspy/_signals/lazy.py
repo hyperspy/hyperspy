@@ -39,7 +39,8 @@ from hyperspy.misc.array_tools import (_requires_linear_rebin,
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import (multiply, dummy_context_manager, isiterable,
-    process_function_blockwise, guess_output_signal_size, rechunk_signal)
+                                 process_function_blockwise, guess_output_signal_size,
+                                 rechunk_signal)
 
 
 _logger = logging.getLogger(__name__)

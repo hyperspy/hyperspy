@@ -454,9 +454,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 post_array = da.full(tuple(post_shape),
                                      fill_value,
                                      chunks=tuple(post_chunks))
-
                 self.data = da.concatenate((pre_array, self.data, post_array),
-                                           axis=ind)
+                                           axis=ind).rechunk()
             else:
                 padding = []
                 for i in range(self.data.ndim):
@@ -469,7 +468,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    constant_values=(fill_value,))
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
-
         if isinstance(shift_array, np.ndarray):
             shift_array = BaseSignal(shift_array.ravel()).T
 

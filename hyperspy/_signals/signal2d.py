@@ -53,7 +53,6 @@ _logger = logging.getLogger(__name__)
 
 
 def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
-    print("shift", shift)
     if not np.any(shift):
         return im
     else:

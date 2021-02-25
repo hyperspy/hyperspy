@@ -144,11 +144,9 @@ class TestAlignTools:
 
     def test_align_twice(self):
         s = self.signal
-        shifts = s.align2D()
-        print(shifts)
+        s.align2D()
         with pytest.warns(UserWarning, match="the images are already aligned"):
             shifts = s.align2D()
-            print(shifts)
             assert shifts.sum() == 0
 
     def test_align(self):
@@ -174,7 +172,6 @@ class TestAlignTools:
 
         # Check alignment is correct
         d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
-        print(d_al, self.aligned)
         assert np.all(d_al == self.aligned)
 
 

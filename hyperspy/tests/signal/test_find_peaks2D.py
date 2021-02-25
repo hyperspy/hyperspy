@@ -124,8 +124,6 @@ class TestFindPeaks2D:
         assert not isinstance(peaks, LazySignal)
 
         # Check navigation shape
-        print(dataset)
-        print(peaks.axes_manager)
         np.testing.assert_equal(dataset.axes_manager.navigation_shape,
                         peaks.axes_manager.navigation_shape)
         if dataset.axes_manager.navigation_size == 0:

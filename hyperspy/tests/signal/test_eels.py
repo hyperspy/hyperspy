@@ -131,7 +131,7 @@ class TestEstimateZLPCentre:
 class TestAlignZLP:
 
     def setup_method(self, method):
-        s = signals.EELSSpectrum(np.zeros((10, 100),dtype=float))
+        s = signals.EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]

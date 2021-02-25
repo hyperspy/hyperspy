@@ -132,7 +132,7 @@ def test_reconstruct_phase_single(lazy):
     X_STOP = img_size - 1 - int(img_size / 10)
     phase_new_crop = wave_image.unwrapped_phase().data[X_START:X_STOP, X_START:X_STOP]
     phase_ref_crop = phase_ref[X_START:X_STOP, X_START:X_STOP]
-    np.testing.assert_allclose(np.real(phase_new_crop), phase_ref_crop, atol=0.02)
+    np.testing.assert_allclose(phase_new_crop, phase_ref_crop, atol=0.02)
 
 
 @pytest.mark.parametrize("lazy", [True, False])

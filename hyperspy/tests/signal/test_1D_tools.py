@@ -89,11 +89,6 @@ class TestAlignTools:
         assert s.axes_manager._axes[1].scale == self.scale
 
     def test_align_expand(self):
-        if self.signal._lazy:
-            # There is some bug in how the shift1D function
-            # works.  It somehow skips adding on the expanded
-            # values and as a result the sizes mismatch...
-            return
         s = self.signal
         s.align1D(expand=True)
         # Check the numbers of NaNs to make sure expansion happened properly
@@ -283,9 +278,7 @@ class TestEstimatePeakWidth:
 
     def test_two_peaks(self):
         if self.s._lazy:
-            # this is broken because of how shift1D works with lazy datasets
-            # and becasue the signal has no navigation dimensions.
-            return
+            pytest.skip("Lazy Signals don't work properly with 0 dimension data")
         s = self.s.deepcopy()
         shifts = BaseSignal([1.0])
         s.shift1D(shifts)

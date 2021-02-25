@@ -1145,6 +1145,8 @@ def process_function_blockwise(data,
         for index in np.ndindex(chunk_nav_shape):
             islice = np.s_[index]
             iter_dict = {a[0]: a[1][islice].squeeze() for a in args}
+            print(np.shape(function(data[islice],**iter_dict,**kwargs)))
+            print(np.shape(output_array))
             output_array[islice] = function(data[islice],
                                             **iter_dict,
                                             **kwargs)
