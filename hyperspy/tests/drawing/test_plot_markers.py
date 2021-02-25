@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -389,7 +389,7 @@ def test_plot_rectange_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_rectange_markers_close():
     return _test_plot_rectange_markers()  # return for @update_close_figure
 
@@ -414,7 +414,7 @@ def test_plot_point_markers():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_point_markers_close():
     return _test_plot_point_markers()
 
@@ -445,7 +445,7 @@ def test_plot_text_markers_sig():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_text_markers_close():
     return _test_plot_text_markers()
 
@@ -472,7 +472,7 @@ def test_plot_line_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
 
@@ -525,7 +525,7 @@ def test_iterate_markers():
                 mi.marker_properties['color']
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_eds_markers_close():
     s = EDS_TEM_Spectrum()
     s.plot(True)

@@ -98,15 +98,15 @@ parallel on your machine.
    # To run on 2 cores
    $ pytest -n 2 --dist loadfile
 
-The ``--dist loadfile`` argument will group tests by their containing file. The 
-groups are then distributed to available workers as whole units, thus guaranteeing 
-that all tests in a file run in the same worker. 
+The ``--dist loadfile`` argument will group tests by their containing file. The
+groups are then distributed to available workers as whole units, thus guaranteeing
+that all tests in a file run in the same worker.
 
 .. note::
 
     Running tests in parallel using ``pytest-xdist`` will change the content
     and format of the output of ``pytest`` to the console. We recommend installing
-    ```pytest-sugar`` <https://pypi.org/project/pytest-sugar/>`_ to produce 
+    ```pytest-sugar`` <https://pypi.org/project/pytest-sugar/>`_ to produce
     nicer-looking output including an animated progressbar.
 
 
@@ -114,7 +114,7 @@ Flaky tests
 ^^^^^^^^^^^
 
 Test functions can sometimes exhibit intermittent or sporadic failure, with seemingly
-random or non-deterministic behaviour. They may sometimes pass or sometimes fail, and 
+random or non-deterministic behaviour. They may sometimes pass or sometimes fail, and
 it won't always be clear why. These are usually known as "flaky" tests.
 
 One way to approach flaky tests is to rerun them, to see if the failure was a one-off.
@@ -128,7 +128,7 @@ This can be achieved using the ```pytest-rerunfailures`` plugin <https://pypi.or
     # To wait 1 second before the next retry
     $ pytest --reruns 3 --reruns-delay 1
 
-You can read more about flaky tests in the `pytest documentation 
+You can read more about flaky tests in the `pytest documentation
 <https://docs.pytest.org/en/stable/flaky.html>`_.
 
 
@@ -204,7 +204,10 @@ The Github Actions testing matrix also includes the following special cases:
 - The test suite is run against the oldest supported versions of ``numpy``,
   ``matplotlib`` and ``scipy``. For more details, see this
   `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`_.
-
+- The test suite is run against the development supported versions of ``numpy``,
+  ``scipy``, ``scikit-learn`` and ``scikit-image`` using the weekly build wheels
+  available on https://anaconda.org/scipy-wheels-nightly. For more details, see
+  this `Github issue <https://github.com/hyperspy/hyperspy/pull/2616>`_.
 
 .. _plot-test-label:
 
