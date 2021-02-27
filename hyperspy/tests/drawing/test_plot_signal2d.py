@@ -406,8 +406,7 @@ def test_plot_images_multi_signal_w_axes_replot():
         plt.matplotlib.backends.backend_agg.FigureCanvasBase.button_press_event(
             f.canvas, x, y, 'left', True)
         fn = plt.gcf()
-        tests.append(
-            np.allclose(imi, fn.axes[0].images[0].get_array().data))
+        tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
     assert np.alltrue(tests)
     return f

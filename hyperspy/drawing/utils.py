@@ -160,7 +160,7 @@ def create_figure(window_title=None,
             window_title = window_title.replace(c, '')
         window_title = window_title.replace('\n', ' ')
         window_title = window_title.replace(':', ' -')
-        fig.canvas.set_window_title(window_title)
+        fig.canvas.manager.set_window_title(window_title)
     if disable_xyscale_keys and hasattr(fig.canvas, 'toolbar'):
         # hack the `key_press_handler` to disable the `k`, `l`, `L` shortcuts
         manager = fig.canvas.manager
