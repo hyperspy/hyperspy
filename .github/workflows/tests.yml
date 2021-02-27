@@ -9,14 +9,14 @@ jobs:
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
-      PIP_ARGS: --upgrade --use-feature=2020-resolver -e
+      PIP_ARGS: --upgrade --pre -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
       PYTEST_ARGS_COVERAGE: 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
-        PYTHON_VERSION: [3.7, 3.8]
+        PYTHON_VERSION: [3.7, 3.8, 3.9]
         PIP_SELECTOR: ['[all, tests]']
         UPSTREAM_DEV: [false]
         include:
