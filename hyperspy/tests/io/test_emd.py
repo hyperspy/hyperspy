@@ -16,22 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
 # NOT to be confused with the FEI EMD format which was developed later.
 
-
-import gc
-import os.path
-import shutil
-import tempfile
+import dask.array as da
 from datetime import datetime
-from os import remove
-
+from dateutil import tz
+import gc
 import h5py
 import numpy as np
+import os
 import pytest
-from dateutil import tz
+import tempfile
+import shutil
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -274,7 +273,32 @@ class TestCaseSaveAndRead():
         assert isinstance(signal, BaseSignal)
 
     def teardown_method(self, method):
-        remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+        os.remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+
+
+def test_chunking_saving_lazy():
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.emd')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.emd')
+        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specify.emd')
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (13, 25, 13)
+    s1.close_file()
+    s2.close_file()
+
+    # Specify chunks
+    chunks = (50, 20, 20)
+    s.save(filename3, chunks=chunks)
+    s3 = load(filename3, lazy=True)
+    assert tuple([c[0] for c in s3.data.chunks]) == chunks
 
 
 def _generate_parameters():
