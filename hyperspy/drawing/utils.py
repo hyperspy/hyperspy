@@ -671,11 +671,12 @@ def plot_images(images,
     if cmap is None:
         cmap = [preferences.Plot.cmap_signal]
     elif cmap == 'mpl_colors':
-        for n_color, c in enumerate(mpl.rcParams['axes.prop_cycle']):
-            make_cmap(colors=['#000000', c['color']],
-                      name='mpl{}'.format(n_color))
-        cmap = ['mpl{}'.format(i) for i in
-                range(len(mpl.rcParams['axes.prop_cycle']))]
+        cycle = mpl.rcParams['axes.prop_cycle']
+        for n_color, c in enumerate(cycle):
+            name = f'mpl{n_color}'
+            if name not in plt.colormaps():
+                make_cmap(colors=['#000000', c['color']], name=name)
+        cmap = [f'mpl{i}' for i in range(len(cycle))]
         __check_single_colorbar(colorbar)
     # cmap is list, tuple, or something else iterable (but not string):
     elif hasattr(cmap, '__iter__') and not isinstance(cmap, str):

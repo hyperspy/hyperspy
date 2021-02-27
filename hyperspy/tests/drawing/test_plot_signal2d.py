@@ -327,7 +327,7 @@ def test_plot_images_cmap_make_cmap_bitfalse():
                                         '#745C97',
                                         (0.22, 0.22, 0.36)],
                                        bit=False,
-                                       name='test_cmap',
+                                       name='test_cmap2',
                                        register=True))
     return plt.gcf()
 
