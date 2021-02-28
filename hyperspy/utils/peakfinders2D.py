@@ -18,16 +18,10 @@
 
 import copy
 
+from numba import njit
 import numpy as np
 import scipy.ndimage as ndi
-from numba import njit
-from skimage.feature import (
-    blob_dog, 
-    blob_log, 
-    corner_peaks,
-    match_template,
-    peak_local_max,
-)
+from skimage.feature import blob_dog, blob_log, match_template, peak_local_max
 
 from hyperspy.misc.machine_learning import import_sklearn
 
@@ -496,9 +490,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
                         c - 1 for c in z.shape))) > 0:
             continue
         clean_centers.append(center)
-    peaks = np.array(clean_centers)
-    ind = np.lexsort((peaks[:,0], peaks[:,1]))
-    return peaks[ind]
+    return clean_peaks(np.array(clean_centers))
 
 
 def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,

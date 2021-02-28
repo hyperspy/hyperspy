@@ -24,6 +24,7 @@ from hyperspy.signals import Signal2D, BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import PeaksFinder2D
+from hyperspy.ui_registry import TOOLKIT_REGISTRY
 
 
 def _generate_dataset():
@@ -80,11 +81,21 @@ def _generate_reference():
     return Signal2D(ref), xref, yref
 
 
+def _get_disc():
+    disc = np.zeros((11, 11))
+    disc[2:9, 2:9] = 0.5
+    disc[4:7, 4:7] = 0.75
+    disc[5, 5] = 1
+    return disc
+
+
 PEAK_METHODS = ['local_max', 'max', 'minmax', 'zaefferer', 'stat',
                 'laplacian_of_gaussian', 'difference_of_gaussian',
                 'template_matching']
 DATASETS = _generate_dataset()
 DATASETS_NAME = ["dense", "sparse_nav0d", "sparse_nav1d", "sparse_nav2d"]
+DISC = _get_disc()
+GUI_INSTALLED = len(TOOLKIT_REGISTRY) > 0
 
 
 @lazifyTestClass
@@ -111,12 +122,8 @@ class TestFindPeaks2D:
             pytest.skip("Parallel=True is ignored for lazy signal.")
 
         if method == 'template_matching':
-            disc = np.zeros((11, 11))
-            disc[2:9, 2:9] = 0.5
-            disc[4:7, 4:7] = 0.75
-            disc[5, 5] = 1
             peaks = dataset.find_peaks(method=method, parallel=parallel,
-                                       interactive=False, template=disc)
+                                       interactive=False, template=DISC)
         else:
             peaks = dataset.find_peaks(method=method, parallel=parallel,
                                        interactive=False)
@@ -184,3 +191,24 @@ class TestFindPeaks2D:
         pf2D.close()
 
         assert peaks.data.shape == (3, 2)
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.parametrize('method', ['local_max', 'minmax', 'zaefferer', 'stat',
+                                    'laplacian_of_gaussian',
+                                    'difference_of_gaussian'])
+def test_find_peaks_zeros(method):
+    if method == 'stat':
+        pytest.importorskip("sklearn")
+    n = 64
+    s = Signal2D(np.zeros([n]*2))
+    s.find_peaks(method=method, interactive=False)
+
+
+@pytest.mark.skipif(not GUI_INSTALLED, reason="no GUI available")
+@pytest.mark.parametrize('method', PEAK_METHODS)
+def test_find_peaks_interactive(method):
+    if method == 'stat':
+        pytest.importorskip("sklearn")
+    s = DATASETS[0]
+    s.find_peaks(method=method, template=DISC)

@@ -43,6 +43,7 @@ RELEASE_next_patch (Unreleased)
 * Use 'dask_auto' when rechunk=True in ``change_dtype`` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
 * Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
 * Fix incorrect chunksize when saving EMD NCEM file and specifying chunks (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
+* Fix ``find_peaks`` GUIs call with laplacian/difference of gaussian methods (`#2622 <https://github.com/hyperspy/hyperspy/issues/2622>`_ and `#2647 <https://github.com/hyperspy/hyperspy/pull/2647>`_)
 
 
 Changelog
