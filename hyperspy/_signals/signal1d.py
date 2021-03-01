@@ -455,7 +455,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                      fill_value,
                                      chunks=tuple(post_chunks))
                 self.data = da.concatenate((pre_array, self.data, post_array),
-                                           axis=ind).rechunk()
+                                           axis=ind).rechunk({ind:-1})
             else:
                 padding = []
                 for i in range(self.data.ndim):
