@@ -1095,9 +1095,9 @@ class FeiEMDReader(object):
             real = h5data.dtype.descr[0][0]
             imag = h5data.dtype.descr[1][0]
             if self.lazy:
-                data = da.from_array(h5data)
+                data = da.from_array(h5data, chunks=h5data.chunks)
                 data = data[real] + 1j * data[imag]
-                data = da.rollaxis(data, axis=2)
+                data = da.transpose(data, axes=[2, 0, 1])
             else:
                 data = np.empty(h5data.shape, h5data.dtype)
                 h5data.read_direct(data)
