@@ -78,7 +78,6 @@ This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
     │   ├── name = A BaseSignal
     │   └── title = A BaseSignal title
     └── Signal
-	├── binned = False
 	└── signal_type =
 
 
@@ -280,7 +279,7 @@ Binned and unbinned signals
 ---------------------------
 
 Signals that are a histogram of a probability density function (pdf) should
-have the ``signal.metadata.Signal.binned`` attribute set to
+have the ``signal.axes_manager.signal_axes[0].is_binned`` attribute set to
 ``True``. This is because some methods operate differently in signals that are
 *binned*.
 
@@ -323,7 +322,7 @@ To change the default value:
 
 .. code-block:: python
 
-    >>> s.metadata.Signal.binned = True
+    >>> s.axes_manager[-1].is_binned = True
 
 Generic tools
 -------------
@@ -1493,7 +1492,6 @@ model, for example:
   ├── General
   │   └── title =
   └── Signal
-      ├── binned = False
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
@@ -1507,7 +1505,6 @@ model, for example:
       │   │   ├── gain_factor = 1
       │   │   └── gain_offset = 0
       │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
-      ├── binned = False
       └── signal_type =
 
 Speeding up operations
