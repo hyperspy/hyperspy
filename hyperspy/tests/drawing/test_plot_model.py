@@ -84,7 +84,7 @@ def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
     s = create_sum_of_gaussians(convolved)
     s.set_signal_type('EELS')
     s.axes_manager[-1].is_binned == binned
-    s.metadata.General.title = 'Convolved: {}, plot_component: {}'.format(
+    s.metadata.General.title = 'Convolved: {}, plot_component: {}, binned: {}'.format(
         convolved, plot_component, binned)
 
     ll = create_ll_signal(1000) if convolved else None
