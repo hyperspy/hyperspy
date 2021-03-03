@@ -947,13 +947,11 @@ the data size in memory.
 
     FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
     The FFT is not centered and only positive frequencies are stored in the file.
-    Lazy reading of these datasets is not supported. Making FFTs with HyperSpy
-    from the respective image datasets is recommended.
+    Making FFTs with HyperSpy from the respective image datasets is recommended.
 
 .. note::
 
-    DPC data is loaded in as a HyperSpy ComplexSignal2D object. Lazy reading of these
-    datasets is not supported.
+    DPC data is loaded in as a HyperSpy ComplexSignal2D object.
 
 .. note::
 
