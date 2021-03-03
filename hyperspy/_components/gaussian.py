@@ -167,7 +167,7 @@ class Gaussian(Expression):
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if self.binned:
+            if axis.is_binned:
                 self.A.value /= axis.scale
             return True
         else:
@@ -175,7 +175,7 @@ class Gaussian(Expression):
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
 
-            if self.binned:
+            if axis.is_binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

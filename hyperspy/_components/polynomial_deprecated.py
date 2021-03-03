@@ -133,7 +133,7 @@ class Polynomial(Component):
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if self.binned:
+            if axis.is_binned:
                 self.coefficients.value = estimation / axis.scale
             else:
                 self.coefficients.value = estimation
@@ -154,7 +154,7 @@ class Polynomial(Component):
                 # Shape needed to fit coefficients.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
-                if self.binned:
+                if axis.is_binned:
                     self.coefficients.map["values"] /= axis.scale
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()

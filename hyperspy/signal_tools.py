@@ -1354,7 +1354,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.axis.axis[from_index:to_index])
             to_return = bg_array
 
-        if self.signal.metadata.Signal.binned is True:
+        if self.axis.is_binned is True:
             to_return *= self.axis.scale
         return to_return
 

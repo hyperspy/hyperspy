@@ -39,7 +39,7 @@ def test_function():
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned):
     s = Signal1D(np.empty((100,)))
-    s.metadata.Signal.binned = binned
+    s.axes_manager[-1].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 0.02
     axis.offset = 1
@@ -62,7 +62,7 @@ def test_function_nd(binned):
     axis.offset = 1
     g1 = PowerLaw(50015.156, 1.2)
     s.data = g1.function(axis.axis)
-    s.metadata.Signal.binned = binned
+    s.axes_manager[-1].is_binned = binned
     s2 = stack([s] * 2)
     g2 = PowerLaw()
     factor = axis.scale if binned else 1

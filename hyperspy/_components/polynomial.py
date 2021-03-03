@@ -99,7 +99,7 @@ class Polynomial(Expression):
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if self.binned:
+            if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim / axis.scale
             else:
@@ -124,7 +124,7 @@ class Polynomial(Expression):
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 fit = fit.reshape(cmap_shape)
 
-                if self.binned:
+                if axis.is_binned:
                     for i, para in enumerate(self.parameters[::-1]):
                         para.map['values'][:] = fit[..., i] / axis.scale
                         para.map['is_set'][:] = True

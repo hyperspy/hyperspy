@@ -100,6 +100,7 @@ class TestDictionaryBrowser:
                         {
                             'name': 'x',
                             'navigate': False,
+                            'is_binned': False,
                                     'offset': 0.0,
                                     'scale': 1.0,
                                     'size': 3,
@@ -110,7 +111,6 @@ class TestDictionaryBrowser:
                         'General': {
                             'title': ''},
                         'Signal': {
-                            'binned': False,
                             'signal_type': ''},
                         '_HyperSpy': {
                             'Folding': {

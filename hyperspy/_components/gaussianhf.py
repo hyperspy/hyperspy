@@ -143,7 +143,7 @@ class GaussianHF(Expression):
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
-            if self.binned:
+            if axis.is_binned:
                 self.height.value /= axis.scale
             return True
         else:
@@ -151,7 +151,7 @@ class GaussianHF(Expression):
                 self._create_arrays()
             self.height.map['values'][:] = height
 
-            if self.binned:
+            if axis.is_binned:
                 self.height.map['values'][:] /= axis.scale
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm

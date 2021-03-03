@@ -91,7 +91,7 @@ class Offset(Component):
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            if self.binned:
+            if axis.is_binned:
                 self.offset.value /= axis.scale
             return True
         else:
@@ -102,7 +102,7 @@ class Offset(Component):
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[tuple(
                 gi)].mean(axis.index_in_array)
-            if self.binned:
+            if axis.is_binned:
                 self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()

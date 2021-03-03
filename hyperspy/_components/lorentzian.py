@@ -167,7 +167,7 @@ class Lorentzian(Expression):
             self.centre.value = centre
             self.gamma.value = gamma
             self.A.value = height * gamma * np.pi
-            if self.binned:
+            if axis.is_binned:
                 self.A.value /= axis.scale
             return True
         else:
@@ -175,7 +175,7 @@ class Lorentzian(Expression):
                 self._create_arrays()
             self.A.map['values'][:] = height * gamma * np.pi
 
-            if self.binned:
+            if axis.is_binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.gamma.map['values'][:] = gamma

@@ -210,6 +210,7 @@ class DataAxis(t.HasTraits, UnitConversion):
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(t.Undefined)
+    is_binnned = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
     continuous_value = t.Bool(False)
@@ -221,7 +222,8 @@ class DataAxis(t.HasTraits, UnitConversion):
                  scale=1.,
                  offset=0.,
                  units=t.Undefined,
-                 navigate=t.Undefined):
+                 navigate=t.Undefined,
+                 is_binned = False):
         super().__init__()
         self.events = Events()
         self.events.index_changed = Event("""
@@ -258,10 +260,12 @@ class DataAxis(t.HasTraits, UnitConversion):
         self.index = 0
         self.update_axis()
         self.navigate = navigate
+        self.is_binned = is_binned
         self.axes_manager = None
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
         self.on_trait_change(self._update_slice, 'navigate')
+        self.on_trait_change(self._update_slice, 'is_binned')
         self.on_trait_change(self.update_index_bounds, 'size')
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
@@ -475,7 +479,8 @@ class DataAxis(t.HasTraits, UnitConversion):
             'offset': self.offset,
             'size': self.size,
             'units': self.units,
-            'navigate': self.navigate
+            'navigate': self.navigate,
+            'is_binned': self.is_binned
         }
         return adict
 

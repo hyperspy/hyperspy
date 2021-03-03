@@ -41,7 +41,7 @@ def test_function():
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_estimate_parameters_binned(only_current, binned, lazy):
     s = Signal1D(np.empty((200,)))
-    s.metadata.Signal.binned = binned
+    s.axes_manager[-1].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = .05
     axis.offset = -5

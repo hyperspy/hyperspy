@@ -144,7 +144,7 @@ class Exponential(Expression):
                                 'a zero or negative value).')
                 return False
 
-            if self.binned:
+            if axis.is_binned:
                 A /= axis.scale
             if only_current is True:
                 self.A.value = A

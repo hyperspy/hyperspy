@@ -426,7 +426,7 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if self.signal.metadata.Signal.binned is True:
+        if self.signal.axes_manager[-1].is_binned is True:
             to_return *= self.signal.axes_manager[-1].scale
         return to_return
 
@@ -643,7 +643,7 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if self.signal.metadata.Signal.binned is True:
+        if self.signal.axes_manager[-1].is_binned is True:
             to_return *= self.signal.axes_manager[-1].scale
 
         return to_return

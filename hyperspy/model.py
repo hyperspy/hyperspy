@@ -509,7 +509,6 @@ class BaseModel(list):
                 axes=self.signal.axes_manager._get_axes_dicts())
             signal.metadata.General.title = (
                 self.signal.metadata.General.title + " from fitted model")
-            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
         else:
             signal = out
             data = signal.data

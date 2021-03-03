@@ -1121,7 +1121,7 @@ class Component(t.HasTraits):
             _parameter.free = False
 
     def _estimate_parameters(self, signal):
-        self.binned = signal.metadata.Signal.binned
+        self.binned = signal.axes_manager[-1].is_binned
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()

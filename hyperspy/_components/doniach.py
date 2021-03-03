@@ -149,14 +149,14 @@ class Doniach(Expression):
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * 1.3
-            if self.binned:
+            if axis.is_binned:
                 self.A.value /= axis.scale
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * 1.3
-            if self.binned:
+            if axis.is_binned:
                 self.A.map['values'][:] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

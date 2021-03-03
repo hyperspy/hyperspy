@@ -134,7 +134,7 @@ class ScalableFixedPattern(Component):
             result = yscale * self.f(x * xscale - shift)
         else:
             result = yscale * self.signal.data
-        if self.signal.metadata.Signal.binned is True:
+        if self.signal.axes_manager.signal_axes[0].is_binned is True:
             return result / self.signal.axes_manager.signal_axes[0].scale
         else:
             return result

@@ -55,7 +55,7 @@ def test_function():
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy):
     s = Signal1D(np.empty((300,)))
-    s.metadata.Signal.binned = binned
+    s.axes_manager[-1].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 0.2
     axis.offset = -10
@@ -83,7 +83,7 @@ def test_function_nd(binned, lazy):
     axis.offset = -10
     g1 = SkewNormal(A=2, x0=2, scale=10, shape=5)
     s.data = g1.function(axis.axis)
-    s.metadata.Signal.binned = binned
+    s.axes_manager[-1].is_binned = binned
     s2 = stack([s] * 2)
     if lazy:
         s2 = s2.as_lazy()

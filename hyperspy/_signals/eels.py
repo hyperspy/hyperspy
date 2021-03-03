@@ -84,7 +84,7 @@ class EELSSpectrum_mixin:
         if hasattr(self.metadata, 'Sample') and \
                 hasattr(self.metadata.Sample, 'elements'):
             self.add_elements(self.metadata.Sample.elements)
-        self.metadata.Signal.binned = True
+        self.axes_manager.signal_axes[0].is_binned = True
         self._edge_markers = {}
 
     def add_elements(self, elements, include_pre_edges=False):
@@ -556,7 +556,7 @@ class EELSSpectrum_mixin:
             # I0 = self._get_navigation_signal()
             # I0.axes_manager.set_signal_dimension(0)
             threshold.axes_manager.set_signal_dimension(0)
-            binned = self.metadata.Signal.binned
+            binned = ax.is_binned
 
             def estimating_function(data, threshold=None):
                 if np.isnan(threshold):
@@ -1201,7 +1201,7 @@ collection_angle : float
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if self.metadata.Signal.binned is True:
+        if self.axes_manager[-1].is_binned is True:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1

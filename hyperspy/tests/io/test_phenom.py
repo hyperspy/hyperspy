@@ -38,8 +38,8 @@ def test_elid(pathname):
 
     assert s[0].data.shape == (16, 20)
     assert s[0].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'y', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True},
-        'axis-1': {'name': 'x', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 20, 'units': 'µm', 'navigate': True}
+        'axis-0': {'name': 'y', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-1': {'name': 'x', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 20, 'units': 'µm', 'navigate': True, 'is_binned': False}
     }
     assert s[0].metadata['Acquisition_instrument']['SEM']['Stage']['x'] == -2.586744298575455
     assert s[0].metadata['Acquisition_instrument']['SEM']['Stage']['y'] == -0.7322168400784014
@@ -49,7 +49,6 @@ def test_elid(pathname):
     assert s[0].metadata['General']['original_filename'] == os.path.split(pathname)[1]
     assert s[0].metadata['General']['time'] == '09:37:31'
     assert s[0].metadata['General']['title'] == 'Image 1'
-    assert s[0].metadata['Signal']['binned'] == False
     assert s[0].metadata['Signal']['signal_type'] == ''
     assert s[0].original_metadata['acquisition']['scan']['dwellTime']['value'] == '200'
     assert s[0].original_metadata['acquisition']['scan']['dwellTime']['unit'] == 'ns'

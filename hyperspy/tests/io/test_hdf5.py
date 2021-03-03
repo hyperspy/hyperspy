@@ -312,7 +312,6 @@ class TestSavingMetadataContainers:
                           'title': 'test_diffraction_pattern'},
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
                                                                         'gain_offset': 0.0}},
-                         'binned': False,
                          'quantity': 'Intensity',
                          'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -402,7 +401,7 @@ class TestAxesConfiguration:
         self.filename = 'testfile.hdf5'
         s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
         s.axes_manager.signal_axes[0].navigate = True
-        s.axes_manager.signal_axes[0].navigate = True
+        s.axes_manager.signal_axes[1].navigate = True
         s.save(self.filename)
 
     def test_axes_configuration(self):
@@ -410,6 +409,21 @@ class TestAxesConfiguration:
         assert s.axes_manager.navigation_axes[0].index_in_array == 4
         assert s.axes_manager.navigation_axes[1].index_in_array == 3
         assert s.axes_manager.signal_dimension == 3
+
+    def teardown_method(self, method):
+        remove(self.filename)
+
+class TestAxesConfiguration:
+
+    def setup_method(self, method):
+        self.filename = 'testfile.hdf5'
+        s = BaseSignal(np.zeros((2, 2, 2)))
+        s.axes_manager.signal_axes[0].is_binned = True
+        s.save(self.filename)
+
+    def test_axes_configuration(self):
+        s = load(self.filename)
+        assert s.axes_manager.signal_axes[0].is_binned == True
 
     def teardown_method(self, method):
         remove(self.filename)

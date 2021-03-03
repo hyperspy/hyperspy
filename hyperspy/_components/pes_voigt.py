@@ -301,14 +301,14 @@ class PESVoigt(Component):
             self.centre.value = centre
             self.FWHM.value = sigma * sigma2fwhm
             self.area.value = height * sigma * sqrt2pi
-            if self.binned:
+            if axis.is_binned:
                 self.area.value /= axis.scale
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if self.binned:
+            if axis.is_binned:
                 self.area.map['values'][:] /= axis.scale
             self.area.map['is_set'][:] = True
             self.FWHM.map['values'][:] = sigma * sigma2fwhm
