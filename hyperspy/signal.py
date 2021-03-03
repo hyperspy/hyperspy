@@ -2880,6 +2880,7 @@ class BaseSignal(FancySlicing,
         c2 = am._axes[axis2]
         c1.slice, c2.slice = c2.slice, c1.slice
         c1.navigate, c2.navigate = c2.navigate, c1.navigate
+        c1.is_binned, c2.is_binned = c2.is_binned, c1.is_binned
         am._axes[axis1] = c2
         am._axes[axis2] = c1
         am._update_attributes()
@@ -4744,6 +4745,7 @@ class BaseSignal(FancySlicing,
         for oaxis, caxis in zip(self.axes_manager._axes,
                                 dc.axes_manager._axes):
             caxis.navigate = oaxis.navigate
+            caxis.is_binned = oaxis.is_binned
 
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()

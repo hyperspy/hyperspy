@@ -488,6 +488,13 @@ def load_with_reader(
             objects[-1].tmp_parameters.folder = folder
             objects[-1].tmp_parameters.filename = filename
             objects[-1].tmp_parameters.extension = extension.replace('.', '')
+            # test if binned attribute is still in metadata
+            if objects[-1].metadata.has_item('Signal.binned'):
+                objects[-1].axes_manager[-1].is_binned = objects[-1].metadata.Signal.binned
+                del objects[-1].metadata.Signal.binned
+                warnings.warn('Loading old file version. The binned attribute '
+                              'has been moved from metadata.Signal to '
+                              'axis.is_binned', UserWarning)
             if convert_units:
                 objects[-1].axes_manager.convert_units()
         else:

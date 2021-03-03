@@ -223,7 +223,7 @@ class DataAxis(t.HasTraits, UnitConversion):
                  offset=0.,
                  units=t.Undefined,
                  navigate=t.Undefined,
-                 is_binned = False):
+                 is_binned=False):
         super().__init__()
         self.events = Events()
         self.events.index_changed = Event("""

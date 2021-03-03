@@ -137,7 +137,7 @@ class TestEELSModel:
 
     def test_two_area_powerlaw_estimation_BC(self):
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.signal.axes_manager[-1].is_binned = False
+        #self.m.signal.axes_manager[-1].is_binned = False
         self.m.two_area_background_estimation()
         np.testing.assert_allclose(
             self.m._background_components[0].A.value,
@@ -149,7 +149,7 @@ class TestEELSModel:
     def test_two_area_powerlaw_estimation_C(self):
         self.m["B_K"].active = False
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.signal.axes_manager[-1].is_binned = False
+        #self.m.signal.axes_manager[-1].is_binned = False
         self.m.two_area_background_estimation()
         np.testing.assert_allclose(
             self.m._background_components[0].A.value,
@@ -162,7 +162,8 @@ class TestEELSModel:
         self.m["B_K"].active = False
         self.m["C_K"].active = False
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.signal.axes_manager[-1].is_binned = False
+        print(self.m.signal.axes_manager[-1].is_binned)
+        #self.m.signal.axes_manager[-1].is_binned = False
         self.m.two_area_background_estimation()
         np.testing.assert_allclose(
             self.m._background_components[0].A.value,

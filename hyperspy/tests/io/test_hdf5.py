@@ -297,7 +297,15 @@ class TestSavingMetadataContainers:
         l = load(fname)
         assert l.metadata.Signal.quantity == quantity
 
-    def test_metadata_update_to_v3_0(self):
+    def test_metadata_binned_deprecate(self):
+        with pytest.warns(UserWarning) as warninfo:
+            s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
+        assert warninfo[0].message.args[0][:16] == "Loading old file"
+        assert s.metadata.has_item('Signal.binned') == False
+        assert s.axes_manager[-1].is_binned == False
+        
+
+    def test_metadata_update_to_v3_1(self):
         md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
                                          'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
                                                  'Stage': {'tilt_alpha': 10.0},
@@ -321,7 +329,7 @@ class TestSavingMetadataContainers:
         s = load(os.path.join(
             my_path,
             "hdf5_files",
-            'example2_v2.2.hspy'))
+            'example2_v3.1.hspy'))
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -401,7 +409,7 @@ class TestAxesConfiguration:
         self.filename = 'testfile.hdf5'
         s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
         s.axes_manager.signal_axes[0].navigate = True
-        s.axes_manager.signal_axes[1].navigate = True
+        s.axes_manager.signal_axes[0].navigate = True
         s.save(self.filename)
 
     def test_axes_configuration(self):
@@ -413,17 +421,17 @@ class TestAxesConfiguration:
     def teardown_method(self, method):
         remove(self.filename)
 
-class TestAxesConfiguration:
+class TestAxesConfigurationBinning:
 
     def setup_method(self, method):
         self.filename = 'testfile.hdf5'
         s = BaseSignal(np.zeros((2, 2, 2)))
-        s.axes_manager.signal_axes[0].is_binned = True
+        s.axes_manager.signal_axes[-1].is_binned = True
         s.save(self.filename)
 
     def test_axes_configuration(self):
         s = load(self.filename)
-        assert s.axes_manager.signal_axes[0].is_binned == True
+        assert s.axes_manager.signal_axes[-1].is_binned == True
 
     def teardown_method(self, method):
         remove(self.filename)
