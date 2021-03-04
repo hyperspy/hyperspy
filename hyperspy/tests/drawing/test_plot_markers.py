@@ -111,8 +111,8 @@ class TestMarkers:
         m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
         m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
         m4 = markers.point(5, 5)
-        m4.data['x1'][()] = np.array(None, dtype=np.object)
-        m4.data['y1'][()] = np.array(None, dtype=np.object)
+        m4.data['x1'][()] = np.array(None, dtype=object)
+        m4.data['y1'][()] = np.array(None, dtype=object)
         m5 = markers.vertical_line(9)
         m6 = markers.rectangle(1, 5, 6, 8)
         m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
@@ -389,7 +389,7 @@ def test_plot_rectange_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_rectange_markers_close():
     return _test_plot_rectange_markers()  # return for @update_close_figure
 
@@ -414,7 +414,7 @@ def test_plot_point_markers():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_point_markers_close():
     return _test_plot_point_markers()
 
@@ -445,7 +445,7 @@ def test_plot_text_markers_sig():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_text_markers_close():
     return _test_plot_text_markers()
 
@@ -472,7 +472,7 @@ def test_plot_line_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
 
@@ -525,7 +525,7 @@ def test_iterate_markers():
                 mi.marker_properties['color']
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_eds_markers_close():
     s = EDS_TEM_Spectrum()
     s.plot(True)

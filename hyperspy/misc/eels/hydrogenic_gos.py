@@ -193,7 +193,7 @@ class HydrogenicGOS(GOSBase):
             u = .1
         else:
             # Egerton's correction to the Hydrogenic XS
-            u = XU[np.int(iz)]
+            u = XU[int(iz)]
         el3 = self.onset_energy_L3 + self.energy_shift
         el1 = self.onset_energy_L1 + self.energy_shift
 

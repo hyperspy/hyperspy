@@ -216,6 +216,17 @@ class Test_quantification:
         np.testing.assert_allclose(res[0].data, np.ones((2, 2)) * 22.70779,
             atol=1e-3)
 
+    def test_quant_lorimer_nav1(self):
+        s = self.signal
+        s = s.inav[0, 0]
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units, plot_result=True)
+        np.testing.assert_allclose(res[0].data,  22.70779)
+
     def test_quant_lorimer_warning(self):
         s = self.signal
         method = 'CL'

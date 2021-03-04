@@ -22,8 +22,8 @@ import numpy as np
 from hyperspy.signals import Signal1D, Signal2D
 
 
-def test_lazy_changetype_rechunk():
-    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype="uint8")
+def test_lazy_changetype_rechunk_default():
+    ar = da.ones((50, 50, 512, 512), chunks=(5, 5, 128, 128), dtype="uint8")
     s = Signal2D(ar).as_lazy()
     s._make_lazy(rechunk=True)
     assert s.data.dtype is np.dtype("uint8")
@@ -31,13 +31,17 @@ def test_lazy_changetype_rechunk():
     s.change_dtype("float")
     assert s.data.dtype is np.dtype("float")
     chunks_new = s.data.chunks
+    # We expect more chunks
     assert len(chunks_old[0]) * len(chunks_old[1]) < len(chunks_new[0]) * len(
         chunks_new[1]
     )
     s.change_dtype("uint8")
     assert s.data.dtype is np.dtype("uint8")
     chunks_newest = s.data.chunks
-    assert chunks_newest == chunks_new
+    # We expect less chunks
+    assert len(chunks_newest[0]) * len(chunks_newest[1]) < len(chunks_new[0]) * len(
+        chunks_new[1]
+    )
 
 
 def test_lazy_changetype_rechunk_False():

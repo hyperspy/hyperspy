@@ -314,6 +314,7 @@ def load(filenames=None,
             raise ValueError("No file provided to reader")
 
     if isinstance(filenames, str):
+        pattern = filenames
         if escape_square_brackets:
             filenames = _escape_square_brackets(filenames)
 
@@ -321,7 +322,7 @@ def load(filenames=None,
                                if os.path.isfile(f)])
 
         if not filenames:
-            raise ValueError('No filename matches this pattern')
+            raise ValueError(f'No filename matches the pattern "{pattern}"')
 
     elif isinstance(filenames, Path):
         # Just convert to list for now, pathlib.Path not
