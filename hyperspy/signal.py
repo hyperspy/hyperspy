@@ -2280,7 +2280,8 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
-    def _deepcopy_with_new_data(self, data=None, copy_variance=False):
+    def _deepcopy_with_new_data(self, data=None, copy_variance=False,
+                                copy_navigator=False):
         """Returns a deepcopy of itself replacing the data.
 
         This method has an advantage over the default :py:func:`copy.deepcopy`
@@ -2291,6 +2292,8 @@ class BaseSignal(FancySlicing,
         data : None or :py:class:`numpy.ndarray`
         copy_variance : bool
             Whether to copy the variance of the signal to the new copy
+        copy_navigator : bool
+            Whether to copy the navgitor of the signal to the new copy
 
         Returns
         -------
@@ -2299,6 +2302,7 @@ class BaseSignal(FancySlicing,
 
         """
         old_np = None
+        old_navigator = None
         try:
             old_data = self.data
             self.data = None
@@ -2308,6 +2312,9 @@ class BaseSignal(FancySlicing,
             if not copy_variance and "Noise_properties" in self.metadata.Signal:
                 old_np = self.metadata.Signal.Noise_properties
                 del self.metadata.Signal.Noise_properties
+            if not copy_navigator and self.metadata.has_item('_HyperSpy.navigator'):
+                old_navigator = self.metadata._HyperSpy.navigator
+                del self.metadata._HyperSpy.navigator
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = data
@@ -2318,6 +2325,8 @@ class BaseSignal(FancySlicing,
             self.models._models = old_models
             if old_np is not None:
                 self.metadata.Signal.Noise_properties = old_np
+            if old_navigator is not None:
+                self.metadata._HyperSpy.navigator = old_navigator
 
     def as_lazy(self, copy_variance=True):
         """
