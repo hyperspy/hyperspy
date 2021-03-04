@@ -91,3 +91,9 @@ class TestCupy:
         s2 = s.inav[:5, 0]
         hs.plot.plot_spectra(s2, style=style)
         assert isinstance(s2.data, cp.ndarray)
+
+    def test_fit(self):
+        s = self.s
+        m = s.create_model()
+        m.append(hs.model.components1D.Polynomial(legacy=False, order=1))
+        m.fit()
