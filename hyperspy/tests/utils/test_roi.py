@@ -486,6 +486,10 @@ class TestROIs():
         with pytest.raises(ValueError):
             r.angle(axis='z')
 
+    def test_line2droi_length(self):
+        line = Line2DROI(x1=0., x2=2, y1=0., y2=2)
+        np.testing.assert_allclose(line.length, np.sqrt(8))
+
 
 class TestInteractive:
 
