@@ -104,6 +104,12 @@ class TestROIs():
         r = Point2DROI(1, 2)
         assert tuple(r) == (1, 2)
 
+    def test_span_roi_init(self):
+        with pytest.raises(ValueError):
+            SpanROI(30, 15)
+        with pytest.raises(ValueError):
+            SpanROI(15, 15)
+
     def test_span_spectrum_nav(self):
         s = self.s_s
         r = SpanROI(15, 30)
@@ -523,6 +529,11 @@ class TestROIs():
     def test_get_central_half_limits(self):
         ax = self.s_s.axes_manager[0]
         assert _get_central_half_limits_of_axis(ax) == (73.75, 221.25)
+
+    def test_line2droi_length(self):
+        line = Line2DROI(x1=0., x2=2, y1=0., y2=2)
+        np.testing.assert_allclose(line.length, np.sqrt(8))
+
 
 class TestInteractive:
 

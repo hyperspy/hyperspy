@@ -534,7 +534,7 @@ class EDSTEM_mixin:
             composition[i].metadata.set_item(
                 "Sample.xray_lines", ([xray_line]))
             if plot_result and composition[i].axes_manager.navigation_size == 1:
-                c = np.float(composition[i].data)
+                c = float(composition[i].data)
                 print(f"{element} ({xray_line}): Composition = {c:.2f} percent")
         #For the cross section method this is repeated for the number of atom maps
         if method == 'cross_section':
