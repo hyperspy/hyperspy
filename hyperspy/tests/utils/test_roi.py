@@ -104,6 +104,12 @@ class TestROIs():
         r = Point2DROI(1, 2)
         assert tuple(r) == (1, 2)
 
+    def test_span_roi_init(self):
+        with pytest.raises(ValueError):
+            SpanROI(30, 15)
+        with pytest.raises(ValueError):
+            SpanROI(15, 15)
+
     def test_span_spectrum_nav(self):
         s = self.s_s
         r = SpanROI(15, 30)
