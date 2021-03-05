@@ -23,7 +23,6 @@ from hyperspy import utils
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.test_utils import assert_warns
 from hyperspy.signals import EDSSEMSpectrum
 
 
@@ -276,7 +275,8 @@ class Test_get_lines_intensity:
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         np.testing.assert_allclose(24.99516, sAl.data, atol=1e-3)
         s.axes_manager[-1].offset = 1.0
-        with assert_warns(message="C_Ka is not in the data energy range."):
+        with pytest.warns(UserWarning,
+                          match="C_Ka is not in the data energy range."):
             sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
         assert len(sC) == 0
         assert sAl.metadata.Sample.elements == ["Al"]
