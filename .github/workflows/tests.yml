@@ -9,16 +9,16 @@ jobs:
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
-      PIP_ARGS: --upgrade --pre -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
       PYTEST_ARGS_COVERAGE: 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
-        PYTHON_VERSION: [3.7, 3.8, 3.9]
+        PYTHON_VERSION: [3.7, 3.8]
         PIP_SELECTOR: ['[all, tests]']
-        UPSTREAM_DEV: [false]
+        PIP_ARGS: ['--upgrade']
+        DEPENDENCIES_DEV: [false]
         include:
           # test oldest supported version of main dependencies on python 3.6 
           - os: ubuntu
@@ -38,13 +38,23 @@ jobs:
             PIP_SELECTOR: '[all, tests, coverage]'
             PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
             LABEL: -coverage
-          # Run test suite against upstream development version
+          # Run test suite against dependencies development version
           - os: ubuntu
             PYTHON_VERSION: 3.8
             PIP_SELECTOR: '[all, tests]'
-            LABEL: -upstream_dev
-            UPSTREAM_DEV: true
+            LABEL: -dependencies_dev
+            DEPENDENCIES_DEV: true
             DEPENDENCIES: numpy scipy scikit-learn scikit-image
+          - os: ubuntu
+            PYTHON_VERSION: 3.8
+            PIP_SELECTOR: '[all, tests]'
+            LABEL: -dependencies_pre_release
+            PIP_ARGS: '--upgrade --pre'
+          - os: ubuntu
+            PYTHON_VERSION: 3.9
+            PIP_SELECTOR: '[all, tests]'
+            LABEL: -dependencies_pre_release
+            PIP_ARGS: '--upgrade --pre'
         exclude:
           # redundant build (same as coverage) 
           - os: ubuntu
@@ -66,7 +76,7 @@ jobs:
       - name: Install
         shell: bash
         run: |
-          pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
+          pip install ${{ matrix.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
 
       - name: Install oldest supported version
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
@@ -74,7 +84,7 @@ jobs:
           pip install ${{ matrix.DEPENDENCIES }}
 
       - name: Install dependencies development version
-        if: ${{ matrix.UPSTREAM_DEV }}
+        if: ${{ matrix.DEPENDENCIES_DEV }}
         run: |
           pip install --upgrade --no-deps --pre \
             -i https://pypi.anaconda.org/scipy-wheels-nightly/simple \
