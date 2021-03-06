@@ -90,6 +90,13 @@ jobs:
             -i https://pypi.anaconda.org/scipy-wheels-nightly/simple \
             ${{ matrix.DEPENDENCIES }}
 
+      - name: Install GUIs development version
+        if: ${{ matrix.PIP_ARGS == '--upgrade --pre' }}
+        run: |
+          # use "--force-reinstall --no-deps" to avoid changing dependencies but still forcing installing the hyperspy_gui*
+          pip install https://github.com/hyperspy/hyperspy_gui_ipywidgets/archive/master.zip --force-reinstall --no-deps
+          pip install https://github.com/hyperspy/hyperspy_gui_traitsui/archive/master.zip --force-reinstall --no-deps
+
       - name: Run test suite
         run: |
           pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
