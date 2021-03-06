@@ -30,13 +30,6 @@ except ValueError:
 # 'agg' as early as we can is useless for testing.
 import matplotlib.pyplot as plt
 
-from distutils.version import LooseVersion
-from numpy.version import version as np_version
-import os
-
-if LooseVersion(np_version) < LooseVersion('1.17.0'):
-    os.environ['NUMPY_EXPERIMENTAL_ARRAY_FUNCTION'] = '1'
-
 import pytest
 import numpy as np
 import matplotlib
