@@ -25,6 +25,7 @@ RELEASE_next_patch (Unreleased)
 * Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
 * Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
+* Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
 
 Changelog
 *********
