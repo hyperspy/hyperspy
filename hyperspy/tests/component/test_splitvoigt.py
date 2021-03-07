@@ -38,6 +38,7 @@ def test_function():
     g.sigma2.value = 2
     np.testing.assert_allclose(g.function(0), 0.49867785, rtol=1e-3)
     np.testing.assert_allclose(g.function(6), 0.00553981, rtol=1e-3)
+    assert g._position is g.centre
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
