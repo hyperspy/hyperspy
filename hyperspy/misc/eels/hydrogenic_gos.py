@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -193,7 +193,7 @@ class HydrogenicGOS(GOSBase):
             u = .1
         else:
             # Egerton's correction to the Hydrogenic XS
-            u = XU[np.int(iz)]
+            u = XU[int(iz)]
         el3 = self.onset_energy_L3 + self.energy_shift
         el1 = self.onset_energy_L1 + self.energy_shift
 

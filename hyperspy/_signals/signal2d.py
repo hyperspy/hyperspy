@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -507,7 +507,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 min(images_number, chunk_size)
             pcarray = ma.zeros((nrows, self.axes_manager._max_index + 1,
                                 ),
-                               dtype=np.dtype([('max_value', np.float),
+                               dtype=np.dtype([('max_value', float),
                                                ('shift', np.int32,
                                                 (2,))]))
             nshift, max_value = estimate_image_shift(

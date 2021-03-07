@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -41,6 +41,7 @@ matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.saturated_pixels = 0.0
 hs.preferences.Plot.cmap_navigator = 'viridis'
 hs.preferences.Plot.cmap_signal = 'viridis'
+hs.preferences.Plot.pick_tolerance = 5.0
 
 # Set parallel to False by default, so only
 # those tests with parallel=True are run in parallel
@@ -65,3 +66,16 @@ def setup_module(mod, pdb_cmdopt):
         dask.set_options(get=dask.local.get_sync)
 
 from matplotlib.testing.conftest import mpl_test_settings
+
+
+try:
+    import pytest_mpl
+except ImportError:
+    # Register dummy marker to allow running the test suite without pytest-mpl
+    def pytest_configure(config):
+        config.addinivalue_line(
+            "markers",
+            "mpl_image_compare: dummy marker registration to allow running "
+            "without the pytest-mpl plugin."
+        )
+

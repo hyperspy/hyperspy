@@ -8,6 +8,24 @@ What's new
 RELEASE_next_patch (Unreleased)
 +++++++++++++++++++++++++++++++
 
+* Widgets plotting improvement and add ``pick_tolerance`` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
+* Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Pass keyword argument to the image IO plugins (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Drop support for numpy<1.16, in line with NEP 29 and fix protochip reader for numpy 1.20 (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
+* Run test suite against upstream dependencies (numpy, scipy, scikit-learn and scikit-image) (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
+* Improve error message when file not found (`#2597 <https://github.com/hyperspy/hyperspy/pull/2597>`_)
+* Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
+* Fix disconnect event when closing navigator only plot (fixes `#996 <https://github.com/hyperspy/hyperspy/issues/996>`_), (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
+* Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
+* Use 'dask_auto' when rechunk=True in ``change_dtype`` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
+* Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
+* Fix incorrect chunksize when saving EMD NCEM file and specifying chunks (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
+* Fix ``find_peaks`` GUIs call with laplacian/difference of gaussian methods (`#2622 <https://github.com/hyperspy/hyperspy/issues/2622>`_ and `#2647 <https://github.com/hyperspy/hyperspy/pull/2647>`_)
+* Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
+* Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
+* Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
+* Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
+* Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
 - Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
 - Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
 

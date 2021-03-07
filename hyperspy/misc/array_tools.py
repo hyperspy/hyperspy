@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,8 +20,10 @@ from collections import OrderedDict
 import math as math
 import logging
 
+import dask.array as da
 import numpy as np
 from numba import njit
+
 
 from hyperspy.misc.math_tools import anyfloatin
 
@@ -400,3 +402,39 @@ def numba_histogram(data, bins, ranges):
             hist[int(i)] += 1
 
     return hist
+
+
+def get_signal_chunk_slice(index, chunks):
+    """
+    Convenience function returning the chunk slice in signal space containing
+    the specified index.
+
+    Parameters
+    ----------
+    index : int or tuple of int
+        Index determining the wanted chunk.
+    chunks : tuple
+        Dask array chunks.
+
+    Returns
+    -------
+    slice
+        Slice containing the index x,y.
+
+    """
+    if not isinstance(index, (list, tuple)):
+        index = tuple(index)
+
+    chunk_slice_raw_list = da.core.slices_from_chunks(chunks[-len(index):])
+    chunk_slice_list = []
+    for chunk_slice_raw in chunk_slice_raw_list:
+        chunk_slice_list.append(list(chunk_slice_raw)[::-1])
+
+    for chunk_slice in chunk_slice_list:
+        _slice = chunk_slice
+        if _slice[0].start <= index[0] < _slice[0].stop:
+            if len(_slice) == 1:
+                return chunk_slice
+            elif _slice[1].start <= index[1] < _slice[1].stop:
+                return chunk_slice
+    raise ValueError("Index out of signal range.")

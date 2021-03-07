@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -49,10 +49,11 @@ class TestPlotROI():
 
     def setup_method(self, method):
         # Create test image 100x100 pixels:
-        self.im = Signal2D(np.arange(50000).reshape([10, 50, 100]))
-        self.im.axes_manager[0].scale = 1e-1
-        self.im.axes_manager[1].scale = 1e-2
-        self.im.axes_manager[2].scale = 1e-3
+        im = Signal2D(np.arange(50000).reshape([10, 50, 100]))
+        im.axes_manager[0].scale = 1e-1
+        im.axes_manager[1].scale = 1e-2
+        im.axes_manager[2].scale = 1e-3
+        self.im = im
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
@@ -119,6 +120,8 @@ class TestPlotROI():
         objs = _transpose_space(im=self.im, space=space)
         p = roi.CircleROI(cx=0.1, cy=0.1, r=0.1)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
+        p2 = roi.CircleROI(cx=0.3, cy=0.3, r=0.15, r_inner=0.05)
+        p2.add_widget(signal=objs["im"], axes=objs["axes"])
         return objs["figure"]
 
     @pytest.mark.parametrize("space", ("signal", "navigation"))
@@ -130,15 +133,52 @@ class TestPlotROI():
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
         return objs["figure"]
 
+    @pytest.mark.parametrize("render_figure", [True, False])
+    def test_plot_rectangular_roi_remove(self, render_figure):
+        im = self.im
+        im.plot()
+        p = roi.RectangularROI(left=0.01, top=0.01, right=0.1, bottom=0.03)
+        p.add_widget(signal=im)
+        p.remove_widget(im, render_figure=render_figure)
+
     @pytest.mark.parametrize("space", ("signal", "navigation"))
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_line2d_roi(self, space):
-        objs = _transpose_space(im=self.im, space=space)
+        im = self.im
+        objs = _transpose_space(im=im, space=space)
         p = roi.Line2DROI(x1=0.01, y1=0.01, x2=0.1, y2=0.03)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
+        p2 = roi.Line2DROI(x1=0.03, y1=0.015, x2=0.3, y2=0.03, linewidth=0.2)
+        with pytest.raises(ValueError):
+            p2.add_widget(signal=objs["im"], axes=objs["axes"])
         return objs["figure"]
 
+    @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+    def test_plot_line2d_roi_linewidth(self):
+        im = self.im
+        for axis in im.axes_manager.signal_axes:
+            axis.scale = 0.1
+        objs = _transpose_space(im=im, space='signal')
+        p = roi.Line2DROI(x1=0.3, y1=0.5, x2=6.0, y2=3.0, linewidth=0.5)
+        p.add_widget(signal=objs["im"], axes=objs["axes"])
+
+        p2 = roi.Line2DROI(x1=2.0, y1=0.5, x2=8.0, y2=3.0, linewidth=0.1)
+        p2.add_widget(signal=objs["im"], axes=objs["axes"])
+        widget2 = list(p2.widgets)[0]
+        widget2.decrease_size()
+        assert widget2.size == (0.0, )
+        widget2.increase_size()
+        assert widget2.size == (0.1, )
+
+        p3 = roi.Line2DROI(x1=3.5, y1=0.5, x2=9.5, y2=3.0, linewidth=0.1)
+        p3.add_widget(signal=objs["im"], axes=objs["axes"])
+        widget3 = list(p3.widgets)[0]
+        widget3.decrease_size()
+        assert widget3.size == (0.0, )
+
+        return objs["figure"]
 
 def test_error_message():
     im = Signal2D(np.arange(50000).reshape([10, 50, 100]))

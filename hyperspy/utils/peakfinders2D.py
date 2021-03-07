@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,15 +18,10 @@
 
 import copy
 
+from numba import njit
 import numpy as np
 import scipy.ndimage as ndi
-from numba import njit
-from skimage.feature import (
-    blob_dog,
-    blob_log,
-    match_template,
-    peak_local_max,
-)
+from skimage.feature import blob_dog, blob_log, match_template, peak_local_max
 
 from hyperspy.misc.machine_learning import import_sklearn
 
@@ -408,7 +403,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         """Identify adjacent 'on' coordinates via DBSCAN."""
         bi = binarised_image.astype("bool")
         coordinates = np.indices(bi.shape).reshape(2, -1).T[bi.flatten()]
-        db = import_sklearn.sklearn.cluster.DBSCAN(2, 3)
+        db = import_sklearn.sklearn.cluster.DBSCAN(2, min_samples=3)
         peaks = []
         if coordinates.shape[0] > 0:  # we have at least some peaks
             labeled_points = db.fit_predict(coordinates)
@@ -491,9 +486,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
                         c - 1 for c in z.shape))) > 0:
             continue
         clean_centers.append(center)
-    peaks = np.array(clean_centers)
-    ind = np.lexsort((peaks[:,0], peaks[:,1]))
-    return peaks[ind]
+    return clean_peaks(np.array(clean_centers))
 
 
 def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,

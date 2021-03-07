@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -1411,7 +1411,7 @@ def animate_legend(fig=None, ax=None):
     lined = dict()
     leg = ax.get_legend()
     for legline, origline in zip(leg.get_lines(), lines):
-        legline.set_pickradius(5)  # 5 pts tolerance
+        legline.set_pickradius(preferences.Plot.pick_tolerance)
         legline.set_picker(True)
         lined[legline] = origline
 

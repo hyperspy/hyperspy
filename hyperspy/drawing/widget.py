@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -24,6 +24,7 @@ import numpy as np
 
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.events import Events, Event
+from hyperspy.defaults_parser import preferences
 
 
 class WidgetBase(object):
@@ -60,7 +61,7 @@ class WidgetBase(object):
         self.color = color
         self.alpha = alpha
         self.cids = list()
-        self.blit = True
+        self.blit = None
         self.events = Events()
         self.events.changed = Event(doc="""
             Event that triggers when the widget has a significant change.
@@ -103,7 +104,7 @@ class WidgetBase(object):
         """
         return self.__is_on
 
-    def set_on(self, value):
+    def set_on(self, value, render_figure=True):
         """Change the on state of the widget. If turning off, all patches will
         be removed from the matplotlib axes and the widget will disconnect from
         all events. If turning on, the patch(es) will be added to the
@@ -128,7 +129,8 @@ class WidgetBase(object):
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
         if did_something:
-            self.draw_patch()
+            if render_figure:
+                self.draw_patch()
             if value is False:
                 self.ax = None
         self.__is_on = value
@@ -163,8 +165,8 @@ class WidgetBase(object):
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'
         """
-        self._set_patch()
         self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
+        self._set_patch()
         for p in self.patch:
             ax.add_artist(p)
             p.set_animated(self.blit)
@@ -182,11 +184,10 @@ class WidgetBase(object):
         if self.ax is not None and self.is_on():
             self.disconnect()
         self.ax = ax
-        canvas = ax.figure.canvas
         if self.is_on() is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            canvas.draw_idle()
+            ax.figure.canvas.draw_idle()
             self.select()
 
     def select(self):
@@ -246,19 +247,19 @@ class WidgetBase(object):
         if self._navigating:
             self.disconnect_navigate()
 
-    def close(self, window=None):
+    def close(self, window=None, render_figure=False):
         """Set the on state to off (removes patch and disconnects), and trigger
         events.closed.
         """
-        self.set_on(False)
+        self.set_on(False, render_figure=render_figure)
         self.events.closed.trigger(obj=self)
 
     def draw_patch(self, *args):
         """Update the patch drawing.
         """
         try:
-            if self.blit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._update_animated()
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig.render_figure()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -836,7 +837,8 @@ class ResizersMixin(object):
         self.resizer_picked = False
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
-        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        pick_tol = preferences.Plot.pick_tolerance
+        self.resize_pixel_size = (pick_tol, pick_tol)  # Set to None to make one data pixel
         self._resizers = resizers
         self._resizer_handles = []
         self._resizers_on = False
@@ -884,7 +886,6 @@ class ResizersMixin(object):
                         if r in container:
                             container.remove(r)
             self._resizers_on = value
-            self.draw_patch()
 
     def _get_resizer_size(self):
         """Gets the size of the resizer handles in axes coordinates. If
@@ -946,9 +947,8 @@ class ResizersMixin(object):
         rsize = self._get_resizer_size()
         pos = self._get_resizer_pos()
         for i in range(len(pos)):
-            r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
-                              fill=True, lw=0, fc=self.resize_color,
-                              picker=True,)
+            r = plt.Rectangle(pos[i], rsize[0], rsize[1], fill=True, lw=0,
+                              fc=self.resize_color, picker=True,)
             self._resizer_handles.append(r)
 
     def set_on(self, value):
@@ -978,6 +978,7 @@ class ResizersMixin(object):
         elif self.picked:
             if self.resizers and not self._resizers_on:
                 self._set_resizers(True, self.ax)
+                self.ax.figure.canvas.draw_idle()
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
             self.pick_offset = (x - self._pos[0], y - self._pos[1])

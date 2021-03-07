@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,6 +18,7 @@
 
 from hyperspy.drawing.widgets import Widget1DBase
 from hyperspy.drawing.utils import picker_kwargs
+from hyperspy.defaults_parser import preferences
 
 
 class VerticalLineWidget(Widget1DBase):
@@ -32,7 +33,7 @@ class VerticalLineWidget(Widget1DBase):
 
     def _set_patch(self):
         ax = self.ax
-        kwargs = picker_kwargs(5)
+        kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
         self.patch = [ax.axvline(self._pos[0],
                                  color=self.color,
                                  alpha=self.alpha,
