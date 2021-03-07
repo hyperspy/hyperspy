@@ -26,6 +26,8 @@ RELEASE_next_patch (Unreleased)
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
 * Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 * Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
+* Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
+
 
 Changelog
 *********
