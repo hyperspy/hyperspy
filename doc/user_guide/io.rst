@@ -345,7 +345,8 @@ This feature is particularly useful when using
 
 The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
 of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
-full signal shape. It is possible to customise the chunk shape using the ``chunks`` keyword. 
+full signal shape for non-lazy signal, while for lazy signal, the chunking of the dask is used. It is possible to
+customise the chunk shape using the ``chunks`` keyword.
 For example, to save the data with ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks
 for this signal:
 
@@ -358,8 +359,8 @@ Note that currently it is not possible to pass different customised chunk shapes
 arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving
 will be applied to all arrays contained in the signal.
 
-By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
-what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`` does not impose the
+By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunk`` function
+what, for large signal spaces usually leads to smaller chunks as ``guess_chunk`` does not impose the
 constrain of storing at least one signal per chunks. For example, for the signal in the example above
 passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
@@ -368,7 +369,7 @@ See the `chunking section <big_data.html#Chunking>`__ under `Working with big da
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``). 
+- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
   ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
 .. note::
@@ -492,7 +493,7 @@ EMSA/MSA
 --------
 
 This `open standard format
-<http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`__
+<https://www.microscopy.org/resources/scientific_data/index.cfm>`__
 is widely used to exchange single spectrum data, but it does not support
 multidimensional data. It can be used to exchange single spectra with Gatan's
 Digital Micrograph.
@@ -529,12 +530,12 @@ using the `encoding` argument, e.g.:
 Ripple
 ------
 
-This `open standard format
-<http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`__ is
-widely used to exchange multidimensional data. However, it only supports data of
-up to three dimensions. It can be used to exchange data with Bruker and `Lispix
-<http://www.nist.gov/lispix/>`_. Used in combination with the :ref:`import-rpl`
-it is very useful for exporting data to Gatan's Digital Micrograph.
+This *open standard format* developed at NIST as native format for
+`Lispix <http://www.nist.gov/lispix/>`_ is widely used to exchange
+multidimensional data. However, it only supports data of up to three
+dimensions. It can also be used to exchange data with Bruker and used in
+combination with the :ref:`import-rpl` it is very useful for exporting data
+to Gatan's Digital Micrograph.
 
 The default encoding is latin-1. It is possible to set a different encoding
 using the encoding argument, e.g.:
@@ -554,8 +555,9 @@ the "r+" mode are incompatible).
 Images
 ------
 
-HyperSpy is able to read and write data too all the image formats supported by
-`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
+HyperSpy is able to read and write data too `all the image formats
+<https://imageio.readthedocs.io/en/stable/formats.html>`_ supported by
+`imageio`, which used the Python Image Library  (PIL/pillow).
 This includes png, pdf, gif etc.
 
 It is important to note that these image formats only support 8-bit files, and
@@ -633,7 +635,8 @@ Gatan Digital Micrograph
 
 HyperSpy can read both dm3 and dm4 files but the reading features are not
 complete (and probably they will be unless Gatan releases the specifications of
-the format). That said, we understand that this is an important feature and if
+the format and creates a more consistent metadata-structure). That said, we
+understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make
 us aware of the problem.
@@ -659,11 +662,11 @@ Extra loading arguments
 
 .. _edax-format:
 
-EDAX TEAM SPD and SPC
----------------------
+EDAX TEAM/Genesis SPD and SPC
+-----------------------------
 
 HyperSpy can read both ``.spd`` (spectrum image) and ``.spc`` (single spectra)
-files from the EDAX TEAM software.
+files from the EDAX TEAM software and its predecessor EDAX Genesis.
 If reading an ``.spd`` file, the calibration of the
 spectrum image is loaded from the corresponding ``.ipr`` and ``.spc`` files
 stored in the same directory, or from specific files indicated by the user.
@@ -886,6 +889,9 @@ Extra loading arguments
 - ``stack_group`` : bool, default is True. Stack datasets of groups with common
   path. Relevant for emd file version >= 0.5 where groups can be named
   'group0000', 'group0001', etc.
+- ``chunks`` : None, True or tuple. Determine the chunking of the dataset to save.
+  See the ``chunks`` arguments of the ``hspy`` file format for more details.
+
 
 For files containing several datasets, the `dataset_name` argument can be
 used to select a specific one:
@@ -932,16 +938,14 @@ the data size in memory.
     <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
 
 .. note::
-    
+
     FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
     The FFT is not centered and only positive frequencies are stored in the file.
-    Lazy reading of these datasets is not supported. Making FFTs with HyperSpy
-    from the respective image datasets is recommended.
+    Making FFTs with HyperSpy from the respective image datasets is recommended.
 
 .. note::
-    
-    DPC data is loaded in as a HyperSpy ComplexSignal2D object. Lazy reading of these
-    datasets is not supported.
+
+    DPC data is loaded in as a HyperSpy ComplexSignal2D object.
 
 .. note::
 

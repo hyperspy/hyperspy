@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -2280,7 +2280,8 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
-    def _deepcopy_with_new_data(self, data=None, copy_variance=False):
+    def _deepcopy_with_new_data(self, data=None, copy_variance=False,
+                                copy_navigator=False):
         """Returns a deepcopy of itself replacing the data.
 
         This method has an advantage over the default :py:func:`copy.deepcopy`
@@ -2291,6 +2292,8 @@ class BaseSignal(FancySlicing,
         data : None or :py:class:`numpy.ndarray`
         copy_variance : bool
             Whether to copy the variance of the signal to the new copy
+        copy_navigator : bool
+            Whether to copy the navgitor of the signal to the new copy
 
         Returns
         -------
@@ -2299,6 +2302,7 @@ class BaseSignal(FancySlicing,
 
         """
         old_np = None
+        old_navigator = None
         try:
             old_data = self.data
             self.data = None
@@ -2308,6 +2312,9 @@ class BaseSignal(FancySlicing,
             if not copy_variance and "Noise_properties" in self.metadata.Signal:
                 old_np = self.metadata.Signal.Noise_properties
                 del self.metadata.Signal.Noise_properties
+            if not copy_navigator and self.metadata.has_item('_HyperSpy.navigator'):
+                old_navigator = self.metadata._HyperSpy.navigator
+                del self.metadata._HyperSpy.navigator
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = data
@@ -2318,6 +2325,8 @@ class BaseSignal(FancySlicing,
             self.models._models = old_models
             if old_np is not None:
                 self.metadata.Signal.Noise_properties = old_np
+            if old_navigator is not None:
+                self.metadata._HyperSpy.navigator = old_navigator
 
     def as_lazy(self, copy_variance=True):
         """
@@ -2532,6 +2541,14 @@ class BaseSignal(FancySlicing,
             value = np.fft.fftshift(value)
         return value
 
+    @property
+    def navigator(self):
+        return self.metadata.get_item('_HyperSpy.navigator')
+
+    @navigator.setter
+    def navigator(self, navigator):
+        self.metadata.set_item('_HyperSpy.navigator', navigator)
+
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
              **kwargs):
         """%s
@@ -2542,8 +2559,7 @@ class BaseSignal(FancySlicing,
         if self._plot is not None:
             self._plot.close()
         if 'power_spectrum' in kwargs:
-            from hyperspy._signals.complex_signal import ComplexSignal
-            if not isinstance(self, ComplexSignal):
+            if not np.issubdtype(self.data.dtype, np.complexfloating):
                 raise ValueError('The parameter `power_spectrum` required a '
                                  'signal with complex data type.')
                 del kwargs['power_spectrum']
@@ -2582,7 +2598,10 @@ class BaseSignal(FancySlicing,
             self._plot.signal_title = self.tmp_parameters.filename
 
         def get_static_explorer_wrapper(*args, **kwargs):
-            return navigator()
+            if np.issubdtype(navigator.data.dtype, np.complexfloating):
+                return np.abs(navigator())
+            else:
+                return navigator()
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
@@ -2601,7 +2620,9 @@ class BaseSignal(FancySlicing,
                 return navigator()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
-            if (self.axes_manager.navigation_dimension == 1 and
+            if self.navigator is not None:
+                navigator = self.navigator
+            elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
                 navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
@@ -2631,23 +2652,29 @@ class BaseSignal(FancySlicing,
             # check first if we have a signal to avoid comparion of signal with
             # string
             if isinstance(navigator, BaseSignal):
-                # Dynamic navigator
-                if (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape +
-                        navigator.axes_manager.navigation_shape):
-                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
-
-                elif (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape or
-                        axes_manager.navigation_shape[:2] ==
-                        navigator.axes_manager.signal_shape or
-                        (axes_manager.navigation_shape[0],) ==
-                        navigator.axes_manager.signal_shape):
+                def is_shape_compatible(navigation_shape, shape):
+                    return (navigation_shape == shape or
+                            navigation_shape[:2] == shape or
+                            (navigation_shape[0],) == shape
+                            )
+                # Static navigator
+                if is_shape_compatible(axes_manager.navigation_shape,
+                                       navigator.axes_manager.signal_shape):
                     self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Static transposed navigator
+                elif is_shape_compatible(axes_manager.navigation_shape,
+                                         navigator.axes_manager.navigation_shape):
+                    navigator = navigator.T
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Dynamic navigator
+                elif (axes_manager.navigation_shape ==
+                      navigator.axes_manager.signal_shape +
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
                 else:
                     raise ValueError(
-                        "The navigator dimensions are not compatible with "
-                        "those of self.")
+                        "The dimensions of the provided (or stored) navigator "
+                        "are not compatible with this signal.")
             elif navigator == "slider":
                 self._plot.navigator_data_function = "slider"
             elif navigator is None:
@@ -2667,10 +2694,11 @@ class BaseSignal(FancySlicing,
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
-        if self._plot.signal_plot:
-            self._plot.signal_plot.events.closed.connect(
-                lambda: self.events.data_changed.disconnect(self.update_plot),
-                [])
+
+        p = self._plot.signal_plot if self._plot.signal_plot else self._plot.navigator_plot
+        p.events.closed.connect(
+            lambda: self.events.data_changed.disconnect(self.update_plot),
+            [])
 
         if plot_markers:
             if self.metadata.has_item('Markers'):
@@ -2726,6 +2754,23 @@ class BaseSignal(FancySlicing,
             i) the filename
             ii)  `Signal.tmp_parameters.extension`
             iii) ``'hspy'`` (the default extension)
+        chunks : tuple or True or None (default)
+            HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
+            saving. The chunk shape should follow the order of the array
+            (``s.data.shape``), not the shape of the ``axes_manager``.
+            If None and lazy signal, the dask array chunking is used.
+            If None and non-lazy signal, the chunks are estimated automatically
+            to have at least one chunk per signal space.
+            If True, the chunking is determined by the the h5py ``guess_chunk``
+            function.
+        save_original_metadata : bool , default : False
+            Nexus file only. Option to save hyperspy.original_metadata with
+            the signal. A loaded Nexus file may have a large amount of data
+            when loaded which you may wish to omit on saving
+        use_default : bool , default : False
+            Nexus file only. Define the default dataset in the file.
+            If set to True the signal or first signal in the list of signals
+            will be defined as the default (following Nexus v3 data rules).
 
         """
         if filename is None:
@@ -3985,30 +4030,17 @@ class BaseSignal(FancySlicing,
 
         use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
 
-        if isinstance(self.data, da.Array):
-            if use_real_fft:
-                fft_f = da.fft.rfftn
-            else:
-                fft_f = da.fft.fftn
-
-            if shift:
-                im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if use_real_fft:
+            fft_f = np.fft.rfftn
         else:
-            if use_real_fft:
-                fft_f = np.fft.rfftn
-            else:
-                fft_f = np.fft.fftn
+            fft_f = np.fft.fftn
 
-            if shift:
-                im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if shift:
+            im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
+        else:
+            im_fft = self._deepcopy_with_new_data(
+                fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
@@ -4079,21 +4111,12 @@ class BaseSignal(FancySlicing,
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
-        if isinstance(self.data, da.Array):
-            if shift:
-                fft_data_shift = da.fft.ifftshift(self.data, axes=axes)
-                im_ifft = self._deepcopy_with_new_data(
-                    da.fft.ifftn(fft_data_shift, axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+        if shift:
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
         else:
-            if shift:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                self.data, axes=axes, **kwargs))
 
         im_ifft.metadata.General.title = 'iFFT of {}'.format(
             im_ifft.metadata.General.title)

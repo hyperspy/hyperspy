@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,10 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import dask.array as da
 import numpy as np
 import pytest
 
-from hyperspy.misc.array_tools import dict2sarray, get_array_memory_size_in_GiB
+from hyperspy.misc.array_tools import (
+    dict2sarray,
+    get_array_memory_size_in_GiB,
+    get_signal_chunk_slice,
+)
 
 dt = [("x", np.uint8), ("y", np.uint16), ("text", (bytes, 6))]
 
@@ -142,3 +147,41 @@ def test_d2s_arrayX():
     sa = dict2sarray(d, sarray=sa)
     np.testing.assert_array_equal(sa['z'], [[2, 2, 2, 2], ] * 4)
     np.testing.assert_array_equal(sa['u'], [[1, 2, 3, 4], ] * 4)
+
+
+@pytest.mark.parametrize(
+    'sig_chunks, index, expected',
+    [((5, 5), (1, 1), [slice(0, 5, None), slice(0, 5, None)]),
+     ((5, 5), (7, 7), [slice(5, 10, None), slice(5, 10, None)]),
+     ((5, 5), (1, 12), [slice(0, 5, None), slice(10, 15, None)]),
+     ((5, ), (1, ), [slice(0, 5, None), ]),
+     ((20, ), (1, ), [slice(0, 20, None), ]),
+     ((5, ), (25, ), 'error'),
+     ((20, 20), (25, 21), 'error'),
+      ]
+)
+def test_get_signal_chunk_slice(sig_chunks, index, expected):
+    ndim = 1 + len(index)
+    data = da.zeros([20]*ndim, chunks=(10, *sig_chunks[::-1]))
+    if expected == 'error':
+        with pytest.raises(ValueError):
+            chunk_slice = get_signal_chunk_slice(index, data.chunks)
+    else:
+        chunk_slice = get_signal_chunk_slice(index, data.chunks)
+        assert chunk_slice == expected
+
+
+@pytest.mark.parametrize(
+    'sig_chunks, index, expected',
+    [((5, 5), (12, 7), [slice(10, 15, None), slice(5, 10, None)]),
+     ((5, 5), (7, 12), 'error'),
+     ]
+)
+def test_get_signal_chunk_slice_not_square(sig_chunks, index, expected):
+    data = da.zeros((2, 2, 10, 20), chunks=(2, 2, *sig_chunks[::-1]))
+    if expected == 'error':
+        with pytest.raises(ValueError):
+            chunk_slice = get_signal_chunk_slice(index, data.chunks)
+    else:
+        chunk_slice = get_signal_chunk_slice(index, data.chunks)
+        assert chunk_slice == expected
