@@ -68,7 +68,7 @@ NEW
 * Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
-  * :py:class:`~._components.split_pvoigt.SplitVoigt`
+  * :py:class:`~._components.split_voigt.SplitVoigt`
 * :ref:`EDS absorption correction <eds_absorption-label>`.
 * :ref:`Argand diagram for complex signals <complex.argand>`.
 * :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.

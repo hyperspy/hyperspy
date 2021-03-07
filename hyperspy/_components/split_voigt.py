@@ -74,6 +74,7 @@ class SplitVoigt(Component):
         self.sigma2.value = sigma2
         self.centre.value = centre
         self.fraction.value = fraction
+        self._position = self.centre
 
         # Boundaries
         self.A.bmin = 1.0e-8
