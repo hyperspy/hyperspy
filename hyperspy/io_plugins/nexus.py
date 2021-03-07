@@ -1,6 +1,6 @@
 """Nexus file reading, writing and inspection."""
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -100,7 +100,7 @@ def _parse_from_file(value, lazy=False):
         toreturn = toreturn[0]
     if isinstance(toreturn, bytes):
         toreturn = _byte_to_string(toreturn)
-    if isinstance(toreturn, (np.int, np.float)):
+    if isinstance(toreturn, (int, float)):
         toreturn = toreturn
     if isinstance(toreturn, (np.ndarray)) and toreturn.dtype.char == "U":
         toreturn = toreturn.astype("S")

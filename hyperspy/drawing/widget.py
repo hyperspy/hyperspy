@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -165,8 +165,8 @@ class WidgetBase(object):
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'
         """
-        self._set_patch()
         self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
+        self._set_patch()
         for p in self.patch:
             ax.add_artist(p)
             p.set_animated(self.blit)

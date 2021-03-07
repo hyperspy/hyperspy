@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -214,6 +214,9 @@ class TestEstimateElbowPosition:
         ):
             _ = self.s.estimate_elbow_position(None)
 
+    # Should be removed in scikit-learn 0.26
+    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
+    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_store_number_significant_components(self):
         s = signals.Signal1D(generate_low_rank_matrix())
@@ -335,9 +338,6 @@ class TestDecompositionAlgorithm:
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize("algorithm", ["RPCA", "ORPCA", "ORNMF", "MLPCA"])
     def test_decomposition_output_dimension_not_given(self, algorithm):
@@ -377,9 +377,9 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    # Should be removed in scikit-learn 0.26
+    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
+    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize(
         "algorithm", ["sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca"]
@@ -410,10 +410,11 @@ class TestReturnInfo:
             is None
         )
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    # Should be removed in scikit-learn 0.26
+    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
+    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @pytest.mark.parametrize("return_info", [True, False])
     @pytest.mark.parametrize(
         "algorithm",
         [
@@ -426,37 +427,11 @@ class TestReturnInfo:
             "mini_batch_sparse_pca",
         ],
     )
-    def test_decomposition_supported_return_true(self, algorithm):
-        assert (
-            self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=2
+    def test_decomposition_supported(self, algorithm, return_info):
+        out = self.s.decomposition(
+                algorithm=algorithm, return_info=return_info, output_dimension=2
             )
-            is not None
-        )
-
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-    @pytest.mark.parametrize(
-        "algorithm",
-        [
-            "RPCA",
-            "ORPCA",
-            "ORNMF",
-            "sklearn_pca",
-            "NMF",
-            "sparse_pca",
-            "mini_batch_sparse_pca",
-        ],
-    )
-    def test_decomposition_supported_return_false(self, algorithm):
-        assert (
-            self.s.decomposition(
-                algorithm=algorithm, return_info=False, output_dimension=2
-            )
-            is None
-        )
+        assert (out is not None) is return_info
 
 
 class TestNonFloatTypeError:
