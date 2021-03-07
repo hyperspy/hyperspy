@@ -41,6 +41,20 @@ def test_function():
     assert g._position is g.centre
 
 
+def test_height_attribute():
+    s = Signal1D(np.empty((100,)))
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = 0.5
+    axis.offset = -20
+    g1 = SplitVoigt(A=20001.0, centre=10.0, sigma1=10.0, sigma2=4.0)
+    s.data = g1.function(axis.axis)
+    np.testing.assert_almost_equal(g1.height, 1139.8920786)
+
+    g1.height = 1000.0
+    np.testing.assert_almost_equal(g1.height, 1000.0)
+    np.testing.assert_almost_equal(g1.A.value, 17546.3979224)
+
+
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy):
