@@ -203,3 +203,14 @@ class TestPrintInfo:
         self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
         captured = capfd.readouterr()
         assert "Decomposition info:" not in captured.out
+
+    def test_decomposition_mask_SVD(self):
+        s = self.s
+        sig_mask = (s.inav[0].data < 0.5).compute()
+        with pytest.raises(NotImplementedError):
+            s.decomposition(algorithm="SVD", signal_mask=sig_mask)
+
+        nav_mask = (s.isig[0].data < 0.5).compute()
+        with pytest.raises(NotImplementedError):
+            s.decomposition(algorithm="SVD", navigation_mask=nav_mask)
+

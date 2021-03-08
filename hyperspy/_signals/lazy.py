@@ -808,9 +808,9 @@ class LazySignal(BaseSignal):
         # Initialize print_info
         to_print = [
             "Decomposition info:",
-            "  normalize_poissonian_noise={}".format(normalize_poissonian_noise),
-            "  algorithm={}".format(algorithm),
-            "  output_dimension={}".format(output_dimension)
+            f"  normalize_poissonian_noise={normalize_poissonian_noise}",
+            f"  algorithm={algorithm}",
+            f"  output_dimension={output_dimension}"
         ]
 
         # LEARN
@@ -886,7 +886,7 @@ class LazySignal(BaseSignal):
                 try:
                     self._unfolded4decomposition = self.unfold()
                     # TODO: implement masking
-                    if navigation_mask or signal_mask:
+                    if navigation_mask is not None or signal_mask is not None:
                         raise NotImplementedError("Masking is not yet implemented for lazy SVD")
 
                     U, S, V = svd(self.data)
