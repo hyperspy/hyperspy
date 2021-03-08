@@ -52,11 +52,6 @@ jobs:
           python --version
           which python
 
-      - name: Install Visual C++ for Python 2.7
-        if: runner.os == 'Windows'
-        run: |
-          choco install vcpython27 -f -y
-
       - name: install pep517 and twine
         run: |
           python -m pip install --upgrade pip
