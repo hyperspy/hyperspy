@@ -567,7 +567,6 @@ def test_plot_scale_different_sign():
     N = 10
     s = hs.signals.Signal2D(np.arange(N**2).reshape([10]*2))
     s2 = s.isig[:, ::-1]
-    s2.axes_manager[0]
     s2.axes_manager[0].scale = 1.0
     s2.axes_manager[1].scale = -1.0
 
