@@ -736,10 +736,10 @@ class LazySignal(BaseSignal):
             increased to contain at least ``output_dimension`` signals.
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not used in the
-            decomposition.
+            decomposition. Not implemented for the 'SVD' algorithm.
         signal_mask : {BaseSignal, numpy array, dask array}
             The signal locations marked as True are not used in the
-            decomposition.
+            decomposition. Not implemented for the 'SVD' algorithm.
         reproject : bool, default True
             Reproject data on the learnt components (factors) after learning.
         print_info : bool, default True
@@ -908,6 +908,8 @@ class LazySignal(BaseSignal):
                         self.fold()
                         self._unfolded4decomposition is False
             else:
+                self._check_navigation_mask(navigation_mask)
+                self._check_signal_mask(signal_mask)
                 this_data = []
                 try:
                     for chunk in progressbar(
