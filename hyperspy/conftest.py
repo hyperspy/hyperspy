@@ -60,3 +60,16 @@ def setup_module(mod, pdb_cmdopt):
         dask.set_options(get=dask.local.get_sync)
 
 from matplotlib.testing.conftest import mpl_test_settings
+
+
+try:
+    import pytest_mpl
+except ImportError:
+    # Register dummy marker to allow running the test suite without pytest-mpl
+    def pytest_configure(config):
+        config.addinivalue_line(
+            "markers",
+            "mpl_image_compare: dummy marker registration to allow running "
+            "without the pytest-mpl plugin."
+        )
+

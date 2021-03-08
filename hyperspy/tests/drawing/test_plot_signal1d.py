@@ -38,11 +38,6 @@ style_pytest_mpl = 'default'
 style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
 
 
-@pytest.fixture
-def mpl_generate_path_cmdopt(request):
-    return request.config.getoption("--mpl-generate-path")
-
-
 def _generate_filename_list(style):
     path = Path(__file__).resolve().parent
     baseline_path = path.joinpath(baseline_dir)
@@ -62,7 +57,13 @@ def _generate_filename_list(style):
 
 @pytest.fixture
 def setup_teardown(request, scope="class"):
-    mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
+    try:
+        import pytest_mpl
+        # This option is available only when pytest-mpl is installed
+        mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
+    except ImportError:
+        mpl_generate_path_cmdopt = None
+
     # SETUP
     # duplicate baseline images to match the test_name when the
     # parametrized 'test_plot_spectra' are run. For a same 'style', the

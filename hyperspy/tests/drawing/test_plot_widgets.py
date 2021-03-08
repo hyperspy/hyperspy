@@ -159,6 +159,57 @@ class TestPlotLine2DWidget():
         return self.im._plot.signal_plot.figure
 
 
+class TestPlotCircleWidget():
+
+    def setup_method(self, method):
+        # Create test image 100x100 pixels:
+        N = 100
+        im = Signal2D(np.arange(N**2).reshape([N]*2))
+        im.axes_manager[0].scale = 1.2
+        im.axes_manager[1].scale = 1.2
+        circle = widgets.CircleWidget(im.axes_manager)
+        self.im = im
+        self.circle = circle
+
+    def test_change_size_snap_size(self):
+        # Need to plot the signal to set the mpl axis to the widget
+        im = self.im
+        circle = self.circle
+        im.plot()
+        circle.set_mpl_ax(im._plot.signal_plot.ax)
+        circle.snap_all = True
+
+        circle.position = (10, 10)
+        circle.size = (5, 1.0)
+        assert circle.position == (9.6, 9.6)
+        np.testing.assert_allclose(circle.size, (5.4, 0.6))
+
+        circle.decrease_size()
+        np.testing.assert_allclose(circle.size, (4.2, 0.0))
+        circle.decrease_size()
+        np.testing.assert_allclose(circle.size, (3.0, 0.0))
+
+        circle.increase_size()
+        np.testing.assert_allclose(circle.size, (4.2, 0.0))
+
+        circle.size = (5, 1.0)
+        circle.increase_size()
+        np.testing.assert_allclose(circle.size, (6.6, 1.8))
+
+    def test_change_size(self):
+        im = self.im
+        circle = self.circle
+        im.plot()
+        circle.set_mpl_ax(im._plot.signal_plot.ax)
+        circle.snap_all = False
+
+        position, size = (10, 10), (5, 2.5)
+        circle.position = position
+        circle.size = size
+        assert circle.position == position
+        assert circle.size == size
+
+
 class TestPlotRangeWidget():
 
     def setup_method(self, method):
