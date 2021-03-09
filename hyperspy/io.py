@@ -522,7 +522,7 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
 
     Returns
     -------
-    Signal or subclass
+    Signal class or subclass
 
     """
     # Check if parameter values are allowed:
