@@ -557,7 +557,7 @@ the "r+" mode are incompatible).
 Images
 ------
 
-HyperSpy can read and write data too `all the image formats
+HyperSpy can read and write data to `all the image formats
 <https://imageio.readthedocs.io/en/stable/formats.html>`_ supported by
 `imageio`, which uses the Python Image Library  (PIL/pillow).
 This includes png, pdf, gif, etc.
@@ -572,7 +572,7 @@ documentation for more information.
     >>> s.save('file.jpg', scalebar=True)
     >>> s.save('file.jpg', scalebar=True, scalebar_kwds={'location':'lower right'})
 
-When saving an image, keywords arguments can be passed to the corresponding
+When saving an image, keyword arguments can be passed to the corresponding
 pillow file writer.
 
 It is important to note that these image formats only support 8-bit files, and
