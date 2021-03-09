@@ -1682,8 +1682,8 @@ class MVATools(object):
     def get_cluster_labels(self, merged=False):
         """Return cluster labels as a Signal.
 
-        Parameters:
-        --------
+        Parameters
+        ----------
         merged : bool
             If False the cluster label signal has a navigation axes of length
             number_of_clusters and the signal along the the navigation
@@ -1698,7 +1698,7 @@ class MVATools(object):
         get_cluster_signals
 
         Returns
-        --------
+        -------
         signal Hyperspy signal of cluster labels
         """
         if self.learning_results.cluster_labels is None:
@@ -1732,12 +1732,12 @@ class MVATools(object):
     def get_cluster_signals(self, signal="mean"):
         """Return the cluster centers as a Signal.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         %s
 
         See Also
-        -------
+        --------
         get_cluster_labels
 
         """
@@ -1757,7 +1757,7 @@ class MVATools(object):
         get_cluster_signals
 
         Returns
-        --------
+        -------
         signal
             Hyperspy signal of cluster distances
 

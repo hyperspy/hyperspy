@@ -33,7 +33,7 @@ all the work that you do.
 * ``@pytest.mark.parametrize()`` is a very convenient decorator to test several
   parameters of the same function without having to write to much repetitive
   code, which is often error-prone. See `pytest documentation
-  <http://doc.pytest.org/en/latest/parametrize.html>`_ for more details.
+  <http://doc.pytest.org/en/latest/parametrize.html>`__ for more details.
 * It is good to check that the tests does not use too much memory after
   creating new tests. If you need to explicitly delete your objects and free
   memory, you can do the following to release the memory associated with the
@@ -128,8 +128,8 @@ This can be achieved using the ```pytest-rerunfailures`` plugin <https://pypi.or
     # To wait 1 second before the next retry
     $ pytest --reruns 3 --reruns-delay 1
 
-You can read more about flaky tests in the `pytest documentation
-<https://docs.pytest.org/en/stable/flaky.html>`_.
+You can read more about flaky tests in the `pytest documentation 
+<https://docs.pytest.org/en/stable/flaky.html>`__.
 
 
 Test coverage
@@ -203,11 +203,11 @@ The Github Actions testing matrix also includes the following special cases:
   ``scikit-learn``.
 - The test suite is run against the oldest supported versions of ``numpy``,
   ``matplotlib`` and ``scipy``. For more details, see this
-  `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`_.
+  `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`__.
 - The test suite is run against the development supported versions of ``numpy``,
   ``scipy``, ``scikit-learn`` and ``scikit-image`` using the weekly build wheels
   available on https://anaconda.org/scipy-wheels-nightly. For more details, see
-  this `Github issue <https://github.com/hyperspy/hyperspy/pull/2616>`_.
+  this `Github issue <https://github.com/hyperspy/hyperspy/pull/2616>`__.
 
 .. _plot-test-label:
 

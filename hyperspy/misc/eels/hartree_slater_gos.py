@@ -44,7 +44,6 @@ class HartreeSlaterGOS(GOSBase):
 
     Parameters
     ----------
-
     element_subshell : {str, dict}
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
@@ -52,7 +51,6 @@ class HartreeSlaterGOS(GOSBase):
 
     Methods
     -------
-
     readgosfile()
         Read the GOS files of the element subshell from the location
         defined in Preferences.
@@ -60,13 +58,9 @@ class HartreeSlaterGOS(GOSBase):
         given the energy axis index and qmin and qmax values returns
         the qaxis and gos between qmin and qmax using linear
         interpolation to include qmin and qmax in the range.
-    as_dictionary()
-        Export the GOS as a dictionary that can be saved.
-
 
     Attributes
     ----------
-
     energy_axis : array
         The tabulated energy axis
     qaxis : array
@@ -109,7 +103,7 @@ class HartreeSlaterGOS(GOSBase):
         self.energy_axis = self.rel_energy_axis + self.onset_energy
 
     def as_dictionary(self, fullcopy=True):
-        """Export the GOS as a dictionary
+        """Export the GOS as a dictionary.
         """
         dic = {}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)

@@ -55,7 +55,6 @@ class EELSCLEdge(Component):
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-
     GOS : {'hydrogenic', 'Hartree-Slater', None}
         The GOS to use. If None it will use the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
@@ -80,7 +79,6 @@ class EELSCLEdge(Component):
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-
     fine_structure_active : bool
         Activates/deactivates the fine structure feature.
 
@@ -218,12 +216,6 @@ class EELSCLEdge(Component):
 
     @property
     def fine_structure_smoothing(self):
-        """Controls the level of the smoothing of the fine structure.
-
-        It must a real number between 0 and 1. The higher close to 0
-        the higher the smoothing.
-
-        """
         return self._fine_structure_smoothing
 
     @fine_structure_smoothing.setter

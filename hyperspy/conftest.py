@@ -16,9 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-# Configure mpl and traits to work in a headless system
-from traits.etsconfig.api import ETSConfig
-ETSConfig.toolkit = "null"
+try:
+    # Set traits toolkit to work in a headless system
+    # Capture error when toolkit is already previously set which typically
+    # occurs when building the doc locally
+    from traits.etsconfig.api import ETSConfig
+    ETSConfig.toolkit = "null"
+except ValueError:
+    # in case ETSConfig.toolkit was already set previously.
+    pass
 
 # pytest-mpl 0.7 already import pyplot, so setting the matplotlib backend to
 # 'agg' as early as we can is useless for testing.

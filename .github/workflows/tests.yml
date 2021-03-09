@@ -95,21 +95,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/setup-python@v2
-        name: Install Python
+      - uses: ammaraskar/sphinx-action@master
         with:
-          python-version: 3.8
-
-      - name: Install
-        run: |
-          pip install -e .[build-doc]
-
-      - name: Build doc
-        run: |
-          cd doc && make html
+          pre-build-command: "apt-get update -y && apt-get install -y python3-dev build-essential graphviz && pip install -e .[build-doc]"
+          build-command: make html
+          docs-folder: doc/
 
       - uses: actions/upload-artifact@v2
         with:
-          path: ./doc/_build/*
+          path: ./doc/_build/html/
           name: doc_build
 

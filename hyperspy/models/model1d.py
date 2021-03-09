@@ -153,7 +153,6 @@ class Model1D(BaseModel):
 
     Attributes
     ----------
-
     signal : Signal1D instance
         It contains the data to fit.
     chisq : A Signal of floats
@@ -169,13 +168,8 @@ class Model1D(BaseModel):
 
     Methods
     -------
-
-    append
-        Append one component to the model.
     extend
         Append multiple components to the model.
-    remove
-        Remove component from model.
     as_signal
         Generate a Signal1D instance (possible multidimensional)
         from the model.
@@ -194,8 +188,6 @@ class Model1D(BaseModel):
         full dataset.
     save_parameters2file, load_parameters_from_file
         Save/load the parameter values to/from a file.
-    plot
-        Plot the model and the data.
     enable_plot_components, disable_plot_components
         Plot each component separately. (Use after `plot`.)
     set_current_values_to
@@ -210,9 +202,6 @@ class Model1D(BaseModel):
     enable_adjust_position, disable_adjust_position
         Enable/disable interactive adjustment of the position of the components
         that have a well defined position. (Use after `plot`).
-    fit_component
-        Fit just the given component in the given signal range, that can be
-        set interactively.
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
     set_parameters_value
@@ -351,6 +340,12 @@ class Model1D(BaseModel):
                                               dimension, knot_position)
 
     def append(self, thing):
+        """Add component to Model.
+
+        Parameters
+        ----------
+        thing: `Component` instance.
+        """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
         with cm(update_on_resume=False):
             super(Model1D, self).append(thing)
@@ -697,17 +692,16 @@ class Model1D(BaseModel):
         return s
 
     def plot(self, plot_components=False, **kwargs):
-        """Plots the current spectrum to the screen and a map with a
+        """Plot the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
         Parameters
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
-        kwargs:
-            All extra keyword arguements are passed to ``Signal1D.plot``
-
-
+        **kwargs : dict
+            All extra keyword arguements are passed to
+            :py:meth:`~._signals.signal1d.Signal1D.plot`
         """
 
         # If new coordinates are assigned
