@@ -509,7 +509,7 @@ def plot_images(images,
         image.
         If any of the signal shapes is not suitable, a ValueError will be
         raised.
-    cmap : {matplotlib colormap, list, ``'mpl_colors'``}, optional
+    cmap : matplotlib colormap, list, 'mpl_colors', optional
         The colormap used for the images, by default uses the setting
         ``color map signal`` from the plot preferences. A list of colormaps can
         also be provided, and the images will cycle through them. Optionally,
@@ -522,7 +522,7 @@ def plot_images(images,
         If True, set nans to zero for plotting.
     per_row : int, optional
         The number of plots in each row.
-    label : {None, str, list of str}, optional
+    label : None, str, list of str, optional
         Control the title labeling of the plotted images.
         If None, no titles will be shown.
         If 'auto' (default), function will try to determine suitable titles
@@ -546,30 +546,30 @@ def plot_images(images,
         this parameter will override the automatically determined title.
     suptitle_fontsize : int, optional
         Font size to use for super title at top of figure.
-    colorbar : {'multi', None, 'single'}
+    colorbar : 'multi', None, 'single'
         Controls the type of colorbars that are plotted.
         If None, no colorbar is plotted.
         If 'multi' (default), individual colorbars are plotted for each
         (non-RGB) image
         If 'single', all (non-RGB) images are plotted on the same scale,
         and one colorbar is shown for all
-    centre_colormap : {"auto", True, False}
+    centre_colormap : 'auto', True, False
         If True, the centre of the color scheme is set to zero. This is
         particularly useful when using diverging color schemes. If "auto"
         (default), diverging color schemes are automatically centred.
-    scalebar : {None, 'all', list of ints}, optional
+    scalebar : None, 'all', list of ints, optional
         If None (or False), no scalebars will be added to the images.
         If 'all', scalebars will be added to all images.
         If list of ints, scalebars will be added to each image specified.
     scalebar_color : str, optional
         A valid MPL color string; will be used as the scalebar color.
-    axes_decor : {'all', 'ticks', 'off', None}, optional
+    axes_decor : 'all', 'ticks', 'off', None, optional
         Controls how the axes are displayed on each image; default is 'all'.
         If 'all', both ticks and axis labels will be shown.
         If 'ticks', no axis labels will be shown, but ticks/labels will.
         If 'off', all decorations and frame will be disabled.
         If None, no axis decorations will be shown, but ticks/frame will.
-    padding : {None, dict}, optional
+    padding : None, dict, optional
         This parameter controls the spacing between images.
         If None, default options will be used.
         Otherwise, supply a dictionary with the spacing options as
@@ -583,7 +583,7 @@ def plot_images(images,
         figure using matplotlib's tight_layout.
         If false, repositioning images inside the figure will be left as
         an exercise for the user.
-    aspect : {str, numeric}, optional
+    aspect : str, float, int, optional
         If 'auto', aspect ratio is auto determined, subject to min_asp.
         If 'square', image will be forced onto square display.
         If 'equal', aspect ratio of 1 will be enforced.
@@ -610,26 +610,23 @@ def plot_images(images,
         If None, use the percentiles value set in the preferences.
         If float or integer, keep this value as bounds.
         Note: vmin is ignored when overlaying images.
-    overlay : boolean, optional
+    overlay : bool, optional
         If True, overlays the images with different colors rather than plotting
         each image as a subplot.
-    colors : list of char or hex string, optional
-	    `colors` should be a list compromising either characters or hex
-		strings, corresponding to colors acceptable to matplotlib. Details
-		can be found at https://matplotlib.org/2.0.2/api/colors_api.html.
-        If 'auto', colors will be taken from matplotlib.colors.BASE_COLORS.
+    colors : 'auto', list of char, list of hex str, optional
+        If list, it must contains colors acceptable to matplotlib [1]_.
+        If ``'auto'``, colors will be taken from matplotlib.colors.BASE_COLORS.
     alphas : float or list of floats, optional
-        `alphas` should be a single float value or a list of floats
-        corresponding to the alpha value of each color.
+        Float value or a list of floats corresponding to the alpha value of
+        each color.
     legend_picking: bool, optional
         If True (default), a spectrum can be toggled on and off by clicking on
         the legended line.
-    legend_loc : {str, int}, optional
-        This parameter controls where the legend is placed on the figure;
-        see the pyplot.legend docstring for valid values
+    legend_loc : str, int, optional
+        This parameter controls where the legend is placed on the figure
+        see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
     pixel_size_factor : int or float, optional
-        Default value is 1.
-        Sets the size of the figure when plotting an overlay image. The higher
+        Default value is 1. Sets the size of the figure when plotting an overlay image. The higher
         the number the larger the figure and therefore a greater number of
         pixels are used. This value will be ignored if a Figure is provided.
     **kwargs, optional
@@ -645,6 +642,10 @@ def plot_images(images,
     plot_spectra : Plotting of multiple spectra
     plot_signals : Plotting of multiple signals
     plot_histograms : Compare signal histograms
+
+    References
+    ----------
+    .. [1] Matplotlib colors API: https://matplotlib.org/stable/api/colors_api.html.
 
     Notes
     -----

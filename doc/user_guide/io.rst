@@ -1589,7 +1589,7 @@ calibration, it is required to load the ``asw`` file, which will load all others
 files automatically.
 
 Extra loading arguments
-+++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^
 
 - ``rebin_energy`` : Factor used to rebin the energy dimension. It must be a
   multiple of the number of channels, typically 4096. (default 1)
