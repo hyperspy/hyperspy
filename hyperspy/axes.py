@@ -599,6 +599,7 @@ class DataAxis(t.HasTraits, UnitConversion):
 
         When a value is out of the axis limits, the endpoint is used instead.
         `v1` must be preceding `v2` in the axis values
+
           - if the axis scale is positive, it means v1 < v2
           - if the axis scale is negative, it means v1 > v2
 
@@ -717,7 +718,6 @@ class AxesManager(t.HasTraits):
 
     Attributes
     ----------
-
     coordinates : tuple
         Get and set the current coordinates if the navigation dimension
         is not 0. If the navigation dimension is 0 it raises
@@ -1455,27 +1455,12 @@ class AxesManager(t.HasTraits):
 
     @property
     def coordinates(self):
-        """Get the coordinates of the navigation axes.
-
-        Returns
-        -------
-        list
-
-        """
+        # See class docstring
         return tuple([axis.value for axis in self.navigation_axes])
 
     @coordinates.setter
     def coordinates(self, coordinates):
-        """Set the coordinates of the navigation axes.
-
-        Parameters
-        ----------
-        coordinates : tuple
-            The len of the tuple must coincide with the navigation
-            dimension
-
-        """
-
+        # See class docstring
         if len(coordinates) != self.navigation_dimension:
             raise AttributeError(
                 "The number of coordinates must be equal to the "
@@ -1492,27 +1477,12 @@ class AxesManager(t.HasTraits):
 
     @property
     def indices(self):
-        """Get the index of the navigation axes.
-
-        Returns
-        -------
-        list
-
-        """
+        # See class docstring
         return tuple([axis.index for axis in self.navigation_axes])
 
     @indices.setter
     def indices(self, indices):
-        """Set the index of the navigation axes.
-
-        Parameters
-        ----------
-        indices : tuple
-            The len of the tuple must coincide with the navigation
-            dimension
-
-        """
-
+        # See class docstring
         if len(indices) != self.navigation_dimension:
             raise AttributeError(
                 "The number of indices must be equal to the "

@@ -18,7 +18,7 @@
 
 """Registry of user interface widgets.
 
-Format {"tool_key" : {"toolkit" : <function(obj, display, **kwargs)>}}
+Format {"tool_key" : {"toolkit" : <function(obj, display, \*\*kwargs)>}}
 
 The ``tool_key`` is defined by the "model function" to which the widget provides
 and user interface. That function gets the widget function from this registry

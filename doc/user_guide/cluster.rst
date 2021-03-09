@@ -1,4 +1,3 @@
-.. _cluster_analysis-label:
 
 Cluster analysis
 ================
@@ -8,29 +7,29 @@ Cluster analysis
 Introduction
 ------------
 
-`Cluster analysis <https://en.wikipedia.org/wiki/Cluster_analysis>`_ or clustering 
-is the task of grouping a set of measurements such that measurements in the same 
-group (called a cluster) are more similar (in some sense) to each other than to 
+`Cluster analysis <https://en.wikipedia.org/wiki/Cluster_analysis>`__ or clustering
+is the task of grouping a set of measurements such that measurements in the same
+group (called a cluster) are more similar (in some sense) to each other than to
 those in other groups (clusters).
 A HyperSpy signal can represent a number of large arrays of different measurements
 which can represent spectra, images or sets of paramaters.
-Identifying and extracting trends from large datasets is often difficult and 
-decomposition methods, blind source separation and cluster analysis play an important role in this process. 
+Identifying and extracting trends from large datasets is often difficult and
+decomposition methods, blind source separation and cluster analysis play an important role in this process.
 
-Cluster analysis, in essence, compares the "distances" (or similar metric) 
-between different sets of measurements and groups those that are closest together.   
-The features it groups can be raw data points, for example, comparing for 
-every navigation dimension all points of a spectrum. However, if the 
-dataset is large, the process of clustering can be computationally intensive so 
+Cluster analysis, in essence, compares the "distances" (or similar metric)
+between different sets of measurements and groups those that are closest together.
+The features it groups can be raw data points, for example, comparing for
+every navigation dimension all points of a spectrum. However, if the
+dataset is large, the process of clustering can be computationally intensive so
 clustering is more commonly used on an extracted set of features or parameters.
 For example, extraction of two peak positions of interest via a fitting process
 rather than clustering all spectra points.
 
 In favourable cases, matrix decomposition and related methods can decompose the
 data into a (ideally small) set of significant loadings and factors.
-The factors capture a core representation of the features in the data and the loadings 
-provide the mixing ratios of these factors that best describe the original data. 
-Overall, this usually represents a much smaller data volume compared to the original data 
+The factors capture a core representation of the features in the data and the loadings
+provide the mixing ratios of these factors that best describe the original data.
+Overall, this usually represents a much smaller data volume compared to the original data
 and can helps to identify correlations.
 
 A detailed description of the application of cluster analysis in x-ray
@@ -138,7 +137,7 @@ Cluster signals
 
 In HyperSpy *cluster signals* are signals that somehow represent their clusters.
 The concept is ill-defined, since cluster algorithms only assign data points to
-clusters. HyperSpy computers 2 cluster signals, 
+clusters. HyperSpy computers 2 cluster signals,
 
 1. ``cluster_sum_signals``, which are the sum of all the cluster signals
    that belong to each cluster.
@@ -163,26 +162,26 @@ clusters:
 
 Clustering with user defined algorithms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-User developed preprocessing or cluster algorithms can be 
+User developed preprocessing or cluster algorithms can be
 used in place of the sklearn methods.
 A preprocessing object needs a ``fit_transform`` which
-appropriately scales the data. 
-The example below defines a preprocessing class which normalizes 
-the data then applies a square root to enhances weaker features. 
+appropriately scales the data.
+The example below defines a preprocessing class which normalizes
+the data then applies a square root to enhances weaker features.
 
 .. code-block:: python
 
     >>> class PowerScaling(object):
-    >>>     
+    >>>
     >>>     def __init__(self,power=0.5):
     >>>         self.power = power
-    >>>         
+    >>>
     >>>     def fit_transform(self,data):
     >>>         norm = np.amax(data,axis=1)
     >>>         scaled_data = data/norm[:,None]
     >>>         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
     >>>         scaled_data = scaled_data ** self.power
-    >>>         return scaled_data 
+    >>>         return scaled_data
 
 The PowerScaling class can then be passed to the cluster_analysis method for use.
 
@@ -197,15 +196,15 @@ An example template would be:
 
 .. code-block:: python
 
-    
+
     >>> class MyClustering(object):
-    >>>     
+    >>>
     >>>     def __init__(self):
     >>>         self.labels_ = None
-    >>>         
+    >>>
     >>>     def fit_(self,X):
-    >>>         self.labels_ = do_something(X)       
-    
+    >>>         self.labels_ = do_something(X)
+
 
 
 Examples
@@ -356,7 +355,7 @@ well-defined the clustering is.
 
 .. image:: images/clustering_Gap.png
 
-The optimal number of clusters can be set or accessed from the learning 
+The optimal number of clusters can be set or accessed from the learning
 results
 
 .. code-block:: python

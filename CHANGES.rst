@@ -50,9 +50,11 @@ RELEASE_next_patch (Unreleased)
 * Fix ``iterpath`` VisibleDeprecationWarning when using ``fit_component`` (`#2654 <https://github.com/hyperspy/hyperspy/pull/2654>`_)
 * Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 * Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
+* Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
+* Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
 * Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
 * Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
-* Plot scalebar when the axis scale have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
+* Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
 
 Changelog
 *********
@@ -60,6 +62,7 @@ Changelog
 We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
+
 
 .. _changes_1.6.1:
 
@@ -680,7 +683,8 @@ Model
 * :ref:`SAMFire-label`.
 * Store :ref:`models in hdf5 files <storing_models-label>`.
 * Add :ref:`fancy indexing <model_indexing-label>` to `Model`.
-* :ref:`Two-dimensional model fitting <2D_model-label>`.
+* :ref:Two-dimensional model fitting (:py:class:`~.models.model2d.Model2D`).
+
 
 EDS
 ^^^
@@ -959,7 +963,7 @@ Core
 
 * New syntax to index the :py:class:`~.axes.AxesManager`.
 * New Signal methods to transform between Signal subclasses. More information
-  :ref:`here <transforming.signal>`.
+  :ref:`here <transforming_signal-label>`.
 
   + :py:meth:`~.signal.Signal.set_signal_type`
   + :py:meth:`~.signal.Signal.set_signal_origin`
