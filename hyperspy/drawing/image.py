@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -69,7 +69,7 @@ class ImagePlot(BlittedFigure):
 
         # Attribute matching the arguments of
         # `hyperspy._signal.signal2d.signal2D.plot`
-        self.autoscale = "z"
+        self.autoscale = "v"
         self.saturated_pixels = None
         self.norm = "auto"
         self.vmin = None
@@ -201,7 +201,8 @@ class ImagePlot(BlittedFigure):
         xaxis = self.xaxis
         yaxis = self.yaxis
 
-        if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
+        if ((xaxis.units == yaxis.units) and
+                (abs(xaxis.scale) == abs(yaxis.scale))):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
@@ -557,8 +558,7 @@ class ImagePlot(BlittedFigure):
             else:
                 self.figure.canvas.draw_idle()
         else:  # no signal have been drawn yet
-            new_args = {'interpolation': 'nearest',
-                        'extent': self._extent,
+            new_args = {'extent': self._extent,
                         'aspect': self._aspect,
                         'animated': self.figure.canvas.supports_blit,
                         }

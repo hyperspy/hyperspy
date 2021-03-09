@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -178,36 +178,17 @@ class BaseModel(list):
 
     signal : BaseSignal instance
         It contains the data to fit.
-    chisq : A BaseSignal of floats
+    chisq : :py:class:`~.signal.BaseSignal` of float
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A BaseSignal of integers
+    dof : :py:class:`~.signal.BaseSignal` of int
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : BaseSignal instance
-        Reduced chi-squared.
-    components : `ModelComponents` instance
+    components : :py:class:`~.model.ModelComponents` instance
         The components of the model are attributes of this class. This provides
         a convenient way to access the model components when working in IPython
         as it enables tab completion.
 
     Methods
     -------
-
-    append
-        Append one component to the model.
-    extend
-        Append multiple components to the model.
-    remove
-        Remove component from model.
-    as_signal
-        Generate a BaseSignal instance (possible multidimensional)
-        from the model.
-    store_current_values
-        Store the value of the parameters at the current position.
-    fetch_stored_values
-        Fetch stored values of the parameters.
-    update_plot
-        Force a plot update. (In most cases the plot should update
-        automatically.)
     set_signal_range, remove_signal range, reset_signal_range,
     add signal_range.
         Customize the signal range to fit.
@@ -223,12 +204,6 @@ class BaseModel(list):
     set_current_values_to
         Set the current value of all the parameters of the given component as
         the value for all the dataset.
-    export_results
-        Save the value of the parameters in separate files.
-    plot_results
-        Plot the value of all parameters at all positions.
-    print_current_values
-        Print the value of the parameters at the current position.
     enable_adjust_position, disable_adjust_position
         Enable/disable interactive adjustment of the position of the components
         that have a well defined position. (Use after `plot`).
@@ -237,15 +212,9 @@ class BaseModel(list):
         set interactively.
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
-    set_parameters_value
-        Set the value of a parameter in components in a model to a specified
-        value.
-    as_dictionary
-        Exports the model to a dictionary that can be saved in a file.
 
     See also
     --------
-
     :py:class:`~hyperspy.models.model1d.Model1D`
     :py:class:`~hyperspy.models.model2d.Model2D`
 
@@ -312,10 +281,10 @@ class BaseModel(list):
 
             * _whitelist: a dictionary with keys used as references of save
               attributes, for more information, see
-              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+              :py:func:`~.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
               the model (see
-              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              :py:meth:`~.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
         """
@@ -404,11 +373,17 @@ class BaseModel(list):
         thing.model = self
         setattr(self.components, slugify(name_string,
                                          valid_variable_name=True), thing)
-        if self._plot_active is True:
+        if self._plot_active:
             self._connect_parameters2update_plot(components=[thing])
-        self.update_plot(render_figure=True, update_ylimits=True)
+            self.signal._plot.signal_plot.update()
 
     def extend(self, iterable):
+        """Append multiple components to the model.
+
+        Parameters
+        ----------
+        iterable: iterable of `Component` instances.
+        """
         for object in iterable:
             self.append(object)
 
@@ -453,7 +428,7 @@ class BaseModel(list):
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:
-            self.update_plot(render_figure=True, update_ylimits=False)
+            self.signal._plot.signal_plot.update()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, **kwargs):
@@ -606,9 +581,10 @@ class BaseModel(list):
                 if self._model_line is not None:
                     self._model_line.update(render_figure=render_figure,
                                             update_ylimits=update_ylimits)
-                for component in [component for component in self if
-                                  component.active is True]:
-                    self._update_component_line(component)
+                if self._plot_components:
+                    for component in [component for component in self if
+                                      component.active is True]:
+                        self._update_component_line(component)
             except BaseException:
                 self._disconnect_parameters2update_plot(components=self)
 
@@ -627,11 +603,14 @@ class BaseModel(list):
             f = self._model_line._auto_update_line
             for c in self:
                 es.add(c.events, f)
+                if c._position:
+                    es.add(c._position.events)
                 for p in c.parameters:
                     es.add(p.events, f)
+
         for c in self:
-            if hasattr(c, '_model_plot_line'):
-                f = c._model_plot_line._auto_update_line
+            if hasattr(c, '_component_line'):
+                f = c._component_line._auto_update_line
                 es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
@@ -643,6 +622,11 @@ class BaseModel(list):
         self._suspend_update = old
 
         if update_on_resume is True:
+            for c in self:
+                position = c._position
+                if position:
+                    position.events.value_changed.trigger(
+                        obj=position, value=position.value)
             self.update_plot(render_figure=True, update_ylimits=False)
 
     def _close_plot(self):
@@ -651,58 +635,20 @@ class BaseModel(list):
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    @staticmethod
-    def _connect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
-            component.events.active_changed.connect(f, [])
-            for parameter in component.parameters:
-                parameter.events.value_changed.connect(f, [])
-
-    @staticmethod
-    def _disconnect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
-            component.events.active_changed.disconnect(f)
-            for parameter in component.parameters:
-                parameter.events.value_changed.disconnect(f)
-
-    def _connect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._connect_component_line(component)
-
-    def _disconnect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._disconnect_component_line(component)
-
-    @staticmethod
-    def _update_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update(render_figure=False,
-                                              update_ylimits=False)
-
-    def _disable_plot_component(self, component):
-        self._disconnect_component_line(component)
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.close()
-            del component._model_plot_line
-        self._plot_components = False
-
     def enable_plot_components(self):
         if self._plot is None or self._plot_components:
             return
-        self._plot_components = True
         for component in [component for component in self if
                           component.active]:
             self._plot_component(component)
+        self._plot_components = True
 
     def disable_plot_components(self):
         if self._plot is None:
             return
-        for component in self:
-            self._disable_plot_component(component)
+        if self._plot_components:
+            for component in self:
+                self._disable_plot_component(component)
         self._plot_components = False
 
     def _set_p0(self):
@@ -845,7 +791,7 @@ class BaseModel(list):
             if component.active:
                 component.store_current_parameters_in_map()
 
-    def fetch_stored_values(self, only_fixed=False):
+    def fetch_stored_values(self, only_fixed=False, update_on_resume=True):
         """Fetch the value of the parameters that has been previously stored.
 
         Parameters
@@ -853,15 +799,24 @@ class BaseModel(list):
         only_fixed : bool, optional
             If True, only the fixed parameters are fetched.
 
+        update_on_resume : bool, optional
+            If True, update the model plot after values are updated.
+
         See Also
         --------
         store_current_values
 
         """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
-        with cm(update_on_resume=True):
+        with cm(update_on_resume=update_on_resume):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
+
+    def _on_navigating(self):
+        """Same as fetch_stored_values but without update_on_resume since
+        the model plot is updated in the figure update callback.
+        """
+        self.fetch_stored_values(only_fixed=False, update_on_resume=False)
 
     def fetch_values_from_array(self, array, array_std=None):
         """Fetch the parameter values from the given array, optionally also
@@ -969,7 +924,8 @@ class BaseModel(list):
 
     @property
     def red_chisq(self):
-        """Reduced chi-squared. Calculated from self.chisq and self.dof
+        """:py:class:`~.signal.BaseSignal`: Reduced chi-squared.
+        Calculated from ``self.chisq`` and ``self.dof``.
         """
         tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
         tmp.metadata.General.title = self.signal.metadata.General.title + \
@@ -1261,13 +1217,12 @@ class BaseModel(list):
                 # differentiation, but for consistency across all three
                 # we enforce estimation below, and raise an error here.
                 raise ValueError(
-                    f"`optimizer='{optimizer}'` does not support `grad=None`. "
-                    f"Please use `grad='auto'` instead."
+                    f"`optimizer='{optimizer}'` does not support `grad=None`."
                 )
         else:
             raise ValueError(
-                "`grad` must be one of ['auto', 'analytical', "
-                f"callable, None], not '{grad}'"
+                "`grad` must be one of ['analytical', callable, None], not "
+                f"'{grad}'."
             )
 
         with cm(update_on_resume=True):
@@ -1631,6 +1586,9 @@ class BaseModel(list):
 
                             if autosave and i % autosave_every == 0:
                                 self.save_parameters2file(autosave_fn)
+            # Trigger the indices_changed event to update to current indices,
+            # since the callback was suppressed
+            self.axes_manager.events.indices_changed.trigger(self.axes_manager)
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")

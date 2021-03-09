@@ -1,12 +1,79 @@
 What's new
 **********
 
+..
+  Add a single entry in the corresponding section below.
+  See https://keepachangelog.com for details
+
+RELEASE_next_minor (Unreleased)
++++++++++++++++++++++++++++++++
+
+New
+---
+* Add `filter_zero_loss_peak` argument to the `spikes_removal_tool` method (`#1412 <https://github.com/hyperspy/hyperspy/pull/1412>`_)
+* Add `vacuum_mask` method for EELSSpectrum (`#2183 <https://github.com/hyperspy/hyperspy/pull/2183>`_)
+* Plot overlayed images (`#2599 <https://github.com/hyperspy/hyperspy/pull/2599>`_)
+* Support for reading JEOL EDS data (`#2488 <https://github.com/hyperspy/hyperspy/pull/2488>`_, 
+  `#2607 <https://github.com/hyperspy/hyperspy/pull/2607>`_, `#2620 <https://github.com/hyperspy/hyperspy/pull/2620>`_)
+
+Enhancements
+------------
+
+* Support for relative slicing (`#2386 <https://github.com/hyperspy/hyperspy/pull/2386>`_)
+* Read Cathodoluminescence metadata (`#2590 <https://github.com/hyperspy/hyperspy/pull/2590>`_)
+* Document reading Attolight data with the sur/pro format reader. (`#2559 <https://github.com/hyperspy/hyperspy/pull/2559/files>`_)
+* mpfit cleanup (`#2494 <https://github.com/hyperspy/hyperspy/pull/2494>`_)
+
+API changes
+-----------
+
+
+RELEASE_next_patch (Unreleased)
++++++++++++++++++++++++++++++++
+
+* Widgets plotting improvement and add ``pick_tolerance`` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
+* Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Pass keyword argument to the image IO plugins (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Drop support for numpy<1.16, in line with NEP 29 and fix protochip reader for numpy 1.20 (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
+* Run test suite against upstream dependencies (numpy, scipy, scikit-learn and scikit-image) (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
+* Improve error message when file not found (`#2597 <https://github.com/hyperspy/hyperspy/pull/2597>`_)
+* Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
+* Fix disconnect event when closing navigator only plot (fixes `#996 <https://github.com/hyperspy/hyperspy/issues/996>`_), (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
+* Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
+* Use 'dask_auto' when rechunk=True in ``change_dtype`` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
+* Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
+* Fix incorrect chunksize when saving EMD NCEM file and specifying chunks (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
+* Fix ``find_peaks`` GUIs call with laplacian/difference of gaussian methods (`#2622 <https://github.com/hyperspy/hyperspy/issues/2622>`_ and `#2647 <https://github.com/hyperspy/hyperspy/pull/2647>`_)
+* Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
+* Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
+* Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
+* Fix ``iterpath`` VisibleDeprecationWarning when using ``fit_component`` (`#2654 <https://github.com/hyperspy/hyperspy/pull/2654>`_)
+* Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
+* Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
+* Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
+* Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
+* Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
+* Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
+* Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
+
+Changelog
+*********
+
 We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
 
-Current Version
-===============
+
+.. _changes_1.6.1:
+
+v1.6.1
+++++++
+
+This is a maintenance release that adds compatibility with h5py 3.0 and includes
+numerous bug fixes and enhancements.
+See `the issue tracker
+<https://github.com/hyperspy/hyperspy/milestone/41?closed=1>`__
+for details.
 
 .. _changes_1.6:
 
@@ -32,7 +99,7 @@ NEW
 * Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
-  * :py:class:`~._components.split_pvoigt.SplitVoigt`
+  * :py:class:`~._components.split_voigt.SplitVoigt`
 * :ref:`EDS absorption correction <eds_absorption-label>`.
 * :ref:`Argand diagram for complex signals <complex.argand>`.
 * :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
@@ -175,14 +242,6 @@ API changes
     Use ``var_func`` instead.
 
 
-
-
-Changelog
-*********
-
-Previous Versions
-=================
-
 .. _changes_1.5.2:
 
 
@@ -203,6 +262,7 @@ v1.5.1
 This is a maintenance release that fixes some regressions introduced in v1.5.
 Follow the following links for details on all the `bugs fixed
 <https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.1>`__.
+
 
 .. _changes_1.5:
 
@@ -623,7 +683,8 @@ Model
 * :ref:`SAMFire-label`.
 * Store :ref:`models in hdf5 files <storing_models-label>`.
 * Add :ref:`fancy indexing <model_indexing-label>` to `Model`.
-* :ref:`Two-dimensional model fitting <2D_model-label>`.
+* :ref:Two-dimensional model fitting (:py:class:`~.models.model2d.Model2D`).
+
 
 EDS
 ^^^
@@ -902,7 +963,7 @@ Core
 
 * New syntax to index the :py:class:`~.axes.AxesManager`.
 * New Signal methods to transform between Signal subclasses. More information
-  :ref:`here <transforming.signal>`.
+  :ref:`here <transforming_signal-label>`.
 
   + :py:meth:`~.signal.Signal.set_signal_type`
   + :py:meth:`~.signal.Signal.set_signal_origin`

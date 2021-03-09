@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -27,13 +27,14 @@ from collections.abc import Iterable
 import unicodedata
 from contextlib import contextmanager
 import importlib
+import logging
 
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -139,7 +140,7 @@ def str2num(string, **kargs):
 
 
 def parse_quantity(quantity, opening='(', closing=')'):
-    """Parse quantity of the signal outputting quantity and units separately. 
+    """Parse quantity of the signal outputting quantity and units separately.
     It looks for the last matching opening and closing separator.
 
     Parameters
@@ -361,14 +362,14 @@ class DictionaryTreeBrowser(object):
         from hyperspy.defaults_parser import preferences
 
         string = '' # Final return string
-        
+
         for key_, value in iter(sorted(self.__dict__.items())):
             if key_.startswith("_"): # Skip any private attributes
                 continue
             if not isinstance(key_, types.MethodType): # If it isn't a method, then continue
                 key = ensure_unicode(value['key'])
                 value = value['_dtb_value_']
-                
+
                 # dtb_expand_structures is a setting that sets whether to fully expand long strings
                 if preferences.General.dtb_expand_structures:
                     if isinstance(value, list) or isinstance(value, tuple):
@@ -404,7 +405,7 @@ class DictionaryTreeBrowser(object):
 
     def __repr__(self):
         return self._get_print_items()
-    
+
     def _repr_html_(self):
         return self._get_html_print_items()
 
@@ -711,7 +712,7 @@ def add_key_value(key, value):
 
 
 def swapelem(obj, i, j):
-    """Swaps element having index i with element having index j in object obj 
+    """Swaps element having index i with element having index j in object obj
     IN PLACE.
 
     Example
@@ -863,7 +864,8 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kwargs):
+def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
+          show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -871,6 +873,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kw
     Parameters
     ----------
     signal_list : list of BaseSignal instances
+        List of signals to stack.
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
@@ -882,14 +885,14 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kw
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    lazy: {bool, None}
-        Returns a LazySignal if True. If None, only returns lazy rezult if at
+    lazy : {bool, None}
+        Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
+    %s
 
     Returns
     -------
-    signal : BaseSignal instance (or subclass, determined by the objects in
-        signal list)
+    signal : BaseSignal instance
 
     Examples
     --------
@@ -936,6 +939,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kw
 
     if lazy is None:
         lazy = any(_s._lazy for _s in signal_list)
+
     if not isinstance(lazy, bool):
         raise ValueError("'lazy' argument has to be None, True or False")
 
@@ -1012,9 +1016,12 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None, **kw
     if lazy:
         signal = signal.as_lazy()
     else:
-        signal.compute(False)
+        signal.compute(False, show_progressbar=show_progressbar)
 
     return signal
+
+stack.__doc__ %= (SHOW_PROGRESSBAR_ARG)
+
 
 def shorten_name(name, req_l):
     if len(name) > req_l:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,26 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
 # NOT to be confused with the FEI EMD format which was developed later.
 
-
-import gc
-import os.path
-import shutil
-import tempfile
+import dask.array as da
 from datetime import datetime
-from os import remove
-
+from dateutil import tz
+import gc
 import h5py
 import numpy as np
+import os
 import pytest
-from dateutil import tz
+import tempfile
+import shutil
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-from hyperspy.signals import BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D
+from hyperspy.signals import (BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D,
+                              ComplexSignal2D)
 
 my_path = os.path.dirname(__file__)
 
@@ -217,7 +217,6 @@ class TestReadSeveralDatasets:
     def test_load_file(self):
         s = load(self.hdf5_dataset_path)
         assert len(s) == len(self.group_path_list)
-        title_list = [s_temp.metadata.General.title for s_temp in s]
         for _s, path in zip(s, self.group_path_list):
             assert _s.metadata.General.title in path
 
@@ -274,7 +273,32 @@ class TestCaseSaveAndRead():
         assert isinstance(signal, BaseSignal)
 
     def teardown_method(self, method):
-        remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+        os.remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+
+
+def test_chunking_saving_lazy():
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.emd')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.emd')
+        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specify.emd')
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (13, 25, 13)
+    s1.close_file()
+    s2.close_file()
+
+    # Specify chunks
+    chunks = (50, 20, 20)
+    s.save(filename3, chunks=chunks)
+    s3 = load(filename3, lazy=True)
+    assert tuple([c[0] for c in s3.data.chunks]) == chunks
 
 
 def _generate_parameters():
@@ -407,6 +431,44 @@ class TestFeiEMD():
         assert signal0.axes_manager[1].name == 'y'
         assert signal0.axes_manager[1].size == 50
         assert signal0.axes_manager[1].units == 'nm'
+
+        s = load(os.path.join(
+            self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
+            lazy=lazy,
+            load_SI_image_stack=True)
+        signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+
+        signal0 = s[0]
+        if lazy:
+            assert signal0._lazy
+            signal0.compute(close_file=True)
+        assert isinstance(signal0, Signal2D)
+        assert signal0.axes_manager[0].name == 'Time'
+        assert signal0.axes_manager[0].size == 10
+        assert signal0.axes_manager[0].units == 's'
+        assert signal0.axes_manager[1].name == 'x'
+        assert signal0.axes_manager[1].size == 10
+        assert signal0.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal0.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal0.axes_manager[2].name == 'y'
+        assert signal0.axes_manager[2].size == 50
+        assert signal0.axes_manager[2].units == 'nm'
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
@@ -620,3 +682,40 @@ class TestFeiEMD():
         plt.plot(frame_offsets, time_data)
         plt.xlabel('Frame offset')
         plt.xlabel('Loading time (s)')
+
+
+def test_fei_complex_loading():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'))
+    assert isinstance(signal, ComplexSignal2D)
+
+def test_fei_complex_loading_lazy():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'), lazy=True)
+    assert isinstance(signal, ComplexSignal2D)
+
+def test_fei_no_frametime():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_tem_stack.emd'))
+    assert isinstance(signal, Signal2D)
+    assert signal.data.shape == (2, 3, 3)
+    assert signal.axes_manager["Time"].scale == 0.8
+
+
+def test_fei_dpc_loading():
+    signals = load(os.path.join(my_path, 'emd_files', 'fei_example_dpc_titles.emd'))
+    assert signals[0].metadata.General.title == "B-D"
+    assert signals[1].metadata.General.title == "DPC"
+    assert signals[2].metadata.General.title == "iDPC"
+    assert signals[3].metadata.General.title == "DF4-C"
+    assert signals[4].metadata.General.title == "DF4-B"
+    assert signals[5].metadata.General.title == "DF4-A"
+    assert signals[6].metadata.General.title == "A-C"
+    assert signals[7].metadata.General.title == "DF4-D"
+    assert signals[8].metadata.General.title == "Filtered iDPC"
+    assert isinstance(signals[0], Signal2D)
+    assert isinstance(signals[1], ComplexSignal2D)
+    assert isinstance(signals[2], Signal2D)
+    assert isinstance(signals[3], Signal2D)
+    assert isinstance(signals[4], Signal2D)
+    assert isinstance(signals[5], Signal2D)
+    assert isinstance(signals[6], Signal2D)
+    assert isinstance(signals[7], Signal2D)
+    assert isinstance(signals[8], Signal2D)

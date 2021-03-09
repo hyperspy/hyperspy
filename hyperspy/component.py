@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -78,7 +78,7 @@ class Parameter(t.HasTraits):
         parsed using sympy, so permitted values are any valid sympy expressions
         of one variable. If the function is invertible the twin inverse function
         is set automatically.
-    twin_inverse_function : str
+    twin_inverse_function_expr : str
         Expression of the ``twin_inverse_function`` that enables setting the
         value of the twin parameter. If ``twin`` is not
         ``None``, its value is set to the output of calling the
@@ -106,12 +106,6 @@ class Parameter(t.HasTraits):
 
     Methods
     -------
-    as_signal(field = 'values')
-        Get a parameter map as a signal object
-    plot()
-        Plots the value of the Parameter at all locations.
-    export(folder=None, name=None, format=None, save_std=False)
-        Saves the value of the parameter map to the specified format
     connect, disconnect(function)
         Call the functions connected when the value attribute changes.
 
@@ -1127,7 +1121,7 @@ class Component(t.HasTraits):
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary. For more information on method 
+        """Returns component as a dictionary. For more information on method
         and conventions, see
         py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
 
@@ -1171,7 +1165,7 @@ class Component(t.HasTraits):
             * _id_name: _id_name of the original parameter, used to create the
               dictionary. Has to match with the self._id_name
             * parameters: a list of dictionaries, one per parameter of the
-              component (see 
+              component (see
               :py:meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * _whitelist: a dictionary, which keys are used as keywords to
@@ -1188,7 +1182,7 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
-            if (self._id_name == "Polynomial" and 
+            if (self._id_name == "Polynomial" and
                     LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
                 # in HyperSpy 2.0 the polynomial definition changed
                 from hyperspy._components.polynomial import convert_to_polynomial

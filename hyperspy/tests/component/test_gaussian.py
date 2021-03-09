@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -58,6 +58,23 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
                                   only_current=only_current)
     assert g2.binned == binned
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor)
+    assert abs(g2.centre.value - g1.centre.value) <= 1e-3
+    assert abs(g2.sigma.value - g1.sigma.value) <= 0.1
+
+
+def test_estimate_parameters_negative_scale():
+    s = Signal1D(np.empty((100,)))
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = -1
+    axis.offset = 100
+    g1 = Gaussian(50015.156, 15/sigma2fwhm, 50)
+    s.data = g1.function(axis.axis)
+
+    g2 = Gaussian()
+    with pytest.raises(ValueError):
+        g2.estimate_parameters(s, 40, 60)
+    assert g2.estimate_parameters(s, 90, 10)
+    np.testing.assert_allclose(g1.A.value, g2.A.value)
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
     assert abs(g2.sigma.value - g1.sigma.value) <= 0.1
 

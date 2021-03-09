@@ -1,6 +1,6 @@
 """Nexus file reading, writing and inspection."""
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -100,7 +100,7 @@ def _parse_from_file(value, lazy=False):
         toreturn = toreturn[0]
     if isinstance(toreturn, bytes):
         toreturn = _byte_to_string(toreturn)
-    if isinstance(toreturn, (np.int, np.float)):
+    if isinstance(toreturn, (int, float)):
         toreturn = toreturn
     if isinstance(toreturn, (np.ndarray)) and toreturn.dtype.char == "U":
         toreturn = toreturn.astype("S")
@@ -128,11 +128,11 @@ def _parse_to_file(value):
         toreturn = value
     if isinstance(totest, (list, tuple)):
         totest = np.array(value)
-    if isinstance(totest, (np.ndarray)) and totest.dtype.char == "U":
+    if isinstance(totest, np.ndarray) and totest.dtype.char == "U":
         toreturn = np.array(totest).astype("S")
     elif isinstance(totest, (np.ndarray, da.Array)):
         toreturn = totest
-    if isinstance(totest, (str)):
+    if isinstance(totest, str):
         toreturn = totest.encode("utf-8")
         toreturn = np.string_(toreturn)
     return toreturn
@@ -449,12 +449,12 @@ def file_reader(filename, lazy=False, dataset_keys=None,
     mapping = kwds.get('mapping', {})
     original_metadata = {}
     learning = {}
-    fin = h5py.File(filename, "r+" if lazy else "r")
+    fin = h5py.File(filename, "r")
     signal_dict_list = []
 
     dataset_keys = _check_search_keys(dataset_keys)
     metadata_keys = _check_search_keys(metadata_keys)
-    original_metadata = _load_metadata(fin)
+    original_metadata = _load_metadata(fin, lazy=lazy)
     # some default values...
     nexus_data_paths = []
     hdf_data_paths = []
@@ -554,8 +554,8 @@ def file_reader(filename, lazy=False, dataset_keys=None,
 def _is_linear_axis(data):
     """Check if the data is linearly incrementing.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     data : dask or numpy array
 
     Returns
@@ -572,8 +572,8 @@ def _is_linear_axis(data):
 def _is_numeric_data(data):
     """Check that data contains numeric data.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     data : dask or numpy array
 
     Returns
@@ -592,8 +592,8 @@ def _is_numeric_data(data):
 def _is_int(s):
     """Check that s in an integer.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     s : python object to test
 
     Returns
@@ -789,11 +789,11 @@ def _fix_exclusion_keys(key):
     Signal and DictionaryBrowser break if a
     a key is a dict method - e.g. {"keys":2.0}.
 
-    This method prepends the key with "fix_" so the information is
+    This method prepends the key with ``fix_`` so the information is
     still present to work around this issue
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     key : str
 
     Returns
@@ -1055,12 +1055,11 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
     nxdata.attrs["signal"] = _parse_to_file("data")
     if smd.record_by:
         nxdata.attrs["interpretation"] = _parse_to_file(smd.record_by)
-    datastr = _parse_to_file("data")
-    overwrite_dataset(nxdata, signal.data, datastr, chunks=None, **kwds)
+    overwrite_dataset(nxdata, signal.data, "data", chunks=None, **kwds)
     axis_names = [_parse_to_file(".")] * len(signal.axes_manager.shape)
     for i, axis in enumerate(signal.axes_manager._axes):
         if axis.name != t.Undefined:
-            axname = _parse_to_file(axis.name)
+            axname = axis.name
             axindex = [axis.index_in_array]
             indices = _parse_to_file(axis.name + "_indices")
             nxdata.attrs[indices] = _parse_to_file(axindex)

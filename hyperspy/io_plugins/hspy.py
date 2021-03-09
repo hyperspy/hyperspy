@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -28,6 +28,7 @@ import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
+
 
 _logger = logging.getLogger(__name__)
 
@@ -116,7 +117,16 @@ def get_hspy_format_version(f):
 
 def file_reader(filename, backing_store=False,
                 lazy=False, **kwds):
-    mode = kwds.pop('mode', 'r+' if lazy else 'r')
+    """Read data from hdf5 files saved with the hyperspy hdf5 format specification
+
+    Parameters
+    ----------
+    filename: str
+    lazy: bool
+        Load image lazily using dask
+    **kwds, optional
+    """
+    mode = kwds.pop('mode', 'r')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
@@ -403,6 +413,8 @@ def hdfgroup2signaldict(group, lazy=False):
 
 
 def dict2hdfgroup(dictionary, group, **kwds):
+    "Recursive writer of dicts and signals"
+
     from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import BaseSignal
 
@@ -490,7 +502,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
 
 
 def get_signal_chunks(shape, dtype, signal_axes=None):
-    """Function that claculates chunks for the signal, preferably at least one
+    """Function that calculates chunks for the signal, preferably at least one
     chunk per signal space.
 
     Parameters
@@ -537,13 +549,17 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
 
 def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
     if chunks is None:
-        if signal_axes is None:
-            # Use automatic h5py chunking
-            chunks = True
+        if isinstance(data, da.Array):
+            # For lazy dataset, by default, we use the current dask chunking
+            chunks = tuple([c[0] for c in data.chunks])
         else:
-            # Optimise the chunking to contain at least one signal per chunk
+            # If signal_axes=None, use automatic h5py chunking, otherwise
+            # optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
+    if np.issubdtype(data.dtype, np.dtype('U')):
+        # Saving numpy unicode type is not supported in h5py
+        data = data.astype(np.dtype('S'))
     if data.dtype == np.dtype('O'):
         # For saving ragged array
         # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
@@ -578,9 +594,11 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
         # just a reference to already created thing
         pass
     else:
-        _logger.info("Chunks used for saving: %s" % str(dset.chunks))
+        _logger.info(f"Chunks used for saving: {dset.chunks}")
         if isinstance(data, da.Array):
-            da.store(data.rechunk(dset.chunks), dset)
+            if data.chunks != dset.chunks:
+                data = data.rechunk(dset.chunks)
+            da.store(data, dset)
         elif data.flags.c_contiguous:
             dset.write_direct(data)
         else:
@@ -635,6 +653,11 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                 dat = group[key]
                 kn = key
                 if key.startswith("_list_"):
+                    if (h5py.check_string_dtype(dat.dtype) and
+                        hasattr(dat, 'asstr')):
+                        # h5py 3.0 and newer
+                        # https://docs.h5py.org/en/3.0.0/strings.html
+                        dat = dat.asstr()[:]
                     ans = np.array(dat)
                     ans = ans.tolist()
                     kn = key[6:]
@@ -684,6 +707,8 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
 
 
 def write_signal(signal, group, **kwds):
+    "Writes a hyperspy signal to a hdf5 group"
+
     group.attrs.update(get_object_package_info(signal))
     if default_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
@@ -691,6 +716,7 @@ def write_signal(signal, group, **kwds):
     else:
         metadata = "metadata"
         original_metadata = "original_metadata"
+
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
 
@@ -707,6 +733,9 @@ def write_signal(signal, group, **kwds):
     if default_version < LooseVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
+    # Remove chunks from the kwds since it wouldn't have the same rank as the
+    # dataset and can't be used
+    kwds.pop('chunks', None)
     dict2hdfgroup(metadata_dict, mapped_par, **kwds)
     original_par = group.create_group(original_metadata)
     dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,
@@ -728,9 +757,16 @@ def write_signal(signal, group, **kwds):
             model.attrs['_signal'] = group.name
 
 
-def file_writer(filename,
-                signal,
-                *args, **kwds):
+def file_writer(filename, signal, *args, **kwds):
+    """Writes data to hyperspy's hdf5 format
+
+    Parameters
+    ----------
+    filename: str
+    signal: a BaseSignal instance
+    *args, optional
+    **kwds, optional
+    """
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
@@ -741,8 +777,7 @@ def file_writer(filename,
         if "/" in group_name:
             group_name = group_name.replace("/", "-")
         expg = exps.create_group(group_name)
-        if 'compression' not in kwds:
-            kwds['compression'] = 'gzip'
+
         # Add record_by metadata for backward compatibility
         smd = signal.metadata.Signal
         if signal.axes_manager.signal_dimension == 1:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -296,10 +296,17 @@ class TestPolynomial:
 
     def test_gradient(self):
         poly = self.m[0]
-        assert poly.a2.grad(1) == 1
-        assert poly.a1.grad(1) == 1
-        assert poly.a0.grad(1) == 1
-        assert poly.a2.grad(np.arange(10)).shape == (10,)
+        np.testing.assert_allclose(poly.a2.grad(np.arange(3)), np.array([0, 1, 4]))
+        np.testing.assert_allclose(poly.a1.grad(np.arange(3)), np.array([0, 1, 2]))
+        np.testing.assert_allclose(poly.a0.grad(np.arange(3)), np.array([1, 1, 1]))
+
+    def test_fitting(self):
+        s_2d = self.m_2d.signal
+        s_2d.data += 100 * np.array([np.random.randint(50, size=10)]*100).T
+        m_2d = s_2d.create_model()
+        m_2d.append(hs.model.components1D.Polynomial(order=1, legacy=False))
+        m_2d.multifit(iterpath='serpentine', grad='analytical')
+        np.testing.assert_allclose(m_2d.red_chisq.data.sum(), 0.0, atol=1E-7)
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self,  only_current, binned):
@@ -452,6 +459,11 @@ class TestScalableFixedPattern:
         s1.axes_manager[0].scale = 0.1
         self.s = s
         self.pattern = s1
+
+    def test_position(self):
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
+        assert fp._position is fp.shift
 
     def test_both_unbinned(self):
         s = self.s

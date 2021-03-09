@@ -33,7 +33,7 @@ all the work that you do.
 * ``@pytest.mark.parametrize()`` is a very convenient decorator to test several
   parameters of the same function without having to write to much repetitive
   code, which is often error-prone. See `pytest documentation
-  <http://doc.pytest.org/en/latest/parametrize.html>`_ for more details.
+  <http://doc.pytest.org/en/latest/parametrize.html>`__ for more details.
 * It is good to check that the tests does not use too much memory after
   creating new tests. If you need to explicitly delete your objects and free
   memory, you can do the following to release the memory associated with the
@@ -98,15 +98,15 @@ parallel on your machine.
    # To run on 2 cores
    $ pytest -n 2 --dist loadfile
 
-The ``--dist loadfile`` argument will group tests by their containing file. The 
-groups are then distributed to available workers as whole units, thus guaranteeing 
-that all tests in a file run in the same worker. 
+The ``--dist loadfile`` argument will group tests by their containing file. The
+groups are then distributed to available workers as whole units, thus guaranteeing
+that all tests in a file run in the same worker.
 
 .. note::
 
     Running tests in parallel using ``pytest-xdist`` will change the content
     and format of the output of ``pytest`` to the console. We recommend installing
-    ```pytest-sugar`` <https://pypi.org/project/pytest-sugar/>`_ to produce 
+    ```pytest-sugar`` <https://pypi.org/project/pytest-sugar/>`_ to produce
     nicer-looking output including an animated progressbar.
 
 
@@ -114,7 +114,7 @@ Flaky tests
 ^^^^^^^^^^^
 
 Test functions can sometimes exhibit intermittent or sporadic failure, with seemingly
-random or non-deterministic behaviour. They may sometimes pass or sometimes fail, and 
+random or non-deterministic behaviour. They may sometimes pass or sometimes fail, and
 it won't always be clear why. These are usually known as "flaky" tests.
 
 One way to approach flaky tests is to rerun them, to see if the failure was a one-off.
@@ -129,7 +129,7 @@ This can be achieved using the ```pytest-rerunfailures`` plugin <https://pypi.or
     $ pytest --reruns 3 --reruns-delay 1
 
 You can read more about flaky tests in the `pytest documentation 
-<https://docs.pytest.org/en/stable/flaky.html>`_.
+<https://docs.pytest.org/en/stable/flaky.html>`__.
 
 
 Test coverage
@@ -165,18 +165,18 @@ Continuous integration (CI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The HyperSpy test suite is run using continuous integration services provided by
-`Travis CI <https://travis-ci.org/github/hyperspy/hyperspy>`_ and
+`Github Actions <https://github.com/hyperspy/hyperspy/actions>`_ and
 `Azure Pipelines <https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build>`_.
-The CI helper scripts are pulled from the
+In case of Azure Pipelines, CI helper scripts are pulled from the
 `ci-scripts <https://github.com/hyperspy/ci-scripts>`_ repository.
 
 The testing matrix is as follows:
 
-- **Travis CI**: test all supported Python versions on Linux only; all dependencies
-  are pulled from `PyPI <https://pypi.org>`_. See ``.travis.yml`` in the HyperSpy
-  repository for further details.
+- **Github Actions**: test a range of Pythons version on Linux, MacOS and Windows;
+  all dependencies are installed from `PyPI <https://pypi.org>`_.
+  See ``.github/workflows/tests.yml`` in the HyperSpy repository for further details.
 - **Azure Pipeline**: test a range of Python versions on Linux, MacOS and Windows;
-  all dependencies are pulled from `Anaconda Cloud <https://anaconda.org/>`_
+  all dependencies are installed from `Anaconda Cloud <https://anaconda.org/>`_
   using the `Anaconda "defaults" <https://anaconda.org/anaconda>`_ and the
   `"conda-forge" <https://anaconda.org/conda-forge>`_ channel (in this order of
   priority). See ``azure-pipelines.yml`` in the HyperSpy repository for further details.
@@ -188,26 +188,26 @@ interface (ABI) incompatibility between dependencies.
 
 The most recent versions of packages are usually available first on PyPI, before
 they are available on Anaconda Cloud. These means that if a recent release of a
-dependency breaks the test suite, it should happen first on Travis CI.
-Similarly, deprecation warnings will usually appear first on Travis CI.
+dependency breaks the test suite, it should happen first on Github Actions.
+Similarly, deprecation warnings will usually appear first on Github Actions.
 
-The documentation build is done on both Travis CI and
+The documentation build is done on both Github Actions and
 `Read the Docs <https://readthedocs.org/>`_, and it is worth checking that no new
 warnings have been introduced when writing documentation in the user guide or
 in the docstrings.
 
-The Travis CI testing matrix also includes the following special cases:
+The Github Actions testing matrix also includes the following special cases:
 
 - The test suite is run against HyperSpy's minimum requirements on Python 3.7
   on Linux. This will skip any tests that require **optional** packages such as
   ``scikit-learn``.
 - The test suite is run against the oldest supported versions of ``numpy``,
   ``matplotlib`` and ``scipy``. For more details, see this
-  `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`_.
-- `codecov.io <https://codecov.io/gh/hyperspy/hyperspy>`_ will only report
-  the coverage of your PR if the test suite passes on Python 3.7 on Linux.
-  This job is labelled as ``"Linux, 3.7, pip"`` on Travis CI.
-
+  `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`__.
+- The test suite is run against the development supported versions of ``numpy``,
+  ``scipy``, ``scikit-learn`` and ``scikit-image`` using the weekly build wheels
+  available on https://anaconda.org/scipy-wheels-nightly. For more details, see
+  this `Github issue <https://github.com/hyperspy/hyperspy/pull/2616>`__.
 
 .. _plot-test-label:
 

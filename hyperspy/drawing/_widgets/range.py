@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -24,6 +24,7 @@ import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.events import Events, Event
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -61,17 +62,15 @@ class RangeWidget(ResizableDraggableWidgetBase):
         super(RangeWidget, self).__init__(axes_manager, alpha=alpha, **kwargs)
         self.span = None
 
-    def set_on(self, value):
+    def set_on(self, value, render_figure=True):
         if value is not self.is_on() and self.ax is not None:
             if value is True:
                 self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
                 self.disconnect()
-            try:
-                self.ax.figure.canvas.draw_idle()
-            except BaseException:  # figure does not exist
-                pass
+            if render_figure:
+                self.draw_patch()
             if value is False:
                 self.ax = None
         self.__is_on = value
@@ -85,7 +84,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.can_switch = True
         self.span.events.changed.connect(self._span_changed, {'obj': 'widget'})
         self.span.step_ax = self.axes[0]
-        self.span.tolerance = 5
+        self.span.tolerance = preferences.Plot.pick_tolerance
         self.patch = [self.span.rect]
         self.patch[0].set_color(self.color)
         self.patch[0].set_alpha(self.alpha)
@@ -285,7 +284,7 @@ class ModifiableSpanSelector(SpanSelector):
         SpanSelector.__init__(self, ax, onselect, direction=direction,
                               useblit=useblit, span_stays=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
-        self.tolerance = 2
+        self.tolerance = preferences.Plot.pick_tolerance
         self.on_move_cid = None
         self._range = None
         self.step_ax = None
@@ -404,8 +403,8 @@ class ModifiableSpanSelector(SpanSelector):
         """Update the patch drawing.
         """
         try:
-            if self.useblit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._update_animated()
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig.render_figure()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -577,7 +576,7 @@ class ModifiableSpanSelector(SpanSelector):
             return
         x_increment = self._get_mouse_position(event) - self.pressv
         if self.step_ax is not None:
-            if (self.bounds_check  
+            if (self.bounds_check
                 and self._range[0] <= self.step_ax.low_value
                 and self._get_mouse_position(event) <= self.pressv):
                 return

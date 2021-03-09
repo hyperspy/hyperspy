@@ -108,6 +108,19 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
   :align:   center
   :width:   500
 
+.. NOTE::
+
+    Depending on your screen and display settings, it can be difficult to `pick`
+    or manipulate widgets and you can try to change the pick tolerance in
+    the :ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.
+    Typically, using a 4K resolution with a small scaling factor (<150 %), setting
+    the pick tolerance to 15 instead of 7.5 makes the widgets easier to manipulate.
+
+If instantiated without arguments, (i.e. ``rect = RectangularROI()`` the roi
+will automatically determine sensible values to center it when 
+interactively adding it to a signal. This provides a conventient starting point
+to further manipulate the ROI, either by hand or using the gui (i.e. ``rect.gui``).
+
 Notably, since ROIs are independent from the signals they sub-select, the widget
 can be plotted on a different signal altogether.
 
@@ -258,3 +271,6 @@ Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
     >>> tuple(roi)
     (2.0, 10.0, 0.0, 5.0)
     >>> im.align2D(roi=roi)
+    
+
+

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -32,6 +32,7 @@ def test_PESCoreLineShape():
                   0.290714653, 6.13260141e-04, 6.17204216e-08, 2.96359844e-13,
                   6.78916184e-20, 7.42026292e-28])
         )
+    assert core_line._position is core_line.origin
 
 
 def test_PESCoreLineShape_shirley():

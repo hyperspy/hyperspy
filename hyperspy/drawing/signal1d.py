@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,6 +23,7 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
 import inspect
+from functools import partial
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
@@ -120,11 +121,11 @@ class Signal1DFigure(BlittedFigure):
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         if connect_navigation:
-            line.axes_manager.events.indices_changed.connect(
-                line._auto_update_line, [])
+            f = partial(line._auto_update_line, update_ylimits=True)
+            line.axes_manager.events.indices_changed.connect(f, [])
             line.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(
-                    line._auto_update_line), [])
+                lambda: line.axes_manager.events.indices_changed.disconnect(f),
+                [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -201,10 +202,7 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is not None:
             update_lines(self.right_ax, self.right_ax_lines)
 
-        if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._update_animated()
-        else:
-            self.ax.figure.canvas.draw_idle()
+        self.render_figure()
 
 
 class Signal1DLine(object):
@@ -405,7 +403,7 @@ class Signal1DLine(object):
                                        **self.data_function_kwargs).real
         return ydata
 
-    def _auto_update_line(self, update_ylimits=True, **kwargs):
+    def _auto_update_line(self, update_ylimits=False, **kwargs):
         """Updates the line plot only if `auto_update` is `True`.
 
         This is useful to connect to events that automatically update the line.
@@ -423,8 +421,8 @@ class Signal1DLine(object):
                update_ylimits=False):
         """Update the current spectrum figure
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         force_replot : bool
             If True, close and open the figure. Default is False.
         render_figure : bool
@@ -495,10 +493,7 @@ class Signal1DLine(object):
             self.text.set_text(self.axes_manager.indices)
 
         if render_figure:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self.ax.hspy_fig.render_figure()
 
     def close(self):
         _logger.debug('Closing `Signal1DLine`.')

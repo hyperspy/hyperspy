@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 
 install_req = ['scipy>=1.1',
                'matplotlib>=2.2.3',
-               'numpy>=1.15.4',
+               'numpy>=1.16.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -64,7 +64,9 @@ install_req = ['scipy>=1.1',
                'sparse',
                'imageio',
                'pyyaml',
-               'PTable',
+               # prettytable and ptable are API compatible
+               # prettytable is maintained and ptable is an unmaintained fork
+               'prettytable',
                'tifffile>=2018.10.18',
                'numba',
                ]
@@ -82,7 +84,7 @@ extras_require = {
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov", "codecov"],
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt"],
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt", "sphinxcontrib-mermaid"],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be
@@ -332,6 +334,7 @@ with update_version_when_dev() as version:
                 'tests/io/FEI_old/*.emi',
                 'tests/io/FEI_old/*.ser',
                 'tests/io/FEI_old/*.npy',
+                'tests/io/FEI_old/*.tar.gz',
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/hdf5_files/*.hspy',
