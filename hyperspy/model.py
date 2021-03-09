@@ -1418,9 +1418,10 @@ class BaseModel(list):
 
                     if np.any(~np.isfinite(de_b)):
                         raise ValueError(
-                            "Finite upper and lower bounds must be "
-                            "specified for every free parameter when "
-                            f"`optimizer='{optimizer}'`"
+                            "Finite upper and lower bounds must be specified "
+                            "using `bmin/bmax` for every free parameter and "
+                            "`bounded=True` needs to be set as argument of "
+                            f"`m.fit()` when using `optimizer='{optimizer}'`."
                         )
 
                     self.fit_output = _supported_global[optimizer](
