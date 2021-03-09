@@ -20,6 +20,7 @@ import copy
 
 import numpy as np
 from scipy.special import huber
+import traits.api as t
 
 import hyperspy.drawing.signal1d
 from hyperspy.axes import generate_axis
@@ -35,10 +36,13 @@ from hyperspy.misc.utils import dummy_context_manager
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
+    only_current = t.Bool(True)
+    iterpath = t.Enum('flyback', 'serpentine', default='serpentine',
+                      desc='Define the iterating pattern over the navigation space.')
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
-                 only_current=True, **kwargs):
+                 only_current=True, iterpath='flyback', **kwargs):
         if model.signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.signal.axes_manager.signal_dimension, 1)
@@ -53,6 +57,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.fit_independent = fit_independent
         self.fit_kwargs = kwargs
         self.only_current = only_current
+        self.iterpath = iterpath
         if signal_range == "interactive":
             if (not hasattr(self.model, '_plot') or self.model._plot is None or
                     not self.model._plot.is_active):
@@ -106,7 +111,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         if only_current:
             self.model.fit(**self.fit_kwargs)
         else:
-            self.model.multifit(**self.fit_kwargs)
+            self.model.multifit(iterpath=self.iterpath, **self.fit_kwargs)
 
         # Restore the signal range
         if self.signal_range is not None:
