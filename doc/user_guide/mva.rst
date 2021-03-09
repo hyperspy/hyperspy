@@ -22,7 +22,7 @@ analysis (ICA), are available through the methods described in this section.
 
    For some of the algorithms listed below, the decomposition results in
    an `approximation` of the dataset, i.e. :math:`X \approx A B^T`.
-
+RPCA
 .. _mva.decomposition:
 
 Decomposition
@@ -314,7 +314,7 @@ finding the correct minima. Usually a value between 1 and 2 works well:
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="RPCA",
+   >>> s.decomposition(algorithm="ORPCA",
    ...                 output_dimension=3,
    ...                 method="SGD",
    ...                 subspace_learning_rate=1.1)
@@ -326,7 +326,7 @@ fraction between 0 and 1.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="RPCA",
+   >>> s.decomposition(algorithm="ORPCA",
    ...                 output_dimension=3,
    ...                 method="MomentumSGD",
    ...                 subspace_learning_rate=1.1,
