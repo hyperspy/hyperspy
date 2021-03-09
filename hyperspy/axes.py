@@ -564,26 +564,42 @@ class DataAxis(t.HasTraits, UnitConversion):
     def value_range_to_indices(self, v1, v2):
         """Convert the given range to index range.
 
-        When an out of the axis limits, the endpoint is used instead.
+        When a value is out of the axis limits, the endpoint is used instead.
+        `v1` must be preceding `v2` in the axis values
+          - if the axis scale is positive, it means v1 < v2
+          - if the axis scale is negative, it means v1 > v2
 
         Parameters
         ----------
         v1, v2 : float
-            The end points of the interval in the axis units. v2 must be
-            greater than v1.
+            The end points of the interval in the axis units.
 
+        Returns
+        -------
+        i2, i2 : float
+            The indices corresponding to the interval [v1, v2]
         """
-        if v1 is not None and v2 is not None and v1 > v2:
-            raise ValueError("v2 must be greater than v1.")
+        i1, i2 = 0, self.size - 1
+        error_message = "Wrong order of the values: for axis with"
+        if self.scale > 0:
+            if v1 is not None and v2 is not None and v1 > v2:
+                raise ValueError(f"{error_message} positive scale, v2 ({v2}) "
+                                 f"must be greater than v1 ({v1}).")
 
-        if v1 is not None and self.low_value < v1 <= self.high_value:
-            i1 = self.value2index(v1)
+            if v1 is not None and self.low_value < v1 <= self.high_value:
+                i1 = self.value2index(v1)
+            if v2 is not None and self.high_value > v2 >= self.low_value:
+                i2 = self.value2index(v2)
         else:
-            i1 = 0
-        if v2 is not None and self.high_value > v2 >= self.low_value:
-            i2 = self.value2index(v2)
-        else:
-            i2 = self.size - 1
+            if v1 is not None and v2 is not None and v1 < v2:
+                raise ValueError(f"{error_message} negative scale: v1 ({v1}) "
+                                 f"must be greater than v2 ({v2}).")
+
+            if v1 is not None and self.high_value > v1 >= self.low_value:
+                i1 = self.value2index(v1)
+            if v2 is not None and self.low_value < v2 <= self.high_value:
+                i2 = self.value2index(v2)
+
         return i1, i2
 
     def update_from(self, axis, attributes=["scale", "offset", "units"]):

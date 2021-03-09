@@ -24,12 +24,14 @@ RELEASE_next_patch (Unreleased)
 * Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
 * Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
+* Fix ``iterpath`` VisibleDeprecationWarning when using ``fit_component`` (`#2654 <https://github.com/hyperspy/hyperspy/pull/2654>`_)
 * Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 * Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
 * Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
 * Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
+* Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
 * Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
-* Plot scalebar when the axis scale have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
+* Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
 
 Changelog
 *********
