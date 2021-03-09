@@ -460,6 +460,11 @@ class TestScalableFixedPattern:
         self.s = s
         self.pattern = s1
 
+    def test_position(self):
+        s1 = self.pattern
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
+        assert fp._position is fp.shift
+
     def test_both_unbinned(self):
         s = self.s
         s1 = self.pattern

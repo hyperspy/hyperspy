@@ -461,6 +461,17 @@ class Model1D(BaseModel):
         self.channel_switches[i1:i2] = True
         self.update_plot()
 
+    def _parse_signal_range_values(self, x1=None, x2=None):
+        """Parse signal range values to be used by the `set_signal_range`,
+        `add_signal_range` and `remove_signal_range` and return sorted indices
+        """
+        try:
+            x1, x2 = x1
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
+        return self.axis.value_range_to_indices(x1, x2)
+
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
         """Use only the selected spectral range defined in its own units in the
@@ -468,17 +479,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        E1 : None or float
-        E2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._set_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._set_signal_range_in_pixels(*indices)
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None):
         """Removes the data in the given range from the data range that
@@ -486,8 +490,7 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
+        i1, i2 : None or integer
         """
         if i2 is not None:
             i2 += 1
@@ -501,17 +504,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._remove_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._remove_signal_range_in_pixels(*indices)
 
     def reset_signal_range(self):
         """Resets the data range"""
@@ -523,8 +519,7 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
+        i1, i2 : None or integer
         """
         if i2 is not None:
             i2 += 1
@@ -538,17 +533,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._add_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._add_signal_range_in_pixels(*indices)
 
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
