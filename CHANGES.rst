@@ -27,7 +27,8 @@ RELEASE_next_patch (Unreleased)
 * Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 * Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
 * Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
-
+* Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
+* Plot scalebar when the axis scale have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
 
 Changelog
 *********
@@ -71,7 +72,7 @@ NEW
 * Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
-  * :py:class:`~._components.split_pvoigt.SplitVoigt`
+  * :py:class:`~._components.split_voigt.SplitVoigt`
 * :ref:`EDS absorption correction <eds_absorption-label>`.
 * :ref:`Argand diagram for complex signals <complex.argand>`.
 * :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
