@@ -141,8 +141,10 @@ def create_figure(window_title=None,
 
     Parameters
     ----------
-    window_title : {None, string}, optional
-    _on_figure_window_close : {None, function}, optional
+    window_title : None, string, optional
+        Default None.
+    _on_figure_window_close : None, function, optional
+        Default None.
     disable_xyscale_keys : bool, optional
         Disable the `k`, `l` and `L` shortcuts which toggle the x or y axis
         between linear and log scale. Default False.
@@ -202,7 +204,8 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     Parameters
     ----------
     im_list : list of Signal2D instances
-    normalization : {'single', 'global'}, optional
+    normalization : 'single', 'global', optional
+        Default 'single'.
     dont_plot : bool, optional
         Default False.
 
@@ -279,18 +282,17 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     signal_list : list of BaseSignal instances
         If sync is set to True, the signals must have the
         same navigation shape, but not necessarily the same signal shape.
-    sync : {True, False}, default "True", optional
-        If True: the signals will share navigation, all the signals
+    sync : True, False, optional
+        If True (default), the signals will share navigation. All the signals
         must have the same navigation shape for this to work, but not
         necessarily the same signal shape.
-    navigator : {"auto", None, "spectrum", "slider", BaseSignal}, optional,
-    default "auto"
-        See signal.plot docstring for full description.
-    navigator_list : {None, list of navigator arguments}, optional, default None
+    navigator : 'auto', None, 'spectrum', 'slider', BaseSignal, optional
+        Default 'auto'. See signal.plot docstring for full description.
+    navigator_list : None, list of navigator arguments, optional
         Set different navigator options for the signals. Must use valid
-        navigator arguments: "auto", None, "spectrum", "slider", or a
+        navigator arguments: 'auto', None, 'spectrum', 'slider', or a
         HyperSpy Signal. The list must have the same size as signal_list.
-        If None, the argument specified in navigator will be used.
+        If None (default), the argument specified in navigator will be used.
     **kwargs
         Any extra keyword arguments are passed to each signal `plot` method.
 
@@ -478,7 +480,7 @@ def plot_images(images,
                 suptitle=None,
                 suptitle_fontsize=18,
                 colorbar='multi',
-                centre_colormap="auto",
+                centre_colormap='auto',
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -509,7 +511,7 @@ def plot_images(images,
         image.
         If any of the signal shapes is not suitable, a ValueError will be
         raised.
-    cmap : {matplotlib colormap, list, ``'mpl_colors'``}, optional
+    cmap : matplotlib colormap, list, 'mpl_colors', optional
         The colormap used for the images, by default uses the setting
         ``color map signal`` from the plot preferences. A list of colormaps can
         also be provided, and the images will cycle through them. Optionally,
@@ -522,7 +524,7 @@ def plot_images(images,
         If True, set nans to zero for plotting.
     per_row : int, optional
         The number of plots in each row.
-    label : {None, str, list of str}, optional
+    label : None, str, list of str, optional
         Control the title labeling of the plotted images.
         If None, no titles will be shown.
         If 'auto' (default), function will try to determine suitable titles
@@ -546,30 +548,30 @@ def plot_images(images,
         this parameter will override the automatically determined title.
     suptitle_fontsize : int, optional
         Font size to use for super title at top of figure.
-    colorbar : {'multi', None, 'single'}
+    colorbar : 'multi', None, 'single', optional
         Controls the type of colorbars that are plotted.
         If None, no colorbar is plotted.
         If 'multi' (default), individual colorbars are plotted for each
         (non-RGB) image
         If 'single', all (non-RGB) images are plotted on the same scale,
         and one colorbar is shown for all
-    centre_colormap : {"auto", True, False}
+    centre_colormap : 'auto', True, False, optional
         If True, the centre of the color scheme is set to zero. This is
-        particularly useful when using diverging color schemes. If "auto"
+        particularly useful when using diverging color schemes. If 'auto'
         (default), diverging color schemes are automatically centred.
-    scalebar : {None, 'all', list of ints}, optional
+    scalebar : None, 'all', list of ints, optional
         If None (or False), no scalebars will be added to the images.
         If 'all', scalebars will be added to all images.
         If list of ints, scalebars will be added to each image specified.
     scalebar_color : str, optional
         A valid MPL color string; will be used as the scalebar color.
-    axes_decor : {'all', 'ticks', 'off', None}, optional
+    axes_decor : 'all', 'ticks', 'off', None, optional
         Controls how the axes are displayed on each image; default is 'all'.
         If 'all', both ticks and axis labels will be shown.
         If 'ticks', no axis labels will be shown, but ticks/labels will.
         If 'off', all decorations and frame will be disabled.
         If None, no axis decorations will be shown, but ticks/frame will.
-    padding : {None, dict}, optional
+    padding : None, dict, optional
         This parameter controls the spacing between images.
         If None, default options will be used.
         Otherwise, supply a dictionary with the spacing options as
@@ -583,7 +585,7 @@ def plot_images(images,
         figure using matplotlib's tight_layout.
         If false, repositioning images inside the figure will be left as
         an exercise for the user.
-    aspect : {str, numeric}, optional
+    aspect : str, float, int, optional
         If 'auto', aspect ratio is auto determined, subject to min_asp.
         If 'square', image will be forced onto square display.
         If 'equal', aspect ratio of 1 will be enforced.
@@ -610,26 +612,23 @@ def plot_images(images,
         If None, use the percentiles value set in the preferences.
         If float or integer, keep this value as bounds.
         Note: vmin is ignored when overlaying images.
-    overlay : boolean, optional
+    overlay : bool, optional
         If True, overlays the images with different colors rather than plotting
         each image as a subplot.
-    colors : list of char or hex string, optional
-	    `colors` should be a list compromising either characters or hex
-		strings, corresponding to colors acceptable to matplotlib. Details
-		can be found at https://matplotlib.org/2.0.2/api/colors_api.html.
-        If 'auto', colors will be taken from matplotlib.colors.BASE_COLORS.
+    colors : 'auto', list of char, list of hex str, optional
+        If list, it must contains colors acceptable to matplotlib [1]_.
+        If ``'auto'``, colors will be taken from matplotlib.colors.BASE_COLORS.
     alphas : float or list of floats, optional
-        `alphas` should be a single float value or a list of floats
-        corresponding to the alpha value of each color.
+        Float value or a list of floats corresponding to the alpha value of
+        each color.
     legend_picking: bool, optional
         If True (default), a spectrum can be toggled on and off by clicking on
         the legended line.
-    legend_loc : {str, int}, optional
-        This parameter controls where the legend is placed on the figure;
-        see the pyplot.legend docstring for valid values
+    legend_loc : str, int, optional
+        This parameter controls where the legend is placed on the figure
+        see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
     pixel_size_factor : int or float, optional
-        Default value is 1.
-        Sets the size of the figure when plotting an overlay image. The higher
+        Default value is 1. Sets the size of the figure when plotting an overlay image. The higher
         the number the larger the figure and therefore a greater number of
         pixels are used. This value will be ignored if a Figure is provided.
     **kwargs, optional
@@ -645,6 +644,10 @@ def plot_images(images,
     plot_spectra : Plotting of multiple spectra
     plot_signals : Plotting of multiple signals
     plot_histograms : Compare signal histograms
+
+    References
+    ----------
+    .. [1] Matplotlib colors API: https://matplotlib.org/stable/api/colors_api.html.
 
     Notes
     -----
@@ -1238,18 +1241,20 @@ def make_cmap(colors, name='my_colormap', position=None,
         list of either tuples containing rgb values, or html strings
         Colors should be arranged so that the first color is the lowest
         value for the colorbar and the last is the highest.
-    name : str
-        name of colormap to use when registering with matplotlib
-    position : {None, iterable}, optional
-        list containing the values (from [0,1]) that dictate the position
+    name : str, optional
+        Name of colormap to use when registering with matplotlib. Default
+        'my_colormap'.
+    position : None, iterable, optional
+        List containing the values (from [0,1]) that dictate the position
         of each color within the colormap. If None (default), the colors
         will be equally-spaced within the colorbar.
     bit : bool, optional
         True if RGB colors are given in 8-bit [0 to 255] or False if given
         in arithmetic basis [0 to 1] (default).
     register : bool, optional
-        Wwitch to control whether or not to register the custom colormap
+        Switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string.
+        Default True.
     """
     bit_rgb = np.linspace(0, 1, 256)
 
@@ -1304,40 +1309,41 @@ def plot_spectra(
         "mosaic", the spectra can have different size and axes. For `BaseSignal`
         with navigation dimensions 1 and signal dimension 0, the signal will be
         tranposed to form a `Signal1D`.
-    style : {'overlap', 'cascade', 'mosaic', 'heatmap'}
-        The style of the plot.
-    color : {None, matplotlib color, list of colors}, optional
+    style : 'overlap', 'cascade', 'mosaic', 'heatmap', optional
+        The style of the plot: 'overlap' (default), 'cascade', 'mosaic', or
+        'heatmap'.
+    color : None, matplotlib color, list of colors, optional
         Sets the color of the lines of the plots (no action on 'heatmap').
         For a list, if its length is less than the number of spectra to plot,
-        the colors will be cycled. If `None`, use default matplotlib color
-        cycle.
-    line_style: {None, matplotlib line style, list of line_styles}, optional
+        the colors will be cycled. If `None` (default), use default matplotlib
+        color cycle.
+    line_style: None, matplotlib line style, list of line_styles, optional
         Sets the line style of the plots (no action on 'heatmap').
         The main line style are '-','--','steps','-.',':'.
-        For a list, if its length is less than the number of
-        spectra to plot, line_style will be cycled. If
-        If `None`, use continuous lines, eg: ('-','--','steps','-.',':').
-    padding : float, optional, default 1.0
-        Option for "cascade". 1 guarantees that there is no overlapping.
+        For a list, if its length is less than the number of spectra
+        to plot, `line_style` will be cycled, eg. ('-','--','steps','-.',':').
+        If None (default), use continuous lines, eg. '-'.
+    padding : float, optional
+        Option for "cascade". 1.0 (default) guarantees that there is no overlapping.
         However, in many cases, a value between 0 and 1 can produce a tighter
         plot without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
-    legend: {None, list of str, 'auto'}, optional
-       If list of string, legend for "cascade" or title for "mosaic" is
+    legend: None, list of str, 'auto', optional
+       If list of string, legend for 'cascade' or title for 'mosaic' is
        displayed. If 'auto', the title of each spectra (metadata.General.title)
-       is used.
+       is used. Default None.
     legend_picking: bool, optional
         If True (default), a spectrum can be toggled on and off by clicking on
         the legended line.
-    legend_loc : {str, int}, optional
+    legend_loc : str, int, optional
         This parameter controls where the legend is placed on the figure;
-        see the pyplot.legend docstring for valid values
-    fig : {None, matplotlib figure}, optional
-        If None, a default figure will be created. Specifying fig will
+        see the pyplot.legend docstring for valid values. Default 'upper right'.
+    fig : None, matplotlib figure, optional
+        If None (default), a default figure will be created. Specifying `fig` will
         not work for the 'heatmap' style.
-    ax : {none, matplotlib ax (subplot)}, optional
-        If None, a default ax will be created. Will not work for 'mosaic'
+    ax : none, matplotlib ax (subplot), optional
+        If None (default), a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
     auto_update : bool or None
         If True, the plot will update when the data are changed. Only supported
@@ -1360,7 +1366,7 @@ def plot_spectra(
     Returns
     -------
     ax: matplotlib axes or list of matplotlib axes
-        An array is returned when `style` is "mosaic".
+        An array is returned when `style` is 'mosaic'.
 
     """
     import hyperspy.signal
@@ -1375,7 +1381,7 @@ def plot_spectra(
         ----------
         ax_: matplotlib axes
 
-        legend_loc_: {str, int}
+        legend_loc_: str, int
             This parameter controls where the legend is placed on the
             figure; see the pyplot.legend docstring for valid values.
         """
@@ -1514,10 +1520,10 @@ def animate_legend(fig=None, ax=None, plot_type='spectra'):
     Parameters
     ----------
 
-    fig: {None, matplotlib.figure}, optional
-        If None pick the current figure using "plt.gcf".
+    fig: None, matplotlib.figure, optional
+        If None (default), pick the current figure using "plt.gcf".
     ax:  {None, matplotlib.axes}, optional
-        If None pick the current axes using "plt.gca".
+        If None (Default), pick the current axes using "plt.gca".
 
     Note
     ----
@@ -1582,35 +1588,34 @@ def plot_histograms(signal_list,
     Parameters
     ----------
     signal_list : iterable
-        Ordered list of spectra to plot. If `style` is "cascade" or "mosaic",
+        Ordered list of spectra to plot. If `style` is 'cascade' or 'mosaic',
         the spectra can have different size and axes.
-    bins : {int, list, str}, optional
+    bins : int, list, str, optional
         If bins is a string, then it must be one of:
         'knuth' : use Knuth's rule to determine bins,
         'scott' : use Scott's rule to determine bins,
-        'fd' : use the Freedman-diaconis rule to determine bins,
+        'fd' : use the Freedman-diaconis rule to determine bins (default),
         'blocks' : use bayesian blocks for dynamic bin widths.
-    range_bins : {None, tuple}, optional
+    range_bins : None, tuple, optional
         The minimum and maximum range for the histogram. If not specified,
-        it will be (x.min(), x.max()).
-    color : {None, valid matplotlib color, list of colors}, optional
+        it will be (x.min(), x.max()). Default None.
+    color : None, valid matplotlib color, list of colors, optional
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
-        If `None`, use default matplotlib color cycle.
-    line_style: {None, valid matplotlib line style, list of line styles},
-    optional
+        If None (default), use default matplotlib color cycle.
+    line_style: None, valid matplotlib line style, list of line styles, optional
         The main line styles are '-','--','steps','-.',':'.
-        For a list, if its length is less than the number of
-        spectra to plot, line_style will be cycled.
-        If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
-    legend: {None, list of str, 'auto'}, optional
-       Display a legend. If 'auto', the title of each spectra
+        For a list, if its length is less than the number of spectra
+        to plot, `line_style` will be cycled, eg. ('-','--','steps','-.',':').
+        If None, use continuous lines.
+    legend: None, list of str, 'auto', optional
+       Display a legend. If 'auto' (default), the title of each spectra
        (metadata.General.title) is used.
     legend_picking: bool, optional
-        If true, a spectrum can be toggled on and off by clicking on
+        If True, a spectrum can be toggled on and off by clicking on
         the line in the legend.
-    fig : {None, matplotlib figure}, optional
-        If None, a default figure will be created.
+    fig : None, matplotlib figure, optional
+        If None (default), a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
         :py:func:`numpy.histogram`.
@@ -1626,7 +1631,7 @@ def plot_histograms(signal_list,
     Returns
     -------
     ax: matplotlib axes or list of matplotlib axes
-        An array is returned when `style` is "mosaic".
+        An array is returned when `style` is 'mosaic'.
 
     """
     hists = []
