@@ -503,7 +503,8 @@ def load_with_reader(
 
 
 def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
-    """Given dtype, signal_dimension and signal_type, return the matching Signal subclass.
+    """Given dtype, signal_dimension and signal_type, return the matching
+    Signal subclass.
 
     See `hs.print_known_signal_types()` for a list of known signal_types,
     and the developer guide for details on how to add new signal_types.
@@ -534,7 +535,7 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
     else:
         raise ValueError(f'Data type "{dtype.name}" not understood!')
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
-        raise ValueError("signal_dimension must be a positive interger")
+        raise ValueError("signal_dimension must be a positive integer")
 
     signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
                if value["lazy"] == lazy}
@@ -594,6 +595,7 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         signal_class = getattr(importlib.import_module(value["module"]), key)
 
         return signal_class
+
 
 def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary.
