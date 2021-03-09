@@ -305,9 +305,6 @@ class SFS_reader(object):
     ----------
     filename
 
-    Methods
-    -------
-    get_file
     """
 
     def __init__(self, filename):
@@ -434,7 +431,7 @@ class SFS_reader(object):
         Returns
         -------
         object : SFSTreeItem
-            SFSTreeItem, which can be read into byte stream, in chunks or 
+            SFSTreeItem, which can be read into byte stream, in chunks or
             whole using objects methods.
 
         Example
@@ -502,7 +499,7 @@ class EDXSpectrum(object):
 
         Parameters
         ----------
-        spectrum : etree xml object 
+        spectrum : etree xml object
             etree xml object, where spectrum.attrib['Type'] should
             be 'TRTSpectrum'.
         """
@@ -780,15 +777,15 @@ class HyperHeader(object):
         Parameters
         ----------
         index : int
-            Index of the hypermap if multiply hypermaps are present in the 
+            Index of the hypermap if multiply hypermaps are present in the
             same bcf. (default 0)
         downsample : int
             Downsample factor. (default 1)
         for_numpy : bool
-            If False produce unsigned, otherwise signed types: if hypermap 
+            If False produce unsigned, otherwise signed types: if hypermap
             will be loaded using the pure python function where numpy's inplace
             integer addition will be used, the dtype should be signed;
-            If cython implementation will be used (default), then any returned 
+            If cython implementation will be used (default), then any returned
             dtypes can be safely unsigned. (default False)
 
         Returns
@@ -930,15 +927,15 @@ class BCF_reader(SFS_reader):
             The index of hypermap in bcf if there is more than one
             hyper map in file.
         downsample : int
-            Downsampling factor. Differently than block_reduce from 
-            skimage.measure, the parser populates reduced array by suming 
-            results of pixels, thus having lower memory requiriments. Default 
+            Downsampling factor. Differently than block_reduce from
+            skimage.measure, the parser populates reduced array by suming
+            results of pixels, thus having lower memory requiriments. Default
             is 1.
         cutoff_at_kV : None or float
             Value in keV to truncate the array at. Helps reducing size of
             array. Default is None.
         lazy : bool
-            It True, returns dask.array otherwise a numpy.array. Default is 
+            It True, returns dask.array otherwise a numpy.array. Default is
             False.
 
         Returns
@@ -1235,7 +1232,7 @@ def bcf_reader(filename, select_type=None, index=None,  # noqa
         or just hyper spectral mapping data (default None).
     index : int, None or str
         Index of dataset in bcf v2 can be None integer and 'all'
-        (default None); None will select first available mapping if more than 
+        (default None); None will select first available mapping if more than
         one. 'all' will return all maps if more than one present;
         integer will return only selected map.
     downsample : int

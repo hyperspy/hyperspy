@@ -79,7 +79,7 @@ The defaults are ``Shift`` + ``left``/``right`` and ``Shift`` + ``up``/``down``,
 for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
 
 Hotkeys and modifier keys for navigating the plot can be set in the
-:ref:`HyperSpy plot preferences <configuring-hyperspy-label>``.
+:ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.
 Note that some combinations will not work for all platforms, as some systems reserve them for
 other purposes.
 

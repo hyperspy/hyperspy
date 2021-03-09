@@ -1093,15 +1093,18 @@ class FeiEMDReader(object):
                      ('imagFloat', '<f4')]
         if h5data.dtype == fft_dtype or h5data.dtype == dpc_dtype:
             _logger.debug("Found an FFT or DPC, loading as Complex2DSignal")
-            if self.lazy:
-                _logger.warning("Lazy not supported for FFT or DPC")
-            data = np.empty(h5data.shape, h5data.dtype)
-            h5data.read_direct(data)
             real = h5data.dtype.descr[0][0]
             imag = h5data.dtype.descr[1][0]
-            data = data[real] + 1j * data[imag]
-            # Set the axes in frame, y, x order
-            data = np.rollaxis(data, axis=2)
+            if self.lazy:
+                data = da.from_array(h5data, chunks=h5data.chunks)
+                data = data[real] + 1j * data[imag]
+                data = da.transpose(data, axes=[2, 0, 1])
+            else:
+                data = np.empty(h5data.shape, h5data.dtype)
+                h5data.read_direct(data)
+                data = data[real] + 1j * data[imag]
+                # Set the axes in frame, y, x order
+                data = np.rollaxis(data, axis=2)
         else:
             if self.lazy:
                 data = da.transpose(
@@ -1459,7 +1462,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = np.float(value) * self.ureg(units)
+        v = float(value) * self.ureg(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)

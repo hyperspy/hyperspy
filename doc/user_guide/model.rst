@@ -102,6 +102,7 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~._components.skew_normal.SkewNormal`
 * :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.split_voigt.SplitVoigt`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
 The following components developed with specific signal types in mind are

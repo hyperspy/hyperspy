@@ -17,8 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
 import logging
+import numpy as np
+import matplotlib.pyplot as plt
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.drawing.utils import picker_kwargs
@@ -139,12 +140,20 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             if self.snap_size:
                 value = self._do_snap_size(value)[0]
         if self._size[0] != value:
-            if not value and self._size:
+            if value == 0 and self._size[0] > 0:
+                # width reaches zero from higher value:
+                # remove the width indicators
                 self._size = np.array((0,))
                 self._remove_size_patch()
-            elif value and not self._size:
+            elif value > 0 and self._size[0] == 0:
+                # width is current zero and new value is higher
+                # add the width indicators
                 self._size = np.array((value,))
                 self._set_size_patch()
+                # the size patches have been removed, we need to draw them
+                for p in self._width_indicator_patches:
+                    self.ax.add_artist(p)
+                    p.set_animated(self.blit)
             else:
                 self._size = np.array((value,))
             self._size_changed()
@@ -260,7 +269,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
         kwargs = picker_kwargs(max_r)
-        self.patch = self.ax.plot(
+        self.patch = [plt.Line2D(
             xy[:, 0], xy[:, 1],
             linestyle='-',
             lw=self.linewidth,
@@ -270,18 +279,25 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             markersize=self.radius_resize,
             mew=0.1,
             mfc='lime',
-            **kwargs,)[0:1]
+            **kwargs,)]
+        if self._size[0] > 0:
+            self._set_size_patch()
 
     def _set_size_patch(self):
+        if self.ax is None:
+            # The widget hasn't been fully added to an axis yet.
+            return
+        if self.axes[0].scale != self.axes[1].scale:
+            raise ValueError("linewidth is not supported for axis with "
+                             "different scale.")
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
-            wi, = self.ax.plot(
-                wc[i][0], wc[i][1],
+            wi = plt.Line2D(
+                *wc[i].T,
                 linestyle=':',
                 lw=self.linewidth,
                 c=self.color,
-                animated=self.blit,
                 **kwargs)
             self.patch.append(wi)
             self._width_indicator_patches.append(wi)

@@ -178,36 +178,17 @@ class BaseModel(list):
 
     signal : BaseSignal instance
         It contains the data to fit.
-    chisq : A BaseSignal of floats
+    chisq : :py:class:`~.signal.BaseSignal` of float
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A BaseSignal of integers
+    dof : :py:class:`~.signal.BaseSignal` of int
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : BaseSignal instance
-        Reduced chi-squared.
-    components : `ModelComponents` instance
+    components : :py:class:`~.model.ModelComponents` instance
         The components of the model are attributes of this class. This provides
         a convenient way to access the model components when working in IPython
         as it enables tab completion.
 
     Methods
     -------
-
-    append
-        Append one component to the model.
-    extend
-        Append multiple components to the model.
-    remove
-        Remove component from model.
-    as_signal
-        Generate a BaseSignal instance (possible multidimensional)
-        from the model.
-    store_current_values
-        Store the value of the parameters at the current position.
-    fetch_stored_values
-        Fetch stored values of the parameters.
-    update_plot
-        Force a plot update. (In most cases the plot should update
-        automatically.)
     set_signal_range, remove_signal range, reset_signal_range,
     add signal_range.
         Customize the signal range to fit.
@@ -223,12 +204,6 @@ class BaseModel(list):
     set_current_values_to
         Set the current value of all the parameters of the given component as
         the value for all the dataset.
-    export_results
-        Save the value of the parameters in separate files.
-    plot_results
-        Plot the value of all parameters at all positions.
-    print_current_values
-        Print the value of the parameters at the current position.
     enable_adjust_position, disable_adjust_position
         Enable/disable interactive adjustment of the position of the components
         that have a well defined position. (Use after `plot`).
@@ -237,15 +212,9 @@ class BaseModel(list):
         set interactively.
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
-    set_parameters_value
-        Set the value of a parameter in components in a model to a specified
-        value.
-    as_dictionary
-        Exports the model to a dictionary that can be saved in a file.
 
     See also
     --------
-
     :py:class:`~hyperspy.models.model1d.Model1D`
     :py:class:`~hyperspy.models.model2d.Model2D`
 
@@ -312,10 +281,10 @@ class BaseModel(list):
 
             * _whitelist: a dictionary with keys used as references of save
               attributes, for more information, see
-              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+              :py:func:`~.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
               the model (see
-              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              :py:meth:`~.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
         """
@@ -409,6 +378,12 @@ class BaseModel(list):
             self.signal._plot.signal_plot.update()
 
     def extend(self, iterable):
+        """Append multiple components to the model.
+
+        Parameters
+        ----------
+        iterable: iterable of `Component` instances.
+        """
         for object in iterable:
             self.append(object)
 
@@ -951,7 +926,8 @@ class BaseModel(list):
 
     @property
     def red_chisq(self):
-        """Reduced chi-squared. Calculated from self.chisq and self.dof
+        """:py:class:`~.signal.BaseSignal`: Reduced chi-squared.
+        Calculated from ``self.chisq`` and ``self.dof``.
         """
         tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
         tmp.metadata.General.title = self.signal.metadata.General.title + \

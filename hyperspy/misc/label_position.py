@@ -219,9 +219,8 @@ class SpectrumLabelPosition():
         element, subshell = text_edge.split('_')
 
         if subshell[-1].isdigit():
-            formatted = element+' '+'$\mathregular{'+subshell[0]+'_'+\
-                subshell[-1]+'}$'
+            formatted = f"{element} {subshell[0]}$_{subshell[-1]}$"
         else:
-            formatted = element+' '+'$\mathregular{'+subshell[0]+'}$'
+            formatted = f"{element} {subshell[0]}"
 
         return formatted

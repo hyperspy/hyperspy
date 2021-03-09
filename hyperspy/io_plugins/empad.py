@@ -91,7 +91,7 @@ def _parse_xml(filename):
 
 
 def _convert_scale_units(value, units, factor=1):
-    v = np.float(value) * _ureg(units)
+    v = float(value) * _ureg(units)
     converted_v = (factor * v).to_compact()
     converted_value = converted_v.magnitude / factor
     converted_units = '{:~}'.format(converted_v.units)

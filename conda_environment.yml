@@ -9,6 +9,7 @@ dependencies:
 - imageio
 - ipyparallel
 - matplotlib-base
+- matplotlib-scalebar
 - mrcz
 - natsort
 - numba
@@ -30,4 +31,5 @@ dependencies:
 - toolz
 - tqdm
 - traits
+
 

@@ -148,11 +148,14 @@ class UnitConversion:
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
 
     def _get_value_from_value_with_units(self, value):
+        if self.units is t.Undefined:
+            raise ValueError("Units conversion can't be perfomed "
+                             f"because the axis '{self}' doesn't have "
+                             "units.")
         value = _ureg.parse_expression(value)
-        if self.units == t.Undefined:
-            raise RuntimeError("Axis units is not defined.")
         if not hasattr(value, 'units'):
-            raise ValueError(f'`{value}` should contain an units.')
+            raise ValueError(f"`{value}` should contain an units.")
+
         return float(value.to(self.units).magnitude)
 
     def _convert_units(self, converted_units, inplace=True):
@@ -559,26 +562,43 @@ class BaseDataAxis(t.HasTraits):
     def value_range_to_indices(self, v1, v2):
         """Convert the given range to index range.
 
-        When an out of the axis limits, the endpoint is used instead.
+        When a value is out of the axis limits, the endpoint is used instead.
+        `v1` must be preceding `v2` in the axis values
+
+          - if the axis scale is positive, it means v1 < v2
+          - if the axis scale is negative, it means v1 > v2
 
         Parameters
         ----------
         v1, v2 : float
-            The end points of the interval in the axis units. v2 must be
-            greater than v1.
+            The end points of the interval in the axis units.
 
+        Returns
+        -------
+        i2, i2 : float
+            The indices corresponding to the interval [v1, v2]
         """
-        if v1 is not None and v2 is not None and v1 > v2:
-            raise ValueError("v2 must be greater than v1.")
+        i1, i2 = 0, self.size - 1
+        error_message = "Wrong order of the values: for axis with"
+        if self._is_increasing_order:
+            if v1 is not None and v2 is not None and v1 > v2:
+                raise ValueError(f"{error_message} increasing order, v2 ({v2}) "
+                                 f"must be greater than v1 ({v1}).")
 
-        if v1 is not None and self.low_value < v1 <= self.high_value:
-            i1 = self.value2index(v1)
+            if v1 is not None and self.low_value < v1 <= self.high_value:
+                i1 = self.value2index(v1)
+            if v2 is not None and self.high_value > v2 >= self.low_value:
+                i2 = self.value2index(v2)
         else:
-            i1 = 0
-        if v2 is not None and self.high_value > v2 >= self.low_value:
-            i2 = self.value2index(v2)
-        else:
-            i2 = self.size - 1
+            if v1 is not None and v2 is not None and v1 < v2:
+                raise ValueError(f"{error_message} decreasing order: v1 ({v1}) "
+                                 f"must be greater than v2 ({v2}).")
+
+            if v1 is not None and self.high_value > v1 >= self.low_value:
+                i1 = self.value2index(v1)
+            if v2 is not None and self.low_value < v2 <= self.high_value:
+                i2 = self.value2index(v2)
+
         return i1, i2
 
     def update_from(self, axis, attributes):
@@ -621,6 +641,27 @@ class BaseDataAxis(t.HasTraits):
         d["_type"] = 'UniformDataAxis'
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
+
+    @property
+    def _is_increasing_order(self):
+        """
+        Determine if the axis has an increasing, decreasing order or no order
+        at all.
+
+        Returns
+        -------
+        True if order is increasing, False if order is decreasing, None
+        otherwise.
+
+        """
+        steps = self.axis[1:] - self.axis[:-1]
+        if np.all(steps > 0):
+            return True
+        elif np.all(steps < 0):
+            return False
+        else:
+            # the axis is not ordered
+            return None
 
 
 class DataAxis(BaseDataAxis):
@@ -669,9 +710,7 @@ class DataAxis(BaseDataAxis):
         if len(self.axis) > 1:
             if isinstance(self.axis, list):
                 self.axis = np.asarray(self.axis)
-            steps = self.axis[1:] - self.axis[:-1]
-            # check axis is ordered
-            if not (np.all(steps > 0) or np.all(steps < 0)):
+            if self._is_increasing_order is None:
                 raise ValueError('The non-uniform axis needs to be ordered.')
         self.size = len(self.axis)
 
@@ -1145,7 +1184,6 @@ class AxesManager(t.HasTraits):
 
     Attributes
     ----------
-
     coordinates : tuple
         Get and set the current coordinates, if the navigation dimension
         is not 0. If the navigation dimension is 0, it raises
@@ -1970,27 +2008,12 @@ class AxesManager(t.HasTraits):
 
     @property
     def coordinates(self):
-        """Get the coordinates of the navigation axes.
-
-        Returns
-        -------
-        list
-
-        """
+        # See class docstring
         return tuple([axis.value for axis in self.navigation_axes])
 
     @coordinates.setter
     def coordinates(self, coordinates):
-        """Set the coordinates of the navigation axes.
-
-        Parameters
-        ----------
-        coordinates : tuple
-            The len of the tuple must coincide with the navigation
-            dimension
-
-        """
-
+        # See class docstring
         if len(coordinates) != self.navigation_dimension:
             raise AttributeError(
                 "The number of coordinates must be equal to the "
@@ -2007,27 +2030,12 @@ class AxesManager(t.HasTraits):
 
     @property
     def indices(self):
-        """Get the index of the navigation axes.
-
-        Returns
-        -------
-        list
-
-        """
+        # See class docstring
         return tuple([axis.index for axis in self.navigation_axes])
 
     @indices.setter
     def indices(self, indices):
-        """Set the index of the navigation axes.
-
-        Parameters
-        ----------
-        indices : tuple
-            The len of the tuple must coincide with the navigation
-            dimension
-
-        """
-
+        # See class docstring
         if len(indices) != self.navigation_dimension:
             raise AttributeError(
                 "The number of indices must be equal to the "

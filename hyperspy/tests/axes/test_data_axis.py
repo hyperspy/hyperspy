@@ -288,19 +288,13 @@ class TestUniformDataAxis:
                 10.1, 10.8) == (1, 8))
 
     def test_value_range_to_indices_endpoints(self):
-        assert (
-            self.axis.value_range_to_indices(
-                10, 10.9) == (0, 9))
+        assert self.axis.value_range_to_indices(10, 10.9) == (0, 9)
 
     def test_value_range_to_indices_out(self):
-        assert (
-            self.axis.value_range_to_indices(
-                9, 11) == (0, 9))
+        assert self.axis.value_range_to_indices(9, 11) == (0, 9)
 
     def test_value_range_to_indices_None(self):
-        assert (
-            self.axis.value_range_to_indices(
-                None, None) == (0, 9))
+        assert self.axis.value_range_to_indices(None, None) == (0, 9)
 
     def test_value_range_to_indices_v1_greater_than_v2(self):
         with pytest.raises(ValueError):
@@ -365,19 +359,23 @@ class TestUniformDataAxis:
             [1, 1])
 
     def test_calibrated_value2index_list_in(self):
-        ax = self.axis
-        ax.units = 'nm'
+        axis = copy.deepcopy(self.axis)
+        axis.units = 'nm'
         np.testing.assert_allclose(
-            ax.value2index(['0.01um', '0.0101um', '0.0103um']),
+            axis.value2index(['0.01um', '0.0101um', '0.0103um']),
             np.array([0, 1, 3])
             )
         with pytest.raises(BaseException):
-            ax.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
+            axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
+
+    def test_calibrated_value2index_error_missing_units(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index("0.0101um")
 
     def test_calibrated_value2index_in(self):
-        ax = self.axis
-        ax.units = 'nm'
-        assert ax.value2index("0.0101um") == 1
+        axis = copy.deepcopy(self.axis)
+        axis.units = 'nm'
+        assert axis.value2index("0.0101um") == 1
 
     def test_relative_value2index_in(self):
         assert self.axis.value2index("rel0.5") == 4
@@ -499,7 +497,7 @@ class TestUniformDataAxis:
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
     def test_parse_value(self):
-        ax = self.axis
+        ax = copy.deepcopy(self.axis)
         ax.units = 'nm'
         # slicing by index
         assert ax._parse_value(5) == 5
@@ -527,3 +525,25 @@ class TestUniformDataAxis:
         ax = self.axis
         with pytest.raises(ValueError):
             ax._parse_value("")
+
+
+class TestUniformDataAxisValueRangeToIndicesNegativeScale:
+
+    def setup_method(self, method):
+        self.axis = UniformDataAxis(size=10, scale=-0.1, offset=10)
+
+    def test_value_range_to_indices_in_range(self):
+        assert self.axis.value_range_to_indices(9.9, 9.2) == (1, 8)
+
+    def test_value_range_to_indices_endpoints(self):
+        assert self.axis.value_range_to_indices(10, 9.1) == (0, 9)
+
+    def test_value_range_to_indices_out(self):
+        assert self.axis.value_range_to_indices(11, 9) == (0, 9)
+
+    def test_value_range_to_indices_None(self):
+        assert self.axis.value_range_to_indices(None, None) == (0, 9)
+
+    def test_value_range_to_indices_v1_greater_than_v2(self):
+        with pytest.raises(ValueError):
+            self.axis.value_range_to_indices(1, 2)

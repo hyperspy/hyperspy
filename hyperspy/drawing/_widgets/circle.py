@@ -116,7 +116,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         if ri > 0:
             self.patch.append(
                 plt.Circle(
-                    xy, radius=ro,
+                    xy, radius=ri,
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,
@@ -195,7 +195,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
 
     def _get_resizer_pos(self):
         positions = []
-        indices = (0, 1) if self.size[1] > 0 else (0, )
+        indices = (0, 1) if len(self.size) > 1 else (0, )
         for i in indices:
             r = self._size[i]
             rsize = self._get_resizer_size() / 2
