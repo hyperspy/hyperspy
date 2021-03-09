@@ -566,6 +566,7 @@ class DataAxis(t.HasTraits, UnitConversion):
 
         When a value is out of the axis limits, the endpoint is used instead.
         `v1` must be preceding `v2` in the axis values
+
           - if the axis scale is positive, it means v1 < v2
           - if the axis scale is negative, it means v1 > v2
 

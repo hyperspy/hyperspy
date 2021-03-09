@@ -203,11 +203,11 @@ The Github Actions testing matrix also includes the following special cases:
   ``scikit-learn``.
 - The test suite is run against the oldest supported versions of ``numpy``,
   ``matplotlib`` and ``scipy``. For more details, see this
-  `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`_.
+  `Github issue <https://github.com/hyperspy/hyperspy/pull/2485>`__.
 - The test suite is run against the development supported versions of ``numpy``,
   ``scipy``, ``scikit-learn`` and ``scikit-image`` using the weekly build wheels
   available on https://anaconda.org/scipy-wheels-nightly. For more details, see
-  this `Github issue <https://github.com/hyperspy/hyperspy/pull/2616>`_.
+  this `Github issue <https://github.com/hyperspy/hyperspy/pull/2616>`__.
 
 .. _plot-test-label:
 
