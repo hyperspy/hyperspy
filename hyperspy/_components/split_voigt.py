@@ -74,6 +74,7 @@ class SplitVoigt(Component):
         self.sigma2.value = sigma2
         self.centre.value = centre
         self.fraction.value = fraction
+        self._position = self.centre
 
         # Boundaries
         self.A.bmin = 1.0e-8
@@ -220,9 +221,13 @@ class SplitVoigt(Component):
             return True
 
     @property
+    def _sigma(self):
+        return (self.sigma1.value + self.sigma2.value) * 0.5
+
+    @property
     def height(self):
-        return self.A.value / (self.sigma.value * sqrt2pi)
+        return self.A.value / (self._sigma * sqrt2pi)
 
     @height.setter
     def height(self, value):
-        self.A.value = value * self.sigma.value * sqrt2pi
+        self.A.value = value * self._sigma * sqrt2pi
