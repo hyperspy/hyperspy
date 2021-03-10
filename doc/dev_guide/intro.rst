@@ -1,4 +1,8 @@
-﻿﻿Introduction
+﻿﻿
+
+.. _dev_guide-label:
+
+Introduction
 =============
 
 This guide is intended to give people who want to start contributing

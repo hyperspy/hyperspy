@@ -214,9 +214,10 @@ class Test_quantification:
             atol=1e-3)
 
         # Test plot_results
-        s2 = s.sum()
+        s2 = s.inav[0, 0]
         s2.quantification(intensities, method, kfactors,
                           composition_units, plot_result=True)
+        np.testing.assert_allclose(res[0].data,  22.70779)
 
     def test_quant_lorimer_mask(self):
         s = self.signal

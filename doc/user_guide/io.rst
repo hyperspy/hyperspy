@@ -505,7 +505,7 @@ Digital Micrograph.
     the calibration read from the first spectrum and applied to all other spectra.
 
 Extra saving arguments
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 For the MSA format the ``format`` argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
@@ -557,10 +557,23 @@ the "r+" mode are incompatible).
 Images
 ------
 
-HyperSpy is able to read and write data too `all the image formats
+HyperSpy can read and write data to `all the image formats
 <https://imageio.readthedocs.io/en/stable/formats.html>`_ supported by
-`imageio`, which used the Python Image Library  (PIL/pillow).
-This includes png, pdf, gif etc.
+`imageio`, which uses the Python Image Library  (PIL/pillow).
+This includes png, pdf, gif, etc.
+
+When saving an image, a scalebar can be added to the image and the formatting,
+location, etc. of the scalebar can be set using the ``scalebar_kwds`` arguments
+- see the `matplotlib-scalebar <https://pypi.org/project/matplotlib-scalebar/>`_
+documentation for more information.
+
+.. code-block:: python
+
+    >>> s.save('file.jpg', scalebar=True)
+    >>> s.save('file.jpg', scalebar=True, scalebar_kwds={'location':'lower right'})
+
+When saving an image, keyword arguments can be passed to the corresponding
+pillow file writer.
 
 It is important to note that these image formats only support 8-bit files, and
 therefore have an insufficient dynamic range for most scientific applications.
@@ -947,13 +960,11 @@ the data size in memory.
 
     FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
     The FFT is not centered and only positive frequencies are stored in the file.
-    Lazy reading of these datasets is not supported. Making FFTs with HyperSpy
-    from the respective image datasets is recommended.
+    Making FFTs with HyperSpy from the respective image datasets is recommended.
 
 .. note::
 
-    DPC data is loaded in as a HyperSpy ComplexSignal2D object. Lazy reading of these
-    datasets is not supported.
+    DPC data is loaded in as a HyperSpy ComplexSignal2D object.
 
 .. note::
 
@@ -1578,7 +1589,7 @@ calibration, it is required to load the ``asw`` file, which will load all others
 files automatically.
 
 Extra loading arguments
-+++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^
 
 - ``rebin_energy`` : Factor used to rebin the energy dimension. It must be a
   multiple of the number of channels, typically 4096. (default 1)
@@ -1655,7 +1666,7 @@ This Digital Micrograph plugin is designed to import HDF5 files and like the
 `ImportRPL` script above, it can be used to easily transfer data from HyperSpy to
 Digital Micrograph by using the HDF5 hyperspy format (``hspy`` extension).
 
-Download ``gms_plugin_hdf5`` from its `Github repository <https://github.com/niermann/gms_plugin_hdf5>`_.
+Download ``gms_plugin_hdf5`` from its `Github repository <https://github.com/niermann/gms_plugin_hdf5>`__.
 
 
 .. _hyperspy-matlab:
@@ -1667,4 +1678,4 @@ This MATLAB script is designed to import HyperSpy's saved HDF5 files (``.hspy`` 
 Like the Digital Micrograph script above, it is used to easily transfer data
 from HyperSpy to MATLAB, while retaining spatial calibration information.
 
-Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.
+Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`__.

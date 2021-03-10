@@ -29,7 +29,7 @@ def test_tv_denoise_error():
 
 def test_2d_tv_denoise():
     rng = np.random.RandomState(123)
-    data = ascent().astype(np.float)
+    data = ascent().astype(float)
     data_noisy = data + data.std() * rng.randn(*data.shape)
     data_clean = tv_denoise(data, weight=60)
 
@@ -44,7 +44,7 @@ def test_3d_tv_denoise():
     rng = np.random.RandomState(123)
     x, y, z = np.ogrid[0:40, 0:40, 0:40]
     data = (x - 22) ** 2 + (y - 20) ** 2 + (z - 17) ** 2 < 8 ** 2
-    data = 255 * data.astype(np.float)
+    data = 255 * data.astype(float)
     data_noisy = data + data.std() * rng.randn(*data.shape)
     data_clean = tv_denoise(data_noisy, weight=100)
 

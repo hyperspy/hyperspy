@@ -577,3 +577,15 @@ def test_plot_overlay(axes_decor,label,colors,alphas):
                              alphas=alphas, pixel_size_factor=10)
 
     return ax[0].figure
+
+
+def test_plot_scale_different_sign():
+    N = 10
+    s = hs.signals.Signal2D(np.arange(N**2).reshape([10]*2))
+    s2 = s.isig[:, ::-1]
+    s2.axes_manager[0].scale = 1.0
+    s2.axes_manager[1].scale = -1.0
+
+    s2.plot()
+    assert s2._plot.signal_plot.pixel_units is not None
+    assert s2._plot.signal_plot.scalebar is True

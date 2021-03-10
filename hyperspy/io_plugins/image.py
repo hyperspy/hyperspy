@@ -17,16 +17,19 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import logging
 
 from imageio import imread, imwrite
-
+from matplotlib.figure import Figure
+import traits.api as t
+import pint
 
 from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
 # ----------------------
 format_name = 'Signal2D'
-description = 'Import/Export standard image formats using PIL or freeimage'
+description = 'Import/Export standard image formats using pillow, freeimage or matplotlib (with scalebar)'
 full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
                    'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
@@ -35,11 +38,14 @@ default_extension = 0  # png
 writes = [(2, 0), ]
 # ----------------------
 
+_ureg = pint.UnitRegistry()
+_logger = logging.getLogger(__name__)
 
-# TODO Extend it to support SI
-def file_writer(filename, signal, **kwds):
-    """Writes data to any format supported by imageio (PIL/pillow).
-    For a list of formats see https://imageio.readthedocs.io/en/stable/formats.html
+
+def file_writer(filename, signal, scalebar=False,
+                scalebar_kwds={'box_alpha':0.75, 'location':'lower left'},
+                **kwds):
+    """Writes data to any format supported by PIL
 
     Parameters
     ----------
@@ -48,18 +54,61 @@ def file_writer(filename, signal, **kwds):
         file object, see the docs for more info. The file format is defined by 
         the file extension that is any one supported by imageio.
     signal: a Signal instance
-    format: str, optional
-        The format to use to read the file. By default imageio selects the
-        appropriate for you based on the filename and its contents.
+    scalebar : bool, optional
+        Export the image with a scalebar.
+    scalebar_kwds : dict
+        Dictionary of keyword arguments for the scalebar. Useful to set
+        formattiong, location, etc. of the scalebar. See the documentation of
+        the 'matplotlib-scalebar' library for more information.
     **kwds: keyword arguments
         Allows to pass keyword arguments supported by the individual file
         writers as documented at https://imageio.readthedocs.io/en/stable/formats.html
-        
+
     """
     data = signal.data
     if rgb_tools.is_rgbx(data):
         data = rgb_tools.rgbx2regular_array(data)
-    imwrite(filename, data, **kwds)
+    if scalebar:
+        try:
+            from matplotlib_scalebar.scalebar import ScaleBar
+            export_scalebar = True
+        except ImportError:  # pragma: no cover
+            export_scalebar = False
+            _logger.warning("Exporting image with scalebar requires the "
+                            "matplotlib-scalebar library.")
+        dpi = 100
+        fig = Figure(figsize=[v/dpi for v in signal.axes_manager.signal_shape],
+                     dpi=dpi)
+
+        try:
+            # List of format supported by matplotlib
+            supported_format = sorted(fig.canvas.get_supported_filetypes())
+            if os.path.splitext(filename)[1].replace('.', '') not in supported_format:
+                export_scalebar = False
+                _logger.warning("Exporting image with scalebar is supported "
+                                f"only with {', '.join(supported_format)}.")
+        except AttributeError:  # pragma: no cover
+            export_scalebar = False
+            _logger.warning("Exporting image with scalebar requires the "
+                            "matplotlib 3.1 or newer.")
+
+    if scalebar and export_scalebar:
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.axis('off')
+        ax.imshow(data, cmap='gray')
+
+        # Add scalebar
+        axis = signal.axes_manager.signal_axes[0]
+        if axis.units == t.Undefined:
+            axis.units = "px"
+            scalebar_kwds['dimension'] = "pixel-length"
+        if _ureg.Quantity(axis.units).check('1/[length]'):
+            scalebar_kwds['dimension'] = "si-length-reciprocal"
+        scalebar = ScaleBar(axis.scale, axis.units, **scalebar_kwds)
+        ax.add_artist(scalebar)
+        fig.savefig(filename, dpi=dpi, pil_kwargs=kwds)
+    else:
+        imwrite(filename, data, **kwds)
 
 
 def file_reader(filename, **kwds):

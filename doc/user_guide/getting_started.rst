@@ -106,10 +106,6 @@ These warnings can be turned off using the
     (also called ``nbAgg``) backend that enables interactive plotting embedded 
     in the jupyter notebook.
 
-.. warning::
-        When using the qt4 backend in Python 2 the matplotlib magic must be
-        executed after importing HyperSpy and qt must be the default HyperSpy
-        backend.
 
 .. NOTE::
 
@@ -130,7 +126,7 @@ Getting help
 When using IPython, the documentation (docstring in Python jargon) can be
 accessed by adding a question mark to the name of a function. e.g.:
 
-.. code-block:: python
+.. code-block:: none
 
    >>> hs?
    >>> hs.load?

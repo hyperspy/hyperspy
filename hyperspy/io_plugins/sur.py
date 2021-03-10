@@ -1266,7 +1266,7 @@ class DigitalSurfHandler(object):
             nm = _points == self._get_work_dict_key_value("_16_Zmin")-2
 
         #We set the point in the numeric scale
-        _points = _points.astype(np.float) \
+        _points = _points.astype(float) \
             * self._get_work_dict_key_value("_23_Z_Spacing") \
             * self._get_work_dict_key_value("_35_Z_Unit_Ratio") \
             + self._get_work_dict_key_value("_55_Z_Offset")
