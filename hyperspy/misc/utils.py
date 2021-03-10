@@ -426,6 +426,12 @@ class DictionaryTreeBrowser(object):
             return item
 
     def __setattr__(self, key, value):
+        if key == 'binned':
+            warnings.warn('Use of the `binned` attribute in metadata is '
+                          'going to be deprecated in v2.0. Set the '
+                          '`axis.is_binned` attribute instead. ', 
+                          DeprecationWarning)
+            
         if key.startswith('_sig_'):
             key = key[5:]
             from hyperspy.signal import BaseSignal
@@ -634,7 +640,7 @@ class DictionaryTreeBrowser(object):
     def __next__(self):
         """
         Standard iterator method, updates the index and returns the
-        current coordiantes
+        current coordinates
 
         Returns
         -------
