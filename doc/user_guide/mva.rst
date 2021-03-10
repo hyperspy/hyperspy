@@ -22,7 +22,7 @@ analysis (ICA), are available through the methods described in this section.
 
    For some of the algorithms listed below, the decomposition results in
    an `approximation` of the dataset, i.e. :math:`X \approx A B^T`.
-RPCA
+
 .. _mva.decomposition:
 
 Decomposition
