@@ -41,7 +41,7 @@ def test_function():
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy):
     s = Signal1D(np.empty((250,)))
-    s.axes_manager[-1].is_binned = binned
+    s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = .2
     axis.offset = -15
@@ -53,7 +53,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     factor = axis.scale if binned else 1
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
-    assert g2.binned == binned
+    assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor,0.1)
     assert abs(g2.centre.value - g1.centre.value) <= 0.2
     assert abs(g2.gamma.value - g1.gamma.value) <= 0.1
@@ -68,14 +68,14 @@ def test_function_nd(binned, lazy):
     axis.offset = -15
     g1 = Lorentzian(52342, 2, 10)
     s.data = g1.function(axis.axis)
-    s.axes_manager[-1].is_binned = binned
+    s.axes_manager.signal_axes[0].is_binned = binned
     s2 = stack([s] * 2)
     if lazy:
         s2 = s2.as_lazy()
     g2 = Lorentzian()
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
-    assert g2.binned == binned
+    assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data,0.16)
 
 

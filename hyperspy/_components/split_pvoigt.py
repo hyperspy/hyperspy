@@ -200,14 +200,14 @@ class SplitVoigt(Component):
             self.sigma1.value = sigma
             self.sigma2.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if self.binned:
+            if axis.is_binned:
                 self.A.value /= axis.scale
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-            if self.binned:
+            if axis.is_binned:
                 self.A.map['values'][:] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma1.map['values'][:] = sigma
