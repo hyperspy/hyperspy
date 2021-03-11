@@ -300,7 +300,7 @@ class TestSavingMetadataContainers:
     def test_metadata_binned_deprecate(self):
         with pytest.warns(UserWarning) as warninfo:
             s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
-        assert warninfo[0].message.args[0][:16] == "Loading old file"
+        assert warninfo[1].message.args[0][:16] == "Loading old file"
         assert s.metadata.has_item('Signal.binned') == False
         assert s.axes_manager[-1].is_binned == False
         
@@ -713,7 +713,8 @@ def test_save_ragged_array(tmp_path):
 
 def test_load_missing_extension(caplog):
     path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
-    s = load(path)
+    with pytest.warns(UserWarning):
+        s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
        _ = s.models.restore("a")
