@@ -124,6 +124,11 @@ class Test_metadata:
         s.set_lines((), only_one=False, only_lines=False)
         assert s.metadata.Sample.xray_lines == ['Ti_Ll']
 
+    def test_add_lines_warning(self):
+        s = self.signal
+        with pytest.warns(UserWarning):
+            s.add_lines(('Fe_Ka',))
+
     def test_add_lines_auto(self):
         s = self.signal
         s.axes_manager.signal_axes[0].scale = 1e-2
