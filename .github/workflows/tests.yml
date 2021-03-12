@@ -46,15 +46,8 @@ jobs:
             DEPENDENCIES_DEV: true
             DEPENDENCIES: numpy scipy scikit-learn scikit-image
           - os: ubuntu
-            PYTHON_VERSION: 3.8
-            PIP_SELECTOR: '[all, tests]'
-            LABEL: -dependencies_pre_release
-            PIP_ARGS: '--upgrade --pre'
-          - os: ubuntu
             PYTHON_VERSION: 3.9
             PIP_SELECTOR: '[all, tests]'
-            LABEL: -dependencies_pre_release
-            PIP_ARGS: '--upgrade --pre'
         exclude:
           # redundant build (same as coverage) 
           - os: ubuntu
