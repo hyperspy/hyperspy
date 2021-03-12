@@ -32,6 +32,7 @@ RELEASE_next_patch (Unreleased)
 * Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
 * Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
 * Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
+* Fix finding dataset path for EMD NCEM file containing more than one dataset in a  group `#2673 <https://github.com/hyperspy/hyperspy/pull/2673>`_
 
 Changelog
 *********
