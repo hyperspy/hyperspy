@@ -33,6 +33,8 @@ RELEASE_next_patch (Unreleased)
 * Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
 * Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
 * Add support for python 3.9, fix deprecation warning with matplotlib 3.4.0 and bump minimum requirement to numpy 1.17.1 and dask 2.1.0. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
+* Add integration test suite documentation in the developer guide. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
+
 
 Changelog
 *********
