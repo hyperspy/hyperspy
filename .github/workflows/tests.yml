@@ -9,6 +9,7 @@ jobs:
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
+      PIP_ARGS: --upgrade -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
       PYTEST_ARGS_COVERAGE: 
     strategy:
@@ -17,7 +18,6 @@ jobs:
         os: [ubuntu, windows, macos]
         PYTHON_VERSION: [3.7, 3.8]
         PIP_SELECTOR: ['[all, tests]']
-        PIP_ARGS: ['--upgrade']
         DEPENDENCIES_DEV: [false]
         include:
           # test oldest supported version of main dependencies on python 3.6 
@@ -69,7 +69,7 @@ jobs:
       - name: Install
         shell: bash
         run: |
-          pip install ${{ matrix.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
+          pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
 
       - name: Install oldest supported version
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
@@ -82,13 +82,6 @@ jobs:
           pip install --upgrade --no-deps --pre \
             -i https://pypi.anaconda.org/scipy-wheels-nightly/simple \
             ${{ matrix.DEPENDENCIES }}
-
-      - name: Install GUIs development version
-        if: ${{ matrix.PIP_ARGS == '--upgrade --pre' }}
-        run: |
-          # use "--force-reinstall --no-deps" to avoid changing dependencies but still forcing installing the hyperspy_gui*
-          pip install https://github.com/hyperspy/hyperspy_gui_ipywidgets/archive/master.zip --force-reinstall --no-deps
-          pip install https://github.com/hyperspy/hyperspy_gui_traitsui/archive/master.zip --force-reinstall --no-deps
 
       - name: Run test suite
         run: |
