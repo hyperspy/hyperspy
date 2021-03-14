@@ -338,6 +338,8 @@ with update_version_when_dev() as version:
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/hdf5_files/*.hspy',
+                'tests/io/JEOL_files/*',
+                'tests/io/JEOL_files/Sample/00_View000/*',
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
