@@ -62,17 +62,18 @@ class RangeWidget(ResizableDraggableWidgetBase):
         super(RangeWidget, self).__init__(axes_manager, alpha=alpha, **kwargs)
         self.span = None
 
-    def set_on(self, value):
+    def set_on(self, value, render_figure=True):
         if value is not self.is_on() and self.ax is not None:
             if value is True:
                 self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
                 self.disconnect()
-            try:
-                self.ax.figure.canvas.draw_idle()
-            except BaseException:  # figure does not exist
-                pass
+            if render_figure:
+                try:
+                    self.ax.figure.canvas.draw_idle()
+                except BaseException:  # figure does not exist
+                    pass
             if value is False:
                 self.ax = None
         self.__is_on = value
@@ -574,7 +575,8 @@ class ModifiableSpanSelector(SpanSelector):
         self.draw_patch()
 
     def move_rect(self, event):
-        if self._button_down is False or self.ignore(event):
+        if (self._button_down is False or self.ignore(event) or
+            self._get_mouse_position(event) is None):
             return
         x_increment = self._get_mouse_position(event) - self.pressv
         if self.step_ax is not None:
