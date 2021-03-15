@@ -1066,11 +1066,11 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._cycle_signal()
-                      if isinstance(signal[1], BaseSignal) else signal[1]
-                      for signal in iterating_kwargs)
+    iterators = tuple(iterating_kwargs[key]._cycle_signal()
+                      if isinstance(iterating_kwargs[key], BaseSignal) else iterating_kwargs[key]
+                      for key in iterating_kwargs)
     # make all kwargs iterating for simplicity:
-    iterating = tuple(key for key, value in iterating_kwargs)
+    iterating = tuple(key for key in iterating_kwargs)
     for k, v in kwargs.items():
         if k not in iterating:
             iterating += k,
@@ -1078,8 +1078,8 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     def figure_out_kwargs(data):
         _kwargs = {k: v for k, v in zip(iterating, data[1:])}
-        for k, v in iterating_kwargs:
-            if (isinstance(v, BaseSignal) and
+        for k in iterating_kwargs:
+            if (isinstance(iterating_kwargs[k], BaseSignal) and
                 isinstance(_kwargs[k], np.ndarray) and
                     len(_kwargs[k]) == 1):
                 _kwargs[k] = _kwargs[k][0]
@@ -1096,7 +1096,6 @@ def process_function_blockwise(data,
                                function,
                                nav_indexes=None,
                                output_signal_size=None,
-                               iterating_kwargs=None,
                                block_info=None,
                                **kwargs):
     """

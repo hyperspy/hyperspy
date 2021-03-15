@@ -18,9 +18,16 @@ the two arrays are indeed almost identical, the most important differences are
    shape of the result depends on the values and cannot be inferred without
    execution. Hence, few operations can be run on ``res`` lazily, and it should
    be avoided if possible.
- - **Computations in Dask are Lazy**: This means that operations only run when
-   the ``signal.compute()`` function is called. It also means that for things
-   like plotting sections of the signal will need to be computed.
+ - **Computations in Dask are Lazy**:  Dask only preforms a computation when it has to. For example
+   the sum function isn't run until compute is called.  This also means that some function can be
+   applied to only some portion of the data.
+
+    .. code-block::python
+        summed_lazy_signal = lazy_signal.sum(axis=lazy_signal.axes_manager.signal_axes) # Dask sets up tasks but does not compute
+        summed_lazy_signal.inav[0:10].compute() # computes sum for only 0:10
+        summed_lazy_signal.compute() # runs sum function
+
+
 
 The easiest way to add new methods that work both with arbitrary navigation
 dimensions and ``LazySignals`` is by using the ``map`` method to map your function ``func`` across

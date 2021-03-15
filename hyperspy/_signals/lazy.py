@@ -133,6 +133,33 @@ class LazySignal(BaseSignal):
 
     compute.__doc__ %= SHOW_PROGRESSBAR_ARG
 
+    def rechunk(self,
+                nav_chunks="auto",
+                sig_chunks= -1,
+                threshold=None,
+                block_size_limit=None,
+                balance=False):
+        """Rechunks the data using the same rechunking formula from Dask expect
+        that the navigation and signal chunks are defined seperately. Note, for most
+        functions sig_chunks should remain None so that it spans the entire signal.
+
+        Parameters:
+        nav_chunks:
+            The navigation chunk size
+        sig_chunks:
+            The signal chunk size
+        """
+        if not isinstance(sig_chunks, tuple):
+            sig_chunks = (sig_chunks,)*len(self.axes_manager.signal_shape)
+        if not isinstance(nav_chunks, tuple):
+            nav_chunks = (nav_chunks,)*len(self.axes_manager.navigation_shape)
+        new_chunks = nav_chunks + sig_chunks
+        self.data = self.data.rechunk(new_chunks,
+                                      threshold=threshold,
+                                      block_size_limit=block_size_limit,
+                                      balance=balance)
+
+
     def close_file(self):
         """Closes the associated data file if any.
 
@@ -528,7 +555,7 @@ class LazySignal(BaseSignal):
 
     def _map_iterate(self,
                      function,
-                     iterating_kwargs=(),
+                     iterating_kwargs={},
                      show_progressbar=None,
                      parallel=None,
                      max_workers=None,
@@ -537,44 +564,32 @@ class LazySignal(BaseSignal):
                      output_signal_size=None,
                      output_dtype=None,
                      **kwargs):
-        """This function has two different implementations
-        based on if there is a BaseSignal passed as an argument
-        or not.
-        """
         # unpacking keyword arguments
+        nav_indexes = self.axes_manager.navigation_indices_in_array
         if ragged and inplace:
             raise ValueError("Ragged and inplace are not compatible with a lazy signal")
-        autodetermine = (output_signal_size is None or output_dtype is None)
+        chunk_span = np.equal(self.data.chunksize, self.data.shape)
+        chunk_span = [chunk_span[i] for i in self.axes_manager.signal_indices_in_array]
+        if not all(chunk_span):
+            print("The chunk size needs to span the full signal size, rechunking...")
+            self.rechunk()
+        autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
+        nav_chunks = self._get_navigation_chunk_size()
+        args = ()
+        for key in iterating_kwargs:
+            if iterating_kwargs[key]._lazy:
+                if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
+                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
+            else:
+                iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
+                iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
+            args += ((key, iterating_kwargs[key].data), )
 
-        rechunked_signals = ()
-        iter_keys = []
-        testing_kwargs = {}
-        nav_indexes = self.axes_manager.navigation_indices_in_array
-        if len(iterating_kwargs) > 0:
-            for key, signal in iterating_kwargs:
-                if (signal.axes_manager.navigation_shape != self.axes_manager.navigation_shape and
-                        signal.axes_manager.navigation_shape != ()):
-                    if signal.axes_manager.signal_shape == ():
-                        kwargs[key] = signal.data  # this really isn't an iterating signal.
-                    else:
-                        raise ValueError('the size of the navigation_shape: <' +
-                                        str(signal.axes_manager.navigation_shape) +
-                                        '> must be consistent with the size of the mapped signal <' +
-                                        str(self.axes_manager.navigation_shape) + '>')
-                elif signal.axes_manager.navigation_shape == ():
-                    if signal.axes_manager.signal_shape == (1,):
-                        kwargs[key] = signal.data[0]  # this really isn't an iterating signal.
-                    else:
-                        kwargs[key] = signal.data
-                else:
-                    rechunked_signal, test_kwarg = rechunk_signal(signal,
-                                                                  key,
-                                                                  nav_chunks=self._get_navigation_chunk_size(),
-                                                                  test=autodetermine)
-                    rechunked_signals += (rechunked_signal,)
-                    testing_kwargs.update(test_kwarg)
-                    kwargs.pop(key)
-        if autodetermine:
+        if autodetermine: #trying to guess the output d-type and size from one signal
+            testing_kwargs = {}
+            for key in iterating_kwargs:
+                test_ind = (0,) * len(self.axes_manager.navigation_axes)
+                testing_kwargs[key] = np.squeeze(iterating_kwargs[key].inav[test_ind].data).compute()
             testing_kwargs = {**kwargs, **testing_kwargs}
             test_data = np.array(self.inav[(0,) * len(self.axes_manager.navigation_shape)].data.compute())
             output_signal_size, output_dtype = guess_output_signal_size(test_signal=test_data,
@@ -600,7 +615,7 @@ class LazySignal(BaseSignal):
         chunks = tuple([self.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
         mapped = da.map_blocks(process_function_blockwise,
                                self.data,
-                               *rechunked_signals,
+                               *args,
                                function=function,
                                nav_indexes=nav_indexes,
                                drop_axis=drop_axis,
@@ -608,7 +623,6 @@ class LazySignal(BaseSignal):
                                output_signal_size=output_signal_size,
                                dtype=output_dtype,
                                chunks=chunks,
-                               iterating_kwargs=iter_keys,
                                **kwargs)
         if inplace:
             self.data = mapped
@@ -619,8 +633,6 @@ class LazySignal(BaseSignal):
                 sig.axes_manager.remove(sig.axes_manager.signal_axes)
                 sig.__class__ = LazySignal
                 sig.__init__(**sig._to_dictionary(add_models=True))
-                #if len(sig.axes_manager._axes) == 0:
-                #    sig.axes_manager._append_axis(1, navigate=True, name='Scalar')
 
                 return sig
             # remove if too many axes

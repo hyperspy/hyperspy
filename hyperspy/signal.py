@@ -4474,12 +4474,19 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.navigation_shape == () and self._lazy:
             print("Converting signal to a non-lazy signal because there are no nav dimensions")
             self.compute()
-        # Sepate ndkwargs
-        ndkwargs = ()
-        for key, value in list(kwargs.items()):
-            if isinstance(value, BaseSignal):
-                ndkwargs += ((key, value),)
-
+        # Sepate ndkwargs depending on if they are BaseSignals.
+        ndkwargs = {}
+        ndkeys = [key for key in kwargs if isinstance(kwargs[key], BaseSignal)]
+        for key in ndkeys:
+            if kwargs[key].axes_manager.navigation_shape == self.axes_manager.navigation_shape:
+                ndkwargs[key] = kwargs.pop(key)
+            elif kwargs[key].axes_manager.navigation_shape == () or kwargs[key].axes_manager.navigation_shape == (1,):
+                kwargs[key] = np.squeeze(kwargs[key].data)  # this really isn't an iterating signal.
+            else:
+                raise ValueError('the size of the navigation_shape for some kwarg:' + key + ' <' +
+                                 str(kwargs[key].axes_manager.navigation_shape) +
+                                 '> must be consistent with the size of the mapped signal <' +
+                                 str(self.axes_manager.navigation_shape) + '>')
         # Check if the signal axes have inhomogeneous scales and/or units and
         # display in warning if yes.
         scale = set()
