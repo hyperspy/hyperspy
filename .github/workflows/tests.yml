@@ -11,7 +11,7 @@ jobs:
       MPLBACKEND: agg
       PIP_ARGS: --upgrade --use-feature=2020-resolver -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
-      PYTEST_ARGS_COVERAGE: 
+      PYTEST_ARGS_COVERAGE:
     strategy:
       fail-fast: false
       matrix:
@@ -20,11 +20,11 @@ jobs:
         PIP_SELECTOR: ['[all, tests]']
         UPSTREAM_DEV: [false]
         include:
-          # test oldest supported version of main dependencies on python 3.6 
+          # test oldest supported version of main dependencies on python 3.6
           - os: ubuntu
             PYTHON_VERSION: 3.6
             OLDEST_SUPPORTED_VERSION: true
-            DEPENDENCIES: matplotlib==2.2.3 numpy==1.17.0 scipy==1.1 imagecodecs==2019.12.3 dask==2.1.0
+            DEPENDENCIES: matplotlib==2.2.3 numpy==1.17.1 scipy==1.1 imagecodecs==2019.12.3 dask==2.1.0
             PIP_SELECTOR: '[all, tests]'
             LABEL: -oldest
           # test minimum requirement
@@ -46,7 +46,7 @@ jobs:
             UPSTREAM_DEV: true
             DEPENDENCIES: numpy scipy scikit-learn scikit-image
         exclude:
-          # redundant build (same as coverage) 
+          # redundant build (same as coverage)
           - os: ubuntu
             PYTHON_VERSION: 3.7
 
@@ -85,7 +85,7 @@ jobs:
           pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
 
       - name: Upload coverage to Codecov
-        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }} 
+        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}
         uses: codecov/codecov-action@v1
 
   build_doc:
