@@ -552,9 +552,19 @@ class EMD_NCEM:
             self.dictionaries.append(d)
 
     @classmethod
-    def find_dataset_paths(cls, file):
+    def find_dataset_paths(cls, file, supported_dataset=True):
         """
         Find the paths of all groups containing valid EMD data.
+
+        Parameters
+        ----------
+        file : hdf5 file handle
+        supported_dataset : bool, optional
+            If True (default), returns the paths of all supported datasets,
+            otherwise returns the path of the non-supported other dataset.
+            This is relevant for groups containing auxiliary dataset(s) which
+            are not supported by HyperSpy or described in the EMD NCEM dataset
+            specification.
 
         Returns
         -------
@@ -562,15 +572,20 @@ class EMD_NCEM:
             List of path to these group.
 
         """
-        def print_dataset_only(item_name, item):
-            if not os.path.basename(item_name).startswith(('dim', 'index_coords')):
+        def print_dataset_only(item_name, item, dataset_only):
+            if supported_dataset is os.path.basename(item_name).startswith(
+                    ('data', 'counted_datacube', 'datacube', 'diffractionslice',
+                     'realslice', 'pointlistarray', 'pointlist')):
                 if isinstance(item, h5py.Dataset):
                     grp = file.get(os.path.dirname(item_name))
                     if cls._get_emd_group_type(grp):
                         dataset_path.append(item_name)
 
+        f = lambda item_name, item: print_dataset_only(item_name, item,
+                                                       supported_dataset)
+
         dataset_path = []
-        file.visititems(print_dataset_only)
+        file.visititems(f)
 
         return dataset_path
 
