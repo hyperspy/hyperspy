@@ -103,6 +103,19 @@ class TestAlignTools:
         np.testing.assert_allclose(s.data[:, i_zlp], 12)
 
 
+def test_align1D():
+    scale = 0.1
+    g = hs.model.components1D.Gaussian(sigma=scale*5)
+    x = np.stack([np.linspace(-5, 5, 100)]*5)
+    s = hs.signals.Signal1D(g.function(x) + 1E5)
+    s.axes_manager[-1].scale = scale
+    shifts = np.random.random(len(s.axes_manager[0].axis)) * 2
+    shifts[0] = 0
+    s.shift1D(-shifts, show_progressbar=False)
+    shifts2 = s.estimate_shift1D(show_progressbar=False)
+    np.testing.assert_allclose(shifts, shifts2, rtol=0.3)
+
+
 @lazifyTestClass
 class TestShift1D:
 
