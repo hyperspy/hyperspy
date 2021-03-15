@@ -33,9 +33,9 @@ It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
 <https://github.com/hyperspy/hyperspy-extensions-list>`_ regardless of their
 maturity level. In this way, we can avoid duplication of efforts and issues
-arising from naming conflicts. This repository also run an `integration test
+arising from naming conflicts. This repository also runs an `integration test
 suite <https://github.com/hyperspy/hyperspy-extensions-list/actions>`__ daily,
-which run the test suite of all extensions to check the status of
+which runs the test suite of all extensions to check the status of
 the ecosystem. See the :ref:`corresponding section <integration_test_suite-label>`
 for more details.
 
@@ -379,8 +379,8 @@ Integration test suite
 ----------------------
 
 The `integration test suite <https://github.com/hyperspy/hyperspy-extensions-list/actions>`__
-daily run the test suite of hyperspy and hyperspy extension against release and
-development version. The build matrix is as follow:
+runs the test suite of hyperspy and hyperspy extension on a daily basis against both the
+release and development versions. The build matrix is as follows:
 
 .. list-table:: Build matrix of the integration test suite
    :widths: 25 25 25
@@ -414,10 +414,10 @@ development version. The build matrix is as follow:
      - Development
      - Pre-release
 
-To development packages of the dependencies are provided by the
+The development packages of the dependencies are provided by the
 `scipy-wheels-nightly <https://pypi.anaconda.org/scipy-wheels-nightly/simple>`_
 repository, which provides ``scipy``, ``numpy``, ``scikit-learn`` and ``scikit-image``
 at the time of writing.
 The pre-release packages are obtained from `pypi <https://pypi.org>`_ and these
-will be used by any dependency which provides a pre-release package on pypi.
+will be used for any dependency which provides a pre-release package on pypi.
 
