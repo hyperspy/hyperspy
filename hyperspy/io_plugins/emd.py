@@ -560,9 +560,9 @@ class EMD_NCEM:
         ----------
         file : hdf5 file handle
         supported_dataset : bool, optional
-            If True (default), returns the paths of all supported dataset,
+            If True (default), returns the paths of all supported datasets,
             otherwise returns the path of the non-supported other dataset.
-            This is relevant for group contains auxiliary dataset(s) which
+            This is relevant for groups containing auxiliary dataset(s) which
             are not supported by HyperSpy or described in the EMD NCEM dataset
             specification.
 
