@@ -33,7 +33,11 @@ It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
 <https://github.com/hyperspy/hyperspy-extensions-list>`_ regardless of their
 maturity level. In this way, we can avoid duplication of efforts and issues
-arising from naming conflicts.
+arising from naming conflicts. This repository also runs an `integration test
+suite <https://github.com/hyperspy/hyperspy-extensions-list/actions>`__ daily,
+which runs the test suite of all extensions to check the status of
+the ecosystem. See the :ref:`corresponding section <integration_test_suite-label>`
+for more details.
 
 At this point, it is worth noting that HyperSpy's main strength is its amazing
 community of users and developers. We trust that the developers of packages
@@ -331,7 +335,7 @@ Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
 To register a new toolkey:
 
-1. Declare a new toolkey, *e. g.* by adding the :py:func:`hyperspy.ui_registry.add_gui_method`
+1. Declare a new toolkey, *e. g.* by adding the :py:func:`~.ui_registry.add_gui_method`
    decorator to the function you want to assign a widget to.
 2. Register a new toolkey that you have declared in your package by adding it to
    the ``hyperspy_extension.yaml`` file, as in the following example:
@@ -367,3 +371,53 @@ resides.
             function: get_mycomponent_widget
             # The module where the function resides.
             module: my_package.widgets
+
+
+.. _integration_test_suite-label:
+
+Integration test suite
+----------------------
+
+The `integration test suite <https://github.com/hyperspy/hyperspy-extensions-list/actions>`__
+runs the test suite of hyperspy and hyperspy extension on a daily basis against both the
+release and development versions. The build matrix is as follows:
+
+.. list-table:: Build matrix of the integration test suite
+   :widths: 25 25 25
+   :header-rows: 1
+
+   * - HyperSpy
+     - Extension
+     - Dependencies
+   * - Release
+     - Release
+     - Release
+   * - Release
+     - Development
+     - Release
+   * - RELEASE_next_patch
+     - Release
+     - Release
+   * - RELEASE_next_patch
+     - Development
+     - Release
+   * - RELEASE_next_minor
+     - Release
+     - Release
+   * - RELEASE_next_minor
+     - Development
+     - Release
+   * - RELEASE_next_minor
+     - Development
+     - Development
+   * - RELEASE_next_minor
+     - Development
+     - Pre-release
+
+The development packages of the dependencies are provided by the
+`scipy-wheels-nightly <https://pypi.anaconda.org/scipy-wheels-nightly/simple>`_
+repository, which provides ``scipy``, ``numpy``, ``scikit-learn`` and ``scikit-image``
+at the time of writing.
+The pre-release packages are obtained from `pypi <https://pypi.org>`_ and these
+will be used for any dependency which provides a pre-release package on pypi.
+

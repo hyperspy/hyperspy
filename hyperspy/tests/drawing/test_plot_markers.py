@@ -156,7 +156,7 @@ class TestMarkers:
         for iy, temp_marker_list in enumerate(marker_pos_list):
             for ix, value in enumerate(temp_marker_list):
                 s.axes_manager.indices = (ix, iy)
-                vertical_line = s._plot.signal_plot.figure.axes[0].lines[1]
+                vertical_line = s._plot.signal_plot.ax.lines[1]
                 assert value == vertical_line.get_data()[0]
 
     def test_add_marker_signal2d_navigation_dim(self):
