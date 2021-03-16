@@ -311,3 +311,6 @@ def test_plot_autoscale(sdim):
     s = test_plot_nav1d.signal
     with pytest.raises(ValueError):
         s.plot(autoscale='xa')
+
+    s.change_dtype(bool)
+    s.plot()
