@@ -802,9 +802,12 @@ class MVA:
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         f"`mask` shape is not equal to {space} shape. "
-                        f"Mask shape: {mask.axes_manager.signal_shape}\t"
+                        f"Mask shape: {mask.axes_manager.signal_shape}; "
                         f"{space} shape: {ref_shape}"
                     )
+            else:
+                raise ValueError("`mask` must be a HyperSpy signal.")
+
             if hasattr(mask, "compute"):
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.
