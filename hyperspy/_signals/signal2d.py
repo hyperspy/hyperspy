@@ -685,8 +685,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 int(np.ceil(signal_shifts.isig[1].max().data)) if signal_shifts.isig[1].max().data > 0 else 0,
             )
             top, bottom = (
-                int(np.floor(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else 0,
-                int(np.ceil(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
+                int(np.ceil(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else 0,
+                int(np.floor(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
             )
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
@@ -694,9 +694,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
             for i in range(self.data.ndim):
                 if i == xaxis.index_in_array:
-                    padding.append((right, -left))
+                    padding.append((-left, right))
                 elif i == yaxis.index_in_array:
-                    padding.append((bottom, -top))
+                    padding.append((-top, bottom))
                 else:
                     padding.append((0, 0))
 
