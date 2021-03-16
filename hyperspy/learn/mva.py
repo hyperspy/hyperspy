@@ -365,9 +365,9 @@ class MVA:
             _logger.info("Performing decomposition analysis")
 
             if isinstance(navigation_mask, BaseSignal):
-                navigation_mask = navigation_mask.data
-            if hasattr(navigation_mask, "ravel"):
-                navigation_mask = navigation_mask.ravel()
+                navigation_mask = navigation_mask.data.ravel()
+            elif hasattr(navigation_mask, "ravel"):
+                navigation_mask = navigation_mask.T.ravel()
 
             if isinstance(signal_mask, BaseSignal):
                 signal_mask = signal_mask.data

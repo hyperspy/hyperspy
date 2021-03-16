@@ -646,6 +646,11 @@ def test_decomposition_navigation_mask(mask_as_array):
     if mask_as_array:
         navigation_mask = navigation_mask
     s.decomposition(navigation_mask=navigation_mask)
+    data = s.get_decomposition_loadings().inav[0].data
+    # Use np.argwhere(np.isnan(data)) to get the indices
+    np.testing.assert_allclose(data[[2, 5, 7, 8, 12, 13, 15, 19]],
+                               np.full(8, np.nan))
+    assert not np.isnan(s.get_decomposition_factors().data).any()
 
 
 @pytest.mark.parametrize('mask_as_array', [True, False])
@@ -655,6 +660,12 @@ def test_decomposition_signal_mask(mask_as_array):
     if mask_as_array:
         signal_mask = signal_mask.data
     s.decomposition(signal_mask=signal_mask)
+    data = s.get_decomposition_factors().inav[0].data
+    # Use np.argwhere(np.isnan(data)) to get the indices
+    np.testing.assert_allclose(data[[ 5, 12, 14, 15, 18, 21, 27, 28, 32, 43,
+                                     52, 55, 57, 59, 62, 79, 83]],
+                                np.full(17, np.nan))
+    assert not np.isnan(s.get_decomposition_loadings().data).any()
 
 
 @pytest.mark.parametrize('normalise_poissonian_noise', [True, False])
