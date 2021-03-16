@@ -51,8 +51,13 @@ def test_signal_iterator():
         for i, signal in enumerate(s):
             assert i == signal.data[0]
 
-def test_squeeze():
-    s = signals.Signal2D(np.random.random((2,1,1,6,7,8)))
+@pytest.mark.parametrize('shape', 
+                         [(2,1,1,6,7,8), (2,6,1,1,7,8), (1,1,2,6,7,8)])
+@pytest.mark.parametrize('shape2', 
+                         [(2,1,1,6,8,7,1,1), (2,6,1,1,8,1,7,1),
+                         (1,1,2,6,8,1,1,7)])
+def test_squeeze(shape, shape2):
+    s = signals.Signal2D(np.random.random(shape))
     assert s.squeeze().axes_manager.shape == (6, 2, 8, 7)
     assert s.squeeze().data.shape == (2, 6, 7, 8)
     s = signals.BaseSignal(np.random.random((2,1,1,6,8,7,1,1)))

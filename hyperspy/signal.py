@@ -2502,7 +2502,7 @@ class BaseSignal(FancySlicing,
             for axis in reversed(ax):
                 if axis.size == 1:
                     self._remove_axis(axis.index_in_axes_manager)
-            self.data = self.data.squeeze()
+        self.data = self.data.squeeze()
         return self
 
     def _to_dictionary(self, add_learning_results=True, add_models=False):
