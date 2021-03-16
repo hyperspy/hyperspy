@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
-      PIP_ARGS: --upgrade --use-feature=2020-resolver -e
+      PIP_ARGS: --upgrade -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
       PYTEST_ARGS_COVERAGE:
     strategy:
@@ -18,7 +18,7 @@ jobs:
         os: [ubuntu, windows, macos]
         PYTHON_VERSION: [3.7, 3.8]
         PIP_SELECTOR: ['[all, tests]']
-        UPSTREAM_DEV: [false]
+        DEPENDENCIES_DEV: [false]
         include:
           # test oldest supported version of main dependencies on python 3.6
           - os: ubuntu
@@ -38,13 +38,16 @@ jobs:
             PIP_SELECTOR: '[all, tests, coverage]'
             PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
             LABEL: -coverage
-          # Run test suite against upstream development version
+          # Run test suite against dependencies development version
           - os: ubuntu
             PYTHON_VERSION: 3.8
             PIP_SELECTOR: '[all, tests]'
-            LABEL: -upstream_dev
-            UPSTREAM_DEV: true
+            LABEL: -dependencies_dev
+            DEPENDENCIES_DEV: true
             DEPENDENCIES: numpy scipy scikit-learn scikit-image
+          - os: ubuntu
+            PYTHON_VERSION: 3.9
+            PIP_SELECTOR: '[all, tests]'
         exclude:
           # redundant build (same as coverage)
           - os: ubuntu
@@ -74,7 +77,7 @@ jobs:
           pip install ${{ matrix.DEPENDENCIES }}
 
       - name: Install dependencies development version
-        if: ${{ matrix.UPSTREAM_DEV }}
+        if: ${{ matrix.DEPENDENCIES_DEV }}
         run: |
           pip install --upgrade --no-deps --pre \
             -i https://pypi.anaconda.org/scipy-wheels-nightly/simple \
@@ -95,21 +98,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/setup-python@v2
-        name: Install Python
+      - uses: ammaraskar/sphinx-action@master
         with:
-          python-version: 3.8
-
-      - name: Install
-        run: |
-          pip install -e .[build-doc]
-
-      - name: Build doc
-        run: |
-          cd doc && make html
+          pre-build-command: "apt-get update -y && apt-get install -y python3-dev build-essential graphviz && pip install -e .[build-doc]"
+          build-command: make html
+          docs-folder: doc/
 
       - uses: actions/upload-artifact@v2
         with:
-          path: ./doc/_build/*
+          path: ./doc/_build/html/
           name: doc_build
 

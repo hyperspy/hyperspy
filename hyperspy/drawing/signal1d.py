@@ -421,8 +421,8 @@ class Signal1DLine(object):
                update_ylimits=False):
         """Update the current spectrum figure
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         force_replot : bool
             If True, close and open the figure. Default is False.
         render_figure : bool

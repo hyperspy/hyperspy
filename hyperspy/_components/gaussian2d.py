@@ -60,25 +60,9 @@ class Gaussian2D(Expression):
 
     Attributes
     ----------
-    fwhm_x, fwhm_x : float
+    fwhm_x, fwhm_y : float
         Convenience attributes to get and set the full-with-half-maxima along
         the two axes.
-
-    Properties
-    ----------
-    sigma_major : float
-        The sigma value of the major axis (axis with the largest sigma value).
-    sigma_minor : float
-        The sigma value of the minor axis (axis with the smallest sigma value).
-    ellipticity : float
-        Ratio between the major and minor axis.
-    rotation_major_axis : float
-        Rotation angle in radian between the major axis (axis with the largest
-        sigma value) and the horizontal axis.
-        Only for Gaussian2D component created with `add_rotation=True`.
-    rotation_angle_wrapped : float
-        Rotation angle in radian wrapped to [0, 2*pi].
-        Only for Gaussian2D component created with `add_rotation=True`.
     """
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
@@ -117,6 +101,7 @@ class Gaussian2D(Expression):
 
     @property
     def fwhm_y(self):
+
         return self.sigma_y.value * sigma2fwhm
 
     @fwhm_y.setter
@@ -125,6 +110,9 @@ class Gaussian2D(Expression):
 
     @property
     def sigma_major(self):
+        """float: The sigma value of the major axis (axis with the largest
+        sigma value).
+        """
         if self.sigma_x.value >= self.sigma_y.value:
             return self.sigma_x.value
         else:
@@ -132,6 +120,9 @@ class Gaussian2D(Expression):
 
     @property
     def sigma_minor(self):
+        """float: The sigma value of the minor axis (axis with the smallest
+        sigma value).
+        """
         if self.sigma_x.value >= self.sigma_y.value:
             return self.sigma_y.value
         else:
@@ -139,16 +130,23 @@ class Gaussian2D(Expression):
 
     @property
     def ellipticity(self):
+        """float: Ratio between the major and minor axis.
+        """
         return self.sigma_major / self.sigma_minor
 
     @property
     def rotation_angle_wrapped(self):
-        """ Angle in radian wrapped from 0 to 2*pi. """
+        """float: Rotation angle in radian wrapped to [0, 2*pi].
+        Only for Gaussian2D component created with `add_rotation=True`.
+        """
         return math.fmod(self.rotation_angle.value, 2 * np.pi)
 
     @property
     def rotation_major_axis(self):
-        """Angle between major axis and x-axis, in radian."""
+        """float: Rotation angle in radian between the major axis (axis with
+        the largest sigma value) and the horizontal axis.
+        Only for Gaussian2D component created with `add_rotation=True`.
+        """
         if self.sigma_x.value >= self.sigma_y.value:
             return self.rotation_angle_wrapped
         else:

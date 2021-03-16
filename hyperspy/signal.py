@@ -1682,8 +1682,8 @@ class MVATools(object):
     def get_cluster_labels(self, merged=False):
         """Return cluster labels as a Signal.
 
-        Parameters:
-        --------
+        Parameters
+        ----------
         merged : bool
             If False the cluster label signal has a navigation axes of length
             number_of_clusters and the signal along the the navigation
@@ -1698,7 +1698,7 @@ class MVATools(object):
         get_cluster_signals
 
         Returns
-        --------
+        -------
         signal Hyperspy signal of cluster labels
         """
         if self.learning_results.cluster_labels is None:
@@ -1732,12 +1732,12 @@ class MVATools(object):
     def get_cluster_signals(self, signal="mean"):
         """Return the cluster centers as a Signal.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         %s
 
         See Also
-        -------
+        --------
         get_cluster_labels
 
         """
@@ -1757,7 +1757,7 @@ class MVATools(object):
         get_cluster_signals
 
         Returns
-        --------
+        -------
         signal
             Hyperspy signal of cluster distances
 
@@ -2280,7 +2280,8 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
-    def _deepcopy_with_new_data(self, data=None, copy_variance=False):
+    def _deepcopy_with_new_data(self, data=None, copy_variance=False,
+                                copy_navigator=False):
         """Returns a deepcopy of itself replacing the data.
 
         This method has an advantage over the default :py:func:`copy.deepcopy`
@@ -2291,6 +2292,8 @@ class BaseSignal(FancySlicing,
         data : None or :py:class:`numpy.ndarray`
         copy_variance : bool
             Whether to copy the variance of the signal to the new copy
+        copy_navigator : bool
+            Whether to copy the navgitor of the signal to the new copy
 
         Returns
         -------
@@ -2299,6 +2302,7 @@ class BaseSignal(FancySlicing,
 
         """
         old_np = None
+        old_navigator = None
         try:
             old_data = self.data
             self.data = None
@@ -2308,6 +2312,9 @@ class BaseSignal(FancySlicing,
             if not copy_variance and "Noise_properties" in self.metadata.Signal:
                 old_np = self.metadata.Signal.Noise_properties
                 del self.metadata.Signal.Noise_properties
+            if not copy_navigator and self.metadata.has_item('_HyperSpy.navigator'):
+                old_navigator = self.metadata._HyperSpy.navigator
+                del self.metadata._HyperSpy.navigator
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = data
@@ -2318,6 +2325,8 @@ class BaseSignal(FancySlicing,
             self.models._models = old_models
             if old_np is not None:
                 self.metadata.Signal.Noise_properties = old_np
+            if old_navigator is not None:
+                self.metadata._HyperSpy.navigator = old_navigator
 
     def as_lazy(self, copy_variance=True):
         """
@@ -2473,12 +2482,26 @@ class BaseSignal(FancySlicing,
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes. See :py:func:`numpy.squeeze` for more details.
+        
+        Returns
+        -------
+        s : signal
+            A new signal object with single-entry dimensions removed
+        
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+        <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
+        >>> s = s.squeeze()
+        >>> s
+        <Signal2D, title: , dimensions: (6, 2|8, 8)>
         """
         # We deepcopy everything but data
         self = self._deepcopy_with_new_data(self.data)
-        for axis in self.axes_manager._axes:
-            if axis.size == 1:
-                self._remove_axis(axis.index_in_axes_manager)
+        for ax in (self.axes_manager.signal_axes, self.axes_manager.navigation_axes):
+            for axis in reversed(ax):
+                if axis.size == 1:
+                    self._remove_axis(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
         return self
 
@@ -6029,16 +6052,17 @@ class BaseSignal(FancySlicing,
         """
         if isinstance(mask, BaseSignal):
             if mask.axes_manager.signal_dimension != 0:
-                raise ValueError("`mask` must be a signal with "
-                                 "`signal_dimension` equal to 0")
+                raise ValueError("The navigation mask signal must have the "
+                                 "`signal_dimension` equal to 0.")
             elif (mask.axes_manager.navigation_shape !=
                   self.axes_manager.navigation_shape):
-                raise ValueError("`mask` must be a signal with the same "
-                                 "`navigation_shape` as the current signal.")
+                raise ValueError("The navigation mask signal must have the "
+                                 "same `navigation_shape` as the current "
+                                 "signal.")
         if isinstance(mask, np.ndarray) and (
                 mask.shape != self.axes_manager.navigation_shape):
-            raise ValueError("The shape of `mask` must match the shape of "
-                             "the `navigation_shape`.")
+            raise ValueError("The shape of the navigation mask array must "
+                             "match `navigation_shape`.")
 
     def _check_signal_mask(self, mask):
         """
@@ -6061,16 +6085,16 @@ class BaseSignal(FancySlicing,
         """
         if isinstance(mask, BaseSignal):
             if mask.axes_manager.navigation_dimension != 0:
-                raise ValueError("`mask` must be a signal with "
-                                 "`navigation_dimension` equal to 0")
+                raise ValueError("The signal mask signal must have the "
+                                 "`navigation_dimension` equal to 0.")
             elif (mask.axes_manager.signal_shape !=
                   self.axes_manager.signal_shape):
-                raise ValueError("`mask` must be a signal with the same "
+                raise ValueError("The signal mask signal must have the same "
                                  "`signal_shape` as the current signal.")
         if isinstance(mask, np.ndarray) and (
                 mask.shape != self.axes_manager.signal_shape):
-            raise ValueError("The shape of `mask` must match the shape of "
-                             "the `signal_shape`.")
+            raise ValueError("The shape of signal mask array must match "
+                             "`signal_shape`.")
 
 
 ARITHMETIC_OPERATORS = (

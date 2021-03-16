@@ -133,9 +133,9 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    peak_dt = np.dtype([('position', np.float),
-                        ('height', np.float),
-                        ('width', np.float)])
+    peak_dt = np.dtype([('position', float),
+                        ('height', float),
+                        ('width', float)])
     P = np.array([], dtype=peak_dt)
     peak = 0
     for j in range(len(y) - 4):
@@ -226,12 +226,8 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
-def _estimate_shift1D(data, **kwargs):
-    mask = kwargs.get('mask', None)
-    ref = kwargs.get('ref', None)
-    interpolate = kwargs.get('interpolate', True)
-    ip = kwargs.get('ip', 5)
-    data_slice = kwargs.get('data_slice', slice(None))
+def _estimate_shift1D(data, data_slice=slice(None), ref=None, ip=5,
+                      interpolate=True, mask=None, **kwargs):
     if bool(mask):
         # asarray is required for consistensy as argmax
         # returns a numpy scalar array
@@ -239,6 +235,9 @@ def _estimate_shift1D(data, **kwargs):
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
+    # Normalise the data before the cross correlation
+    ref = ref - ref.mean()
+    data = data - data.mean()
     return (np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1).astype(float)
 
 
@@ -253,6 +252,7 @@ def _shift1D(data, **kwargs):
     if np.isnan(shift) or shift == 0:
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
+
     si = sp.interpolate.interp1d(original_axis,
                                  data,
                                  bounds_error=False,
@@ -655,7 +655,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array = shift_array / ip
-        shift_array *= axis.scale
+        shift_array = shift_array * axis.scale
         if self._lazy:
             # We must compute right now because otherwise any changes to the
             # axes_manager of the signal later in the workflow may result in
@@ -1438,9 +1438,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          parallel=parallel,
                          max_workers=max_workers,
                          inplace=False)
-
-        if peaks._lazy:
-            peaks.compute()
         return peaks.data
 
     find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -1516,8 +1513,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         def estimating_function(spectrum,
                                 window=None,
                                 factor=0.5,
-                                axis2=None):
-            x = axis2.axis
+                                axis=None):
+            x = axis.axis
             if window is not None:
                 vmax = axis.index2value(spectrum.argmax())
                 slices = axis._get_array_slices(
@@ -1532,21 +1529,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
             if len(roots) == 2:
                 return np.array(roots)
             else:
-                print("return", np.full((2,), np.nan))
                 return np.full((2,), np.nan)
 
-        both = self.map(estimating_function,
+        both = self._map_iterate(estimating_function,
                                  window=window,
                                  factor=factor,
-                                 axis2=axis,
+                                 axis=axis,
                                  ragged=False,
                                  inplace=False,
                                  parallel=parallel,
                                  show_progressbar=show_progressbar,
-                                 output_signal_size =(2,),
                                  max_workers=None)
-        if both._lazy:
-            both.data[0].compute()
         left, right = both.T.split()
         width = right - left
         if factor == 0.5:

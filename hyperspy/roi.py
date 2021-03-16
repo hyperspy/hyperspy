@@ -702,15 +702,15 @@ class SpanROI(BaseInteractiveROI):
     _ndim = 1
 
     def __init__(self, left, right):
-        super(SpanROI, self).__init__()
-        self._bounds_check = True   # Use reponsibly!
+        super().__init__()
+        self._bounds_check = True   # Use responsibly!
+        if left >= right:
+            raise ValueError(f"`left` ({left}) must be smaller than `right` ({right}).")
         self.left, self.right = left, right
 
     def __getitem__(self, *args, **kwargs):
         _tuple = (self.left, self.right)
         return _tuple.__getitem__(*args, **kwargs)
-
-
 
     def is_valid(self):
         return (t.Undefined not in (self.left, self.right) and
@@ -1196,8 +1196,8 @@ class Line2DROI(BaseInteractiveROI):
 
     @property
     def length(self):
-        p0 = np.array((self.x1, self.y1), dtype=np.float)
-        p1 = np.array((self.x2, self.y2), dtype=np.float)
+        p0 = np.array((self.x1, self.y1), dtype=float)
+        p1 = np.array((self.x2, self.y2), dtype=float)
         d_row, d_col = p1 - p0
         return np.hypot(d_row, d_col)
 

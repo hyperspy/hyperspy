@@ -111,8 +111,8 @@ class TestMarkers:
         m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
         m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
         m4 = markers.point(5, 5)
-        m4.data['x1'][()] = np.array(None, dtype=np.object)
-        m4.data['y1'][()] = np.array(None, dtype=np.object)
+        m4.data['x1'][()] = np.array(None, dtype=object)
+        m4.data['y1'][()] = np.array(None, dtype=object)
         m5 = markers.vertical_line(9)
         m6 = markers.rectangle(1, 5, 6, 8)
         m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
@@ -156,7 +156,7 @@ class TestMarkers:
         for iy, temp_marker_list in enumerate(marker_pos_list):
             for ix, value in enumerate(temp_marker_list):
                 s.axes_manager.indices = (ix, iy)
-                vertical_line = s._plot.signal_plot.figure.axes[0].lines[1]
+                vertical_line = s._plot.signal_plot.ax.lines[1]
                 assert value == vertical_line.get_data()[0]
 
     def test_add_marker_signal2d_navigation_dim(self):

@@ -688,6 +688,9 @@ def test_fei_complex_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'))
     assert isinstance(signal, ComplexSignal2D)
 
+def test_fei_complex_loading_lazy():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'), lazy=True)
+    assert isinstance(signal, ComplexSignal2D)
 
 def test_fei_no_frametime():
     signal = load(os.path.join(my_path, 'emd_files', 'fei_example_tem_stack.emd'))

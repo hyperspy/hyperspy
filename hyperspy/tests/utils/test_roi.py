@@ -104,6 +104,12 @@ class TestROIs():
         r = Point2DROI(1, 2)
         assert tuple(r) == (1, 2)
 
+    def test_span_roi_init(self):
+        with pytest.raises(ValueError):
+            SpanROI(30, 15)
+        with pytest.raises(ValueError):
+            SpanROI(15, 15)
+
     def test_span_spectrum_nav(self):
         s = self.s_s
         r = SpanROI(15, 30)
@@ -485,6 +491,10 @@ class TestROIs():
             r.angle(units='meters')
         with pytest.raises(ValueError):
             r.angle(axis='z')
+
+    def test_line2droi_length(self):
+        line = Line2DROI(x1=0., x2=2, y1=0., y2=2)
+        np.testing.assert_allclose(line.length, np.sqrt(8))
 
 
 class TestInteractive:
