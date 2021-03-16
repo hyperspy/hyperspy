@@ -2498,10 +2498,11 @@ class BaseSignal(FancySlicing,
         """
         # We deepcopy everything but data
         self = self._deepcopy_with_new_data(self.data)
-        for axis in reversed(self.axes_manager._axes):
-            if axis.size == 1:
-                self._remove_axis(axis.index_in_axes_manager)
-        self.data = self.data.squeeze()
+        for ax in (self.axes_manager.signal_axes, self.axes_manager.navigation_axes):
+            for axis in reversed(ax):
+                if axis.size == 1:
+                    self._remove_axis(axis.index_in_axes_manager)
+            self.data = self.data.squeeze()
         return self
 
     def _to_dictionary(self, add_learning_results=True, add_models=False):

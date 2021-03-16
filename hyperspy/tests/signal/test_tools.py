@@ -52,9 +52,14 @@ def test_signal_iterator():
             assert i == signal.data[0]
 
 def test_squeeze():
-    s = signals.Signal2D(np.random.random((2,1,1,6,8,8)))
-    assert s.squeeze().axes_manager.shape == (6, 2, 8, 8)
-    assert s.squeeze().data.shape == (2, 6, 8, 8)
+    s = signals.Signal2D(np.random.random((2,1,1,6,7,8)))
+    assert s.squeeze().axes_manager.shape == (6, 2, 8, 7)
+    assert s.squeeze().data.shape == (2, 6, 7, 8)
+    s = signals.BaseSignal(np.random.random((2,1,1,6,8,7,1,1)))
+    s2 = s.transpose(signal_axes=[0, 1, 2])
+    s3 = s2.squeeze()
+    assert s2.data.squeeze().shape == s3.data.shape
+    assert s3.axes_manager.shape == (8, 6, 2, 7)
 
 
 @lazifyTestClass
