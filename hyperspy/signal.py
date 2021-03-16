@@ -2482,10 +2482,23 @@ class BaseSignal(FancySlicing,
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes. See :py:func:`numpy.squeeze` for more details.
+        
+        Returns
+        -------
+        s : signal
+            A new signal object with single-entry dimensions removed
+        
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+        <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
+        >>> s = s.squeeze()
+        >>> s
+        <Signal2D, title: , dimensions: (6, 2|8, 8)>
         """
         # We deepcopy everything but data
         self = self._deepcopy_with_new_data(self.data)
-        for axis in self.axes_manager._axes:
+        for axis in reversed(self.axes_manager._axes):
             if axis.size == 1:
                 self._remove_axis(axis.index_in_axes_manager)
         self.data = self.data.squeeze()

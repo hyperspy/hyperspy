@@ -210,7 +210,7 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, kfactors,
                                composition_units)
-        s2 = s.rebin(new_shape=(1,1,1024)).squeeze().squeeze()
+        s2 = s.rebin(new_shape=(1,1,1024)).squeeze()
         s2.quantification(intensities, method, kfactors,
                                composition_units, plot_result=True)
         np.testing.assert_allclose(res[0].data, np.ones((2, 2)) * 22.70779,

@@ -51,6 +51,11 @@ def test_signal_iterator():
         for i, signal in enumerate(s):
             assert i == signal.data[0]
 
+def test_squeeze():
+    s = signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+    assert s.squeeze().axes_manager.shape == (6, 2, 8, 8)
+    assert s.squeeze().data.shape == (2, 6, 8, 8)
+
 
 @lazifyTestClass
 class TestDerivative:
