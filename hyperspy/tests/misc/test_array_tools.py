@@ -157,6 +157,7 @@ def test_d2s_arrayX():
      ((5, 5), (1, 12), [slice(0, 5, None), slice(10, 15, None)]),
      ((5, ), (1, ), [slice(0, 5, None), ]),
      ((20, ), (1, ), [slice(0, 20, None), ]),
+     ((5, ), [1], [slice(0, 5, None), ]),
      ((5, ), (25, ), 'error'),
      ((20, 20), (25, 21), 'error'),
       ]
