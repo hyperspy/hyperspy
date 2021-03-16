@@ -1021,7 +1021,7 @@ Squeezing
 ^^^^^^^^^
 
 The :py:meth:`~.signal.BaseSignal.squeeze` method removes any zero-dimensional
-axes, i.e. axes of `size=1`, and the attributed data dimensions from a signal.
+axes, i.e. axes of ``size=1``, and the attributed data dimensions from a signal.
 The method returns a reduced copy of the signal and does not operate in place.
 
 .. code-block:: python
@@ -1033,7 +1033,7 @@ The method returns a reduced copy of the signal and does not operate in place.
     <Signal2D, title: , dimensions: (6, 2|8, 8)>
 
 Squeezing can be particularly useful after a rebinning operation that leaves
-one dimension with `shape=1`:
+one dimension with ``shape=1``:
 
     >>> s = hs.signals.Signal2D(np.random.random((5,5,5,10,10)))
     >>> s.rebin(new_shape=(5,1,5,5,5))
