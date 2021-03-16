@@ -225,12 +225,8 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
-def _estimate_shift1D(data, **kwargs):
-    mask = kwargs.get('mask', None)
-    ref = kwargs.get('ref', None)
-    interpolate = kwargs.get('interpolate', True)
-    ip = kwargs.get('ip', 5)
-    data_slice = kwargs.get('data_slice', slice(None))
+def _estimate_shift1D(data, data_slice=slice(None), ref=None, ip=5,
+                      interpolate=True, mask=None, **kwargs):
     if bool(mask):
         # asarray is required for consistensy as argmax
         # returns a numpy scalar array
@@ -238,6 +234,9 @@ def _estimate_shift1D(data, **kwargs):
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
+    # Normalise the data before the cross correlation
+    ref = ref - ref.mean()
+    data = data - data.mean()
     return np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1
 
 
@@ -654,7 +653,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array = shift_array / ip
-        shift_array *= axis.scale
+        shift_array = shift_array * axis.scale
         if self._lazy:
             # We must compute right now because otherwise any changes to the
             # axes_manager of the signal later in the workflow may result in
