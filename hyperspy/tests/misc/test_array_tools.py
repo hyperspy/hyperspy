@@ -25,6 +25,7 @@ from hyperspy.misc.array_tools import (
     dict2sarray,
     get_array_memory_size_in_GiB,
     get_signal_chunk_slice,
+    numba_histogram,
 )
 
 dt = [("x", np.uint8), ("y", np.uint16), ("text", (bytes, 6))]
@@ -185,3 +186,9 @@ def test_get_signal_chunk_slice_not_square(sig_chunks, index, expected):
     else:
         chunk_slice = get_signal_chunk_slice(index, data.chunks)
         assert chunk_slice == expected
+
+@pytest.mark.parametrize('type', ['<u2', 'u2', '>u2', '<f4', 'f4', '>f4'])
+def test_numba_histogram(type):
+    arr = np.arange(100, dtype=type)
+    np.testing.assert_array_equal(numba_histogram(arr, 5, (0, 100)), [20, 20, 20, 20, 20])
+

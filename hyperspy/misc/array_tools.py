@@ -375,7 +375,6 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
     return sarray
 
 
-@njit(cache=True)
 def numba_histogram(data, bins, ranges):
     """
     Parameters
@@ -391,6 +390,17 @@ def numba_histogram(data, bins, ranges):
     -------
     hist : array
         The values of the histogram.
+    """
+    if data.dtype.byteorder == '>':
+        return _numba_histogram(data.byteswap().newbyteorder(), bins, ranges)
+    else:
+        return _numba_histogram(data, bins, ranges)
+
+
+@njit(cache=True)
+def _numba_histogram(data, bins, ranges):
+    """
+    Numba histogram computation requiring little endian datatype.
     """
     # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
     hist = np.zeros((bins,), dtype=np.intp)
