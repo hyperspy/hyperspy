@@ -21,8 +21,7 @@ import numpy as np
 from numba import njit
 
 
-@njit(cache=True, nogil=True)
-def lowess(y, x, f=2.0 / 3.0, n_iter=3):  # pragma: no cover
+def lowess(y, x, f=2.0 / 3.0, n_iter=3):
     """Lowess smoother (robust locally weighted regression).
 
     Fits a nonparametric regression curve to a scatterplot.
@@ -45,6 +44,18 @@ def lowess(y, x, f=2.0 / 3.0, n_iter=3):  # pragma: no cover
     -------
     yest : np.ndarray
         The estimated (smooth) values of y.
+
+    """
+    if not x.dtype.isnative:
+        x = x.astype(x.dtype.type)
+    if not y.dtype.isnative:
+        y = y.astype(y.dtype.type)
+    return _lowess(y, x, f, n_iter)
+
+
+@njit(cache=True, nogil=True)
+def _lowess(y, x, f=2.0 / 3.0, n_iter=3):  # pragma: no cover
+    """Lowess smoother requiring native endian datatype (for numba).
 
     """
     n = len(x)

@@ -361,6 +361,8 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         """Calculates rolling method 'func' over a circular kernel."""
         x, y = np.ogrid[-radius : radius + 1, -radius : radius + 1]
         kernel = np.hypot(x, y) < radius
+        if not image.dtype.isnative:
+            image = image.astype(image.dtype.type)
         stat = ndi.filters.generic_filter(image, func, footprint=kernel)
         return stat
 
@@ -375,6 +377,8 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
     def single_pixel_desensitize(image):
         """Reduces single-pixel anomalies by nearest-neighbor smoothing."""
         kernel = np.array([[0.5, 1, 0.5], [1, 1, 1], [0.5, 1, 0.5]])
+        if not image.dtype.isnative:
+            image = data.astype(image.dtype.type)
         smoothed_image = ndi.filters.generic_filter(image, _fast_mean, footprint=kernel)
         return smoothed_image
 
