@@ -46,8 +46,6 @@ def lowess(y, x, f=2.0 / 3.0, n_iter=3):
         The estimated (smooth) values of y.
 
     """
-    if not x.dtype.isnative:
-        x = x.astype(x.dtype.type)
     if not y.dtype.isnative:
         y = y.astype(y.dtype.type)
     return _lowess(y, x, f, n_iter)
