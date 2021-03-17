@@ -498,8 +498,9 @@ def _quantification_cliff_lorimer(intensities,
     other_index = list(range(len(kfactors)))
     other_index.pop(ref_index)
     for i in other_index:
-        ab[i] = intensities[ref_index] * kfactors[ref_index]  \
-            / (intensities[i] * absorption_correction[i]) / kfactors[i]
+        ab[i] = (intensities[ref_index] * absorption_correction[ref_index]) \
+            / (intensities[i] * absorption_correction[i]) \
+            *( kfactors[ref_index] / kfactors[i])
     # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
     ab = ab
     for i in other_index:

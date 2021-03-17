@@ -684,11 +684,10 @@ must be determined experimentally using standards.
 
 Zeta-factors should be provided in units of kg/m^2. The method is described
 further in :ref:`[Watanabe1996] <Watanabe1996>`
-and :ref:`[Watanabe2006] <Watanabe2006>`. K-factors are unitless but are based
-on the assumption of weight percent. Cross sections should be provided in units
-of barns (b). Further details on the cross section method can be found in
-:ref:`[MacArthur2016] <MacArthur2016>`. Conversion between zeta-factors and
-cross sections is possible using
+and :ref:`[Watanabe2006] <Watanabe2006>`. Cross sections should be
+provided in units of barns (b). Further details on the cross section method can
+be found in :ref:`[MacArthur2016] <MacArthur2016>`. Conversion between
+zeta-factors and cross sections is possible using
 :py:func:`~.misc.eds.utils.edx_cross_section_to_zeta` or
 :py:func:`~.misc.eds.utils.zeta_to_edx_cross_section`.
 
