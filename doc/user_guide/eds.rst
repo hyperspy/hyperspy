@@ -684,10 +684,11 @@ must be determined experimentally using standards.
 
 Zeta-factors should be provided in units of kg/m^2. The method is described
 further in :ref:`[Watanabe1996] <Watanabe1996>`
-and :ref:`[Watanabe2006] <Watanabe2006>`. Cross sections should be
-provided in units of barns (b). Further details on the cross section method can
-be found in :ref:`[MacArthur2016] <MacArthur2016>`. Conversion between
-zeta-factors and cross sections is possible using
+and :ref:`[Watanabe2006] <Watanabe2006>`. K-factors are unitless but are based
+on the assumption of weight percent. Cross sections should be provided in units
+of barns (b). Further details on the cross section method can be found in
+:ref:`[MacArthur2016] <MacArthur2016>`. Conversion between zeta-factors and
+cross sections is possible using
 :py:func:`~.misc.eds.utils.edx_cross_section_to_zeta` or
 :py:func:`~.misc.eds.utils.zeta_to_edx_cross_section`.
 
@@ -811,13 +812,13 @@ composition maps for each element.
         >>>                  factors=factors, absorption_correction=True
         >>>                  thickness = 100.)
 
-At this stage absorption correction is only applicable for parallel-sided, 
-thin-film samples. Absorption correction is calculated on a pixel by pixel 
+At this stage absorption correction is only applicable for parallel-sided,
+thin-film samples. Absorption correction is calculated on a pixel by pixel
 basis after having determined a sample mass-thickness map. It therefore may
 be a source of error in particularly inhomogeneous specimens.
-  
+
 Absorption correction can also only be applied to spectra from a single EDS
-detector. For systems that consist of multiple detectors, such as the Thermo 
+detector. For systems that consist of multiple detectors, such as the Thermo
 Fisher Super-X, it is therefore necessary to load the spectra from each
 detector separately.
 
@@ -847,13 +848,13 @@ is available:
 Electron and X-ray range
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The electron and X-ray range in a bulk material can be estimated with 
+The electron and X-ray range in a bulk material can be estimated with
 :py:meth:`hs.eds.electron_range` and :py:meth:`hs.eds.xray_range`
 
 To calculate the X-ray range of Cu Ka in pure Copper at 30 kV in micron:
 
 .. code-block:: python
-    
+
     >>> hs.eds.xray_range('Cu_Ka', 30.)
     1.9361716759499248
 
@@ -871,4 +872,3 @@ To calculate the electron range in pure Copper at 30 kV in micron
 
     >>> hs.eds.electron_range('Cu', 30.)
     2.8766744984001607
-
