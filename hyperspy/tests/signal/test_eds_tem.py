@@ -257,7 +257,7 @@ class Test_quantification:
                                absorption_correction=True,
                                thickness=300.)
         np.testing.assert_allclose(res5[0][0].data, res3[0][1].data, atol=1e-5)
-        np.testing.assert_allclose(res2[0][0].data, np.ones((2, 2)) * 22.70779,
+        np.testing.assert_allclose(res2[0][0].data, np.ones((2, 2)) * 22.743013,
                                    atol=1e-3)
         np.testing.assert_allclose(res3[0][0].data, np.ones((2, 2)) * 22.587251,
                                    atol=1e-3)
