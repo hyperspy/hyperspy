@@ -135,10 +135,8 @@ class LazySignal(BaseSignal):
 
     def rechunk(self,
                 nav_chunks="auto",
-                sig_chunks= -1,
-                threshold=None,
-                block_size_limit=None,
-                balance=False):
+                sig_chunks=-1,
+                **kwargs):
         """Rechunks the data using the same rechunking formula from Dask expect
         that the navigation and signal chunks are defined seperately. Note, for most
         functions sig_chunks should remain None so that it spans the entire signal.
@@ -155,9 +153,7 @@ class LazySignal(BaseSignal):
             nav_chunks = (nav_chunks,)*len(self.axes_manager.navigation_shape)
         new_chunks = nav_chunks + sig_chunks
         self.data = self.data.rechunk(new_chunks,
-                                      threshold=threshold,
-                                      block_size_limit=block_size_limit,
-                                      balance=balance)
+                                      **kwargs)
 
 
     def close_file(self):
