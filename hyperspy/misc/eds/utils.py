@@ -440,7 +440,7 @@ def quantification_cliff_lorimer(intensities,
     else:
         index = np.where(intensities > min_intensity)[0]
         if absorption_correction is not None:
-            absorption_correction = absorption_correction.reshape(dim[0], dim2)
+            absorption_correction = absorption_correction
         else:
             # default to ones
             absorption_correction = np.ones_like(intens, dtype='float')
