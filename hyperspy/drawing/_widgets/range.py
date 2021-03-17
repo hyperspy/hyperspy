@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import inspect
+import logging
 
 import numpy as np
 from matplotlib.widgets import SpanSelector
-import inspect
-import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.events import Events, Event
@@ -392,7 +392,6 @@ class ModifiableSpanSelector(SpanSelector):
         # And connect to the new ones
         self.connect_event('button_press_event', self.mm_on_press)
         self.connect_event('button_release_event', self.mm_on_release)
-        self.connect_event('draw_event', self.update_background)
 
         self.rect.set_visible(True)
         self.rect.contains = self.contains
@@ -400,7 +399,7 @@ class ModifiableSpanSelector(SpanSelector):
     def update(self, *args):
         # Override the SpanSelector `update` method to blit properly all
         # artirts before we go to "modify mode" in `set_initial`.
-        self.draw_patch()
+        self.set_visible(True)
 
     def draw_patch(self, *args):
         """Update the patch drawing.
