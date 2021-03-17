@@ -76,6 +76,17 @@ def test_assignment_class(caplog):
         assert new_subclass is getattr(_lazy_signals, lazyclass)
 
 
+def test_id_set_signal_type():
+    s = hs.signals.BaseSignal(np.zeros((3, 3)))
+    id_events = id(s.events)
+    id_metadata = id(s.metadata)
+    id_om = id(s.original_metadata)
+    s.set_signal_type()
+    assert id_events == id(s.events)
+    assert id_metadata == id(s.metadata)
+    assert id_om == id(s.original_metadata)
+
+
 class TestConvertBaseSignal:
 
     def setup_method(self, method):
