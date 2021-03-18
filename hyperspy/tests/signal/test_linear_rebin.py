@@ -18,13 +18,15 @@
 
 
 import numpy as np
+import pytest
 
 from hyperspy.signals import EDSTEMSpectrum
 
 
 class TestLinearRebin:
-    def test_linear_downsize(self):
-        spectrum = EDSTEMSpectrum(np.ones([3, 5, 1]))
+    @pytest.mark.parametrize('dtype', ['<u2', 'u2', '>u2', '<f4', 'f4', '>f4'])
+    def test_linear_downsize(self, dtype):
+        spectrum = EDSTEMSpectrum(np.ones([3, 5, 1],dtype=dtype))
         scale = (1.5, 2.5, 1)
         res = spectrum.rebin(scale=scale, crop=True)
         np.testing.assert_allclose(res.data, 3.75 * np.ones((1, 3, 1)))
@@ -33,8 +35,9 @@ class TestLinearRebin:
         res = spectrum.rebin(scale=scale, crop=False)
         np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
 
-    def test_linear_upsize(self):
-        spectrum = EDSTEMSpectrum(np.ones([4, 5, 10]))
+    @pytest.mark.parametrize('dtype', ['<u2', 'u2', '>u2', '<f4', 'f4', '>f4'])
+    def test_linear_upsize(self, dtype):
+        spectrum = EDSTEMSpectrum(np.ones([4, 5, 10],dtype=dtype))
         scale = [0.3, 0.2, 0.5]
         res = spectrum.rebin(scale=scale)
         np.testing.assert_allclose(res.data, 0.03 * np.ones((20, 16, 20)))

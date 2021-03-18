@@ -59,6 +59,10 @@ RELEASE_next_patch (Unreleased)
 * Fix finding dataset path for EMD NCEM file containing more than one dataset in a  group `#2673 <https://github.com/hyperspy/hyperspy/pull/2673>`_
 * Add support for python 3.9, fix deprecation warning with matplotlib 3.4.0 and bump minimum requirement to numpy 1.17.1 and dask 2.1.0. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
 * Add integration test suite documentation in the developer guide. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
+* Fix squeeze function for multiple zero-dimensional entries, improved docstring, added to user guide. (`#2676 <https://github.com/hyperspy/hyperspy/pull/2676>`_)
+* Use native endianess in numba jitted functions. (`#2678 <https://github.com/hyperspy/hyperspy/pull/2678>`_)
+* Fix error in Cliff-Lorimer quantification using absorption correction (`#2681 <https://github.com/hyperspy/hyperspy/pull/2681>`_)
+* Fix ``navigation_mask`` bug in decomposition when provided as numpy array (`#2679 <https://github.com/hyperspy/hyperspy/pull/2679>`_)
 
 
 Changelog
