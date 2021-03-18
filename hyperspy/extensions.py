@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import importlib
 import copy
 import pkgutil
 import pkg_resources
@@ -25,7 +24,6 @@ import yaml
 
 from pathlib import Path
 
-import hyperspy.misc.config_dir
 
 _logger = logging.getLogger(__name__)
 
