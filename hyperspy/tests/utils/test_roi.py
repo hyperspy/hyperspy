@@ -548,3 +548,49 @@ class TestInteractive:
         r.x += 5
         sr2 = r(s)
         np.testing.assert_array_equal(sr.data, sr2.data)
+
+    def test_interactive_snap_False(self):
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        s.plot()
+        _ = r.interactive(s, snap=False)
+        r.x = 3.5
+        assert r.x == 3.5
+        for w in r.widgets:
+            assert not w.snap_all
+            assert not w.snap_position
+            assert not w.snap_size
+
+        p1 = Point1DROI(4)
+        _ = p1.interactive(s, snap=False)
+        p1.value = 4.9
+        assert p1.value == 4.9
+        for w in p1.widgets:
+            assert not w.snap_position
+
+        p2 = Point2DROI(4, 5)
+        _ = p2.interactive(s, snap=False)
+        p2.x, p2.y = 4.3, 5.3
+        assert (p2.x, p2.y) == (4.3, 5.3)
+        for w in p2.widgets:
+            assert not w.snap_position
+
+    def test_interactive_snap_default(self):
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        s.plot()
+        _ = r.interactive(s)
+        for w in r.widgets:
+            assert w.snap_all
+            assert w.snap_position
+            assert w.snap_size
+
+        p1 = Point1DROI(4)
+        _ = p1.interactive(s)
+        for w in p1.widgets:
+            assert w.snap_position
+
+        p2 = Point2DROI(4, 5)
+        _ = p2.interactive(s)
+        for w in p2.widgets:
+            assert w.snap_position

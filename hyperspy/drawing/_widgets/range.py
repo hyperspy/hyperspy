@@ -233,13 +233,15 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def _set_snap_position(self, value):
         super(RangeWidget, self)._set_snap_position(value)
-        self.span.snap_position = value
-        self._update_patch_geometry()
+        if self.span is not None:
+            self.span.snap_position = value
+            self._update_patch_geometry()
 
     def _set_snap_size(self, value):
         super(RangeWidget, self)._set_snap_size(value)
-        self.span.snap_size = value
-        self._update_patch_size()
+        if self.span is not None:
+            self.span.snap_size = value
+            self._update_patch_size()
 
     def _validate_geometry(self, x1=None):
         """Make sure the entire patch always stays within bounds. First the
