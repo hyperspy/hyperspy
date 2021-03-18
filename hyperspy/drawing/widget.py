@@ -33,7 +33,7 @@ class WidgetBase(object):
     maintains one or more matplotlib patches, and manages the interaction code
     so that the user can maniuplate it on the fly.
 
-    This base class implements functionality witch is common to all such
+    This base class implements functionality which is common to all such
     widgets, mainly the code that manages the patch, axes management, and
     sets up common events ('changed' and 'closed').
 
@@ -267,7 +267,7 @@ class WidgetBase(object):
 
     def _v2i(self, axis, v):
         """Wrapped version of DataAxis.value2index, which bounds the index
-        inbetween axis.low_index and axis.high_index+1, and does not raise a
+        between axis.low_index and axis.high_index+1, and does not raise a
         ValueError.
         """
         try:
@@ -282,7 +282,7 @@ class WidgetBase(object):
 
     def _i2v(self, axis, i):
         """Wrapped version of DataAxis.index2value, which bounds the value
-        inbetween axis.low_value and axis.high_value+axis.scale, and does not
+        between axis.low_value and axis.high_value+axis.scale, and does not
         raise a ValueError.
         """
         try:
@@ -402,7 +402,7 @@ class DraggableWidgetBase(WidgetBase):
         return pos
 
     def _get_position(self):
-        """Providies the position of the widget (by values) in a tuple.
+        """Provides the position of the widget (by values) in a tuple.
         """
         return tuple(
             self._pos.tolist())  # Don't pass reference, and make it clear
@@ -481,12 +481,12 @@ class DraggableWidgetBase(WidgetBase):
         pass
 
     def _update_patch_geometry(self):
-        """Updates all geometry of the patch on the plot.
+        """Updates all geometrical properties of the patch on the plot.
         """
         self._update_patch_position()
 
     def button_release(self, event):
-        """whenever a mouse button is released"""
+        """whenever a mouse button is released."""
         if event.button != 1:
             return
         if self.picked is True:
@@ -500,7 +500,7 @@ class Widget1DBase(DraggableWidgetBase):
     It sets the right dimensions for size and
     position, adds the 'border_thickness' attribute and initalizes the 'axes'
     attribute to the first two navigation axes if possible, if not, the two
-    first signal_axes are used. Other than that it mainly supplies common
+    first signal_axes are used. Other than that, it mainly supplies common
     utility functions for inheritors, and implements required functions for
     ResizableDraggableWidgetBase.
 
@@ -655,7 +655,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         self.size = s   # Use property to get full processing
 
     def get_centre(self):
-        """Get's the center indices. The default implementation is simply the
+        """Gets the center indices. The default implementation is simply the
         position + half the size in axes space, which should work for any
         symmetric widget, but more advanced widgets will need to decide whether
         to return the center of gravity or the geometrical center of the
@@ -664,7 +664,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         return self._pos + self._size() / 2.0
 
     def get_centre_index(self):
-        """Get's the center position (in index space). The default
+        """Gets the center position (in index space). The default
         implementation is simply the indices + half the size, which should
         work for any symmetric widget, but more advanced widgets will need to
         decide whether to return the center of gravity or the geometrical
@@ -703,7 +703,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             self._drag_store = (self.position, self.size)
 
     def _apply_changes(self, old_size, old_position):
-        """Evalutes whether the widget has been moved/resized, and triggers
+        """Evaluates whether the widget has been moved/resized, and triggers
         the correct events and updates the patch geometry. This function has
         the advantage that the geometry is updated only once, preventing
         flickering, and the 'changed' event only fires once.
@@ -733,7 +733,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 self.events.changed.trigger(self)
 
     def button_release(self, event):
-        """whenever a mouse button is released"""
+        """whenever a mouse button is released."""
         picked = self.picked
         super(ResizableDraggableWidgetBase, self).button_release(event)
         if event.button != 1:
@@ -935,7 +935,7 @@ class ResizersMixin(object):
         return positions
 
     def _set_patch(self):
-        """Creates the resizer handles, irregardless of whether they will be
+        """Creates the resizer handles, regardless of whether they will be
         used or not.
         """
         if hasattr(super(ResizersMixin, self), '_set_patch'):
@@ -961,7 +961,7 @@ class ResizersMixin(object):
 
     def onpick(self, event):
         """Picking of main patch is same as for widget base, but this also
-        handles picking of the resize handles. If a resize handles is picked,
+        handles picking of the resize handles. If a resize handle is picked,
         `picked` is set to `True`, and `resizer_picked` is set to an integer
         indicating which handle was picked (0-3 for top left, top right, bottom
         left, bottom right). It is set to `False` if another widget was picked.
