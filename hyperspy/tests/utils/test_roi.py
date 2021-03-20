@@ -549,48 +549,70 @@ class TestInteractive:
         sr2 = r(s)
         np.testing.assert_array_equal(sr.data, sr2.data)
 
-    def test_interactive_snap_False(self):
+    @pytest.mark.parametrize('snap', [True, False, 'default'])
+    def test_interactive_snap(self, snap):
+        kwargs = {}
+        if snap != 'default':
+            kwargs['snap'] = snap
+        else:
+            # default is True
+            snap = True
         s = self.s
         r = RectangularROI(left=3, right=7, top=2, bottom=5)
         s.plot()
-        _ = r.interactive(s, snap=False)
-        r.x = 3.5
-        assert r.x == 3.5
+        _ = r.interactive(s, **kwargs)
         for w in r.widgets:
-            assert not w.snap_all
-            assert not w.snap_position
-            assert not w.snap_size
+            old_position = w.position
+            new_position = (3.25, 2.2)
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap
 
         p1 = Point1DROI(4)
-        _ = p1.interactive(s, snap=False)
-        p1.value = 4.9
-        assert p1.value == 4.9
+        _ = p1.interactive(s, **kwargs)
         for w in p1.widgets:
-            assert not w.snap_position
+            old_position = w.position
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_position == snap
 
         p2 = Point2DROI(4, 5)
-        _ = p2.interactive(s, snap=False)
-        p2.x, p2.y = 4.3, 5.3
-        assert (p2.x, p2.y) == (4.3, 5.3)
+        _ = p2.interactive(s, **kwargs)
         for w in p2.widgets:
-            assert not w.snap_position
+            old_position = w.position
+            new_position = (4.3, 5.3)
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_position == snap
 
-    def test_interactive_snap_default(self):
-        s = self.s
-        r = RectangularROI(left=3, right=7, top=2, bottom=5)
-        s.plot()
-        _ = r.interactive(s)
-        for w in r.widgets:
-            assert w.snap_all
-            assert w.snap_position
-            assert w.snap_size
+        span = SpanROI(4, 5)
+        _ = span.interactive(s, **kwargs)
+        for w in span.widgets:
+            old_position = w.position
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap
 
-        p1 = Point1DROI(4)
-        _ = p1.interactive(s)
-        for w in p1.widgets:
-            assert w.snap_position
+            # check that changing snap is working fine
+            new_snap = not snap
+            w.snap_all = new_snap
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if new_snap else new_position
 
-        p2 = Point2DROI(4, 5)
-        _ = p2.interactive(s)
-        for w in p2.widgets:
-            assert w.snap_position
+        line2d = Line2DROI(4, 5, 6, 6, 1)
+        _ = line2d.interactive(s, **kwargs)
+        for w in line2d.widgets:
+            old_position = w.position
+            new_position = ([4.3, 5.3], [6.0, 6.0])
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap
