@@ -55,7 +55,7 @@ class WidgetBase(object):
         self._selected_artist = None
         self._size = 1.
         self._pos = np.array([0.])
-        self.__is_on = True
+        self._is_on = True
         self.background = None
         self.patch = []
         self.color = color
@@ -99,10 +99,11 @@ class WidgetBase(object):
     axes = property(lambda s: s._get_axes(),
                     lambda s, v: s._set_axes(v))
 
+    @property
     def is_on(self):
         """Determines if the widget is set to draw if valid (turned on).
         """
-        return self.__is_on
+        return self._is_on
 
     def set_on(self, value, render_figure=True):
         """Change the on state of the widget. If turning off, all patches will
@@ -111,7 +112,7 @@ class WidgetBase(object):
         matplotlib axes, and the widget will connect to its default events.
         """
         did_something = False
-        if value is not self.is_on() and self.ax is not None:
+        if value is not self.is_on and self.ax is not None:
             did_something = True
             if value is True:
                 self._add_patch_to(self.ax)
@@ -133,7 +134,7 @@ class WidgetBase(object):
                 self.draw_patch()
             if value is False:
                 self.ax = None
-        self.__is_on = value
+        self._is_on = value
 
     @property
     def color(self):
@@ -181,10 +182,10 @@ class WidgetBase(object):
         if ax is self.ax:
             return  # Do nothing
         # Disconnect from previous axes if set
-        if self.ax is not None and self.is_on():
+        if self.ax is not None and self.is_on:
             self.disconnect()
         self.ax = ax
-        if self.is_on() is True:
+        if self.is_on is True:
             self._add_patch_to(ax)
             self.connect(ax)
             ax.figure.canvas.draw_idle()
@@ -195,7 +196,7 @@ class WidgetBase(object):
         Cause this widget to be the selected widget in its MPL axes. This
         assumes that the widget has its patch added to the MPL axes.
         """
-        if not self.patch or not self.is_on() or not self.ax:
+        if not self.patch or not self.is_on or not self.ax:
             return
 
         canvas = self.ax.figure.canvas
@@ -795,7 +796,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
         return (xy[0], xy[1], xs, ys)        # x,y,w,h
 
     def _update_patch_position(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_xy(self._get_patch_xy())
             self.draw_patch()
 
@@ -803,7 +804,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
         self._update_patch_geometry()
 
     def _update_patch_geometry(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_bounds(*self._get_patch_bounds())
             self.draw_patch()
 

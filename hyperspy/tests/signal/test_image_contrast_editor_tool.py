@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -112,3 +112,28 @@ class TestContrastEditorTool:
 
         np.testing.assert_allclose(ceditor._vmin, 9.9)
         np.testing.assert_allclose(ceditor._vmax, 98.01)
+
+
+def test_close_vmin_vmax():
+    data = np.random.random(10*10*10).reshape([10]*3)
+    s = hs.signals.Signal2D(data)
+    s.plot()
+
+    image_plot = s._plot.signal_plot
+    display_range = (0.6, 0.9)
+
+    ceditor = ImageContrastEditor(image_plot)
+
+    # Simulate selecting a range on the histogram
+    ceditor.span_selector_switch(True)
+    ceditor.span_selector.set_initial = (0, 1)
+    ceditor.span_selector.range = display_range
+    plt.pause(0.001) # in case, interactive backend is used
+    ceditor.update_span_selector_traits()
+
+    # Need to use auto=False to pick up the current display when closing
+    ceditor.auto = False
+    ceditor.close()
+
+    assert image_plot.vmin == display_range[0]
+    assert image_plot.vmax == display_range[1]

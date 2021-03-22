@@ -813,9 +813,11 @@ class ImageContrastEditor(t.HasTraits):
         self.norm_original = copy.deepcopy(self.norm)
 
         self.span_selector = None
-        self.span_selector_switch(on=True)
-
         self.plot_histogram()
+
+        # After the figure have been rendered to follow the same pattern as
+        # for other tools
+        self.span_selector_switch(on=True)
 
         if self.image.axes_manager is not None:
             self.image.axes_manager.events.indices_changed.connect(
@@ -830,9 +832,6 @@ class ImageContrastEditor(t.HasTraits):
 
     def create_axis(self):
         self.ax = self.hspy_fig.figure.add_subplot(111)
-        animated = self.hspy_fig.figure.canvas.supports_blit
-        self.ax.yaxis.set_animated(animated)
-        self.ax.xaxis.set_animated(animated)
         self.hspy_fig.ax = self.ax
 
     def _gamma_changed(self, old, new):
@@ -923,10 +922,11 @@ class ImageContrastEditor(t.HasTraits):
 
     def _set_xaxis(self):
         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
-        # Set this attribute to restrict the span selector to the xaxis
-        self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
-                                              offset=self.xaxis[1],
-                                              scale=self.xaxis[1]-self.xaxis[0])
+        if self.span_selector is not None:
+            # Set this attribute to restrict the span selector to the xaxis
+            self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
+                                                  offset=self.xaxis[1],
+                                                  scale=self.xaxis[1]-self.xaxis[0])
 
     def plot_histogram(self, max_num_bins=250):
         """Plot a histogram of the data.
@@ -968,10 +968,10 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_ylim(0, self.hist_data.max())
         self.ax.set_xticks([])
         self.ax.set_yticks([])
-        self.line = self.ax.plot(*self._get_line(),
-                                       color='#ff7f0e')[0]
-        self.line.set_animated(self.ax.figure.canvas.supports_blit)
+        self.line = self.ax.plot(*self._get_line(), color='#ff7f0e',
+                                 animated=self.ax.figure.canvas.supports_blit)[0]
         plt.tight_layout(pad=0)
+        self.ax.figure.canvas.draw()
 
     plot_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
 
@@ -1065,7 +1065,7 @@ class ImageContrastEditor(t.HasTraits):
         self.linscale = self.linscale_original
 
     def _get_current_range(self):
-        if self.span_selector._get_span_width() != 0:
+        if self.span_selector and self.span_selector._get_span_width() != 0:
             # if we have a span selector, use it to set the display
             return self.ss_left_value, self.ss_right_value
         else:
@@ -1078,8 +1078,7 @@ class ImageContrastEditor(t.HasTraits):
                 self.image.vmin = f"{self.vmin_percentile}th"
                 self.image.vmax = f"{self.vmax_percentile}th"
             else:
-                self.image.vmin = self._vmin
-                self.image.vmax = self._vmax
+                self.image.vmin, self.image.vmax = self._get_current_range()
             self.image.connect()
         self.hspy_fig.close()
 

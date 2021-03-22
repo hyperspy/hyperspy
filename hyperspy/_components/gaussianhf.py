@@ -28,12 +28,12 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 class GaussianHF(Expression):
 
     r"""Normalized gaussian function component, with a `fwhm` parameter instead
-    of the sigma parameter, and a `height` parameter instead of the `A` 
-    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`). 
-    This makes the parameter vs. peak maximum independent of :math:`\sigma`, 
-    and thereby makes locking of the parameter more viable. As long as there 
-    is no binning, the `height` parameter corresponds directly to the peak 
-    maximum, if not, the value is scaled by a linear constant 
+    of the sigma parameter, and a `height` parameter instead of the `A`
+    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`).
+    This makes the parameter vs. peak maximum independent of :math:`\sigma`,
+    and thereby makes locking of the parameter more viable. As long as there
+    is no binning, the `height` parameter corresponds directly to the peak
+    maximum, if not, the value is scaled by a linear constant
     (`signal_axis.scale`).
 
     .. math::
@@ -42,11 +42,11 @@ class GaussianHF(Expression):
             \left(x-c\right)^{2}}{W^{2}}\right]}
 
     ============= =============
-     Variable      Parameter 
+     Variable      Parameter
     ============= =============
-     :math:`h`     height    
-     :math:`W`     fwhm 
-     :math:`c`     centre    
+     :math:`h`     height
+     :math:`W`     fwhm
+     :math:`c`     centre
     ============= =============
 
 

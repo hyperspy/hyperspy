@@ -213,23 +213,27 @@ class TestPlotCircleWidget():
 class TestPlotRangeWidget():
 
     def setup_method(self, method):
-        self.s = Signal1D(np.arange(50))
-        self.s.axes_manager[0].scale = 1.2
-        self.range = widgets.RangeWidget(self.s.axes_manager)
+        s = Signal1D(np.arange(50))
+        s.axes_manager[0].scale = 1.2
+        range_widget = widgets.RangeWidget(s.axes_manager)
+        self.s = s
+        self.range_widget = range_widget
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_range(self):
-        self.s.plot()
-        self.range.set_mpl_ax(self.s._plot.signal_plot.ax)
-        assert self.range.ax == self.s._plot.signal_plot.ax
-        assert self.range.color == 'red'  # default color
-        assert self.range.position == (0.0, )
-        assert self.range.size == (1.2, )
-        assert self.range.span.rect.get_alpha() == 0.5
+        s = self.s
+        range_widget = self.range_widget
+        s.plot()
+        range_widget.set_mpl_ax(s._plot.signal_plot.ax)
+        assert range_widget.ax == s._plot.signal_plot.ax
+        assert range_widget.color == 'red'  # default color
+        assert range_widget.position == (0.0, )
+        assert range_widget.size == (1.2, )
+        assert range_widget.span.rect.get_alpha() == 0.5
 
-        w = widgets.RangeWidget(self.s.axes_manager, color='blue')
-        w.set_mpl_ax(self.s._plot.signal_plot.ax)
+        w = widgets.RangeWidget(s.axes_manager, color='blue')
+        w.set_mpl_ax(s._plot.signal_plot.ax)
         w.set_ibounds(left=4, width=3)
         assert w.color == 'blue'
         color_rgba = matplotlib.colors.to_rgba('blue', alpha=0.5)
@@ -238,9 +242,9 @@ class TestPlotRangeWidget():
         np.testing.assert_allclose(w.position[0], 4.8)
         np.testing.assert_allclose(w.size[0], 3.6)
 
-        w2 = widgets.RangeWidget(self.s.axes_manager)
-        w2.set_mpl_ax(self.s._plot.signal_plot.ax)
-        assert w2.ax == self.s._plot.signal_plot.ax
+        w2 = widgets.RangeWidget(s.axes_manager)
+        w2.set_mpl_ax(s._plot.signal_plot.ax)
+        assert w2.ax == s._plot.signal_plot.ax
 
         w2.set_bounds(left=24.0, width=12.0)
         w2.color = 'green'
@@ -248,7 +252,29 @@ class TestPlotRangeWidget():
         w2.alpha = 0.25
         assert w2.alpha == 0.25
 
-        return self.s._plot.signal_plot.figure
+        return s._plot.signal_plot.figure
+
+    @pytest.mark.parametrize('render_figure', [True, False])
+    def test_set_on(self, render_figure):
+        s = self.s
+        range_widget = self.range_widget
+        s.plot()
+        range_widget.ax = s._plot.signal_plot.ax
+        range_widget._is_on = False
+
+        range_widget.set_on(True, render_figure=render_figure)
+        assert range_widget.span.visible
+
+        range_widget.set_on(False, render_figure=render_figure)
+        assert range_widget.span is None
+        assert range_widget.ax is None
+
+    def test_update(self):
+        s = self.s
+        range_widget = self.range_widget
+        s.plot()
+        range_widget.set_mpl_ax(s._plot.signal_plot.ax)
+        range_widget.span.update()
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
@@ -277,9 +303,10 @@ class TestPlotRangeWidget():
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_ModifiableSpanSelector(self):
-        self.s.plot()
+        s = self.s
+        s.plot()
         from hyperspy.drawing._widgets.range import ModifiableSpanSelector
-        ax = self.s._plot.signal_plot.ax
+        ax = s._plot.signal_plot.ax
         span_v = ModifiableSpanSelector(ax, direction='vertical')
         span_v.set_initial((15, 20))
         assert span_v.range == (15, 20)
@@ -300,4 +327,4 @@ class TestPlotRangeWidget():
         assert span_h.range == (40, 45)
         ax.figure.canvas.draw_idle()
 
-        return self.s._plot.signal_plot.figure
+        return s._plot.signal_plot.figure
