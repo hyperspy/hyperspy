@@ -396,9 +396,12 @@ class ImagePlot(BlittedFigure):
 
     def _update_data(self):
         # self._current_data caches the displayed data.
-        self._current_data =  self.data_function(
-                axes_manager=self.axes_manager,
+        data = self.data_function(axes_manager=self.axes_manager,
                 **self.data_function_kwargs)
+        # the colorbar of matplotlib ~< 3.2 doesn't support bool array
+        if data.dtype == bool:
+            data = data.astype(int)
+        self._current_data = data
 
     def update(self, data_changed=True, auto_contrast=None, vmin=None,
                vmax=None, **kwargs):

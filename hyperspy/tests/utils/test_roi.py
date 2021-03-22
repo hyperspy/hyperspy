@@ -602,3 +602,72 @@ class TestInteractive:
             r = roi()
             r.interactive(signal=self.s)
             assert tuple(r) == vals
+
+
+    @pytest.mark.parametrize('snap', [True, False, 'default'])
+    def test_interactive_snap(self, snap):
+        kwargs = {}
+        if snap != 'default':
+            kwargs['snap'] = snap
+        else:
+            # default is True
+            snap = True
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        s.plot()
+        _ = r.interactive(s, **kwargs)
+        for w in r.widgets:
+            old_position = w.position
+            new_position = (3.25, 2.2)
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap
+
+        p1 = Point1DROI(4)
+        _ = p1.interactive(s, **kwargs)
+        for w in p1.widgets:
+            old_position = w.position
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_position == snap
+
+        p2 = Point2DROI(4, 5)
+        _ = p2.interactive(s, **kwargs)
+        for w in p2.widgets:
+            old_position = w.position
+            new_position = (4.3, 5.3)
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_position == snap
+
+        span = SpanROI(4, 5)
+        _ = span.interactive(s, **kwargs)
+        for w in span.widgets:
+            old_position = w.position
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap
+
+            # check that changing snap is working fine
+            new_snap = not snap
+            w.snap_all = new_snap
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if new_snap else new_position
+
+        line2d = Line2DROI(4, 5, 6, 6, 1)
+        _ = line2d.interactive(s, **kwargs)
+        for w in line2d.widgets:
+            old_position = w.position
+            new_position = ([4.3, 5.3], [6.0, 6.0])
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap

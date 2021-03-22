@@ -287,6 +287,14 @@ class TestBSS1D:
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
 
+    def test_mask_error(self):
+        with pytest.raises(ValueError):
+            self.s.blind_source_separation(3, mask=self.mask_sig.data)
+
+    def test_mask_shape_error(self):
+        with pytest.raises(ValueError):
+            self.s.blind_source_separation(3, mask=self.mask_nav)
+
     def test_on_loadings(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_signal1D(0)

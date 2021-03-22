@@ -15,6 +15,7 @@ New
 * Plot overlayed images (`#2599 <https://github.com/hyperspy/hyperspy/pull/2599>`_)
 * Support for reading JEOL EDS data (`#2488 <https://github.com/hyperspy/hyperspy/pull/2488>`_, 
   `#2607 <https://github.com/hyperspy/hyperspy/pull/2607>`_, `#2620 <https://github.com/hyperspy/hyperspy/pull/2620>`_)
+* Add `height` property to the `Gaussian2D` component (`#2688 <https://github.com/hyperspy/hyperspy/pull/2688>`_)
 
 Enhancements
 ------------
@@ -54,7 +55,21 @@ RELEASE_next_patch (Unreleased)
 * Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
 * Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
 * Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
-* Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (#2657 `<https://github.com/hyperspy/hyperspy/pull/2657>`_)
+* Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
+* Fix align1D returning zeros shifts (`#2675 <https://github.com/hyperspy/hyperspy/pull/2675>`_)
+* Fix finding dataset path for EMD NCEM file containing more than one dataset in a  group `#2673 <https://github.com/hyperspy/hyperspy/pull/2673>`_
+* Add support for python 3.9, fix deprecation warning with matplotlib 3.4.0 and bump minimum requirement to numpy 1.17.1 and dask 2.1.0. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
+* Add integration test suite documentation in the developer guide. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
+* Fix squeeze function for multiple zero-dimensional entries, improved docstring, added to user guide. (`#2676 <https://github.com/hyperspy/hyperspy/pull/2676>`_)
+* Use native endianess in numba jitted functions. (`#2678 <https://github.com/hyperspy/hyperspy/pull/2678>`_)
+* Fix error in Cliff-Lorimer quantification using absorption correction (`#2681 <https://github.com/hyperspy/hyperspy/pull/2681>`_)
+* Fix ``navigation_mask`` bug in decomposition when provided as numpy array (`#2679 <https://github.com/hyperspy/hyperspy/pull/2679>`_)
+* Fix closing image constrat tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
+* Fix range widget with matplotlib 3.4 (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
+* Fix bug in `hs.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
+* Add option not to snap ROI when calling the `interactive` method of a ROI (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
+* Fix broken events when changing signal type `#2683 <https://github.com/hyperspy/hyperspy/pull/2683>`_
+
 
 Changelog
 *********

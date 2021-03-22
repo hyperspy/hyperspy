@@ -24,7 +24,7 @@ import traits.api as t
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
-from hyperspy.misc.test_utils import assert_warns
+
 
 MY_PATH = os.path.dirname(__file__)
 
@@ -451,9 +451,9 @@ class TestFEIReader():
         assert unit == 'meters'
 
         # objects is empty dictionary
-        with assert_warns(
-                message="The navigation axes units could not be determined.",
-                category=UserWarning):
+        with pytest.warns(
+                UserWarning,
+                match="The navigation axes units could not be determined."):
             unit = _guess_units_from_mode({}, header0)
         assert unit == 'meters'
 

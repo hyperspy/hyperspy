@@ -367,7 +367,7 @@ class BaseInteractiveROI(BaseROI):
         raise NotImplementedError()
 
     def interactive(self, signal, navigation_signal="same", out=None,
-                    color="green", **kwargs):
+                    color="green", snap=True, **kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
         hyperspy.interactive.
 
@@ -389,6 +389,9 @@ class BaseInteractiveROI(BaseROI):
             The color for the widget. Any format that matplotlib uses should
             be ok. This will not change the color fo any widget passed with
             the 'widget' argument.
+        snap : bool, optional
+            If True, the ROI will be snapped to the axes values. Default is
+            True.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
             interactively on any roi parameter change.
@@ -410,7 +413,7 @@ class BaseInteractiveROI(BaseROI):
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal, color=color,
+                self.add_widget(navigation_signal, color=color, snap=snap,
                                 axes=kwargs.get("axes", None))
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
@@ -443,8 +446,8 @@ class BaseInteractiveROI(BaseROI):
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
-    def add_widget(self, signal, axes=None, widget=None,
-                   color='green', **kwargs):
+    def add_widget(self, signal, axes=None, widget=None, color='green',
+                   snap=True, **kwargs):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
@@ -475,6 +478,9 @@ class BaseInteractiveROI(BaseROI):
             The color for the widget. Any format that matplotlib uses should be
             ok. This will not change the color fo any widget passed with the
             'widget' argument.
+        snap : bool, optional
+            If True, the ROI will be snapped to the axes values. Default is
+            True.
         kwargs:
             All keyword argument are passed to the widget constructor.
         """
@@ -484,6 +490,10 @@ class BaseInteractiveROI(BaseROI):
                 axes, signal)(
                 signal.axes_manager, **kwargs)
             widget.color = color
+            if hasattr(widget, 'snap_all'):
+                widget.snap_all = snap
+            else:
+                widget.snap_position = snap
 
         # Remove existing ROI, if it exists and axes match
         if signal in self.signal_map and \
