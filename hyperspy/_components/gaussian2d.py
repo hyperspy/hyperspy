@@ -64,7 +64,7 @@ class Gaussian2D(Expression):
         Convenience attributes to get and set the full-with-half-maxima along
         the two axes.
     height : float
-        Convenience attributes to get height of the Gaussian.
+        Convenience attribute to get height of the Gaussian.
     """
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
