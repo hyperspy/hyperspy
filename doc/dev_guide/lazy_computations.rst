@@ -41,9 +41,6 @@ operate on some signal. If you add a ``BaseSignal`` with the same navigation siz
 as the signal it will be iterated alongside the mapped signal otherwise a keyword
 argument is assumed to be constant and is applied to every signal.
 
-There are additional protected methods ``_map_iterate`` and ``_map_all`` which are
-called by the ``map`` function but it is discouraged to directly call these methods.
-
 If the new method cannot be coerced into a shape suitable for ``map``, separate
 cases for lazy signals will have to be written. If a function operates on
 arbitrary-sized arrays and the shape of the output can be known before calling,

@@ -39,8 +39,7 @@ from hyperspy.misc.array_tools import (_requires_linear_rebin,
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import (multiply, dummy_context_manager, isiterable,
-                                 process_function_blockwise, guess_output_signal_size,
-                                 rechunk_signal)
+                                 process_function_blockwise, guess_output_signal_size,)
 
 
 _logger = logging.getLogger(__name__)
@@ -142,10 +141,16 @@ class LazySignal(BaseSignal):
         functions sig_chunks should remain None so that it spans the entire signal.
 
         Parameters:
-        nav_chunks:
-            The navigation chunk size
-        sig_chunks:
-            The signal chunk size
+        nav_chunks : {tuple, int, "auto", None}
+            The navigation block dimensions to create.
+            -1 indicates the full size of the corresponding dimension.
+            Default is “auto” which automatically determines chunk sizes.
+        sig_chunks : {tuple, int, "auto", None}
+            The signal block dimensions to create.
+            -1 indicates the full size of the corresponding dimension.
+            Default is -1 which automatically spans the full signal dimension
+        **kwargs : dict
+            Any other keyword arguments for `dask.array.rechunk`
         """
         if not isinstance(sig_chunks, tuple):
             sig_chunks = (sig_chunks,)*len(self.axes_manager.signal_shape)
@@ -567,7 +572,7 @@ class LazySignal(BaseSignal):
         chunk_span = np.equal(self.data.chunksize, self.data.shape)
         chunk_span = [chunk_span[i] for i in self.axes_manager.signal_indices_in_array]
         if not all(chunk_span):
-            print("The chunk size needs to span the full signal size, rechunking...")
+            _logger.info("The chunk size needs to span the full signal size, rechunking...")
             self.rechunk()
         autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
         nav_chunks = self._get_navigation_chunk_size()
@@ -627,8 +632,8 @@ class LazySignal(BaseSignal):
             sig = self._deepcopy_with_new_data(mapped)
             if ragged:
                 sig.axes_manager.remove(sig.axes_manager.signal_axes)
-                sig.__class__ = LazySignal
-                sig.__init__(**sig._to_dictionary(add_models=True))
+                sig._lazy = True
+                sig._assign_subclass()
 
                 return sig
             # remove if too many axes

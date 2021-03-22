@@ -1107,21 +1107,18 @@ def process_function_blockwise(data,
     ------------
     data: np.array
         The data for one chunk
-    *args: np.array
-        Any signal the is iterated alongside the data
+    *args: tuple
+        Any signal the is iterated alongside the data in. In the
+        form ((key1, value1),(key2,value2)...)
     function: function
         The function to applied to the signal axis
-    nav_shape: tuple
-        The shape of the navigation axes
+    nav_indexes: tuple
+        The indexes of the navigation axes for the dataset.
     output_signal_shape: tuple
         The shape of the output signal.  For a ragged signal
         this is equal to 1.
-    dtype: np.dtype
-        The datatype for the output array. For preallocating.
-        For a ragged array this is np.object.
-    iterating_kwargs: list str
-        The keys for anything that is being mapped
-        alongside the data.
+    block_info: dict
+        The block info as described by the `dask.array.map_blocks` function
     **kwargs: dict
         Any additional key value pairs to be used by the function
         (Note that these are the constants that are applied.)
@@ -1154,25 +1151,6 @@ def process_function_blockwise(data,
     return output_array
 
 
-def rechunk_signal(signal,
-                   key,
-                   nav_chunks,
-                   test=False,
-                   ):
-    test_kwarg = {}
-    if test:
-        test_ind = (0,) * len(signal.axes_manager.navigation_axes)
-        if signal.axes_manager.signal_shape == ():
-            test_kwarg[key] = signal.inav[test_ind].data[0]
-        else:
-            test_kwarg[key] = signal.inav[test_ind].data
-    signal = signal.as_lazy()
-    new_chunks = nav_chunks + (*signal.axes_manager.signal_shape,)
-    signal.data = signal.data.rechunk(new_chunks)
-    rechunked_signal = (key, signal.data)
-    return rechunked_signal, test_kwarg
-
-
 def guess_output_signal_size(test_signal,
                              function,
                              ragged,
@@ -1180,6 +1158,18 @@ def guess_output_signal_size(test_signal,
     """This function is for guessing the output signal shape and size.
     It will attempt to apply the function to some test signal and then output
     the resulting signal shape and datatype.
+
+    Parameters
+    test_signal: BaseSignal
+        A test signal for the function to be applied to. A signal
+        with 0 navigation dimensions
+    function: function
+        The function to be applied to the dataset
+    ragged: bool
+        If the data is ragged then the output signal size is () and the
+        data type is np.object
+    **kwargs: dict
+        Any other keyword arguments passed to the function.
     """
     if ragged:
         output_dtype = np.object
