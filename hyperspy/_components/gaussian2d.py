@@ -61,7 +61,7 @@ class Gaussian2D(Expression):
     Attributes
     ----------
     fwhm_x, fwhm_y : float
-        Convenience attributes to get and set the full-with-half-maxima along
+        Convenience attributes to get and set the full width at half maximum along
         the two axes.
     """
 
