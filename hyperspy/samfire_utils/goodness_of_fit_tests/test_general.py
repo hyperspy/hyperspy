@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-
 
 class goodness_test(object):
 
@@ -32,4 +30,4 @@ class goodness_test(object):
         if value is None:
             self._tolerance = None
         else:
-            self._tolerance = np.abs(value)
+            self._tolerance = abs(value)

@@ -50,7 +50,7 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
         centre_shape[i] = 1
 
     centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-    sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - centre.reshape(
+    sigma = np.sqrt(abs(np.sum((X.reshape(X_shape) - centre.reshape(
         centre_shape)) ** 2 * data, i) / np.sum(data, i)))
     height = data.max(i)
 

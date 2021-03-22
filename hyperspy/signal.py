@@ -2792,7 +2792,7 @@ class BaseSignal(FancySlicing,
 
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
-                return np.abs(navigator(as_numpy=True))
+                return abs(navigator(as_numpy=True))
             else:
                 return navigator(as_numpy=True)
 
@@ -2814,7 +2814,7 @@ class BaseSignal(FancySlicing,
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
             if np.issubdtype(navigator().dtype, np.complexfloating):
-                return np.abs(navigator(as_numpy=True))
+                return abs(navigator(as_numpy=True))
             else:
                 return navigator(as_numpy=True)
 
@@ -2888,7 +2888,7 @@ class BaseSignal(FancySlicing,
                 elif navigator == "data":
                     if np.issubdtype(self.data.dtype, np.complexfloating):
                         self._plot.navigator_data_function = \
-                            lambda axes_manager=None: to_numpy(np.abs(self.data))
+                            lambda axes_manager=None: to_numpy(abs(self.data))
                     else:
                         self._plot.navigator_data_function = \
                             lambda axes_manager=None: to_numpy(self.data)

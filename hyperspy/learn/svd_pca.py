@@ -60,10 +60,10 @@ def svd_flip_signs(u, v, u_based_decision=True):
     # All rights reserved.
 
     if u_based_decision:
-        max_abs_cols = np.argmax(np.abs(u), axis=0)
+        max_abs_cols = np.argmax(abs(u), axis=0)
         signs = np.sign(u[max_abs_cols, range(u.shape[1])])
     else:
-        max_abs_rows = np.argmax(np.abs(v), axis=1)
+        max_abs_rows = np.argmax(abs(v), axis=1)
         signs = np.sign(v[range(v.shape[0]), max_abs_rows])
 
     u *= signs

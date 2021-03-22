@@ -36,7 +36,7 @@ def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):
     rng = np.random.RandomState(random_seed)
     U = rng.randn(m, rank)
     V = rng.randn(n, rank)
-    X = np.abs(U @ V.T)
+    X = abs(U @ V.T)
     X /= np.linalg.norm(X)
     return X
 

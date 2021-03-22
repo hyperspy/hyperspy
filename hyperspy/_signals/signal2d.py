@@ -127,7 +127,7 @@ def fft_correlation(in1, in2, normalize=False, real_only=False):
     fprod *= fft_f(in2, fsize).conjugate()
 
     if normalize is True:
-        fprod = np.nan_to_num(fprod / np.absolute(fprod))
+        fprod = np.nan_to_num(fprod / abs(fprod))
 
     ret = ifft_f(fprod).real.copy()
 
@@ -262,7 +262,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         correlation /= normalization
         # Locate maximum and map back to original pixel grid
         maxima = np.array(np.unravel_index(
-            np.argmax(np.abs(correlation)),
+            np.argmax(abs(correlation)),
             correlation.shape),
             dtype=np.float64)
         maxima -= dftshift

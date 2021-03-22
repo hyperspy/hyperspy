@@ -51,9 +51,9 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     a1 = np.sqrt(2 / np.pi)
     b1 = (4 / np.pi - 1) * a1
     m1 = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-    m2 = np.abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
+    m2 = abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
               / np.sum(data, i))
-    m3 = np.abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
+    m3 = abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
               / np.sum(data, i))
 
     x0 = m1 - a1 * (m3 / b1) ** (1 / 3)
@@ -61,7 +61,7 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     delta = np.sqrt(1 / (a1**2 + m2 * (b1 / m3) ** (2 / 3)))
     shape = delta / np.sqrt(1 - delta**2)
 
-    iheight = np.argmin(np.abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
+    iheight = np.argmin(abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
     # height is the value of the function at x0, shich has to be computed
     # differently for dask array (lazy) and depending on the dimension
     if isinstance(data, da.Array):
@@ -275,5 +275,5 @@ class SkewNormal(Expression):
             return self.x0.value
         else:
             m0 = muz - self.skewness * sigmaz / 2 - np.sign(self.shape.value) \
-                / 2 * np.exp(- 2 * np.pi / np.abs(self.shape.value))
+                / 2 * np.exp(- 2 * np.pi / abs(self.shape.value))
             return self.x0.value + self.scale.value * m0

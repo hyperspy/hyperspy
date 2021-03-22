@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 def _thresh(X, lambda1, vmax):
     """Soft-thresholding with clipping."""
-    res = np.abs(X) - lambda1
+    res = abs(X) - lambda1
     np.maximum(res, 0.0, out=res)
     res *= np.sign(X)
     np.clip(res, -vmax, vmax, out=res)
@@ -211,7 +211,7 @@ class ORNMF:
         self.W = halfnorm.rvs(
             size=(self.n_features, self.rank), random_state=self.random_state
         )
-        self.W = np.abs(avg * self.W / np.sqrt(self.rank))
+        self.W = abs(avg * self.W / np.sqrt(self.rank))
         self.H = []
 
         if self.subspace_tracking:
@@ -281,7 +281,7 @@ class ORNMF:
             n = 0
             lasttwo = np.zeros(2)
             while n <= 2 or (
-                np.abs((lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9
+                abs((lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9
             ):
                 self.W -= eta * (self.W @ self.A - self.B)
                 self.W = _project(self.W)

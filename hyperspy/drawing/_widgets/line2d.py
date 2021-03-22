@@ -475,4 +475,4 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         dn = 2 * np.dot(n, dx)
         if self._selected_artist is self.patch[2]:
             dn *= -1
-        self.size = np.abs(self._drag_store[1] + dn)
+        self.size = abs(self._drag_store[1] + dn)

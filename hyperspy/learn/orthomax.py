@@ -77,7 +77,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                 S = np.sum(S)
                 B = A @ W
 
-                if np.abs(S - Sold) < tol * S:
+                if abs(S - Sold) < tol * S:
                     converged = True
                     break
 
@@ -103,7 +103,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                     denom = u.T @ u - v.T @ v - gamma * (usum ** 2 - vsum ** 2) * oo_d
 
                     theta = 0.25 * np.arctan2(numer, denom)
-                    maxTheta = max(maxTheta, np.abs(theta))
+                    maxTheta = max(maxTheta, abs(theta))
 
                     R = np.array(
                         [

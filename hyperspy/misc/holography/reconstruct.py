@@ -69,23 +69,23 @@ def estimate_sideband_position(
         fft_filtered.shape[1] //
         2)  # cb: center band
     if sb == 'lower':
-        fft_sb = np.abs(fft_filtered[:cb_position[0], :])
+        fft_sb = abs(fft_filtered[:cb_position[0], :])
         sb_position = np.asarray(
             np.unravel_index(
                 fft_sb.argmax(),
                 fft_sb.shape))
     elif sb == 'upper':
-        fft_sb = np.abs(fft_filtered[cb_position[0]:, :])
+        fft_sb = abs(fft_filtered[cb_position[0]:, :])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
         sb_position = np.asarray(np.add(sb_position, (cb_position[0], 0)))
     elif sb == 'left':
-        fft_sb = np.abs(fft_filtered[:, :cb_position[1]])
+        fft_sb = abs(fft_filtered[:, :cb_position[1]])
         sb_position = np.asarray(
             np.unravel_index(
                 fft_sb.argmax(),
                 fft_sb.shape))
     elif sb == 'right':
-        fft_sb = np.abs(fft_filtered[:, cb_position[1]:])
+        fft_sb = abs(fft_filtered[:, cb_position[1]:])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
         sb_position = np.asarray(np.add(sb_position, (0, cb_position[1])))
     # Return sideband position:
@@ -166,7 +166,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
 
     if plotting:
         _, axs = plt.subplots(1, 1, figsize=(4, 4))
-        axs.imshow(np.abs(fftshift(fft_aperture)), clim=(0, 0.1))
+        axs.imshow(abs(fftshift(fft_aperture)), clim=(0, 0.1))
         axs.scatter(
             sb_position[1],
             sb_position[0],
@@ -208,7 +208,7 @@ def aperture_function(r, apradius, rsmooth):
         Smoothness in halfwidth. rsmooth = 1 will cause a decay from 1 to 0 over 2 pixel.
     """
 
-    return 0.5 * (1. - np.tanh((np.absolute(r) - apradius) / (0.5 * rsmooth)))
+    return 0.5 * (1. - np.tanh((abs(r) - apradius) / (0.5 * rsmooth)))
 
 
 def freq_array(shape, sampling):

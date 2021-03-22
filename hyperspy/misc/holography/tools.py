@@ -90,4 +90,4 @@ def estimate_fringe_contrast_fourier(
 
     fft_exp = fft2(data)
 
-    return 2 * np.abs(fft_exp[tuple(sb_position)]) / np.abs(fft_exp[0, 0])
+    return 2 * abs(fft_exp[tuple(sb_position)]) / abs(fft_exp[0, 0])

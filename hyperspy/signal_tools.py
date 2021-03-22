@@ -1060,9 +1060,9 @@ class ImageContrastEditor(t.HasTraits):
         arr = arr.copy()
         _linscale_adj = (self.linscale / (1.0 - np.e ** -1))
         with np.errstate(invalid="ignore"):
-            masked = np.abs(arr) > self.linthresh
+            masked = abs(arr) > self.linthresh
         sign = np.sign(arr[masked])
-        log = (_linscale_adj + np.log(np.abs(arr[masked]) / self.linthresh))
+        log = (_linscale_adj + np.log(abs(arr[masked]) / self.linthresh))
         log *= sign * self.linthresh
         arr[masked] = log
         arr[~masked] *= _linscale_adj

@@ -44,8 +44,7 @@ class AIC_test(object):
         m = model.inav[ind[::-1]]
         m.fetch_stored_values()
         _aic = AIC(m)
-        return np.abs(
-            notexp(_aic) - self.expected) < notexp(self.tolerance)
+        return abs(notexp(_aic) - self.expected) < notexp(self.tolerance)
 
     def map(self, model, mask):
         ind_list = np.where(mask)
@@ -67,8 +66,7 @@ class AICc_test(object):
         m = model.inav[ind[::-1]]
         m.fetch_stored_values()
         _aicc = AICc(m)
-        return np.abs(
-            notexp(_aicc) - self.expected) < notexp(self.tolerance)
+        return abs(notexp(_aicc) - self.expected) < notexp(self.tolerance)
 
     def map(self, model, mask):
         ind_list = np.where(mask)
@@ -90,8 +88,7 @@ class BIC_test(object):
         m = model.inav[ind[::-1]]
         m.fetch_stored_values()
         _bic = BIC(m)
-        return np.abs(
-            notexp(_bic) - self.expected) < notexp(self.tolerance)
+        return abs(notexp(_bic) - self.expected) < notexp(self.tolerance)
 
     def map(self, model, mask):
         ind_list = np.where(mask)

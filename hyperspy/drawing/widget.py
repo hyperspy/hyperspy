@@ -919,7 +919,7 @@ class ResizersMixin(object):
         if self.resize_pixel_size is None:
             rsize = [ax.scale for ax in self.axes]
         else:
-            rsize = np.abs(invtrans.transform(self.resize_pixel_size) -
+            rsize = abs(invtrans.transform(self.resize_pixel_size) -
                            invtrans.transform((0, 0)))
         return rsize
 
@@ -930,8 +930,8 @@ class ResizersMixin(object):
         invtrans = self.ax.transData.inverted()
         border = self.border_thickness
         # Transform the border thickness into data values
-        dl = np.abs(invtrans.transform((border, border)) -
-                    invtrans.transform((0, 0))) / 2
+        dl = abs(invtrans.transform((border, border)) -
+                 invtrans.transform((0, 0))) / 2
         rsize = self._get_resizer_size()
         return rsize / 2 + dl
 
@@ -941,8 +941,8 @@ class ResizersMixin(object):
         invtrans = self.ax.transData.inverted()
         border = self.border_thickness
         # Transform the border thickness into data values
-        dl = np.abs(invtrans.transform((border, border)) -
-                    invtrans.transform((0, 0))) / 2
+        dl = abs(invtrans.transform((border, border)) -
+                 invtrans.transform((0, 0))) / 2
         rsize = self._get_resizer_size()
         xs, ys = self._size
 

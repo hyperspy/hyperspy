@@ -1049,7 +1049,7 @@ def plot_images(images,
                         factor = min_asp ** -1 * float(xaxis.size) / yaxis.size
                     else:
                         factor = 1
-                    asp = np.abs(factor * float(xaxis.scale) / yaxis.scale)
+                    asp = abs(factor * float(xaxis.scale) / yaxis.scale)
                 elif aspect == 'square':
                     asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
                 elif aspect == 'equal':

@@ -131,7 +131,7 @@ def mlpca(
 
         # Every second iteration, check the stop criterion
         if itr > 0 and itr % 2 == 0:
-            stop_criterion = np.abs(s_old - s_obj) / s_obj
+            stop_criterion = abs(s_old - s_obj) / s_obj
             _logger.info(f"Iteration: {itr // 2}, convergence: {stop_criterion}")
 
             if stop_criterion < tol:

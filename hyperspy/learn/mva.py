@@ -1007,7 +1007,7 @@ class MVA:
             # following code is an experimental attempt to sort them in a
             # more predictable way
             sorting_indices = np.argsort(
-                lr.explained_variance[:number_of_components] @ np.abs(w.T)
+                lr.explained_variance[:number_of_components] @ abs(w.T)
             )[::-1]
             w[:] = w[sorting_indices, :]
 
@@ -2490,7 +2490,7 @@ class MVA:
                     reference_inertia[o_indx]=np.mean(local_inertia)
                     reference_std[o_indx] = np.std(local_inertia)
                 std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std
-                std_error = np.abs(std_error)
+                std_error = abs(std_error)
                 gap       = reference_inertia-data_inertia
                 to_return = gap
                 # finding the first max..check if first point is max
@@ -2599,7 +2599,7 @@ class MVA:
         else:
             ys = curve_values_adj[:max_points]
 
-        numer = np.abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
+        numer = abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
         denom = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         distance = np.nan_to_num(numer / denom)
         elbow_position = np.argmax(distance)

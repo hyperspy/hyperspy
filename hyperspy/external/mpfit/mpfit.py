@@ -885,7 +885,7 @@ class mpfit:
                         return
 
                     # If parameters were changed (grrr..) then re-tie
-                    if np.max(np.abs(xnew0 - self.params)) > 0:
+                    if np.max(abs(xnew0 - self.params)) > 0:
                         if self.qanytied:
                             self.params = self.tie(self.params, ptied)
                         x = self.params[ifree]
@@ -988,7 +988,7 @@ class mpfit:
                     l_ = ipvt[j]
                     if wa2[l_] != 0:
                         sum0 = sum(fjac[0 : j + 1, j] * qtf[0 : j + 1]) / self.fnorm
-                        gnorm = np.max([gnorm, np.abs(sum0 / wa2[l_])])
+                        gnorm = np.max([gnorm, abs(sum0 / wa2[l_])])
 
             # Test for convergence of the gradient norm
             if gnorm <= gtol:
@@ -1031,7 +1031,7 @@ class mpfit:
                         if nupeg > 0:
                             wa1[whupeg] = np.clip(wa1[whupeg], np.min(wa1), 0.0)
 
-                        dwa1 = np.abs(wa1) > machep
+                        dwa1 = abs(wa1) > machep
                         whl = (
                             np.nonzero(((dwa1 != 0.0) & qllim) & ((x + wa1) < llim))
                         )[0]
@@ -1053,7 +1053,7 @@ class mpfit:
                         )[0]
                         if len(whmax) > 0:
                             mrat = np.max(
-                                np.abs(nwa1[whmax]) / np.abs(maxstep[ifree[whmax]])
+                                abs(nwa1[whmax]) / abs(maxstep[ifree[whmax]])
                             )
                             if mrat > 1:
                                 alpha /= mrat
@@ -1144,12 +1144,12 @@ class mpfit:
                     self.niter += 1
 
                 # Tests for convergence
-                if (np.abs(actred) <= ftol) and (prered <= ftol) and (0.5 * ratio <= 1):
+                if (abs(actred) <= ftol) and (prered <= ftol) and (0.5 * ratio <= 1):
                     self.status = 1
                 if delta <= xtol * xnorm:
                     self.status = 2
                 if (
-                    (np.abs(actred) <= ftol)
+                    (abs(actred) <= ftol)
                     and (prered <= ftol)
                     and (0.5 * ratio <= 1)
                     and (self.status == 2)
@@ -1162,7 +1162,7 @@ class mpfit:
                 if self.niter >= maxiter:
                     self.status = 5
                 if (
-                    (np.abs(actred) <= machep)
+                    (abs(actred) <= machep)
                     and (prered <= machep)
                     and (0.5 * ratio <= 1)
                 ):
@@ -1404,7 +1404,7 @@ class mpfit:
 
         fjac = np.zeros([m, n])
 
-        h = eps * np.abs(x)
+        h = eps * abs(x)
 
         # if STEP is given, use that
         # STEP includes the fixed parameters
@@ -1420,7 +1420,7 @@ class mpfit:
             dstepi = dstep[ifree]
             wh = (np.nonzero(dstepi > 0))[0]
             if len(wh) > 0:
-                h[wh] = np.abs(dstepi[wh] * x[wh])
+                h[wh] = abs(dstepi[wh] * x[wh])
 
         # In case any of the step values are zero
         h[h == 0] = eps
@@ -1443,7 +1443,7 @@ class mpfit:
             if status < 0:
                 return None
 
-            if np.abs(dside[ifree[j]]) <= 1:
+            if abs(dside[ifree[j]]) <= 1:
                 # COMPUTE THE ONE-SIDED DERIVATIVE
                 # Note optimization fjac(0:*,j)
                 fjac[0:, j] = (fp - fvec) / h[j]
@@ -1682,7 +1682,7 @@ class mpfit:
             for k in range(j, n):
                 if sdiag[k] == 0:
                     break
-                if np.abs(r[k, k]) < np.abs(sdiag[k]):
+                if abs(r[k, k]) < abs(sdiag[k]):
                     cotan = r[k, k] / sdiag[k]
                     sine = 0.5 / np.sqrt(0.25 + 0.25 * cotan * cotan)
                     cosine = sine * cotan
@@ -1818,7 +1818,7 @@ class mpfit:
         # jacobian is rank-deficient, obtain a least-squares solution
         nsing = n
         wa1 = qtb.copy()
-        rdiagabs = np.abs(np.diagonal(r))
+        rdiagabs = abs(np.diagonal(r))
         rthresh = np.max(rdiagabs) * machep
         wh = (np.nonzero(rdiagabs < rthresh))[0]
         if len(wh) > 0:
@@ -1888,7 +1888,7 @@ class mpfit:
             temp = fp
             fp = dxnorm - delta
 
-            if (np.abs(fp) <= 0.1 * delta) or (
+            if (abs(fp) <= 0.1 * delta) or (
                 (parl == 0) and (fp <= temp) and (temp < 0)
             ):
                 break
@@ -1992,9 +1992,9 @@ class mpfit:
 
         # For the inverse of r in the full upper triangle of r
         l_ = -1
-        tolr = tol * np.abs(r[0, 0])
+        tolr = tol * abs(r[0, 0])
         for k in range(n):
-            if np.abs(r[k, k]) <= tolr:
+            if abs(r[k, k]) <= tolr:
                 break
             r[k, k] = 1.0 / r[k, k]
             for j in range(k):

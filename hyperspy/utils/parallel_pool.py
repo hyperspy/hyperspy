@@ -76,7 +76,7 @@ class ParallelPool:
         self.pool = None
         if num_workers is None:
             num_workers = np.inf
-        self.num_workers = np.abs(num_workers)
+        self.num_workers = abs(num_workers)
         self.timestep = 0.001
         self.setup(ipyparallel=ipyparallel)
 
