@@ -63,6 +63,8 @@ class Gaussian2D(Expression):
     fwhm_x, fwhm_y : float
         Convenience attributes to get and set the full-with-half-maxima along
         the two axes.
+    height : float
+        Convenience attributes to get height of the Gaussian.
     """
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
@@ -151,3 +153,8 @@ class Gaussian2D(Expression):
             return self.rotation_angle_wrapped
         else:
             return self.rotation_angle_wrapped - np.pi / 2
+
+    @property
+    def height(self):
+        """float: Height of the Gaussian"""
+        return self.A.value / (2 * np.pi * self.sigma_x.value * self.sigma_y.value)

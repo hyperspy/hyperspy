@@ -19,6 +19,7 @@
 import math
 
 import numpy as np
+from pytest import approx
 
 from hyperspy.components2d import Gaussian2D
 
@@ -96,3 +97,15 @@ def test_properties():
     g.rotation_angle.value = angle
     np.testing.assert_allclose(g.rotation_angle_wrapped, angle)
     np.testing.assert_allclose(g.rotation_major_axis, angle - np.pi / 2)
+
+
+def test_height():
+    g = Gaussian2D()
+    g.sigma_x.value = 0.1
+    g.sigma_y.value = 0.5
+    g.A.value = 99
+    x = np.arange(-2, 2, 0.01)
+    y = np.arange(-2, 2, 0.01)
+    xx, yy = np.meshgrid(x, y)
+    g_image = g.function(xx, yy)
+    assert approx(g_image.max()) == g.height
