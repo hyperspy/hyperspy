@@ -111,6 +111,15 @@ class Gaussian2D(Expression):
         self.sigma_y.value = value / sigma2fwhm
 
     @property
+    def height(self):
+        """float: Height of the Gaussian"""
+        return self.A.value / (2 * np.pi * self.sigma_x.value * self.sigma_y.value)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * 2 * np.pi * self.sigma_x.value * self.sigma_y.value
+
+    @property
     def sigma_major(self):
         """float: The sigma value of the major axis (axis with the largest
         sigma value).
@@ -153,8 +162,3 @@ class Gaussian2D(Expression):
             return self.rotation_angle_wrapped
         else:
             return self.rotation_angle_wrapped - np.pi / 2
-
-    @property
-    def height(self):
-        """float: Height of the Gaussian"""
-        return self.A.value / (2 * np.pi * self.sigma_x.value * self.sigma_y.value)
