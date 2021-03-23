@@ -388,3 +388,26 @@ class Test_energy_units:
                                    (1.4865, 0.07661266213883969))
         np.testing.assert_allclose(s._get_line_energy('Al_Ka', FWHM_MnKa=128),
                                    (1.4865, 0.073167615787314))
+
+
+class TestDetectorEfficiency:
+    def setup_method(self, method):
+        s = EDSSEMSpectrum(np.ones((5)))
+        s.axes_manager.signal_axes[0].scale = 0.5
+        s.axes_manager.signal_axes[0].units = "keV"
+        self.signal = s
+
+    def test_beam_energy(self):
+        s = self.signal
+        det = s.detector_efficiency_from_layers(
+            elements=["C", "Al", "Si", "O"],
+            thicknesses_layer=[50.0, 30.0, 40.0, 40.0],
+            thickness_detector=0.45,
+            cutoff_energy=0.1,
+        )
+        np.testing.assert_allclose(
+            det.data,
+            np.array([0.0, 0.75500789, 0.95501759, 0.98541387, 0.95350419]),
+            atol=1e-3,
+        )
+

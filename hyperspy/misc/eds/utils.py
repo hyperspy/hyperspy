@@ -585,6 +585,62 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
     acf = expo/(1.0 - np.exp(-(expo)))
     return acf
 
+
+def detector_efficiency_from_layers(energies,
+                                      elements,
+                                      thicknesses_layer,
+                                      thickness_detector,
+                                      cutoff_energy=0.05):
+    """Compute the detector efficiency from the layers.
+
+    The efficiency is calculated by estimating the absorption of the
+    different the layers in front of the detector.
+
+    Parameters
+    ----------
+    energy: float or list of float
+        The energy of the  X-ray reaching the detector in keV.
+    elements: list of str
+        The composition of each layer. One element per layer.
+    thicknesses_layer: list of float
+        The thickness of each layer in nm
+    thickness_detector: float
+        The thickness of the detector in mm
+    cutoff_energy: float
+        The lower energy limit in keV below which the detector has no
+        efficiency.
+
+    Return
+    ------
+    An EDSspectrum instance. 1. is a totaly efficient detector
+
+    Notes
+    -----
+    Equation adapted from  Alvisi et al 2006
+    """
+    from hyperspy import utils
+    efficiency = np.ones_like(energies)
+
+    for element, thickness in zip(elements,
+                                  thicknesses_layer):
+        macs = np.array(utils.material.mass_absorption_coefficient(
+            energies=energies,
+            element=element))
+        density = utils.material.elements[element]\
+            .Physical_properties.density_gcm3
+        efficiency *= np.nan_to_num(np.exp(-(
+            macs * density * thickness * 1e-7)))
+    macs = np.array(utils.material.mass_absorption_coefficient(
+        energies=energies,
+        element='Si'))
+    density = utils.material.elements.Si\
+        .Physical_properties.density_gcm3
+    efficiency *= (1 - np.nan_to_num(np.exp(-(macs * density *
+                                              thickness_detector * 1e-1))))
+    efficiency[energies < cutoff_energy] = 0.0
+    return efficiency
+
+
 def quantification_cross_section(intensities,
                                  cross_sections,
                                  dose,
