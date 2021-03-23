@@ -23,7 +23,6 @@ from hyperspy import utils
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.test_utils import assert_warns
 from hyperspy.signals import EDSSEMSpectrum
 
 
@@ -124,6 +123,11 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
         assert s.metadata.Sample.xray_lines == ['Ti_Ll']
+
+    def test_add_lines_warning(self):
+        s = self.signal
+        with pytest.warns(UserWarning):
+            s.add_lines(('Fe_Ka',))
 
     def test_add_lines_auto(self):
         s = self.signal
@@ -276,7 +280,8 @@ class Test_get_lines_intensity:
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         np.testing.assert_allclose(24.99516, sAl.data, atol=1e-3)
         s.axes_manager[-1].offset = 1.0
-        with assert_warns(message="C_Ka is not in the data energy range."):
+        with pytest.warns(UserWarning,
+                          match="C_Ka is not in the data energy range."):
             sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
         assert len(sC) == 0
         assert sAl.metadata.Sample.elements == ["Al"]

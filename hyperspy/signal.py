@@ -2162,28 +2162,33 @@ class BaseSignal(FancySlicing,
             imported from the original data file.
 
         """
-        self._create_metadata()
-        self.models = ModelManager(self)
-        self.learning_results = LearningResults()
-        kwds['data'] = data
-        self._load_dictionary(kwds)
-        self._plot = None
-        self.inav = SpecialSlicersSignal(self, True)
-        self.isig = SpecialSlicersSignal(self, False)
-        self.events = Events()
-        self.events.data_changed = Event("""
-            Event that triggers when the data has changed
+        # the 'full_initialisation' keyword is private API to be used by the
+        # _assign_subclass method. Purposely not exposed as public API.
+        # Its purpose is to avoid creating new attributes, which breaks events
+        # and to reduce overhead when changing 'signal_type'.
+        if kwds.get('full_initialisation', True):
+            self._create_metadata()
+            self.models = ModelManager(self)
+            self.learning_results = LearningResults()
+            kwds['data'] = data
+            self._load_dictionary(kwds)
+            self._plot = None
+            self.inav = SpecialSlicersSignal(self, True)
+            self.isig = SpecialSlicersSignal(self, False)
+            self.events = Events()
+            self.events.data_changed = Event("""
+                Event that triggers when the data has changed
 
-            The event trigger when the data is ready for consumption by any
-            process that depend on it as input. Plotted signals automatically
-            connect this Event to its `BaseSignal.plot()`.
+                The event trigger when the data is ready for consumption by any
+                process that depend on it as input. Plotted signals automatically
+                connect this Event to its `BaseSignal.plot()`.
 
-            Note: The event only fires at certain specific times, not everytime
-            that the `BaseSignal.data` array changes values.
+                Note: The event only fires at certain specific times, not everytime
+                that the `BaseSignal.data` array changes values.
 
-            Arguments:
-                obj: The signal that owns the data.
-            """, arguments=['obj'])
+                Arguments:
+                    obj: The signal that owns the data.
+                """, arguments=['obj'])
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -2481,12 +2486,26 @@ class BaseSignal(FancySlicing,
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes. See :py:func:`numpy.squeeze` for more details.
+
+        Returns
+        -------
+        s : signal
+            A new signal object with single-entry dimensions removed
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+        <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
+        >>> s = s.squeeze()
+        >>> s
+        <Signal2D, title: , dimensions: (6, 2|8, 8)>
         """
         # We deepcopy everything but data
         self = self._deepcopy_with_new_data(self.data)
-        for axis in self.axes_manager._axes:
-            if axis.size == 1:
-                self._remove_axis(axis.index_in_axes_manager)
+        for ax in (self.axes_manager.signal_axes, self.axes_manager.navigation_axes):
+            for axis in reversed(ax):
+                if axis.size == 1:
+                    self._remove_axis(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
         return self
 
@@ -5300,7 +5319,7 @@ class BaseSignal(FancySlicing,
             lazy=self._lazy)
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
-        self.__init__(**self._to_dictionary(add_models=True))
+        self.__init__(self.data, full_initialisation=False)
         if self._lazy:
             self._make_lazy()
 

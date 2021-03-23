@@ -313,6 +313,9 @@ def _linear_bin(dat, scale, crop=True):
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
         result = np.zeros((dim,) + dat.shape[1:])
+        # Make sure that native endian is used
+        if not dat.dtype.isnative:
+            dat = dat.astype(dat.dtype.type)
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.
@@ -375,7 +378,6 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
     return sarray
 
 
-@njit(cache=True)
 def numba_histogram(data, bins, ranges):
     """
     Parameters
@@ -391,6 +393,17 @@ def numba_histogram(data, bins, ranges):
     -------
     hist : array
         The values of the histogram.
+    """
+    # Make sure that native endian is used
+    if not data.dtype.isnative:
+        data = data.astype(data.dtype.type)
+    return _numba_histogram(data, bins, ranges)
+
+
+@njit(cache=True)
+def _numba_histogram(data, bins, ranges):
+    """
+    Numba histogram computation requiring native endian datatype.
     """
     # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
     hist = np.zeros((bins,), dtype=np.intp)

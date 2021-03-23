@@ -330,14 +330,14 @@ class RectangleWidget(SquareWidget, ResizersMixin):
 
     def _update_patch_position(self):
         # Override to include resizer positioning
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_xy(self._get_patch_xy())
             self._update_resizers()
             self.draw_patch()
 
     def _update_patch_geometry(self):
         # Override to include resizer positioning
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_bounds(*self._get_patch_bounds())
             self._update_resizers()
             self.draw_patch()

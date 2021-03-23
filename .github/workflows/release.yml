@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -51,11 +51,6 @@ jobs:
           uname -a
           python --version
           which python
-
-      - name: Install Visual C++ for Python 2.7
-        if: runner.os == 'Windows'
-        run: |
-          choco install vcpython27 -f -y
 
       - name: install pep517 and twine
         run: |
@@ -109,8 +104,9 @@ jobs:
           python -m pip install twine
 
       - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2010_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.3.3
         with:
+          python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
           build-requirements: 'cython'
 
       - name: Build source distribution

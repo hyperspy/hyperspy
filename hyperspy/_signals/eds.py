@@ -443,7 +443,8 @@ class EDS_mixin:
                     "%s is not a valid symbol of an element." % element)
         xray_not_here = self._get_xray_lines_in_spectral_range(xray_lines)[1]
         for xray in xray_not_here:
-            warnings.warn("%s is not in the data energy range." % xray)
+            warnings.warn(f"{xray} is not in the data energy range.",
+                          UserWarning)
         if "Sample.elements" in self.metadata:
             extra_elements = (set(self.metadata.Sample.elements) -
                               elements)

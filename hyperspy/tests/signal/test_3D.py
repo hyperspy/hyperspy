@@ -21,6 +21,7 @@ import pytest
 
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signals import Signal1D
+from hyperspy.misc.array_tools import rebin
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
@@ -98,7 +99,6 @@ class Test3D:
         var = new_s.metadata.Signal.Noise_properties.variance
         assert new_s.data.shape == (1, 2, 6)
         assert var.data.shape == (1, 2, 6)
-        from hyperspy.misc.array_tools import rebin
 
         np.testing.assert_array_equal(
             rebin(self.signal.data, scale=(2, 2, 1)), var.data
@@ -115,6 +115,22 @@ class Test3D:
                 rebin(self.signal.data, scale=(2, 2, 1)), new_s.data
             )
 
+    def test_rebin_new_shape(self):
+        self.signal.estimate_poissonian_noise_variance()
+        new_s = self.signal.rebin(new_shape=(1, 2, 6))
+        var = new_s.metadata.Signal.Noise_properties.variance
+        assert new_s.data.shape == (2, 1, 6)
+        assert var.data.shape == (2, 1, 6)
+        np.testing.assert_array_equal(
+            rebin(self.signal.data, new_shape=(2, 1, 6)), new_s.data
+        )
+        np.testing.assert_array_equal(
+            rebin(self.signal.data, new_shape=(2, 1, 6)), var.data
+        )
+        new_s = self.signal.rebin(new_shape=(4, 2, 6))
+        assert new_s.data.shape == self.data.shape
+
+
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin(scale=(2, 2, 1))
         with pytest.raises(AttributeError):
@@ -130,6 +146,14 @@ class Test3D:
         s.change_dtype(np.uint8)
         s2 = s.rebin(scale=(3, 3, 1), crop=False)
         assert s.sum() == s2.sum()
+
+    def test_rebin_errors(self):
+        with pytest.raises(ValueError):
+            self.signal.rebin()
+        with pytest.raises(ValueError):
+            rebin(self.signal.data, scale=(3, 3, 1), new_shape=(1, 2, 6))
+        with pytest.raises(ValueError):
+            rebin(self.signal.data, scale=(2, 2, 2, 2))
 
     def test_swap_axes_simple(self):
         s = self.signal

@@ -251,7 +251,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     def _update_patch_geometry(self):
         """Set line position, and set width indicator's if appropriate
         """
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_data(np.array(self._pos).T)
             # Update width indicator if present
             if self._width_indicator_patches:

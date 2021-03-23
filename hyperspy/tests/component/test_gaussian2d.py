@@ -19,6 +19,7 @@
 import math
 
 import numpy as np
+from pytest import approx
 
 from hyperspy.components2d import Gaussian2D
 
@@ -61,6 +62,39 @@ def test_util_fwhm_getset():
     g1.fwhm_y = 0.33
     assert g1.fwhm_x == 0.33
     assert g1.fwhm_y == 0.33
+
+
+def test_height_value():
+    g = Gaussian2D()
+    g.sigma_x.value = 0.1
+    g.sigma_y.value = 0.5
+    g.A.value = 99
+    x = np.arange(-2, 2, 0.01)
+    y = np.arange(-2, 2, 0.01)
+    xx, yy = np.meshgrid(x, y)
+    g_image = g.function(xx, yy)
+    assert approx(g_image.max()) == g.height
+
+
+def test_util_height_set():
+    g = Gaussian2D()
+    g.height = 0.33
+    np.testing.assert_allclose(
+        g.height, g.A.value / (2 * np.pi * g.sigma_x.value * g.sigma_y.value)
+    )
+
+
+def test_util_height_get():
+    g = Gaussian2D(A=55)
+    np.testing.assert_allclose(
+        g.height, g.A.value / (2 * np.pi * g.sigma_x.value * g.sigma_y.value)
+    )
+
+
+def test_util_height_getset():
+    g = Gaussian2D()
+    g.height = 0.165
+    assert g.height == 0.165
 
 
 def test_properties():

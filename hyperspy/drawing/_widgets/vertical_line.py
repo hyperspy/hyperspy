@@ -27,7 +27,7 @@ class VerticalLineWidget(Widget1DBase):
     """
 
     def _update_patch_position(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_xdata(self._pos[0])
             self.draw_patch()
 

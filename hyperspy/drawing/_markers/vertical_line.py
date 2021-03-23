@@ -60,7 +60,6 @@ class VerticalLine(MarkerBase):
             self.name,
             self.get_data_position('x1'),
             self.marker_properties['color'],
-            self.get_data_position('size'),
         )
         return(string)
 
