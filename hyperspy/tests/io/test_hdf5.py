@@ -298,9 +298,8 @@ class TestSavingMetadataContainers:
         assert l.metadata.Signal.quantity == quantity
 
     def test_metadata_binned_deprecate(self):
-        with pytest.warns(UserWarning) as warninfo:
+        with pytest.warns(UserWarning, match="Loading old file"):
             s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
-        assert warninfo[1].message.args[0][:16] == "Loading old file"
         assert s.metadata.has_item('Signal.binned') == False
         assert s.axes_manager[-1].is_binned == False
         

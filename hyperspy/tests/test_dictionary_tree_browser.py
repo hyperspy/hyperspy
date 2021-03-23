@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 from hyperspy.misc.utils import (DictionaryTreeBrowser, check_long_string,
                                  replace_html_symbols)
@@ -184,6 +185,12 @@ class TestDictionaryBrowser:
         assert self.tree.get_item('Node1.Node31.leaf311', 44) == 44
         assert self.tree.get_item('Node1.Node21.leaf311', 44) == 44
         assert self.tree.get_item('.Node1.Node21.leaf311', 44) == 44
+
+    # Can be removed once metadata.Signal.binned is deprecated in v2.0
+    def test_set_item_binned(self):
+        with pytest.warns(DeprecationWarning, match="Use of the `binned`"):
+            self.tree.set_item('Signal.binned', True)
+
 
     def test_html(self):
         "Test that the method actually runs"

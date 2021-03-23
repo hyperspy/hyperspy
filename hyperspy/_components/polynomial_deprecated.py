@@ -23,7 +23,7 @@ import logging
 from hyperspy.component import Component
 from hyperspy.misc.utils import ordinal
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 _logger = logging.getLogger(__name__)
 
@@ -133,7 +133,9 @@ class Polynomial(Component):
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if axis.is_binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.coefficients.value = estimation / axis.scale
             else:
                 self.coefficients.value = estimation
@@ -154,7 +156,9 @@ class Polynomial(Component):
                 # Shape needed to fit coefficients.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
-                if axis.is_binned:
+                if is_binned(signal) is True:
+                # in v2 replace by
+                #if axis.is_binned:
                     self.coefficients.map["values"] /= axis.scale
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()

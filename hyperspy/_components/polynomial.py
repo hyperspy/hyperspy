@@ -19,13 +19,11 @@
 import numpy as np
 import logging
 
-
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import ordinal
-
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 _logger = logging.getLogger(__name__)
-
 
 
 class Polynomial(Expression):
@@ -99,7 +97,9 @@ class Polynomial(Expression):
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if axis.is_binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim / axis.scale
             else:
@@ -124,7 +124,9 @@ class Polynomial(Expression):
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 fit = fit.reshape(cmap_shape)
 
-                if axis.is_binned:
+                if is_binned(signal) is True:
+                # in v2 replace by
+                #if axis.is_binned:
                     for i, para in enumerate(self.parameters[::-1]):
                         para.map['values'][:] = fit[..., i] / axis.scale
                         para.map['is_set'][:] = True

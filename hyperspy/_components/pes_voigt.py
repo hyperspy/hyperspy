@@ -21,7 +21,7 @@ import math
 
 from hyperspy.component import Component
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
-
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -301,14 +301,18 @@ class PESVoigt(Component):
             self.centre.value = centre
             self.FWHM.value = sigma * sigma2fwhm
             self.area.value = height * sigma * sqrt2pi
-            if axis.is_binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.area.value /= axis.scale
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if axis.is_binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.area.map['values'][:] /= axis.scale
             self.area.map['is_set'][:] = True
             self.FWHM.map['values'][:] = sigma * sigma2fwhm

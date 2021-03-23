@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 from hyperspy import signals
 from hyperspy.misc.utils import (
@@ -24,6 +25,7 @@ from hyperspy.misc.utils import (
     parse_quantity,
     slugify,
     strlist2enumeration,
+    is_binned,
 )
 
 
@@ -65,3 +67,13 @@ def test_strlist2enumeration():
     assert strlist2enumeration(["a"]) == "a"
     assert strlist2enumeration(["a", "b"]) == "a and b"
     assert strlist2enumeration(["a", "b", "c"]) == "a, b and c"
+
+# Can be removed in v2.0:
+def test_is_binned():
+    s = signals.Signal1D(np.zeros((5, 5)))
+    assert is_binned(s) == s.axes_manager[-1].is_binned
+    with pytest.warns(DeprecationWarning, match="Use of the `binned`"):
+        s.metadata.set_item('Signal.binned', True)
+    with pytest.warns(DeprecationWarning, match="backwards compatibility"):
+        assert is_binned(s) == s.metadata.Signal.binned
+    

@@ -498,7 +498,7 @@ def load_with_reader(
                 warnings.warn('Loading old file version. The binned attribute '
                               'has been moved from metadata.Signal to '
                               'axis.is_binned. Setting this attribute for all '
-                              'signal axes.', UserWarning)
+                              'signal axes instead.', UserWarning)
             if convert_units:
                 objects[-1].axes_manager.convert_units()
         else:

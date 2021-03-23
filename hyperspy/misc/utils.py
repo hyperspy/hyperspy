@@ -1232,3 +1232,19 @@ def is_hyperspy_signal(input_object):
     """
     from hyperspy.signals import BaseSignal
     return isinstance(input_object,BaseSignal)
+
+
+def is_binned(signal, axis=-1):
+    """Backwards compatibility check utility for is_binned attribute.
+    
+    Can be removed in v2.0.
+    """
+    if signal.metadata.has_item('Signal.binned'):
+        warnings.warn('Use of the `binned` attribute in metadata is going to '
+                      'be deprecated in v2.0. At the moment, it still takes '
+                      'precendence over the `axis.is_binned` attribute for '
+                      'backwards compatibility, but use of the latter is '
+                      'strongly recommended.', DeprecationWarning)
+        return signal.metadata.Signal.binned
+    else:
+        return signal.axes_manager[axis].is_binned

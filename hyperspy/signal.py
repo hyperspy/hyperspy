@@ -51,6 +51,7 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
+from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
@@ -4189,7 +4190,9 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if self.axes_manager[axis].is_binned is False:
+        if is_binned(self, axis=axis) is False:
+        # in v2 replace by
+        #if self.axes_manager[axis].is_binned is False:
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)
