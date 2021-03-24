@@ -213,6 +213,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     |    :py:class:`~._signals.complex_signal2d.Complex2D`                    |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
+.. versionchanged:: 1.0 ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
+   classes removed.
 
 .. versionadded:: 1.5
     External packages can register extra :py:class:`~.signal.BaseSignal`
@@ -279,14 +281,13 @@ Binned and unbinned signals
 ---------------------------
 
 Signals that are a histogram of a probability density function (pdf) should
-have the ``signal.axes_manager.signal_axes[0].is_binned`` attribute set to
-``True``. This is because some methods operate differently in signals that are
-*binned*.
+have the ``is_binned`` attribute of the signal axis set to ``True``. The reason
+is that some methods operate differently on signals that are *binned*.
+Note that for 2D signals each signal axis has an ``is_binned``
+attribute that can be set independently. For example, for the first signal
+axis: ``signal.axes_manager.signal_axes[0].is_binned``.
 
-.. versionchanged:: 1.0 ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
-   classes removed.
-
-The default value of the ``binned`` attribute is shown in the
+The default value of the ``is_binned`` attribute is shown in the
 following table:
 
 .. table:: Binned default values for the different subclasses.
@@ -316,13 +317,16 @@ following table:
 
 
 
-
-
 To change the default value:
 
 .. code-block:: python
 
     >>> s.axes_manager[-1].is_binned = True
+
+.. versionchanged:: 1.7 The ``binned`` attribute from the metadata has been
+    replaced by the axis attributes ``is_binned``.
+
+
 
 Generic tools
 -------------
