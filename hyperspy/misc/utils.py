@@ -268,7 +268,7 @@ class DictionaryTreeBrowser:
         """When creating a DictionaryTreeBrowser lazily, the dictionary is
         added to the `_lazy_attributes` attribute. The first time a lazy
         attribute is called or the DictionaryTreeBrowser is printed, the
-        DictionaryTreeBrowser process the lazy attributes with the
+        DictionaryTreeBrowser processes the lazy attributes with the
         `process_lazy_attributes` method.
         DictionaryTreeBrowser is lazy by default, using non-lazy instances
         can be useful for debugging purposes.
