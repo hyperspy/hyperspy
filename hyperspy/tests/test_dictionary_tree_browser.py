@@ -21,6 +21,7 @@ import pytest
 
 from hyperspy.misc.utils import (DictionaryTreeBrowser, check_long_string,
                                  replace_html_symbols)
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signal import BaseSignal
 
 
@@ -188,7 +189,7 @@ class TestDictionaryBrowser:
 
     # Can be removed once metadata.Signal.binned is deprecated in v2.0
     def test_set_item_binned(self):
-        with pytest.warns(DeprecationWarning, match="Use of the `binned`"):
+        with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
             self.tree.set_item('Signal.binned', True)
 
 

@@ -430,7 +430,7 @@ class DictionaryTreeBrowser(object):
             warnings.warn('Use of the `binned` attribute in metadata is '
                           'going to be deprecated in v2.0. Set the '
                           '`axis.is_binned` attribute instead. ', 
-                          DeprecationWarning)
+                          VisibleDeprecationWarning)
             
         if key.startswith('_sig_'):
             key = key[5:]
@@ -1244,7 +1244,7 @@ def is_binned(signal, axis=-1):
                       'be deprecated in v2.0. At the moment, it still takes '
                       'precendence over the `axis.is_binned` attribute for '
                       'backwards compatibility, but use of the latter is '
-                      'strongly recommended.', DeprecationWarning)
+                      'strongly recommended.', VisibleDeprecationWarning)
         return signal.metadata.Signal.binned
     else:
         return signal.axes_manager[axis].is_binned
