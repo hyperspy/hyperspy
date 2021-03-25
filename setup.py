@@ -279,7 +279,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.learn',
                   'hyperspy.tests.model',
                   'hyperspy.tests.samfire',
-                  'hyperspy.tests.signal',
+                  'hyperspy.tests.signals',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',
                   'hyperspy.models',
