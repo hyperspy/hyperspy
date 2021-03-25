@@ -577,6 +577,7 @@ class LazySignal(BaseSignal):
         autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
         nav_chunks = self._get_navigation_chunk_size()
         args = ()
+        arg_keys = ()
         for key in iterating_kwargs:
             if iterating_kwargs[key]._lazy:
                 if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
@@ -584,8 +585,15 @@ class LazySignal(BaseSignal):
             else:
                 iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
                 iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
-            args += ((key, iterating_kwargs[key].data), )
-
+            extra_dims = (len(self.axes_manager.signal_shape) -
+                          len(iterating_kwargs[key].axes_manager.signal_shape))
+            if extra_dims > 0:
+                old_shape = iterating_kwargs[key].data.shape
+                new_shape = old_shape + (1,)*extra_dims
+                args += (iterating_kwargs[key].data.reshape(new_shape), )
+            else:
+                args += (iterating_kwargs[key].data, )
+            arg_keys += (key,)
         if autodetermine: #trying to guess the output d-type and size from one signal
             testing_kwargs = {}
             for key in iterating_kwargs:
@@ -624,6 +632,7 @@ class LazySignal(BaseSignal):
                                output_signal_size=output_signal_size,
                                dtype=output_dtype,
                                chunks=chunks,
+                               arg_keys=arg_keys,
                                **kwargs)
         if inplace:
             self.data = mapped

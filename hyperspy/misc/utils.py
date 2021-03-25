@@ -1097,6 +1097,7 @@ def process_function_blockwise(data,
                                nav_indexes=None,
                                output_signal_size=None,
                                block_info=None,
+                               arg_keys=None,
                                **kwargs):
     """
     Function for processing the function blockwise...
@@ -1140,7 +1141,8 @@ def process_function_blockwise(data,
         # There are BaseSignals which iterate alongside the data
         for index in np.ndindex(chunk_nav_shape):
             islice = np.s_[index]
-            iter_dict = {a[0]: a[1][islice].squeeze() for a in args}
+
+            iter_dict = {key: a[islice].squeeze() for key, a in zip(arg_keys,args)}
             output_array[islice] = function(data[islice],
                                             **iter_dict,
                                             **kwargs)

@@ -4495,7 +4495,7 @@ class BaseSignal(FancySlicing,
 
         """
         if self.axes_manager.navigation_shape == () and self._lazy:
-            print("Converting signal to a non-lazy signal because there are no nav dimensions")
+            _logger.info("Converting signal to a non-lazy signal because there are no nav dimensions")
             self.compute()
         # Sepate ndkwargs depending on if they are BaseSignals.
         ndkwargs = {}
