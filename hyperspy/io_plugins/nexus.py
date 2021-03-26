@@ -192,88 +192,23 @@ def _getlink(h5group, rootkey, key):
     return _target
 
 
-def _extract_hdf_dataset(group, dataset, lazy=False):
-    """Import data from hdf path.
+def _get_nav_list(data, dataentry):
+    """Get the list with information of each axes of the dataset
 
     Parameters
     ----------
-    group : hdf group
-        group from which to load the dataset
-    dataset : str
-        path to the dataset within the group
-    lazy    : bool {default:True}
-        If true use lazy opening, if false read into memory
+    data : hdf dataset
+        the dataset to be loaded.
+    dataentry : hdf group
+        the group with corresponding attributes.
 
     Returns
     -------
-    dask or numpy array
-
+    nav_list : list
+        contains information about each axes.
     """
-    data = group[dataset]
-    if lazy:
-        if "chunks" in data.attrs.keys():
-            chunks = data.attrs["chunks"]
-        else:
-            chunks = get_signal_chunks(data.shape, data.dtype)
-        data_lazy = da.from_array(data, chunks=chunks)
-    else:
-        data_lazy = np.array(data)
-
-    nav_list = []
-    for i in range(data.ndim):
-        nav_list.append({
-                'size': data.shape[i],
-                'index_in_array': i,
-                'scale': 1,
-                'offset': 0.0,
-                'units': '',
-                'navigate': True,
-               })
-
-    dictionary = {'data': data_lazy, 'metadata': {}, 'original_metadata': {},
-                  'axes': nav_list}
-
-    return dictionary
-
-
-def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
-    """Load an NXdata set as a hyperspy signal.
-
-    Parameters
-    ----------
-    group : hdf group containing the NXdata
-    nexus_data_path : str
-        Path to the NXdata set in the group
-    lazy : bool, default : True
-        lazy loading of data
-
-    Returns
-    -------
-    dict
-        A signal dictionary which can be used to instantiate a signal.
-
-    """
+    
     detector_index = 0
-    interpretation = None
-    dataentry = group[nexus_dataset_path]
-    if "signal" in dataentry.attrs.keys():
-        if _is_int(dataentry.attrs["signal"]):
-            data_key = "data"
-        else:
-            data_key = dataentry.attrs["signal"]
-    else:
-        _logger.info("No signal attr associated with NXdata will\
-                     try assume signal name is data")
-        if "data" not in dataentry.keys():
-            raise ValueError("Signal attribute not found in NXdata and\
-                             attempt to find a default \"data\" key failed")
-        else:
-            data_key = "data"
-
-    if "interpretation" in dataentry.attrs.keys():
-        interpretation = _parse_from_file(dataentry.attrs["interpretation"])
-
-    data = dataentry[data_key]
     nav_list = []
     # list indices...
     axis_index_list = []
@@ -284,6 +219,8 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
             axes_keys = axes_key[:data.ndim]
             for i, num in enumerate(axes_keys):
                 axes_list[i] = _parse_from_file(num)
+        elif isinstance(axes_key, bytes):
+            axes_list = _parse_from_file(axes_key).split(',')[:data.ndim]
         else:
             axes_list[0] = _parse_from_file(axes_key)
 
@@ -347,7 +284,89 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
                             'units': '',
                             'navigate': False
                            })
-                    detector_index = detector_index+1
+                    detector_index = detector_index+1    
+
+    return nav_list
+
+
+def _extract_hdf_dataset(group, dataset, lazy=False):
+    """Import data from hdf path.
+
+    Parameters
+    ----------
+    group : hdf group
+        group from which to load the dataset
+    dataset : str
+        path to the dataset within the group
+    lazy    : bool {default:True}
+        If true use lazy opening, if false read into memory
+
+    Returns
+    -------
+    dict
+        A signal dictionary which can be used to instantiate a signal.
+
+    """
+
+    data = group[dataset]
+    nav_list = _get_nav_list(data, data.parent)
+    
+    if lazy:
+        if "chunks" in data.attrs.keys():
+            chunks = data.attrs["chunks"]
+        else:
+            signal_axes = [d['index_in_array'] for d in nav_list
+                           if not d['navigate']]
+            chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+        data_lazy = da.from_array(data, chunks=chunks)
+    else:
+        data_lazy = np.array(data)
+
+    dictionary = {'data': data_lazy, 'metadata': {}, 'original_metadata': {},
+                  'axes': nav_list}
+
+    return dictionary
+
+
+def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
+    """Load an NXdata set as a hyperspy signal.
+
+    Parameters
+    ----------
+    group : hdf group containing the NXdata
+    nexus_data_path : str
+        Path to the NXdata set in the group
+    lazy : bool, default : True
+        lazy loading of data
+
+    Returns
+    -------
+    dict
+        A signal dictionary which can be used to instantiate a signal.
+
+    """
+    
+    interpretation = None
+    dataentry = group[nexus_dataset_path]
+    if "signal" in dataentry.attrs.keys():
+        if _is_int(dataentry.attrs["signal"]):
+            data_key = "data"
+        else:
+            data_key = dataentry.attrs["signal"]
+    else:
+        _logger.info("No signal attr associated with NXdata will\
+                     try assume signal name is data")
+        if "data" not in dataentry.keys():
+            raise ValueError("Signal attribute not found in NXdata and\
+                             attempt to find a default \"data\" key failed")
+        else:
+            data_key = "data"
+
+    if "interpretation" in dataentry.attrs.keys():
+        interpretation = _parse_from_file(dataentry.attrs["interpretation"])
+
+    data = dataentry[data_key]
+    nav_list = _get_nav_list(data, dataentry)
 
     if lazy:
         if "chunks" in data.attrs.keys():
