@@ -1120,6 +1120,9 @@ def process_function_blockwise(data,
         this is equal to 1.
     block_info: dict
         The block info as described by the `dask.array.map_blocks` function
+    arg_keys: tuple
+        The list of keys for the passed arguments (args).  Together this makes
+        a set of key:value pairs to be passed to the function.
     **kwargs: dict
         Any additional key value pairs to be used by the function
         (Note that these are the constants that are applied.)
