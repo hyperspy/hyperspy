@@ -20,6 +20,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+import dask.array as da
 from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 
 import hyperspy.api as hs
@@ -385,3 +386,13 @@ def test_map_ufunc(caplog):
     assert np.log(s) == s.map(np.log)
     np.testing.assert_allclose(s.data, np.log(data))
     assert "can direcly operate on hyperspy signals" in caplog.records[0].message
+
+def test_map_lazy():
+    dask_array = da.zeros((10, 11, 12, 13), chunks=(3, 3, 3, 3))
+    s = hs.signals.Signal2D(dask_array).as_lazy()
+    iter_array, _ = da.meshgrid(range(11), range(10))
+    iter_array = iter_array.rechunk(3, 2)
+    s_iter = hs.signals.BaseSignal(iter_array).T
+    f = lambda a,b: a+b
+    s_out = s.map(function=f,b=s_iter, inplace=False)
+    np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
