@@ -353,7 +353,9 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
         if "chunks" in data.attrs.keys():
             chunks = data.attrs["chunks"]
         else:
-            chunks = get_signal_chunks(data.shape, data.dtype)
+            signal_axes = [d['index_in_array'] for d in nav_list
+                           if not d['navigate']]
+            chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
         data_lazy = da.from_array(data, chunks=chunks)
     else:
         data_lazy = np.array(data)
