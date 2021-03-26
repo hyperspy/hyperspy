@@ -281,7 +281,8 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
         axes_key = dataentry.attrs["axes"]
         axes_list = ["."]*data.ndim
         if isinstance(axes_key, np.ndarray):
-            for i, num in enumerate(axes_key):
+            axes_keys = axes_key[:data.ndim]
+            for i, num in enumerate(axes_keys):
                 axes_list[i] = _parse_from_file(num)
         else:
             axes_list[0] = _parse_from_file(axes_key)
