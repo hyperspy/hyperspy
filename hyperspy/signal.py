@@ -4776,7 +4776,6 @@ class BaseSignal(FancySlicing,
         for oaxis, caxis in zip(self.axes_manager._axes,
                                 dc.axes_manager._axes):
             caxis.navigate = oaxis.navigate
-            caxis.is_binned = oaxis.is_binned
 
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()

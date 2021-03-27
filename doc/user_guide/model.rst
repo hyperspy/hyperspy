@@ -28,7 +28,7 @@ Caveats
 -------
 
 * Before creating a model verify that the
-  :py:attr:`~.signal.BaseSignal.axes_manager.signal_axes[0].is_binned`attribute
+  :py:attr:`~.signal.BaseSignal.axes_manager.signal_axes[0].is_binned` attribute
   of the signal axis is set to the correct value because the resulting
   model depends on this parameter. See :ref:`signal.binned` for more details.
 * When importing data that has been binned using other software, in
