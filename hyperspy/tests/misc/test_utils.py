@@ -75,6 +75,5 @@ def test_is_binned():
     assert is_binned(s) == s.axes_manager[-1].is_binned
     with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
         s.metadata.set_item('Signal.binned', True)
-    with pytest.warns(VisibleDeprecationWarning, match="backwards compatibility"):
-        assert is_binned(s) == s.metadata.Signal.binned
+    assert is_binned(s) == s.metadata.Signal.binned
     

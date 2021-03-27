@@ -1240,11 +1240,6 @@ def is_binned(signal, axis=-1):
     Can be removed in v2.0.
     """
     if signal.metadata.has_item('Signal.binned'):
-        warnings.warn('Use of the `binned` attribute in metadata is going to '
-                      'be deprecated in v2.0. At the moment, it still takes '
-                      'precendence over the `axis.is_binned` attribute for '
-                      'backwards compatibility, but use of the latter is '
-                      'strongly recommended.', VisibleDeprecationWarning)
         return signal.metadata.Signal.binned
     else:
         return signal.axes_manager[axis].is_binned
