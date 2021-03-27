@@ -91,7 +91,7 @@ class Gaussian(Expression):
 
 
     For convenience the `fwhm` and `height` attributes can be used to get and set
-    the full-with-half-maximum and height of the distribution, respectively.
+    the full width at half maximum and height of the distribution, respectively.
 
 
     See also

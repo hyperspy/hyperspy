@@ -378,8 +378,8 @@ class Signal1DLine(object):
                              "'log' for Signal1D.")
         else:
             plot = self.ax.plot
-        self.line, = plot(self.axis.axis, data, **self.line_properties)
-        self.line.set_animated(self.ax.figure.canvas.supports_blit)
+        self.line, = plot(self.axis.axis, data, **self.line_properties,
+                          animated=self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -421,8 +421,8 @@ class Signal1DLine(object):
                update_ylimits=False):
         """Update the current spectrum figure
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         force_replot : bool
             If True, close and open the figure. Default is False.
         render_figure : bool

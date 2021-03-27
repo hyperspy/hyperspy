@@ -19,8 +19,8 @@ read the :ref:`conda installation <anaconda-install>` and
 
 .. note::
 
-    If you want to be notified about new releases, please *Watch (Releases only)* 
-    the `hyperspy repository on GitHub <https://github.com/hyperspy/hyperspy/>`_ 
+    If you want to be notified about new releases, please *Watch (Releases only)*
+    the `hyperspy repository on GitHub <https://github.com/hyperspy/hyperspy/>`_
     (requires a `GitHub account <https://github.com/login>`_).
 
 .. warning::
@@ -33,30 +33,39 @@ read the :ref:`conda installation <anaconda-install>` and
 HyperSpy Bundle
 ---------------
 
-The HyperSpy bundle is very similar to the Anaconda distribution, and it includes:
+The `HyperSpy <https://github.com/hyperspy/hyperspy-bundle>`__ bundle is very similar
+to the Anaconda distribution, and it includes:
 
   * HyperSpy
   * HyperSpyUI
   * `HyperSpy extensions <https://github.com/hyperspy/hyperspy-extensions-list>`_
-  * context menu shortcut (right-click) to Jupyter Notebook, Qtconsole or JupyterLab
+  * context `menu shortcut (right-click) <https://github.com/hyperspy/start_jupyter_cm>`_
+    to Jupyter Notebook, Qtconsole or JupyterLab
 
-For instructions and download links go to https://github.com/hyperspy/hyperspy-bundle
+.. image:: images/download_hyperspy_button.png
+   :width: 350
+   :align: center
+   :target: https://github.com/hyperspy/hyperspy-bundle/releases
+
+
+For instructions, see the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`__ repository.
 
 Portable distribution (Windows only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A portable version of the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`_
+A portable version of the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`__
 based on the WinPython distribution is also available on Windows.
-
 
 .. _anaconda-install:
 
-Installation in an Anaconda/Miniconda distribution
---------------------------------------------------
+Installation using conda
+------------------------
 
-HyperSpy is packaged in the `conda-forge <https://conda-forge.org/>`_ channel
-and can be installed easily using the `conda <https://docs.conda.io/en/latest/>`_
-package manager.
+`Conda <https://docs.conda.io/en/latest/>`_ is a package manager for Anaconda-like
+distributions, such as the `Miniforge <https://github.com/conda-forge/miniforge>`_
+or the `HyperSpy-bundle <https://github.com/hyperspy/hyperspy-bundle>`__.
+Since HyperSpy is packaged in the `conda-forge <https://conda-forge.org/>`__ channel,
+it can easily be installed using conda.
 
 To install hyperspy run the following from the Anaconda Prompt on Windows or
 from a Terminal on Linux and Mac.
@@ -74,7 +83,7 @@ and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use
 
 .. note::
 
-    Depending on how Anaconda has been installed, it is possible that the 
+    Depending on how Anaconda has been installed, it is possible that the
     ``conda`` command is not avaible from the Terminal, read the
     `Anaconda User Guide <https://docs.continuum.io/anaconda/>`_ for details.
 
@@ -132,6 +141,7 @@ To learn more about the Anaconda eco-system:
 
 - Choose between `Anaconda or Miniconda <https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html#anaconda-or-miniconda>`_?
 - Understanding `conda and pip <https://www.anaconda.com/blog/understanding-conda-and-pip>`_.
+- What is `conda-forge <https://conda-forge.org/#about>`__.
 
 .. _install-with-pip:
 
@@ -145,16 +155,16 @@ install pip for the following commands to run.
 
 To install all hyperspy functionalities, run:
 
-.. code-block:: bash
+  .. code-block:: bash
 
-    $ pip install hyperspy[all]
+      $ pip install hyperspy[all]
 
 To install only the strictly required dependencies and limited functionalities,
 use:
 
-.. code-block:: bash
+  .. code-block:: bash
 
-    $ pip install hyperspy
+      $ pip install hyperspy
 
 See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
@@ -184,6 +194,51 @@ tools installed in the system. If the above does not work for you remember that
 the easiest way to install HyperSpy is
 :ref:`using the HyperSpy bundle <hyperspy-bundle>`.
 
+.. _update-with-conda:
+
+Update HyperSpy
+---------------
+
+Using conda
+^^^^^^^^^^^
+
+To update hyperspy to the latest release using conda:
+
+   .. code-block:: bash
+
+       $ conda update hyperspy -c conda-forge
+
+Using pip
+^^^^^^^^^
+
+To update hyperspy to the latest release using pip:
+
+   .. code-block:: bash
+
+       $ pip install hyperspy --upgrade
+
+Install specific version
+------------------------
+
+Using conda
+^^^^^^^^^^^
+
+To install a specific version of hyperspy (for example ``1.6.1``) using conda:
+
+   .. code-block:: bash
+
+       $ conda install hyperspy=1.6.1 -c conda-forge
+
+Using pip
+^^^^^^^^^
+
+To install a specific version of hyperspy (for example ``1.6.1``) using pip:
+
+   .. code-block:: bash
+
+       $ pip install hyperspy==1.6.1
+
+
 .. _install-dev:
 
 Rolling release Linux distributions
@@ -195,19 +250,19 @@ distributions and the installation via :ref:`Anaconda/Miniconda <anaconda-instal
 or :ref:`Pip <install-with-pip>` is recommended.
 
 However, packages of the latest HyperSpy release and the related
-GUI packages are maintained for the rolling release distributions 
-**Arch-Linux** (in the `Arch User Repository 
-<https://aur.archlinux.org/packages/python-hyperspy/>`_) (AUR) and 
-**openSUSE** (`Community Package <https://software.opensuse.org/package/python-hyperspy>`_)
-as ``python-hyperspy`` and ``python-hyperspy-gui-traitsui`` /
-``python-hyperspy-gui-ipywidgets``.
+GUI packages are maintained for the rolling release distributions
+*Arch-Linux* (in the `Arch User Repository
+<https://aur.archlinux.org/packages/python-hyperspy/>`_) (AUR) and
+*openSUSE* (`Community Package <https://software.opensuse.org/package/python-hyperspy>`_)
+as ``python-hyperspy`` and ``python-hyperspy-gui-traitsui``,
+``python-hyperspy-gui-ipywidgets`` for the GUIs packages.
 
 A more up-to-date package that contains all updates to be included
 in the next minor version release (likely including new features compared to
 the stable release) is also available in the AUR as |python-hyperspy-git|_.
 
 .. |python-hyperspy-git| replace:: ``python-hyperspy-git``
-.. _python-hyperspy-git: https://aur.archlinux.org/packages/python-hyperspy-git 
+.. _python-hyperspy-git: https://aur.archlinux.org/packages/python-hyperspy-git
 
 Install development version
 ---------------------------

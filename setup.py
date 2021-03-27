@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 
 install_req = ['scipy>=1.1',
                'matplotlib>=2.2.3',
-               'numpy>=1.16.0',
+               'numpy>=1.17.1',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -57,7 +57,7 @@ install_req = ['scipy>=1.1',
                'h5py>=2.3',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>2.0',
+               'dask[array]>2.1.0',
                'scikit-image>=0.15',
                'pint>=0.10',
                'numexpr',
@@ -78,12 +78,13 @@ extras_require = {
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["cython", "imagecodecs"],
     "usid": ["pyUSID>=0.0.7", "sidpy"],
+    "scalebar": ["matplotlib-scalebar"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov", "codecov"],
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt"],
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt", "sphinxcontrib-mermaid"],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be
@@ -337,6 +338,8 @@ with update_version_when_dev() as version:
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/hdf5_files/*.hspy',
+                'tests/io/JEOL_files/*',
+                'tests/io/JEOL_files/Sample/00_View000/*',
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
@@ -377,6 +380,7 @@ with update_version_when_dev() as version:
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

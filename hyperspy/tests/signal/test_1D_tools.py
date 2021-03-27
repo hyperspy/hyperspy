@@ -103,6 +103,19 @@ class TestAlignTools:
         np.testing.assert_allclose(s.data[:, i_zlp], 12)
 
 
+def test_align1D():
+    scale = 0.1
+    g = hs.model.components1D.Gaussian(sigma=scale*5)
+    x = np.stack([np.linspace(-5, 5, 100)]*5)
+    s = hs.signals.Signal1D(g.function(x) + 1E5)
+    s.axes_manager[-1].scale = scale
+    shifts = np.random.random(len(s.axes_manager[0].axis)) * 2
+    shifts[0] = 0
+    s.shift1D(-shifts, show_progressbar=False)
+    shifts2 = s.estimate_shift1D(show_progressbar=False)
+    np.testing.assert_allclose(shifts, shifts2, rtol=0.3)
+
+
 @lazifyTestClass
 class TestShift1D:
 
@@ -303,11 +316,13 @@ class TestSmoothing:
         self.atol = 0
 
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_lowess(self, parallel):
+    @pytest.mark.parametrize('dtype', ['<f4', 'f4', '>f4'])
+    def test_lowess(self, parallel, dtype):
         from hyperspy.misc.lowess_smooth import lowess
         f = 0.5
         n_iter = 1
-        data = np.asanyarray(self.s.data, dtype='float')
+        self.rtol = 1e-5
+        data = np.asanyarray(self.s.data, dtype=dtype)
         for i in range(data.shape[0]):
             data[i, :] = lowess(
                 x=self.s.axes_manager[-1].axis,

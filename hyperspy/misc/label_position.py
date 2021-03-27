@@ -47,9 +47,9 @@ class SpectrumLabelPosition():
 
     def _set_active_figure_properties(self):
         # set the properties which depend on the figure
-        self.signal_figure = self.signal._plot.signal_plot.figure
-        self.figsize = self.signal_figure.get_size_inches()
-        self.smin, self.smax = self.signal_figure.get_axes()[0].get_ylim()
+        self.figure = self.signal._plot.signal_plot.figure
+        self.figsize = self.figure.get_size_inches()
+        self.smin, self.smax = self.signal._plot.signal_plot.ax.get_ylim()
 
         self.sig_index = self._get_current_signal_index()
         self.text_width, self.text_height = self._estimate_textbox_dimension()
@@ -67,19 +67,26 @@ class SpectrumLabelPosition():
         # check if the spectrum is changed
         # reset its properties if changed
         current_sig_index = self._get_current_signal_index()
-        current_figsize = self.signal_figure.get_size_inches()
+        current_figsize = self.figure.get_size_inches()
         if (current_sig_index != self.sig_index) or \
             not np.isclose(current_figsize, self.figsize).all():
             return True
         else:
             return False
 
-    def _get_bbox_from_textbox_patch(self, fig, textbox):
+    def _get_bbox_from_text_artist(self, text):
+        """
+        Parameters
+        ----------
+        text : matplotlib.text.Text instance
+
+        """
         # get the bbox object of the textbox
-        ax = fig.axes[0]
-        r = fig.canvas.get_renderer()
+        ax = text.axes
+        fig = text.figure
+        r = text.figure.canvas.get_renderer()
         fig.draw(r)
-        extent = textbox.get_bbox_patch().get_window_extent()
+        extent = text.get_bbox_patch().get_window_extent()
         bbox_patch = extent.transformed(ax.transData.inverted())
 
         return bbox_patch
@@ -95,8 +102,7 @@ class SpectrumLabelPosition():
                                **dummy_style)
         self.signal.add_marker(tx)
 
-        fig = tx.marker.get_figure()
-        dummybb = self._get_bbox_from_textbox_patch(fig, tx.marker)
+        dummybb = self._get_bbox_from_text_artist(tx.marker)
         tx.close()
 
         text_width = dummybb.width
@@ -219,9 +225,8 @@ class SpectrumLabelPosition():
         element, subshell = text_edge.split('_')
 
         if subshell[-1].isdigit():
-            formatted = element+' '+'$\mathregular{'+subshell[0]+'_'+\
-                subshell[-1]+'}$'
+            formatted = f"{element} {subshell[0]}$_{subshell[-1]}$"
         else:
-            formatted = element+' '+'$\mathregular{'+subshell[0]+'}$'
+            formatted = f"{element} {subshell[0]}"
 
         return formatted

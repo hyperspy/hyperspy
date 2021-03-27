@@ -515,7 +515,7 @@ class EELSSpectrum_mixin:
                                     interactive=interactive,
                                     display=display, toolkit=toolkit)
     spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
-        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, MASK_ZERO_LOSS_PEAK_WIDTH, DISPLAY_DT, TOOLKIT_DT)
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, MASK_ZERO_LOSS_PEAK_WIDTH, DISPLAY_DT, TOOLKIT_DT,)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
@@ -1236,9 +1236,8 @@ collection_angle : float
                                 t=None,
                                 delta=0.5,
                                 full_output=False):
-        r"""Calculate the complex
-        dielectric function from a single scattering distribution (SSD) using
-        the Kramers-Kronig relations.
+        r"""Calculate the complex dielectric function from a single scattering
+        distribution (SSD) using the Kramers-Kronig relations.
 
         It uses the FFT method as in [1]_.  The SSD is an
         EELSSpectrum instance containing SSD low-loss EELS with no zero-loss
@@ -1253,7 +1252,7 @@ collection_angle : float
 
         Parameters
         ----------
-        zlp: {None, number, Signal1D}
+        zlp : {None, number, Signal1D}
             ZLP intensity. It is optional (can be None) if `t` is None and `n`
             is not None and the thickness estimation is not required. If `t`
             is not None, the ZLP is required to perform the normalization and
@@ -1265,17 +1264,17 @@ collection_angle : float
             spectra for each location ii) a BaseSignal of signal dimension 0
             and navigation_dimension equal to the current signal containing the
             integrated ZLP intensity.
-        iterations: int
+        iterations : int
             Number of the iterations for the internal loop to remove the
             surface plasmon contribution. If 1 the surface plasmon contribution
             is not estimated and subtracted (the default is 1).
-        n: {None, float}
+        n : {None, float}
             The medium refractive index. Used for normalization of the
             SSD to obtain the energy loss function. If given the thickness
             is estimated and returned. It is only required when `t` is None.
-        t: {None, number, Signal1D}
-            The sample thickness in nm. Used for normalization of the
-             to obtain the energy loss function. It is only required when
+        t : {None, number, Signal1D}
+            The sample thickness in nm. Used for normalization of the SSD
+            to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
             given by a number. Otherwise, it can be provided as a BaseSignal
             with signal dimension 0 and navigation_dimension equal to the
@@ -1300,15 +1299,12 @@ collection_angle : float
 
             contained in an DielectricFunction instance.
         output: Dictionary (optional)
-            A dictionary of optional outputs with the following keys:
+            A dictionary of optional outputs with the following keys
 
-            ``thickness``
-                The estimated  thickness in nm calculated by normalization of
-                the SSD (only when `t` is None)
-
-            ``surface plasmon estimation``
-               The estimated surface plasmon excitation (only if
-               `iterations` > 1.)
+            * ``thickness``: the estimated  thickness in nm calculated by
+              normalization of the SSD (only when ``t`` is None)
+            * ``surface plasmon estimation``: the estimated surface plasmon
+              excitation (only if ``iterations`` > 1.)
 
         Raises
         ------
@@ -1320,11 +1316,10 @@ collection_angle : float
 
         Notes
         -----
-        This method is based in Egerton's Matlab code [1]_ with some
-        minor differences:
-
-        * The wrap-around problem when computing the ffts is workarounded by
-          padding the signal instead of substracting the reflected tail.
+        This method is based in Egerton's Matlab code [1]_ with a
+        minor difference: the wrap-around problem when computing the ffts is
+        workarounded by padding the signal instead of substracting the
+        reflected tail.
 
         .. [1] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
            Microscope", Springer-Verlag, 2011.

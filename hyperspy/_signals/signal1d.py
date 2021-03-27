@@ -34,7 +34,6 @@ from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.lowess_smooth import lowess
 
-
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
     Signal1DCalibration,
@@ -53,7 +52,6 @@ from hyperspy.docstrings.signal import (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_
                                         SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
-
 
 _logger = logging.getLogger(__name__)
 
@@ -134,9 +132,9 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    peak_dt = np.dtype([('position', np.float),
-                        ('height', np.float),
-                        ('width', np.float)])
+    peak_dt = np.dtype([('position', float),
+                        ('height', float),
+                        ('width', float)])
     P = np.array([], dtype=peak_dt)
     peak = 0
     for j in range(len(y) - 4):
@@ -227,12 +225,8 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
-def _estimate_shift1D(data, **kwargs):
-    mask = kwargs.get('mask', None)
-    ref = kwargs.get('ref', None)
-    interpolate = kwargs.get('interpolate', True)
-    ip = kwargs.get('ip', 5)
-    data_slice = kwargs.get('data_slice', slice(None))
+def _estimate_shift1D(data, data_slice=slice(None), ref=None, ip=5,
+                      interpolate=True, mask=None, **kwargs):
     if bool(mask):
         # asarray is required for consistensy as argmax
         # returns a numpy scalar array
@@ -240,6 +234,9 @@ def _estimate_shift1D(data, **kwargs):
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
+    # Normalise the data before the cross correlation
+    ref = ref - ref.mean()
+    data = data - data.mean()
     return np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1
 
 
@@ -266,7 +263,6 @@ def _shift1D(data, **kwargs):
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
-
     """
     """
     _signal_dimension = 1
@@ -340,10 +336,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     spikes_diagnosis.__doc__ %= (SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
 
-
     def spikes_removal_tool(self, signal_mask=None, navigation_mask=None,
                             threshold='auto', interactive=True,
-                            display=True, toolkit=None):
+                            display=True, toolkit=None, **kwargs):
         self._check_signal_dimension_equals_one()
         if interactive:
             sr = SpikesRemovalInteractive(self,
@@ -352,13 +347,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                           threshold=threshold)
             return sr.gui(display=display, toolkit=toolkit)
         else:
-            SpikesRemoval(self,
-                          signal_mask=signal_mask,
-                          navigation_mask=navigation_mask,
-                          threshold=threshold)
+            sr = SpikesRemoval(self,
+                               signal_mask=signal_mask,
+                               navigation_mask=navigation_mask,
+                               threshold=threshold, **kwargs)
+            sr.remove_all_spikes()
+            return sr
 
     spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
-        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT)
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT,)
 
     def create_model(self, dictionary=None):
         """Create a model for the current data.
@@ -656,7 +653,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array = shift_array / ip
-        shift_array *= axis.scale
+        shift_array = shift_array * axis.scale
         if self._lazy:
             # We must compute right now because otherwise any changes to the
             # axes_manager of the signal later in the workflow may result in

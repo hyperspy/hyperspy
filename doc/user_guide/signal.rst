@@ -1020,6 +1020,32 @@ cannot be performed lazily:
     NotImplementedError: Lazy rebin requires scale to be integer and divisor of the original signal shape
 
 
+.. _squeeze-label:
+
+Squeezing
+^^^^^^^^^
+
+The :py:meth:`~.signal.BaseSignal.squeeze` method removes any zero-dimensional
+axes, i.e. axes of ``size=1``, and the attributed data dimensions from a signal.
+The method returns a reduced copy of the signal and does not operate in place.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+    <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
+    >>> s = s.squeeze()
+    >>> s
+    <Signal2D, title: , dimensions: (6, 2|8, 8)>
+
+Squeezing can be particularly useful after a rebinning operation that leaves
+one dimension with ``shape=1``:
+
+    >>> s = hs.signals.Signal2D(np.random.random((5,5,5,10,10)))
+    >>> s.rebin(new_shape=(5,1,5,5,5))
+    <Signal2D, title: , dimensions: (5, 1, 5|5, 5)>
+    >>> s.rebin(new_shape=(5,1,5,5,5)).squeeze()
+    <Signal2D, title: , dimensions: (5, 5|5, 5)>
+
 
 Folding and unfolding
 ^^^^^^^^^^^^^^^^^^^^^

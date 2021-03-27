@@ -214,7 +214,7 @@ components1D:
     module: hyperspy._components.skew_normal
     class: SkewNormal
   SplitVoigt:
-    module: hyperspy._components.split_pvoigt
+    module: hyperspy._components.split_voigt
     class: SplitVoigt
   Vignetting:
     module: hyperspy._components.eels_vignetting

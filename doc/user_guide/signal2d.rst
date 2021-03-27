@@ -161,8 +161,8 @@ Zaeferrer peak finder
 
     >>> s.find_peaks(method='zaefferer')
 
-This algorithm was developed by Zaefferer [Zaefferer2000]_. It is based on a
-gradient threshold followed by a local maximum search within a square window,
+This algorithm was developed by Zaefferer :ref:`[Zaefferer2000] <Zaefferer2000>`.
+It is based on a gradient threshold followed by a local maximum search within a square window,
 which is moved until it is centered on the brightest point, which is taken as a
 peak if it is within a certain distance of the starting point. It uses the
 :py:func:`~.utils.peakfinders2D.find_peaks_zaefferer` function, which can take
@@ -177,7 +177,7 @@ Ball statistical peak finder
 
     >>> s.find_peaks(method='stat')
 
-Described by White [White2009]_, this method is based on finding points that
+Described by White :ref:`[White2009] <White2009>`, this method is based on finding points that
 have a statistically higher value than the surrounding areas, then iterating
 between smoothing and binarising until the number of peaks has converged. This
 method can be slower than the others, but is very robust to a variety of image types.

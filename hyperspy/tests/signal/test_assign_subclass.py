@@ -59,7 +59,7 @@ def test_assignment_class(caplog):
 
         assert new_subclass is getattr(hs.signals, case.cls)
 
-        warn_msg = "not understood. See `hs.print_known_signal_types()` for a list of known signal types"
+        warn_msg = "not understood. See `hs.print_known_signal_types()` for a list"
         if case.sig_type == "DefinitelyNotAHyperSpySignal":
             assert warn_msg in caplog.text
         else:
@@ -74,6 +74,17 @@ def test_assignment_class(caplog):
         )
 
         assert new_subclass is getattr(_lazy_signals, lazyclass)
+
+
+def test_id_set_signal_type():
+    s = hs.signals.BaseSignal(np.zeros((3, 3)))
+    id_events = id(s.events)
+    id_metadata = id(s.metadata)
+    id_om = id(s.original_metadata)
+    s.set_signal_type()
+    assert id_events == id(s.events)
+    assert id_metadata == id(s.metadata)
+    assert id_om == id(s.original_metadata)
 
 
 class TestConvertBaseSignal:

@@ -30,18 +30,18 @@ def test_check_navigation_mask():
     assert s._check_navigation_mask(mask) is None
 
     # wrong navigation shape
-    error_message = '`mask` must be a signal with the same `navigation_shape`'
+    error_message = 'The navigation mask signal must have the same'
     with pytest.raises(ValueError, match=error_message):
         s._check_navigation_mask(mask.inav[:-2, :])
 
     # wrong array shape
-    error_message = 'The shape of `mask` must match the shape of the `navigation_shape`.'
+    error_message = 'The shape of the navigation mask array must match'
     with pytest.raises(ValueError, match=error_message):
         s._check_navigation_mask(mask.inav[:-2, :].data)
 
     # wrong signal dimenstion
     mask = (s > 1)
-    error_message = '`mask` must be a signal with `signal_dimension`'
+    error_message = 'The navigation mask signal must have the `signal_dimension`'
     with pytest.raises(ValueError, match=error_message):
         s._check_navigation_mask(mask)
 
@@ -54,18 +54,18 @@ def test_check_signal_mask():
     mask = (s.inav[0, 0] > 1)
     assert s._check_signal_mask(mask) is None
 
-    # wrong navigation shape
-    error_message = '`mask` must be a signal with the same `signal_shape`'
+    # wrong signal shape
+    error_message = 'The signal mask signal must have the same'
     with pytest.raises(ValueError, match=error_message):
         s._check_signal_mask(mask.isig[:-2])
 
     # wrong array shape
-    error_message = 'The shape of `mask` must match the shape of the `signal_shape`.'
+    error_message = 'The shape of signal mask array must match '
     with pytest.raises(ValueError, match=error_message):
         s._check_signal_mask(mask.isig[:-2].data)
 
-    # wrong signal dimenstion
+    # wrong navigation dimenstion
     mask = (s > 1)
-    error_message = '`mask` must be a signal with `navigation_dimension`'
+    error_message = 'The signal mask signal must have the `navigation_dimension`'
     with pytest.raises(ValueError, match=error_message):
         s._check_signal_mask(mask)

@@ -210,13 +210,17 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, kfactors,
                                composition_units)
+        s2 = s.rebin(new_shape=(1,1,1024)).squeeze()
+        s2.quantification(intensities, method, kfactors,
+                               composition_units, plot_result=True)
         np.testing.assert_allclose(res[0].data, np.ones((2, 2)) * 22.70779,
             atol=1e-3)
 
         # Test plot_results
-        s2 = s.sum()
+        s2 = s.inav[0, 0]
         s2.quantification(intensities, method, kfactors,
                           composition_units, plot_result=True)
+        np.testing.assert_allclose(res[0].data,  22.70779)
 
     def test_quant_lorimer_mask(self):
         s = self.signal
@@ -266,9 +270,16 @@ class Test_quantification:
                                composition_units,
                                absorption_correction=True,
                                thickness=0.0001)
-        np.testing.assert_allclose(res2[0][0].data, np.ones((2, 2)) * 22.70779,
+        list.reverse(intensities)
+        list.reverse(kfactors)
+        res5 = s.quantification(intensities, method, kfactors,
+                               composition_units,
+                               absorption_correction=True,
+                               thickness=300.)
+        np.testing.assert_allclose(res5[0][0].data, res3[0][1].data, atol=1e-5)
+        np.testing.assert_allclose(res2[0][0].data, np.ones((2, 2)) * 22.743013,
                                    atol=1e-3)
-        np.testing.assert_allclose(res3[0][0].data, np.ones((2, 2)) * 22.587251,
+        np.testing.assert_allclose(res3[0][0].data, np.ones((2, 2)) * 31.816908,
                                    atol=1e-3)
         np.testing.assert_allclose(res[0].data, res4[0][0].data, atol=1e-5)
 

@@ -327,7 +327,7 @@ def test_plot_images_cmap_make_cmap_bitfalse():
                                         '#745C97',
                                         (0.22, 0.22, 0.36)],
                                        bit=False,
-                                       name='test_cmap',
+                                       name='test_cmap2',
                                        register=True))
     return plt.gcf()
 
@@ -406,8 +406,7 @@ def test_plot_images_multi_signal_w_axes_replot():
         plt.matplotlib.backends.backend_agg.FigureCanvasBase.button_press_event(
             f.canvas, x, y, 'left', True)
         fn = plt.gcf()
-        tests.append(
-            np.allclose(imi, fn.axes[0].images[0].get_array().data))
+        tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
     assert np.alltrue(tests)
     return f
@@ -577,3 +576,15 @@ def test_plot_overlay(axes_decor,label,colors,alphas):
                              alphas=alphas, pixel_size_factor=10)
 
     return ax[0].figure
+
+
+def test_plot_scale_different_sign():
+    N = 10
+    s = hs.signals.Signal2D(np.arange(N**2).reshape([10]*2))
+    s2 = s.isig[:, ::-1]
+    s2.axes_manager[0].scale = 1.0
+    s2.axes_manager[1].scale = -1.0
+
+    s2.plot()
+    assert s2._plot.signal_plot.pixel_units is not None
+    assert s2._plot.signal_plot.scalebar is True

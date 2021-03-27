@@ -28,20 +28,21 @@ def _theta_E(density, electron_energy):
 def iMFP_Iakoubovskii(density, electron_energy):
     """Estimate electron inelastic mean free path from density
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     density : float
         Material density in g/cm**3
     beam_energy : float
         Electron beam energy in keV
 
-    Notes:
-    ------
-    For details see Equation 9 in:
-    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
-      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
-      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-      https://doi.org/10.1002/jemt.20597.
+    Notes
+    -----
+    For details see Equation 9 in reference [*]_.
+
+    .. [*] Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+       ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+       Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+       https://doi.org/10.1002/jemt.20597
 
     Returns
     -------
@@ -76,13 +77,14 @@ def iMFP_TPP2M(electron_energy, density, M, N_v, E_g):
 
     Notes
     -----
-    For details see:
-    - Shinotsuka, H., S. Tanuma, C. J. Powell, and D. R. Penn. ‘Calculations
-      of Electron Inelastic Mean Free Paths. X. Data for 41 Elemental Solids over
-      the 50 EV to 200 KeV Range with the Relativistic Full Penn Algorithm:
-      Calculations of Electron Inelastic Mean Free Paths. X’. Surface and
-      Interface Analysis 47, no. 9 (September 2015): 871–88.
-      https://doi.org/10.1002/sia.5789.
+    For details see reference [*]_.
+
+    .. [*] Shinotsuka, H., S. Tanuma, C. J. Powell, and D. R. Penn. ‘Calculations
+       of Electron Inelastic Mean Free Paths. X. Data for 41 Elemental Solids over
+       the 50 EV to 200 KeV Range with the Relativistic Full Penn Algorithm:
+       Calculations of Electron Inelastic Mean Free Paths. X’. Surface and
+       Interface Analysis 47, no. 9 (September 2015): 871–88.
+       https://doi.org/10.1002/sia.5789
     """
     E = electron_energy * 1e3
     rho = density
@@ -99,8 +101,8 @@ def iMFP_TPP2M(electron_energy, density, M, N_v, E_g):
 def iMFP_angular_correction(density, beam_energy, alpha, beta):
     """Estimate the effect of limited collection angle on EELS mean free path
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     density : float
         Material density in g/cm**3
     beam_energy : float
@@ -108,16 +110,17 @@ def iMFP_angular_correction(density, beam_energy, alpha, beta):
     alpha, beta : float
         Convergence and collection angles in mrad.
 
-    Notes:
-    ------
-    For details see Equation 9 in:
-    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
-      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
-      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-      https://doi.org/10.1002/jemt.20597.
+    Notes
+    -----
+    For details see Equation 9 in reference [*]_.
+
+    .. [*] Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+       ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+       Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+       https://doi.org/10.1002/jemt.20597
     """
     theta_C = 20 # mrad
-    A = alpha ** 2 + beta ** 2 + 2 * _theta_E(density, beam_energy) ** 2 + np.abs(alpha ** 2 - beta ** 2) 
+    A = alpha ** 2 + beta ** 2 + 2 * _theta_E(density, beam_energy) ** 2 + np.abs(alpha ** 2 - beta ** 2)
     B = alpha ** 2 + beta ** 2 + 2 * theta_C ** 2 + np.abs(alpha ** 2 - beta ** 2)
     return np.log(theta_C ** 2 / _theta_E(density, beam_energy) ** 2) / np.log(A * theta_C ** 2 / B / _theta_E(density, beam_energy) ** 2)
 
