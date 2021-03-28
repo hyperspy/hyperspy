@@ -50,7 +50,7 @@ class TestStackBuilder:
         assert md.Sample.description == "DWNC"
         assert md.Signal.quantity == "Electrons (Counts)"
         assert md.Signal.signal_type == ""
-        assert md.Signal.binned == False
+        assert am.signal_axes[0].is_binned == False
         np.testing.assert_allclose(md.Signal.Noise_properties.Variance_linear_model.gain_factor,
                         0.15674974)
         np.testing.assert_allclose(md.Signal.Noise_properties.Variance_linear_model.gain_offset,

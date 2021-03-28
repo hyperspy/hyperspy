@@ -291,7 +291,7 @@ class Test2D:
         result = self.signal.get_histogram(3)
         assert isinstance(result, Signal1D)
         np.testing.assert_array_equal(result.data, np.array([17, 16, 17]))
-        assert result.metadata.Signal.binned
+        assert result.axes_manager[-1].is_binned
 
     def test_noise_variance_helpers(self):
         assert self.signal.get_noise_variance() is None

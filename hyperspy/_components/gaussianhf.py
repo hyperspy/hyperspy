@@ -20,6 +20,7 @@ import math
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -143,15 +144,18 @@ class GaussianHF(Expression):
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.height.value /= axis.scale
             return True
         else:
             if self.height.map is None:
                 self._create_arrays()
             self.height.map['values'][:] = height
-
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.height.map['values'][:] /= axis.scale
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm

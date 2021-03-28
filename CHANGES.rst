@@ -19,7 +19,6 @@ New
 
 Enhancements
 ------------
-
 * Support for relative slicing (`#2386 <https://github.com/hyperspy/hyperspy/pull/2386>`_)
 * Read Cathodoluminescence metadata (`#2590 <https://github.com/hyperspy/hyperspy/pull/2590>`_)
 * Document reading Attolight data with the sur/pro format reader. (`#2559 <https://github.com/hyperspy/hyperspy/pull/2559/files>`_)
@@ -27,6 +26,7 @@ Enhancements
 
 API changes
 -----------
+* `metadata.Signal.binned` is replaced by an axes parameter, e.g. `axes_manager[-1].is_binned` (`#2652 https://github.com/hyperspy/hyperspy/pull/2652`_)
 
 
 RELEASE_next_patch (Unreleased)
@@ -69,6 +69,7 @@ RELEASE_next_patch (Unreleased)
 * Fix bug in `hs.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
 * Add option not to snap ROI when calling the `interactive` method of a ROI (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
 * Fix broken events when changing signal type `#2683 <https://github.com/hyperspy/hyperspy/pull/2683>`_
+* Make DictionaryTreeBrowser lazy by default - see `#368 <https://github.com/hyperspy/hyperspy/issues/368>`_ (`#2623 <https://github.com/hyperspy/hyperspy/pull/2623>`_)
 
 
 Changelog

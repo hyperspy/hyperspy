@@ -35,6 +35,7 @@ import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline, print_html
+from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
@@ -84,7 +85,7 @@ class EELSSpectrum_mixin:
         if hasattr(self.metadata, 'Sample') and \
                 hasattr(self.metadata.Sample, 'elements'):
             self.add_elements(self.metadata.Sample.elements)
-        self.metadata.Signal.binned = True
+        self.axes_manager.signal_axes[0].is_binned = True
         self._edge_markers = {}
 
     def add_elements(self, elements, include_pre_edges=False):
@@ -556,7 +557,7 @@ class EELSSpectrum_mixin:
             # I0 = self._get_navigation_signal()
             # I0.axes_manager.set_signal_dimension(0)
             threshold.axes_manager.set_signal_dimension(0)
-            binned = self.metadata.Signal.binned
+            binned = ax.is_binned
 
             def estimating_function(data, threshold=None):
                 if np.isnan(threshold):
@@ -1214,7 +1215,9 @@ collection_angle : float
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if self.metadata.Signal.binned is True:
+        if is_binned(self) is True:
+        # in v2 replace by
+        # if self.axes_manager[-1].is_binned is True:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1

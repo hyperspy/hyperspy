@@ -33,6 +33,7 @@ from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.lowess_smooth import lowess
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
@@ -1097,7 +1098,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             try:
                 axis = self.axes_manager.signal_axes[0]
-                scale_factor = axis.scale if self.metadata.Signal.binned else 1
+                scale_factor = axis.scale if is_binned(self) else 1
+                # in v2 replace by
+                # scale_factor = axis.scale if axis.is_binned else 1
                 bkg = background_estimator.function_nd(axis.axis) * scale_factor
                 result = self - bkg
             except MemoryError:

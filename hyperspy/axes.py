@@ -253,6 +253,7 @@ class BaseDataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(t.Undefined)
+    is_binnned = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
@@ -261,6 +262,7 @@ class BaseDataAxis(t.HasTraits):
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
+                 is_binned=False,
                  **kwargs):
         super(BaseDataAxis, self).__init__()
 
@@ -299,11 +301,13 @@ class BaseDataAxis(t.HasTraits):
         self.units = units
         self.low_index = 0
         self.on_trait_change(self._update_slice, 'navigate')
+        self.on_trait_change(self._update_slice, 'is_binned')
         self.on_trait_change(self.update_index_bounds, 'size')
         self.on_trait_change(self._update_bounds, 'axis')
 
         self.index = 0
         self.navigate = navigate
+        self.is_binned = is_binned
         self.axes_manager = None
         self._is_uniform = False
 
@@ -490,7 +494,8 @@ class BaseDataAxis(t.HasTraits):
         return {'_type': self.__class__.__name__,
                 'name': self.name,
                 'units': self.units,
-                'navigate': self.navigate
+                'navigate': self.navigate,
+                'is_binned': self.is_binned,
                 }
 
     def copy(self):
@@ -671,9 +676,16 @@ class DataAxis(BaseDataAxis):
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
+                 is_binned=False,
                  axis=[1],
                  **kwargs):
-        super().__init__(index_in_array, name, units, navigate, **kwargs)
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            is_binned=is_binned,
+            **kwargs)
         self.axis = axis
         self.update_axis()
 
@@ -770,8 +782,15 @@ class FunctionalDataAxis(BaseDataAxis):
                  units=t.Undefined,
                  navigate=t.Undefined,
                  size=t.Undefined,
+                 is_binned=False,
                  **parameters):
-        super().__init__(index_in_array, name, units, navigate, **parameters)
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            is_binned=is_binned,
+            **parameters)
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
@@ -908,12 +927,14 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                  size=1.,
                  scale=1.,
                  offset=0.,
+                 is_binned=False,
                  **kwargs):
         super().__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
+            is_binned=is_binned,
             **kwargs
             )
         # These traits need to added dynamically to be removed when necessary

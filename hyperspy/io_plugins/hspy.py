@@ -80,6 +80,7 @@ version = "3.1"
 #
 # v3.1
 # - add read support for non-linear DataAxis defined by 'axis' vector
+# - move metadata.Signal.binned attribute to axes.is_binned parameter
 #
 # v3.0
 # - add Camera and Stage node

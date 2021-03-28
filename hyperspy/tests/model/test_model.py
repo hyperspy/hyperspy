@@ -132,7 +132,7 @@ class TestModelCallMethod:
         m = self.model
         m.convolved = False
         m.remove(1)
-        m.signal.metadata.Signal.binned = True
+        m.signal.axes_manager[-1].is_binned = True
         m.signal.axes_manager[-1].scale = 0.3
         r1 = m()
         np.testing.assert_allclose(m[0].function(0) * 0.3, r1)

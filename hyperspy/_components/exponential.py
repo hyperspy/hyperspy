@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy._components.expression import Expression
 import numpy as np
 import logging
+
+from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 _logger = logging.getLogger(__name__)
 
@@ -147,7 +149,9 @@ class Exponential(Expression):
                                 'a zero or negative value).')
                 return False
 
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 A /= axis.scale
             if only_current is True:
                 self.A.value = A

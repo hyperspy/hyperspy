@@ -56,39 +56,44 @@ def test_integral_as_signal():
     ref = (h_ref * 3.33 * sqrt2pi / sigma2fwhm).reshape(s_out.data.shape)
     np.testing.assert_allclose(s_out.data, ref)
 
+@pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned):
+def test_estimate_parameters_binned(only_current, binned, lazy):
     s = Signal1D(np.empty((100,)))
-    s.metadata.Signal.binned = binned
+    s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 2.
     axis.offset = -30
     g1 = GaussianHF(50015.156, 23, 10)
     s.data = g1.function(axis.axis)
+    if lazy:
+        s = s.as_lazy()
     g2 = GaussianHF()
     factor = axis.scale if binned else 1
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
-    assert g2.binned == binned
+    assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g1.height.value, g2.height.value * factor)
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
     assert abs(g2.fwhm.value - g1.fwhm.value) <= 0.1
 
+@pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("binned"), (True, False))
-def test_function_nd(binned):
+def test_function_nd(binned, lazy):
     s = Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 2.
     axis.offset = -30
     g1 = GaussianHF(50015.156, 23, 10)
     s.data = g1.function(axis.axis)
-    s.metadata.Signal.binned = binned
-
+    s.axes_manager.signal_axes[0].is_binned = binned
     s2 = stack([s] * 2)
+    if lazy:
+        s = s.as_lazy()
     g2 = GaussianHF()
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
-    assert g2.binned == binned
+    assert g2._axes_manager[-1].is_binned == binned
     # TODO: sort out while the rtol to be so high...
     np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)
 

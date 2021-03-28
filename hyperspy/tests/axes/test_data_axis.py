@@ -53,7 +53,8 @@ class TestBaseDataAxis:
                                  {'_type': 'BaseDataAxis',
                                   'name': 'named axis',
                                   'units': 's',
-                                  'navigate': True})
+                                  'navigate': True,
+                                  'is_binned': False})
 
 class TestDataAxis:
 
@@ -304,6 +305,8 @@ class TestUniformDataAxis:
         ac = copy.deepcopy(self.axis)
         ac.offset = 100
         assert self.axis.offset != ac.offset
+        assert self.axis.navigate == ac.navigate
+        assert self.axis.is_binned == ac.is_binned
 
     def test_deepcopy_on_trait_change(self):
         ac = copy.deepcopy(self.axis)

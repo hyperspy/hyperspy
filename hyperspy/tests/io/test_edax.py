@@ -107,7 +107,6 @@ class TestSpcSpectrum_v061_xrf:
                 set(elements))
 
         # Testing HyperSpy parameters
-        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpcSpectrum_v061_xrf.spc, signals.EDSSEMSpectrum)
 
@@ -115,6 +114,7 @@ class TestSpcSpectrum_v061_xrf:
         spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
                                      'name': 'Energy',
                                      'navigate': False,
+                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.01,
                                      'size': 4000,
@@ -184,7 +184,6 @@ class TestSpcSpectrum_v070_eds:
                 set(elements))
 
         # Testing HyperSpy parameters
-        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpcSpectrum_v070_eds.spc, signals.EDSSEMSpectrum)
 
@@ -192,6 +191,7 @@ class TestSpcSpectrum_v070_eds:
         spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
                                      'name': 'Energy',
                                      'navigate': False,
+                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.01,
                                      'size': 4096,
@@ -282,7 +282,6 @@ class TestSpdMap_070_eds:
                 'Sr'} == set(elements)
 
         # Testing HyperSpy parameters
-        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpdMap_070_eds.spd, signals.EDSSEMSpectrum)
 
@@ -290,6 +289,7 @@ class TestSpdMap_070_eds:
         spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
                                      'name': 'y',
                                      'navigate': True,
+                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 14.227345585823057,
                                      'size': 200,
@@ -297,6 +297,7 @@ class TestSpdMap_070_eds:
                           'axis-1': {'_type': 'UniformDataAxis',
                                      'name': 'x',
                                      'navigate': True,
+                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 14.235896058380602,
                                      'size': 256,
@@ -304,6 +305,7 @@ class TestSpdMap_070_eds:
                           'axis-2': {'_type': 'UniformDataAxis',
                                      'name': 'Energy',
                                      'navigate': False,
+                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.0050000000000000001,
                                      'size': 2500,
@@ -410,7 +412,6 @@ class TestSpdMap_061_xrf:
                 'Y'} == set(elements)
 
         # Testing HyperSpy parameters
-        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpdMap_061_xrf.spd, signals.EDSSEMSpectrum)
 
@@ -418,6 +419,7 @@ class TestSpdMap_061_xrf:
         spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
                                      'name': 'y',
                                      'navigate': True,
+                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 0.5651920166015625,
                                      'size': 200,
@@ -425,6 +427,7 @@ class TestSpdMap_061_xrf:
                           'axis-1': {'_type': 'UniformDataAxis',
                                      'name': 'x',
                                      'navigate': True,
+                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 0.5651920166015625,
                                      'size': 256,
@@ -432,6 +435,7 @@ class TestSpdMap_061_xrf:
                           'axis-2': {'_type': 'UniformDataAxis',
                                      'name': 'Energy',
                                      'navigate': False,
+                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.01,
                                      'size': 2000,
