@@ -36,6 +36,9 @@ from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.utils import COPY_METADATA_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -124,6 +127,8 @@ def load(filenames=None,
          lazy=False,
          convert_units=False,
          escape_square_brackets=False,
+         copy_metadata=True,
+         show_progressbar=None,
          **kwds):
     """Load potentially multiple supported files into HyperSpy.
 
@@ -188,6 +193,8 @@ def load(filenames=None,
         then square brackets are escaped before wildcard matching with
         ``glob.glob()``. If False, square brackets are used to represent
         character classes (e.g. ``[a-z]`` matches lowercase letters).
+    %s
+    %s Only used with ``stack=True``.
     reader : None, str, custom file reader object, optional
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
@@ -249,7 +256,7 @@ def load(filenames=None,
         Only for EMD NCEM. Stack datasets of groups with common name. Relevant
         for emd file version >= 0.5 where groups can be named 'group0000',
         'group0001', etc.
-    ignore_non_linear_dims : bool, optional 
+    ignore_non_linear_dims : bool, optional
         Only for HDF5 USID files: if True (default), parameters that were varied
         non-linearly in the desired dataset will result in Exceptions.
         Else, all such non-linearly varied parameters will be treated as
@@ -398,6 +405,8 @@ def load(filenames=None,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,
                 lazy=lazy,
+                copy_metadata=copy_metadata,
+                show_progressbar=show_progressbar,
             )
             signal.metadata.General.title = Path(filenames[0]).parent.stem
             _logger.info('Individual files loaded correctly')
@@ -411,6 +420,8 @@ def load(filenames=None,
         objects = objects[0]
 
     return objects
+
+load.__doc__ %= (COPY_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def load_single_file(filename, **kwds):
@@ -458,7 +469,7 @@ def load_single_file(filename, **kwds):
         # Try and load the file
         return load_with_reader(filename=filename, reader=reader, **kwds)
 
-    except BaseException as e:
+    except BaseException:
         _logger.error(
             "If this file format is supported, please "
             "report this error to the HyperSpy developers."
@@ -614,12 +625,12 @@ def dict2signal(signal_dict, lazy=False):
             importlib.import_module(signal_dict["package"])
         except ImportError:
             _logger.warning(
-                f"This file contains a signal provided by the " +
-                f'{signal_dict["package"]} Python package that is not ' +
-                f'currently installed. The signal will be loaded into a '
-                f'generic HyperSpy signal. Consider installing ' +
+                "This file contains a signal provided by the "
+                f'{signal_dict["package"]} Python package that is not '
+                'currently installed. The signal will be loaded into a '
+                'generic HyperSpy signal. Consider installing '
                 f'{signal_dict["package"]} to load this dataset into its '
-                f'original signal class.')
+                'original signal class.')
     signal_dimension = -1  # undefined
     signal_type = ""
     if "metadata" in signal_dict:

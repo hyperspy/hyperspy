@@ -34,6 +34,7 @@ import numpy as np
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.utils import COPY_METADATA_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -955,12 +956,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     lazy : {bool, None}
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
-    copy_metadata : {bool, int}
-        If integer, this value define the index of the signal in ``signal_list``
-        from which the ``original_metadata`` are copied. If ``True``, the
-        ``original_metadata`` and ``metadata`` are stacked and saved in
-        ``original_metadata.stack_elements`` of the returned signal.
-        If False, the ``metadata`` and ``original_metadata`` are not copied.
+    %s
     %s
 
     Returns
@@ -1103,7 +1099,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     return signal
 
-stack.__doc__ %= (SHOW_PROGRESSBAR_ARG)
+stack.__doc__ %= (COPY_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def shorten_name(name, req_l):
