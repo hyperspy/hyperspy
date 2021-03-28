@@ -22,6 +22,8 @@ import pytest
 from hyperspy import utils
 from hyperspy.signal import BaseSignal
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.utils import DictionaryTreeBrowser
+
 
 
 def test_stack_warning():
@@ -39,19 +41,44 @@ class TestUtilsStack:
         s.axes_manager[2].name = "E"
         s.axes_manager[2].scale = 0.5
         s.metadata.General.title = 'test'
+        s.original_metadata = DictionaryTreeBrowser({'om': 'some metadata'})
         self.signal = s
 
-    def test_stack_default(self):
+    @pytest.mark.parametrize('copy_metadata', [True, False, 0, 1])
+    def test_stack_copy_metadata(self, copy_metadata):
         s = self.signal
         s1 = s.deepcopy() + 1
         s2 = s.deepcopy() * 4
         test_axis = s.axes_manager[0].index_in_array
-        result_signal = utils.stack([s, s1, s2])
+        result_signal = utils.stack([s, s1, s2], copy_metadata=copy_metadata)
         result_list = result_signal.split()
         assert test_axis == s.axes_manager[0].index_in_array
         assert len(result_list) == 3
         np.testing.assert_array_almost_equal(
             result_list[0].data, result_signal.inav[:, :, 0].data)
+        if copy_metadata is True:
+            om = result_signal.original_metadata.stack_elements.element0.original_metadata
+        elif copy_metadata in [0, 1]:
+            om = result_signal.original_metadata
+        if copy_metadata is False:
+            assert om.as_dictionary() == {}
+        else:
+            assert om.as_dictionary() == s.original_metadata.as_dictionary()
+
+    def test_stack_copy_metadata_index(self):
+        s = self.signal
+        s1 = s.deepcopy() + 1
+        s1.metadata.General.title = 'first signal'
+        s1.original_metadata.om_title = 'first signal om'
+        s2 = s.deepcopy() * 4
+        s2.metadata.General.title = 'second_signal'
+        s2.original_metadata.om_title = 'second signal om'
+
+        res = utils.stack([s1, s2, s], copy_metadata=0)
+        assert res.metadata.General.title == s1.metadata.General.title
+
+        res2 = utils.stack([s1, s2, s], copy_metadata=2)
+        assert res2.metadata.General.title == s.metadata.General.title
 
     def test_stack_number_of_parts(self):
         s = self.signal
@@ -65,15 +92,19 @@ class TestUtilsStack:
         np.testing.assert_array_almost_equal(
             result_list[0].data, result_signal.inav[:, :, 0].data)
 
-    def test_stack_of_stack(self):
+    @pytest.mark.parametrize('copy_metadata', ['first', 'all'])
+    def test_stack_of_stack(self, copy_metadata):
         s = self.signal
-        s1 = utils.stack([s] * 2)
-        s2 = utils.stack([s1] * 3)
+        s1 = utils.stack([s] * 2, copy_metadata=copy_metadata)
+        s2 = utils.stack([s1] * 3, copy_metadata=copy_metadata)
         s3 = s2.split()[0]
         s4 = s3.split()[0]
-        np.testing.assert_array_almost_equal(s4.data, s.data)
-        assert not hasattr(s4.original_metadata, 'stack_elements')
-        assert s4.metadata.General.title == 'test'
+        if copy_metadata == 'all':
+            # only when copying all the metadata, we can reconstruct the only
+            # list of signal
+            np.testing.assert_array_almost_equal(s4.data, s.data)
+            assert not hasattr(s4.original_metadata, 'stack_elements')
+            assert s4.metadata.General.title == 'test'
 
     def test_stack_not_default(self):
         s = self.signal
@@ -82,7 +113,6 @@ class TestUtilsStack:
         result_signal = utils.stack([s, s1, s2], axis=1)
         axis_size = s.axes_manager[1].size
         axs1 = s1.axes_manager[1].size
-        axs2 = s2.axes_manager[1].size
         result_list = result_signal.split()
         assert len(result_list) == 3
         for rs in [result_signal, utils.stack([s, s1, s2], axis='y')]:
@@ -99,7 +129,6 @@ class TestUtilsStack:
         s = self.signal
         list_s = [s] * 12
         list_s.append(s.deepcopy() * 3)
-        list_s[-1].metadata.General.title = 'test'
         s1 = utils.stack(list_s)
         res = s1.split()
         np.testing.assert_array_almost_equal(list_s[-1].data, res[-1].data)

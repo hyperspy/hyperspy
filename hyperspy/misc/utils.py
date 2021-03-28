@@ -932,7 +932,7 @@ def closest_power_of_two(n):
 
 
 def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
-          show_progressbar=None, **kwargs):
+          copy_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -947,7 +947,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         signals are stacked over the axis given by its integer index or
         its name. The data must have the same shape, except in the dimension
         corresponding to `axis`.
-    new_axis_name : string
+    new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
@@ -955,6 +955,12 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     lazy : {bool, None}
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
+    copy_metadata : {bool, int}
+        If integer, this value define the index of the signal in ``signal_list``
+        from which the ``original_metadata`` are copied. If ``True``, the
+        ``original_metadata`` and ``metadata`` are stacked and saved in
+        ``original_metadata.stack_elements`` of the returned signal.
+        If False, the ``metadata`` and ``original_metadata`` are not copied.
     %s
 
     Returns
@@ -1051,14 +1057,24 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             signal = newlist[0]._deepcopy_with_new_data(newdata)
             signal._lazy = True
             signal._assign_subclass()
-        signal.get_dimensions_from_data()
-        signal.original_metadata.add_node("stack_elements")
 
-        for i, obj in enumerate(signal_list):
-            signal.original_metadata.stack_elements.add_node(f"element{i}")
-            node = signal.original_metadata.stack_elements[f"element{i}"]
-            node.original_metadata = obj.original_metadata.as_dictionary()
-            node.metadata = obj.metadata.as_dictionary()
+        signal.get_dimensions_from_data()
+
+        if (not isinstance(copy_metadata, bool) and
+             isinstance(copy_metadata, int)):
+            obj = signal_list[copy_metadata]
+            signal.metadata = copy.deepcopy(obj.metadata)
+            signal.original_metadata = DictionaryTreeBrowser(
+                obj.original_metadata.as_dictionary())
+        elif copy_metadata:
+            signal.original_metadata.add_node('stack_elements')
+            for i, obj in enumerate(signal_list):
+                signal.original_metadata.stack_elements.add_node(f'element{i}')
+                node = signal.original_metadata.stack_elements[f'element{i}']
+                node.original_metadata = obj.original_metadata.as_dictionary()
+                node.metadata = obj.metadata.as_dictionary()
+        else:
+            signal.original_metadata = DictionaryTreeBrowser({})
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager

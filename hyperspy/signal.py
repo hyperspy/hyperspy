@@ -2529,11 +2529,9 @@ class BaseSignal(FancySlicing,
         """
         dic = {'data': self.data,
                'axes': self.axes_manager._get_axes_dicts(),
-               'metadata': self.metadata.deepcopy().as_dictionary(),
-               'original_metadata':
-               self.original_metadata.deepcopy().as_dictionary(),
-               'tmp_parameters':
-               self.tmp_parameters.deepcopy().as_dictionary(),
+               'metadata': self.metadata.as_dictionary(),
+               'original_metadata': self.original_metadata.as_dictionary(),
+               'tmp_parameters': self.tmp_parameters.as_dictionary(),
                'attributes': {'_lazy': self._lazy},
                }
         if add_learning_results and hasattr(self, 'learning_results'):
@@ -3112,7 +3110,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
             If ``'auto'`` and if the object has been created with
-            :py:func:`~hyperspy.misc.utils.stack`,
+            :py:func:`~hyperspy.misc.utils.stack` (and ``copy_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
             If it was not created with :py:func:`~hyperspy.misc.utils.stack`,
