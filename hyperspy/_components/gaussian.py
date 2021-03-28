@@ -22,6 +22,7 @@ import numpy as np
 import dask.array as da
 
 from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -167,15 +168,18 @@ class Gaussian(Expression):
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.A.value /= axis.scale
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

@@ -78,6 +78,8 @@ class TestDataAxis:
         ac = copy.deepcopy(self.axis)
         ac.offset = 100
         assert self.axis.offset != ac.offset
+        assert self.axis.navigate == ac.navigate
+        assert self.axis.is_binned == ac.is_binned
 
     def test_deepcopy_on_trait_change(self):
         ac = copy.deepcopy(self.axis)

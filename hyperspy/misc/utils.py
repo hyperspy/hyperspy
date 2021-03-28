@@ -488,7 +488,12 @@ class DictionaryTreeBrowser:
         if key in ['_double_lines', '_lazy_attributes']:
             super().__setattr__(key, value)
             return
-
+        if key == 'binned':
+            warnings.warn('Use of the `binned` attribute in metadata is '
+                          'going to be deprecated in v2.0. Set the '
+                          '`axis.is_binned` attribute instead. ', 
+                          VisibleDeprecationWarning)
+            
         if key.startswith('_sig_'):
             key = key[5:]
             from hyperspy.signal import BaseSignal
@@ -700,7 +705,7 @@ class DictionaryTreeBrowser:
     def __next__(self):
         """
         Standard iterator method, updates the index and returns the
-        current coordiantes
+        current coordinates
 
         Returns
         -------
@@ -1304,3 +1309,15 @@ def nested_dictionary_merge(dict1, dict2):
             nested_dictionary_merge(dict1[key], dict2[key])
         else:
             dict1[key] = dict2[key]
+
+
+def is_binned(signal, axis=-1):
+    """Backwards compatibility check utility for is_binned attribute.
+
+    Can be removed in v2.0.
+    """
+    if signal.metadata.has_item('Signal.binned'):
+        return signal.metadata.Signal.binned
+    else:
+        return signal.axes_manager[axis].is_binned
+

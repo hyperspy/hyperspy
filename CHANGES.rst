@@ -19,7 +19,6 @@ New
 
 Enhancements
 ------------
-
 * Support for relative slicing (`#2386 <https://github.com/hyperspy/hyperspy/pull/2386>`_)
 * Read Cathodoluminescence metadata (`#2590 <https://github.com/hyperspy/hyperspy/pull/2590>`_)
 * Document reading Attolight data with the sur/pro format reader. (`#2559 <https://github.com/hyperspy/hyperspy/pull/2559/files>`_)
@@ -27,6 +26,7 @@ Enhancements
 
 API changes
 -----------
+* `metadata.Signal.binned` is replaced by an axes parameter, e.g. `axes_manager[-1].is_binned` (`#2652 https://github.com/hyperspy/hyperspy/pull/2652`_)
 
 
 RELEASE_next_patch (Unreleased)

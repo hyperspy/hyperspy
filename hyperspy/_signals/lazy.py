@@ -466,9 +466,9 @@ class LazySignal(BaseSignal):
         hist_spec.axes_manager[0].offset = bin_edges[0]
         hist_spec.axes_manager[0].size = hist.shape[-1]
         hist_spec.axes_manager[0].name = 'value'
+        hist_spec.axes_manager[0].is_binned = True
         hist_spec.metadata.General.title = (
             self.metadata.General.title + " histogram")
-        hist_spec.metadata.Signal.binned = True
         if out is None:
             return hist_spec
         else:

@@ -44,7 +44,7 @@ file_extensions = ['hspy', 'hdf5']
 default_extension = 0
 # Writing capabilities
 writes = True
-version = "3.0"
+version = "3.1"
 
 # -----------------------
 # File format description
@@ -74,6 +74,9 @@ version = "3.0"
 # Experiments instance
 #
 # CHANGES
+#
+# v3.1
+# - move metadata.Signal.binned attribute to axes.is_binned parameter
 #
 # v3.0
 # - add Camera and Stage node

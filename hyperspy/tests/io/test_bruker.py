@@ -88,6 +88,7 @@ def test_hyperspy_wrap():
     np.testing.assert_allclose(hype.axes_manager[2].scale, 0.009999)
     np.testing.assert_allclose(hype.axes_manager[2].offset, -0.47225277)
     assert hype.axes_manager[2].units == 'keV'
+    assert hype.axes_manager[2].is_binned == True
 
     md_ref = {
         'Acquisition_instrument': {
@@ -122,7 +123,6 @@ def test_hyperspy_wrap():
                            'O_Ka', 'P_Ka', 'Si_Ka', 'Sm_La', 'Th_Ma',
                            'Ti_Ka']},
         'Signal': {
-            'binned': True,
             'quantity': 'X-rays (Counts)',
             'signal_type': 'EDS_SEM'},
         '_HyperSpy': {

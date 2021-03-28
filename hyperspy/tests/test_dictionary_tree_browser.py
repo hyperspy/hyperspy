@@ -22,6 +22,7 @@ import pytest
 from hyperspy.misc.utils import (DictionaryTreeBrowser, check_long_string,
                                  replace_html_symbols,
                                  nested_dictionary_merge)
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signal import BaseSignal
 
 
@@ -95,44 +96,45 @@ class TestDictionaryBrowser:
         d = tree.as_dictionary()
         np.testing.assert_array_equal(d['_sig_Some name']['data'], s.data)
         d['_sig_Some name']['data'] = 0
-        d2 = {
-            "Node1": {
-                "leaf11": 11,
-                "Node11": {
-                    "leaf111": 111},
-            },
-            "Node2": {
-                "leaf21": 21,
-                "Node21": {
-                    "leaf211": 211},
-            },
-            "_sig_Some name": {
-                'attributes': {'_lazy': False},
-                'axes': [
-                    {
-                        'name': 'x',
-                        'navigate': False,
-                                'offset': 0.0,
-                                'scale': 1.0,
-                                'size': 3,
-                                'units': 'ly'}],
-                'data': 0,
-                'learning_results': {},
-                'metadata': {
-                    'General': {
-                        'title': ''},
-                    'Signal': {
-                        'binned': False,
-                        'signal_type': ''},
-                    '_HyperSpy': {
-                        'Folding': {
-                            'original_axes_manager': None,
-                            'original_shape': None,
-                            'unfolded': False,
-                            'signal_unfolded': False}}},
-                'original_metadata': {},
-                'tmp_parameters': {}}}
-        assert d2 == d
+        assert (
+            {
+                "Node1": {
+                    "leaf11": 11,
+                    "Node11": {
+                        "leaf111": 111},
+                },
+                "Node2": {
+                    "leaf21": 21,
+                    "Node21": {
+                        "leaf211": 211},
+                },
+                "_sig_Some name": {
+                    'attributes': {'_lazy': False},
+                    'axes': [
+                        {
+                            'name': 'x',
+                            'navigate': False,
+                            'is_binned': False,
+                                    'offset': 0.0,
+                                    'scale': 1.0,
+                                    'size': 3,
+                                    'units': 'ly'}],
+                    'data': 0,
+                    'learning_results': {},
+                    'metadata': {
+                        'General': {
+                            'title': ''},
+                        'Signal': {
+                            'signal_type': ''},
+                        '_HyperSpy': {
+                            'Folding': {
+                                'original_axes_manager': None,
+                                'original_shape': None,
+                                'unfolded': False,
+                                'signal_unfolded': False}}},
+                    'original_metadata': {},
+                    'tmp_parameters': {}}} ==
+            d)
 
     def _test_date_time(self, tree, dt_str='now'):
         dt0 = np.datetime64(dt_str)
@@ -208,6 +210,16 @@ class TestDictionaryBrowser:
                                   "    ├── Node21\n",
                                   "    │   └── leaf211 = 211\n",
                                   "    └── leaf21 = 21\n"])
+
+        assert tree.get_item('Node1.Node31.leaf311', 44) == 44
+        assert tree.get_item('Node1.Node21.leaf311', 44) == 44
+        assert tree.get_item('.Node1.Node21.leaf311', 44) == 44
+
+    # Can be removed once metadata.Signal.binned is deprecated in v2.0
+    def test_set_item_binned(self, tree):
+        with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
+            tree.set_item('Signal.binned', True)
+
 
     def test_html(self, tree):
         "Test that the method actually runs"

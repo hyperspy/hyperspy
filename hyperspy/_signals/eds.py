@@ -47,7 +47,7 @@ class EDS_mixin:
             warnings.warn('The microscope type is not set. Use '
                           'set_signal_type(\'EDS_TEM\')  '
                           'or set_signal_type(\'EDS_SEM\')')
-        self.metadata.Signal.binned = True
+        self.axes_manager.signal_axes[0].is_binned = True
         self._xray_markers = {}
 
     def _get_line_energy(self, Xray_line, FWHM_MnKa=None):
