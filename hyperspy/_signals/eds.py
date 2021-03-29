@@ -937,15 +937,17 @@ class EDS_mixin:
                      navigator_kwds=navigator_kwds,
                      **kwargs)
         self._plot_xray_lines(xray_lines, only_lines, only_one,
-                              background_windows, integration_windows)
+                              background_windows, integration_windows,
+                              render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
     plot.__doc__ %= (BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT1D_DOCSTRING)
 
     def _plot_xray_lines(self, xray_lines=False, only_lines=("a", "b"),
                          only_one=False, background_windows=None,
-                         integration_windows=None):
-        if xray_lines is not False or\
+                         integration_windows=None, render_figure=True):
+        if (xray_lines is not False or\
                 background_windows is not None or\
                 integration_windows is not None:
             if xray_lines is False:
@@ -970,9 +972,11 @@ class EDS_mixin:
             for xray in xray_not_here:
                 _logger.warning("%s is not in the data energy range." % xray)
             xray_lines = np.unique(xray_lines)
-            self.add_xray_lines_markers(xray_lines)
+            self.add_xray_lines_markers(xray_lines,
+                                        render_figure=False)
             if background_windows is not None:
-                self._add_background_windows_markers(background_windows)
+                self._add_background_windows_markers(background_windows,
+                                                     render_figure=False)
             if integration_windows is not None:
                 if integration_windows == 'auto':
                     integration_windows = 2.0
@@ -981,9 +985,14 @@ class EDS_mixin:
                         windows_width=integration_windows,
                         xray_lines=xray_lines)
                 self._add_vertical_lines_groups(integration_windows,
-                                                linestyle='--')
+                                                linestyle='--',
+                                                render_figure=False)
+        # Render figure only at the end
+        if render_figure:
+            self._render_figure(plot=['signal_plot'])
 
-    def _add_vertical_lines_groups(self, position, **kwargs):
+    def _add_vertical_lines_groups(self, position, render_figure=True,
+                                   **kwargs):
         """
         Add vertical markers for each group that shares the color.
 
@@ -1002,9 +1011,10 @@ class EDS_mixin:
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
             self.add_marker(line, render_figure=False)
-        self._render_figure(plot=['signal_plot'])
+        if render_figure:
+            self._render_figure(plot=['signal_plot'])
 
-    def add_xray_lines_markers(self, xray_lines):
+    def add_xray_lines_markers(self, xray_lines, render_figure=True):
         """
         Add marker on a spec.plot() with the name of the selected X-ray
         lines
@@ -1038,7 +1048,8 @@ class EDS_mixin:
             self._xray_markers[xray_lines[i]] = [line, text]
             line.events.closed.connect(self._xray_marker_closed)
             text.events.closed.connect(self._xray_marker_closed)
-        self._render_figure(plot=['signal_plot'])
+        if render_figure:
+            self._render_figure(plot=['signal_plot'])
 
     def _xray_marker_closed(self, obj):
         marker = obj
@@ -1049,7 +1060,7 @@ class EDS_mixin:
             if not line_markers:
                 self._xray_markers.pop(xray_line)
 
-    def remove_xray_lines_markers(self, xray_lines):
+    def remove_xray_lines_markers(self, xray_lines, render_figure=True):
         """
         Remove marker previosuly added on a spec.plot() with the name of the
         selected X-ray lines
@@ -1065,10 +1076,11 @@ class EDS_mixin:
                 while line_markers:
                     m = line_markers.pop()
                     m.close(render_figure=False)
-        self._render_figure(plot=['signal_plot'])
+        if render_figure:
+            self._render_figure(plot=['signal_plot'])
 
-    def _add_background_windows_markers(self,
-                                        windows_position):
+    def _add_background_windows_markers(self, windows_position,
+                                        render_figure=True):
         """
         Plot the background windows associated with each X-ray lines.
 
@@ -1103,7 +1115,8 @@ class EDS_mixin:
                 x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
             self.add_marker(line, render_figure=False)
-        self._render_figure(plot=['signal_plot'])
+        if render_figure:
+            self._render_figure(plot=['signal_plot'])
 
 
 class EDSSpectrum(EDS_mixin, Signal1D):
