@@ -3081,12 +3081,11 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         s.get_dimensions_from_data()
-        for i, factor in enumerate(factors):
-            s.axes_manager[i].offset += ((factor - 1)
-                                         * s.axes_manager[i].scale) / 2
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
-            axis.scale = axis_src.scale * factors[axis.index_in_array]
+            factor = factors[axis.index_in_array]
+            axis.scale = axis_src.scale * factor
+            axis.offset = axis_src.offset + (factor - 1) * axis_src.scale / 2
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance,
                           BaseSignal):
