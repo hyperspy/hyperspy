@@ -2510,16 +2510,23 @@ class BaseSignal(FancySlicing,
         self.data = self.data.squeeze()
         return self
 
-    def _to_dictionary(self, add_learning_results=True, add_models=False):
+    def _to_dictionary(self, add_learning_results=True, add_models=False,
+                       add_original_metadata=True):
         """Returns a dictionary that can be used to recreate the signal.
 
         All items but `data` are copies.
 
         Parameters
         ----------
-        add_learning_results : bool
+        add_learning_results : bool, optional
             Whether or not to include any multivariate learning results in
-            the outputted dictionary
+            the outputted dictionary. Default is True.
+        add_models : bool, optional
+            Whether or not to include any models in the outputted dictionary.
+            Default is False
+        add_original_metadata : bool
+            Whether or not to include the original_medata in the outputted
+            dictionary. Default is True.
 
         Returns
         -------
@@ -2530,10 +2537,11 @@ class BaseSignal(FancySlicing,
         dic = {'data': self.data,
                'axes': self.axes_manager._get_axes_dicts(),
                'metadata': self.metadata.as_dictionary(),
-               'original_metadata': self.original_metadata.as_dictionary(),
                'tmp_parameters': self.tmp_parameters.as_dictionary(),
                'attributes': {'_lazy': self._lazy},
                }
+        if add_original_metadata:
+            dic['original_metadata'] = self.original_metadata.as_dictionary()
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -4764,6 +4772,10 @@ class BaseSignal(FancySlicing,
         standard library's :py:func:`~copy.copy` function. Note: this will
         return a copy of the signal, but it will not duplicate the underlying
         data in memory, and both Signals will reference the same data.
+
+        See Also
+        --------
+        :py:meth:`~hyperspy.signal.BaseSignal.deepcopy`
         """
         try:
             backup_plot = self._plot
@@ -4773,9 +4785,11 @@ class BaseSignal(FancySlicing,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        dc = type(self)(**self._to_dictionary())
+        dc = type(self)(**self._to_dictionary(add_original_metadata=False))
         if isinstance(dc.data, np.ndarray):
             dc.data = dc.data.copy()
+
+        dc.original_metadata = self.original_metadata.copy()
 
         # uncomment if we want to deepcopy models as well:
 
@@ -4801,7 +4815,12 @@ class BaseSignal(FancySlicing,
         """
         Return a "deep copy" of this Signal using the
         standard library's :py:func:`~copy.deepcopy` function. Note: this means
-        the underlying data structure will be duplicated in memory.
+        the underlying data structure will be duplicated in memory, except for
+        the ``original_metadata`` which will be a "shallow copy".
+
+        See Also
+        --------
+        :py:meth:`~hyperspy.signal.BaseSignal.copy`
         """
         return copy.deepcopy(self)
 
