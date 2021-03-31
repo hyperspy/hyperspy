@@ -670,8 +670,10 @@ class EDS_mixin:
                 f'{self.axes_manager.signal_axes[0].units}')
             img.axes_manager.set_signal_dimension(0)
             if plot_result and img.axes_manager.navigation_size == 1:
+                if img._lazy:
+                    img.compute()
                 print(f"{Xray_line} at {line_energy} {ax.units} : "
-                      f"Intensity = {img.data:.2f}")
+                      f"Intensity = {img.data[0]:.2f}")
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
@@ -958,6 +960,7 @@ class EDS_mixin:
                         "No elements defined, set them with `add_elements`")
                     # No X-rays lines, nothing to do then
                     return
+
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import pytest
 
@@ -485,6 +487,45 @@ def test_plot_eds_lines():
     s.plot(True)
     s.axes_manager.navigation_axes[0].index = 1
     return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl,
+    filename='test_plot_eds_lines.png')
+def test_plot_xray_lines():
+    # It should be the same image as with previous test (test_plot_eds_lines)
+    a = EDS_TEM_Spectrum()
+    s = stack([a, a * 5])
+    s.plot()
+    s._plot_xray_lines(xray_lines=True)
+    s.axes_manager.navigation_axes[0].index = 1
+    return s._plot.signal_plot.figure
+
+
+def test_plot_eds_lines_not_in_range(caplog):
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    with caplog.at_level(logging.WARNING):
+        s._plot_xray_lines(xray_lines=['Pt_Ka'])
+
+    assert "Pt_Ka is not in the data energy range." in caplog.text
+
+
+def test_plot_eds_lines_background():
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    bw = s.estimate_background_windows()
+    s._plot_xray_lines(background_windows=bw)
+
+
+def test_plot_add_background_windows():
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    bw = s.estimate_background_windows()
+    s._add_background_windows_markers(bw)
+    # Add integration windows
+    iw = s.estimate_integration_windows(windows_width=2.0, xray_lines=['Fe_Ka'])
+    s._add_vertical_lines_groups(iw, linestyle='--')
 
 
 def test_iterate_markers():
