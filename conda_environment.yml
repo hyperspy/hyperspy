@@ -18,7 +18,6 @@ dependencies:
 - prettytable
 - python
 - python-dateutil
-- pyusid
 - pyyaml
 - requests
 - scikit-image
