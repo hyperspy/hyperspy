@@ -321,11 +321,13 @@ class TestSmoothing:
         self.atol = 0
 
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_lowess(self, parallel):
+    @pytest.mark.parametrize('dtype', ['<f4', 'f4', '>f4'])
+    def test_lowess(self, parallel, dtype):
         from hyperspy.misc.lowess_smooth import lowess
         f = 0.5
         n_iter = 1
-        data = np.asanyarray(self.s.data, dtype='float')
+        self.rtol = 1e-5
+        data = np.asanyarray(self.s.data, dtype=dtype)
         for i in range(data.shape[0]):
             data[i, :] = lowess(
                 x=self.s.axes_manager[-1].axis,

@@ -87,6 +87,13 @@ class TestPlotROI():
         p.add_widget(signal=self.im, axes=[0, ], color="cyan")
         return self.im._plot.navigator_plot.figure
 
+    def test_plot_spanroi_close(self):
+        self.im.plot()
+        p = roi.SpanROI(0.5, 0.7)
+        p.add_widget(signal=self.im, axes=[0, ], color="cyan")
+        for widget in p.widgets:
+            widget.close()
+
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_spanroi_axis_1(self):

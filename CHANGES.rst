@@ -37,6 +37,16 @@ RELEASE_next_patch (Unreleased)
 * Add support for python 3.9, fix deprecation warning with matplotlib 3.4.0 and bump minimum requirement to numpy 1.17.1 and dask 2.1.0. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
 * Add integration test suite documentation in the developer guide. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
 * Fix squeeze function for multiple zero-dimensional entries, improved docstring, added to user guide. (`#2676 <https://github.com/hyperspy/hyperspy/pull/2676>`_)
+* Use native endianess in numba jitted functions. (`#2678 <https://github.com/hyperspy/hyperspy/pull/2678>`_)
+* Fix error in Cliff-Lorimer quantification using absorption correction (`#2681 <https://github.com/hyperspy/hyperspy/pull/2681>`_)
+* Fix ``navigation_mask`` bug in decomposition when provided as numpy array (`#2679 <https://github.com/hyperspy/hyperspy/pull/2679>`_)
+* Fix closing image constrat tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
+* Fix range widget with matplotlib 3.4 (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
+* Fix bug in `hs.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
+* Add option not to snap ROI when calling the `interactive` method of a ROI (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
+* Fix broken events when changing signal type `#2683 <https://github.com/hyperspy/hyperspy/pull/2683>`_
+* Make DictionaryTreeBrowser lazy by default - see `#368 <https://github.com/hyperspy/hyperspy/issues/368>`_ (`#2623 <https://github.com/hyperspy/hyperspy/pull/2623>`_)
+* Fix setting offset in rebin: the offset was changed in the wrong axis (`#2690 <https://github.com/hyperspy/hyperspy/pull/2690>`_)
 
 
 Changelog
