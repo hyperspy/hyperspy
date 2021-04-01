@@ -4497,6 +4497,7 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.navigation_shape == () and self._lazy:
             _logger.info("Converting signal to a non-lazy signal because there are no nav dimensions")
             self.compute()
+
         # Sepate ndkwargs depending on if they are BaseSignals.
         ndkwargs = {}
         ndkeys = [key for key in kwargs if isinstance(kwargs[key], BaseSignal)]
@@ -4506,10 +4507,10 @@ class BaseSignal(FancySlicing,
             elif kwargs[key].axes_manager.navigation_shape == () or kwargs[key].axes_manager.navigation_shape == (1,):
                 kwargs[key] = np.squeeze(kwargs[key].data)  # this really isn't an iterating signal.
             else:
-                raise ValueError('the size of the navigation_shape for some kwarg:' + key + ' <' +
-                                 str(kwargs[key].axes_manager.navigation_shape) +
-                                 '> must be consistent with the size of the mapped signal <' +
-                                 str(self.axes_manager.navigation_shape) + '>')
+                raise ValueError(f'The size of the navigation_shape for the kwarg {key} '
+                                 f'(<{kwargs[key].axes_manager.navigation_shape}> must be consistent'
+                                 f'with the size of the mapped signal '
+                                 f'<{self.axes_manager.navigation_shape}>')
         # Check if the signal axes have inhomogeneous scales and/or units and
         # display in warning if yes.
         scale = set()
@@ -4553,20 +4554,17 @@ class BaseSignal(FancySlicing,
                                     self.axes_manager.signal_axes])
             res = self._map_all(function, inplace=inplace, **kwargs)
         else:
-            # Iteration over coordinates.
             if self._lazy:
-                res = self._map_iterate(function, iterating_kwargs=ndkwargs,
-                                        show_progressbar=show_progressbar,
-                                        parallel=parallel, max_workers=max_workers,
-                                        ragged=ragged, inplace=inplace, output_dtype=output_dtype,
-                                        output_signal_size=output_signal_size,
-                                        **kwargs)
-            else:
-                res = self._map_iterate(function, iterating_kwargs=ndkwargs,
-                                        show_progressbar=show_progressbar,
-                                        parallel=parallel, max_workers=max_workers,
-                                        ragged=ragged, inplace=inplace,
-                                        **kwargs)
+                kwargs["output_signal_size"] = output_signal_size
+                kwargs["output_dtype"] = output_dtype
+            # Iteration over coordinates.
+            res = self._map_iterate(function, iterating_kwargs=ndkwargs,
+                                    show_progressbar=show_progressbar,
+                                    parallel=parallel,
+                                    max_workers=max_workers,
+                                    ragged=ragged,
+                                    inplace=inplace,
+                                    **kwargs)
         if inplace:
             self.events.data_changed.trigger(obj=self)
         return res
