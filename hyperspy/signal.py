@@ -5929,21 +5929,6 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
-
-    def _check_navigation_mask(self, mask):
-        if mask is not None:
-            if (mask.axes_manager.navigation_shape !=
-                self.axes_manager.navigation_shape):
-                raise ValueError("mask must be a signal with the same "
-                                 "navigation shape as the current signal.")
-
-    def _check_signal_mask(self, mask):
-        if mask is not None:
-            if (mask.axes_manager.signal_shape !=
-                self.axes_manager.signal_shape):
-                raise ValueError("mask must be a signal with the same "
-                                 "signal shape as the current signal.")
-
     def apply_apodization(self, window='hann',
                           hann_order=None, tukey_alpha=0.5, inplace=False):
         """
