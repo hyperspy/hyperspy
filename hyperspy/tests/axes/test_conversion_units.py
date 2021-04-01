@@ -182,6 +182,12 @@ class TestUnitConversion:
         assert self.uc.units == 'eV'
         assert self.uc.scale == 0.05
 
+    def test_get_set_quantity(self):
+        with pytest.raises(ValueError):
+            self.uc._get_quantity('size')
+        with pytest.raises(ValueError):
+            self.uc._set_quantity('size', 10)
+  
 
 class TestUniformDataAxis:
 

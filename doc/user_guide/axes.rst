@@ -234,10 +234,10 @@ Uniform data axis
 ^^^^^^^^^^^^^^^^^
 
 The most common case is the :py:class:`~.axes.UniformDataAxis`. Here, the axis
-is defined by the ``offset`` and ``scale`` parameters, which determine the
-`initial value` and `spacing`, respectively. The actual ``axis`` array is
-automatically calculated from these two values. The ``UniformDataAxis`` is a
-special case of the ``FunctionalDataAxis`` defined by the function
+is defined by the ``offset``, ``scale`` and ``size`` parameters, which determine
+the `initial value`, `spacing` and `length`, respectively. The actual ``axis``
+array is automatically calculated from these three values. The ``UniformDataAxis``
+is a special case of the ``FunctionalDataAxis`` defined by the function
 ``scale * x + offset``.
 
 Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
@@ -524,7 +524,7 @@ method of the :py:class:`~.axes.UniformDataAxis`:
     100.0 micrometer
 
 
-.. _Axes_storage_ordering
+.. _Axes_storage_ordering:
 
 Axes storage and ordering
 -------------------------
