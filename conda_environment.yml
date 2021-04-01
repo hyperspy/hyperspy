@@ -3,7 +3,7 @@ channels:
 - defaults
 - conda-forge
 dependencies:
-- dask-core >2.0
+- dask-core >2.0,!=2021.3.1
 - dill
 - h5py
 - imageio
