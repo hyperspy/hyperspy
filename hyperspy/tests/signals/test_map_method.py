@@ -335,6 +335,7 @@ class TestLazyMap:
         iter_array, _ = da.meshgrid(range(11), range(10))
         iter_array = iter_array.rechunk(chunks)
         s_iter = hs.signals.BaseSignal(iter_array).T
+        s_iter = s_iter.as_lazy()
         f = lambda a, b: a + b
         s_out = self.s.map(function=f, b=s_iter, inplace=False)
         np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
