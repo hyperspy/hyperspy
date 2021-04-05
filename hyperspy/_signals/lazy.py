@@ -664,8 +664,6 @@ class LazySignal(BaseSignal):
                 sig.axes_manager._append_axis(output_signal_size[-ind], navigate=False)
         if not ragged:
             sig.get_dimensions_from_data()
-        if len(sig.axes_manager._axes) == 0:
-            sig.axes_manager._append_axis(1, navigate=True, name='Scalar')
         return sig
 
     def _iterate_signal(self):

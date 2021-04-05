@@ -325,6 +325,26 @@ def test_new_axes(parallel):
     assert not 'b' in ax_names
     assert 0 == sl.axes_manager.navigation_dimension
 
+class TestLazyMap:
+    def setup_method(self, method):
+        dask_array = da.zeros((10, 11, 12, 13), chunks=(3, 3, 3, 3))
+        self.s = hs.signals.Signal2D(dask_array).as_lazy()
+
+    @pytest.mark.parametrize('chunks', [(3, 2), (3, 3)])
+    def test_map_iter(self,chunks):
+        iter_array, _ = da.meshgrid(range(11), range(10))
+        iter_array = iter_array.rechunk(chunks)
+        s_iter = hs.signals.BaseSignal(iter_array).T
+        f = lambda a, b: a + b
+        s_out = self.s.map(function=f, b=s_iter, inplace=False)
+        np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
+
+    def test_map_nav_size_error(self):
+        iter_array, _ = da.meshgrid(range(12), range(10))
+        s_iter = hs.signals.BaseSignal(iter_array).T
+        f = lambda a, b: a + b
+        with pytest.raises(ValueError):
+            self.s.map(function=f, b=s_iter, inplace=False)
 
 @pytest.mark.parametrize('ragged', [True, False, None])
 def test_singleton(ragged):
@@ -387,12 +407,4 @@ def test_map_ufunc(caplog):
     np.testing.assert_allclose(s.data, np.log(data))
     assert "can direcly operate on hyperspy signals" in caplog.records[0].message
 
-def test_map_lazy():
-    dask_array = da.zeros((10, 11, 12, 13), chunks=(3, 3, 3, 3))
-    s = hs.signals.Signal2D(dask_array).as_lazy()
-    iter_array, _ = da.meshgrid(range(11), range(10))
-    iter_array = iter_array.rechunk(3, 2)
-    s_iter = hs.signals.BaseSignal(iter_array).T
-    f = lambda a,b: a+b
-    s_out = s.map(function=f,b=s_iter, inplace=False)
-    np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
+

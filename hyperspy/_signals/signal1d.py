@@ -471,9 +471,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if isinstance(shift_array, np.ndarray):
             shift_array = BaseSignal(shift_array.ravel()).T
 
-        if self.axes_manager.navigation_shape != shift_array.axes_manager.navigation_shape:
-            raise ValueError("The navigation shapes must be the same"+str(self.axes_manager.navigation_shape)+
-                             " "+str(shift_array.axes_manager.navigation_shape))
         self.map(_shift1D,
                  shift=shift_array,
                  original_axis=axis.axis,
