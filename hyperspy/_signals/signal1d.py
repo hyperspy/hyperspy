@@ -1435,10 +1435,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          parallel=parallel,
                          max_workers=max_workers,
                          inplace=False)
-        if peaks._lazy:
-            return peaks.data.compute()
-        else:
-            return peaks.data
+        return peaks.data
 
     find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
 
