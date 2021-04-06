@@ -207,7 +207,7 @@ def _get_nav_list(data, dataentry):
     nav_list : list
         contains information about each axes.
     """
-    
+
     detector_index = 0
     nav_list = []
     # list indices...
@@ -284,7 +284,7 @@ def _get_nav_list(data, dataentry):
                             'units': '',
                             'navigate': False
                            })
-                    detector_index = detector_index+1    
+                    detector_index = detector_index+1
 
     return nav_list
 
@@ -310,7 +310,7 @@ def _extract_hdf_dataset(group, dataset, lazy=False):
 
     data = group[dataset]
     nav_list = _get_nav_list(data, data.parent)
-    
+
     if lazy:
         if "chunks" in data.attrs.keys():
             chunks = data.attrs["chunks"]
@@ -345,7 +345,7 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
         A signal dictionary which can be used to instantiate a signal.
 
     """
-    
+
     interpretation = None
     dataentry = group[nexus_dataset_path]
     if "signal" in dataentry.attrs.keys():
@@ -1082,7 +1082,9 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
     nxdata.attrs["signal"] = _parse_to_file("data")
     if smd.record_by:
         nxdata.attrs["interpretation"] = _parse_to_file(smd.record_by)
-    overwrite_dataset(nxdata, signal.data, "data", chunks=None, **kwds)
+    overwrite_dataset(nxdata, signal.data, "data", chunks=None,
+                      signal_axes=signal.axes_manager.signal_indices_in_array,
+                      **kwds)
     axis_names = [_parse_to_file(".")] * len(signal.axes_manager.shape)
     for i, axis in enumerate(signal.axes_manager._axes):
         if axis.name != t.Undefined:
@@ -1090,9 +1092,11 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
             axindex = [axis.index_in_array]
             indices = _parse_to_file(axis.name + "_indices")
             nxdata.attrs[indices] = _parse_to_file(axindex)
-            nxdata.require_dataset(axname, data=axis.axis,
-                                   shape=axis.axis.shape,
-                                   dtype=axis.axis.dtype)
+            ax = nxdata.require_dataset(axname, data=axis.axis,
+                                        shape=axis.axis.shape,
+                                        dtype=axis.axis.dtype)
+            if axis.units != t.Undefined:
+                ax.attrs['units'] = axis.units
             axis_names[axis.index_in_array] = axname
 
     nxdata.attrs["axes"] = _parse_to_file(axis_names)
