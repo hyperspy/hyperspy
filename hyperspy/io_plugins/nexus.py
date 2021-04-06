@@ -25,7 +25,7 @@ import h5py
 import pprint
 import traits.api as t
 from hyperspy.io_plugins.hspy import overwrite_dataset, get_signal_chunks
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser, is_hyperspy_signal
 _logger = logging.getLogger(__name__)
 # Plugin characteristics
 
@@ -912,6 +912,11 @@ def _write_nexus_groups(dictionary, group, **kwds):
             overwrite_dataset(group, data, key, chunks=None, **kwds)
         elif isinstance(value, (int, float, str, bytes)):
             group.create_dataset(key, data=_parse_to_file(value))
+        elif is_hyperspy_signal(value):
+            _write_signal(value, group, key, **kwds)
+        else:
+            if value is not None:
+                _write_nexus_groups(value, group.require_group(key), **kwds)
 
 
 def _write_nexus_attr(dictionary, group):
