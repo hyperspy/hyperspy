@@ -574,6 +574,9 @@ class LazySignal(BaseSignal):
         # unpacking keyword arguments
         if iterating_kwargs is None:
             iterating_kwargs = {}
+        elif isinstance(iterating_kwargs, (tuple, list)):
+            iterating_kwargs = dict((k, v) for k, v in iterating_kwargs)
+
         nav_indexes = self.axes_manager.navigation_indices_in_array
         if ragged and inplace:
             raise ValueError("Ragged and inplace are not compatible with a lazy signal")
@@ -588,7 +591,14 @@ class LazySignal(BaseSignal):
         nav_chunks = old_sig._get_navigation_chunk_size()
         args = ()
         arg_keys = ()
+
         for key in iterating_kwargs:
+            if not isinstance(iterating_kwargs[key], BaseSignal):
+                iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
+                warnings.warn(
+                    "Passing array as keyword argument can be ambigous. This "
+                    "is deprecated and will be removed in HyperSpy 2.0. "
+                    "Use Signal instead.", VisibleDeprecationWarning)
             if iterating_kwargs[key]._lazy:
                 if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
                     iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
@@ -604,6 +614,7 @@ class LazySignal(BaseSignal):
             else:
                 args += (iterating_kwargs[key].data, )
             arg_keys += (key,)
+
         if autodetermine: #trying to guess the output d-type and size from one signal
             testing_kwargs = {}
             for key in iterating_kwargs:
