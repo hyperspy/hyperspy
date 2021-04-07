@@ -3,7 +3,7 @@ channels:
 - defaults
 - conda-forge
 dependencies:
-- dask-core >2.0,!=2021.3.1
+- dask-core >2.0
 - dill
 - h5py
 - imageio
@@ -25,7 +25,7 @@ dependencies:
 - scipy
 - sparse
 - sympy
-- tifffile >=2019.07.26
+- tifffile >=2019.07.26,!=2021.3.31
 - toolz
 - tqdm
 - traits
