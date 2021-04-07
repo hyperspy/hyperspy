@@ -516,7 +516,7 @@ class EDS_mixin:
                 element_lines = [element_lines[select_this], ]
 
             if not element_lines:
-                _logger.info("There is no X-ray line for element {element} "
+                _logger.info(f"There is no X-ray line for element {element} "
                              "in the data spectral range")
             else:
                 lines.extend(element_lines)
@@ -532,7 +532,7 @@ class EDS_mixin:
         for xray in xray_not_here:
             warnings.warn(f"{xray} is not in the data energy range. "
                           "You can remove it with: "
-                          "`s.metadata.Sample.xray_lines.remove('{xray}')`")
+                          f"`s.metadata.Sample.xray_lines.remove('{xray}')`")
         return xray_lines
 
     def get_lines_intensity(self,
@@ -629,7 +629,7 @@ class EDS_mixin:
 
             raise TypeError(
                 "xray_lines must be a compatible iterable, but was "
-                "mistakenly provided as a {type(xray_lines)}.")
+                f"mistakenly provided as a {type(xray_lines)}.")
 
         xray_lines = self._parse_xray_lines(xray_lines, only_one, only_lines)
         if hasattr(integration_windows, '__iter__') is False:
