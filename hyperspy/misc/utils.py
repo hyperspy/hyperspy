@@ -1252,12 +1252,12 @@ def guess_output_signal_size(test_signal,
         The function to be applied to the dataset
     ragged: bool
         If the data is ragged then the output signal size is () and the
-        data type is np.object
+        data type is 'object'
     **kwargs: dict
         Any other keyword arguments passed to the function.
     """
     if ragged:
-        output_dtype = np.object
+        output_dtype = object
         output_signal_size = ()
     else:
         output = function(test_signal, **kwargs)
