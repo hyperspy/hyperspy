@@ -2286,7 +2286,8 @@ class BaseSignal(FancySlicing,
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
     def _deepcopy_with_new_data(self, data=None, copy_variance=False,
-                                copy_navigator=False):
+                                copy_navigator=False,
+                                copy_learning_results=False):
         """Returns a deepcopy of itself replacing the data.
 
         This method has an advantage over the default :py:func:`copy.deepcopy`
@@ -2298,7 +2299,9 @@ class BaseSignal(FancySlicing,
         copy_variance : bool
             Whether to copy the variance of the signal to the new copy
         copy_navigator : bool
-            Whether to copy the navgitor of the signal to the new copy
+            Whether to copy the navigator of the signal to the new copy
+        copy_learning_results : bool
+            Whether to copy the learning_results of the signal to the new copy
 
         Returns
         -------
@@ -2308,6 +2311,7 @@ class BaseSignal(FancySlicing,
         """
         old_np = None
         old_navigator = None
+        old_learning_results = None
         try:
             old_data = self.data
             self.data = None
@@ -2320,6 +2324,9 @@ class BaseSignal(FancySlicing,
             if not copy_navigator and self.metadata.has_item('_HyperSpy.navigator'):
                 old_navigator = self.metadata._HyperSpy.navigator
                 del self.metadata._HyperSpy.navigator
+            if not copy_learning_results:
+                old_learning_results = self.learning_results
+                del self.learning_results
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = data
@@ -2332,8 +2339,11 @@ class BaseSignal(FancySlicing,
                 self.metadata.Signal.Noise_properties = old_np
             if old_navigator is not None:
                 self.metadata._HyperSpy.navigator = old_navigator
+            if old_learning_results is not None:
+                self.learning_results = old_learning_results
 
-    def as_lazy(self, copy_variance=True):
+    def as_lazy(self, copy_variance=True, copy_navigator=True,
+                copy_learning_results=True):
         """
         Create a copy of the given Signal as a
         :py:class:`~hyperspy._signals.lazy.LazySignal`.
@@ -2342,15 +2352,25 @@ class BaseSignal(FancySlicing,
         ----------
         copy_variance : bool
             Whether or not to copy the variance from the original Signal to
-            the new lazy version
+            the new lazy version. Default is True.
+        copy_navigator : bool
+            Whether or not to copy the navigator from the original Signal to
+            the new lazy version. Default is True.
+        copy_learning_results : bool
+            Whether to copy the learning_results from the original signal to
+            the new lazy version. Default is True.
 
         Returns
         -------
         res : :py:class:`~hyperspy._signals.lazy.LazySignal`
             The same signal, converted to be lazy
         """
-        res = self._deepcopy_with_new_data(self.data,
-                                           copy_variance=copy_variance)
+        res = self._deepcopy_with_new_data(
+            self.data,
+            copy_variance=copy_variance,
+            copy_navigator=copy_navigator,
+            copy_learning_results=copy_learning_results
+            )
         res._lazy = True
         res._assign_subclass()
         return res
@@ -5918,7 +5938,8 @@ class BaseSignal(FancySlicing,
             ax.index_in_array for ax in navigation_axes)
         array_order += tuple(ax.index_in_array for ax in signal_axes)
         newdata = self.data.transpose(array_order)
-        res = self._deepcopy_with_new_data(newdata, copy_variance=True)
+        res = self._deepcopy_with_new_data(newdata, copy_variance=True,
+                                           copy_learning_results=True)
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
