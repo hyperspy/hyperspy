@@ -915,7 +915,7 @@ def _write_nexus_groups(dictionary, group, **kwds):
         elif is_hyperspy_signal(value):
             _write_signal(value, group, key, **kwds)
         else:
-            if value is not None:
+            if value is not None and key not in group:
                 _write_nexus_groups(value, group.require_group(key), **kwds)
 
 
