@@ -50,7 +50,7 @@ RELEASE_next_patch (Unreleased)
 * Fix reading XRF bruker file, close `#2689 <https://github.com/hyperspy/hyperspy/issues/2689>`_ (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
 * Speed up setting CI on azure pipeline (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
 * Fix performance issue with the lazy map method of lazy (`#2617 <https://github.com/hyperspy/hyperspy/pull/2617>`_)
-* Fix slowdown due to large metadata, add option to copy/load original metadata in ``hs.stack`` and ``hs.load``. Close `#1398 <https://github.com/hyperspy/hyperspy/issues/1398>`_, `#2045 <https://github.com/hyperspy/hyperspy/issues/2045>`_ and `#2536 <https://github.com/hyperspy/hyperspy/issues/2536>`_. (`#2691 <https://github.com/hyperspy/hyperspy/pull/2691>`_)
+* Fix slowdown due to large metadata, add option to copy/load original metadata in ``hs.stack`` and ``hs.load``. Close `#1398 <https://github.com/hyperspy/hyperspy/issues/1398>`_, `#1568 <https://github.com/hyperspy/hyperspy/issues/1568>`_, `#2045 <https://github.com/hyperspy/hyperspy/issues/2045>`_ and `#2536 <https://github.com/hyperspy/hyperspy/issues/2536>`_. (`#2691 <https://github.com/hyperspy/hyperspy/pull/2691>`_)
 
 
 Changelog
