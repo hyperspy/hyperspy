@@ -65,6 +65,24 @@ class TestUtilsStack:
         else:
             assert om.as_dictionary() == s.original_metadata.as_dictionary()
 
+    def test_stack_copy_metadata_value(self):
+        s = BaseSignal(1)
+        s.metadata.General.title = 'title 1'
+        s.original_metadata.set_item('a', 1)
+
+        s2 = BaseSignal(2)
+        s2.metadata.General.title = 'title 2'
+        s2.original_metadata.set_item('a', 2)
+
+        stack_out = utils.stack([s, s2], copy_metadata=True)
+        elem0 = stack_out.original_metadata.stack_elements.element0
+        elem1 = stack_out.original_metadata.stack_elements.element1
+
+        for el, _s in zip([elem0, elem1], [s, s2]):
+            assert el.original_metadata.as_dictionary() == \
+                _s.original_metadata.as_dictionary()
+            assert el.metadata.as_dictionary() == _s.metadata.as_dictionary()
+
     def test_stack_copy_metadata_index(self):
         s = self.signal
         s1 = s.deepcopy() + 1
