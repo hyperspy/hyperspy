@@ -528,7 +528,7 @@ class DictionaryTreeBrowser:
         """
 
         if len(self._lazy_attributes) > 0:
-            return copy.copy(self._lazy_attributes)
+            return copy.deepcopy(self._lazy_attributes)
 
         par_dict = {}
 

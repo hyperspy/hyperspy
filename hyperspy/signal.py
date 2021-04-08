@@ -2191,7 +2191,7 @@ class BaseSignal(FancySlicing,
                 """, arguments=['obj'])
 
     def _create_metadata(self):
-        self.metadata = DictionaryTreeBrowser(lazy=False)
+        self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
         mp.add_node("_HyperSpy")
         mp.add_node("General")
