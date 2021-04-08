@@ -1058,20 +1058,22 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
         signal.get_dimensions_from_data()
 
-        if (not isinstance(copy_metadata, bool) and
-             isinstance(copy_metadata, int)):
+        if isinstance(copy_metadata, bool):
+            if copy_metadata:
+                signal.original_metadata.add_node('stack_elements')
+                for i, obj in enumerate(signal_list):
+                    signal.original_metadata.stack_elements.add_node(f'element{i}')
+                    node = signal.original_metadata.stack_elements[f'element{i}']
+                    node.original_metadata = obj.original_metadata.copy()
+                    node.metadata = obj.metadata.copy()
+            else:
+                signal.original_metadata = DictionaryTreeBrowser({})
+        elif isinstance(copy_metadata, int):
             obj = signal_list[copy_metadata]
             signal.metadata = copy.deepcopy(obj.metadata)
             signal.original_metadata = copy.copy(obj.original_metadata)
-        elif copy_metadata:
-            signal.original_metadata.add_node('stack_elements')
-            for i, obj in enumerate(signal_list):
-                signal.original_metadata.stack_elements.add_node(f'element{i}')
-                node = signal.original_metadata.stack_elements[f'element{i}']
-                node.original_metadata = obj.original_metadata.copy()
-                node.metadata = obj.metadata.copy()
         else:
-            signal.original_metadata = DictionaryTreeBrowser({})
+            raise ValueError('`copy_metadata` must a boolean or an integer.')
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager

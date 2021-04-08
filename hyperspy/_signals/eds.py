@@ -1027,7 +1027,7 @@ class EDS_mixin:
             relative_factor = elements_db[element][
                 'Atomic_properties']['Xray_lines'][line]['weight']
             a_eng = self._get_line_energy(f'{element}_{line[0]}a')
-            idx = self.axes_manager[-1].value2index(a_eng)
+            idx = self.axes_manager.signal_axes[0].value2index(a_eng)
             intensity.append(self.data[..., idx] * relative_factor)
         for i in range(len(line_energy)):
             line = markers.vertical_line_segment(

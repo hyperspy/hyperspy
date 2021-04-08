@@ -92,19 +92,15 @@ class TestUtilsStack:
         np.testing.assert_array_almost_equal(
             result_list[0].data, result_signal.inav[:, :, 0].data)
 
-    @pytest.mark.parametrize('copy_metadata', ['first', 'all'])
-    def test_stack_of_stack(self, copy_metadata):
+    def test_stack_of_stack(self):
         s = self.signal
-        s1 = utils.stack([s] * 2, copy_metadata=copy_metadata)
-        s2 = utils.stack([s1] * 3, copy_metadata=copy_metadata)
+        s1 = utils.stack([s] * 2)
+        s2 = utils.stack([s1] * 3)
         s3 = s2.split()[0]
         s4 = s3.split()[0]
-        if copy_metadata == 'all':
-            # only when copying all the metadata, we can reconstruct the only
-            # list of signal
-            np.testing.assert_array_almost_equal(s4.data, s.data)
-            assert not hasattr(s4.original_metadata, 'stack_elements')
-            assert s4.metadata.General.title == 'test'
+        np.testing.assert_array_almost_equal(s4.data, s.data)
+        assert not hasattr(s4.original_metadata, 'stack_elements')
+        assert s4.metadata.General.title == 'test'
 
     def test_stack_not_default(self):
         s = self.signal
