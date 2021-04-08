@@ -596,9 +596,10 @@ class LazySignal(BaseSignal):
             if not isinstance(iterating_kwargs[key], BaseSignal):
                 iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
                 warnings.warn(
-                    "Passing array as keyword argument can be ambigous. This "
-                    "is deprecated and will be removed in HyperSpy 2.0. "
-                    "Use Signal instead.", VisibleDeprecationWarning)
+                    "Passing arrays as keyword arguments can be ambigous. "
+                    "This is deprecated and will be removed in HyperSpy 2.0. "
+                    "Pass signal instances instead.",
+                    VisibleDeprecationWarning)
             if iterating_kwargs[key]._lazy:
                 if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
                     iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
