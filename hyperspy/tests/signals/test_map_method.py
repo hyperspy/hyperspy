@@ -110,7 +110,7 @@ class TestSignal2D:
         if s._lazy:
             # inplace not compatible with ragged and lazy
             with pytest.raises(ValueError):
-                s.map(rotate, angle=angles.T, reshape=True, inplace=True, 
+                s.map(rotate, angle=angles.T, reshape=True, inplace=True,
                       ragged=True)
             s = s.map(rotate, angle=angles.T, reshape=True, inplace=False,
                   ragged=True)
@@ -154,6 +154,7 @@ class TestSignal2D:
         out = s.map(lambda x: x, inplace=False, ragged=ragged)
         assert out.axes_manager.navigation_shape == s.axes_manager.navigation_shape
         assert out.data.shape[:2] == s.axes_manager.navigation_shape[::-1]
+
 
 @lazifyTestClass(ragged=False)
 class TestSignal1D:
@@ -211,6 +212,7 @@ class TestSignal1D:
                 np.testing.assert_allclose(s.data[i], out.data[i])
         else:
             np.testing.assert_allclose(s.data, out.data)
+
 
 @lazifyTestClass(ragged=False)
 class TestSignal0D:
@@ -325,6 +327,7 @@ def test_new_axes(parallel):
     assert not 'b' in ax_names
     assert 0 == sl.axes_manager.navigation_dimension
 
+
 class TestLazyMap:
     def setup_method(self, method):
         dask_array = da.zeros((10, 11, 12, 13), chunks=(3, 3, 3, 3))
@@ -347,6 +350,16 @@ class TestLazyMap:
         with pytest.raises(ValueError):
             self.s.map(function=f, b=s_iter, inplace=False)
 
+    def test_map_iterate_array(self):
+        s = self.s
+        iter_array, _ = np.meshgrid(range(11), range(10))
+        f = lambda a, b: a + b
+        iterating_kwargs = {'b':iter_array.T}
+        s_out = s._map_iterate(function=f, iterating_kwargs=iterating_kwargs,
+                               inplace=False)
+        np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
+
+
 @pytest.mark.parametrize('ragged', [True, False, None])
 def test_singleton(ragged):
     sig = hs.signals.Signal2D(np.empty((3, 2)))
@@ -362,8 +375,8 @@ def test_singleton(ragged):
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
 
+
 def test_lazy_singleton():
-    from hyperspy._signals.lazy import LazySignal
     sig = hs.signals.Signal2D(np.empty((3, 2)))
     sig = sig.as_lazy()
     sig.axes_manager[0].name = 'x'
@@ -381,8 +394,8 @@ def test_lazy_singleton():
         assert not isinstance(_s, hs.signals.Signal1D)
         #assert isinstance(_s, LazySignal)
 
+
 def test_lazy_singleton_ragged():
-    from hyperspy._signals.lazy import LazySignal
     sig = hs.signals.Signal2D(np.empty((3, 2)))
     sig = sig.as_lazy()
     sig.axes_manager[0].name = 'x'
@@ -407,5 +420,3 @@ def test_map_ufunc(caplog):
     assert np.log(s) == s.map(np.log)
     np.testing.assert_allclose(s.data, np.log(data))
     assert "can direcly operate on hyperspy signals" in caplog.records[0].message
-
-
