@@ -2556,12 +2556,14 @@ class BaseSignal(FancySlicing,
         """
         dic = {'data': self.data,
                'axes': self.axes_manager._get_axes_dicts(),
-               'metadata': self.metadata.as_dictionary(),
+               'metadata': copy.deepcopy(self.metadata.as_dictionary()),
                'tmp_parameters': self.tmp_parameters.as_dictionary(),
                'attributes': {'_lazy': self._lazy},
                }
         if add_original_metadata:
-            dic['original_metadata'] = self.original_metadata.as_dictionary()
+            dic['original_metadata'] = copy.deepcopy(
+                self.original_metadata.as_dictionary()
+                )
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -4805,11 +4807,9 @@ class BaseSignal(FancySlicing,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        dc = type(self)(**self._to_dictionary(add_original_metadata=False))
+        dc = type(self)(**self._to_dictionary())
         if isinstance(dc.data, np.ndarray):
             dc.data = dc.data.copy()
-
-        dc.original_metadata = self.original_metadata.copy()
 
         # uncomment if we want to deepcopy models as well:
 
@@ -4835,8 +4835,7 @@ class BaseSignal(FancySlicing,
         """
         Return a "deep copy" of this Signal using the
         standard library's :py:func:`~copy.deepcopy` function. Note: this means
-        the underlying data structure will be duplicated in memory, except for
-        the ``original_metadata`` which will be a "shallow copy".
+        the underlying data structure will be duplicated in memory.
 
         See Also
         --------
