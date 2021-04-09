@@ -137,11 +137,13 @@ class LazySignal(BaseSignal):
                 sig_chunks=-1,
                 inplace=True,
                 **kwargs):
-        """Rechunks the data using the same rechunking formula from Dask expect
-        that the navigation and signal chunks are defined seperately. Note, for most
-        functions sig_chunks should remain None so that it spans the entire signal.
+        """Rechunks the data using the same rechunking formula from Dask
+        expect that the navigation and signal chunks are defined seperately.
+        Note, for most functions sig_chunks should remain ``None`` so that it
+        spans the entire signal axes.
 
-        Parameters:
+        Parameters
+        ----------
         nav_chunks : {tuple, int, "auto", None}
             The navigation block dimensions to create.
             -1 indicates the full size of the corresponding dimension.
@@ -151,7 +153,7 @@ class LazySignal(BaseSignal):
             -1 indicates the full size of the corresponding dimension.
             Default is -1 which automatically spans the full signal dimension
         **kwargs : dict
-            Any other keyword arguments for `dask.array.rechunk`
+            Any other keyword arguments for :py:func:`dask.array.rechunk`.
         """
         if not isinstance(sig_chunks, tuple):
             sig_chunks = (sig_chunks,)*len(self.axes_manager.signal_shape)
