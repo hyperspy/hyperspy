@@ -128,6 +128,7 @@ def load(filenames=None,
          convert_units=False,
          escape_square_brackets=False,
          stack_metadata=True,
+         load_original_metadata=True,
          show_progressbar=None,
          **kwds):
     """Load potentially multiple supported files into HyperSpy.
@@ -195,6 +196,9 @@ def load(filenames=None,
         character classes (e.g. ``[a-z]`` matches lowercase letters).
     %s
     %s Only used with ``stack=True``.
+    load_original_metadata : bool
+        If ``True``, all metadata will be added them to ``original_metadata``.
+        This doesn't change the metadata added to ``metadata``.
     reader : None, str, custom file reader object, optional
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
@@ -312,6 +316,7 @@ def load(filenames=None,
             del kwds[k]
     kwds['signal_type'] = signal_type
     kwds['convert_units'] = convert_units
+    kwds['load_original_metadata'] = load_original_metadata
     if filenames is None:
         from hyperspy.signal_tools import Load
         load_ui = Load()
@@ -482,12 +487,13 @@ def load_with_reader(
         reader,
         signal_type=None,
         convert_units=False,
+        load_original_metadata=True,
         **kwds
     ):
     """Load a supported file with a given reader."""
     lazy = kwds.get('lazy', False)
     file_data_list = reader.file_reader(filename, **kwds)
-    objects = []
+    signal_list = []
 
     for signal_dict in file_data_list:
         if 'metadata' in signal_dict:
@@ -495,22 +501,25 @@ def load_with_reader(
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            objects.append(dict2signal(signal_dict, lazy=lazy))
+            signal = dict2signal(signal_dict, lazy=lazy)
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
-            objects[-1].tmp_parameters.folder = folder
-            objects[-1].tmp_parameters.filename = filename
-            objects[-1].tmp_parameters.extension = extension.replace('.', '')
+            signal.tmp_parameters.folder = folder
+            signal.tmp_parameters.filename = filename
+            signal.tmp_parameters.extension = extension.replace('.', '')
             if convert_units:
-                objects[-1].axes_manager.convert_units()
+                signal.axes_manager.convert_units()
+            if not load_original_metadata:
+                signal.original_metadata = type(signal.original_metadata)()
+            signal_list.append(signal)
         else:
             # it's a standalone model
             continue
 
-    if len(objects) == 1:
-        objects = objects[0]
+    if len(signal_list) == 1:
+        signal_list = signal_list[0]
 
-    return objects
+    return signal_list
 
 
 def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
