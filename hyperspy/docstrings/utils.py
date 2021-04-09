@@ -20,8 +20,8 @@
 
 """
 
-COPY_METADATA_ARG = \
-    """copy_metadata : {bool, int}
+STACK_METADATA_ARG = \
+    """stack_metadata : {bool, int}
         If integer, this value defines the index of the signal in the signal
         list, from which the ``metadata`` and ``original_metadata`` are taken.
         If ``True``, the ``original_metadata`` and ``metadata`` of each signals

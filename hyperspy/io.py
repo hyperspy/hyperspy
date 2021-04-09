@@ -37,7 +37,7 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
-from hyperspy.docstrings.utils import COPY_METADATA_ARG
+from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ def load(filenames=None,
          lazy=False,
          convert_units=False,
          escape_square_brackets=False,
-         copy_metadata=True,
+         stack_metadata=True,
          show_progressbar=None,
          **kwds):
     """Load potentially multiple supported files into HyperSpy.
@@ -405,7 +405,7 @@ def load(filenames=None,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,
                 lazy=lazy,
-                copy_metadata=copy_metadata,
+                stack_metadata=stack_metadata,
                 show_progressbar=show_progressbar,
             )
             signal.metadata.General.title = Path(filenames[0]).parent.stem
@@ -421,7 +421,7 @@ def load(filenames=None,
 
     return objects
 
-load.__doc__ %= (COPY_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
+load.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def load_single_file(filename, **kwds):

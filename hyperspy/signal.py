@@ -3140,7 +3140,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
             If ``'auto'`` and if the object has been created with
-            :py:func:`~hyperspy.misc.utils.stack` (and ``copy_metadata=True``),
+            :py:func:`~hyperspy.misc.utils.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
             If it was not created with :py:func:`~hyperspy.misc.utils.stack`,

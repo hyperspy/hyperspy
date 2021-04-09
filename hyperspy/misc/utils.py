@@ -34,7 +34,7 @@ import numpy as np
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
-from hyperspy.docstrings.utils import COPY_METADATA_ARG
+from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -935,7 +935,7 @@ def closest_power_of_two(n):
 
 
 def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
-          copy_metadata=True, show_progressbar=None, **kwargs):
+          stack_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -1058,8 +1058,8 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
         signal.get_dimensions_from_data()
 
-        if isinstance(copy_metadata, bool):
-            if copy_metadata:
+        if isinstance(stack_metadata, bool):
+            if stack_metadata:
                 signal.original_metadata.add_node('stack_elements')
                 for i, obj in enumerate(signal_list):
                     signal.original_metadata.stack_elements.add_node(f'element{i}')
@@ -1068,12 +1068,12 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
                     node.metadata = obj.metadata.copy()
             else:
                 signal.original_metadata = DictionaryTreeBrowser({})
-        elif isinstance(copy_metadata, int):
-            obj = signal_list[copy_metadata]
+        elif isinstance(stack_metadata, int):
+            obj = signal_list[stack_metadata]
             signal.metadata = copy.deepcopy(obj.metadata)
             signal.original_metadata = copy.copy(obj.original_metadata)
         else:
-            raise ValueError('`copy_metadata` must a boolean or an integer.')
+            raise ValueError('`stack_metadata` must a boolean or an integer.')
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -1102,7 +1102,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     return signal
 
-stack.__doc__ %= (COPY_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
+stack.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def shorten_name(name, req_l):

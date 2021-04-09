@@ -457,18 +457,18 @@ class TestFEIReader():
             unit = _guess_units_from_mode({}, header0)
         assert unit == 'meters'
 
-    @pytest.mark.parametrize('copy_metadata', [True, False, 0])
-    def test_load_multisignal_stack(self, copy_metadata):
+    @pytest.mark.parametrize('stack_metadata', [True, False, 0])
+    def test_load_multisignal_stack(self, stack_metadata):
         fname0 = os.path.join(
             self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
-        s = load([fname0, fname0], stack=True, copy_metadata=copy_metadata)
+        s = load([fname0, fname0], stack=True, stack_metadata=stack_metadata)
         assert s[0].axes_manager.navigation_shape == (5, 2)
         assert s[0].axes_manager.signal_shape == (4000, )
         assert s[1].axes_manager.navigation_shape == (5, 2)
         assert s[1].axes_manager.signal_shape == (128, 128)
 
         om = s[0].original_metadata
-        assert om.has_item('stack_elements') is (copy_metadata is True)
+        assert om.has_item('stack_elements') is (stack_metadata is True)
 
     def test_load_multisignal_stack_mismatch(self):
         fname0 = os.path.join(
