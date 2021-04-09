@@ -83,6 +83,12 @@ class TestUtilsStack:
                 _s.original_metadata.as_dictionary()
             assert el.metadata.as_dictionary() == _s.metadata.as_dictionary()
 
+    def test_stack_copy_metadata_error(self):
+        s = self.signal
+        s2 = s.deepcopy()
+        with pytest.raises(ValueError):
+            utils.stack([s, s2], copy_metadata='not supported argument')
+
     def test_stack_copy_metadata_index(self):
         s = self.signal
         s1 = s.deepcopy() + 1
