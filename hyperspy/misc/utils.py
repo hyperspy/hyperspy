@@ -1033,10 +1033,9 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             if axis is None
             else da.concatenate(datalist, axis=axis.index_in_array)
         )
+
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
             signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
@@ -1047,16 +1046,16 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             eaxis = signal.axes_manager._axes[0]
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
-            signal.metadata = copy.deepcopy(first.metadata)
-            # Get the title from 1st object
-            signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
-            signal.original_metadata = DictionaryTreeBrowser({})
         else:
             signal = newlist[0]._deepcopy_with_new_data(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
 
+        signal._lazy = True
+        signal._assign_subclass()
         signal.get_dimensions_from_data()
+        # Set the metadata, if an stack_metadata is an integer, the metadata
+        # will overwritten later
+        signal.metadata = first.metadata.deepcopy()
+        signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
 
         if isinstance(stack_metadata, bool):
             if stack_metadata:
@@ -1064,14 +1063,14 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
                 for i, obj in enumerate(signal_list):
                     signal.original_metadata.stack_elements.add_node(f'element{i}')
                     node = signal.original_metadata.stack_elements[f'element{i}']
-                    node.original_metadata = obj.original_metadata.copy()
-                    node.metadata = obj.metadata.copy()
+                    node.original_metadata = obj.original_metadata.deepcopy()
+                    node.metadata = obj.metadata.deepcopy()
             else:
                 signal.original_metadata = DictionaryTreeBrowser({})
         elif isinstance(stack_metadata, int):
             obj = signal_list[stack_metadata]
-            signal.metadata = copy.deepcopy(obj.metadata)
-            signal.original_metadata = copy.copy(obj.original_metadata)
+            signal.metadata = obj.metadata.deepcopy()
+            signal.original_metadata = obj.original_metadata.deepcopy()
         else:
             raise ValueError('`stack_metadata` must a boolean or an integer.')
 
@@ -1094,10 +1093,8 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     else:
         signal = signal_list[0]
 
-    # Leave as lazy or compute
-    if lazy:
-        signal = signal.as_lazy()
-    else:
+    # compute if not lazy
+    if not lazy:
         signal.compute(False, show_progressbar=show_progressbar)
 
     return signal
