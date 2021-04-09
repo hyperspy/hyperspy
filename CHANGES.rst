@@ -5,8 +5,16 @@ What's new
   Add a single entry in the corresponding section below.
   See https://keepachangelog.com for details
 
-RELEASE_next_patch (Unreleased)
-+++++++++++++++++++++++++++++++
+.. _changes_1.6.2:
+
+v1.6.2
+++++++
+
+This is a maintenance release that adds support for python 3.9 and includes
+numerous bug fixes and enhancements.
+See `the issue tracker
+<https://github.com/hyperspy/hyperspy/milestone/42?closed=1>`__
+for details.
 
 * Widgets plotting improvement and add ``pick_tolerance`` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
 * Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
@@ -52,12 +60,14 @@ RELEASE_next_patch (Unreleased)
 * Fix performance issue with the lazy map method of lazy (`#2617 <https://github.com/hyperspy/hyperspy/pull/2617>`_)
 
 
+
 Changelog
 *********
 
 We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
+
 
 
 .. _changes_1.6.1:
