@@ -4610,7 +4610,9 @@ class BaseSignal(FancySlicing,
             A tuple with structure (('key1', value1), ('key2', value2), ..)
             where the key-value pairs will be passed as kwargs for the
             function to be mapped, and the values will be iterated together
-            with the signal navigation.
+            with the signal navigation. The value needs to be a signal
+            instance because passing array can be ambigous and will be removed
+            in HyperSpy 2.0.
         %s
         %s
         %s
@@ -4670,6 +4672,9 @@ class BaseSignal(FancySlicing,
 
         if parallel is None:
             parallel = preferences.General.parallel
+
+        if isinstance(iterating_kwargs, (tuple, list)):
+            iterating_kwargs = dict((k, v) for k, v in iterating_kwargs)
 
         size = max(1, self.axes_manager.navigation_size)
         func, iterators = create_map_objects(function, size, iterating_kwargs, **kwargs)
