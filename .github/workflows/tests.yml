@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
-        PYTHON_VERSION: [3.7, 3.8]
+        PYTHON_VERSION: [3.8, 3.9]
         PIP_SELECTOR: ['[all, tests]']
         DEPENDENCIES_DEV: [false]
         include:
@@ -29,12 +29,12 @@ jobs:
             LABEL: -oldest
           # test minimum requirement
           - os: ubuntu
-            PYTHON_VERSION: 3.7
+            PYTHON_VERSION: 3.8
             PIP_SELECTOR: '[tests]'
             LABEL: -minimum
           # Run coverage
           - os: ubuntu
-            PYTHON_VERSION: 3.7
+            PYTHON_VERSION: 3.8
             PIP_SELECTOR: '[all, tests, coverage]'
             PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
             LABEL: -coverage
@@ -46,12 +46,12 @@ jobs:
             DEPENDENCIES_DEV: true
             DEPENDENCIES: numpy scipy scikit-learn scikit-image
           - os: ubuntu
-            PYTHON_VERSION: 3.9
+            PYTHON_VERSION: 3.7
             PIP_SELECTOR: '[all, tests]'
         exclude:
           # redundant build (same as coverage)
           - os: ubuntu
-            PYTHON_VERSION: 3.7
+            PYTHON_VERSION: 3.8
 
     steps:
       - uses: actions/checkout@v2
