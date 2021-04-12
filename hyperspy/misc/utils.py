@@ -1170,6 +1170,7 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     return func, iterators
 
+
 def process_function_blockwise(data,
                                *args,
                                function,

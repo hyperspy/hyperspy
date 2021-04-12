@@ -95,7 +95,7 @@ class EELSSpectrum_mixin:
             work, while add_elements(('C')) will NOT work.
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower
-            energy limit of the SI will be incluided
+            energy limit of the SI will be included
 
         Examples
         --------
@@ -138,7 +138,7 @@ class EELSSpectrum_mixin:
         ----------
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower
-            energy limit of the SI will be incluided
+            energy limit of the SI will be included
 
         """
         Eaxis = self.axes_manager.signal_axes[0].axis
@@ -260,7 +260,7 @@ class EELSSpectrum_mixin:
                           f_html=table.get_html_string)
 
     def estimate_zero_loss_peak_centre(self, mask=None):
-        """Estimate the posision of the zero-loss peak.
+        """Estimate the position of the zero-loss peak.
 
         This function provides just a coarse estimation of the position
         of the zero-loss peak centre by computing the position of the maximum
@@ -282,7 +282,7 @@ class EELSSpectrum_mixin:
         -----
         This function only works when the zero-loss peak is the most
         intense feature in the spectrum. If it is not in most cases
-        the spectrum can be cropped to meet this criterium.
+        the spectrum can be cropped to meet this criterion.
         Alternatively use `estimate_shift1D`.
 
         See Also
@@ -333,7 +333,7 @@ class EELSSpectrum_mixin:
             the spectra in the list.
         print_stats : bool
             If True, print summary statistics of the ZLP maximum before
-            the aligment.
+            the alignment.
         subpixel : bool
             If True, perform the alignment with subpixel accuracy
             using cross-correlation.
@@ -555,7 +555,7 @@ class EELSSpectrum_mixin:
         window_length : int
             If non zero performs order three Savitzky-Golay smoothing
             to the data to avoid falling in local minima caused by
-            the noise. It must be an odd interger.
+            the noise. It must be an odd integer.
         polynomial_order : int
             Savitzky-Golay filter polynomial order.
         start : float
@@ -717,9 +717,9 @@ class EELSSpectrum_mixin:
                     _logger.info(f"The estimated iMFP is {mean_free_path} nm")
         else:
             _logger.warning(
-                "Computing the thickness without taking into account the effect of"
-                "the limited collection angle, what usually leads to underestimating"
-                "the thickness. To perform the angular corrections you must provide"
+                "Computing the thickness without taking into account the effect of "
+                "the limited collection angle, what usually leads to underestimating "
+                "the thickness. To perform the angular corrections you must provide "
                 "the density of the material.")
 
         s = self._get_navigation_signal(data=t_over_lambda)
@@ -838,7 +838,7 @@ class EELSSpectrum_mixin:
         """Performs Fourier-ratio deconvolution.
 
         The core-loss should have the background removed. To reduce the noise
-        amplication the result is convolved with a Gaussian function.
+        amplification the result is convolved with a Gaussian function.
 
         Parameters
         ----------
@@ -1051,7 +1051,7 @@ class EELSSpectrum_mixin:
 
         beam_energy: float
             The energy of the electron beam in keV
-        convengence_angle : float
+        convergence_angle : float
             The microscope convergence semi-angle in mrad.
         collection_angle : float
             The collection semi-angle in mrad.
@@ -1174,7 +1174,7 @@ class EELSSpectrum_mixin:
         peak. The internal loop is devised to approximately subtract the
         surface plasmon contribution supposing an unoxidized planar surface and
         neglecting coupling between the surfaces. This method does not account
-        for retardation effects, instrumental broading and surface plasmon
+        for retardation effects, instrumental broadening and surface plasmon
         excitation in particles.
 
         Note that either refractive index or thickness are required.
@@ -1238,17 +1238,17 @@ class EELSSpectrum_mixin:
 
         Raises
         ------
-        ValuerError
+        ValueError
             If both `n` and `t` are undefined (None).
-        AttribureError
+        AttributeError
             If the beam_energy or the collection semi-angle are not defined in
             metadata.
 
         Notes
         -----
         This method is based in Egerton's Matlab code [1]_ with a
-        minor difference: the wrap-around problem when computing the ffts is
-        workarounded by padding the signal instead of substracting the
+        minor difference: the wrap-around problem when computing the FFTs is
+        workarounded by padding the signal instead of subtracting the
         reflected tail.
 
         .. [1] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
@@ -1317,7 +1317,7 @@ class EELSSpectrum_mixin:
                                  'low-loss signal')
         elif isinstance(t, np.ndarray) and t.shape and t.shape != (1,):
             raise ValueError("thickness must be a HyperSpy signal or a number,"
-                             " not a numpy array.")
+                             " not a NumPy array.")
 
         # Slicer to get the signal data from 0 to axis.size
         slicer = s.axes_manager._get_data_slice(
@@ -1330,7 +1330,7 @@ class EELSSpectrum_mixin:
 
         for io in range(iterations):
             # Calculation of the ELF by normalization of the SSD
-            # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
+            # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Function, ELF)
 
             # We start by the "angular corrections"
             Im = s.data / (np.log(1 + (beta * tgt / eaxis) ** 2)) / axis.scale
@@ -1395,7 +1395,7 @@ class EELSSpectrum_mixin:
 
             if iterations > 1 and zlp is not None:
                 # Surface losses correction:
-                #  Calculates the surface ELF from a vaccumm border effect
+                #  Calculates the surface ELF from a vacuum border effect
                 #  A simulated surface plasmon is subtracted from the ELF
                 Srfelf = 4 * e2 / ((e1 + 1) ** 2 + e2 ** 2) - Im
                 adep = (tgt / (eaxis + delta) *
@@ -1460,7 +1460,7 @@ class EELSSpectrum_mixin:
             the components.EELSSpectrum.add_elements method automatically
             add the corresponding ionisation edges to the model.
         GOS : {'hydrogenic' | 'Hartree-Slater'}, optional
-            The generalized oscillation strenght calculations to use for the
+            The generalized oscillation strength calculations to use for the
             core-loss EELS edges. If None the Hartree-Slater GOS are used if
             available, otherwise it uses the hydrogenic GOS.
         dictionary : {None | dict}, optional
