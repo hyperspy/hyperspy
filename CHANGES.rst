@@ -48,7 +48,7 @@ for details.
 * Use native endianess in numba jitted functions. (`#2678 <https://github.com/hyperspy/hyperspy/pull/2678>`_)
 * Fix error in Cliff-Lorimer quantification using absorption correction (`#2681 <https://github.com/hyperspy/hyperspy/pull/2681>`_)
 * Fix ``navigation_mask`` bug in decomposition when provided as numpy array (`#2679 <https://github.com/hyperspy/hyperspy/pull/2679>`_)
-* Fix closing image constrat tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
+* Fix closing image contrast tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
 * Fix range widget with matplotlib 3.4 (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
 * Fix bug in `hs.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
 * Add option not to snap ROI when calling the `interactive` method of a ROI (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
@@ -58,7 +58,7 @@ for details.
 * Fix reading XRF bruker file, close `#2689 <https://github.com/hyperspy/hyperspy/issues/2689>`_ (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
 * Speed up setting CI on azure pipeline (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
 * Fix performance issue with the lazy map method of lazy (`#2617 <https://github.com/hyperspy/hyperspy/pull/2617>`_)
-* Add option to copy/load original metadata in ``hs.stack`` and ``hs.load`` to avoid large ``original_metadata`` which can slowdown processing. Close `#1398 <https://github.com/hyperspy/hyperspy/issues/1398>`_, `#2045 <https://github.com/hyperspy/hyperspy/issues/2045>`_, `#2536<https://github.com/hyperspy/hyperspy/issues/2536>`_ and `#1568 <https://github.com/hyperspy/hyperspy/issues/1568>`_. (`#2691 <https://github.com/hyperspy/hyperspy/pull/2691>`_)
+* Add option to copy/load original metadata in ``hs.stack`` and ``hs.load`` to avoid large ``original_metadata`` which can slowdown processing. Close `#1398 <https://github.com/hyperspy/hyperspy/issues/1398>`_, `#2045 <https://github.com/hyperspy/hyperspy/issues/2045>`_, `#2536 <https://github.com/hyperspy/hyperspy/issues/2536>`_ and `#1568 <https://github.com/hyperspy/hyperspy/issues/1568>`_. (`#2691 <https://github.com/hyperspy/hyperspy/pull/2691>`_)
 * Fix SkewNormal component compatibility with sympy 1.8 (`#2701 <https://github.com/hyperspy/hyperspy/pull/2701>`_)
 
 
