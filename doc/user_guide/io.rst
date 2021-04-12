@@ -65,7 +65,7 @@ override this using the ``reader`` keyword:
     >>> s = hs.load("filename.some_extension", reader="hspy")
 
 Some file formats store some extra information about the data (metadata) and
-HyperSpy read most of them and store them in the
+HyperSpy reads most of them and stores them in the
 :py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, depending on
 the file format, a part of this information will be mapped by HyperSpy to the
 :py:attr:`~.signal.BaseSignal.metadata` attribute, where it can be used by
@@ -74,10 +74,10 @@ e.g. routines operating on the signal. See :ref:`metadata structure
 
 .. note::
 
-    Very large amount of metadata can slow down loading and processing, and
-    loading the :py:attr:`~.signal.BaseSignal.original_metadata` can be disable
+    Extensive metadata can slow down loading and processing, and
+    loading the :py:attr:`~.signal.BaseSignal.original_metadata` can be disabled
     using the ``load_original_metadata`` argument of the :py:func:`~.load`
-    function; in this case the :py:attr:`~.signal.BaseSignal.metadata` will
+    function; in this case, the :py:attr:`~.signal.BaseSignal.metadata` will
     still be populated.
 
 To print the content of the attributes simply use:

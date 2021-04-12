@@ -197,8 +197,9 @@ def load(filenames=None,
     %s
     %s Only used with ``stack=True``.
     load_original_metadata : bool
-        If ``True``, all metadata will be added them to ``original_metadata``.
-        This doesn't change the metadata added to ``metadata``.
+        If ``True``, all metadata contained in the input file will be added
+        to ``original_metadata``.
+        This does not affect parsing the metadata to ``metadata``.
     reader : None, str, custom file reader object, optional
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
