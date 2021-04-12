@@ -402,7 +402,7 @@ class ModifiableSpanSelector(SpanSelector):
     def update(self, *args):
         # Override the SpanSelector `update` method to blit properly all
         # artirts before we go to "modify mode" in `set_initial`.
-        self.set_visible(True)
+        self.draw_patch()
 
     def draw_patch(self, *args):
         """Update the patch drawing.
