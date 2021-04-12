@@ -570,6 +570,8 @@ class Test_eds_markers:
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])
-        assert (
-            sorted(s._xray_markers.keys()) ==
-            ['Zn_Ka', 'Zn_La'])
+        assert sorted(s._xray_markers.keys()) == ['Zn_Ka', 'Zn_La']
+        s.remove_xray_lines_markers(['Zn_Ka'], render_figure=False)
+        assert sorted(s._xray_markers.keys()) == ['Zn_La']
+        s.remove_xray_lines_markers(['Zn_La'], render_figure=True)
+        assert sorted(s._xray_markers.keys()) == []

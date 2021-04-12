@@ -33,7 +33,7 @@ for details.
 * Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
 * Fix ``iterpath`` VisibleDeprecationWarning when using ``fit_component`` (`#2654 <https://github.com/hyperspy/hyperspy/pull/2654>`_)
-* Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
+* Fix various bugs with ``CircleWidget`` and ``Line2DWidget`` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 * Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
 * Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
 * Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
@@ -58,8 +58,8 @@ for details.
 * Fix reading XRF bruker file, close `#2689 <https://github.com/hyperspy/hyperspy/issues/2689>`_ (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
 * Speed up setting CI on azure pipeline (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
 * Fix performance issue with the lazy map method of lazy (`#2617 <https://github.com/hyperspy/hyperspy/pull/2617>`_)
+* Add option to copy/load original metadata in ``hs.stack`` and ``hs.load`` to avoid large ``original_metadata`` which can slowdown processing. Close `#1398 <https://github.com/hyperspy/hyperspy/issues/1398>`_, `#2045 <https://github.com/hyperspy/hyperspy/issues/2045>`_, `#2536<https://github.com/hyperspy/hyperspy/issues/2536>`_ and `#1568 <https://github.com/hyperspy/hyperspy/issues/1568>`_. (`#2691 <https://github.com/hyperspy/hyperspy/pull/2691>`_)
 * Fix SkewNormal component compatibility with sympy 1.8 (`#2701 <https://github.com/hyperspy/hyperspy/pull/2701>`_)
-
 
 
 Changelog
