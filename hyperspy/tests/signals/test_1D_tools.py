@@ -114,7 +114,7 @@ def test_align1D():
     shifts[0] = 0
     s.shift1D(-shifts, show_progressbar=False)
     shifts2 = s.estimate_shift1D(show_progressbar=False)
-    np.testing.assert_allclose(shifts, shifts2, rtol=0.3)
+    np.testing.assert_allclose(shifts, shifts2, rtol=0.5)
 
 
 @lazifyTestClass
