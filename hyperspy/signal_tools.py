@@ -1248,6 +1248,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.fast = fast
         self.plot_remainder = plot_remainder
         if plot_remainder:
+            # When plotting the remainder on the right hand side axis, we 
+            # adjust the layout here to avoid doing it later to avoid
+            # corrupting the background when using blitting
             figure = signal._plot.signal_plot.figure
             figure.tight_layout(rect=[0, 0, 0.95, 1])
         if model is None:
@@ -1334,7 +1337,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             type='line',
             scaley=False)
         self.signal._plot.signal_plot.create_right_axis(color='green',
-                                                        tight_layout=False)
+                                                        adjust_layout=False)
         self.signal._plot.signal_plot.add_line(self.rm_line, ax='right')
         self.rm_line.plot()
 

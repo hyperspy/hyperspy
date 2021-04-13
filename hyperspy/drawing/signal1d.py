@@ -70,7 +70,20 @@ class Signal1DFigure(BlittedFigure):
         self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
-    def create_right_axis(self, color='black', tight_layout=True):
+    def create_right_axis(self, color='black', adjust_layout=True):
+        """
+        Add an axis on the right hand side of the figure.
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
@@ -78,16 +91,29 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             self.right_ax.tick_params(axis='y', labelcolor=color)
-        if tight_layout:
+        if adjust_layout:
             plt.tight_layout()
 
-    def close_right_axis(self, tight_layout=True):
+    def close_right_axis(self, adjust_layout=True):
+        """
+        Remove the axis on the right hand side of the figure
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.right_ax is not None:
             for lines in self.right_ax_lines:
                 lines.close()
             self.right_ax.axes.get_yaxis().set_visible(False)
             self.right_ax = None
-        if tight_layout:
+        if adjust_layout:
             plt.tight_layout()
 
     def add_line(self, line, ax='left', connect_navigation=False):

@@ -267,8 +267,6 @@ def test_plot_two_cursors(ndim, plot_type):
         f = s._plot.signal_plot.figure
     else:
         f= s._plot.navigator_plot.figure
-    f.canvas.draw()
-    f.canvas.flush_events()
     return f
 
 
