@@ -392,7 +392,7 @@ class Signal1DLine(object):
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
         self._y_min, self._y_max = self.ax.get_ylim()
-        self.ax.figure.canvas.draw_idle()
+        self.ax.hspy_fig.render_figure()
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
