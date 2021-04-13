@@ -34,6 +34,7 @@ import numpy as np
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -530,10 +531,12 @@ class DictionaryTreeBrowser:
         """Returns its dictionary representation.
 
         """
-        par_dict = {}
 
         if len(self._lazy_attributes) > 0:
-            par_dict.update(self._lazy_attributes)
+            return copy.deepcopy(self._lazy_attributes)
+
+        par_dict = {}
+
         from hyperspy.signal import BaseSignal
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -937,7 +940,7 @@ def closest_power_of_two(n):
 
 
 def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
-          show_progressbar=None, **kwargs):
+          stack_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -952,7 +955,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         signals are stacked over the axis given by its integer index or
         its name. The data must have the same shape, except in the dimension
         corresponding to `axis`.
-    new_axis_name : string
+    new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
@@ -960,6 +963,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     lazy : {bool, None}
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
+    %s
     %s
 
     Returns
@@ -1034,10 +1038,9 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             if axis is None
             else da.concatenate(datalist, axis=axis.index_in_array)
         )
+
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
             signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
@@ -1048,22 +1051,33 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             eaxis = signal.axes_manager._axes[0]
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
-            signal.metadata = copy.deepcopy(first.metadata)
-            # Get the title from 1st object
-            signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
-            signal.original_metadata = DictionaryTreeBrowser({})
         else:
             signal = newlist[0]._deepcopy_with_new_data(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
-        signal.get_dimensions_from_data()
-        signal.original_metadata.add_node("stack_elements")
 
-        for i, obj in enumerate(signal_list):
-            signal.original_metadata.stack_elements.add_node(f"element{i}")
-            node = signal.original_metadata.stack_elements[f"element{i}"]
-            node.original_metadata = obj.original_metadata.as_dictionary()
-            node.metadata = obj.metadata.as_dictionary()
+        signal._lazy = True
+        signal._assign_subclass()
+        signal.get_dimensions_from_data()
+        # Set the metadata, if an stack_metadata is an integer, the metadata
+        # will overwritten later
+        signal.metadata = first.metadata.deepcopy()
+        signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
+
+        if isinstance(stack_metadata, bool):
+            if stack_metadata:
+                signal.original_metadata.add_node('stack_elements')
+                for i, obj in enumerate(signal_list):
+                    signal.original_metadata.stack_elements.add_node(f'element{i}')
+                    node = signal.original_metadata.stack_elements[f'element{i}']
+                    node.original_metadata = obj.original_metadata.deepcopy()
+                    node.metadata = obj.metadata.deepcopy()
+            else:
+                signal.original_metadata = DictionaryTreeBrowser({})
+        elif isinstance(stack_metadata, int):
+            obj = signal_list[stack_metadata]
+            signal.metadata = obj.metadata.deepcopy()
+            signal.original_metadata = obj.original_metadata.deepcopy()
+        else:
+            raise ValueError('`stack_metadata` must a boolean or an integer.')
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -1084,15 +1098,13 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     else:
         signal = signal_list[0]
 
-    # Leave as lazy or compute
-    if lazy:
-        signal = signal.as_lazy()
-    else:
+    # compute if not lazy
+    if not lazy:
         signal.compute(False, show_progressbar=show_progressbar)
 
     return signal
 
-stack.__doc__ %= (SHOW_PROGRESSBAR_ARG)
+stack.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def shorten_name(name, req_l):
@@ -1245,12 +1257,12 @@ def guess_output_signal_size(test_signal,
         The function to be applied to the dataset
     ragged: bool
         If the data is ragged then the output signal size is () and the
-        data type is np.object
+        data type is 'object'
     **kwargs: dict
         Any other keyword arguments passed to the function.
     """
     if ragged:
-        output_dtype = np.object
+        output_dtype = object
         output_signal_size = ()
     else:
         output = function(test_signal, **kwargs)
