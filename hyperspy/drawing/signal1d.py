@@ -70,7 +70,7 @@ class Signal1DFigure(BlittedFigure):
         self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
-    def create_right_axis(self, color='black'):
+    def create_right_axis(self, color='black', tight_layout=True):
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
@@ -78,14 +78,17 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             self.right_ax.tick_params(axis='y', labelcolor=color)
-        plt.tight_layout()
+        if tight_layout:
+            plt.tight_layout()
 
-    def close_right_axis(self):
+    def close_right_axis(self, tight_layout=True):
         if self.right_ax is not None:
             for lines in self.right_ax_lines:
                 lines.close()
             self.right_ax.axes.get_yaxis().set_visible(False)
             self.right_ax = None
+        if tight_layout:
+            plt.tight_layout()
 
     def add_line(self, line, ax='left', connect_navigation=False):
         """
