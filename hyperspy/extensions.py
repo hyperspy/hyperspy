@@ -19,10 +19,10 @@
 import logging
 import copy
 import pkgutil
-import pkg_resources
 import yaml
 
 from pathlib import Path
+import importlib_metadata as metadata
 
 
 _logger = logging.getLogger(__name__)
@@ -37,8 +37,8 @@ EXTENSIONS["GUI"]["widgets"] = {}
 ALL_EXTENSIONS = copy.deepcopy(EXTENSIONS)
 
 _external_extensions = [
-    entry_point.module_name
-    for entry_point in pkg_resources.iter_entry_points('hyperspy.extensions')]
+    entry_point.module
+    for entry_point in metadata.entry_points()['hyperspy.extensions']]
 
 for _external_extension_mod in _external_extensions:
     _logger.info("Enabling extension %s" % _external_extension_mod)
