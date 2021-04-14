@@ -69,6 +69,8 @@ install_req = ['scipy>=1.1',
                'prettytable',
                'tifffile>=2018.10.18',
                'numba',
+                # included in stdlib since v3.8, but this required version requires Python 3.9
+               'importlib_metadata>=1.6.0',
                ]
 
 extras_require = {
