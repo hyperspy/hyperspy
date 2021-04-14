@@ -38,7 +38,7 @@ ALL_EXTENSIONS = copy.deepcopy(EXTENSIONS)
 
 _external_extensions = [
     entry_point.module
-    for entry_point in metadata.entry_points()['hyperspy.extensions']]
+    for entry_point in metadata.entry_points(group="hyperspy.extensions")]
 
 for _external_extension_mod in _external_extensions:
     _logger.info("Enabling extension %s" % _external_extension_mod)
