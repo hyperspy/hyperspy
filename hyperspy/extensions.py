@@ -18,7 +18,6 @@
 
 import logging
 import copy
-import pkgutil
 import yaml
 
 from pathlib import Path
@@ -27,6 +26,7 @@ import importlib_metadata as metadata
 
 _logger = logging.getLogger(__name__)
 
+# Load hyperspy's own extensions
 _ext_f = Path(__file__).resolve().parent.joinpath("hyperspy_extension.yaml")
 with open(_ext_f, 'r') as stream:
     EXTENSIONS = yaml.safe_load(stream)
@@ -37,17 +37,18 @@ EXTENSIONS["GUI"]["widgets"] = {}
 ALL_EXTENSIONS = copy.deepcopy(EXTENSIONS)
 
 _external_extensions = [
-    entry_point.module
+    entry_point
     for entry_point in metadata.entry_points(group="hyperspy.extensions")]
 
-for _external_extension_mod in _external_extensions:
-    _logger.info("Enabling extension %s" % _external_extension_mod)
-    _path = Path(
-        pkgutil.get_loader(_external_extension_mod).get_filename()
-    ).resolve().parent.joinpath("hyperspy_extension.yaml")
+for _external_extension in _external_extensions:
+    _logger.info("Enabling extension %s" % _external_extension.name)
 
-    if _path.is_file():
-        with open(_path, 'r') as stream:
+    _files = [file for file in _external_extension.dist.files
+              if "hyperspy_extension.yaml" in str(file)]
+
+    if _files:
+        _path = _files.pop()
+        with _path.locate().open() as stream:
             _external_extension = yaml.safe_load(stream)
             if "signals" in _external_extension:
                 ALL_EXTENSIONS["signals"].update(_external_extension["signals"])
