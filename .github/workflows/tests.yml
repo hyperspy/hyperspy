@@ -104,7 +104,7 @@ jobs:
       - uses: ammaraskar/sphinx-action@master
         with:
 
-          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }}  && pip install -e .[build-doc]"
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }}  && pip install -e .[all,build-doc]"
           build-command: make html
           docs-folder: doc/
 
