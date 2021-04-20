@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BUILD_DEPS: python3-dev build-essential graphviz
-      LATEX_DEPS: dvipng
+      LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
     steps:
       - uses: actions/checkout@v2
