@@ -94,13 +94,17 @@ jobs:
   build_doc:
     name: Build doc
     runs-on: ubuntu-latest
+    env:
+      BUILD_DEPS: python3-dev build-essential graphviz
+      LATEX_DEPS: dvipng
 
     steps:
       - uses: actions/checkout@v2
 
       - uses: ammaraskar/sphinx-action@master
         with:
-          pre-build-command: "apt-get update -y && apt-get install -y python3-dev build-essential graphviz && pip install -e .[build-doc]"
+
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }}  && pip install -e .[build-doc]"
           build-command: make html
           docs-folder: doc/
 
