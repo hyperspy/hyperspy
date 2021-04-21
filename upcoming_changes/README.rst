@@ -25,3 +25,12 @@ If you are not sure what issue type to use, don't hesitate to ask in your PR.
 ``towncrier`` preserves multiple paragraphs and formatting (code blocks, lists, and so on), but for entries
 other than ``features`` it is usually better to stick to a single paragraph to keep it concise.
 
+
+To previous a draft of the changelog, run from the command line:
+
+   .. code-block:: bash
+
+       $ towncrier build --draft
+
+
+See https://github.com/twisted/towncrier for more details.
