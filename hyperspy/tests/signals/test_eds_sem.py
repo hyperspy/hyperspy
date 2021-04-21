@@ -298,6 +298,11 @@ class Test_get_lines_intensity:
                                     integration_windows=5)[0]
         np.testing.assert_allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3)
 
+    def test_plot_result_single_spectrum(self):
+        s = self.signal.inav[0, 0, 0]
+        intensities = s.get_lines_intensity(["Al_Ka"], plot_result=True)
+        assert intensities[0].data.size == 1
+
     def test_background_substraction(self):
         s = self.signal
         intens = s.get_lines_intensity(["Al_Ka"], plot_result=False)[0].data

@@ -141,9 +141,12 @@ class SkewNormal(Expression):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
             raise ImportError("The `SkewNormal` component requires "
                               "SymPy >= 1.3")
+        # We use `_shape` internally because `shape` is already taken in sympy
+        # https://github.com/sympy/sympy/pull/20791
         super(SkewNormal, self).__init__(
-            expression="2 * A * normpdf * normcdf; normpdf = exp(- t ** 2 / 2) \
-                / sqrt(2 * pi); normcdf = (1 + erf(shape * t / sqrt(2))) / 2; \
+            expression="2 * A * normpdf * normcdf;\
+                normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi);\
+                normcdf = (1 + erf(_shape * t / sqrt(2))) / 2;\
                 t = (x - x0) / scale",
             name="SkewNormal",
             x0=x0,
@@ -152,6 +155,7 @@ class SkewNormal(Expression):
             shape=shape,
             module=module,
             autodoc=False,
+            rename_pars={"_shape": "shape"},
             **kwargs,
         )
 

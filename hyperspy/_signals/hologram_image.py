@@ -97,7 +97,6 @@ def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
                 sb_size = BaseSignal(sb_size)
             if isinstance(sb_size.data, daArray):
                 sb_size = sb_size.as_lazy()
-
     if sb_size.axes_manager.navigation_size != s.axes_manager.navigation_size:
         if sb_size.axes_manager.navigation_size:
             raise ValueError('Sideband size dimensions do not match '

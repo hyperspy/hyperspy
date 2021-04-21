@@ -140,6 +140,13 @@ def test_ma_lazify():
     assert np.isnan(ss.data[:, 1]).all()
 
 
+@pytest.mark.parametrize('nav_chunks', ["auto", -1, (3, -1)])
+@pytest.mark.parametrize('sig_chunks', [-1, ("auto", "auto"), 4])
+def test_rechunk(signal, nav_chunks, sig_chunks):
+    signal.rechunk(nav_chunks=nav_chunks,
+                   sig_chunks=sig_chunks)
+
+
 def test_warning():
     sig = _signal()
 

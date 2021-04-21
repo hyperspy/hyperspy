@@ -514,6 +514,7 @@ class EDXSpectrum(object):
         # ESMA could stand for Electron Scanning Microscope Analysis
         spectrum_header = spectrum.find(
             "./ClassInstance[@Type='TRTSpectrumHeader']")
+        xrf_header = TRTHeader.find("./ClassInstance[@Type='TRTXrfHeader']")
 
         # map stuff from harware xml branch:
         self.hardware_metadata = dictionarize(hardware_header)
@@ -532,7 +533,14 @@ class EDXSpectrum(object):
             self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
 
         # map stuff from esma xml branch:
-        self.esma_metadata = dictionarize(esma_header)
+        if esma_header:
+            self.esma_metadata = dictionarize(esma_header)
+        if xrf_header:
+            xrf_header_dict = dictionarize(xrf_header)
+            self.esma_metadata = {
+                'PrimaryEnergy':xrf_header_dict['Voltage'],
+                'ElevationAngle':xrf_header_dict['ExcitationAngle']
+                }
         # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elev_angle = self.esma_metadata['ElevationAngle']
@@ -540,7 +548,6 @@ class EDXSpectrum(object):
         if date_time is not None:
             self.date, self.time = date_time
 
-        # map stuff from spectra xml branch:
         self.spectrum_metadata = dictionarize(spectrum_header)
         self.offset = self.spectrum_metadata['CalibAbs']
         self.scale = self.spectrum_metadata['CalibLin']

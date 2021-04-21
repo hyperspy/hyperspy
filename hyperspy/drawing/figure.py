@@ -137,7 +137,7 @@ class BlittedFigure(object):
         self._title = textwrap.fill(value, 60)
 
     def render_figure(self):
-        if self.figure.canvas.supports_blit:
+        if self.figure.canvas.supports_blit and self._background is not None:
             self._update_animated()
         else:
             self.figure.canvas.draw_idle()
