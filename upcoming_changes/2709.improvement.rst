@@ -1,0 +1,3 @@
+Improve support for extension registration on kaggle: the extension should now
+be registered without restarting the kernel. Speed up importing hyperspy by
+using ``importlib_metadata`` instead of ``pkg_resources`` to register extension.
