@@ -1102,6 +1102,14 @@ with same dimension.
 
   Stacking example.
 
+.. note::
+
+    When stacking signals with large amount of
+    :py:attr:`~.signal.BaseSignal.original_metadata`, these metadata will be
+    stacked and this can lead to very large amount of metadata which can in
+    turn slow down processing. The ``stack_original_metadata`` argument can be
+    used to disable stacking :py:attr:`~.signal.BaseSignal.original_metadata`.
+
 An object can be split into several objects
 with the :py:meth:`~.signal.BaseSignal.split` method. This function can be used
 to reverse the :py:func:`~.utils.stack` function:
@@ -1123,13 +1131,13 @@ to reverse the :py:func:`~.utils.stack` function:
 Fast Fourier Transform (FFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_ 
-of a signal can be computed using the :py:meth:`~.signal.BaseSignal.fft` method. By default, 
-the FFT is calculated with the origin at (0, 0), which will be displayed at the 
-bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the 
-the :py:meth:`~.signal.BaseSignal.fft` method can be used to center the output of the FFT. 
-In the following example, the FFT of a hologram is computed using ``shift=True`` and its 
-output signal is displayed, which shows that the FFT results in a complex signal with a 
+The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_
+of a signal can be computed using the :py:meth:`~.signal.BaseSignal.fft` method. By default,
+the FFT is calculated with the origin at (0, 0), which will be displayed at the
+bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the
+the :py:meth:`~.signal.BaseSignal.fft` method can be used to center the output of the FFT.
+In the following example, the FFT of a hologram is computed using ``shift=True`` and its
+output signal is displayed, which shows that the FFT results in a complex signal with a
 real and an imaginary parts:
 
 .. code-block:: python
@@ -1142,11 +1150,11 @@ real and an imaginary parts:
   :align:   center
   :width:   800
 
-The strong features in the real and imaginary parts correspond to the lattice fringes of the 
+The strong features in the real and imaginary parts correspond to the lattice fringes of the
 hologram.
 
-For visual inspection of the FFT it is convenient to display its power spectrum 
-(i.e. the square of the absolute value of the FFT) rather than FFT itself as it is done 
+For visual inspection of the FFT it is convenient to display its power spectrum
+(i.e. the square of the absolute value of the FFT) rather than FFT itself as it is done
 in the example above by using the ``power_spectum`` argument:
 
 .. code-block:: python
@@ -1155,8 +1163,8 @@ in the example above by using the ``power_spectum`` argument:
     >>> fft = im.fft(True)
     >>> fft.plot(True)
 
-Where ``power_spectum`` is set to ``True`` since it is the first argument of the 
-:py:meth:`~._signals.complex_signal.ComplexSignal_mixin.plot` method for complex signal. 
+Where ``power_spectum`` is set to ``True`` since it is the first argument of the
+:py:meth:`~._signals.complex_signal.ComplexSignal_mixin.plot` method for complex signal.
 When ``power_spectrum=True``, the plot will be displayed on a log scale by default.
 
 
@@ -1164,7 +1172,7 @@ When ``power_spectrum=True``, the plot will be displayed on a log scale by defau
   :align:   center
   :width:   400
 
-The visualisation can be further improved by setting the minimum value to display to the 30-th 
+The visualisation can be further improved by setting the minimum value to display to the 30-th
 percentile; this can be done by using ``vmin="30th"`` in the plot function:
 
 .. code-block:: python
@@ -1177,12 +1185,12 @@ percentile; this can be done by using ``vmin="30th"`` in the plot function:
   :align:   center
   :width:   400
 
-The streaks visible in the FFT come from the edge of the image and can be removed by  
-applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original 
-signal before the computation of the FFT. This can be done using the ``apodization`` argument of 
-the :py:meth:`~.signal.BaseSignal.fft` method and it is usually used for visualising FFT patterns 
-rather than for quantitative analyses. By default, the so-called ``hann`` windows is 
-used but different type of windows such as the ``hamming`` and ``tukey`` windows. 
+The streaks visible in the FFT come from the edge of the image and can be removed by
+applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original
+signal before the computation of the FFT. This can be done using the ``apodization`` argument of
+the :py:meth:`~.signal.BaseSignal.fft` method and it is usually used for visualising FFT patterns
+rather than for quantitative analyses. By default, the so-called ``hann`` windows is
+used but different type of windows such as the ``hamming`` and ``tukey`` windows.
 
 .. code-block:: python
 
@@ -1200,8 +1208,8 @@ used but different type of windows such as the ``hamming`` and ``tukey`` windows
 Inverse Fast Fourier Transform (iFFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Inverse fast Fourier transform can be calculated from a complex signal by using the 
-:py:meth:`~.signal.BaseSignal.ifft` method. Similarly to the :py:meth:`~.signal.BaseSignal.fft` method, 
+Inverse fast Fourier transform can be calculated from a complex signal by using the
+:py:meth:`~.signal.BaseSignal.ifft` method. Similarly to the :py:meth:`~.signal.BaseSignal.fft` method,
 the ``shift`` argument can be provided to shift the origin of the iFFT when necessary:
 
 .. code-block:: python

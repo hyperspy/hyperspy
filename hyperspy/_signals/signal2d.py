@@ -35,6 +35,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize, optimal_fft_size
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.signal_tools import PeaksFinder2D
@@ -52,7 +53,9 @@ _logger = logging.getLogger(__name__)
 
 
 def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
-    if np.any(shift):
+    if not np.any(shift):
+        return im
+    else:
         fractional, integral = np.modf(shift)
         if fractional.any():
             order = interpolation_order
@@ -60,8 +63,6 @@ def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
             # Disable interpolation
             order = 0
         return ndimage.shift(im, shift, cval=fill_value, order=order)
-    else:
-        return im
 
 
 def triu_indices_minus_diag(n):
@@ -683,16 +684,19 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 UserWarning,
             )
             return None
-
+        if isinstance(shifts, np.ndarray):
+            signal_shifts = Signal1D(-shifts)
+        else:
+            signal_shifts = shifts
         if expand:
             # Expand to fit all valid data
             left, right = (
-                int(np.floor(shifts[:, 1].min())) if shifts[:, 1].min() < 0 else 0,
-                int(np.ceil(shifts[:, 1].max())) if shifts[:, 1].max() > 0 else 0,
+                int(np.floor(signal_shifts.isig[1].min().data)) if signal_shifts.isig[1].min().data < 0 else 0,
+                int(np.ceil(signal_shifts.isig[1].max().data)) if signal_shifts.isig[1].max().data > 0 else 0,
             )
             top, bottom = (
-                int(np.floor(shifts[:, 0].min())) if shifts[:, 0].min() < 0 else 0,
-                int(np.ceil(shifts[:, 0].max())) if shifts[:, 0].max() > 0 else 0,
+                int(np.ceil(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else 0,
+                int(np.floor(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
             )
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
@@ -703,9 +707,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
             for i in range(self.data.ndim):
                 if i == xaxis.index_in_array:
-                    padding.append((right, -left))
+                    padding.append((-left, right))
                 elif i == yaxis.index_in_array:
-                    padding.append((bottom, -top))
+                    padding.append((-top, bottom))
                 else:
                     padding.append((0, 0))
 
@@ -722,11 +726,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
             if np.any((top < 0, bottom > 0)):
                 yaxis.size += bottom - top
 
-        # Translate, with sub-pixel precision if necesary,
+        # Translate, with sub-pixel precision if necessary,
         # note that we operate in-place here
-        self._map_iterate(
+
+        self.map(
             shift_image,
-            iterating_kwargs=(("shift", -shifts),),
+            shift=signal_shifts,
             show_progressbar=show_progressbar,
             parallel=parallel,
             max_workers=max_workers,
@@ -735,22 +740,21 @@ class Signal2D(BaseSignal, CommonSignal2D):
             fill_value=fill_value,
             interpolation_order=interpolation_order,
         )
-
         if crop and not expand:
-            max_shift = np.max(shifts, axis=0) - np.min(shifts, axis=0)
-
-            if np.any(max_shift >= np.array(self.axes_manager.signal_shape)):
-                raise ValueError("Shift outside range of signal axes. Cannot crop signal.")
+            max_shift = signal_shifts.max() - signal_shifts.min()
+            if np.any(max_shift.data >= np.array(self.axes_manager.signal_shape)):
+                raise ValueError("Shift outside range of signal axes. Cannot crop signal." +
+                                  "Max shift:" + str(max_shift.data) + " shape" + str(self.axes_manager.signal_shape))
 
             # Crop the image to the valid size
             shifts = -shifts
             bottom, top = (
-                int(np.floor(shifts[:, 0].min())) if shifts[:, 0].min() < 0 else None,
-                int(np.ceil(shifts[:, 0].max())) if shifts[:, 0].max() > 0 else 0,
+                int(np.floor(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else None,
+                int(np.ceil(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
             )
             right, left = (
-                int(np.floor(shifts[:, 1].min())) if shifts[:, 1].min() < 0 else None,
-                int(np.ceil(shifts[:, 1].max())) if shifts[:, 1].max() > 0 else 0,
+                int(np.floor(signal_shifts.isig[1].min().data)) if signal_shifts.isig[1].min().data < 0 else None,
+                int(np.ceil(signal_shifts.isig[1].max().data)) if signal_shifts.isig[1].max().data > 0 else 0,
             )
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
@@ -938,6 +942,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
             peaks = self.map(method_func, show_progressbar=show_progressbar,
                              parallel=parallel, inplace=False, ragged=True,
                              max_workers=max_workers, **kwargs)
+            if peaks._lazy:
+                peaks.compute()
+
+
 
         return peaks
 
