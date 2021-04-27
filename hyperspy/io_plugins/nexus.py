@@ -411,7 +411,7 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
     return dictionary
 
 
-def file_reader(filename, lazy=False, dataset_keys=None,
+def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
                 metadata_keys=None,
                 nxdata_only=False,
                 hardlinks_only=False,
@@ -439,6 +439,14 @@ def file_reader(filename, lazy=False, dataset_keys=None,
         whose path contain the string(s) are returned. For example
         dataset_keys = ["instrument", "Fe"] will return
         data entries with instrument or Fe in their hdf path.
+    dataset_paths : None, str, list of strings, default : None
+        If None, no absolute path is searched.
+        If a string or list of strings is provided items with the absolute
+        paths specified will be returned. For example, dataset_paths =
+        ['/data/spectrum/Mn'], it returns the exact dataset with this path.
+        It is not filtered by dataset_keys, i.e. with dataset_keys = ['Fe'],
+        it still returns the specific dataset at '/data/spectrum/Mn'. It is
+        empty if no dataset matching the absolute path provided is present.
     metadata_keys: : None, str, list of strings, default : None
         Only return items from the original metadata whose path contain the
         strings .e.g metadata_keys = ["instrument", "Fe"] will return
@@ -475,6 +483,7 @@ def file_reader(filename, lazy=False, dataset_keys=None,
     signal_dict_list = []
 
     dataset_keys = _check_search_keys(dataset_keys)
+    dataset_paths = _check_search_keys(dataset_paths)
     metadata_keys = _check_search_keys(metadata_keys)
     original_metadata = _load_metadata(fin, lazy=lazy)
     # some default values...
@@ -508,7 +517,8 @@ def file_reader(filename, lazy=False, dataset_keys=None,
     if not nexus_data_paths and not hdf_data_paths:
         nexus_data_paths, hdf_data_paths = \
             _find_data(fin, search_keys=dataset_keys,
-                       hardlinks_only=hardlinks_only)
+                       hardlinks_only=hardlinks_only,
+                       absolute_path=dataset_paths)
 
     for data_path in nexus_data_paths:
         dictionary = _nexus_dataset_to_signal(fin, data_path, lazy=lazy)
@@ -646,7 +656,8 @@ def _check_search_keys(search_keys):
                          "or a list of strings")
 
 
-def _find_data(group, search_keys=None, hardlinks_only=False):
+def _find_data(group, search_keys=None, hardlinks_only=False,
+               absolute_path=None):
     """Read from a nexus or hdf file and return a list of the dataset entries.
 
     The method iterates through group attributes and returns NXdata or
@@ -668,6 +679,8 @@ def _find_data(group, search_keys=None, hardlinks_only=False):
         hdf entries with instrument or Fe in their hdf path.
     hardlinks_only : bool , default : False
         Option to ignore links (soft or External) within the file.
+    absolute_path : string, list of strings or None, default: None
+        Return items with the exact specified absolute path
 
     Returns
     -------
@@ -678,6 +691,7 @@ def _find_data(group, search_keys=None, hardlinks_only=False):
 
     """
     _check_search_keys(search_keys)
+    _check_search_keys(absolute_path)
     all_hdf_datasets = []
     unique_hdf_datasets = []
     all_nx_datasets = []
@@ -716,7 +730,7 @@ def _find_data(group, search_keys=None, hardlinks_only=False):
     # does not visit links
     find_data_in_tree(group, rootname)
 
-    if search_keys is None:
+    if search_keys is None and absolute_path is None:
         # return all datasets
         if hardlinks_only:
             # return only the stored data, no linked data
@@ -724,7 +738,7 @@ def _find_data(group, search_keys=None, hardlinks_only=False):
         else:
             return all_nx_datasets, all_hdf_datasets
 
-    elif type(search_keys) is list:
+    elif type(search_keys) is list or type(absolute_path) is list:
         if hardlinks_only:
             # return only the stored data, no linked data
             nx_datasets = unique_nx_datasets
@@ -732,11 +746,25 @@ def _find_data(group, search_keys=None, hardlinks_only=False):
         else:
             nx_datasets = all_nx_datasets
             hdf_datasets = all_hdf_datasets
+
+    matched_hdf = set()
+    matched_nexus = set()
+    # return data having the specified absolute paths
+    if absolute_path is not None:
+        matched_hdf.update([j for j in hdf_datasets
+                            if any(s==j for s in absolute_path)])
+        matched_nexus.update([j for j in nx_datasets
+                              if any(s==j for s in absolute_path)])
     # return data which contains a search string
-    matched_hdf = [j for j in hdf_datasets
-                   if any(s in j for s in search_keys)]
-    matched_nexus = [j for j in nx_datasets
-                     if any(s in j for s in search_keys)]
+    if search_keys is not None:
+        matched_hdf.update([j for j in hdf_datasets
+                            if any(s in j for s in search_keys)])
+        matched_nexus.update([j for j in nx_datasets
+                              if any(s in j for s in search_keys)])
+
+    matched_nexus = list(matched_nexus)
+    matched_hdf = list(matched_hdf)
+
     return matched_nexus, matched_hdf
 
 
