@@ -36,9 +36,9 @@ strategy:
     MacOS_Python38:
       vmImage: 'macOS-latest'
       PYTHON_VERSION: '3.8'
-    MacOS_Python36:
+    MacOS_Python37:
       vmImage: 'macOS-latest'
-      PYTHON_VERSION: '3.6'
+      PYTHON_VERSION: '3.7'
     Windows_Python38:
       vmImage: 'windows-latest'
       PYTHON_VERSION: '3.8'
