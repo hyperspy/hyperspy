@@ -161,6 +161,10 @@ class TestDataAxis:
         assert self.axis.value2index(10.15) == 3
         assert self.axis.value2index(60) == 8
 
+    def test_value2index_error(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index(226)
+
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
         axis = DataAxis(axis=self._axis)
@@ -198,7 +202,9 @@ class TestDataAxis:
         with pytest.raises(ValueError):
             self.axis._get_array_slices(slice_=slice(1,2,1.5))
         with pytest.raises(IndexError):
-            self.axis._get_array_slices(slice_=slice(0,-0.5,1))
+            self.axis._get_array_slices(slice_=slice(225,-1.1,1))
+        with pytest.raises(IndexError):
+            self.axis._get_array_slices(slice_=slice(225.1,0,1))
 
 
 class TestFunctionalDataAxis:

@@ -575,7 +575,7 @@ class BaseDataAxis(t.HasTraits):
         if self.low_value <= value <= self.high_value:
             return (np.abs(self.axis - value)).argmin()
         else:
-            index = int(index)
+            index = int(value)
             if self.size > index >= 0:
                 return index
             else:
