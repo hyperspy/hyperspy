@@ -66,11 +66,11 @@ class TestDictionaryBrowser:
                        "Node21": {"leaf211": 211},
                        },
              "Node3": {"leaf31": 31},
-             } == self.tree.as_dictionary())
-        self.tree.add_dictionary({'_double_lines': ''}, double_lines=True)
-        assert self.tree._double_lines == True
-        self.tree.add_dictionary({'_double_lines': ''}, double_lines=False)
-        assert self.tree._double_lines == False
+             } == tree.as_dictionary())
+        tree.add_dictionary({'_double_lines': ''}, double_lines=True)
+        assert tree._double_lines == True
+        tree.add_dictionary({'_double_lines': ''}, double_lines=False)
+        assert tree._double_lines == False
 
     def test_deepcopy(self, tree):
         a = tree.deepcopy()
@@ -112,8 +112,7 @@ class TestDictionaryBrowser:
             f.close()
 
 
-    def test_signal_to_dictionary(self):
-        tree = self.tree
+    def test_signal_to_dictionary(self,tree):
         s = BaseSignal([1., 2, 3])
         s.axes_manager[0].name = 'x'
         s.axes_manager[0].units = 'ly'
@@ -345,10 +344,10 @@ class TestDictionaryBrowser:
         assert self.tree._get_print_items()[-102:-59] == \
                'And now for something completely different.'
 
-    def test_copy(self):
-        treecopy = self.tree.copy()
+    def test_copy(self,tree):
+        treecopy = tree.copy()
         assert treecopy.get_item('Node1.leaf11') == \
-               self.tree.get_item('Node1.leaf11')
+               tree.get_item('Node1.leaf11')
 
     def test_length(self, tree):
         length = len(tree._lazy_attributes)
