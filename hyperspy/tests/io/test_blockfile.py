@@ -229,8 +229,6 @@ def test_load_readonly():
     mm = s.data.dask[k]
     assert isinstance(mm, np.memmap)
     assert not mm.flags["WRITEABLE"]
-    with pytest.raises(NotImplementedError):
-        s.data[:] = 23
 
 
 def test_load_inplace():
