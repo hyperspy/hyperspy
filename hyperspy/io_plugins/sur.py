@@ -602,7 +602,7 @@ class DigitalSurfHandler(object):
 
         return self.signal_dict
 
-    def _build_Xax(self,unpacked_dict,ind=0,nav=False):
+    def _build_Xax(self,unpacked_dict,ind=0,nav=False,binned=False):
         """Return X axis dictionary from an unpacked dict. index int and navigate
         boolean can be optionally passed. Default 0 and False respectively."""
         Xax = { 'name': unpacked_dict['_24_Name_of_X_Axis'],
@@ -612,10 +612,11 @@ class DigitalSurfHandler(object):
                 'offset': unpacked_dict['_53_X_Offset'],
                 'units': unpacked_dict['_27_X_Step_Unit'],
                 'navigate':nav,
+                'is_binned':binned,
                 }
         return Xax
 
-    def _build_Yax(self,unpacked_dict,ind=1,nav=False):
+    def _build_Yax(self,unpacked_dict,ind=1,nav=False,binned=False):
         """Return X axis dictionary from an unpacked dict. index int and navigate
         boolean can be optionally passed. Default 1 and False respectively."""
         Yax = { 'name': unpacked_dict['_25_Name_of_Y_Axis'],
@@ -625,10 +626,11 @@ class DigitalSurfHandler(object):
                 'offset': unpacked_dict['_54_Y_Offset'],
                 'units': unpacked_dict['_28_Y_Step_Unit'],
                 'navigate':nav,
+                'is_binned':binned,
                 }
         return Yax
 
-    def _build_Tax(self,unpacked_dict,size_key,ind=0,nav=True):
+    def _build_Tax(self,unpacked_dict,size_key,ind=0,nav=True,binned=False):
         """Return T axis dictionary from an unpacked surface object dict.
         Unlike x and y axes, the size key can be determined from various keys:
         _14_W_Size, _15_Size_of_Points or _03_Number_of_Objects. index int
@@ -651,6 +653,7 @@ class DigitalSurfHandler(object):
                 'offset': unpacked_dict['_57_T_Offset'],
                 'units': unpacked_dict['_59_T_Step_Unit'],
                 'navigate':nav,
+                'is_binned':binned,
                 }
         return Tax
 
@@ -931,7 +934,6 @@ class DigitalSurfHandler(object):
                 "time": time_str,
                 },
             "Signal": {
-                "binned": False,
                 "quantity": quantity_str,
                 "signal_type": "",
                 },

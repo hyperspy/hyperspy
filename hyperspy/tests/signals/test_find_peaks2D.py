@@ -20,7 +20,7 @@ import pytest
 import numpy as np
 from scipy.stats import norm
 
-from hyperspy.signals import Signal2D, BaseSignal
+from hyperspy.signals import Signal2D, BaseSignal, Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import PeaksFinder2D
@@ -67,6 +67,8 @@ def _generate_dataset():
     sparse_nav1d = Signal2D(np.stack([sparse]*2))
     sparse_nav2d = Signal2D(np.stack([[sparse]*2]*3))
     shifts = np.array([[2*i, 2*i] for i in range(sparse_nav2d.axes_manager.navigation_size)])
+    shifts = shifts.reshape(3, 2, 2)
+    shifts = Signal1D(-shifts)
     sparse_nav2d_shifted = sparse_nav2d.deepcopy()
     sparse_nav2d_shifted.align2D(shifts=shifts, fill_value=0)
 

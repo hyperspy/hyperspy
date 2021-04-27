@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 from hyperspy import signals
 from hyperspy.misc.utils import (
@@ -30,7 +31,9 @@ from hyperspy.misc.utils import (
     generate_axis,
     closest_power_of_two,
     shorten_name,
+    is_binned,
 )
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 def test_slugify():
@@ -106,3 +109,12 @@ def test_closest_power_of_two():
 def test_shorten_name():
     assert shorten_name('And now for soemthing completely different.', 16) == \
            'And now for so..'
+
+# Can be removed in v2.0:
+def test_is_binned():
+    s = signals.Signal1D(np.zeros((5, 5)))
+    assert is_binned(s) == s.axes_manager[-1].is_binned
+    with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
+        s.metadata.set_item('Signal.binned', True)
+    assert is_binned(s) == s.metadata.Signal.binned
+    

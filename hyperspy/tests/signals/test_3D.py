@@ -171,6 +171,9 @@ class Test3D:
                 cks[0],
                 cks[2],
             )
+        assert s.swap_axes(0, 2).axes_manager[0].navigate == True
+        s.axes_manager[2].is_binned = True
+        assert s.swap_axes(0, 2).axes_manager[2].is_binned == True
 
     def test_swap_axes_iteration(self):
         s = self.signal

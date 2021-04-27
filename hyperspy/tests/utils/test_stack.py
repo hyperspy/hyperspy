@@ -22,6 +22,8 @@ import pytest
 from hyperspy import utils
 from hyperspy.signal import BaseSignal
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.utils import DictionaryTreeBrowser
+
 
 
 def test_stack_warning():
@@ -39,19 +41,68 @@ class TestUtilsStack:
         s.axes_manager[2].name = "E"
         s.axes_manager[2].scale = 0.5
         s.metadata.General.title = 'test'
+        s.original_metadata = DictionaryTreeBrowser({'om': 'some metadata'})
         self.signal = s
 
-    def test_stack_default(self):
+    @pytest.mark.parametrize('stack_metadata', [True, False, 0, 1])
+    def test_stack_stack_metadata(self, stack_metadata):
         s = self.signal
         s1 = s.deepcopy() + 1
         s2 = s.deepcopy() * 4
         test_axis = s.axes_manager[0].index_in_array
-        result_signal = utils.stack([s, s1, s2])
+        result_signal = utils.stack([s, s1, s2], stack_metadata=stack_metadata)
         result_list = result_signal.split()
         assert test_axis == s.axes_manager[0].index_in_array
         assert len(result_list) == 3
         np.testing.assert_array_almost_equal(
             result_list[0].data, result_signal.inav[:, :, 0].data)
+        if stack_metadata is True:
+            om = result_signal.original_metadata.stack_elements.element0.original_metadata
+        elif stack_metadata in [0, 1]:
+            om = result_signal.original_metadata
+        if stack_metadata is False:
+            assert om.as_dictionary() == {}
+        else:
+            assert om.as_dictionary() == s.original_metadata.as_dictionary()
+
+    def test_stack_stack_metadata_value(self):
+        s = BaseSignal(1)
+        s.metadata.General.title = 'title 1'
+        s.original_metadata.set_item('a', 1)
+
+        s2 = BaseSignal(2)
+        s2.metadata.General.title = 'title 2'
+        s2.original_metadata.set_item('a', 2)
+
+        stack_out = utils.stack([s, s2], stack_metadata=True)
+        elem0 = stack_out.original_metadata.stack_elements.element0
+        elem1 = stack_out.original_metadata.stack_elements.element1
+
+        for el, _s in zip([elem0, elem1], [s, s2]):
+            assert el.original_metadata.as_dictionary() == \
+                _s.original_metadata.as_dictionary()
+            assert el.metadata.as_dictionary() == _s.metadata.as_dictionary()
+
+    def test_stack_stack_metadata_error(self):
+        s = self.signal
+        s2 = s.deepcopy()
+        with pytest.raises(ValueError):
+            utils.stack([s, s2], stack_metadata='not supported argument')
+
+    def test_stack_stack_metadata_index(self):
+        s = self.signal
+        s1 = s.deepcopy() + 1
+        s1.metadata.General.title = 'first signal'
+        s1.original_metadata.om_title = 'first signal om'
+        s2 = s.deepcopy() * 4
+        s2.metadata.General.title = 'second_signal'
+        s2.original_metadata.om_title = 'second signal om'
+
+        res = utils.stack([s1, s2, s], stack_metadata=0)
+        assert res.metadata.General.title == s1.metadata.General.title
+
+        res2 = utils.stack([s1, s2, s], stack_metadata=2)
+        assert res2.metadata.General.title == s.metadata.General.title
 
     def test_stack_number_of_parts(self):
         s = self.signal
@@ -82,7 +133,6 @@ class TestUtilsStack:
         result_signal = utils.stack([s, s1, s2], axis=1)
         axis_size = s.axes_manager[1].size
         axs1 = s1.axes_manager[1].size
-        axs2 = s2.axes_manager[1].size
         result_list = result_signal.split()
         assert len(result_list) == 3
         for rs in [result_signal, utils.stack([s, s1, s2], axis='y')]:
@@ -99,7 +149,6 @@ class TestUtilsStack:
         s = self.signal
         list_s = [s] * 12
         list_s.append(s.deepcopy() * 3)
-        list_s[-1].metadata.General.title = 'test'
         s1 = utils.stack(list_s)
         res = s1.split()
         np.testing.assert_array_almost_equal(list_s[-1].data, res[-1].data)

@@ -19,28 +19,34 @@
 import numpy as np
 import os.path
 import tempfile
+import pytest
 
 from hyperspy.misc.utils import (DictionaryTreeBrowser, check_long_string,
-                                 replace_html_symbols)
+                                 replace_html_symbols,
+                                 nested_dictionary_merge)
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signal import BaseSignal
+
+
+@pytest.fixture(params=[True, False], ids=['lazy', 'not_lazy'])
+def tree(request):
+    lazy = request.param
+    tree = DictionaryTreeBrowser(
+        {
+            "Node1": {"leaf11": 11,
+                      "Node11": {"leaf111": 111},
+                      },
+            "Node2": {"leaf21": 21,
+                      "Node21": {"leaf211": 211},
+                      },
+        }, lazy=lazy)
+    return tree
 
 
 class TestDictionaryBrowser:
 
-    def setup_method(self, method):
-        tree = DictionaryTreeBrowser(
-            {
-                "Node1": {"leaf11": 11,
-                          "Node11": {"leaf111": 111},
-                          },
-                "Node2": {"leaf21": 21,
-                          "Node21": {"leaf211": 211},
-                          },
-            })
-        self.tree = tree
-
-    def test_add_dictionary(self):
-        self.tree.add_dictionary({
+    def test_add_dictionary(self, tree):
+        tree.add_dictionary({
             "Node1": {"leaf12": 12,
                       "Node11": {"leaf111": 222,
                                  "Node111": {"leaf1111": 1111}, },
@@ -66,8 +72,17 @@ class TestDictionaryBrowser:
         self.tree.add_dictionary({'_double_lines': ''}, double_lines=False)
         assert self.tree._double_lines == False
 
-    def test_add_signal_in_dictionary(self):
-        tree = self.tree
+    def test_deepcopy(self, tree):
+        a = tree.deepcopy()
+        assert a.as_dictionary() == tree.as_dictionary()
+
+    def test_add_dictionary_space_key(self, tree):
+        tree.add_dictionary({'a key with a space': 'a value'})
+        assert tree.a_key_with_a_space == 'a value'
+        # All lazy attribute should have been processed
+        assert len(tree._lazy_attributes) == 0
+
+    def test_add_signal_in_dictionary(self, tree):
         s = BaseSignal([1., 2, 3])
         s.axes_manager[0].name = 'x'
         s.axes_manager[0].units = 'ly'
@@ -124,6 +139,7 @@ class TestDictionaryBrowser:
                         {
                             'name': 'x',
                             'navigate': False,
+                            'is_binned': False,
                                     'offset': 0.0,
                                     'scale': 1.0,
                                     'size': 3,
@@ -134,7 +150,6 @@ class TestDictionaryBrowser:
                         'General': {
                             'title': ''},
                         'Signal': {
-                            'binned': False,
                             'signal_type': ''},
                         '_HyperSpy': {
                             'Folding': {
@@ -146,68 +161,84 @@ class TestDictionaryBrowser:
                     'tmp_parameters': {}}} ==
             d)
 
-    def _test_date_time(self, dt_str='now'):
+    def _test_date_time(self, tree, dt_str='now'):
         dt0 = np.datetime64(dt_str)
         data_str, time_str = np.datetime_as_string(dt0).split('T')
-        self.tree.add_node("General")
-        self.tree.General.date = data_str
-        self.tree.General.time = time_str
+        tree.add_node("General")
+        tree.General.date = data_str
+        tree.General.time = time_str
 
-        dt1 = np.datetime64('%sT%s' % (self.tree.General.date,
-                                       self.tree.General.time))
+        dt1 = np.datetime64(f'{tree.General.date}T{tree.General.time}')
 
         np.testing.assert_equal(dt0, dt1)
         return dt1
 
-    def test_date_time_now(self):
+    def test_date_time_now(self, tree):
         # not really a test, more a demo to show how to set and use date and
         # time in the DictionaryBrowser
-        self._test_date_time()
+        self._test_date_time(tree)
 
-    def test_date_time_nanosecond_precision(self):
+    def test_date_time_nanosecond_precision(self, tree):
         # not really a test, more a demo to show how to set and use date and
         # time in the DictionaryBrowser
         dt_str = '2016-08-05T10:13:15.450580'
-        self._test_date_time(dt_str)
+        self._test_date_time(tree, dt_str)
 
-    def test_has_item(self):
+    def test_has_item(self, tree):
         # Check that it finds all actual items:
-        assert self.tree.has_item('Node1')
-        assert self.tree.has_item('Node1.leaf11')
-        assert self.tree.has_item('Node1.Node11')
-        assert self.tree.has_item('Node1.Node11.leaf111')
-        assert self.tree.has_item('Node2')
-        assert self.tree.has_item('Node2.leaf21')
-        assert self.tree.has_item('Node2.Node21')
-        assert self.tree.has_item('Node2.Node21.leaf211')
+        assert tree.has_item('Node1')
+        assert tree.has_item('Node1.leaf11')
+        assert tree.has_item('Node1.Node11')
+        assert tree.has_item('Node1.Node11.leaf111')
+        assert tree.has_item('Node2')
+        assert tree.has_item('Node2.leaf21')
+        assert tree.has_item('Node2.Node21')
+        assert tree.has_item('Node2.Node21.leaf211')
 
         # Check that it doesn't find non-existant ones
-        assert not self.tree.has_item('Node3')
-        assert not self.tree.has_item('General')
-        assert not self.tree.has_item('Node1.leaf21')
-        assert not self.tree.has_item('')
-        assert not self.tree.has_item('.')
-        assert not self.tree.has_item('..Node1')
+        assert not tree.has_item('Node3')
+        assert not tree.has_item('General')
+        assert not tree.has_item('Node1.leaf21')
+        assert not tree.has_item('')
+        assert not tree.has_item('.')
+        assert not tree.has_item('..Node1')
 
-    def test_get_item(self):
+    def test_get_item(self, tree):
+        assert tree['Node1']['leaf11'] == 11
+
         # Check that it gets all leaf nodes:
-        assert self.tree.get_item('Node1.leaf11') == 11
-        assert self.tree.get_item('Node1.Node11.leaf111') == 111
-        assert self.tree.get_item('Node2.leaf21') == 21
-        assert self.tree.get_item('Node2.Node21.leaf211') == 211
+        assert tree.get_item('Node1.leaf11') == 11
+        assert tree.get_item('Node1.Node11.leaf111') == 111
+        assert tree.get_item('Node2.leaf21') == 21
+        assert tree.get_item('Node2.Node21.leaf211') == 211
 
         # Check that it gets all leaf nodes, also with given default:
-        assert self.tree.get_item('Node1.leaf11', 44) == 11
-        assert self.tree.get_item('Node1.Node11.leaf111', 44) == 111
-        assert self.tree.get_item('Node2.leaf21', 44) == 21
-        assert self.tree.get_item('Node2.Node21.leaf211', 44) == 211
+        assert tree.get_item('Node1.leaf11', 44) == 11
+        assert tree.get_item('Node1.Node11.leaf111', 44) == 111
+        assert tree.get_item('Node2.leaf21', 44) == 21
+        assert tree.get_item('Node2.Node21.leaf211', 44) == 211
 
         # Check that it returns the default value for various incorrect paths:
-        assert self.tree.get_item('Node1.leaf33', 44) == 44
-        assert self.tree.get_item('Node1.leaf11.leaf111', 44) == 44
-        assert self.tree.get_item('Node1.Node31.leaf311', 44) == 44
-        assert self.tree.get_item('Node1.Node21.leaf311', 44) == 44
-        assert self.tree.get_item('.Node1.Node21.leaf311', 44) == 44
+        assert tree.get_item('Node1.leaf33', 44) == 44
+        assert tree.get_item('Node1.leaf11.leaf111', 44) == 44
+        assert tree.get_item('Node1.Node31.leaf311', 44) == 44
+        assert tree.get_item('Node1.Node21.leaf311', 44) == 44
+        assert tree.get_item('.Node1.Node21.leaf311', 44) == 44
+
+    def test_str(self, tree):
+        string = tree.__repr__()
+        assert string == "".join(["├── Node1\n",
+                                  "│   ├── Node11\n",
+                                  "│   │   └── leaf111 = 111\n",
+                                  "│   └── leaf11 = 11\n",
+                                  "└── Node2\n",
+                                  "    ├── Node21\n",
+                                  "    │   └── leaf211 = 211\n",
+                                  "    └── leaf21 = 21\n"])
+
+        assert tree.get_item('Node1.Node31.leaf311', 44) == 44
+        assert tree.get_item('Node1.Node21.leaf311', 44) == 44
+        assert tree.get_item('.Node1.Node21.leaf311', 44) == 44
 
     def test_has_nested_item(self):
         #assert self.tree.has_nested_item('Node1') == True
@@ -274,11 +305,15 @@ class TestDictionaryBrowser:
         assert self.tree.get_nested_item('211', wild=True, return_path=True) == \
                ([211, 31], ['Node2.Node21.leaf211', 'Node3.leaf211'])
         
-    def test_html(self):
+    # Can be removed once metadata.Signal.binned is deprecated in v2.0
+    def test_set_item_binned(self, tree):
+        with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
+            tree.set_item('Signal.binned', True)
+
+    def test_html(self, tree):
         "Test that the method actually runs"
         # We do not have a way to validate html
         # without relying on more dependencies
-        tree = self.tree
         tree['<myhtmltag>'] = "5 < 6"
         tree['<mybrokenhtmltag'] = "<hello>"
         tree['mybrokenhtmltag2>'] = ""
@@ -315,6 +350,14 @@ class TestDictionaryBrowser:
         assert treecopy.get_item('Node1.leaf11') == \
                self.tree.get_item('Node1.leaf11')
 
+    def test_length(self, tree):
+        length = len(tree._lazy_attributes)
+        assert len(tree) == 2
+        assert len(tree._lazy_attributes) == length
+
+    def test_iteration(self, tree):
+        assert [key for key, value in tree] == ['Node1', 'Node2']
+
 def test_check_long_string():
     max_len = 20
     value = "Hello everyone this is a long string"
@@ -327,10 +370,12 @@ def test_check_long_string():
     assert truth == True
     assert shortened == 'No! It was not a lon ... is is a long string!'
 
+
 def test_replace_html_symbols():
     assert '&lt;&gt;&amp' == replace_html_symbols('<>&')
     assert 'no html symbols' == replace_html_symbols('no html symbols')
     assert '&lt;mix&gt;' == replace_html_symbols('<mix>')
+
 
 def test_add_key_value():
     key = "<foo>"
@@ -341,3 +386,38 @@ def test_add_key_value():
         """.format(replace_html_symbols(key), replace_html_symbols(value))
 
     assert string == '<ul style="margin: 0px; list-style-position: outside;">\n        <li style=\'margin-left:1em; padding-left: 0.5em\'>&lt;foo&gt; = &gt;bar&lt;</li></ul>\n        '
+
+
+def test_nested_dictionary_merge():
+    a = {"Node1": {"leaf11": 11,
+                   "Node11": {"leaf111": 111}, },
+         "Node2": {"leaf21": 21,
+                   "Node21": {"leaf211": 211}, },
+         }
+    b = {"Node1": {"leaf12": 12,
+                   "Node11": {"leaf111": 222,
+                              "Node111": {"leaf1111": 1111}, }, },
+         "Node3": {"leaf31": 31},
+         }
+    nested_dictionary_merge(a, b)
+    merged_dict = {"Node1": {"leaf11": 11,
+                             "leaf12": 12,
+                             "Node11": {"leaf111": 222,
+                                        "Node111": {"leaf1111": 1111}, }, },
+                   "Node2": {"leaf21": 21,
+                             "Node21": {"leaf211": 211}, },
+                   "Node3": {"leaf31": 31},
+                   }
+    assert a == merged_dict
+
+    # Override b to a when conflicts
+    a = {"Node1": {"leaf11": 11,
+                   "Node11": {"leaf111": 111}, },
+         }
+    b = {"Node1": {"leaf11": 12,
+                   "Node11": {"leaf111": 111}, },
+         "Node2": {"leaf21": 21,
+                   "Node21": {"leaf211": 211}, },
+         }
+    nested_dictionary_merge(a, b)
+    assert a == b

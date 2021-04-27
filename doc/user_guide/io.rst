@@ -64,14 +64,21 @@ override this using the ``reader`` keyword:
     # Load a .hspy file with an unknown extension
     >>> s = hs.load("filename.some_extension", reader="hspy")
 
-Some file formats store some extra information about the data (metadata), which
-can be stored in `attributes` of the signal object. If HyperSpy manages to read
-such metadata, it is stored in the
+Some file formats store some extra information about the data (metadata) and
+HyperSpy reads most of them and stores them in the
 :py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, depending on
 the file format, a part of this information will be mapped by HyperSpy to the
 :py:attr:`~.signal.BaseSignal.metadata` attribute, where it can be used by
 e.g. routines operating on the signal. See :ref:`metadata structure
 <metadata_structure>` for details.
+
+.. note::
+
+    Extensive metadata can slow down loading and processing, and
+    loading the :py:attr:`~.signal.BaseSignal.original_metadata` can be disabled
+    using the ``load_original_metadata`` argument of the :py:func:`~.load`
+    function; in this case, the :py:attr:`~.signal.BaseSignal.metadata` will
+    still be populated.
 
 To print the content of the attributes simply use:
 
@@ -144,7 +151,7 @@ Alternatively, regular expression type character classes can be used such as
 
     Wildcards are implemented using ``glob.glob()``, which treats ``*``, ``[``
     and ``]`` as special characters for pattern matching. If your filename or
-    path contains square brackets, you may want to set 
+    path contains square brackets, you may want to set
     ``escape_square_brackets=True``:
 
     .. code-block:: python

@@ -102,7 +102,6 @@ in the following sections of this chapter.
         │   │   ├── gain_offset
         │   │   └── parameters_estimation_method
         │   └── variance
-        ├── binned
         ├── quantity
         ├── signal_type
         └── signal_origin

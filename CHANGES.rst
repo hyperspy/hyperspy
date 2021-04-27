@@ -20,7 +20,6 @@ New
 
 Enhancements
 ------------
-
 * Support for relative slicing (`#2386 <https://github.com/hyperspy/hyperspy/pull/2386>`_)
 * Read Cathodoluminescence metadata (`#2590 <https://github.com/hyperspy/hyperspy/pull/2590>`_)
 * Document reading Attolight data with the sur/pro format reader. (`#2559 <https://github.com/hyperspy/hyperspy/pull/2559/files>`_)
@@ -28,10 +27,22 @@ Enhancements
 
 API changes
 -----------
+* `metadata.Signal.binned` is replaced by an axes parameter, e.g. `axes_manager[-1].is_binned` (`#2652 https://github.com/hyperspy/hyperspy/pull/2652`_)
 
 
-RELEASE_next_patch (Unreleased)
-+++++++++++++++++++++++++++++++
+Changelog
+*********
+
+.. _changes_1.6.2:
+
+v1.6.2
+++++++
+
+This is a maintenance release that adds support for python 3.9 and includes
+numerous bug fixes and enhancements.
+See `the issue tracker
+<https://github.com/hyperspy/hyperspy/milestone/42?closed=1>`__
+for details.
 
 * Widgets plotting improvement and add ``pick_tolerance`` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
 * Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
@@ -50,7 +61,7 @@ RELEASE_next_patch (Unreleased)
 * Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
 * Fix ``iterpath`` VisibleDeprecationWarning when using ``fit_component`` (`#2654 <https://github.com/hyperspy/hyperspy/pull/2654>`_)
-* Fix various bugs with `CircleWidget` and `Line2DWidget` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
+* Fix various bugs with ``CircleWidget`` and ``Line2DWidget`` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 * Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
 * Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
 * Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
@@ -65,15 +76,19 @@ RELEASE_next_patch (Unreleased)
 * Use native endianess in numba jitted functions. (`#2678 <https://github.com/hyperspy/hyperspy/pull/2678>`_)
 * Fix error in Cliff-Lorimer quantification using absorption correction (`#2681 <https://github.com/hyperspy/hyperspy/pull/2681>`_)
 * Fix ``navigation_mask`` bug in decomposition when provided as numpy array (`#2679 <https://github.com/hyperspy/hyperspy/pull/2679>`_)
-* Fix closing image constrat tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
+* Fix closing image contrast tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
 * Fix range widget with matplotlib 3.4 (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
 * Fix bug in `hs.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
 * Add option not to snap ROI when calling the `interactive` method of a ROI (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
 * Fix broken events when changing signal type `#2683 <https://github.com/hyperspy/hyperspy/pull/2683>`_
+* Make DictionaryTreeBrowser lazy by default - see `#368 <https://github.com/hyperspy/hyperspy/issues/368>`_ (`#2623 <https://github.com/hyperspy/hyperspy/pull/2623>`_)
+* Fix setting offset in rebin: the offset was changed in the wrong axis (`#2690 <https://github.com/hyperspy/hyperspy/pull/2690>`_)
+* Fix reading XRF bruker file, close `#2689 <https://github.com/hyperspy/hyperspy/issues/2689>`_ (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
+* Speed up setting CI on azure pipeline (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
+* Fix performance issue with the lazy map method of lazy (`#2617 <https://github.com/hyperspy/hyperspy/pull/2617>`_)
+* Add option to copy/load original metadata in ``hs.stack`` and ``hs.load`` to avoid large ``original_metadata`` which can slowdown processing. Close `#1398 <https://github.com/hyperspy/hyperspy/issues/1398>`_, `#2045 <https://github.com/hyperspy/hyperspy/issues/2045>`_, `#2536 <https://github.com/hyperspy/hyperspy/issues/2536>`_ and `#1568 <https://github.com/hyperspy/hyperspy/issues/1568>`_. (`#2691 <https://github.com/hyperspy/hyperspy/pull/2691>`_)
+* Fix SkewNormal component compatibility with sympy 1.8 (`#2701 <https://github.com/hyperspy/hyperspy/pull/2701>`_)
 
-
-Changelog
-*********
 
 We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones

@@ -342,7 +342,7 @@ class TestFeiEMD():
                           'time': '09:56:41',
                           'time_zone': 'BST',
                           'title': 'HAADF'},
-              'Signal': {'binned': False, 'signal_type': ''},
+              'Signal': {'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
                                         'signal_unfolded': False,
@@ -365,9 +365,11 @@ class TestFeiEMD():
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].units == 'µm'
+        assert signal.axes_manager[0].is_binned == False
         np.testing.assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].units == 'µm'
+        assert signal.axes_manager[1].is_binned == False
         np.testing.assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
         np.testing.assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)

@@ -36,6 +36,9 @@ from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.utils import STACK_METADATA_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -124,6 +127,9 @@ def load(filenames=None,
          lazy=False,
          convert_units=False,
          escape_square_brackets=False,
+         stack_metadata=True,
+         load_original_metadata=True,
+         show_progressbar=None,
          **kwds):
     """Load potentially multiple supported files into HyperSpy.
 
@@ -188,6 +194,12 @@ def load(filenames=None,
         then square brackets are escaped before wildcard matching with
         ``glob.glob()``. If False, square brackets are used to represent
         character classes (e.g. ``[a-z]`` matches lowercase letters).
+    %s
+    %s Only used with ``stack=True``.
+    load_original_metadata : bool
+        If ``True``, all metadata contained in the input file will be added
+        to ``original_metadata``.
+        This does not affect parsing the metadata to ``metadata``.
     reader : None, str, custom file reader object, optional
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
@@ -249,7 +261,7 @@ def load(filenames=None,
         Only for EMD NCEM. Stack datasets of groups with common name. Relevant
         for emd file version >= 0.5 where groups can be named 'group0000',
         'group0001', etc.
-    ignore_non_linear_dims : bool, optional 
+    ignore_non_linear_dims : bool, optional
         Only for HDF5 USID files: if True (default), parameters that were varied
         non-linearly in the desired dataset will result in Exceptions.
         Else, all such non-linearly varied parameters will be treated as
@@ -305,6 +317,7 @@ def load(filenames=None,
             del kwds[k]
     kwds['signal_type'] = signal_type
     kwds['convert_units'] = convert_units
+    kwds['load_original_metadata'] = load_original_metadata
     if filenames is None:
         from hyperspy.signal_tools import Load
         load_ui = Load()
@@ -398,6 +411,8 @@ def load(filenames=None,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,
                 lazy=lazy,
+                stack_metadata=stack_metadata,
+                show_progressbar=show_progressbar,
             )
             signal.metadata.General.title = Path(filenames[0]).parent.stem
             _logger.info('Individual files loaded correctly')
@@ -411,6 +426,8 @@ def load(filenames=None,
         objects = objects[0]
 
     return objects
+
+load.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def load_single_file(filename, **kwds):
@@ -458,7 +475,7 @@ def load_single_file(filename, **kwds):
         # Try and load the file
         return load_with_reader(filename=filename, reader=reader, **kwds)
 
-    except BaseException as e:
+    except BaseException:
         _logger.error(
             "If this file format is supported, please "
             "report this error to the HyperSpy developers."
@@ -471,12 +488,13 @@ def load_with_reader(
         reader,
         signal_type=None,
         convert_units=False,
+        load_original_metadata=True,
         **kwds
     ):
     """Load a supported file with a given reader."""
     lazy = kwds.get('lazy', False)
     file_data_list = reader.file_reader(filename, **kwds)
-    objects = []
+    signal_list = []
 
     for signal_dict in file_data_list:
         if 'metadata' in signal_dict:
@@ -484,22 +502,34 @@ def load_with_reader(
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            objects.append(dict2signal(signal_dict, lazy=lazy))
+            signal = dict2signal(signal_dict, lazy=lazy)
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
-            objects[-1].tmp_parameters.folder = folder
-            objects[-1].tmp_parameters.filename = filename
-            objects[-1].tmp_parameters.extension = extension.replace('.', '')
+            signal.tmp_parameters.folder = folder
+            signal.tmp_parameters.filename = filename
+            signal.tmp_parameters.extension = extension.replace('.', '')
+            # test if binned attribute is still in metadata
+            if signal.metadata.has_item('Signal.binned'):
+                for axis in signal.axes_manager.signal_axes:
+                    axis.is_binned = signal.metadata.Signal.binned
+                del signal.metadata.Signal.binned
+                warnings.warn('Loading old file version. The binned attribute '
+                              'has been moved from metadata.Signal to '
+                              'axis.is_binned. Setting this attribute for all '
+                              'signal axes instead.', UserWarning)
             if convert_units:
-                objects[-1].axes_manager.convert_units()
+                signal.axes_manager.convert_units()
+            if not load_original_metadata:
+                signal.original_metadata = type(signal.original_metadata)()
+            signal_list.append(signal)
         else:
             # it's a standalone model
             continue
 
-    if len(objects) == 1:
-        objects = objects[0]
+    if len(signal_list) == 1:
+        signal_list = signal_list[0]
 
-    return objects
+    return signal_list
 
 
 def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
@@ -614,12 +644,12 @@ def dict2signal(signal_dict, lazy=False):
             importlib.import_module(signal_dict["package"])
         except ImportError:
             _logger.warning(
-                f"This file contains a signal provided by the " +
-                f'{signal_dict["package"]} Python package that is not ' +
-                f'currently installed. The signal will be loaded into a '
-                f'generic HyperSpy signal. Consider installing ' +
+                "This file contains a signal provided by the "
+                f'{signal_dict["package"]} Python package that is not '
+                'currently installed. The signal will be loaded into a '
+                'generic HyperSpy signal. Consider installing '
                 f'{signal_dict["package"]} to load this dataset into its '
-                f'original signal class.')
+                'original signal class.')
     signal_dimension = -1  # undefined
     signal_type = ""
     if "metadata" in signal_dict:
