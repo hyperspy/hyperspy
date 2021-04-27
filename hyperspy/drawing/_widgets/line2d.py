@@ -187,9 +187,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
     def _do_snap_position(self, value=None):
         value = np.array(value) if value is not None else self._pos
-
-        ret1 = super(Line2DWidget, self)._do_snap_position(value[0, :])
-        ret2 = super(Line2DWidget, self)._do_snap_position(value[1, :])
+        ret1 = super()._do_snap_position(value[0, :])
+        ret2 = super()._do_snap_position(value[1, :])
 
         return np.array([ret1, ret2])
 

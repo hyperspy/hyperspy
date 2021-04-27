@@ -579,7 +579,11 @@ class DataAxis(t.HasTraits, UnitConversion):
             if self.size > index >= 0:
                 return index
             else:
-                raise ValueError("The value is out of the axis limits")
+                raise ValueError(
+                    f'The value {value} is out of the limits '
+                    f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                    f'"{self._get_name()}" axis.'
+                    )
 
     def index2value(self, index):
         if isinstance(index, da.Array):
