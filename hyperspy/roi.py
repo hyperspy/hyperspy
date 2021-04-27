@@ -458,10 +458,6 @@ class BaseInteractiveROI(BaseROI):
                 axes, signal)(
                 signal.axes_manager, **kwargs)
             widget.color = color
-            if hasattr(widget, 'snap_all'):
-                widget.snap_all = snap
-            else:
-                widget.snap_position = snap
 
         # Remove existing ROI, if it exsists and axes match
         if signal in self.signal_map and \
@@ -472,6 +468,12 @@ class BaseInteractiveROI(BaseROI):
         widget.axes = axes
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
+            # We need to snap after the widget value have been set
+            if hasattr(widget, 'snap_all'):
+                widget.snap_all = snap
+            else:
+                widget.snap_position = snap
+
         if widget.ax is None:
             if signal._plot is None or signal._plot.signal_plot is None:
                 raise Exception(
