@@ -562,7 +562,33 @@ class BaseDataAxis(t.HasTraits):
         if self.low_value <= value <= self.high_value:
             return (np.abs(self.axis - value)).argmin()
         else:
-            raise ValueError("The value is out of the axis limits")
+            index = int(index)
+            if self.size > index >= 0:
+                return index
+            else:
+                raise ValueError(
+                    f'The value {value} is out of the limits '
+                    f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                    f'"{self._get_name()}" axis.'
+                    )
+
+    def index2value(self, index):
+        if isinstance(index, da.Array):
+            index = index.compute()
+        if isinstance(index, np.ndarray):
+            return self.axis[index.ravel()].reshape(index.shape)
+        else:
+            return self.axis[index]
+
+    def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
+        scale = (value_tuple[1] - value_tuple[0]) /\
+            (index_tuple[1] - index_tuple[0])
+        offset = value_tuple[0] - scale * index_tuple[0]
+        if modify_calibration is True:
+            self.offset = offset
+            self.scale = scale
+        else:
+            return offset, scale
 
     def value_range_to_indices(self, v1, v2):
         """Convert the given range to index range.

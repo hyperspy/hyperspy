@@ -128,21 +128,15 @@ class TestShift1D:
         s = self.s
         shifts = BaseSignal([0.1])
         s.shift1D(shifts, crop=True)
-        assert (
-            tuple(
-                s.axes_manager[0].axis) == tuple(
-                np.arange(
-                    0.2, 2., 0.2)))
+        np.testing.assert_allclose(s.axes_manager[0].axis,
+                                   np.arange(0.2, 2., 0.2))
 
     def test_crop_right(self):
         s = self.s
         shifts = BaseSignal([-0.1])
         s.shift1D(shifts, crop=True)
-        assert (
-            tuple(
-                s.axes_manager[0].axis) == tuple(
-                np.arange(
-                    0., 1.8, 0.2)))
+        np.testing.assert_allclose(s.axes_manager[0].axis,
+                                   np.arange(0., 1.8, 0.2))
 
 
 @lazifyTestClass

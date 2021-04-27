@@ -187,6 +187,7 @@ class TestPlotROI():
 
         return objs["figure"]
 
+
 def test_error_message():
     im = Signal2D(np.arange(50000).reshape([10, 50, 100]))
     im.plot()
@@ -207,3 +208,13 @@ def test_remove_rois():
     s2_roi = r.interactive(s2)
 
     r.remove_widget(s)
+
+
+@pytest.mark.parametrize('snap', [True, False])
+def test_snapping_axis_values(snap):
+    s = Signal2D(np.arange(100).reshape(10, 10))
+    s.axes_manager[0].offset = 5
+
+    r = roi.Line2DROI(x1=6, y1=0, x2=12, y2=4, linewidth=0)
+    s.plot()
+    _ = r.interactive(s, snap=snap)
