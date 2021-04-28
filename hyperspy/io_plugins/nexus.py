@@ -413,6 +413,7 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
 
 def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
                 metadata_keys=None,
+                skip_array_metadata=False,
                 nxdata_only=False,
                 hardlinks_only=False,
                 use_default=False,
@@ -451,6 +452,9 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
         Only return items from the original metadata whose path contain the
         strings .e.g metadata_keys = ["instrument", "Fe"] will return
         all metadata entries with "instrument" or "Fe" in their hdf path.
+    skip_array_metadata : bool, default : False
+        Whether to skip loading metadata with an array entry. This is useful 
+        as metadata may contain large array that is redundant with the data.
     nxdata_only : bool, default : False
         If True only NXdata will be converted into a signal
         if False NXdata and any hdf datasets will be loaded as signals
@@ -485,7 +489,8 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
     dataset_keys = _check_search_keys(dataset_keys)
     dataset_paths = _check_search_keys(dataset_paths)
     metadata_keys = _check_search_keys(metadata_keys)
-    original_metadata = _load_metadata(fin, lazy=lazy)
+    original_metadata = _load_metadata(fin, lazy=lazy, 
+                                       skip_array_metadata=skip_array_metadata)
     # some default values...
     nexus_data_paths = []
     hdf_data_paths = []
@@ -768,7 +773,7 @@ def _find_data(group, search_keys=None, hardlinks_only=False,
     return matched_nexus, matched_hdf
 
 
-def _load_metadata(group, lazy=False):
+def _load_metadata(group, lazy=False, skip_array_metadata=False):
     """Search through a hdf group and return the group structure.
 
     h5py.visit or visititems does not visit soft
@@ -781,6 +786,8 @@ def _load_metadata(group, lazy=False):
         location to load the metadata from
     lazy : bool , default : False
         Option for lazy loading
+    skip_array_metadata : bool, default : False
+        whether to skip loading array metadata
 
     Returns
     -------
@@ -791,7 +798,8 @@ def _load_metadata(group, lazy=False):
     """
     rootname = ""
 
-    def find_meta_in_tree(group, rootname, lazy=False):
+    def find_meta_in_tree(group, rootname, lazy=False, 
+                          skip_array_metadata=False):
         tree = {}
         for key, item in group.attrs.items():
             new_key = _fix_exclusion_keys(key)
@@ -809,7 +817,15 @@ def _load_metadata(group, lazy=False):
                 if item.attrs:
                     if new_key not in tree.keys():
                         tree[new_key] = {}
-                    tree[new_key]["value"] = _parse_from_file(item, lazy=lazy)
+                    # avoid loading array as metadata
+                    if skip_array_metadata:
+                        if item.size < 2 and item.ndim == 0:
+                            tree[new_key]["value"] = _parse_from_file(item, 
+                                                                      lazy=lazy)
+                    else:
+                        tree[new_key]["value"] = _parse_from_file(item, 
+                                                                  lazy=lazy)
+                        
                     for k, v in item.attrs.items():
                         if "attrs" not in tree[new_key].keys():
                             tree[new_key]["attrs"] = {}
@@ -818,18 +834,26 @@ def _load_metadata(group, lazy=False):
                 else:
                     # this is to support hyperspy where datasets are not saved
                     # with attributes
-                    tree[new_key] = _parse_from_file(item, lazy=lazy)
+                    if skip_array_metadata:
+                        if item.size < 2 and item.ndim == 0:
+                            tree[new_key] = _parse_from_file(item, lazy=lazy)
+                    else:
+                        tree[new_key] = _parse_from_file(item, lazy=lazy)
+                        
             elif type(item) is h5py.Group:
                 if "NX_class" in item.attrs:
                     if item.attrs["NX_class"] != b"NXdata":
                         tree[new_key] = find_meta_in_tree(item, rootkey,
-                                                          lazy=lazy)
+                                                          lazy=lazy,
+                                      skip_array_metadata=skip_array_metadata)
                 else:
                     tree[new_key] = find_meta_in_tree(item, rootkey,
-                                                      lazy=lazy)
+                                                      lazy=lazy, 
+                                      skip_array_metadata=skip_array_metadata)
 
         return tree
-    extracted_tree = find_meta_in_tree(group, rootname, lazy=lazy)
+    extracted_tree = find_meta_in_tree(group, rootname, lazy=lazy, 
+                                       skip_array_metadata=skip_array_metadata)
     return extracted_tree
 
 
