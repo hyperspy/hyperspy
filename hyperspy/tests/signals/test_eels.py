@@ -289,7 +289,7 @@ class TestPowerLawExtrapolation:
 
     def setup_method(self, method):
         s = hs.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
-        s.metadata.Signal.binned = False
+        s.axes_manager[-1].is_binned = False
         s.axes_manager[-1].offset = 50
         s.axes_manager[-1].scale = 0.5
         self.s = s
@@ -301,7 +301,7 @@ class TestPowerLawExtrapolation:
 
     def test_binned(self):
         self.s.data *= self.s.axes_manager[-1].scale
-        self.s.metadata.Signal.binned = True
+        self.s.axes_manager[-1].is_binned = True
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)

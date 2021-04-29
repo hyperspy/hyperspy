@@ -46,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 
 
 install_req = ['scipy>=1.1',
-               'matplotlib>=2.2.3',
+               'matplotlib>=3.1.0',
                'numpy>=1.17.1',
                'traits>=4.5.0',
                'natsort',
@@ -69,6 +69,9 @@ install_req = ['scipy>=1.1',
                'prettytable',
                'tifffile>=2018.10.18',
                'numba',
+                # included in stdlib since v3.8, but this required version requires Python 3.10
+                # We can remove this requirement when the minimum supported version becomes Python 3.10
+               'importlib_metadata>=3.6',
                ]
 
 extras_require = {
@@ -280,7 +283,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.learn',
                   'hyperspy.tests.model',
                   'hyperspy.tests.samfire',
-                  'hyperspy.tests.signal',
+                  'hyperspy.tests.signals',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',
                   'hyperspy.models',
@@ -359,8 +362,8 @@ with update_version_when_dev() as version:
                 'tests/io/phenom_data/*.elid',
                 'tests/io/sur_data/*.pro',
                 'tests/io/sur_data/*.sur',
-                'tests/signal/data/test_find_peaks1D_ohaver.hdf5',
-                'tests/signal/data/*.hspy',
+                'tests/signals/data/test_find_peaks1D_ohaver.hdf5',
+                'tests/signals/data/*.hspy',
                 'hyperspy_extension.yaml',
             ],
         },

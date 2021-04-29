@@ -40,6 +40,7 @@ from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import numba_histogram
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 _logger = logging.getLogger(__name__)
@@ -1247,6 +1248,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.background_estimator = None
         self.fast = fast
         self.plot_remainder = plot_remainder
+        if plot_remainder:
+            # When plotting the remainder on the right hand side axis, we 
+            # adjust the layout here to avoid doing it later to avoid
+            # corrupting the background when using blitting
+            figure = signal._plot.signal_plot.figure
+            figure.tight_layout(rect=[0, 0, 0.95, 1])
         if model is None:
             from hyperspy.models.model1d import Model1D
             model = Model1D(signal)
@@ -1330,7 +1337,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             color='green',
             type='line',
             scaley=False)
-        self.signal._plot.signal_plot.create_right_axis(color='green')
+        self.signal._plot.signal_plot.create_right_axis(color='green',
+                                                        adjust_layout=False)
         self.signal._plot.signal_plot.add_line(self.rm_line, ax='right')
         self.rm_line.plot()
 
@@ -1353,7 +1361,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.axis.axis[from_index:to_index])
             to_return = bg_array
 
-        if self.signal.metadata.Signal.binned is True:
+        if is_binned(self.signal) is True:
+        # in v2 replace by
+        #if self.axis.is_binned is True:
             to_return *= self.axis.scale
         return to_return
 

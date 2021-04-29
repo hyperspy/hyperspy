@@ -378,8 +378,7 @@ def test_multi_signal():
                     'date': '2019-12-10',
                     'time': '15:32:41',
                     'authors': 'JohnDoe'},
-        'Signal': {'binned': False,
-                   'signal_type': '',
+        'Signal': {'signal_type': '',
                    'quantity': 'Intensity',
                    'Noise_properties': {
                        'Variance_linear_model': {
@@ -414,7 +413,6 @@ def test_multi_signal():
             'title': 'Plot',
             'original_filename': 'multi_signal.dm3'},
         'Signal': {
-            'binned': False,
             'signal_type': '',
             'quantity': 'Intensity',
             'Noise_properties': {
@@ -430,6 +428,10 @@ def test_multi_signal():
     # rather than testing all of original metadata (huge), use length as a proxy
     assert len(json.dumps(s1.original_metadata.as_dictionary())) == 17779
     assert len(json.dumps(s2.original_metadata.as_dictionary())) == 15024
+    
+    # test axes
+    assert s1.axes_manager[-1].is_binned == False
+    assert s2.axes_manager[-1].is_binned == False
 
     # simple tests on the data itself:
     assert s1.data.sum() == 949490255

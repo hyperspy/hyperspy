@@ -200,3 +200,19 @@ def test_save_default_format():
 
         t = hs.load(Path(dirpath, "temp.hspy"))
         assert len(t) == 1
+
+
+def test_load_original_metadata():
+    s = Signal1D(np.arange(10))
+    s.original_metadata.a = 0
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        f = os.path.join(dirpath, "temp")
+        s.save(f)
+        assert s.original_metadata.as_dictionary() != {}
+
+        t = hs.load(Path(dirpath, "temp.hspy"))
+        assert t.original_metadata.as_dictionary() == s.original_metadata.as_dictionary()
+
+        t = hs.load(Path(dirpath, "temp.hspy"), load_original_metadata=False)
+        assert t.original_metadata.as_dictionary() == {}

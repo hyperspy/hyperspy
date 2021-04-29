@@ -297,7 +297,14 @@ class TestSavingMetadataContainers:
         l = load(fname)
         assert l.metadata.Signal.quantity == quantity
 
-    def test_metadata_update_to_v3_0(self):
+    def test_metadata_binned_deprecate(self):
+        with pytest.warns(UserWarning, match="Loading old file"):
+            s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
+        assert s.metadata.has_item('Signal.binned') == False
+        assert s.axes_manager[-1].is_binned == False
+        
+
+    def test_metadata_update_to_v3_1(self):
         md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
                                          'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
                                                  'Stage': {'tilt_alpha': 10.0},
@@ -312,7 +319,6 @@ class TestSavingMetadataContainers:
                           'title': 'test_diffraction_pattern'},
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
                                                                         'gain_offset': 0.0}},
-                         'binned': False,
                          'quantity': 'Intensity',
                          'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -322,7 +328,7 @@ class TestSavingMetadataContainers:
         s = load(os.path.join(
             my_path,
             "hdf5_files",
-            'example2_v2.2.hspy'))
+            'example2_v3.1.hspy'))
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -410,6 +416,21 @@ class TestAxesConfiguration:
         assert s.axes_manager.navigation_axes[0].index_in_array == 4
         assert s.axes_manager.navigation_axes[1].index_in_array == 3
         assert s.axes_manager.signal_dimension == 3
+
+    def teardown_method(self, method):
+        remove(self.filename)
+
+class TestAxesConfigurationBinning:
+
+    def setup_method(self, method):
+        self.filename = 'testfile.hdf5'
+        s = BaseSignal(np.zeros((2, 2, 2)))
+        s.axes_manager.signal_axes[-1].is_binned = True
+        s.save(self.filename)
+
+    def test_axes_configuration(self):
+        s = load(self.filename)
+        assert s.axes_manager.signal_axes[-1].is_binned == True
 
     def teardown_method(self, method):
         remove(self.filename)
@@ -691,7 +712,8 @@ def test_save_ragged_array(tmp_path):
 
 def test_load_missing_extension(caplog):
     path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
-    s = load(path)
+    with pytest.warns(UserWarning):
+        s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
        _ = s.models.restore("a")

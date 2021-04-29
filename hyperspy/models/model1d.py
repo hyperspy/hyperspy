@@ -32,6 +32,7 @@ from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 from hyperspy.misc.utils import dummy_context_manager
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
@@ -426,7 +427,9 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if self.signal.metadata.Signal.binned is True:
+        if is_binned(self.signal) is True:
+        # in v2 replace by
+        #if self.signal.axes_manager[-1].is_binned is True:
             to_return *= self.signal.axes_manager[-1].scale
         return to_return
 
@@ -631,7 +634,9 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if self.signal.metadata.Signal.binned is True:
+        if is_binned(self.signal) is True:
+        # in v2 replace by
+        #if self.signal.axes_manager[-1].is_binned is True:
             to_return *= self.signal.axes_manager[-1].scale
 
         return to_return

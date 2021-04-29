@@ -236,14 +236,14 @@ class TestCallMethods:
     def test_plotting_not_active_component(self):
         c = self.c
         c.active = False
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         assert np.isnan(res).all()
 
     def test_plotting_active_component_notbinned(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         c.model.__call__.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
@@ -251,7 +251,7 @@ class TestCallMethods:
     def test_plotting_active_component_binned(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = True
+        c.model.signal.axes_manager[-1].is_binned = True
         c.model.__call__.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
@@ -259,7 +259,7 @@ class TestCallMethods:
     def test_plotting_active_component_out_of_range(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         c.model.__call__.return_value = np.array([1.1, 1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=True)
         np.testing.assert_array_equal(res, np.array([1.1, np.nan, 1.3]))

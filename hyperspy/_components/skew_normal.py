@@ -18,10 +18,12 @@
 
 import numpy as np
 import dask.array as da
+import sympy
 
 from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
+
 from distutils.version import LooseVersion
-import sympy
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -139,9 +141,12 @@ class SkewNormal(Expression):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
             raise ImportError("The `SkewNormal` component requires "
                               "SymPy >= 1.3")
+        # We use `_shape` internally because `shape` is already taken in sympy
+        # https://github.com/sympy/sympy/pull/20791
         super(SkewNormal, self).__init__(
-            expression="2 * A * normpdf * normcdf; normpdf = exp(- t ** 2 / 2) \
-                / sqrt(2 * pi); normcdf = (1 + erf(shape * t / sqrt(2))) / 2; \
+            expression="2 * A * normpdf * normcdf;\
+                normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi);\
+                normcdf = (1 + erf(_shape * t / sqrt(2))) / 2;\
                 t = (x - x0) / scale",
             name="SkewNormal",
             x0=x0,
@@ -150,6 +155,7 @@ class SkewNormal(Expression):
             shape=shape,
             module=module,
             autodoc=False,
+            rename_pars={"_shape": "shape"},
             **kwargs,
         )
 
@@ -208,7 +214,9 @@ class SkewNormal(Expression):
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.A.value /= axis.scale
             return True
         else:
@@ -216,7 +224,9 @@ class SkewNormal(Expression):
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0

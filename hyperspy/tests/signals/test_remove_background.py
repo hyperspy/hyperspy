@@ -50,7 +50,7 @@ class TestRemoveBackground1DGaussian:
     @pytest.mark.parametrize('return_model', [False, True])
     def test_background_remove(self, binning, fast, return_model):
         signal = self.signal
-        signal.metadata.Signal.binned = binning
+        signal.axes_manager[-1].is_binned = binning
         out = signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
@@ -90,7 +90,7 @@ class TestRemoveBackground1DLorentzian:
         self.signal = hs.signals.Signal1D(
             lorentzian.function(np.arange(0, 20, 0.03)))
         self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
+        self.signal.axes_manager[0].is_binned = False
 
     def test_background_remove_lorentzian(self):
         # Fast is not accurate
@@ -116,7 +116,7 @@ class TestRemoveBackground1DPowerLaw:
         pl.r.value = 3
         self.signal = hs.signals.Signal1D(pl.function(np.arange(100, 200)))
         self.signal.axes_manager[0].offset = 100
-        self.signal.metadata.Signal.binned = False
+        self.signal.axes_manager[0].is_binned = False
 
         self.signal_noisy = self.signal.deepcopy()
         self.signal_noisy.add_gaussian_noise(1)
@@ -168,7 +168,7 @@ class TestRemoveBackground1DSkewNormal:
         self.signal = hs.signals.Signal1D(
             skewnormal.function(np.arange(0, 10, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
+        self.signal.axes_manager[0].is_binned = False
 
     def test_background_remove_skewnormal(self):
         # Fast is not accurate
@@ -197,7 +197,7 @@ class TestRemoveBackground1DVoigt:
         self.signal = hs.signals.Signal1D(
             voigt.function(np.arange(0, 20, 0.03)))
         self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
+        self.signal.axes_manager[0].is_binned = False
 
     def test_background_remove_voigt(self):
         # resort to fast=False as estimator guesses only Gaussian width
@@ -225,7 +225,7 @@ class TestRemoveBackground1DExponential:
         self.signal = hs.signals.Signal1D(
             exponential.function(np.arange(100, 200, 0.02)))
         self.signal.axes_manager[0].scale = 0.01
-        self.signal.metadata.Signal.binned = False
+        self.signal.axes_manager[0].is_binned = False
         self.atol = 0.04 * abs(self.signal.data).max()
 
     def test_background_remove_exponential(self):

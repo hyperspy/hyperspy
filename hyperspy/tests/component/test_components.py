@@ -87,11 +87,12 @@ class TestPowerLaw:
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
-        self.m.signal.metadata.Signal.binned = binned
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
-        assert s.metadata.Signal.binned == binned
+        assert s.axes_manager[-1].is_binned == binned
         g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s, None, None, only_current=only_current)
+        assert g._axes_manager[-1].is_binned == binned
         A_value = 1008.4913 if binned else 1006.4378
         r_value = 4.001768 if binned else 4.001752
         np.testing.assert_allclose(g.A.value, A_value)
@@ -102,6 +103,7 @@ class TestPowerLaw:
         # Test that it all works when calling it with a different signal
         s2 = hs.stack((s, s))
         g.estimate_parameters(s2, None, None, only_current=only_current)
+        assert g._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(g.A.map["values"][1], A_value)
         np.testing.assert_allclose(g.r.map["values"][1], r_value)
 
@@ -143,9 +145,9 @@ class TestDoublePowerLaw:
 
     @pytest.mark.parametrize(("binned"), (True, False))
     def test_fit(self, binned):
-        self.m.signal.metadata.Signal.binned = binned
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
-        assert s.metadata.Signal.binned == binned
+        assert s.axes_manager[-1].is_binned == binned
         g = hs.model.components1D.DoublePowerLaw()
         # Fix the ratio parameter to test the fit
         g.ratio.free = False
@@ -169,20 +171,25 @@ class TestOffset:
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
-        self.m.signal.metadata.Signal.binned = binned
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
-        assert s.metadata.Signal.binned == binned
+        assert s.axes_manager[-1].is_binned == binned
         o = hs.model.components1D.Offset()
         o.estimate_parameters(s, None, None, only_current=only_current)
+        assert o._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(o.offset.value, 10)
 
-    def test_function_nd(self):
+    @pytest.mark.parametrize(("binned"), (True, False))
+    def test_function_nd(self, binned):
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         s = hs.stack([s] * 2)
         o = hs.model.components1D.Offset()
         o.estimate_parameters(s, None, None, only_current=False)
+        assert o._axes_manager[-1].is_binned == binned
         axis = s.axes_manager.signal_axes[0]
-        np.testing.assert_allclose(o.function_nd(axis.axis), s.data)
+        factor = axis.scale if binned else 1
+        np.testing.assert_allclose(o.function_nd(axis.axis) * factor, s.data)
 
 
 @pytest.mark.filterwarnings("ignore:The API of the `Polynomial` component")
@@ -215,11 +222,12 @@ class TestDeprecatedPolynomial:
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
-        self.m.signal.metadata.Signal.binned = binned
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
-        assert s.metadata.Signal.binned == binned
+        assert s.axes_manager[-1].is_binned == binned
         g = hs.model.components1D.Polynomial(order=2)
         g.estimate_parameters(s, None, None, only_current=only_current)
+        assert g._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(g.coefficients.value[0], 0.5)
         np.testing.assert_allclose(g.coefficients.value[1], 2)
         np.testing.assert_allclose(g.coefficients.value[2], 3)
@@ -310,11 +318,12 @@ class TestPolynomial:
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self,  only_current, binned):
-        self.m.signal.metadata.Signal.binned = binned
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
-        s.metadata.Signal.binned = binned
+        s.axes_manager[-1].is_binned = binned
         p = hs.model.components1D.Polynomial(order=2, legacy=False)
         p.estimate_parameters(s, None, None, only_current=only_current)
+        assert p._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(p.a2.value, 0.5)
         np.testing.assert_allclose(p.a1.value, 2)
         np.testing.assert_allclose(p.a0.value, 3)
@@ -370,23 +379,24 @@ class TestGaussian:
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters_binned(self, only_current, binned):
-        self.m.signal.metadata.Signal.binned = binned
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
-        assert s.metadata.Signal.binned == binned
+        assert s.axes_manager[-1].is_binned == binned
         g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s, None, None, only_current=only_current)
+        assert g._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(g.sigma.value, 0.5)
         np.testing.assert_allclose(g.A.value, 2)
         np.testing.assert_allclose(g.centre.value, 1)
 
     @pytest.mark.parametrize("binned", (True, False))
     def test_function_nd(self, binned):
-        self.m.signal.metadata.Signal.binned = binned
+        self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         s2 = hs.stack([s] * 2)
         g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s2, None, None, only_current=False)
-        assert g.binned == binned
+        assert g._axes_manager[-1].is_binned == binned
         axis = s.axes_manager.signal_axes[0]
         factor = axis.scale if binned else 1
         np.testing.assert_allclose(g.function_nd(axis.axis) * factor, s2.data)
@@ -468,8 +478,8 @@ class TestScalableFixedPattern:
     def test_both_unbinned(self):
         s = self.s
         s1 = self.pattern
-        s.metadata.Signal.binned = False
-        s1.metadata.Signal.binned = False
+        s.axes_manager[-1].is_binned = False
+        s1.axes_manager[-1].is_binned = False
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
@@ -481,8 +491,8 @@ class TestScalableFixedPattern:
     def test_both_binned(self):
         s = self.s
         s1 = self.pattern
-        s.metadata.Signal.binned = True
-        s1.metadata.Signal.binned = True
+        s.axes_manager[-1].is_binned = True
+        s1.axes_manager[-1].is_binned = True
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
@@ -494,8 +504,8 @@ class TestScalableFixedPattern:
     def test_pattern_unbinned_signal_binned(self):
         s = self.s
         s1 = self.pattern
-        s.metadata.Signal.binned = True
-        s1.metadata.Signal.binned = False
+        s.axes_manager[-1].is_binned = True
+        s1.axes_manager[-1].is_binned = False
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
@@ -507,8 +517,8 @@ class TestScalableFixedPattern:
     def test_pattern_binned_signal_unbinned(self):
         s = self.s
         s1 = self.pattern
-        s.metadata.Signal.binned = False
-        s1.metadata.Signal.binned = True
+        s.axes_manager[-1].is_binned = False
+        s1.axes_manager[-1].is_binned = True
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
