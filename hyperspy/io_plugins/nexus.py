@@ -453,7 +453,7 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
         strings .e.g metadata_keys = ["instrument", "Fe"] will return
         all metadata entries with "instrument" or "Fe" in their hdf path.
     skip_array_metadata : bool, default : False
-        Whether to skip loading metadata with an array entry. This is useful 
+        Whether to skip loading metadata with an array entry. This is useful
         as metadata may contain large array that is redundant with the data.
     nxdata_only : bool, default : False
         If True only NXdata will be converted into a signal
@@ -489,7 +489,7 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
     dataset_keys = _check_search_keys(dataset_keys)
     dataset_paths = _check_search_keys(dataset_paths)
     metadata_keys = _check_search_keys(metadata_keys)
-    original_metadata = _load_metadata(fin, lazy=lazy, 
+    original_metadata = _load_metadata(fin, lazy=lazy,
                                        skip_array_metadata=skip_array_metadata)
     # some default values...
     nexus_data_paths = []
@@ -798,7 +798,7 @@ def _load_metadata(group, lazy=False, skip_array_metadata=False):
     """
     rootname = ""
 
-    def find_meta_in_tree(group, rootname, lazy=False, 
+    def find_meta_in_tree(group, rootname, lazy=False,
                           skip_array_metadata=False):
         tree = {}
         for key, item in group.attrs.items():
@@ -820,12 +820,12 @@ def _load_metadata(group, lazy=False, skip_array_metadata=False):
                     # avoid loading array as metadata
                     if skip_array_metadata:
                         if item.size < 2 and item.ndim == 0:
-                            tree[new_key]["value"] = _parse_from_file(item, 
+                            tree[new_key]["value"] = _parse_from_file(item,
                                                                       lazy=lazy)
                     else:
-                        tree[new_key]["value"] = _parse_from_file(item, 
+                        tree[new_key]["value"] = _parse_from_file(item,
                                                                   lazy=lazy)
-                        
+
                     for k, v in item.attrs.items():
                         if "attrs" not in tree[new_key].keys():
                             tree[new_key]["attrs"] = {}
@@ -839,7 +839,7 @@ def _load_metadata(group, lazy=False, skip_array_metadata=False):
                             tree[new_key] = _parse_from_file(item, lazy=lazy)
                     else:
                         tree[new_key] = _parse_from_file(item, lazy=lazy)
-                        
+
             elif type(item) is h5py.Group:
                 if "NX_class" in item.attrs:
                     if item.attrs["NX_class"] != b"NXdata":
@@ -848,11 +848,11 @@ def _load_metadata(group, lazy=False, skip_array_metadata=False):
                                       skip_array_metadata=skip_array_metadata)
                 else:
                     tree[new_key] = find_meta_in_tree(item, rootkey,
-                                                      lazy=lazy, 
+                                                      lazy=lazy,
                                       skip_array_metadata=skip_array_metadata)
 
         return tree
-    extracted_tree = find_meta_in_tree(group, rootname, lazy=lazy, 
+    extracted_tree = find_meta_in_tree(group, rootname, lazy=lazy,
                                        skip_array_metadata=skip_array_metadata)
     return extracted_tree
 
@@ -999,7 +999,8 @@ def _write_nexus_attr(dictionary, group):
 
 
 def read_metadata_from_file(filename, metadata_keys=None,
-                            lazy=False, verbose=False):
+                            lazy=False, verbose=False,
+                            skip_array_metadata=False):
     """Read the metadata from a nexus or hdf file.
 
     This method iterates through the file and returns a dictionary of
@@ -1019,6 +1020,10 @@ def read_metadata_from_file(filename, metadata_keys=None,
         hdf entries with "instrument" or "Fe" in their hdf path.
     verbose: bool, default : False
         Pretty Print the results to screen
+    skip_array_metadata : bool, default : False
+        Whether to skip loading array metadata. This is useful as a lot of
+        large array may be present in the metadata and it is redundant with
+        dataset itself.
 
     Returns
     -------
@@ -1037,11 +1042,14 @@ def read_metadata_from_file(filename, metadata_keys=None,
     fin = h5py.File(filename, "r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
-    stripped_metadata = _load_metadata(fin, lazy=lazy)
+    stripped_metadata = _load_metadata(fin, lazy=lazy,
+                                       skip_array_metadata=skip_array_metadata)
     stripped_metadata = _find_search_keys_in_dict(stripped_metadata,
                                                   search_keys=search_keys)
     if verbose:
         pprint.pprint(stripped_metadata)
+
+    fin.close()
     return stripped_metadata
 
 
