@@ -931,7 +931,7 @@ def _find_search_keys_in_dict(tree, search_keys=None):
     return metadata_dict
 
 
-def _write_nexus_groups(dictionary, group, **kwds):
+def _write_nexus_groups(dictionary, group, skip_keys=None, **kwds):
     """Recursively iterate throuh dictionary and write groups to nexus.
 
     Parameters
@@ -940,13 +940,20 @@ def _write_nexus_groups(dictionary, group, **kwds):
         dictionary contents to store to hdf group
     group : hdf group
         location to store dictionary
+    skip_keys : str or list of str
+        the key(s) to skip when writing into the group
     **kwds : additional keywords
        additional keywords to pass to h5py.create_dataset method
 
     """
+    if skip_keys is None:
+        skip_keys = []
+    elif isinstance(skip_keys, str):
+        skip_keys = [skip_keys]
+
     for key, value in dictionary.items():
-        if key == 'attrs':
-            # we will handle attrs later...
+        if key == 'attrs' or key in skip_keys:
+            # we will handle attrs later... and skip unwanted keys
             continue
         if isinstance(value, dict):
             if "attrs" in value:
@@ -958,7 +965,8 @@ def _write_nexus_groups(dictionary, group, **kwds):
                     and len(set(list(value.keys()) + ["attrs", "value"])) == 2:
                 value = value["value"]
             else:
-                _write_nexus_groups(value, group.require_group(key), **kwds)
+                _write_nexus_groups(value, group.require_group(key),
+                                    skip_keys=skip_keys, **kwds)
         if isinstance(value, (list, tuple, np.ndarray, da.Array)):
             data = _parse_to_file(value)
             overwrite_dataset(group, data, key, chunks=None, **kwds)
@@ -968,10 +976,11 @@ def _write_nexus_groups(dictionary, group, **kwds):
             _write_signal(value, group, key, **kwds)
         else:
             if value is not None and key not in group:
-                _write_nexus_groups(value, group.require_group(key), **kwds)
+                _write_nexus_groups(value, group.require_group(key),
+                                    skip_keys=skip_keys, **kwds)
 
 
-def _write_nexus_attr(dictionary, group):
+def _write_nexus_attr(dictionary, group, skip_keys=None):
     """Recursively iterate through dictionary and write "attrs" dictionaries.
 
     This step is called after the groups and datasets have been created
@@ -984,6 +993,11 @@ def _write_nexus_attr(dictionary, group):
         location to store the attrs sections of the dictionary
 
     """
+    if skip_keys is None:
+        skip_keys = []
+    elif isinstance(skip_keys, str):
+        skip_keys = [skip_keys]
+
     for key, value in dictionary.items():
         if key == 'attrs':
 
@@ -995,7 +1009,9 @@ def _write_nexus_attr(dictionary, group):
                     if "NX_class" in value["attrs"] and \
                             value["attrs"]["NX_class"] == "NXdata":
                         continue
-                _write_nexus_attr(dictionary[key], group[key])
+                if key not in skip_keys:
+                    _write_nexus_attr(dictionary[key], group[key],
+                                      skip_keys=skip_keys)
 
 
 def read_metadata_from_file(filename, metadata_keys=None,
@@ -1166,6 +1182,7 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
 def file_writer(filename,
                 signals,
                 save_original_metadata=True,
+                skip_metadata_keys=None,
                 use_default=False,
                 *args, **kwds):
     """Write the signal and metadata as a nexus file.
@@ -1184,6 +1201,9 @@ def file_writer(filename,
           Option to save hyperspy.original_metadata with the signal.
           A loaded Nexus file may have a large amount of data
           when loaded which you may wish to omit on saving
+    skip_metadata_keys : str or list of str, default : None
+        the key(s) to skip when it is saving original metadata. This is useful
+        when some metadata's keys are to be ignored.
     use_default : bool , default : False
           Option to define the default dataset in the file.
           If set to True the signal or first signal in the list of signals
@@ -1247,8 +1267,10 @@ def file_writer(filename,
                     nxometa = nxaux.create_group('original_metadata')
                     nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
                     # write the groups and structure
-                    _write_nexus_groups(ometa, nxometa, **kwds)
-                    _write_nexus_attr(ometa, nxometa)
+                    _write_nexus_groups(ometa, nxometa,
+                                        skip_keys=skip_metadata_keys, **kwds)
+                    _write_nexus_attr(ometa, nxometa,
+                                      skip_keys=skip_metadata_keys)
 
             if sig.metadata:
                 if isinstance(sig.metadata, DictionaryTreeBrowser):
