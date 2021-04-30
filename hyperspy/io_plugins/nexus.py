@@ -1233,6 +1233,13 @@ def file_writer(filename,
         for i, sig in enumerate(signals):
             nxentry = f.create_group("entry%d" % (i + 1))
             nxentry.attrs["NX_class"] = _parse_to_file("NXentry")
+
+            if isinstance(sig.metadata, dict):
+                sig.metadata = DictionaryTreeBrowser(sig.metadata)
+            if isinstance(sig.original_metadata, dict):
+                sig.original_metadata = DictionaryTreeBrowser(
+                    sig.original_metadata)
+
             signal_name = sig.metadata.General.title \
                 if sig.metadata.General.title else 'unnamed__%d' % i
             if "/" in signal_name:
@@ -1258,11 +1265,7 @@ def file_writer(filename,
             #
             if save_original_metadata:
                 if sig.original_metadata:
-                    if isinstance(sig.original_metadata,
-                                  DictionaryTreeBrowser):
-                        ometa = sig.original_metadata.as_dictionary()
-                    else:
-                        ometa = sig.original_metadata
+                    ometa = sig.original_metadata.as_dictionary()
 
                     nxometa = nxaux.create_group('original_metadata')
                     nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
@@ -1273,10 +1276,7 @@ def file_writer(filename,
                                       skip_keys=skip_metadata_keys)
 
             if sig.metadata:
-                if isinstance(sig.metadata, DictionaryTreeBrowser):
-                    meta = sig.metadata.as_dictionary()
-                else:
-                    meta = sig.metadata
+                meta = sig.metadata.as_dictionary()
 
                 nxometa = nxaux.create_group('hyperspy_metadata')
                 nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
