@@ -650,10 +650,10 @@ def _check_search_keys(search_keys):
     if type(search_keys) is str:
         return [search_keys]
     elif type(search_keys) is list:
-        if type(search_keys[0]) is not str:
-            raise ValueError("key list provided is not a list of strings")
-        else:
+        if all(isinstance(key, str) for key in search_keys):
             return search_keys
+        else:
+            raise ValueError("key list provided is not a list of strings")
     elif search_keys is None:
         return search_keys
     else:
