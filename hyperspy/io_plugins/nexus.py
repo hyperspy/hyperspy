@@ -357,8 +357,8 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
         _logger.info("No signal attr associated with NXdata will\
                      try assume signal name is data")
         if "data" not in dataentry.keys():
-            raise ValueError("Signal attribute not found in NXdata and\
-                             attempt to find a default \"data\" key failed")
+            raise ValueError("Signal attribute not found in NXdata and "
+                             "attempt to find a default \"data\" key failed")
         else:
             data_key = "data"
 

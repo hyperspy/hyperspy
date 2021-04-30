@@ -21,6 +21,7 @@ import os.path
 import numpy as np
 import pytest
 import traits.api as t
+import h5py
 
 import hyperspy.api as hs
 from hyperspy._signals.signal1d import Signal1D
@@ -29,7 +30,9 @@ from hyperspy.io import load
 from hyperspy.io_plugins.nexus import (_byte_to_string, _fix_exclusion_keys,
                                        _is_int, _is_numeric_data, file_writer,
                                        list_datasets_in_file,
-                                       read_metadata_from_file)
+                                       read_metadata_from_file,
+                                       _check_search_keys,
+                                       _nexus_dataset_to_signal)
 from hyperspy.signal import BaseSignal
 
 dirpath = os.path.dirname(__file__)
@@ -38,6 +41,8 @@ file1 = os.path.join(dirpath, 'nexus_files', 'simple_signal.nxs')
 file2 = os.path.join(dirpath, 'nexus_files', 'saved_multi_signal.nxs')
 file3 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example.nxs')
 file4 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example_no_axes.nxs')
+file5 = os.path.join(dirpath, 'nexus_files', 'nexus_test_datakey.nxs')
+
 
 
 my_path = os.path.dirname(__file__)
@@ -97,6 +102,20 @@ class TestDLSNexus():
             self.s.save(tmp_path / 'test.hspy')
         except:
             pytest.fail("unexpected error saving hdf5")
+
+    @pytest.mark.parametrize("dataset_paths",
+                             ('/entry1/testdata/nexustest/data',
+                               ['/entry1/testdata/nexustest/data', 'wrong']))
+    def test_dataset_paths(self, dataset_paths):
+        s = load(self.file, dataset_paths=dataset_paths)
+        title = s.metadata.General.title
+        assert title == 'entry1_testdata_nexustest_data'
+
+    def test_skip_load_array_metadata(self):
+        s = load(self.file, nxdata_only=True, hardlinks_only=True,
+                 metadata_keys='stage1_x', skip_array_metadata=True)
+        with pytest.raises(AttributeError):
+            s.original_metadata.entry1.instrument.stage1_x.value_set.value
 
 
 class TestDLSNexusNoAxes():
@@ -272,6 +291,72 @@ class TestSavingMetadataContainers:
         with pytest.raises(AttributeError):
             lin.original_metadata.testarray1
 
+    def test_save_skip_original_metadata_keys(self, tmp_path):
+        s = self.s
+        s.original_metadata.set_item("testarray1", ["a", 2, "b", 4, 5])
+        s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
+        s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
+        fname = tmp_path / 'test.nxs'
+        s.save(fname, skip_metadata_keys='testarray2')
+        lin = load(fname, nxdata_only=True)
+        with pytest.raises(AttributeError):
+            lin.original_metadata.testarray2
+
+    def test_save_use_default(self, tmp_path):
+        s = self.s
+        fname = tmp_path / 'test.nxs'
+        s.save(fname, use_default=True)
+        with h5py.File(fname, 'r') as f:
+            root_default_attrs = f['/'].attrs['default']
+        assert root_default_attrs == 'entry1'
+
+    def test_save_without_default_load_with_default(self, tmp_path):
+        s = self.s
+        fname = tmp_path / 'test.nxs'
+        s.save(fname, use_default=False)
+        lin = load(fname, nxdata_only=True, use_default=True)
+        assert np.isclose(lin.data, s.data).all()
+
+    def test_save_metadata_as_dict(self, tmp_path):
+        s = self.s
+        s.original_metadata.set_item("testarray1", ["a", 2, "b", 4, 5])
+        s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
+        s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
+        s.original_metadata = s.original_metadata.as_dictionary()
+        s.metadata = s.metadata.as_dictionary()
+        fname = tmp_path / 'test.nxs'
+        s.save(fname)
+        lin = load(fname, nxdata_only=True)
+        np.testing.assert_array_equal(lin.original_metadata.testarray1,
+                                      np.array([b"a", b'2', b'b', b'4', b'5']))
+        np.testing.assert_array_equal(lin.original_metadata.testarray2,
+                                      np.array([1, 2, 3, 4, 5]))
+        np.testing.assert_array_equal(lin.original_metadata.testarray3,
+                                      np.array([1, 2, 3, 4, 5]))
+
+    def test_save_3D_signal(self, tmp_path):
+        s = BaseSignal(np.zeros((2,3,4)))
+        fname = tmp_path / 'test.nxs'
+        s.save(fname)
+        lin = load(fname, nxdata_only=True)
+        assert lin.axes_manager.signal_dimension == 3
+        np.testing.assert_array_equal(lin.data, np.zeros((2,3,4)))
+
+    def test_save_title_with_slash(self, tmp_path):
+        s = self.s
+        s.metadata.General.title = '/entry/something'
+        fname = tmp_path / 'test.nxs'
+        s.save(fname)
+        lin = load(fname, nxdata_only=True)
+        assert lin.metadata.General.title == '_entry_something'
+
+    def test_save_title_double_underscore(self, tmp_path):
+        s = self.s
+        s.metadata.General.title = '__entry/something'
+        fname = tmp_path / 'test.nxs'
+        s.save(fname)
+        lin = load(fname, nxdata_only=True)
+        assert lin.metadata.General.title == 'entry_something'
 
 def test_saving_multi_signals(tmp_path):
 
@@ -283,6 +368,8 @@ def test_saving_multi_signals(tmp_path):
     sig2 = hs.signals.Signal1D(np.zeros((30, 30, 10)))
     sig2.axes_manager[0].name = "axis1"
     sig2.axes_manager[1].name = "axis2"
+    sig2.axes_manager[0].units = "mm"
+    sig2.axes_manager[1].units = "mm"
     sig2.original_metadata.set_item("stage_x.value", 8.0)
     sig2.original_metadata.set_item("stage_x.attrs.units", "mm")
 
@@ -343,7 +430,7 @@ def test_list_datasets(verbose, dataset_keys):
 
 @pytest.mark.parametrize("metadata_keys", [None, "xxxxx"])
 def test_read_metdata(metadata_keys):
-    s = read_metadata_from_file(file3,
+    s = read_metadata_from_file(file3, verbose=True,
                                 metadata_keys=metadata_keys)
     # hardlinks are false - soft linked data is loaded
     if metadata_keys is None:
@@ -355,6 +442,7 @@ def test_read_metdata(metadata_keys):
 
 def test_is_int():
     assert _is_int("a") is False
+    assert _is_int(1234)
 
 
 def test_is_numeric_data():
@@ -367,3 +455,58 @@ def test_exclusion_keys():
 
 def test_unicode_error():
     assert _byte_to_string(b'\xff\xfeW[') == "ÿþW["
+
+
+class TestCheckSearchKeys():
+
+    def test_check_search_keys_input_None(self):
+        assert _check_search_keys(None) is None
+
+    def test_check_search_keys_input_str(self):
+        assert type(_check_search_keys('[1234]')) is list
+
+    def test_check_search_keys_input_list_all_str(self):
+        assert _check_search_keys(['[1234]', '[5678]'])[0] == '[1234]'
+        assert _check_search_keys(['[1234]', '[5678]'])[1] == '[5678]'
+
+    def test_check_search_keys_input_list_all_not_str(self):
+        with pytest.raises(ValueError):
+            _check_search_keys([123, 456])
+
+    def test_check_search_keys_input_list_some_elements_not_str(self):
+        with pytest.raises(ValueError):
+            _check_search_keys(['[1234]', 56, 78])
+
+    def test_check_search_keys_input_not_str_not_list(self):
+        with pytest.raises(ValueError):
+            _check_search_keys(np.array(['123', '456']))
+
+class TestLoadDatasetKey():
+
+    def test_int_signal_attrs(self):
+        with h5py.File(file5, 'r') as f:
+            d = _nexus_dataset_to_signal(f, '/entry1/testdata/nexustest1')
+        np.testing.assert_almost_equal(d['data'], np.zeros((2,3,4)))
+
+    def test_no_signal_attrs_with_data(self):
+        with h5py.File(file5, 'r') as f:
+            d = _nexus_dataset_to_signal(f, '/entry1/testdata/nexustest2')
+        np.testing.assert_almost_equal(d['data'], np.zeros((4,5,6)))
+
+    def test_no_signal_attrs_no_data(self):
+        with h5py.File(file5, 'r') as f:
+            with pytest.raises(ValueError):
+                _nexus_dataset_to_signal(f, '/entry1/testdata/nexustest3')
+
+def test_dataset_with_chunks_attrs():
+    with h5py.File(file5, 'r') as f:
+        d = _nexus_dataset_to_signal(f, '/entry1/testdata/nexustest1',
+                                     lazy=True)
+    assert d['data'].chunksize == (1, 1, 2)
+
+def test_extract_hdf5():
+    s = load(file5, lazy=False)
+    s_lazy = load(file5, lazy=True)
+
+    assert len(s) == 3
+    assert len(s_lazy) == 3
