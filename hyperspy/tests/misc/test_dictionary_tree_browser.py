@@ -94,19 +94,19 @@ class TestDictionaryBrowser:
         assert (tree.signal_name.axes_manager._get_axes_dicts() ==
                 s.axes_manager._get_axes_dicts())
 
-    def test_export(self):
+    def test_export(self, tree):
         with tempfile.TemporaryDirectory() as tmpdir:
             fname = os.path.join(tmpdir, 'testdict.txt')
-            self.tree.export(fname)
+            tree.export(fname)
             f = open(fname, "r", encoding='utf8')
             assert f.read(9) == '├── Node1'
             f.close()
-            self.tree.export(fname, encoding='utf16')
+            tree.export(fname, encoding='utf16')
             f = open(fname, "r", encoding='utf16')
             assert f.read(9) == '├── Node1'
             f.close()
-            self.tree._double_lines = True
-            self.tree.export(fname)
+            tree._double_lines = True
+            tree.export(fname)
             f = open(fname, "r", encoding='utf8')
             assert f.read(9) == '╠══ Node1'
             f.close()
@@ -239,69 +239,69 @@ class TestDictionaryBrowser:
         assert tree.get_item('Node1.Node21.leaf311', 44) == 44
         assert tree.get_item('.Node1.Node21.leaf311', 44) == 44
 
-    def test_has_nested_item(self):
+    def test_has_nested_item(self, tree):
         #assert self.tree.has_nested_item('Node1') == True
-        assert self.tree.has_nested_item('leaf11') == True
-        assert self.tree.has_nested_item('leaf111') == True
-        assert self.tree.has_nested_item('leaf211') == True
-        assert self.tree.has_nested_item('leaf333') == False
-        assert self.tree.has_nested_item('211',wild=True) == True
-        assert self.tree.has_nested_item('333',wild=True) == False
-        self.tree.add_dictionary({"_double_lines": False, })
-        assert self.tree.has_nested_item('leaf211') == True
+        assert tree.has_nested_item('leaf11') == True
+        assert tree.has_nested_item('leaf111') == True
+        assert tree.has_nested_item('leaf211') == True
+        assert tree.has_nested_item('leaf333') == False
+        assert tree.has_nested_item('211',wild=True) == True
+        assert tree.has_nested_item('333',wild=True) == False
+        tree.add_dictionary({"_double_lines": False, })
+        assert tree.has_nested_item('leaf211') == True
 
-    def test_get_nested_path(self):
-        assert self.tree.get_nested_path('leaf333') == None
-        assert self.tree.get_nested_path('leaf') == None
-        assert self.tree.get_nested_path('leaf333', default=[]) == []
-        assert self.tree.get_nested_path('333', wild=True) == None
-        assert self.tree.get_nested_path('333', wild=True, default=[]) == []
-        assert self.tree.get_nested_path('leaf11', default=[]) == 'Node1.leaf11'
-        assert self.tree.get_nested_path('leaf111') == 'Node1.Node11.leaf111'
-        assert self.tree.get_nested_path('leaf211') == 'Node2.Node21.leaf211'
-        assert self.tree.get_nested_path('211', wild=True) \
+    def test_get_nested_path(self, tree):
+        assert tree.get_nested_path('leaf333') == None
+        assert tree.get_nested_path('leaf') == None
+        assert tree.get_nested_path('leaf333', default=[]) == []
+        assert tree.get_nested_path('333', wild=True) == None
+        assert tree.get_nested_path('333', wild=True, default=[]) == []
+        assert tree.get_nested_path('leaf11', default=[]) == 'Node1.leaf11'
+        assert tree.get_nested_path('leaf111') == 'Node1.Node11.leaf111'
+        assert tree.get_nested_path('leaf211') == 'Node2.Node21.leaf211'
+        assert tree.get_nested_path('211', wild=True) \
                == 'Node2.Node21.leaf211'
-        assert self.tree.get_nested_path('leaf', wild=True) == ['Node1.leaf11', \
+        assert tree.get_nested_path('leaf', wild=True) == ['Node1.leaf11', \
                'Node1.Node11.leaf111', 'Node2.leaf21', 'Node2.Node21.leaf211']
-        self.tree.add_dictionary({
+        tree.add_dictionary({
             "Node3": {
                 "leaf211": 31},
         })
-        assert self.tree.get_nested_path('leaf211') == \
+        assert tree.get_nested_path('leaf211') == \
                ['Node2.Node21.leaf211', 'Node3.leaf211']
 
-    def test_get_nested_item(self):
-        assert self.tree.get_nested_item('leaf333') == None
-        assert self.tree.get_nested_item('leaf') == None
-        assert self.tree.get_nested_item('leaf333', default=[]) == []
-        assert self.tree.get_nested_item('333', return_path=True, default=[]) \
+    def test_get_nested_item(self, tree):
+        assert tree.get_nested_item('leaf333') == None
+        assert tree.get_nested_item('leaf') == None
+        assert tree.get_nested_item('leaf333', default=[]) == []
+        assert tree.get_nested_item('333', return_path=True, default=[]) \
                == []
-        assert self.tree.get_nested_item('333', wild=True) == None
-        assert self.tree.get_nested_item('333', wild=True, default=[]) == []
-        assert self.tree.get_nested_item('333', wild=True, return_path=True) \
+        assert tree.get_nested_item('333', wild=True) == None
+        assert tree.get_nested_item('333', wild=True, default=[]) == []
+        assert tree.get_nested_item('333', wild=True, return_path=True) \
                == None
-        assert self.tree.get_nested_item('333', return_path=True, default=[]) \
+        assert tree.get_nested_item('333', return_path=True, default=[]) \
                == []
-        assert self.tree.get_nested_item('333', wild=True, return_path=True, default=[]) \
+        assert tree.get_nested_item('333', wild=True, return_path=True, default=[]) \
                == []
-        assert self.tree.get_nested_item('leaf11') == 11
-        assert self.tree.get_nested_item('leaf111') == 111
-        assert self.tree.get_nested_item('leaf211', default=[]) == 211
-        assert self.tree.get_nested_item('211', wild=True) == 211
-        assert self.tree.get_nested_item('leaf211', return_path=True) == \
+        assert tree.get_nested_item('leaf11') == 11
+        assert tree.get_nested_item('leaf111') == 111
+        assert tree.get_nested_item('leaf211', default=[]) == 211
+        assert tree.get_nested_item('211', wild=True) == 211
+        assert tree.get_nested_item('leaf211', return_path=True) == \
                (211, 'Node2.Node21.leaf211')
-        assert self.tree.get_nested_item('leaf211', return_path=True, wild=True) \
+        assert tree.get_nested_item('leaf211', return_path=True, wild=True) \
                == (211, 'Node2.Node21.leaf211')
-        self.tree.add_dictionary({
+        tree.add_dictionary({
             "Node3": {
                 "leaf211": 31},
         })
-        assert self.tree.get_nested_item('leaf211') == [211, 31]
-        assert self.tree.get_nested_item('leaf211', default=[]) == [211, 31]
-        assert self.tree.get_nested_item('211', wild=True) == [211, 31]
-        assert self.tree.get_nested_item('leaf211', return_path=True) == \
+        assert tree.get_nested_item('leaf211') == [211, 31]
+        assert tree.get_nested_item('leaf211', default=[]) == [211, 31]
+        assert tree.get_nested_item('211', wild=True) == [211, 31]
+        assert tree.get_nested_item('leaf211', return_path=True) == \
                ([211, 31], ['Node2.Node21.leaf211', 'Node3.leaf211'])
-        assert self.tree.get_nested_item('211', wild=True, return_path=True) == \
+        assert tree.get_nested_item('211', wild=True, return_path=True) == \
                ([211, 31], ['Node2.Node21.leaf211', 'Node3.leaf211'])
         
     # Can be removed once metadata.Signal.binned is deprecated in v2.0
@@ -327,21 +327,21 @@ class TestDictionaryBrowser:
         })
         tree._get_html_print_items()
 
-    def test_print_item_list(self):
-        self.tree.add_dictionary({
+    def test_print_item_list(self, tree):
+        tree.add_dictionary({
             "Node3": {
                 "leaf31": (31, 32),
                 "leaf32": [31, 32]},
         })
-        self.tree._get_print_items()
-        assert self.tree._get_print_items()[-35:-27] == '(31, 32)'
-        assert self.tree._get_print_items()[-9:-1] == '[31, 32]'
-        self.tree.add_dictionary({
+        tree.process_lazy_attributes()
+        assert tree._get_print_items()[-35:-27] == '(31, 32)'
+        assert tree._get_print_items()[-9:-1] == '[31, 32]'
+        tree.add_dictionary({
             "Node4": {
                 "leaf41": 'And now for something completely different. This '
                     'string is so long that it exceeds the max_len limit.'},
         })
-        assert self.tree._get_print_items()[-102:-59] == \
+        assert tree._get_print_items()[-102:-59] == \
                'And now for something completely different.'
 
     def test_copy(self,tree):

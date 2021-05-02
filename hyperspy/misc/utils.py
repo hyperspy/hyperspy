@@ -331,6 +331,7 @@ class DictionaryTreeBrowser:
         encoding : valid encoding str
 
         """
+        self.process_lazy_attributes()
         f = codecs.open(filename, 'w', encoding=encoding)
         f.write(self._get_print_items(max_len=None))
         f.close()
@@ -339,8 +340,6 @@ class DictionaryTreeBrowser:
         """Prints only the attributes that are not methods
         """
         from hyperspy.defaults_parser import preferences
-
-
 
         string = ''
         eoi = len(self)
@@ -649,8 +648,10 @@ class DictionaryTreeBrowser:
         """Search for an item key in a nested DictionaryTreeBrowser and yield a
         list of values. If `wild` is `True`, looks for any key that contains
         the string `item` (case insensitive)."""
+        self.process_lazy_attributes()
         for key_, item_ in self.__dict__.items():
-            if not isinstance(item_, types.MethodType):
+            if not isinstance(item_, types.MethodType) \
+                    and key_ not in ['_lazy_attributes', '_double_lines']:
                 key = item_['key']
                 if key_.startswith("_"): # Skip any private attributes
                     continue
