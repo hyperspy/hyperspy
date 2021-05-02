@@ -889,12 +889,14 @@ class FunctionalDataAxis(BaseDataAxis):
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
+        axes_manager = self.axes_manager
         d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
         del self._expression
         del self._function
         self.remove_trait('x')
+        self.axes_manager = axes_manager
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -1170,11 +1172,13 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
+        axes_manager = self.axes_manager
         self.__class__ = DataAxis
         d["_type"] = 'DataAxis'
         self.remove_trait('scale')
         self.remove_trait('offset')
         self.__init__(**d, axis=self.axis)
+        self.axes_manager = axes_manager
 
 
 def _serpentine_iter(shape):
