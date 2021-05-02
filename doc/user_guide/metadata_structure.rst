@@ -551,7 +551,6 @@ Adding items
 ------------
 
 :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
-`set_item(path, value)`
     Given a ``path`` and ``value``, easily set metadata items, creating any
     necessary nodes on the way.
 

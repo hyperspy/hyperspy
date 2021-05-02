@@ -650,13 +650,8 @@ class DictionaryTreeBrowser:
         the string `item` (case insensitive)."""
         self.process_lazy_attributes()
         for key_, item_ in self.__dict__.items():
-            if not isinstance(item_, types.MethodType) \
-                    and key_ not in ['_lazy_attributes', '_double_lines']:
+            if not isinstance(item_, types.MethodType) and not key_.startswith("_"):
                 key = item_['key']
-                if key_.startswith("_"): # Skip any private attributes
-                    continue
-                if key in ["_db_index", "_double_lines"]:
-                    continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     for result in item_['_dtb_value_']._nested_get(item, wild, return_path):
                         if return_path:
