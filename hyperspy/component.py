@@ -500,8 +500,12 @@ class Parameter(t.HasTraits):
             self.map['std'][indices] = self.std
 
     def fetch(self):
-        """Fetch the stored value and std attributes.
-
+        """Fetch the stored value and std attributes from the
+        parameter.map['values'] and ...['std'] if
+        `parameter.map['is_set']` is True for that index. Updates
+        `parameter.value` and `parameter.std`.
+        If not stored, then .value and .std will remain from their
+        previous values, i.e. from a fit in a previous pixel.
 
         See Also
         --------
@@ -523,7 +527,11 @@ class Parameter(t.HasTraits):
             self.std = std
 
     def assign_current_value_to_all(self, mask=None):
-        """Assign the current value attribute to all the  indices
+        """Assign the current value attribute to all the indices,
+        setting parameter.map for all parameters in the component.
+
+        Takes the current `parameter.value` and sets it for all
+        indices in `parameter.map['values']`.
 
         Parameters
         ----------
@@ -743,7 +751,7 @@ class Component(t.HasTraits):
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
         self.active = True
-        self._active_array = None
+        self._active_array = None # only if active_is_multidimensional is True
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -768,6 +776,10 @@ class Component(t.HasTraits):
 
     @property
     def active_is_multidimensional(self):
+        """In multidimensional signals it is possible to store the value of the
+        :py:attr:`~.component.Component.active` attribute at each navigation
+        index.
+        """
         return self._active_is_multidimensional
 
     @active_is_multidimensional.setter
@@ -897,6 +909,18 @@ class Component(t.HasTraits):
         self._update_free_parameters()
 
     def fetch_values_from_array(self, p, p_std=None, onlyfree=False):
+        """Fetch the parameter values from an array `p` and optionally standard
+        deviation from `p_std`. Places them `component.parameter.value` and
+        `...std`, according to their position in the component.
+
+        Parameters
+        ----------
+        p : array
+            array containing new values for the parameters in a component
+        p_std : array, optional
+            array containing the corresponding standard deviation.
+
+        """
         if onlyfree is True:
             parameters = self.free_parameters
         else:

@@ -652,7 +652,8 @@ class BaseModel(list):
         self._plot_components = False
 
     def _set_p0(self):
-        self.p0 = ()
+        "(Re)sets the initial values for the parameters used in the curve fitting functions"
+        self.p0 = () # Stores the values and is fed as initial values to the fitter
         for component in self:
             if component.active:
                 for parameter in component.free_parameters:
@@ -783,16 +784,22 @@ class BaseModel(list):
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
-        parameters array.
+        `parameter.map` array and sets the `is_set` array attribute to True.
 
         If the parameters array has not being defined yet it creates it filling
-        it with the current parameters."""
+        it with the current parameters at the current indices in the array."""
         for component in self:
             if component.active:
                 component.store_current_parameters_in_map()
 
     def fetch_stored_values(self, only_fixed=False, update_on_resume=True):
-        """Fetch the value of the parameters that has been previously stored.
+        """Fetch the value of the parameters that have been previously stored
+        in `parameter.map['values']` if `parameter.map['is_set']` is `True` for
+        those indices.
+
+        If it is not previously stored, the current values from `parameter.value`
+        are used, which are typically from the fit in the previous pixel of a
+        multidimensional signal.
 
         Parameters
         ----------
@@ -822,6 +829,11 @@ class BaseModel(list):
         """Fetch the parameter values from the given array, optionally also
         fetching the standard deviations.
 
+        Places the parameter values into both `m.p0` (the initial values
+        for the optimizer routine) and `component.parameter.value` and
+        `...std`, for parameters in active components ordered by their
+        position in the model and component.
+
         Parameters
         ----------
         array : array
@@ -833,7 +845,8 @@ class BaseModel(list):
         self._fetch_values_from_p0(p_std=array_std)
 
     def _fetch_values_from_p0(self, p_std=None):
-        """Fetch the parameter values from the output of the optimizer `self.p0`
+        """Fetch the parameter values from the output of the optimizer `self.p0`,
+        placing them in their appropriate `component.parameter.value` and `...std`
 
         Parameters
         ----------
@@ -1591,6 +1604,9 @@ class BaseModel(list):
                     for index in self.axes_manager:
                         with inner(update_on_resume=True):
                             if mask is None or not mask[index[::-1]]:
+                                # first check if model has set initial values in
+                                # parameters.map['values'][indices],
+                                # otherwise use values from previous fit
                                 self.fetch_stored_values(only_fixed=fetch_only_fixed)
                                 self.fit(**kwargs)
                                 i += 1
