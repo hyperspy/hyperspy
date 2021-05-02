@@ -19,7 +19,7 @@
 import numpy as np
 
 
-def check_axes_calibration(ax1, ax2):
+def check_axes_calibration(ax1, ax2, rtol=1e-7):
     """Check if the calibration of two Axis objects matches.
 
     Raises a logger warning if there is a mismatch.
@@ -30,6 +30,9 @@ def check_axes_calibration(ax1, ax2):
     Parameters
     ----------
     ax1, ax2 : Axis objects
+        Axes objects that should be compared.
+    rtol : float
+        Tolerance passed to `np.allclose` for comparison. Default 1e-7.
 
     Returns
     -------
@@ -38,16 +41,7 @@ def check_axes_calibration(ax1, ax2):
 
     """
     if ax1.size == ax2.size:
-        if ax1.is_uniform == ax2.is_uniform == True:
-            if np.allclose(ax1.scale, ax2.scale, atol=0, rtol=1e-7) and \
-               np.allclose(ax1.offset, ax2.offset, atol=0, rtol=1e-7) and\
-               ax1.units == ax2.units:
-                return True
-        elif hasattr(ax1,'axis') and hasattr(ax2,'axis'):
-            if np.allclose(ax1.axis, ax2.axis, atol=0, rtol=1e-7):
-                return True
-        elif hasattr(ax1,'expression') and hasattr(ax2,'expression'):
-            if ax1.expression == ax2.expression and \
-               check_axes_calibration(ax1.x, ax2.x):
-                return True
+        if np.allclose(ax1.axis, ax2.axis, atol=0, rtol=rtol) and\
+            ax1.units == ax2.units:
+            return True
     return False
