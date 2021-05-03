@@ -17,6 +17,7 @@
 
 
 import numpy as np
+from pint.unit import Unit, UnitsContainer
 
 
 def check_axes_calibration(ax1, ax2, rtol=1e-7):
@@ -41,7 +42,8 @@ def check_axes_calibration(ax1, ax2, rtol=1e-7):
 
     """
     if ax1.size == ax2.size:
-        if np.allclose(ax1.axis, ax2.axis, atol=0, rtol=rtol) and\
-            ax1.units == ax2.units:
+        unit1 = Unit(ax1.units) if isinstance(ax1.units, (str, Unit, UnitsContainer)) else ax1.units
+        unit2 = Unit(ax2.units) if isinstance(ax2.units, (str, Unit, UnitsContainer)) else ax2.units
+        if np.allclose(ax1.axis, ax2.axis, atol=0, rtol=rtol) and unit1 == unit2:
             return True
     return False
