@@ -36,7 +36,7 @@ from hyperspy._components.expression import _parse_substitutions
 
 import warnings
 import inspect
-import collections.abc import Iterable
+from collections.abc import Iterable
 
 _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
