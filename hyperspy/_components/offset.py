@@ -88,9 +88,6 @@ class Offset(Component):
         """
         super(Offset, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         i1, i2 = axis.value_range_to_indices(x1, x2)
 
         if only_current is True:
@@ -101,7 +98,7 @@ class Offset(Component):
                 if axis.is_uniform:
                     self.offset.value /= axis.scale
                 else:
-                    self.offset.value /= np.gradient(axis.axis)
+                    self.offset.value /= np.gradient(axis.axis)[(i1 + i2) // 2]
             return True
         else:
             if self.offset.map is None:
@@ -117,7 +114,7 @@ class Offset(Component):
                 if axis.is_uniform:
                     self.offset.map['values'] /= axis.scale
                 else:
-                    self.offset.map['values'] /= np.gradient(axis.axis)
+                    self.offset.map['values'] /= np.gradient(axis.axis)[(i1 + i2) // 2]
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

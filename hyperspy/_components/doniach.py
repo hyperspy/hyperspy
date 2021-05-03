@@ -156,7 +156,7 @@ class Doniach(Expression):
                 if axis.is_uniform:
                     self.A.value /= axis.scale
                 else:
-                    self.A.value /= np.gradient(axis.axis)
+                    self.A.value /= np.gradient(axis.axis)[axis.value2index(centre)]
             return True
         else:
             if self.A.map is None:
@@ -168,7 +168,7 @@ class Doniach(Expression):
                 if axis.is_uniform:
                     self.A.map['values'][:] /= axis.scale
                 else:
-                    self.A.map['values'][:] /= np.gradient(axis.axis)
+                    self.A.map['values'][:] /= np.gradient(axis.axis)[axis.value2index(centre)]
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

@@ -162,9 +162,6 @@ class Lorentzian(Expression):
 
         super(Lorentzian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
                                                               only_current)
         if only_current is True:
@@ -177,7 +174,7 @@ class Lorentzian(Expression):
                 if axis.is_uniform:
                     self.A.value /= axis.scale
                 else:
-                    self.A.value /= np.gradient(axis.axis)
+                    self.A.value /= np.gradient(axis.axis)[axis.value2index(centre)]
             return True
         else:
             if self.A.map is None:
@@ -189,7 +186,7 @@ class Lorentzian(Expression):
                 if axis.is_uniform:
                     self.A.map['values'] /= axis.scale
                 else:
-                    self.A.map['values'] /= np.gradient(axis.axis)
+                    self.A.map['values'] /= np.gradient(axis.axis)[axis.value2index(centre)]
             self.A.map['is_set'][:] = True
             self.gamma.map['values'][:] = gamma
             self.gamma.map['is_set'][:] = True

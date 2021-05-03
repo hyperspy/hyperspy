@@ -307,7 +307,7 @@ class PESVoigt(Component):
                 if axis.is_uniform:
                     self.area.value /= axis.scale
                 else:
-                    self.area.value /= np.gradient(axis.axis)
+                    self.area.value /= np.gradient(axis.axis)[axis.value2index(centre)]
             return True
         else:
             if self.area.map is None:
@@ -319,7 +319,7 @@ class PESVoigt(Component):
                 if axis.is_uniform:
                     self.area.map['values'][:] /= axis.scale
                 else:
-                    self.area.map['values'][:] /= np.gradient(axis.axis)
+                    self.area.map['values'][:] /= np.gradient(axis.axis)[axis.value2index(centre)]
             self.area.map['is_set'][:] = True
             self.FWHM.map['values'][:] = sigma * sigma2fwhm
             self.FWHM.map['is_set'][:] = True

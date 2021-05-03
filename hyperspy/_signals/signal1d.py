@@ -1073,9 +1073,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             zero_fill=False, show_progressbar=None, model=None,
             return_model=False):
         """ See :py:meth:`~hyperspy._signal1d.signal1D.remove_background`. """
-        if fast and not self.axes_manager.signal_axes[0].is_uniform:
-            raise NotImplementedError(
-                "This operation with `fast=True` is not implemented for non-uniform axes.")
+        #if fast and not self.axes_manager.signal_axes[0].is_uniform:
+        #    raise NotImplementedError(
+        #        "This operation with `fast=True` is not implemented for non-uniform axes.")
         if model is None:
             from hyperspy.models.model1d import Model1D
             model = Model1D(self)

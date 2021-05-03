@@ -18,6 +18,7 @@
 
 import math
 import sympy
+import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
@@ -158,9 +159,6 @@ class Voigt(Expression):
         """
         super(Voigt, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
 
@@ -174,7 +172,7 @@ class Voigt(Expression):
                 if axis.is_uniform:
                     self.area.value /= axis.scale
                 else:
-                    self.area.value /= np.gradient(axis.axis)
+                    self.area.value /= np.gradient(axis.axis)[axis.value2index(centre)]
             return True
         else:
             if self.area.map is None:
@@ -186,7 +184,7 @@ class Voigt(Expression):
                 if axis.is_uniform:
                     self.area.map['values'][:] /= axis.scale
                 else:
-                    self.area.map['values'][:] /= np.gradient(axis.axis)
+                    self.area.map['values'][:] /= np.gradient(axis.axis)[axis.value2index(centre)]
             self.area.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

@@ -88,9 +88,6 @@ class Exponential(Expression):
         """
         super(Exponential, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if i1 + 1 == i2:
             if i2 < axis.high_index:
@@ -155,7 +152,7 @@ class Exponential(Expression):
                 if axis.is_uniform:
                     A /= axis.scale
                 else:
-                    A /= np.gradient(axis.axis)
+                    A /= np.gradient(axis.axis)[i_mid]
             if only_current is True:
                 self.A.value = A
                 self.tau.value = t

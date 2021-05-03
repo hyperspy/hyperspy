@@ -619,6 +619,23 @@ class TestModelPrintCurrentValues:
     def test_print_current_values_component_list(self):
         self.m.print_current_values(component_list=list(self.m))
 
+class TestModelUniformBinned:
+    def setup_method(self, method):
+        self.m = hs.signals.Signal1D(np.arange(10)).create_model()
+        self.o = hs.model.components1D.Offset()
+        self.m.append(self.o)
+
+    @pytest.mark.parametrize("uniform", [True, False])
+    @pytest.mark.parametrize("binned", [True, False])
+    def test_binned_uniform(self, binned, uniform):
+        m = self.m
+        if binned:
+            m.signal.axes_manager[-1].is_binned = True
+        m.signal.axes_manager[-1].scale = 0.3
+        if uniform:
+            m.signal.axes_manager[-1].convert_to_non_uniform_axis()
+        r1 = m()
+        np.testing.assert_allclose(m[0].function(0) * 0.3, r1)
 
 class TestStoreCurrentValues:
     def setup_method(self, method):

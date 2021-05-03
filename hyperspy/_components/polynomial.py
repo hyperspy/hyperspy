@@ -90,11 +90,7 @@ class Polynomial(Expression):
 
         """
         super()._estimate_parameters(signal)
-
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
@@ -107,7 +103,7 @@ class Polynomial(Expression):
                     if axis.is_uniform:
                         para.value = estim / axis.scale
                     else:
-                        para.value = estim / np.gradient(axis.axis)
+                        para.value = estim / np.gradient(axis.axis)[i1 + i2 // 2]
             else:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim
@@ -137,7 +133,7 @@ class Polynomial(Expression):
                         if axis.is_uniform:
                             para.map['values'][:] = fit[..., i] / axis.scale
                         else:
-                            para.map['values'][:] = fit[..., i] / np.gradient(axis.axis)
+                            para.map['values'][:] = fit[..., i] / np.gradient(axis.axis)[i1 + i2 // 2]
                         para.map['is_set'][:] = True
                 else:
                     for i, para in enumerate(self.parameters[::-1]):

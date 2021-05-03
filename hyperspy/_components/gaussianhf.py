@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
@@ -150,7 +151,7 @@ class GaussianHF(Expression):
                 if axis.is_uniform:
                     self.height.value /= axis.scale
                 else:
-                    self.height.value /= np.gradient(axis.axis)
+                    self.height.value /= np.gradient(axis.axis)[axis.value2index(centre)]
             return True
         else:
             if self.height.map is None:
@@ -162,7 +163,7 @@ class GaussianHF(Expression):
                 if axis.is_uniform:
                     self.height.map['values'][:] /= axis.scale
                 else:
-                    self.height.map['values'][:] /= np.gradient(axis.axis)
+                    self.height.map['values'][:] /= np.gradient(axis.axis)[axis.value2index(centre)]
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm
             self.fwhm.map['is_set'][:] = True

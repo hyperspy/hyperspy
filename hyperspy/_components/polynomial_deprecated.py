@@ -128,9 +128,6 @@ class Polynomial(Component):
         """
         super(Polynomial, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
@@ -142,7 +139,7 @@ class Polynomial(Component):
                 if axis.is_uniform:
                     self.coefficients.value = estimation / axis.scale
                 else:
-                    self.coefficients.value = estimation / np.gradient(axis.axis)
+                    self.coefficients.value = estimation / np.gradient(axis.axis)[i1 + i2 // 2]
             else:
                 self.coefficients.value = estimation
             return True
@@ -168,7 +165,7 @@ class Polynomial(Component):
                     if axis.is_uniform:
                         self.coefficients.map["values"] /= axis.scale
                     else:
-                        self.coefficients.map["values"] /= np.gradient(axis.axis)
+                        self.coefficients.map["values"] /= np.gradient(axis.axis)[i1 + i2 // 2]
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

@@ -169,18 +169,23 @@ class TestOffset:
         m[0].offset.value = 10
         self.m = m
 
+    @pytest.mark.parametrize(("uniform"), (True, False))
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self, only_current, binned):
+    def test_estimate_parameters(self, only_current, binned, uniform):
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
+        if not uniform:
+            s.axes_manager[-1].convert_to_non_uniform_axis()
         assert s.axes_manager[-1].is_binned == binned
         o = hs.model.components1D.Offset()
         o.estimate_parameters(s, None, None, only_current=only_current)
         assert o._axes_manager[-1].is_binned == binned
+        assert o._axes_manager[-1].is_uniform == uniform
         np.testing.assert_allclose(o.offset.value, 10)
 
+    @pytest.mark.parametrize(("uniform"), (True, False))
     @pytest.mark.parametrize(("binned"), (True, False))
-    def test_function_nd(self, binned):
+    def test_function_nd(self, binned, uniform):
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         s = hs.stack([s] * 2)
@@ -220,11 +225,15 @@ class TestDeprecatedPolynomial:
                                              np.array([[6, ], [4.5], [3.5]]))
         assert c.grad_coefficients(np.arange(10)).shape == (3, 10)
 
+    @pytest.mark.parametrize(("uniform"), (True, False))
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self, only_current, binned):
+    def test_estimate_parameters(self, only_current, binned, uniform):
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
+        if not uniform:
+            s.axes_manager[-1].convert_to_non_uniform_axis()
         assert s.axes_manager[-1].is_binned == binned
+        assert s.axes_manager[-1].is_uniform == uniform
         g = hs.model.components1D.Polynomial(order=2)
         g.estimate_parameters(s, None, None, only_current=only_current)
         assert g._axes_manager[-1].is_binned == binned
@@ -316,14 +325,18 @@ class TestPolynomial:
         m_2d.multifit(iterpath='serpentine', grad='analytical')
         np.testing.assert_allclose(m_2d.red_chisq.data.sum(), 0.0, atol=1E-7)
 
+    @pytest.mark.parametrize(("uniform"), (True, False))
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self,  only_current, binned):
+    def test_estimate_parameters(self,  only_current, binned, uniform):
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         s.axes_manager[-1].is_binned = binned
+        if not uniform:
+            s.axes_manager[-1].convert_to_non_uniform_axis()
         p = hs.model.components1D.Polynomial(order=2, legacy=False)
         p.estimate_parameters(s, None, None, only_current=only_current)
         assert p._axes_manager[-1].is_binned == binned
+        assert p._axes_manager[-1].is_uniform == uniform
         np.testing.assert_allclose(p.a2.value, 0.5)
         np.testing.assert_allclose(p.a1.value, 2)
         np.testing.assert_allclose(p.a0.value, 3)
@@ -527,8 +540,11 @@ class TestScalableFixedPattern:
             m.fit()
         assert abs(fp.yscale.value - 10) <= .1
 
-    def test_function(self):
+    @pytest.mark.parametrize(("uniform"), (True, False))
+    def test_function(self, uniform):
         s = self.s
+        if not uniform:
+            s.axes_manager[0].convert_to_non_uniform_axis()
         s1 = self.pattern
         fp = hs.model.components1D.ScalableFixedPattern(s1, interpolate=False)
         m = s.create_model()
