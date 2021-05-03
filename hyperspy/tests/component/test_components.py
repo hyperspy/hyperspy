@@ -501,11 +501,15 @@ class TestScalableFixedPattern:
             m.fit()
         assert abs(fp.yscale.value - 100) <= 0.1
 
-    def test_both_binned(self):
+    @pytest.mark.parametrize(("uniform"), (True, False))
+    def test_both_binned(self, uniform):
         s = self.s
         s1 = self.pattern
         s.axes_manager[-1].is_binned = True
         s1.axes_manager[-1].is_binned = True
+        if not uniform:
+            s.axes_manager[0].convert_to_non_uniform_axis()
+            s1.axes_manager[0].convert_to_non_uniform_axis()
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
@@ -540,11 +544,8 @@ class TestScalableFixedPattern:
             m.fit()
         assert abs(fp.yscale.value - 10) <= .1
 
-    @pytest.mark.parametrize(("uniform"), (True, False))
-    def test_function(self, uniform):
+    def test_function(self):
         s = self.s
-        if not uniform:
-            s.axes_manager[0].convert_to_non_uniform_axis()
         s1 = self.pattern
         fp = hs.model.components1D.ScalableFixedPattern(s1, interpolate=False)
         m = s.create_model()

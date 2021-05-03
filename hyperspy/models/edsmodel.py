@@ -129,6 +129,10 @@ class EDSModel(Model1D):
                  auto_add_lines=True,
                  *args, **kwargs):
         Model1D.__init__(self, spectrum, *args, **kwargs)
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("Support for EDS models with non-uniform "
+                                      "signal axes is not yet implemented.")
         self.xray_lines = list()
         self.family_lines = list()
         end_energy = self.axes_manager.signal_axes[0].high_value

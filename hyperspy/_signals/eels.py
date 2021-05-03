@@ -388,6 +388,10 @@ class EELSSpectrum_mixin:
         """
 
         def substract_from_offset(value, signals):
+            # Test that axes is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("Support for EELS signals with "
+                            "non-uniform signal axes is not yet implemented.")
             if isinstance(value, da.Array):
                 value = value.compute()
             for signal in signals:

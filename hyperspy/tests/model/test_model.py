@@ -86,6 +86,41 @@ class TestModelJacobians:
         assert m[1].sigma.value == 5
 
 
+class TestModelJacobiansBinnedUniform:
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.zeros(10))
+        m = s.create_model()
+        self.low_loss = 7.0
+        self.weights = 0.3
+        m.axis.axis = np.array([1, 0])
+        m.channel_switches = np.array([0, 1], dtype=bool)
+        m.append(hs.model.components1D.Gaussian())
+        m[0].A.value = 1
+        m[0].centre.value = 2.0
+        m[0].sigma.twin = m[0].centre
+        m._low_loss = mock.MagicMock()
+        m.low_loss.return_value = self.low_loss
+        self.model = m
+        m.convolution_axis = np.zeros(2)
+
+    @pytest.mark.parametrize("uniform", [True, False])
+    @pytest.mark.parametrize("binned", [True, False])
+    def test_jacobian_binned_uniform(self, binned, uniform):
+        m = self.model
+        m.signal.axes_manager[0].binned = binned
+        if not uniform:
+            m.signal.axes_manager[0].convert_to_non_uniform_axis()
+        jac = m._jacobian((1, 2, 3), None, weights=self.weights)
+        np.testing.assert_array_almost_equal(
+            jac.squeeze(),
+            self.weights
+            * np.array([m[0].A.grad(0), m[0].sigma.grad(0) + m[0].centre.grad(0)]),
+        )
+        assert m[0].A.value == 1
+        assert m[0].centre.value == 2
+        assert m[0].sigma.value == 2
+
+
 class TestModelCallMethod:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
@@ -619,6 +654,7 @@ class TestModelPrintCurrentValues:
     def test_print_current_values_component_list(self):
         self.m.print_current_values(component_list=list(self.m))
 
+
 class TestModelUniformBinned:
     def setup_method(self, method):
         self.m = hs.signals.Signal1D(np.arange(10)).create_model()
@@ -634,8 +670,9 @@ class TestModelUniformBinned:
         m.signal.axes_manager[-1].scale = 0.3
         if uniform:
             m.signal.axes_manager[-1].convert_to_non_uniform_axis()
-        r1 = m()
-        np.testing.assert_allclose(m[0].function(0) * 0.3, r1)
+        np.testing.assert_allclose(m[0].function(0) * 0.3, m())
+        self.m.print_current_values()
+
 
 class TestStoreCurrentValues:
     def setup_method(self, method):

@@ -3037,7 +3037,7 @@ class BaseSignal(FancySlicing,
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
                     raise NotImplementedError(
-                            "rebinning of non-uniform axes is not yet implemented.")
+                            "Rebinning of non-uniform axes is not yet implemented.")
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
                                            for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
@@ -3047,7 +3047,7 @@ class BaseSignal(FancySlicing,
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
                     raise NotImplementedError(
-                            "rebinning of non-uniform axes is not yet implemented.")
+                            "Rebinning of non-uniform axes is not yet implemented.")
             factors = np.array([scale[axis.index_in_axes_manager]
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
