@@ -28,20 +28,15 @@ DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = 'default'
 
 
-@pytest.mark.parametrize('binning', (True, False))
-@pytest.mark.parametrize('uniform', (True, False))
 @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
-def test_plot_BackgroundRemoval(binning, uniform):
+def test_plot_BackgroundRemoval():
     pl = components1d.PowerLaw()
     pl.A.value = 1e10
     pl.r.value = 3
     s = signals.Signal1D(pl.function(np.arange(100, 200)))
     s.axes_manager[0].offset = 100
     s.add_poissonian_noise(random_state=1)
-    s.axes_manager[-1].is_binned = binning
-    if not uniform:
-        s.axes_manager[-1].convert_to_non_uniform_axis()
 
     br = BackgroundRemoval(s,
                            background_type='Power Law',

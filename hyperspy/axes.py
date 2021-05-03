@@ -34,10 +34,9 @@ from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
 from hyperspy._components.expression import _parse_substitutions
 
-
 import warnings
 import inspect
-import collections
+import collections.abc import Iterable
 
 _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
@@ -1577,7 +1576,7 @@ class AxesManager(t.HasTraits):
                 if not (inspect.isgenerator(path) or type(path) is GeneratorLen):
                 # If iterpath is a generator, then we can't check its first value, have to trust it
                     first_indices = path[0]
-                    if not isinstance(first_indices, collections.Iterable):
+                    if not isinstance(first_indices, Iterable):
                         raise TypeError
                     assert len(first_indices) == self.navigation_dimension
             except TypeError as e:
