@@ -1098,9 +1098,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             try:
                 axis = self.axes_manager.signal_axes[0]
-                scale_factor = axis.scale if is_binned(self) else 1
+                if is_binned(self):
                 # in v2 replace by
-                # scale_factor = axis.scale if axis.is_binned else 1
+                # if axis.is_binned:
+                    if axis.is_uniform:
+                        scale_factor = axis.scale
+                    else:
+                        scale_factor = np.gradient(axis.axis)
+                else:
+                    scale_factor = 1
                 bkg = background_estimator.function_nd(axis.axis) * scale_factor
                 result = self - bkg
             except MemoryError:

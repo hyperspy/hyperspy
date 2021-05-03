@@ -1214,9 +1214,9 @@ class EELSSpectrum_mixin:
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if is_binned(self) is True:
+        if is_binned(self):
         # in v2 replace by
-        # if self.axes_manager[-1].is_binned is True:
+        # if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1

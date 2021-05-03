@@ -168,19 +168,25 @@ class Voigt(Expression):
             self.centre.value = centre
             self.sigma.value = sigma
             self.area.value = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.value /= axis.scale
+                if axis.is_uniform:
+                    self.area.value /= axis.scale
+                else:
+                    self.area.value /= np.gradient(axis.axis)
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.map['values'][:] /= axis.scale
+                if axis.is_uniform:
+                    self.area.map['values'][:] /= axis.scale
+                else:
+                    self.area.map['values'][:] /= np.gradient(axis.axis)
             self.area.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

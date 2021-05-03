@@ -95,10 +95,13 @@ class Offset(Component):
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.offset.value /= axis.scale
+                if axis.is_uniform:
+                    self.offset.value /= axis.scale
+                else:
+                    self.offset.value /= np.gradient(axis.axis)
             return True
         else:
             if self.offset.map is None:
@@ -108,10 +111,13 @@ class Offset(Component):
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[tuple(
                 gi)].mean(axis.index_in_array)
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.offset.map['values'] /= axis.scale
+                if axis.is_uniform:
+                    self.offset.map['values'] /= axis.scale
+                else:
+                    self.offset.map['values'] /= np.gradient(axis.axis)
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

@@ -144,19 +144,25 @@ class GaussianHF(Expression):
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.height.value /= axis.scale
+                if axis.is_uniform:
+                    self.height.value /= axis.scale
+                else:
+                    self.height.value /= np.gradient(axis.axis)
             return True
         else:
             if self.height.map is None:
                 self._create_arrays()
             self.height.map['values'][:] = height
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.height.map['values'][:] /= axis.scale
+                if axis.is_uniform:
+                    self.height.map['values'][:] /= axis.scale
+                else:
+                    self.height.map['values'][:] /= np.gradient(axis.axis)
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm
             self.fwhm.map['is_set'][:] = True

@@ -217,20 +217,26 @@ class SkewNormal(Expression):
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.value /= axis.scale
+                if axis.is_uniform:
+                    self.A.value /= axis.scale
+                else:
+                    self.A.value /= np.gradient(axis.axis)
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.map['values'] /= axis.scale
+                if axis.is_uniform:
+                    self.A.map['values'] /= axis.scale
+                else:
+                    self.A.map['values'] /= np.gradient(axis.axis)
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0
             self.x0.map['is_set'][:] = True

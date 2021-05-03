@@ -4272,8 +4272,8 @@ class BaseSignal(FancySlicing,
 
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
-        `axis.is_binned` is ``False`` and simple summation over the
-        given axis if ``True``.
+        `axis.is_binned` is ``False`` or `axis.is_uniform` is ``Flse`` and
+        simple summation over the given axis if both are ``True``.
 
         Parameters
         ----------
@@ -4300,9 +4300,9 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if is_binned(self, axis=axis) is False:
+        if (not is_binned(self, axis=axis)) or (not self.axes_manager[axis].is_uniform):
         # in v2 replace by
-        #if self.axes_manager[axis].is_binned is False:
+        # not self.axes_manager[axis].is_binned
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)

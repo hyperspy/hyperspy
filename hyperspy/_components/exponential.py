@@ -149,10 +149,13 @@ class Exponential(Expression):
                                 'a zero or negative value).')
                 return False
 
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                A /= axis.scale
+                if axis.is_uniform:
+                    A /= axis.scale
+                else:
+                    A /= np.gradient(axis.axis)
             if only_current is True:
                 self.A.value = A
                 self.tau.value = t
