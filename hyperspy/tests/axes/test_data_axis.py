@@ -56,6 +56,15 @@ class TestBaseDataAxis:
                                   'navigate': True,
                                   'is_binned': False})
 
+    def test_error_BaseDataAxis(self):
+        with pytest.raises(NotImplementedError):
+            self.axis._slice_me(1)
+        with pytest.raises(ValueError):
+            self.axis._parse_value_from_string('')
+        with pytest.raises(ValueError):
+            self.axis._parse_value_from_string('spam')
+
+
 class TestDataAxis:
 
     def setup_method(self, method):
@@ -152,6 +161,10 @@ class TestDataAxis:
         assert self.axis.value2index(10.15) == 3
         assert self.axis.value2index(60) == 8
 
+    def test_value2index_error(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index(226)
+
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
         axis = DataAxis(axis=self._axis)
@@ -178,6 +191,20 @@ class TestDataAxis:
         assert axis.size == 12
         np.testing.assert_almost_equal(axis.axis[0], 4)
         np.testing.assert_almost_equal(axis.axis[-1], 169)
+    
+    def test_error_DataAxis(self):
+        with pytest.raises(ValueError):
+            axis = DataAxis(axis=np.arange(16)**2, _type='UniformDataAxis')
+        with pytest.raises(AttributeError):
+            self.axis.index_in_axes_manager()
+        with pytest.raises(IndexError):
+            self.axis._get_positive_index(-17)
+        with pytest.raises(ValueError):
+            self.axis._get_array_slices(slice_=slice(1,2,1.5))
+        with pytest.raises(IndexError):
+            self.axis._get_array_slices(slice_=slice(225,-1.1,1))
+        with pytest.raises(IndexError):
+            self.axis._get_array_slices(slice_=slice(225.1,0,1))
 
 
 class TestFunctionalDataAxis:
