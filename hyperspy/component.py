@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,15 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
 import numpy as np
 from dask.array import Array as dArray
 import traits.api as t
 from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
+from distutils.version import LooseVersion
+from pathlib import Path
 
+import hyperspy
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
@@ -34,6 +35,7 @@ from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
 from IPython.display import display_pretty, display
 from hyperspy.misc.model_tools import current_component_values
+from hyperspy.misc.utils import get_object_package_info
 
 import logging
 
@@ -52,7 +54,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
         return super(NoneFloat, self).validate(object, name, value)
 
 
-@add_gui_method(toolkey="Parameter")
+@add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
 
     """Model parameter
@@ -76,7 +78,7 @@ class Parameter(t.HasTraits):
         parsed using sympy, so permitted values are any valid sympy expressions
         of one variable. If the function is invertible the twin inverse function
         is set automatically.
-    twin_inverse_function : str
+    twin_inverse_function_expr : str
         Expression of the ``twin_inverse_function`` that enables setting the
         value of the twin parameter. If ``twin`` is not
         ``None``, its value is set to the output of calling the
@@ -104,12 +106,6 @@ class Parameter(t.HasTraits):
 
     Methods
     -------
-    as_signal(field = 'values')
-        Get a parameter map as a signal object
-    plot()
-        Plots the value of the Parameter at all locations.
-    export(folder=None, name=None, format=None, save_std=False)
-        Saves the value of the parameter map to the specified format
     connect, disconnect(function)
         Call the functions connected when the value attribute changes.
 
@@ -180,25 +176,25 @@ class Parameter(t.HasTraits):
         self._slicing_whitelist = {'map': 'inav'}
 
     def _load_dictionary(self, dictionary):
-        """Load data from dictionary
+        """Load data from dictionary.
 
         Parameters
         ----------
-        dict : dictionary
-            A dictionary containing at least the following items:
-            _id_name : string
-                _id_name of the original parameter, used to create the
-                dictionary. Has to match with the self._id_name
-            _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the
-                parameter attributes.  For more information see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            * any field from _whitelist.keys() *
+        dict : dict
+            A dictionary containing at least the following fields:
+
+            * _id_name: ``_id_name`` of the original parameter, used to create
+              the dictionary. Has to match with the ``self._id_name``.
+            * _whitelist: a dictionary, which keys are used as keywords to
+              match with the parameter attributes. For more information see
+              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from ``_whitelist.keys()``.
+
         Returns
         -------
         id_value : int
-            the ID value of the original parameter, to be later used for setting
-            up the correct twins
+            the ID value of the original parameter, to be later used for
+            setting up the correct twins
 
         """
         if dictionary['_id_name'] == self._id_name:
@@ -243,7 +239,7 @@ class Parameter(t.HasTraits):
         if not self.twin_inverse_function:
             y = sympy.Symbol(x.name + "2")
             try:
-                inv = sympy.solveset(sympy.Eq(y, expr), x)
+                inv = list(sympy.solveset(sympy.Eq(y, expr), x))
                 self._twin_inverse_sympy = lambdify(y, inv)
                 self._twin_inverse_function = None
             except BaseException:
@@ -553,10 +549,18 @@ class Parameter(t.HasTraits):
         shape = self._axes_manager._navigation_shape_in_array
         if not shape:
             shape = [1, ]
-        dtype_ = np.dtype([
-            ('values', 'float', self._number_of_elements),
-            ('std', 'float', self._number_of_elements),
-            ('is_set', 'bool', 1)])
+        # Shape-1 fields in dtypes won’t be collapsed to scalars in a future
+        # numpy version (see release notes numpy 1.17.0)
+        if self._number_of_elements > 1:
+            dtype_ = np.dtype([
+                ('values', 'float', self._number_of_elements),
+                ('std', 'float', self._number_of_elements),
+                ('is_set', 'bool')])
+        else:
+            dtype_ = np.dtype([
+                ('values', 'float'),
+                ('std', 'float'),
+                ('is_set', 'bool')])
         if (self.map is None or self.map.shape != shape or
                 self.map.dtype != dtype_):
             self.map = np.zeros(shape, dtype_)
@@ -577,11 +581,12 @@ class Parameter(t.HasTraits):
         Parameters
         ----------
         field : {'values', 'std', 'is_set'}
+            Field to return as signal.
 
         Raises
         ------
-
-        NavigationDimensionError : if the navigation dimension is 0
+        NavigationDimensionError
+            If the navigation dimension is 0
 
         """
         from hyperspy.signal import BaseSignal
@@ -634,24 +639,23 @@ class Parameter(t.HasTraits):
 
     def export(self, folder=None, name=None, format="hspy",
                save_std=False):
-        """Save the data to a file.
-
-        All the arguments are optional.
+        """Save the data to a file. All the arguments are optional.
 
         Parameters
         ----------
         folder : str or None
             The path to the folder where the file will be saved.
-             If `None` the current folder is used by default.
+            If `None` the current folder is used by default.
         name : str or None
             The name of the file. If `None` the Components name followed
-             by the Parameter `name` attributes will be used by default.
-              If a file with the same name exists the name will be
-              modified by appending a number to the file path.
+            by the Parameter `name` attributes will be used by default.
+            If a file with the same name exists the name will be
+            modified by appending a number to the file path.
         save_std : bool
             If True, also the standard deviation will be saved
         format: str
-            The extension of any file format supported by HyperSpy, default hspy
+            The extension of any file format supported by HyperSpy, default
+            ``hspy``.
 
         """
         if format is None:
@@ -660,7 +664,7 @@ class Parameter(t.HasTraits):
             name = self.component.name + '_' + self.name
         filename = incremental_filename(slugify(name) + '.' + format)
         if folder is not None:
-            filename = os.path.join(folder, filename)
+            filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
             self.as_signal(field='std').save(append2pathname(
@@ -669,26 +673,25 @@ class Parameter(t.HasTraits):
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
         self._whitelist.keys() For more information see
-        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
         fullcopy : Bool (optional, False)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
+
         Returns
         -------
-        dic : dictionary with the following keys:
-            _id_name : string
-                _id_name of the original parameter, used to create the
-                dictionary. Has to match with the self._id_name
-            _twins : list
-                a list of ids of the twins of the parameter
-            _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the
-                parameter attributes.  For more information see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
+        A dictionary, containing at least the following fields:
+
+            * _id_name: _id_name of the original parameter, used to create the
+              dictionary. Has to match with the self._id_name
+            * _twins: a list of ids of the twins of the parameter
+            * _whitelist: a dictionary, which keys are used as keywords to match
+              with the parameter attributes. For more information see
+              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys()
 
         """
         dic = {'_twins': [id(t) for t in self._twins]}
@@ -714,7 +717,7 @@ class Parameter(t.HasTraits):
         return view
 
 
-@add_gui_method(toolkey="Component")
+@add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
     __axes_manager = None
 
@@ -862,9 +865,9 @@ class Component(t.HasTraits):
 
     def _get_long_description(self):
         if self.name:
-            text = '%s (%s component)' % (self.name, self._id_name)
+            text = '%s (%s component)' % (self.name, self.__class__.__name__)
         else:
-            text = '%s component' % self._id_name
+            text = '%s component' % self.__class__.__name__
         return text
 
     def _get_short_description(self):
@@ -872,7 +875,7 @@ class Component(t.HasTraits):
         if self.name:
             text += self.name
         else:
-            text += self._id_name
+            text += self.__class__.__name__
         text += ' component'
         return text
 
@@ -971,24 +974,20 @@ class Component(t.HasTraits):
         ----------
         folder : str or None
             The path to the folder where the file will be saved. If
-            `None` the
-            current folder is used by default.
+            `None` the current folder is used by default.
         format : str
             The extension of the file format, default "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
-            If True, only the value of the parameters that are free will
-             be
+            If True, only the value of the parameters that are free will be
             exported.
 
         Notes
         -----
         The name of the files will be determined by each the Component
-        and
-        each Parameter name attributes. Therefore, it is possible to
-        customise
-        the file names modify the name attributes.
+        and each Parameter name attributes. Therefore, it is possible to
+        customise the file names modify the name attributes.
 
         """
         if only_free:
@@ -1051,7 +1050,7 @@ class Component(t.HasTraits):
 
         Parameters
         ----------
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to free.
@@ -1086,7 +1085,7 @@ class Component(t.HasTraits):
 
         Parameters
         ----------
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
@@ -1116,68 +1115,77 @@ class Component(t.HasTraits):
             _parameter.free = False
 
     def _estimate_parameters(self, signal):
-        self.binned = signal.metadata.Signal.binned
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary
-        For more information on method and conventions, see
-        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+        """Returns component as a dictionary. For more information on method
+        and conventions, see
+        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+
         Parameters
         ----------
         fullcopy : Bool (optional, False)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
+
         Returns
         -------
-        dic : dictionary
+        dic : dict
             A dictionary, containing at least the following fields:
-            parameters : list
-                a list of dictionaries of the parameters, one per
-            _whitelist : dictionary
-                a dictionary with keys used as references saved attributes, for
-                more information, see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
+
+            * parameters: a list of dictionaries of the parameters, one per
+              component.
+            * _whitelist: a dictionary with keys used as references saved
+              attributes, for more information, see
+              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys()
         """
         dic = {
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
+        dic.update(get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        from hyperspy.model import components
-        if self._id_name not in components.__dict__.keys():
+        from hyperspy.model import _COMPONENTS
+        if self._id_name not in _COMPONENTS:
             import dill
             dic['_class_dump'] = dill.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
+
         Parameters
         ----------
-        dict : dictionary
-            A dictionary containing following items:
-            _id_name : string
-                _id_name of the original component, used to create the
-                dictionary. Has to match with the self._id_name
-            parameters : list
-                A list of dictionaries, one per parameter of the component (see
-                parameter.as_dictionary() documentation for more)
-            _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the
-                component attributes.  For more information see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            * any field from _whitelist.keys() *
+        dict : dict
+            A dictionary containing at least the following fields:
+
+            * _id_name: _id_name of the original parameter, used to create the
+              dictionary. Has to match with the self._id_name
+            * parameters: a list of dictionaries, one per parameter of the
+              component (see
+              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              documentation for more details)
+            * _whitelist: a dictionary, which keys are used as keywords to
+              match with the parameter attributes. For more information see
+              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys()
+
         Returns
         -------
-        twin_dict : dictionary
+        twin_dict : dict
             Dictionary of 'id' values from input dictionary as keys with all of
             the parameters of the component, to be later used for setting up
             correct twins.
         """
 
         if dic['_id_name'] == self._id_name:
+            if (self._id_name == "Polynomial" and
+                    LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
+                # in HyperSpy 2.0 the polynomial definition changed
+                from hyperspy._components.polynomial import convert_to_polynomial
+                dic = convert_to_polynomial(dic)
             load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:
@@ -1195,16 +1203,16 @@ class Component(t.HasTraits):
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
     def print_current_values(self, only_free=False, fancy=True):
-            """Prints the current values of the component's parameters.
-            Parameters
-            ----------
-            only_free : bool
-                If True, only free parameters will be printed.
-            fancy : bool
-                If True, attempts to print using html rather than text in the notebook.
-            """
-            if fancy:
-                display(current_component_values(self, only_free=only_free))
-            else:
-                display_pretty(current_component_values(
-                    self, only_free=only_free))
+        """Prints the current values of the component's parameters.
+        Parameters
+        ----------
+        only_free : bool
+            If True, only free parameters will be printed.
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
+        """
+        if fancy:
+            display(current_component_values(self, only_free=only_free))
+        else:
+            display_pretty(current_component_values(
+                self, only_free=only_free))

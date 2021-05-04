@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,30 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
-from os import remove
-import sys
 import gc
-import time
+import os.path
+import sys
 import tempfile
+import time
+from os import remove
 
+import dask.array as da
 import h5py
 import numpy as np
-import dask
-import dask.array as da
 import pytest
-from distutils.version import LooseVersion
 
-from hyperspy.io import load
-from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-from hyperspy.utils import markers
-from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-
+from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.roi import Point2DROI
+from hyperspy.signal import BaseSignal
+from hyperspy.utils import markers
 
 my_path = os.path.dirname(__file__)
 
@@ -79,7 +76,7 @@ example1_original_metadata = {
 
 
 class Example1:
-
+    "Used as a base class for the TestExample classes below"
     def test_data(self):
         assert (
             [4066.0,
@@ -186,87 +183,97 @@ class TestLoadingNewSavedMetadata:
         assert f(3.5) == 4.5
 
 
-@pytest.fixture()
-def tmpfilepath():
-    with tempfile.TemporaryDirectory() as tmp:
-        yield os.path.join(tmp, "test")
-        gc.collect()        # Make sure any memmaps are closed first!
-
-
 class TestSavingMetadataContainers:
 
     def setup_method(self, method):
         self.s = BaseSignal([0.1])
 
-    def test_save_unicode(self, tmpfilepath):
+    def test_save_unicode(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
         assert isinstance(l.metadata.test[2], str)
         assert l.metadata.test[2] == '\u6f22\u5b57'
 
-    def test_save_long_list(self, tmpfilepath):
+    def test_save_long_list(self, tmp_path):
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))
         start = time.time()
-        s.save(tmpfilepath)
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
         end = time.time()
         assert end - start < 1.0  # It should finish in less that 1 s.
 
-    def test_numpy_only_inner_lists(self, tmpfilepath):
+    def test_numpy_only_inner_lists(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test, list)
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
 
     @pytest.mark.xfail(sys.platform == 'win32',
-                   reason="randomly fails in win32")
-    def test_numpy_general_type(self, tmpfilepath):
+                       reason="randomly fails in win32")
+    def test_numpy_general_type(self, tmp_path):
+        s = self.s
+        s.metadata.set_item('test', np.array([[1., 2], ['3', 4]]))
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
+        np.testing.assert_array_equal(l.metadata.test, s.metadata.test)
+
+    @pytest.mark.xfail(sys.platform == 'win32',
+                       reason="randomly fails in win32")
+    def test_list_general_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test[0][0], float)
         assert isinstance(l.metadata.test[0][1], float)
         assert isinstance(l.metadata.test[1][0], str)
         assert isinstance(l.metadata.test[1][1], str)
 
     @pytest.mark.xfail(sys.platform == 'win32',
-                   reason="randomly fails in win32")
-    def test_general_type_not_working(self, tmpfilepath):
+                       reason="randomly fails in win32")
+    def test_general_type_not_working(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert isinstance(l.metadata.test, tuple)
         assert isinstance(l.metadata.test[0], Signal1D)
         assert isinstance(l.metadata.test[1], float)
         assert isinstance(l.metadata.test[2], str)
 
-    def test_unsupported_type(self, tmpfilepath):
+    def test_unsupported_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert 'test' not in l.metadata
 
-    def test_date_time(self, tmpfilepath):
+    def test_date_time(self, tmp_path):
         s = self.s
         date, time = "2016-08-05", "15:00:00.450"
         s.metadata.General.date = date
         s.metadata.General.time = time
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert l.metadata.General.date == date
         assert l.metadata.General.time == time
 
-    def test_general_metadata(self, tmpfilepath):
+    def test_general_metadata(self, tmp_path):
         s = self.s
         notes = "Dummy notes"
         authors = "Author 1, Author 2"
@@ -274,21 +281,30 @@ class TestSavingMetadataContainers:
         s.metadata.General.notes = notes
         s.metadata.General.authors = authors
         s.metadata.General.doi = doi
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert l.metadata.General.notes == notes
         assert l.metadata.General.authors == authors
         assert l.metadata.General.doi == doi
 
-    def test_quantity(self, tmpfilepath):
+    def test_quantity(self, tmp_path):
         s = self.s
         quantity = "Intensity (electron)"
         s.metadata.Signal.quantity = quantity
-        s.save(tmpfilepath)
-        l = load(tmpfilepath + ".hspy")
+        fname = tmp_path / 'test.hspy'
+        s.save(fname)
+        l = load(fname)
         assert l.metadata.Signal.quantity == quantity
 
-    def test_metadata_update_to_v3_0(self):
+    def test_metadata_binned_deprecate(self):
+        with pytest.warns(UserWarning, match="Loading old file"):
+            s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
+        assert s.metadata.has_item('Signal.binned') == False
+        assert s.axes_manager[-1].is_binned == False
+        
+
+    def test_metadata_update_to_v3_1(self):
         md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
                                          'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
                                                  'Stage': {'tilt_alpha': 10.0},
@@ -303,7 +319,6 @@ class TestSavingMetadataContainers:
                           'title': 'test_diffraction_pattern'},
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
                                                                         'gain_offset': 0.0}},
-                         'binned': False,
                          'quantity': 'Intensity',
                          'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -313,7 +328,7 @@ class TestSavingMetadataContainers:
         s = load(os.path.join(
             my_path,
             "hdf5_files",
-            'example2_v2.2.hspy'))
+            'example2_v3.1.hspy'))
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -377,7 +392,7 @@ class TestPassingArgs:
         BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
 
     def test_compression_opts(self):
-        f = h5py.File(self.filename)
+        f = h5py.File(self.filename, mode='r+')
         d = f['Experiments/__unnamed__/data']
         assert d.compression_opts == 8
         assert d.compression == 'gzip'
@@ -401,6 +416,21 @@ class TestAxesConfiguration:
         assert s.axes_manager.navigation_axes[0].index_in_array == 4
         assert s.axes_manager.navigation_axes[1].index_in_array == 3
         assert s.axes_manager.signal_dimension == 3
+
+    def teardown_method(self, method):
+        remove(self.filename)
+
+class TestAxesConfigurationBinning:
+
+    def setup_method(self, method):
+        self.filename = 'testfile.hdf5'
+        s = BaseSignal(np.zeros((2, 2, 2)))
+        s.axes_manager.signal_axes[-1].is_binned = True
+        s.save(self.filename)
+
+    def test_axes_configuration(self):
+        s = load(self.filename)
+        assert s.axes_manager.signal_axes[-1].is_binned == True
 
     def teardown_method(self, method):
         remove(self.filename)
@@ -655,31 +685,73 @@ class Test_permanent_markers_io:
         assert len(s.metadata.Markers) == 5
 
 
+@pytest.mark.parametrize("compression", (None, "gzip", "lzf"))
+def test_compression(compression, tmp_path):
+    s = Signal1D(np.ones((3,3)))
+    s.save(tmp_path / 'test_compression.hspy', overwrite=True,
+           compression=compression)
+    load(tmp_path / 'test_compression.hspy')
+
+
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
-    assert s.metadata.Sample.elements.dtype.char == "U"
+    assert isinstance(s.metadata.Sample.elements, list)
 
 
-@pytest.mark.skipif(LooseVersion(dask.__version__) >= LooseVersion('0.14.1'),
-                    reason='Fixed in later dask versions')
-def test_lazy_metadata_arrays(tmpfilepath):
-    s = BaseSignal([1, 2, 3])
-    s.metadata.array = np.arange(10.)
-    s.save(tmpfilepath)
-    l = load(tmpfilepath + ".hspy", lazy=True)
-    # Can't deepcopy open hdf5 file handles
-    with pytest.raises(TypeError):
-        l.deepcopy()
-    del l
-
-
-def test_save_ragged_array(tmpfilepath):
+def test_save_ragged_array(tmp_path):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
-    s = BaseSignal(np.array([a, b])).T
-    filename = os.path.join(tmpfilepath, "test_save_ragged_array.hspy")
-    s.save(filename)
-    s1 = load(filename)
+    s = BaseSignal(np.array([a, b], dtype=object)).T
+    fname = tmp_path / 'test_save_ragged_array.hspy'
+    s.save(fname)
+    s1 = load(fname)
     for i in range(len(s.data)):
         np.testing.assert_allclose(s.data[i], s1.data[i])
     assert s.__class__ == s1.__class__
+
+
+def test_load_missing_extension(caplog):
+    path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
+    with pytest.warns(UserWarning):
+        s = load(path)
+    assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
+    with pytest.raises(ImportError):
+       _ = s.models.restore("a")
+
+
+def test_save_chunks_signal_metadata():
+    N = 10
+    dim = 3
+    s = Signal1D(np.arange(N**dim).reshape([N]*dim))
+    s.navigator = s.sum(-1)
+    s.change_dtype('float')
+    s.decomposition()
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_save_chunks_signal_metadata.hspy')
+    chunks = (5, 5, 10)
+    s.save(filename, chunks=chunks)
+    s2 = load(filename, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == chunks
+
+
+def test_chunking_saving_lazy():
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.hspy')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.hspy')
+        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specified.hspy')
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (7, 25, 25)
+
+    # specify chunks
+    chunks = (50, 10, 10)
+    s.save(filename3, chunks=chunks)
+    s3 = load(filename3, lazy=True)
+    assert tuple([c[0] for c in s3.data.chunks]) == chunks

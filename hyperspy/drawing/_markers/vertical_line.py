@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -60,7 +60,6 @@ class VerticalLine(MarkerBase):
             self.name,
             self.get_data_position('x1'),
             self.marker_properties['color'],
-            self.get_data_position('size'),
         )
         return(string)
 

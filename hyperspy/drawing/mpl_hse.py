@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -75,9 +75,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
     def plot_signal(self, **kwargs):
         super().plot_signal()
-        if self.signal_plot is not None:
-            self.signal_plot.plot(**kwargs)
-            return
         # Create the figure
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
@@ -99,7 +96,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # Create a line to the left axis with the default indices
         sl = signal1d.Signal1DLine()
         is_complex = np.iscomplexobj(self.signal_data_function())
-        sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
@@ -114,7 +110,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # default coordinates
         if is_complex:
             sl = signal1d.Signal1DLine()
-            sl.autoscale = True
             sl.data_function = self.signal_data_function
             sl.plot_coordinates = True
             sl._plot_imag = True
@@ -129,8 +124,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 self.signal_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
             if self.navigator_plot is not None:
-                self.navigator_plot.events.closed.connect(
-                    self._on_navigator_plot_closing, [])
                 sf.events.closed.connect(self.close_navigator_plot, [])
                 self.signal_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.key2switch_right_pointer)
@@ -138,6 +131,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                     'key_press_event', self.key2switch_right_pointer)
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
+            sf.events.closed.connect(self._on_signal_plot_closing, [])
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":
@@ -165,12 +159,11 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
         rl = signal1d.Signal1DLine()
-        rl.autoscale = True
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')
         self.signal_plot.create_right_axis()
-        self.signal_plot.add_line(rl, ax='right')
+        self.signal_plot.add_line(rl, ax='right', connect_navigation=True)
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
         rl.plot(**kwargs)

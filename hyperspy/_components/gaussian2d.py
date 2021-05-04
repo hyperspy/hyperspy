@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,9 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
 from hyperspy._components.expression import Expression
 
-sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
+
+sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
 
 
 class Gaussian2D(Expression):
@@ -32,11 +34,11 @@ class Gaussian2D(Expression):
 
 
     =============== =============
-    Variable         Parameter 
+    Variable         Parameter
     =============== =============
-    :math:`A`        A 
-    :math:`s_x,s_y`  sigma_x/y 
-    :math:`x_0,y_0`  centre_x/y 
+    :math:`A`        A
+    :math:`s_x,s_y`  sigma_x/y
+    :math:`x_0,y_0`  centre_x/y
     =============== =============
 
 
@@ -52,10 +54,17 @@ class Gaussian2D(Expression):
         Location of the Gaussian maximum (peak position) in `x` direction.
     centre_x : float
         Location of the Gaussian maximum (peak position) in `y` direction.
+    add_rotation : bool
+        If True, add the parameter `rotation_angle` corresponding to the angle
+        between the `x` and the horizontal axis.
 
-
-    For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get 
-    and set the full-with-half-maxima along the two axes.
+    Attributes
+    ----------
+    fwhm_x, fwhm_y : float
+        Convenience attributes to get and set the full width at half maximum along
+        the two axes.
+    height : float
+        Convenience attribute to get height of the Gaussian.
     """
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
@@ -94,8 +103,62 @@ class Gaussian2D(Expression):
 
     @property
     def fwhm_y(self):
+
         return self.sigma_y.value * sigma2fwhm
 
     @fwhm_y.setter
     def fwhm_y(self, value):
         self.sigma_y.value = value / sigma2fwhm
+
+    @property
+    def height(self):
+        """float: Height of the Gaussian"""
+        return self.A.value / (2 * np.pi * self.sigma_x.value * self.sigma_y.value)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * 2 * np.pi * self.sigma_x.value * self.sigma_y.value
+
+    @property
+    def sigma_major(self):
+        """float: The sigma value of the major axis (axis with the largest
+        sigma value).
+        """
+        if self.sigma_x.value >= self.sigma_y.value:
+            return self.sigma_x.value
+        else:
+            return self.sigma_y.value
+
+    @property
+    def sigma_minor(self):
+        """float: The sigma value of the minor axis (axis with the smallest
+        sigma value).
+        """
+        if self.sigma_x.value >= self.sigma_y.value:
+            return self.sigma_y.value
+        else:
+            return self.sigma_x.value
+
+    @property
+    def ellipticity(self):
+        """float: Ratio between the major and minor axis.
+        """
+        return self.sigma_major / self.sigma_minor
+
+    @property
+    def rotation_angle_wrapped(self):
+        """float: Rotation angle in radian wrapped to [0, 2*pi].
+        Only for Gaussian2D component created with `add_rotation=True`.
+        """
+        return math.fmod(self.rotation_angle.value, 2 * np.pi)
+
+    @property
+    def rotation_major_axis(self):
+        """float: Rotation angle in radian between the major axis (axis with
+        the largest sigma value) and the horizontal axis.
+        Only for Gaussian2D component created with `add_rotation=True`.
+        """
+        if self.sigma_x.value >= self.sigma_y.value:
+            return self.rotation_angle_wrapped
+        else:
+            return self.rotation_angle_wrapped - np.pi / 2

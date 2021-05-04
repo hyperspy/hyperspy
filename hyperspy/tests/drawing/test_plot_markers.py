@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,12 +18,12 @@
 import numpy as np
 import pytest
 
-from hyperspy.misc.test_utils import update_close_figure, sanitize_dict
-from hyperspy.signals import Signal2D, Signal1D, BaseSignal
-from hyperspy.utils import markers, stack
-from hyperspy.drawing.marker import dict2marker
+from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-
+from hyperspy.drawing.marker import dict2marker
+from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
+from hyperspy.utils import markers, stack
 
 default_tol = 2.0
 baseline_dir = 'plot_markers'
@@ -111,8 +111,8 @@ class TestMarkers:
         m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
         m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
         m4 = markers.point(5, 5)
-        m4.data['x1'][()] = np.array(None, dtype=np.object)
-        m4.data['y1'][()] = np.array(None, dtype=np.object)
+        m4.data['x1'][()] = np.array(None, dtype=object)
+        m4.data['y1'][()] = np.array(None, dtype=object)
         m5 = markers.vertical_line(9)
         m6 = markers.rectangle(1, 5, 6, 8)
         m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
@@ -148,7 +148,7 @@ class TestMarkers:
         s.add_marker(m2)
 
     def test_add_marker_signal2d_navigation_dim_vertical_line(self):
-        s = Signal2D(np.arange(2*3*8*9).reshape(2, 3, 8, 9))
+        s = Signal2D(np.arange(2 * 3 * 8 * 9).reshape(2, 3, 8, 9))
         marker_pos_list = [[1, 3, 5], [2, 4, 6]]
         m = markers.vertical_line(marker_pos_list)
         s.add_marker(m)
@@ -156,7 +156,7 @@ class TestMarkers:
         for iy, temp_marker_list in enumerate(marker_pos_list):
             for ix, value in enumerate(temp_marker_list):
                 s.axes_manager.indices = (ix, iy)
-                vertical_line = s._plot.signal_plot.figure.axes[0].lines[1]
+                vertical_line = s._plot.signal_plot.ax.lines[1]
                 assert value == vertical_line.get_data()[0]
 
     def test_add_marker_signal2d_navigation_dim(self):
@@ -389,7 +389,7 @@ def test_plot_rectange_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_rectange_markers_close():
     return _test_plot_rectange_markers()  # return for @update_close_figure
 
@@ -414,7 +414,7 @@ def test_plot_point_markers():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_point_markers_close():
     return _test_plot_point_markers()
 
@@ -445,7 +445,7 @@ def test_plot_text_markers_sig():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_text_markers_close():
     return _test_plot_text_markers()
 
@@ -472,7 +472,7 @@ def test_plot_line_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
 
@@ -525,7 +525,7 @@ def test_iterate_markers():
                 mi.marker_properties['color']
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_eds_markers_close():
     s = EDS_TEM_Spectrum()
     s.plot(True)
@@ -536,3 +536,20 @@ def test_plot_eds_markers_no_energy():
     s = EDS_TEM_Spectrum()
     del s.metadata.Acquisition_instrument.TEM.beam_energy
     s.plot(True)
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_eels_labels():
+    s = get_core_loss_eels_line_scan_signal(True, random_state=10)
+    s.add_elements(['Cr'])
+    s.plot(plot_edges=True)
+    return s._plot.signal_plot.figure
+
+
+def test_plot_eels_labels_nav():
+    s = get_core_loss_eels_line_scan_signal(True)
+    s.add_elements(['Cr', 'Fe'])
+    s.plot(plot_edges=True)
+    s.axes_manager.indices = (10, )
+    s._plot.close()

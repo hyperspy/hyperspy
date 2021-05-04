@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,6 +31,8 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
+from hyperspy.misc.test_utils import ignore_warning
+
 
 _logger = logging.getLogger(__name__)
 
@@ -100,14 +102,13 @@ class EDSModel(Model1D):
 
     Parameters
     ----------
-    spectrum : an EDSSpectrum (or any EDSSpectrum subclass) instance.
+    spectrum : EDSSpectrum (or any EDSSpectrum subclass) instance.
 
-    auto_add_lines : boolean
+    auto_add_lines : bool
         If True, automatically add Gaussians for all X-rays generated
         in the energy range by an element, using the edsmodel.add_family_lines
         method.
-
-    auto_background : boolean
+    auto_background : bool
         If True, adds automatically a polynomial order 6 to the model,
         using the edsmodel.add_polynomial_background method.
 
@@ -271,7 +272,7 @@ class EDSModel(Model1D):
     @property
     def _active_background_components(self):
         return [bc for bc in self.background_components
-                if bc.coefficients.free]
+                if bc.free_parameters]
 
     def add_polynomial_background(self, order=6):
         """
@@ -284,7 +285,8 @@ class EDSModel(Model1D):
         order: int
             The order of the polynomial
         """
-        background = create_component.Polynomial(order=order)
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            background = create_component.Polynomial(order=order, legacy=False)
         background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)
@@ -295,14 +297,14 @@ class EDSModel(Model1D):
         Free the yscale of the background components.
         """
         for component in self.background_components:
-            component.coefficients.free = True
+            component.set_parameters_free()
 
     def fix_background(self):
         """
         Fix the background components.
         """
         for component in self._active_background_components:
-            component.coefficients.free = False
+            component.set_parameters_not_free()
 
     def enable_xray_lines(self):
         """Enable the X-ray lines components.
@@ -353,7 +355,7 @@ class EDSModel(Model1D):
             If 'single' fit only the current location. If 'multi'
             use multifit.
         **kwargs : extra key word arguments
-            All extra key word arguments are passed to fit or
+            All extra key word arguments are passed to fit or multifit
 
         See also
         --------
@@ -612,6 +614,7 @@ class EDSModel(Model1D):
             Bound the height of the peak to a fraction of
             its height
         """
+
         def free_twin(component):
             component.A.twin = None
             component.A.free = True
@@ -639,6 +642,7 @@ class EDSModel(Model1D):
 
         Establish the twin on the height of sub-Xray lines (non alpha)
         """
+
         def fix_twin(component):
             component.A.bmin = 0.0
             component.A.bmax = None
@@ -790,10 +794,10 @@ class EDSModel(Model1D):
             fix = self.fix_xray_lines_width
 
         free(xray_lines=xray_lines, bound=bound)
-        if kind == 'single':
-            self.fit(bounded=True, fitter='mpfit', **kwargs)
-        elif kind == 'multi':
-            self.multifit(bounded=True, fitter='mpfit', **kwargs)
+        if kind == "single":
+            self.fit(bounded=True, **kwargs)
+        elif kind == "multi":
+            self.multifit(bounded=True, **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
@@ -843,13 +847,14 @@ class EDSModel(Model1D):
         >>> m.get_lines_intensity(["C_Ka", "Ta_Ma"])
         """
         from hyperspy import utils
+
         intensities = []
 
         if xray_lines is None:
             xray_lines = [component.name for component in self.xray_lines]
         else:
             xray_lines = self.signal._parse_xray_lines(
-                    xray_lines, only_one, only_lines)
+                xray_lines, only_one, only_lines)
             xray_lines = list(filter(lambda x: x in [a.name for a in
                                                      self], xray_lines))
         if len(xray_lines) == 0:

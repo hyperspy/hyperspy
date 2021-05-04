@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -79,13 +79,13 @@ class LabelWidget(Widget1DBase):
         return pos
 
     def _update_patch_position(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_x(self._pos[0])
             self.patch[0].set_y(self._pos[1])
             self.draw_patch()
 
     def _update_patch_string(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_text(self.string)
             self.draw_patch()
 
@@ -99,11 +99,10 @@ class LabelWidget(Widget1DBase):
             self.string,
             color=self.color,
             alpha=self.alpha,
-            picker=5,
             transform=trans,
             horizontalalignment='left',
             bbox=self.bbox,
-            animated=self.blit)]
+            picker=True)]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

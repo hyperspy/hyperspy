@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,13 +23,20 @@ import copy
 import types
 from io import StringIO
 import codecs
-import collections
+from collections.abc import Iterable, Mapping
 import unicodedata
 from contextlib import contextmanager
-from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import VisibleDeprecationWarning
+import importlib
+import logging
 
 import numpy as np
+
+from hyperspy.misc.signal_tools import broadcast_signals
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+
+
+_logger = logging.getLogger(__name__)
 
 
 def attrsetter(target, attrs, value):
@@ -132,6 +139,44 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
+def parse_quantity(quantity, opening='(', closing=')'):
+    """Parse quantity of the signal outputting quantity and units separately.
+    It looks for the last matching opening and closing separator.
+
+    Parameters
+    ----------
+    quantity : string
+    opening : string
+        Separator used to define the beginning of the units
+    closing : string
+        Separator used to define the end of the units
+
+    Returns
+    -------
+    quantity_name : string
+    quantity_units : string
+    """
+
+    # open_bracket keep track of the currently open brackets
+    open_bracket = 0
+    for index, c in enumerate(quantity.strip()[::-1]):
+        if c == closing:
+            # we find an closing, increment open_bracket
+            open_bracket += 1
+        if c == opening:
+            # we find a opening, decrement open_bracket
+            open_bracket -= 1
+            if open_bracket == 0:
+                # we found the matching bracket and we will use the index
+                break
+    if index + 1 == len(quantity):
+        return quantity, ""
+    else:
+        quantity_name = quantity[:-index-1].strip()
+        quantity_units = quantity[-index:-1].strip()
+        return quantity_name, quantity_units
+
+
 _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
@@ -162,7 +207,7 @@ def slugify(value, valid_variable_name=False):
     return value
 
 
-class DictionaryTreeBrowser(object):
+class DictionaryTreeBrowser:
 
     """A class to comfortably browse a dictionary using a CLI.
 
@@ -219,21 +264,54 @@ class DictionaryTreeBrowser(object):
 
     """
 
-    def __init__(self, dictionary=None, double_lines=False):
+    def __init__(self, dictionary=None, double_lines=False, lazy=True):
+        """When creating a DictionaryTreeBrowser lazily, the dictionary is
+        added to the `_lazy_attributes` attribute. The first time a lazy
+        attribute is called or the DictionaryTreeBrowser is printed, the
+        DictionaryTreeBrowser processes the lazy attributes with the
+        `process_lazy_attributes` method.
+        DictionaryTreeBrowser is lazy by default, using non-lazy instances
+        can be useful for debugging purposes.
+
+        """
+        self._lazy_attributes = {}
         self._double_lines = double_lines
-        if not dictionary:
+
+        if dictionary is None:
             dictionary = {}
-        super(DictionaryTreeBrowser, self).__init__()
-        self.add_dictionary(dictionary, double_lines=double_lines)
 
-    def add_dictionary(self, dictionary, double_lines=False):
-        """Add new items from dictionary.
+        if lazy:
+            self._lazy_attributes.update(dictionary)
+        else:
+            self._process_dictionary(dictionary, double_lines)
 
+    def _process_dictionary(self, dictionary, double_lines):
+        """Process the provided dictionary to set the attributes
         """
         for key, value in dictionary.items():
             if key == '_double_lines':
                 value = double_lines
             self.__setattr__(key, value)
+
+    def process_lazy_attributes(self):
+        """Run the DictionaryTreeBrowser machinery for the lazy attributes.
+        """
+        if len(self._lazy_attributes) > 0:
+            _logger.debug("Processing lazy attributes DictionaryBrowserTree")
+            self._process_dictionary(self._lazy_attributes, self._double_lines)
+        self._lazy_attributes = {}
+
+    def add_dictionary(self, dictionary, double_lines=False):
+        """Add new items from dictionary.
+        """
+        if len(self._lazy_attributes) > 0:
+            # To simplify merging lazy and non lazy attribute, we get self
+            # as a dictionary and update the dictionary with the attributes
+            d = self.as_dictionary()
+            nested_dictionary_merge(d, dictionary)
+            self.__init__(d, double_lines=double_lines, lazy=True)
+        else:
+            self._process_dictionary(dictionary, double_lines)
 
     def export(self, filename, encoding='utf8'):
         """Export the dictionary to a text file
@@ -255,18 +333,7 @@ class DictionaryTreeBrowser(object):
         """
         from hyperspy.defaults_parser import preferences
 
-        def check_long_string(value, max_len):
-            if not isinstance(value, (str, np.string_)):
-                value = repr(value)
-            value = ensure_unicode(value)
-            strvalue = str(value)
-            _long = False
-            if max_len is not None and len(strvalue) > 2 * max_len:
-                right_limit = min(max_len, len(strvalue) - max_len)
-                strvalue = '%s ... %s' % (
-                    strvalue[:max_len], strvalue[-right_limit:])
-                _long = True
-            return _long, strvalue
+
 
         string = ''
         eoi = len(self)
@@ -298,7 +365,8 @@ class DictionaryTreeBrowser(object):
                                     else " <tuple>")
                             value = DictionaryTreeBrowser(
                                 {'[%d]' % i: v for i, v in enumerate(value)},
-                                double_lines=True)
+                                double_lines=True,
+                                lazy=False)
                         else:
                             string += "%s%s%s = %s\n" % (
                                 padding, symbol, key, strvalue)
@@ -320,48 +388,136 @@ class DictionaryTreeBrowser(object):
             j += 1
         return string
 
+    def _get_html_print_items(self, padding='', max_len=78, recursive_level=0):
+        """Recursive method that creates a html string for fancy display
+        of metadata.
+        """
+        recursive_level += 1
+        from hyperspy.defaults_parser import preferences
+
+        string = '' # Final return string
+
+        for key_, value in iter(sorted(self.__dict__.items())):
+            if key_.startswith("_"): # Skip any private attributes
+                continue
+            if not isinstance(key_, types.MethodType): # If it isn't a method, then continue
+                key = ensure_unicode(value['key'])
+                value = value['_dtb_value_']
+
+                # dtb_expand_structures is a setting that sets whether to fully expand long strings
+                if preferences.General.dtb_expand_structures:
+                    if isinstance(value, list) or isinstance(value, tuple):
+                        iflong, strvalue = check_long_string(value, max_len)
+                        if iflong:
+                            key += (" <list>"
+                                    if isinstance(value, list)
+                                    else " <tuple>")
+                            value = DictionaryTreeBrowser(
+                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True,
+                                lazy=False)
+                        else:
+                            string += add_key_value(key, strvalue)
+                            continue # skips the next if-else
+
+                # If DTB, then add a details html tag
+                if isinstance(value, DictionaryTreeBrowser):
+                    string += """<ul style="margin: 0px; list-style-position: outside;">
+                    <details {}>
+                    <summary style="display: list-item;">
+                    <li style="display: inline;">
+                    {}
+                    </li></summary>
+                    """.format("open" if recursive_level < 2 else "closed", replace_html_symbols(key))
+                    string += value._get_html_print_items(recursive_level=recursive_level)
+                    string += '</details></ul>'
+
+                # Otherwise just add value
+                else:
+                    _, strvalue = check_long_string(value, max_len)
+                    string += add_key_value(key, strvalue)
+        return string
+
     def __repr__(self):
+        self.process_lazy_attributes()
         return self._get_print_items()
 
+    def _repr_html_(self):
+        self.process_lazy_attributes()
+        return self._get_html_print_items()
+
     def __getitem__(self, key):
+        self.process_lazy_attributes()
         return self.__getattribute__(key)
 
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
 
+    def __getattr__(self, name):
+        """__getattr__ is called when the default attribute access (
+        __getattribute__) fails with an AttributeError.
+
+        """
+        # Skip the attribute we are not interested in. This is also necessary
+        # to recursive loops.
+        if name.startswith("__"):
+            raise AttributeError(name)
+
+        # Attribute name are been slugified, so we need to do the same for
+        # the dictionary keys. Also check with `_sig_` prefix for signal attributes.
+        keys = [slugify(k) for k in self._lazy_attributes.keys()]
+        if name in keys or f"_sig_{name}" in keys:
+            # It is a lazy attribute, we need to process the lazy attribute
+            self.process_lazy_attributes()
+            return self.__dict__[name]['_dtb_value_']
+        else:
+            raise AttributeError(name)
+
     def __getattribute__(self, name):
         if isinstance(name, bytes):
             name = name.decode()
         name = slugify(name, valid_variable_name=True)
-        item = super(DictionaryTreeBrowser, self).__getattribute__(name)
+        item = super().__getattribute__(name)
+
         if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
             return item['_dtb_value_']
         else:
             return item
 
     def __setattr__(self, key, value):
+        if key in ['_double_lines', '_lazy_attributes']:
+            super().__setattr__(key, value)
+            return
+        if key == 'binned':
+            warnings.warn('Use of the `binned` attribute in metadata is '
+                          'going to be deprecated in v2.0. Set the '
+                          '`axis.is_binned` attribute instead. ', 
+                          VisibleDeprecationWarning)
+            
         if key.startswith('_sig_'):
             key = key[5:]
             from hyperspy.signal import BaseSignal
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            if self.has_item(slugified_key):
-                self.get_item(slugified_key).add_dictionary(
+            if slugified_key in self.__dict__.keys():
+                self.__dict__[slugified_key]['_dtb_value_'].add_dictionary(
                     value,
                     double_lines=self._double_lines)
                 return
             else:
                 value = DictionaryTreeBrowser(
                     value,
-                    double_lines=self._double_lines)
-        super(DictionaryTreeBrowser, self).__setattr__(
-            slugified_key,
-            {'key': key, '_dtb_value_': value})
+                    double_lines=self._double_lines,
+                    lazy=False)
+        super().__setattr__(slugified_key, {'key': key, '_dtb_value_': value})
 
     def __len__(self):
-        return len(
-            [key for key in self.__dict__.keys() if not key.startswith("_")])
+        if len(self._lazy_attributes) > 0:
+            d = self._lazy_attributes
+        else:
+            d = self.__dict__
+        return len([key for key in d.keys() if not key.startswith("_")])
 
     def keys(self):
         """Returns a list of non-private keys.
@@ -374,13 +530,16 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal import BaseSignal
         par_dict = {}
+
+        if len(self._lazy_attributes) > 0:
+            par_dict.update(self._lazy_attributes)
+        from hyperspy.signal import BaseSignal
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
-                key = item_['key']
-                if key in ["_db_index", "_double_lines"]:
+                if key_ in ["_db_index", "_double_lines", "_lazy_attributes"]:
                     continue
+                key = item_['key']
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
                 elif isinstance(item_['_dtb_value_'], BaseSignal):
@@ -390,7 +549,7 @@ class DictionaryTreeBrowser(object):
                     item = item_['_dtb_value_']._to_dictionary()
                 else:
                     item = item_['_dtb_value_']
-                par_dict.__setitem__(key, item)
+                par_dict.update({key:item})
         return par_dict
 
     def has_item(self, item_path):
@@ -448,18 +607,16 @@ class DictionaryTreeBrowser(object):
         default :
             The value to return if the path does not exist.
 
-
         Examples
         --------
-
         >>> dict = {'To' : {'be' : True}}
         >>> dict_browser = DictionaryTreeBrowser(dict)
-        >>> dict_browser.has_item('To')
+        >>> dict_browser.get_item('To')
+        └── be = True
+        >>> dict_browser.get_item('To.be')
         True
-        >>> dict_browser.has_item('To.be')
-        True
-        >>> dict_browser.has_item('To.be.or')
-        False
+        >>> dict_browser.get_item('To.be.or', 'default_value')
+        'default_value'
 
         """
         if isinstance(item_path, str):
@@ -542,13 +699,13 @@ class DictionaryTreeBrowser(object):
         dtb = self
         for key in keys:
             if dtb.has_item(key) is False:
-                dtb[key] = DictionaryTreeBrowser()
+                dtb[key] = DictionaryTreeBrowser(lazy=False)
             dtb = dtb[key]
 
     def __next__(self):
         """
         Standard iterator method, updates the index and returns the
-        current coordiantes
+        current coordinates
 
         Returns
         -------
@@ -566,6 +723,7 @@ class DictionaryTreeBrowser(object):
             raise StopIteration
         else:
             self._db_index += 1
+        self.process_lazy_attributes()
         key = list(self.keys())[self._db_index]
         return key, getattr(self, key)
 
@@ -596,16 +754,45 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
         string = string.decode(encoding2, errors='ignore')
     return string
 
+def check_long_string(value, max_len):
+    "Checks whether string is too long for printing in html metadata"
+    if not isinstance(value, (str, np.string_)):
+        value = repr(value)
+    value = ensure_unicode(value)
+    strvalue = str(value)
+    _long = False
+    if max_len is not None and len(strvalue) > 2 * max_len:
+        right_limit = min(max_len, len(strvalue) - max_len)
+        strvalue = '%s ... %s' % (
+            strvalue[:max_len], strvalue[-right_limit:])
+        _long = True
+    return _long, strvalue
+
+def replace_html_symbols(str_value):
+    "Escapes any &, < and > tags that would become invisible when printing html"
+    str_value = str_value.replace("&", "&amp")
+    str_value = str_value.replace("<", "&lt;")
+    str_value = str_value.replace(">", "&gt;")
+    return str_value
+
+def add_key_value(key, value):
+    "Returns the metadata value as a html string"
+    return """
+    <ul style="margin: 0px; list-style-position: outside;">
+    <li style='margin-left:1em; padding-left: 0.5em'>{} = {}</li></ul>
+    """.format(replace_html_symbols(key), replace_html_symbols(value))
+
 
 def swapelem(obj, i, j):
-    """Swaps element having index i with
-    element having index j in object obj IN PLACE.
+    """Swaps element having index i with element having index j in object obj
+    IN PLACE.
 
-    E.g.
+    Example
+    -------
     >>> L = ['a', 'b', 'c']
     >>> spwapelem(L, 1, 2)
     >>> print(L)
-        ['a', 'c', 'b']
+    ['a', 'c', 'b']
 
     """
     if len(obj) > 1:
@@ -679,7 +866,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    return isinstance(obj, collections.Iterable)
+    return isinstance(obj, Iterable)
 
 
 def ordinal(value):
@@ -749,8 +936,8 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def stack(signal_list, axis=None, new_axis_name='stack_element',
-          lazy=None, **kwargs):
+def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
+          show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -758,6 +945,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Parameters
     ----------
     signal_list : list of BaseSignal instances
+        List of signals to stack.
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
@@ -769,14 +957,14 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    lazy: {bool, None}
-        Returns a LazySignal if True. If None, only returns lazy rezult if at
+    lazy : {bool, None}
+        Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
+    %s
 
     Returns
     -------
-    signal : BaseSignal instance (or subclass, determined by the objects in
-        signal list)
+    signal : BaseSignal instance
 
     Examples
     --------
@@ -790,27 +978,27 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from itertools import zip_longest
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
-    # TODO: remove next time
-    deprecated = ['mmap', 'mmap_dir']
-    warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
-    for k in deprecated:
-        if k in kwargs:
-            lazy = True
-            warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
+
+    for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:
+        lazy = True
+        warnings.warn(
+            f"'{k}' argument is deprecated and will be removed in "
+            "HyperSpy v2.0. Please use 'lazy=True' instead.",
+            VisibleDeprecationWarning,
+        )
 
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
+
     # Get the real signal with the most axes to get metadata/class/etc
     # first = sorted(filter(lambda _s: isinstance(_s, BaseSignal), signal_list),
     #                key=lambda _s: _s.data.ndim)[-1]
     first = next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list))
 
-    # Cast numbers as signals. Will broadcast later
-
+    # Cast numbers as signals. Will broadcast later.
     for i, _s in enumerate(signal_list):
         if isinstance(_s, BaseSignal):
             pass
@@ -818,78 +1006,81 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             sig = BaseSignal(_s)
             signal_list[i] = sig
         else:
-            raise ValueError("{} type cannot be stacked.".format(type(_s)))
+            raise ValueError(f"Objects of type {type(_s)} cannot be stacked")
+
 
     if lazy is None:
         lazy = any(_s._lazy for _s in signal_list)
+
     if not isinstance(lazy, bool):
         raise ValueError("'lazy' argument has to be None, True or False")
 
-    # Cast all as lazy if required
     for i, _s in enumerate(signal_list):
+        # Cast all as lazy if required
         if not _s._lazy:
             signal_list[i] = _s.as_lazy()
+
     if len(signal_list) > 1:
+        # Matching axis calibration is checked here
         newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
+
         if axis is not None:
             step_sizes = [s.axes_manager[axis].size for s in newlist]
             axis = newlist[0].axes_manager[axis]
+
         datalist = [s.data for s in newlist]
-        newdata = da.stack(datalist, axis=0) if axis is None else \
-            da.concatenate(datalist, axis=axis.index_in_array)
+        newdata = (
+            da.stack(datalist, axis=0)
+            if axis is None
+            else da.concatenate(datalist, axis=axis.index_in_array)
+        )
         if axis_input is None:
             signal = first.__class__(newdata)
             signal._lazy = True
             signal._assign_subclass()
-            signal.axes_manager._axes[1:] = copy.deepcopy(
-                newlist[0].axes_manager._axes)
+            signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
             axis_name = new_axis_name
-            axis_names = [
-                axis_.name for axis_ in signal.axes_manager._axes[
-                    1:]]
+            axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
             j = 1
             while axis_name in axis_names:
-                axis_name = new_axis_name + "_%i" % j
+                axis_name = f"{new_axis_name}_{j}"
                 j += 1
             eaxis = signal.axes_manager._axes[0]
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
             signal.metadata = copy.deepcopy(first.metadata)
             # Get the title from 1st object
-            signal.metadata.General.title = (
-                "Stack of " + first.metadata.General.title)
+            signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
             signal.original_metadata = DictionaryTreeBrowser({})
         else:
             signal = newlist[0]._deepcopy_with_new_data(newdata)
             signal._lazy = True
             signal._assign_subclass()
         signal.get_dimensions_from_data()
-        signal.original_metadata.add_node('stack_elements')
+        signal.original_metadata.add_node("stack_elements")
 
         for i, obj in enumerate(signal_list):
-            signal.original_metadata.stack_elements.add_node('element%i' % i)
-            node = signal.original_metadata.stack_elements['element%i' % i]
-            node.original_metadata = \
-                obj.original_metadata.as_dictionary()
-            node.metadata = \
-                obj.metadata.as_dictionary()
+            signal.original_metadata.stack_elements.add_node(f"element{i}")
+            node = signal.original_metadata.stack_elements[f"element{i}"]
+            node.original_metadata = obj.original_metadata.as_dictionary()
+            node.metadata = obj.metadata.as_dictionary()
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
             step_sizes = 1
 
-        signal.metadata._HyperSpy.set_item('Stacking_history.axis', axis_input)
-        signal.metadata._HyperSpy.set_item('Stacking_history.step_sizes',
-                                           step_sizes)
-        if np.all([
-                s.metadata.has_item('Signal.Noise_properties.variance')
+        signal.metadata._HyperSpy.set_item("Stacking_history.axis", axis_input)
+        signal.metadata._HyperSpy.set_item("Stacking_history.step_sizes", step_sizes)
+        if np.all(
+            [
+                s.metadata.has_item("Signal.Noise_properties.variance")
                 for s in signal_list
-        ]):
-            variance = stack([
-                s.metadata.Signal.Noise_properties.variance for s in signal_list
-            ], axis)
-            signal.metadata.set_item(
-                'Signal.Noise_properties.variance', variance)
+            ]
+        ):
+            variance = stack(
+                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis
+            )
+            signal.metadata.set_item("Signal.Noise_properties.variance", variance)
     else:
         signal = signal_list[0]
 
@@ -897,9 +1088,11 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     if lazy:
         signal = signal.as_lazy()
     else:
-        signal.compute(False)
+        signal.compute(False, show_progressbar=show_progressbar)
 
     return signal
+
+stack.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
 
 def shorten_name(name, req_l):
@@ -984,12 +1177,12 @@ def map_result_construction(signal,
         sig = signal
     else:
         res = sig = signal._deepcopy_with_new_data()
+
     if ragged:
         sig.data = result
         sig.axes_manager.remove(sig.axes_manager.signal_axes)
         sig.__class__ = LazySignal if lazy else BaseSignal
         sig.__init__(**sig._to_dictionary(add_models=True))
-
     else:
         if not sig._lazy and sig.data.shape == result.shape and np.can_cast(
                 result.dtype, sig.data.dtype):
@@ -1003,9 +1196,10 @@ def map_result_construction(signal,
         for ind in range(
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
-    sig.get_dimensions_from_data()
+    if not ragged:
+        sig.get_dimensions_from_data()
     if not sig.axes_manager._axes:
-        add_scalar_axis(sig)
+        add_scalar_axis(sig, lazy=lazy)
     return res
 
 
@@ -1027,29 +1221,103 @@ def multiply(iterable):
 
 
 def iterable_not_string(thing):
-    return isinstance(thing, collections.Iterable) and \
-        not isinstance(thing, str)
-
-
-def signal_range_from_roi(signal_range):
-    from hyperspy.roi import SpanROI
-    if isinstance(signal_range, SpanROI):
-        return (signal_range.left, signal_range.right)
-    else:
-        return signal_range
+    return isinstance(thing, Iterable) and not isinstance(thing, str)
 
 
 def deprecation_warning(msg):
     warnings.warn(msg, VisibleDeprecationWarning)
 
 
-def add_scalar_axis(signal):
+def add_scalar_axis(signal, lazy=None):
     am = signal.axes_manager
     from hyperspy.signal import BaseSignal
-    signal.__class__ = BaseSignal
+    from hyperspy._signals.lazy import LazySignal
+    if lazy is None:
+        lazy = signal._lazy
+    signal.__class__ = LazySignal if lazy else BaseSignal
     am.remove(am._axes)
     am._append_axis(size=1,
                     scale=1,
                     offset=0,
                     name="Scalar",
                     navigate=False)
+
+
+def get_object_package_info(obj):
+    """Get info about object package
+
+    Returns
+    -------
+    dic: dict
+        Dictionary containing ``package`` and ``package_version`` (if available)
+    """
+    dic = {}
+    # Note that the following can be "__main__" if the component was user
+    # defined
+    dic["package"] = obj.__module__.split(".")[0]
+    if dic["package"] != "__main__":
+        try:
+            dic["package_version"] = importlib.import_module(
+                dic["package"]).__version__
+        except AttributeError:
+            dic["package_version"] = ""
+            _logger.warning(
+                "The package {package} does not set its version in " +
+                "{package}.__version__. Please report this issue to the " +
+                "{package} developers.".format(package=dic["package"]))
+    else:
+        dic["package_version"] = ""
+    return dic
+
+
+def print_html(f_text, f_html):
+    """Print html version when in Jupyter Notebook"""
+    class PrettyText:
+        def __repr__(self):
+            return f_text()
+
+        def _repr_html_(self):
+            return f_html()
+    return PrettyText()
+
+
+def is_hyperspy_signal(input_object):
+    """
+    Check if an object is a Hyperspy Signal
+
+    Parameters
+    ----------
+    input_object : object
+        Object to be tests
+
+    Returns
+    -------
+    bool
+        If true the object is a subclass of hyperspy.signal.BaseSignal
+
+    """
+    from hyperspy.signals import BaseSignal
+    return isinstance(input_object,BaseSignal)
+
+
+def nested_dictionary_merge(dict1, dict2):
+    """ Merge dict2 into dict1 recursively
+    """
+    for key, value in dict2.items():
+        if (key in dict1 and isinstance(dict1[key], dict)
+            and isinstance(dict2[key], Mapping)):
+            nested_dictionary_merge(dict1[key], dict2[key])
+        else:
+            dict1[key] = dict2[key]
+
+
+def is_binned(signal, axis=-1):
+    """Backwards compatibility check utility for is_binned attribute.
+
+    Can be removed in v2.0.
+    """
+    if signal.metadata.has_item('Signal.binned'):
+        return signal.metadata.Signal.binned
+    else:
+        return signal.axes_manager[axis].is_binned
+
