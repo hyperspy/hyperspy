@@ -138,6 +138,16 @@ class TestShift1D:
         np.testing.assert_allclose(s.axes_manager[0].axis,
                                    np.arange(0., 1.8, 0.2))
 
+    def test_2D_nav_shift1D(self):
+        sig = np.empty((3, 4, 10))
+        sig[...] = np.arange(10)
+        s = hs.signals.Signal1D(sig)
+        s.axes_manager[0].scale = 0.2
+        s.axes_manager[1].scale = 0.2
+        shifts = np.ones((3, 4))*0.1
+        s.shift1D(shifts, crop=True)
+        np.testing.assert_allclose(s.data[0, 0, :], np.arange(0.9, 9))
+
 
 @lazifyTestClass
 class TestFindPeaks1D:
