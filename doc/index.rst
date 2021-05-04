@@ -17,6 +17,7 @@ Welcome to HyperSpy's documentation!
    user_guide/install.rst
    user_guide/getting_started.rst
    user_guide/signal.rst
+   user_guide/axes.rst
    user_guide/interactive_operations_ROIs.rst
    user_guide/signal1d.rst
    user_guide/signal2d.rst

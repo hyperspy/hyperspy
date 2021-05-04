@@ -242,6 +242,19 @@ class UnitConversion:
 
 
 class BaseDataAxis(t.HasTraits):
+    """Parent class defining common attributes for all DataAxis classes.
+    
+    Parameters
+    ----------
+    name : str, optional
+        Name string by which the axis can be accessed. `<undefined>` if not set.
+    units : str, optional
+         String for the units of the axis vector. `<undefined>` if not set.
+    navigate : bool, optional
+        True for a navigation axis. Default False (signal axis).
+    is_binned : bool, optional
+        True if data along the axis is binned. Default False.
+    """
     name = t.Str()
     units = t.Str()
     size = t.CInt()
@@ -561,7 +574,7 @@ class BaseDataAxis(t.HasTraits):
         if self.low_value <= value <= self.high_value:
             return (np.abs(self.axis - value)).argmin()
         else:
-            index = int(index)
+            index = int(value)
             if self.size > index >= 0:
                 return index
             else:
@@ -695,6 +708,30 @@ class BaseDataAxis(t.HasTraits):
 
 
 class DataAxis(BaseDataAxis):
+    """DataAxis class for a non-uniform axis defined through an ``axis`` array.
+
+    The most flexible type of axis, where the axis points are directly given by
+    an array named ``axis``. As this can be any array, the property
+    ``is_uniform`` is automatically set to ``False``.
+
+    Parameters
+    ----------
+    axis : numpy array or list
+        The array defining the axis points.
+
+    Examples
+    --------
+    Sample dictionary for a `DataAxis`:
+
+    >>> dict0 = {'axis': np.arange(11)**2}
+    >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
+    >>> s.axes_manager[0].get_axis_dictionary()
+    {'_type': 'DataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
+    """
 
     def __init__(self,
                  index_in_array=None,
@@ -799,6 +836,51 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
+    """DataAxis class for a non-uniform axis defined through an ``expression``.
+    
+    A `FunctionalDataAxis` is defined based on an ``expression`` that is
+    evaluated to yield the axis points. The `expression` is a function defined
+    as a ``string`` using the `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_ 
+    text expression format. An example would be ``expression = a / x + b``.
+    Any variables in the expression, in this case ``a`` and ``b`` must be
+    defined as additional attributes of the axis. The property ``is_uniform``
+    is automatically set to ``False``.
+
+    ``x`` itself is an instance of `BaseDataAxis`. By default, it will be a
+    `UniformDataAxis` with ``offset = 0`` and ``scale = 1`` of the given
+    ``size``. However, it can also be initialized with custom ``offset`` and
+    ``scale`` values. Alternatively, it can be a non-uniform `DataAxis`.
+
+    Parameters
+    ----------
+    expression: str
+        SymPy mathematical expression defining the axis.
+    x : BaseDataAxis
+        Defines x-values at which `expression` is evaluated.
+
+    Examples
+    --------
+    Sample dictionary for a FunctionalDataAxis:
+
+    >>> dict0 = {'expression': 'a / (x + 1) + b', 'a': 100, 'b': 10, 'size': 500}
+    >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
+    >>> s.axes_manager[0].get_axis_dictionary()
+    {'_type': 'FunctionalDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'expression': 'a / (x + 1) + b',
+     'size': 500,
+     'x': {'_type': 'UniformDataAxis',
+      'name': <undefined>,
+      'units': <undefined>,
+      'navigate': <undefined>,
+      'size': 500,
+      'scale': 1.0,
+      'offset': 0.0},
+     'a': 100,
+     'b': 10}
+    """
     def __init__(self,
                  expression,
                  x=None,
@@ -946,12 +1028,46 @@ class FunctionalDataAxis(BaseDataAxis):
 
 
 class UniformDataAxis(BaseDataAxis, UnitConversion):
+    """DataAxis class for a uniform axis defined through a ``scale``, an
+    ``offset`` and a ``size``.
+    
+    The most common type of axis. It is defined by the ``offset``, ``scale``
+    and ``size`` parameters, which determine the `initial value`, `spacing` and
+    `length` of the axis, respectively. The actual ``axis`` array is
+    automatically calculated from these three values. The ``UniformDataAxis``
+    is a special case of the ``FunctionalDataAxis`` defined by the function
+    ``scale * x + offset``.
+    
+    Parameters
+    ----------
+    offset : float
+        The first value of the axis vector.
+    scale : float
+        The spacing between axis points.
+    size : int
+        The number of points in the axis.
+    
+    Examples
+    --------
+    Sample dictionary for a `UniformDataAxis`:
+
+    >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
+    >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
+    >>> s.axes_manager[0].get_axis_dictionary()
+    {'_type': 'UniformDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'size': 500,
+     'scale': 1.0,
+     'offset': 300.0}
+    """
     def __init__(self,
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
-                 size=1.,
+                 size=1,
                  scale=1.,
                  offset=0.,
                  is_binned=False,
