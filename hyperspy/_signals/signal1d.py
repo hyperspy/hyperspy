@@ -469,7 +469,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
         if isinstance(shift_array, np.ndarray):
-            shift_array = BaseSignal(shift_array.ravel()).T
+            shift_array = BaseSignal(shift_array.squeeze()).T
 
         self.map(_shift1D,
                  shift=shift_array,
