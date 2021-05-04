@@ -29,9 +29,9 @@ from hyperspy._signals.signal2d import Signal2D
 from hyperspy.io import load
 from hyperspy.io_plugins.nexus import (_byte_to_string, _fix_exclusion_keys,
                                        _is_int, _is_numeric_data, file_writer,
-                                       list_datasets_in_file,
-                                       read_metadata_from_file,
-                                       _check_search_keys,
+                                       list_datasets_in_file, _get_nav_list,
+                                       read_metadata_from_file, _getlink,
+                                       _check_search_keys, _parse_from_file,
                                        _nexus_dataset_to_signal)
 from hyperspy.signal import BaseSignal
 
@@ -418,14 +418,17 @@ def test_read_lazy_file():
     assert s[0]._lazy and s[1]._lazy
 
 @pytest.mark.parametrize("verbose", [True, False])
-@pytest.mark.parametrize("dataset_keys", ["testdata", "nexustest"])
+@pytest.mark.parametrize("dataset_keys", ["testdata", "nexustest", "xyz"])
 def test_list_datasets(verbose, dataset_keys):
     s = list_datasets_in_file(file3, verbose=verbose,
                               dataset_keys=dataset_keys)
     if dataset_keys == "testdata":
         assert len(s[1]) == 3
-    else:
+    elif dataset_keys == "nexustest":
         assert len(s[1]) == 6
+    else:
+        assert len(s[0]) == 0
+        assert len(s[1]) == 0
 
 
 @pytest.mark.parametrize("metadata_keys", [None, "xxxxx"])
@@ -455,6 +458,28 @@ def test_exclusion_keys():
 
 def test_unicode_error():
     assert _byte_to_string(b'\xff\xfeW[') == "ÿþW["
+
+
+class TestParseFromFile():
+
+    def test_length_1_array(self):
+        val = np.array([10])
+        assert _parse_from_file(val) == 10
+
+    def test_bytes(self):
+        val = b'\x66\x6f\x6f'
+        assert _parse_from_file(val) == 'foo'
+
+    def test_int_float(self):
+        val = 145
+        assert _parse_from_file(val) == 145
+        val = 1.45
+        assert np.isclose(_parse_from_file(val), 1.45)
+
+    def test_unicode_array(self):
+        val = np.array(['foo', 'bar']).astype('U')
+        assert _parse_from_file(val)[0] == b'foo'
+        assert _parse_from_file(val)[1] == b'bar'
 
 
 class TestCheckSearchKeys():
@@ -508,5 +533,22 @@ def test_extract_hdf5():
     s = load(file5, lazy=False)
     s_lazy = load(file5, lazy=True)
 
-    assert len(s) == 3
-    assert len(s_lazy) == 3
+    assert len(s) == 6
+    assert len(s_lazy) == 6
+
+def test_getlink_same_rootkey_key():
+    with h5py.File(file5, 'r') as f:
+        target = _getlink(f['/entry1/testdata/nexustest2'],
+                          '/entry1/testdata/nexustest2',
+                          'data')
+    assert target is None
+
+def test_axes_key_str_or_bytes_with_nonlinear_axis():
+    with h5py.File(file5, 'r') as f:
+        dataset = f['/entry1/testdata/nexustest_axistest1/data']
+        group = f['/entry1/testdata/nexustest_axistest1']
+        nav_list = _get_nav_list(dataset, group)
+
+    assert nav_list[0]['offset'] == 6
+    assert nav_list[1]['offset'] == 0
+

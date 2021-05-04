@@ -219,7 +219,7 @@ def _get_nav_list(data, dataentry):
             axes_keys = axes_key[:data.ndim]
             for i, num in enumerate(axes_keys):
                 axes_list[i] = _parse_from_file(num)
-        elif isinstance(axes_key, bytes):
+        elif isinstance(axes_key, (str, bytes)):
             axes_list = _parse_from_file(axes_key).split(',')[:data.ndim]
         else:
             axes_list[0] = _parse_from_file(axes_key)
