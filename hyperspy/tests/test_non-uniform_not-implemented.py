@@ -24,6 +24,20 @@ from hyperspy.signals import ( Signal1D, Signal2D, EELSSpectrum, EDSTEMSpectrum,
 from hyperspy.components1d import EELSCLEdge
 
 
+def test_signal():
+    s = Signal1D([10, 10])
+    s.axes_manager[0].convert_to_non_uniform_axis()
+    with pytest.raises(NotImplementedError):
+        s.fft()
+    with pytest.raises(NotImplementedError):
+        s.ifft()
+    with pytest.raises(NotImplementedError):
+        s.diff(0)
+    with pytest.raises(NotImplementedError):
+        s.rebin(scale=[1])
+    with pytest.raises(NotImplementedError):
+        s.split(number_of_parts=2,axis=0)
+
 def test_signal1d():
     s = Signal1D((1))
     s.axes_manager[0].convert_to_non_uniform_axis()
