@@ -3133,9 +3133,6 @@ class BaseSignal(FancySlicing,
         s.get_dimensions_from_data()
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
-            if axis.is_uniform is False:
-                raise NotImplementedError(
-                        "Not implemented for non-uniform axes.")
             factor = factors[axis.index_in_array]
             axis.scale = axis_src.scale * factor
             axis.offset = axis_src.offset + (factor - 1) * axis_src.scale / 2
