@@ -129,10 +129,6 @@ class EDSModel(Model1D):
                  auto_add_lines=True,
                  *args, **kwargs):
         Model1D.__init__(self, spectrum, *args, **kwargs)
-        # Test that signal axis is uniform
-        if not self.axes_manager[-1].is_uniform:
-            raise NotImplementedError("Support for EDS models with non-uniform "
-                                      "signal axes is not yet implemented.")
         self.xray_lines = list()
         self.family_lines = list()
         end_energy = self.axes_manager.signal_axes[0].high_value
@@ -208,6 +204,10 @@ class EDSModel(Model1D):
             in `metadata`. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols. (eg. ('Al_Ka','Zn_Ka')).
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
 
         only_one = False
         only_lines = ("Ka", "La", "Ma")
@@ -495,6 +495,11 @@ class EDSModel(Model1D):
         ref: list of float
             The centres, before fitting, of the X-ray lines included
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
+
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         ax = self.signal.axes_manager[-1]
@@ -549,6 +554,11 @@ class EDSModel(Model1D):
         ref: list of float
             The centres, before fitting, of the X-ray lines included
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
+
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         diff = self[xray_lines[0]].centre.value - ref[0]

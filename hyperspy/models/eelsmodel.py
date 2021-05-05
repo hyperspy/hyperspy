@@ -66,10 +66,6 @@ class EELSModel(Model1D):
                  GOS=None, dictionary=None):
         Model1D.__init__(self, signal1D)
 
-        # Test that signal axis is uniform
-        if not self.axes_manager[-1].is_uniform:
-            raise NotImplementedError("Support for EELS models with non-uniform "
-                                      "axes is not yet implemented.")
         # When automatically setting the fine structure energy regions,
         # the fine structure of an EELS edge component is automatically
         # disable if the next ionisation edge onset distance to the
@@ -113,6 +109,10 @@ class EELSModel(Model1D):
     def append(self, component):
         super(EELSModel, self).append(component)
         if isinstance(component, EELSCLEdge):
+            # Test that signal axis is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("This operation is not yet implemented "
+                                          "for non-uniform energy axes")
             tem = self.signal.metadata.Acquisition_instrument.TEM
             component.set_microscope_parameters(
                 E0=tem.beam_energy,
