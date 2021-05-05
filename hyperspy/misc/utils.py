@@ -921,7 +921,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
           stack_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
-    The title is set to that of the first signal in the list.
+    The title is set to that of the first signal in the list. 
 
     Parameters
     ----------
@@ -929,10 +929,13 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         List of signals to stack.
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
-        have the same dimensions. Otherwise the
-        signals are stacked over the axis given by its integer index or
-        its name. The data must have the same shape, except in the dimension
-        corresponding to `axis`.
+        have the same dimensions. Otherwise the signals are stacked over the
+        axis given by its integer index or its name. The data must have the
+        same shape, except in the dimension corresponding to `axis`. If the
+        stacking axis of the first signal is uniform, it is extended up to the
+        new length; if it is non-uniform, the axes vectors of all signals are
+        concatenated along this direction; if it is a `FunctionalDataAxis`,
+        it is converted to a non-uniform DataAxis and treated as such.
     new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
@@ -1007,8 +1010,25 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
 
         if axis is not None:
-            step_sizes = [s.axes_manager[axis].size for s in newlist]
-            axis = newlist[0].axes_manager[axis]
+            step_sizes = [s.axes_manager[axis_input].size for s in newlist]
+            axis = newlist[0].axes_manager[axis_input]
+            if not axis.axes_manager[axis_input].is_uniform:
+                # stack axes if non-uniform
+                if hasattr(axis.axes_manager[axis_input],'_expression'):
+                    axis.axes_manager[axis_input].convert_to_non_uniform_axis()
+                for i, _s in enumerate(signal_list):
+                    if i == 0:
+                        pass
+                    elif (axis.axis[0] < axis.axis[-1] and axis.axis[-1] < \
+                            _s.axes_manager[axis_input].axis[0]) or \
+                            (axis.axis[-1] < axis.axis[0] and \
+                            _s.axes_manager[axis_input].axis[-1] < axis.axis[0]):
+                        axis.axis = np.concatenate((axis.axis, _s.axes_manager[axis_input].axis))
+                        print(axis.__class__)
+                    else:
+                        raise ValueError("Signals can only be stacked along a "
+                            "non-uniform axes if the axis values do not overlap"
+                            " and have the correct order.")
 
         datalist = [s.data for s in newlist]
         newdata = (
@@ -1040,6 +1060,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         signal.metadata = first.metadata.deepcopy()
         signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
 
+        # Stack metadata
         if isinstance(stack_metadata, bool):
             if stack_metadata:
                 signal.original_metadata.add_node('stack_elements')
