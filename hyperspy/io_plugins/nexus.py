@@ -546,26 +546,29 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
                         "hyperspy_nexus_v3":
                     orig_metadata = original_metadata[entryname]
                     if "auxiliary" in orig_metadata:
-                        if "learning_results" in orig_metadata["auxiliary"]:
-                            learning = \
-                                orig_metadata["auxiliary"]["learning_results"]
+                        oma = orig_metadata["auxiliary"]
+                        if "learning_results" in oma:
+                            learning = oma["learning_results"]
                             dictionary["attributes"] = {}
                             dictionary["attributes"]["learning_results"] = \
                                 learning
-                        if "original_metadata" in orig_metadata["auxiliary"]:
+                        if "original_metadata" in oma:
                             if metadata_keys is None:
                                 dictionary["original_metadata"] = \
-                                    (orig_metadata["auxiliary"]
-                                     ["original_metadata"])
+                                    (oma["original_metadata"])
                             else:
                                 dictionary["original_metadata"] = \
                                     _find_search_keys_in_dict(
-                                        (orig_metadata["auxiliary"]
-                                         ["original_metadata"]),
+                                        (oma["original_metadata"]),
                                         search_keys=metadata_keys)
-                        if "hyperspy_metadata" in orig_metadata["auxiliary"]:
-                            hyper_metadata = \
-                                orig_metadata["auxiliary"]["hyperspy_metadata"]
+                            # reconstruct the axes_list for axes_manager
+                            for k, v in oma['original_metadata'].items():
+                                if k.startswith('_sig_'):
+                                    hyper_ax = [ax_v for ax_k, ax_v in v.items()
+                                                if ax_k.startswith('_axes')]
+                                    oma['original_metadata'][k]['axes'] = hyper_ax
+                        if "hyperspy_metadata" in oma:
+                            hyper_metadata = oma["hyperspy_metadata"]
                             hyper_metadata.update(dictionary["metadata"])
                             dictionary["metadata"] = hyper_metadata
         else:
@@ -968,14 +971,19 @@ def _write_nexus_groups(dictionary, group, skip_keys=None, **kwds):
                 _write_nexus_groups(value, group.require_group(key),
                                     skip_keys=skip_keys, **kwds)
         if isinstance(value, (list, tuple, np.ndarray, da.Array)):
-            data = _parse_to_file(value)
-            overwrite_dataset(group, data, key, chunks=None, **kwds)
+            if all(isinstance(v, dict) for v in value):
+                # a list of dictionary is from the axes of HyperSpy signal
+                for i, ax_dict in enumerate(value):
+                    ax_key = '_axes_' + str(i)
+                    _write_nexus_groups(ax_dict, group.require_group(ax_key),
+                                        skip_keys=skip_keys, **kwds)
+            else:
+                data = _parse_to_file(value)
+                overwrite_dataset(group, data, key, chunks=None, **kwds)
         elif isinstance(value, (int, float, str, bytes)):
             group.create_dataset(key, data=_parse_to_file(value))
-        elif is_hyperspy_signal(value):
-            _write_signal(value, group, key, **kwds)
         else:
-            if value is not None and key not in group:
+            if value is not None and value != t.Undefined and key not in group:
                 _write_nexus_groups(value, group.require_group(key),
                                     skip_keys=skip_keys, **kwds)
 

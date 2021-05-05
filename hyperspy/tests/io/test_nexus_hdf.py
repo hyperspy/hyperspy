@@ -33,7 +33,7 @@ from hyperspy.io_plugins.nexus import (_byte_to_string, _fix_exclusion_keys,
                                        read_metadata_from_file, _getlink,
                                        _check_search_keys, _parse_from_file,
                                        _nexus_dataset_to_signal)
-from hyperspy.signal import BaseSignal
+from hyperspy.signals import BaseSignal
 
 dirpath = os.path.dirname(__file__)
 
@@ -333,6 +333,21 @@ class TestSavingMetadataContainers:
                                       np.array([1, 2, 3, 4, 5]))
         np.testing.assert_array_equal(lin.original_metadata.testarray3,
                                       np.array([1, 2, 3, 4, 5]))
+
+    def test_save_hyperspy_signal_metadata(self, tmp_path):
+        s = self.s
+        s.original_metadata.set_item("testarray1", BaseSignal([1.2, 2.3, 3.4]))
+        s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
+        s.original_metadata.set_item("testarray3", Signal2D(np.ones((2,3,5,4))))
+        fname = tmp_path / 'test.nxs'
+        s.save(fname)
+        lin = load(fname, nxdata_only=True)
+        np.testing.assert_allclose(lin.original_metadata.testarray1.data,
+                                   np.array([1.2, 2.3, 3.4]))
+        np.testing.assert_array_equal(lin.original_metadata.testarray2,
+                                      np.array([1, 2, 3, 4, 5]))
+        np.testing.assert_array_equal(lin.original_metadata.testarray3.data,
+                                      np.ones((2,3,5,4)))
 
     def test_save_3D_signal(self, tmp_path):
         s = BaseSignal(np.zeros((2,3,4)))
