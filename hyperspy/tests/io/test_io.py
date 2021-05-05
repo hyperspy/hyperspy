@@ -87,12 +87,6 @@ class TestIOOverwriting:
             self.new_s.save(FULLFILENAME)
             assert not self._check_file_is_written(FULLFILENAME)
 
-    def test_io_overwriting(self):
-        # Invalid entry for overwrite
-        self._clean_file()  # remove the file
-        with pytest.raises("ValueError", match="`overwrite` parameter can"):
-            self.new_s.save(FULLFILENAME, overwrite='spam')
-
     def teardown_method(self, method):
         self._clean_file()
 
