@@ -520,14 +520,6 @@ class BaseDataAxis(t.HasTraits):
         cp = self.copy()
         return cp
 
-    def index2value(self, index):
-        if isinstance(index, da.Array):
-            index = index.compute()
-        if isinstance(index, np.ndarray):
-            return self.axis[index.ravel()].reshape(index.shape)
-        else:
-            return self.axis[index]
-
     def _parse_value_from_string(self, value):
         """Return calibrated value from a suitable string """
         if len(value) == 0:
@@ -671,9 +663,6 @@ class BaseDataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
-    def calibrate(self, *args, **kwargs):
-        raise TypeError("This function works only for uniform axes.")
-
     def convert_to_uniform_axis(self):
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
@@ -770,7 +759,7 @@ class DataAxis(BaseDataAxis):
         return my_slice
 
     def update_axis(self):
-        """Set the value of a axis. The axis values need to be ordered.
+        """Set the value of an axis. The axis values need to be ordered.
 
         Parameters
         ----------
@@ -792,6 +781,9 @@ class DataAxis(BaseDataAxis):
         d = super().get_axis_dictionary()
         d.update({'axis': self.axis})
         return d
+
+    def calibrate(self, *args, **kwargs):
+        raise TypeError("This function works only for uniform axes.")
 
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -959,6 +951,9 @@ class FunctionalDataAxis(BaseDataAxis):
             attributes = self.parameters_list
         return super().update_from(axis, attributes)
 
+    def calibrate(self, *args, **kwargs):
+        raise TypeError("This function works only for uniform axes.")
+
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
@@ -1009,8 +1004,8 @@ class FunctionalDataAxis(BaseDataAxis):
     crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the UniformDataAxis accordingly.
+        """Returns a slice to slice the 'x' vector of the corresponding 
+        functional data axis and set the axis accordingly.
 
         Parameters
         ----------

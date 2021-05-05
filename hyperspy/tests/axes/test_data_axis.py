@@ -206,6 +206,12 @@ class TestDataAxis:
         with pytest.raises(IndexError):
             self.axis._get_array_slices(slice_=slice(225.1,0,1))
 
+    def test_update_from(self):
+        ax2 = DataAxis(units="plumage", name="parrot", axis=np.arange(16))
+        self.axis.update_from(ax2, attributes=("units", "name"))
+        assert ((ax2.units, ax2.name) ==
+                (self.axis.units, self.axis.name))
+
 
 class TestFunctionalDataAxis:
 
@@ -226,6 +232,17 @@ class TestFunctionalDataAxis:
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
+
+    def test_initialisation_errors(self):
+        expression = "x ** power"
+        with pytest.raises(ValueError, match="Please provide"):
+            self.axis = FunctionalDataAxis(
+                expression=expression,
+                power=2,)
+        with pytest.raises(ValueError, match="The values of"):
+            self.axis = FunctionalDataAxis(
+                size=10,
+                expression=expression,)        
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
@@ -253,6 +270,17 @@ class TestFunctionalDataAxis:
             self.axis._function
         with pytest.raises(AttributeError):
             self.axis.x
+
+    def test_update_from(self):
+        ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
+        self.axis.update_from(ax2, attributes=("units", "power"))
+        assert ((ax2.units, ax2.power) ==
+                (self.axis.units, self.axis.power))
+
+    def test_slice_me(self):
+        assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
+        assert self.axis.size == 4
+        np.testing.assert_allclose(self.axis.axis, np.arange(1, 5)**2)
 
 
 class TestReciprocalDataAxis:
@@ -467,8 +495,12 @@ class TestUniformDataAxis:
 
     def test_convert_to_functional_data_axis(self):
         axis = np.copy(self.axis.axis)
+        self.axis.name = "parrot"
+        self.axis.units = "plumage"
         self.axis.convert_to_functional_data_axis(expression = 'x**2')
         assert isinstance(self.axis, FunctionalDataAxis)
+        assert self.axis.name == "parrot"
+        assert self.axis.units == "plumage"
         assert self.axis.size == 10
         assert self.axis.low_value == 10**2
         assert self.axis.high_value == (10 + 0.1 * 9)**2
@@ -547,7 +579,7 @@ class TestUniformDataAxis:
         with pytest.raises(ValueError):
             ax._parse_value_from_string('rela0.5')
         with pytest.raises(ValueError):
-            ax._parse_value_from_string('rela1.5')
+            ax._parse_value_from_string('rel1.5')
         with pytest.raises(ValueError):
             ax._parse_value_from_string('abcd')
 
@@ -555,6 +587,15 @@ class TestUniformDataAxis:
         ax = self.axis
         with pytest.raises(ValueError):
             ax._parse_value("")
+
+    def test_calibrate(self):
+        offset, scale = self.axis.calibrate(value_tuple=(11,12), \
+                                index_tuple=(0,5), modify_calibration=False)
+        assert scale == 0.2
+        assert offset == 11
+        self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
+        assert self.axis.scale == 0.2
+        assert self.axis.offset == 11
 
 
 class TestUniformDataAxisValueRangeToIndicesNegativeScale:
