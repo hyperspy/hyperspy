@@ -212,6 +212,10 @@ class TestDataAxis:
         assert ((ax2.units, ax2.name) ==
                 (self.axis.units, self.axis.name))
 
+    def test_calibrate(self):
+        with pytest.raises(TypeError, match="only for uniform axes"):
+            self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
+
 
 class TestFunctionalDataAxis:
 
@@ -281,6 +285,10 @@ class TestFunctionalDataAxis:
         assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
         assert self.axis.size == 4
         np.testing.assert_allclose(self.axis.axis, np.arange(1, 5)**2)
+
+    def test_calibrate(self):
+        with pytest.raises(TypeError, match="only for uniform axes"):
+            self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
 
 
 class TestReciprocalDataAxis:
